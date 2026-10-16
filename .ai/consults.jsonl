@@ -1281,3 +1281,7 @@
 {"ts":"2026-10-16T17:11:26Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":["chunking-and-indexing","named-period-vote"],"deviations":1}
 {"ts":"2026-10-16T17:11:26Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":["relevance-floors"],"deviations":0}
 {"ts":"2026-10-16T17:12:59Z","bundle":"software-engineering","subjects":["settings"],"techniques":["key-registry","typed-accessors","settings-audit-and-history","setting-kinds"],"deviations":0}
+{"ts":"2026-10-16T17:14:03Z","bundle":"software-engineering","subjects":["canvas-graph"],"techniques":["viewport-transform"],"deviations":0}
+{"ts":"2026-10-16T17:14:03Z","bundle":"software-engineering","subjects":["canvas-graph"],"techniques":["viewport-transform"],"deviations":0}
+{"ts":"2026-10-16T17:14:03Z","bundle":"software-engineering","subjects":["canvas-graph"],"techniques":["viewport-transform"],"deviations":0}
+{"ts":"2026-10-16T17:14:03Z","bundle":"software-engineering","subjects":["canvas-graph"],"techniques":["viewport-transform"],"deviations":0}

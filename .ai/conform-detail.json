@@ -3563,10 +3563,20 @@
       "subject": "canvas-graph",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T00:00:00.000Z",
-      "worker": "f995d01e-3430-4f4c-84e4-712c4214824e",
-      "techniques": []
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:14:03.000Z",
+      "worker": "c2bf05c6-6801-4c21-87e2-5b9c47a74b82",
+      "techniques": [],
+      "registryProposal": "Coverage/hygiene, not a corpus hole: context-map.json still lists entry_points under the deleted src/features/teams/sub_canvas/ for context teams-canvas, so the matcher keeps pairing canvas-graph (score 852 on canvas/nodes/edges) to a context whose canvas is gone; a context-map rescan should rename or retire it.",
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/MastermindPage.tsx:9 the context's files are assignment event listeners plus a data-owning page; the page header says SoundingsView owns the chart, and the DAG canvas the description cites was deleted (git 78e9bff68e, sub_canvas absent), so no canvas-graph surface lives in this context",
+          "evaluatedAt": "2026-10-14T00:00:00.000Z",
+          "worker": "f995d01e-3430-4f4c-84e4-712c4214824e",
+          "reason": "replaced by c2bf05c6-6801-4c21-87e2-5b9c47a74b82"
+        }
+      ]
     },
     "77b8c703-0803-42bc-808a-f255725cc293/canvas-graph": {
       "context": "vault-dependency-graph",
@@ -19654,10 +19664,16 @@
       "subject": "canvas-graph",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T00:00:00.000Z",
-      "worker": "f995d01e-3430-4f4c-84e4-712c4214824e",
-      "techniques": [],
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:14:03.000Z",
+      "worker": "c2bf05c6-6801-4c21-87e2-5b9c47a74b82",
+      "techniques": [
+        {
+          "technique": "viewport-transform",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/TriggerStudioCanvas.tsx:17 the canvas wrapper only mounts StudioPatchbay in a flex column; no pan, zoom or world space"
+        }
+      ],
       "superseded": [
         {
           "state": "not-applicable",
@@ -19665,6 +19681,13 @@
           "evaluatedAt": "2026-10-13T09:28:13.108Z",
           "worker": "d849730c-222f-4517-b5fc-14d6ef2ca524",
           "reason": "replaced by f995d01e-3430-4f4c-84e4-712c4214824e"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/TriggerStudioCanvas.tsx:17 re-checked at revision 5: the only child is StudioPatchbay, which renders routes as a linear ledger of cable rows (StudioPatchbay.tsx:243 maps connected routes to LiveCableRow); no geometry, so the golden path's own list-instead-of-canvas exit applies and no coordinate mapping exists to retain",
+          "evaluatedAt": "2026-10-14T00:00:00.000Z",
+          "worker": "f995d01e-3430-4f4c-84e4-712c4214824e",
+          "reason": "replaced by c2bf05c6-6801-4c21-87e2-5b9c47a74b82"
         }
       ]
     },
@@ -19673,9 +19696,9 @@
       "subject": "canvas-graph",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T00:00:00.000Z",
-      "worker": "f995d01e-3430-4f4c-84e4-712c4214824e",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:14:03.000Z",
+      "worker": "c2bf05c6-6801-4c21-87e2-5b9c47a74b82",
       "techniques": [],
       "superseded": [
         {
@@ -19684,6 +19707,13 @@
           "evaluatedAt": "2026-10-13T09:28:13.108Z",
           "worker": "d849730c-222f-4517-b5fc-14d6ef2ca524",
           "reason": "replaced by f995d01e-3430-4f4c-84e4-712c4214824e"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/shared/components/layout/ContentLayout.tsx:51 re-checked at revision 5: page-shell and layout primitives; no graph, no coordinate space, no drawn set, so the canvas-graph precondition is unmet (the new read-only-renderer section does not apply either)",
+          "evaluatedAt": "2026-10-14T00:00:00.000Z",
+          "worker": "f995d01e-3430-4f4c-84e4-712c4214824e",
+          "reason": "replaced by c2bf05c6-6801-4c21-87e2-5b9c47a74b82"
         }
       ]
     },
@@ -19692,10 +19722,16 @@
       "subject": "canvas-graph",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T00:00:00.000Z",
-      "worker": "f995d01e-3430-4f4c-84e4-712c4214824e",
-      "techniques": [],
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:14:03.000Z",
+      "worker": "c2bf05c6-6801-4c21-87e2-5b9c47a74b82",
+      "techniques": [
+        {
+          "technique": "viewport-transform",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/MastermindPage.tsx:701 popover position is screen-space clientX/clientY, never a world coordinate"
+        }
+      ],
       "superseded": [
         {
           "state": "not-applicable",
@@ -19703,6 +19739,13 @@
           "evaluatedAt": "2026-10-13T09:28:13.108Z",
           "worker": "d849730c-222f-4517-b5fc-14d6ef2ca524",
           "reason": "replaced by f995d01e-3430-4f4c-84e4-712c4214824e"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/lib/ListPopover.tsx:28 re-checked at revision 5: floating list popovers are HTML overlays with no node/edge topology, no transform and no drawn graph, so none of the six techniques' precondition (a pan/zoom relationship surface) holds",
+          "evaluatedAt": "2026-10-14T00:00:00.000Z",
+          "worker": "f995d01e-3430-4f4c-84e4-712c4214824e",
+          "reason": "replaced by c2bf05c6-6801-4c21-87e2-5b9c47a74b82"
         }
       ]
     },

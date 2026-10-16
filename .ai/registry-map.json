@@ -18338,13 +18338,12 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/teams/sub_mastermind/lib/ListPopover.tsx:28 re-checked at revision 5: floating list popovers are HTML overlays with no node/edge topology, no transform and no drawn graph, so none of the six techniques' precondition (a pan/zoom relationship surface) holds",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:59c31182b8b6b4db",
-          "evaluatedRevision": 5,
+          "evidence": "src/features/teams/sub_mastermind/MastermindPage.tsx:701 re-judged at revision 6 (sha256-b2:98dcec8d04236b95): popovers are HTML overlays placed at raw clientX/clientY clamped to the window, no node/edge topology and no world space, so the pan/zoom relationship-surface precondition is unmet and even the renderer stage's mapping clause has nothing to convert",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:98dcec8d04236b95",
+          "evaluatedRevision": 6,
           "source": "retained",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         }
       ],
       "governance": "governed"
@@ -30894,13 +30893,12 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/shared/components/layout/ContentLayout.tsx:51 re-checked at revision 5: page-shell and layout primitives; no graph, no coordinate space, no drawn set, so the canvas-graph precondition is unmet (the new read-only-renderer section does not apply either)",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:59c31182b8b6b4db",
-          "evaluatedRevision": 5,
+          "evidence": "src/features/shared/components/layout/ContentLayout.tsx:51 re-judged at revision 6 (sha256-b2:98dcec8d04236b95): all 33 context files are page-shell, skeleton, button, kanban and editor primitives; no graph, no coordinate space, no drawn set, so the canvas-graph precondition is unmet (KanbanBoard is columns of cards, the golden path's list/table exit)",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:98dcec8d04236b95",
+          "evaluatedRevision": 6,
           "source": "retained",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         },
         {
           "subject": "accessibility",
@@ -33216,12 +33214,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/teams/sub_mastermind/MastermindPage.tsx:9 the context's files are assignment event listeners plus a data-owning page; the page header says SoundingsView owns the chart, and the DAG canvas the description cites was deleted (git 78e9bff68e, sub_canvas absent), so no canvas-graph surface lives in this context",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:59c31182b8b6b4db",
-          "evaluatedRevision": 5,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/teams/sub_mastermind/MastermindPage.tsx:9 re-judged at revision 6 (sha256-b2:98dcec8d04236b95): the context's files are assignment event listeners plus a data-owning page that delegates its chart to SoundingsView; the DAG canvas the context is named for (src/features/teams/sub_canvas) no longer exists, so no canvas-graph surface lives here",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:98dcec8d04236b95",
+          "evaluatedRevision": 6,
+          "revisionsBehind": 1
         },
         {
           "subject": "prompt-assembly",
@@ -37547,15 +37544,14 @@
           "state": "not-applicable",
           "source": "conform",
           "grounding": "precondition",
-          "evidence": "src/features/triggers/sub_studio/TriggerStudioCanvas.tsx:17 re-checked at revision 5: the only child is StudioPatchbay, which renders routes as a linear ledger of cable rows (StudioPatchbay.tsx:243 maps connected routes to LiveCableRow); no geometry, so the golden path's own list-instead-of-canvas exit applies and no coordinate mapping exists to retain",
+          "evidence": "src/features/triggers/sub_studio/StudioPatchbay.tsx:243 re-judged at revision 6 (sha256-b2:98dcec8d04236b95): routes render as a linear ledger of cable rows (connected.map), no geometry, no transform, no drag-to-place; the golden path's table/list exit applies and no coordinate mapping exists to retain",
           "digest": "sha256-b2:98dcec8d04236b95",
           "revision": 6,
           "changedAt": "2026-10-14",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:59c31182b8b6b4db",
-          "evaluatedRevision": 5,
-          "revisionsBehind": 1,
-          "stale": true
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:98dcec8d04236b95",
+          "evaluatedRevision": 6,
+          "revisionsBehind": 1
         },
         {
           "subject": "draft-editing",
