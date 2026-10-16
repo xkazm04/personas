@@ -4618,19 +4618,14 @@
       "subject": "companion-identity",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T17:47:13.000Z",
-      "worker": "4d8c5d79-58b9-4388-817a-018e13252e0f",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:31:07.000Z",
+      "worker": "ccad5e7a-194d-48a5-88ee-0a53559f8c17",
       "techniques": [
         {
           "technique": "anchored-identity-diffs",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_core.rs:352 the bootstrap rewrite is a mode of the ordinary op, reachable after day one; dispatch.rs:2491 content mode is unchecked at propose; :339 returns one success string so a half-applied batch reads as whole"
-        },
-        {
-          "technique": "anchored-identity-diffs",
-          "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/companion/approvals/approval_autopilot.rs:22 standing consent resolves self-model diffs; the technique puts them outside any blanket consent"
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_core.rs:352 full-content write path survives beside the anchored-diff path; no autonomy carve-out for update_identity (approval_autopilot.rs:132)"
         }
       ],
       "superseded": [
@@ -4640,6 +4635,13 @@
           "evaluatedAt": "2026-09-23",
           "worker": null,
           "reason": "replaced by 4d8c5d79-58b9-4388-817a-018e13252e0f"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_core.rs:352 update_identity still writes a whole-document `content` replacement with no skeleton-only precondition re-checked, and under autonomous mode every proposed action fires (approval_autopilot.rs:22, no update_identity defer arm), so the self-model can be rewritten wholesale with no human seeing it.",
+          "evaluatedAt": "2026-10-09T17:47:13.000Z",
+          "worker": "4d8c5d79-58b9-4388-817a-018e13252e0f",
+          "reason": "replaced by ccad5e7a-194d-48a5-88ee-0a53559f8c17"
         }
       ]
     },
@@ -4648,19 +4650,20 @@
       "subject": "companion-identity",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T17:47:13.000Z",
-      "worker": "4d8c5d79-58b9-4388-817a-018e13252e0f",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:31:07.000Z",
+      "worker": "ccad5e7a-194d-48a5-88ee-0a53559f8c17",
       "techniques": [
         {
           "technique": "constitution-self-model-split",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/disk.rs:93 a copy taken before a write must succeed before the write happens; :87 no fingerprint, so an edited file is overwritten rather than kept live with the new baseline beside it"
+          "evidence": "src-tauri/src/companion/disk.rs:94 fs::write(&const_path, CONSTITUTION_MD) runs after an ignored backup result (:93); no shipped-text fingerprint guards an edited constitution"
         },
         {
           "technique": "anchored-identity-diffs",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/brain/identity.rs:340 the diff-path backup is best-effort (`let _ = std::fs::copy` on the next line) and the write proceeds"
+          "evidence": "src-tauri/src/companion/brain/identity.rs:340 the diff-path backup is best-effort (`let _ = std::fs::copy` on the next line) and the write proceeds",
+          "carriedFrom": "2026-10-09"
         }
       ],
       "superseded": [
@@ -4670,6 +4673,13 @@
           "evaluatedAt": "2026-09-23",
           "worker": null,
           "reason": "replaced by 4d8c5d79-58b9-4388-817a-018e13252e0f"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/disk.rs:93 the pre-upgrade constitution backup is still `let _ = fs::copy(...)` and :94 overwrites the file regardless, with no shipped-text fingerprint (:87 keys only on version), so a version bump replaces the person's amended law even when the backup failed.",
+          "evaluatedAt": "2026-10-09T17:47:13.000Z",
+          "worker": "4d8c5d79-58b9-4388-817a-018e13252e0f",
+          "reason": "replaced by ccad5e7a-194d-48a5-88ee-0a53559f8c17"
         }
       ]
     },
@@ -4678,22 +4688,16 @@
       "subject": "companion-identity",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T17:47:13.000Z",
-      "worker": "4d8c5d79-58b9-4388-817a-018e13252e0f",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:31:07.000Z",
+      "worker": "ccad5e7a-194d-48a5-88ee-0a53559f8c17",
       "techniques": [
         {
           "technique": "disk-truth-db-index",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/brain/episodic.rs:394 rebuild is incremental and episodes-only; the technique requires a total, idempotent rebuild that answers every class of index inconsistency"
-        },
-        {
-          "technique": "disk-truth-db-index",
-          "verdict": "partially-realized",
-          "evidence": "src-tauri/src/commands/companion/brain.rs:417 a person-invokable reconcile door now exists for episodes, async over spawn_blocking, idempotent"
+          "evidence": "src-tauri/src/companion/brain/backlog.rs:440 \"There is no rebuild-from-disk pass in the tree today\" - semantic/procedural/goal/backlog nodes have no rebuild"
         }
       ],
-      "registryProposal": "The rust--disk-truth-db-index application (verified_on 2026-09-23) says there is still no rebuild-from-disk pass; personas now ships episodic::reconcile_orphaned_episodes plus the companion_reconcile_episodes command and a sleep-cycle call. Re-verify that application: it is stale, and the reconciler (shares the writer's rules, writes the FTS mirror, reports malformed/truncated) is upward evidence for the incremental half of the technique.",
       "superseded": [
         {
           "state": "deviation",
@@ -4701,6 +4705,13 @@
           "evaluatedAt": "2026-09-23",
           "worker": null,
           "reason": "replaced by 4d8c5d79-58b9-4388-817a-018e13252e0f"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/brain/episodic.rs:394 the only rebuild-from-disk pass walks episodes/ alone and inserts missing rows only, so semantic, procedural, goal and backlog nodes have no rebuild (backlog.rs:440 still says so) and the index is not recomputable as a whole from the documents.",
+          "evaluatedAt": "2026-10-09T17:47:13.000Z",
+          "worker": "4d8c5d79-58b9-4388-817a-018e13252e0f",
+          "reason": "replaced by ccad5e7a-194d-48a5-88ee-0a53559f8c17"
         }
       ]
     },
@@ -5377,14 +5388,14 @@
       "subject": "companion-identity",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T17:47:13.000Z",
-      "worker": "4d8c5d79-58b9-4388-817a-018e13252e0f",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:31:07.000Z",
+      "worker": "ccad5e7a-194d-48a5-88ee-0a53559f8c17",
       "techniques": [
         {
           "technique": "anchored-identity-diffs",
           "verdict": "deviation",
-          "evidence": "src/features/companions/athena/decision/useDecisionQueue.ts:90 an approval surface that does not show the change is consent theatre"
+          "evidence": "src/features/companions/athena/decision/rosterDecisions.ts:101 prompt = `${label}: ${rationale}`; no per-diff before/after; actionRisk.ts:85 elevated risk only changes recommendation copy"
         }
       ],
       "superseded": [
@@ -5394,6 +5405,13 @@
           "evaluatedAt": "2026-09-23",
           "worker": null,
           "reason": "replaced by 4d8c5d79-58b9-4388-817a-018e13252e0f"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/companions/athena/decision/useDecisionQueue.ts:90 an update_identity orb decision is still prompted by label plus batch rationale only and the approve option (:112) applies it, so a self-model rewrite is answerable from the orb with the diffs never shown; actionRisk.ts:85 marks it elevated but that only changes the recommendation text.",
+          "evaluatedAt": "2026-10-09T17:47:13.000Z",
+          "worker": "4d8c5d79-58b9-4388-817a-018e13252e0f",
+          "reason": "replaced by ccad5e7a-194d-48a5-88ee-0a53559f8c17"
         }
       ]
     },
@@ -14913,24 +14931,40 @@
       "subject": "companion-identity",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T14:27:05.000Z",
-      "worker": "46b2f787-918d-4134-9faf-ebae138952d1",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:31:07.000Z",
+      "worker": "ccad5e7a-194d-48a5-88ee-0a53559f8c17",
       "techniques": [
         {
           "technique": "anchored-identity-diffs",
           "verdict": "deviation",
-          "evidence": "src/api/companion.ts:1491 companionCorrectIdentityClaim queues an approval (src-tauri/src/companion/brain/profile_synthesis.rs:124 insert_identity_approval) instead of the correction fast path; in manual mode the companion keeps reading a claim the person already refuted. The direct-edit door src/api/companion.ts:1472 is the person's own edit, a legitimate enumerated writer, and backs up first."
+          "evidence": "src-tauri/src/commands/companion/brain.rs:521 correction routed to propose_identity_update instead of an immediate anchored remove"
+        },
+        {
+          "technique": "operator-profile-synthesis",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/companion/brain.rs:521 a refuted profile claim keeps governing context until approved"
         },
         {
           "technique": "constitution-self-model-split",
           "verdict": "realized",
-          "evidence": "src/api/companion.ts:1387 constitution is a read-only BrainKind: the IPC surface has no save wrapper for it, and the delete wrapper's command refuses it (src-tauri/src/commands/companion/brain.rs:461)."
+          "evidence": "src/api/companion.ts:1387 constitution is a read-only BrainKind: the IPC surface has no save wrapper for it, and the delete wrapper's command refuses it (src-tauri/src/commands/companion/brain.rs:461).",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "one-mind-many-mouths",
           "verdict": "realized",
-          "evidence": "src/api/companion.ts:1086 conversations are addresses with their own transcript and --resume continuity while the brain and identity stay global."
+          "evidence": "src/api/companion.ts:1086 conversations are addresses with their own transcript and --resume continuity while the brain and identity stay global.",
+          "carriedFrom": "2026-10-10"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/api/companion.ts:1491 the person's 'that's wrong' correction is only filed as a pending update_identity approval (:1489, backend profile_synthesis.rs:124), so the refuted claim stays in the always-loaded identity.md until a second click; anchored-identity-diffs says an operator correction supersedes immediately and changes timing, not grammar.",
+          "evaluatedAt": "2026-10-10T14:27:05.000Z",
+          "worker": "46b2f787-918d-4134-9faf-ebae138952d1",
+          "reason": "replaced by ccad5e7a-194d-48a5-88ee-0a53559f8c17"
         }
       ]
     },
