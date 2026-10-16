@@ -1,0 +1,136 @@
+/* EmptyArt - the small animated illustrations behind every empty state.
+ *
+ * Colour is tokens only, so every theme (dark and light) recolours the art for
+ * free: line work mixes the foreground into the brand, accents are the brand or
+ * a status token, fills are washes of either.
+ *
+ * Motion is CSS, not framer-motion: the app's MotionConfig snaps every framer
+ * animation when motion is reduced (see MotionizedGlyph), which would also kill
+ * the entrance. Two layers compose: a one-shot entrance (draw / pop / fade) and,
+ * once it has landed, one calm ambient loop on an accent element only. Both stop
+ * under the OS preference and under the app's own setting (`data-still`).
+ */
+
+.empty-art {
+  --ea-ink: color-mix(in srgb, var(--foreground) 62%, var(--primary));
+  --ea-accent: var(--primary);
+  --ea-fill: color-mix(in srgb, var(--primary) 14%, transparent);
+  --ea-fill-strong: color-mix(in srgb, var(--primary) 26%, transparent);
+  --ea-plate-a: color-mix(in srgb, var(--primary) 11%, transparent);
+  --ea-plate-b: color-mix(in srgb, var(--primary) 2%, transparent);
+  --ea-plate-line: color-mix(in srgb, var(--primary) 20%, transparent);
+  --ea-good: var(--status-success);
+  --ea-warn: var(--status-warning);
+  --ea-land: 900ms;
+  display: block;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.empty-art .ea-line {
+  fill: none;
+  stroke: var(--ea-ink);
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.empty-art .ea-line-accent { fill: none; stroke: var(--ea-accent); stroke-width: 2.25; stroke-linecap: round; stroke-linejoin: round; }
+.empty-art .ea-line-good { fill: none; stroke: var(--ea-good); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.empty-art .ea-fill { fill: var(--ea-fill); }
+.empty-art .ea-fill-strong { fill: var(--ea-fill-strong); }
+.empty-art .ea-dot { fill: var(--ea-accent); }
+.empty-art .ea-dot-good { fill: var(--ea-good); }
+.empty-art .ea-dot-warn { fill: var(--ea-warn); }
+.empty-art .ea-dot-ink { fill: var(--ea-ink); }
+
+/* Every transformed part turns around its own centre. */
+.empty-art .ea-pop,
+.empty-art .ea-float,
+.empty-art .ea-pulse,
+.empty-art .ea-spin,
+.empty-art .ea-swing,
+.empty-art .ea-blink,
+.empty-art .ea-scan,
+.empty-art .ea-drift,
+.empty-art .ea-rise {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.empty-art .ea-spin-base { transform-box: fill-box; transform-origin: 50% 100%; }
+.empty-art .ea-swing { transform-origin: 50% 0%; }
+.empty-art .ea-rise { transform-origin: 50% 100%; }
+
+/* -- Entrance ---------------------------------------------------------------- */
+
+.empty-art .ea-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: ea-draw var(--ea-land) cubic-bezier(0.33, 1, 0.68, 1) forwards;
+  animation-delay: var(--d, 0ms);
+}
+.empty-art .ea-pop {
+  opacity: 0;
+  animation: ea-pop 420ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation-delay: var(--d, 300ms);
+}
+.empty-art .ea-fade {
+  opacity: 0;
+  animation: ea-fade 500ms ease-out forwards;
+  animation-delay: var(--d, 0ms);
+}
+.empty-art .ea-rise {
+  transform: scaleY(0);
+  animation: ea-rise 620ms cubic-bezier(0.33, 1, 0.68, 1) forwards;
+  animation-delay: var(--d, 200ms);
+}
+
+/* -- Ambient (starts after the entrance has landed) --------------------------- */
+
+.empty-art .ea-float { animation: ea-float 3.6s ease-in-out calc(var(--ea-land) + var(--d, 0ms)) infinite; }
+.empty-art .ea-pulse { animation: ea-pulse 2.8s ease-in-out calc(var(--ea-land) + var(--d, 0ms)) infinite; }
+.empty-art .ea-spin { animation: ea-spin 9s linear calc(var(--ea-land) + var(--d, 0ms)) infinite; }
+.empty-art .ea-spin-base { animation: ea-spin 9s linear calc(var(--ea-land) + var(--d, 0ms)) infinite; }
+.empty-art .ea-swing { animation: ea-swing 3.2s ease-in-out calc(var(--ea-land) + var(--d, 0ms)) infinite; }
+.empty-art .ea-blink { animation: ea-blink 4.2s ease-in-out calc(var(--ea-land) + var(--d, 0ms)) infinite; }
+.empty-art .ea-scan { animation: ea-scan 3s ease-in-out calc(var(--ea-land) + var(--d, 0ms)) infinite alternate; }
+.empty-art .ea-drift { animation: ea-drift 2.6s ease-in-out calc(var(--ea-land) + var(--d, 0ms)) infinite; }
+.empty-art .ea-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  animation: ea-ring 2.8s ease-out calc(var(--ea-land) + var(--d, 0ms)) infinite;
+}
+
+/* A pop or rise that also carries an ambient loop: the loop owns the transform
+   after landing, so the entrance is delegated to an outer group. */
+
+@keyframes ea-draw { to { stroke-dashoffset: 0; } }
+@keyframes ea-pop { from { opacity: 0; transform: scale(0.55); } to { opacity: 1; transform: scale(1); } }
+@keyframes ea-fade { to { opacity: 1; } }
+@keyframes ea-rise { to { transform: scaleY(1); } }
+@keyframes ea-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3.5px); } }
+@keyframes ea-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.55; transform: scale(0.82); } }
+@keyframes ea-spin { to { transform: rotate(360deg); } }
+@keyframes ea-swing { 0%, 100% { transform: rotate(0deg); } 20% { transform: rotate(9deg); } 40% { transform: rotate(-7deg); } 60% { transform: rotate(3deg); } 75% { transform: rotate(0deg); } }
+@keyframes ea-blink { 0%, 44%, 50%, 100% { transform: scaleY(1); } 47% { transform: scaleY(0.1); } }
+@keyframes ea-scan { from { transform: translate(-7px, -3px); } to { transform: translate(7px, 3px); } }
+@keyframes ea-drift { 0% { transform: translateX(-14px); opacity: 0; } 20%, 80% { opacity: 1; } 100% { transform: translateX(14px); opacity: 0; } }
+@keyframes ea-ring { 0% { opacity: 0.7; transform: scale(0.6); } 100% { opacity: 0; transform: scale(1.5); } }
+
+/* -- Still: the OS preference or the app's own reduced-motion setting -------- */
+
+.empty-art[data-still] *,
+.empty-art[data-still] { animation: none !important; }
+.empty-art[data-still] .ea-draw { stroke-dashoffset: 0; }
+.empty-art[data-still] .ea-pop,
+.empty-art[data-still] .ea-fade { opacity: 1; }
+.empty-art[data-still] .ea-rise { transform: none; }
+.empty-art[data-still] .ea-ring { opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .empty-art *, .empty-art { animation: none !important; }
+  .empty-art .ea-draw { stroke-dashoffset: 0; }
+  .empty-art .ea-pop, .empty-art .ea-fade { opacity: 1; }
+  .empty-art .ea-rise { transform: none; }
+  .empty-art .ea-ring { opacity: 0; }
+}

@@ -20,7 +20,9 @@
  */
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Inbox, X } from 'lucide-react';
+import { X } from 'lucide-react';
+import { EmptyArt, type EmptyArtMotif } from './emptyArt/EmptyArt';
+import { motifForIcon } from './emptyArt/iconMotif';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { TruncateWithTooltip } from './TruncateWithTooltip';
 import { DataGridPager } from './DataGridPager';
@@ -101,6 +103,8 @@ export interface DataGridProps<T> {
   loadingLabel?: string;
   /** Empty state */
   emptyIcon?: React.ComponentType<{ className?: string }>;
+  /** The small animated illustration above the empty title (EmptyArt). Defaults to `emptyIcon`'s motif, else `inbox`. */
+  emptyArt?: EmptyArtMotif;
   /**
    * **Always pass an already-translated, surface-specific title** ("No
    * credentials yet", not "No data") — omitting it falls back to the generic
@@ -194,6 +198,7 @@ export function DataGrid<T>({
   onRetry,
   loadingLabel,
   emptyIcon: EmptyIcon,
+  emptyArt,
   emptyTitle,
   emptyDescription,
   getRowClassName,
@@ -276,7 +281,8 @@ export function DataGrid<T>({
   // Still drives the bulk-toolbar slide-up (reduced-motion aware).
   const { shouldAnimate } = useMotion();
 
-  const Icon = EmptyIcon || Inbox;
+  const emptyMotif: EmptyArtMotif =
+    emptyArt ?? motifForIcon(EmptyIcon) ?? 'inbox';
 
   /* -- Grid --------------------------------------------------------- */
   return (
@@ -417,15 +423,13 @@ export function DataGrid<T>({
         <ErrorBanner variant="panel" message={error} onRetry={onRetry} />
       ) : data.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="w-10 h-10 rounded-xl bg-secondary/30 border border-primary/10 flex items-center justify-center mb-3">
-            <Icon className="w-5 h-5 text-foreground/90" />
-          </div>
+          <EmptyArt motif={emptyMotif} size="sm" className="mb-3" />
           {/* No hardcoded English fallback: an untranslated default leaks into
               all 14 locales. `shared.grid_no_data` is the shared translated
               last resort — always pass a specific `emptyTitle` instead. */}
           <p className="typo-heading text-foreground">{emptyTitle ?? t.shared.grid_no_data}</p>
           {emptyDescription && (
-            <p className="typo-body text-foreground mt-1 max-w-xs">{emptyDescription}</p>
+            <p className="typo-caption mt-1 max-w-[46ch]">{emptyDescription}</p>
           )}
         </div>
       ) : (

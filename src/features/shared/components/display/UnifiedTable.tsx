@@ -35,6 +35,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
 import { useColumnWidths, ColumnResizeHandle } from './ColumnResize';
 import { MotionizedGlyph, type TracedGlyph } from './MotionizedGlyph';
+import { EmptyArt, type EmptyArtMotif } from './emptyArt/EmptyArt';
 import { buildGroupRows, type GroupSpec } from './grouping';
 import { useGroupedVirtualizer, GroupHeaderRow, GROUP_HEADER_SIZE } from './GroupedVirtualList';
 import { UnifiedTableRow, useStableRowClick, useIndexSensitive } from './UnifiedTableRow';
@@ -116,6 +117,8 @@ export interface UnifiedTableProps<T> {
   emptyDescription?: string;
   /** Optional traced glyph drawn above the empty title (illustrated empty state). */
   emptyGlyph?: TracedGlyph;
+  /** The small animated illustration above the empty title (EmptyArt). Default `inbox`; ignored when `emptyGlyph` is set. */
+  emptyArt?: EmptyArtMotif;
   isLoading?: boolean;
   /**
    * Already-translated failure message for the last fetch. Distinguishes
@@ -508,6 +511,7 @@ export function UnifiedTable<T>({
   emptyTitle,
   emptyDescription,
   emptyGlyph,
+  emptyArt = 'inbox',
   isLoading,
   error,
   onRetry,
@@ -684,7 +688,8 @@ export function UnifiedTable<T>({
            The column header above stays mounted (law 5). */
         <ErrorBanner variant="panel" message={error} onRetry={onRetry} />
       ) : sortedData.length === 0 ? (
-        <div className="py-8 text-center">
+        <div className="py-8 flex flex-col items-center text-center">
+          {!emptyGlyph && <EmptyArt motif={emptyArt} size="sm" className="mb-3" />}
           {emptyGlyph && (
             <MotionizedGlyph
               data={emptyGlyph.data}
@@ -696,8 +701,8 @@ export function UnifiedTable<T>({
           {/* No hardcoded English fallback: an untranslated default leaks into
               all 14 locales. `shared.grid_no_data` is the shared translated
               last resort — always pass a specific `emptyTitle` instead. */}
-          <p className="typo-body text-foreground">{emptyTitle ?? t.shared.grid_no_data}</p>
-          {emptyDescription && <p className="typo-body text-foreground/90 mt-1">{emptyDescription}</p>}
+          <p className="typo-heading text-foreground">{emptyTitle ?? t.shared.grid_no_data}</p>
+          {emptyDescription && <p className="typo-caption mt-1 max-w-[46ch]">{emptyDescription}</p>}
         </div>
       ) : null}
 

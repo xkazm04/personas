@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**173 reusable components** live under `src/features/shared/components/`.
+**174 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -55,7 +55,8 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `DesignConnectorGrid` | _(add a `@catalog` tag)_ |
 | `DragHandle` | Visual size of the grip icon. |
 | `DropIndicator` | Orientation of the list the indicator sits in. |
-| `EmptyIllustration` | _(add a `@catalog` tag)_ |
+| `EmptyArt` | Small animated empty-state illustration (19 motifs: agents, vault, launch, archive, stream, search, inbox ...). Tokens-only colour |
+| `EmptyIllustration` | Compact empty state for a card or panel: small animated art (from art or the icon), heading, caption. |
 | `FacetedDecisionTable` | Left group-rail + toolbar + DataGrid table over a derived slash-path facet tree. |
 | `FieldHint` | Valid value range, e. |
 | `GroupedVirtualList` | Virtualized list that buckets ordered items under sticky date/category group headers (Today / Yesterday / …). |
@@ -127,7 +128,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `InlineErrorBanner` | _(add a `@catalog` tag)_ |
 | `LoadingSpinner` | RENDERS NOTHING. Spinners are disabled app-wide; this survives for import compatibility and emits an sr-only role="status" only when given `label`. Never use it as a visual loading state — for a SURFACE use a calm delayed ghost (docs/design/overview-loading.md), for an ACTION use Button/AsyncButton, which render real spinners by design. |
 | `Reveal` | Reveal — fade (+ subtle slide-up) a block of content in on mount; the canonical "content arrived" reveal for the golden loading pa |
-| `ScenarioEmptyState` | _(add a `@catalog` tag)_ |
+| `ScenarioEmptyState` | THE empty state: animated EmptyArt illustration (from art, the icon or the variant), a heading-over-body type ramp, actions; sizes |
 | `StalenessIndicator` | Epoch ms when this data source was last successfully fetched. |
 | `StepGuideRow` | StepGuideRow — the numbered Create → Credential → Run path under a first-run empty state; steps become buttons when the caller sup |
 | `SuspenseFallback` | Standard fallback for React.lazy/Suspense boundaries. |
@@ -272,4 +273,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_173 components, 39 without a `@catalog` description._
+_174 components, 37 without a `@catalog` description._

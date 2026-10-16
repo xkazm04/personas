@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { Mark } from './Mark';
+import { EmptyArt, type EmptyArtMotif } from '../display/emptyArt/EmptyArt';
 import type { Tone } from './types';
 
 export interface EmptySpec {
@@ -7,6 +8,11 @@ export interface EmptySpec {
   hint?: ReactNode;
   tone?: Tone;
   action?: ReactNode;
+  /**
+   * A row-height illustration (EmptyArt `xs`) in place of the hollow mark. Opt in
+   * for a section's or a page's own emptiness; a dense tool list keeps the mark.
+   */
+  art?: EmptyArtMotif;
   /** Accessible name of the mark; defaults to the title when it is a string. */
   markLabel?: string;
   testId?: string;
@@ -18,10 +24,12 @@ export interface EmptySpec {
  * list keeps the list's geometry. A render helper, not a component: callers reach it through a
  * composition's `state="empty"` / `empty` prop.
  */
-export function emptyBand({ title, hint, tone = 'neutral', action, markLabel, testId }: EmptySpec): ReactNode {
+export function emptyBand({ title, hint, tone = 'neutral', action, art, markLabel, testId }: EmptySpec): ReactNode {
   return (
     <div className="k-empty" data-empty="1" data-testid={testId}>
-      <Mark tone={tone} glyph="hollow" label={markLabel ?? (typeof title === 'string' ? title : '')} />
+      {art
+        ? <EmptyArt motif={art} size="xs" />
+        : <Mark tone={tone} glyph="hollow" label={markLabel ?? (typeof title === 'string' ? title : '')} />}
       <div className="k-empty__text">
         <span className="typo-body k-regular">{title}</span>
         {hint && <span className="typo-caption">{hint}</span>}
