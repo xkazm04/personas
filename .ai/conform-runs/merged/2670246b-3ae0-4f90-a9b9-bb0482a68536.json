@@ -1,0 +1,147 @@
+{
+ "schema": "conform-run/1",
+ "worker": "2670246b-3ae0-4f90-a9b9-bb0482a68536",
+ "subject": "migrations",
+ "evaluatedAt": "2026-10-16T17:54:32Z",
+ "pairs": [
+  {
+   "context": "1bad7967-29dc-4e12-b99a-cb5177b4fb9b",
+   "subject": "migrations",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/db/src/migrations/incremental/support.rs:513 legacy_table_alignment returns () and discards ~20 ddl_step results (incl. CREATE TABLE team_channel_messages at :520), so a failed boot step reports success and the chain advances - the swallowed-step outcome error-propagation names as worst",
+   "techniques": [
+    {
+     "technique": "transactional-ddl",
+     "verdict": "conformant",
+     "evidence": "src-tauri/db/src/migrations/incremental/support.rs:42 ddl_step wraps each step batch in one transaction (BEGIN/commit)"
+    },
+    {
+     "technique": "error-propagation",
+     "verdict": "deviation",
+     "evidence": "src-tauri/db/src/migrations/incremental/support.rs:513 infallible signature swallows step errors; halt policy otherwise holds at src-tauri/db/src/lib.rs:479"
+    },
+    {
+     "technique": "idempotent-steps",
+     "verdict": "deviation",
+     "evidence": "src-tauri/db/src/migrations/initial.rs:91 ALTERs ignore every error to absorb duplicate-column; run_step (incremental/support.rs:22) checks a guard but asserts no post-condition"
+    },
+    {
+     "technique": "schema-drift-detection",
+     "verdict": "deviation",
+     "evidence": "src-tauri/db/src/migrations/incremental/tests.rs:119 replays the chain and sweeps FKs (:887) but no test diffs a fresh schema against one upgraded from the oldest supported store"
+    },
+    {
+     "technique": "expand-deploy-contract",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/db/src/lib.rs:479 single desktop process runs the chain before any other use of the store; stage team (rolling two-version overlap) never occurs"
+    },
+    {
+     "technique": "data-migrations",
+     "verdict": "unknown",
+     "evidence": "not read in depth this run"
+    },
+    {
+     "technique": "migrate-from-data-shape",
+     "verdict": "unknown",
+     "evidence": "ledger-less replay chain chosen deliberately (src-tauri/db/src/backup.rs:15); per-record shape derivation not assessed"
+    },
+    {
+     "technique": "dynamic-table-set-migrations",
+     "verdict": "unknown",
+     "evidence": "not assessed"
+    }
+   ],
+   "registryProposal": "The incremental chain (src-tauri/db/src/migrations/incremental/, 83 files, 268 run_step sites) is absent from every context file_paths in context-map.json; db-repos owns it only via migrations/mod.rs. The rust--idempotent-steps application (verified 2026-08-18) cites incremental.rs line numbers that no longer exist since the split into per-module files, and the unwrap_or(true) inverted guard it cites is gone - re-verify the application."
+  },
+  {
+   "context": "0b0ee725-52a2-4656-9e13-07c5204de60e",
+   "subject": "migrations",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/db/src/lib.rs:711 init_user_db migrates personas_data.db with no pre-migration snapshot and error-swallowing ALTERs (:764), so the second store sits outside the snapshot gate and its failed steps read as success",
+   "techniques": [
+    {
+     "technique": "pre-migration-snapshots",
+     "verdict": "deviation",
+     "evidence": "src-tauri/db/src/lib.rs:389 snapshots personas.db before the pool opens and src-tauri/db/src/restore.rs:179 probes sets at restore time, but src-tauri/db/src/lib.rs:711 gives personas_data.db no snapshot at all; boot snapshots fire every boot (src-tauri/db/src/backup.rs:15), a priced consequence of the ledger-less design"
+    },
+    {
+     "technique": "error-propagation",
+     "verdict": "deviation",
+     "evidence": "src-tauri/db/src/lib.rs:764 user-DB ALTER loop discards every error, not only duplicate-column"
+    },
+    {
+     "technique": "transactional-ddl",
+     "verdict": "unknown",
+     "evidence": "user-DB schema batches not assessed"
+    }
+   ],
+   "registryProposal": "Upward lesson for rust--pre-migration-snapshots: the restore path is now code (src-tauri/db/src/lib.rs:397 restore::apply_pending_restore runs after the snapshot, before the pool) plus a quick_check quarantine at open (src-tauri/db/src/lib.rs:420) - the application still describes restore as prose only; refresh it."
+  },
+  {
+   "context": "f7a0fdbc-ccc1-46c1-a62f-c2b20321997b",
+   "subject": "migrations",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_lab/libs/versionMatrixRows.ts:5 versions here are persona prompt versions rendered as a table; the context issues no schema change and runs no migration (matcher resonance on version/table)",
+   "techniques": []
+  },
+  {
+   "context": "647d6a54-3813-4149-bbf7-2d96a57a77c7",
+   "subject": "migrations",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:9 the context introspects tables of user-connected external databases; it owns no store and runs no schema migration (matcher resonance on table/column)",
+   "techniques": []
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-16T17:54:32Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "migrations"
+   ],
+   "techniques": [
+    "transactional-ddl",
+    "error-propagation",
+    "idempotent-steps",
+    "schema-drift-detection",
+    "expand-deploy-contract"
+   ],
+   "deviations": 1
+  },
+  {
+   "ts": "2026-10-16T17:54:32Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "migrations"
+   ],
+   "techniques": [
+    "pre-migration-snapshots",
+    "error-propagation"
+   ],
+   "deviations": 1
+  },
+  {
+   "ts": "2026-10-16T17:54:32Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "migrations"
+   ],
+   "techniques": [],
+   "deviations": 0
+  },
+  {
+   "ts": "2026-10-16T17:54:32Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "migrations"
+   ],
+   "techniques": [],
+   "deviations": 0
+  }
+ ]
+}

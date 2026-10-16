@@ -9964,7 +9964,11 @@
           "revision": 10,
           "changedAt": "2026-09-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/lib.rs:711 init_user_db migrates personas_data.db with no pre-migration snapshot and error-swallowing ALTERs (:764), so the second store sits outside the snapshot gate and its failed steps read as success",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:b7d5afcb859dfff9",
+          "evaluatedRevision": 10
         },
         {
           "subject": "quality-gates",
@@ -10131,7 +10135,11 @@
           "revision": 10,
           "changedAt": "2026-09-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/migrations/incremental/support.rs:513 legacy_table_alignment returns () and discards ~20 ddl_step results (incl. CREATE TABLE team_channel_messages at :520), so a failed boot step reports success and the chain advances - the swallowed-step outcome error-propagation names as worst",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:b7d5afcb859dfff9",
+          "evaluatedRevision": 10
         },
         {
           "subject": "agent-instruction-files",
@@ -16794,7 +16802,11 @@
           "revision": 10,
           "changedAt": "2026-09-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_lab/libs/versionMatrixRows.ts:5 versions here are persona prompt versions rendered as a table; the context issues no schema change and runs no migration (matcher resonance on version/table)",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:b7d5afcb859dfff9",
+          "evaluatedRevision": 10
         }
       ],
       "governance": "governed"
@@ -39755,7 +39767,11 @@
           "revision": 10,
           "changedAt": "2026-09-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:9 the context introspects tables of user-connected external databases; it owns no store and runs no schema migration (matcher resonance on table/column)",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:b7d5afcb859dfff9",
+          "evaluatedRevision": 10
         },
         {
           "subject": "retrieval",
