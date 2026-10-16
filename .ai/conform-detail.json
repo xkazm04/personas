@@ -23018,6 +23018,59 @@
       "worker": "b24a7080-9d82-45a6-b57d-755b5336324c",
       "techniques": [],
       "registryProposal": "Matcher matched on the context description ('reusable dashboard card primitives', 'TrafficErrorsChart') which describes code that has since moved to sub_missionControl or died; the description is stale, not the subject."
+    },
+    "cbb061cf-5c61-49d4-80d8-98b8f9b40600/hitl-approval": {
+      "context": "browser-webview-control",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:08:30.000Z",
+      "worker": "8eb451f8-999d-443f-a060-aabaed37dc2b",
+      "techniques": [
+        {
+          "technique": "decision-records",
+          "verdict": "deviation",
+          "evidence": "src/features/browser/twinDraftLane.ts:358 submitTarget succeeds and the lane goes idle with no record of who submitted what, when, on which text; the placement rule (:259) only covers the case where the page's own button is the gate and the app never sees it pressed"
+        },
+        {
+          "technique": "review-queues",
+          "verdict": "conformant",
+          "evidence": "src/features/browser/webview/PendingApprovalBar.tsx:4 the bar deliberately carries no deciding control and points at the orb, so a browser approval has exactly one decision surface"
+        },
+        {
+          "technique": "consent-gates",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_autopilot.rs:90 browser_act / browser_login / browser_request_site are never auto-fired, so each page write is per-action consent on the orb"
+        }
+      ]
+    },
+    "0f1de245-e9ba-41df-9b6c-d9ccd91dfb4b/hitl-approval": {
+      "context": "site-whitelist-management",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:08:30.000Z",
+      "worker": "8eb451f8-999d-443f-a060-aabaed37dc2b",
+      "techniques": [
+        {
+          "technique": "gate-state-machines",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/browser_bridge/mcp.rs:420 the gated party supplies the input that decides whether the gate arms (the tool description at :290 claims the gate re-derives the class from the page's manifest)"
+        },
+        {
+          "technique": "author-advisories-yield-to-the-users-mode",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/browser_bridge/policy.rs:214 an operator override may only tighten the page-manifest (author-tier) class; a loosening override is refused loudly as refused_loosening"
+        },
+        {
+          "technique": "consent-gates",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/browser_bridge/policy.rs:144 the Whitelist row is re-read on every navigation, so the page's revoke controls (src/features/browser/whitelist/useWhitelistActions.ts:42 toggle, :79 delete) take effect at the gate; src-tauri/src/commands/companion/approvals/approval_exec_browser.rs:602 an agent's request may widen to one concrete origin only, never a pattern"
+        }
+      ],
+      "registryProposal": "Coverage gap in the PROJECT context map, not the corpus: src-tauri/src/browser_bridge/ (mcp.rs, policy.rs, backend.rs - the substrate that enforces this context's policy) belongs to no context, so no pair can be anchored on it directly; this verdict anchors there because the consequence lands on the policy this page curates. Upward note for gate-state-machines: a 'derive class from declared manifest flags' gate needs an explicit rule that the flags are read from the system's own capture (scan report or live page), never from the request echo."
     }
   }
 }

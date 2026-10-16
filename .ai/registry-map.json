@@ -5604,7 +5604,11 @@
           "revision": 22,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/browser/twinDraftLane.ts:352 confirmSubmit presses the page's form submit from the app's own toolbar after an in-app confirm, so the app owns this externally visible transition, yet it writes no record and the only ledger row stays the insert-time placement (:264) - a sent form is indistinguishable from an abandoned draft",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9",
+          "evaluatedRevision": 22
         },
         {
           "subject": "agent-instruction-files",
@@ -31301,7 +31305,11 @@
           "revision": 22,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/browser_bridge/mcp.rs:420 a page tool's gate class is derived from reversible/side_effects the CALLING AGENT echoes in its own call args, not from the scanned or live manifest, so an agent passing reversible:true,side_effects:internal turns any un-overridden page tool to auto; the whitelist's tighten-only overrides (src/features/browser/whitelist/SitePolicyFields.tsx:11 'the class the page's own manifest implied') are the only brake and the operator is told the class comes from the page",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9",
+          "evaluatedRevision": 22
         }
       ],
       "governance": "governed"
