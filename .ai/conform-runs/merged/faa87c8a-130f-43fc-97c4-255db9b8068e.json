@@ -1,0 +1,9 @@
+{"schema": "conform-run/1", "worker": "faa87c8a-130f-43fc-97c4-255db9b8068e", "subject": "settings",
+ "evaluatedAt": "2026-10-16T18:25:13Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "settings", "context": "cab45fee-e439-4bff-9924-217b1acc17f8", "reason": "dead context: map paths [] and context-map.json file_paths empty; the Artist plugin was removed in 0697f13438 and its tables retired by src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:18, so there is no code to judge - a not-applicable here would be a verdict on nothing and would inflate the priorNotApplicable tally; the context should leave the context map (rescan) rather than be judged"},
+  {"subject": "settings", "context": "b2d7acbc-0191-46e4-8a4d-87c229410c7e", "reason": "dead context: map paths [] and context-map.json file_paths empty; Media Studio hooks lived under src/features/plugins/artist, removed in 0697f13438 (no tracked file under that path remains), so there is no code to judge; needs a context rescan, not a verdict"},
+  {"subject": "settings", "context": "742be60e-3ddf-4160-b7cb-4c5cac5965a0", "reason": "governance weak (never judged by default) and dead: paths [] and the Research Lab plugin was removed in 0697f13438 with tables retired at src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:27"}
+ ],
+ "consults": []}
