@@ -1555,5 +1555,11 @@
   "ml_verb_dropped": "Đã bỏ",
   "ml_verb_kept": "Đã đọc lại và giữ",
   "ml_reread_yes": "Phong bì giữ nguyên như đã ký. Thẻ này chỉ quay lại khi số hành động của nhiệm vụ tăng gấp đôi và cách dùng lại đòi hỏi.",
-  "ml_reread_no": "Nhấn E trước: phong bì đã sửa được ký và áp dụng từ mục tiếp theo; thay đổi được ghi vào nhật ký hành động và có thể hoàn tác ở đó."
+  "ml_reread_no": "Nhấn E trước: phong bì đã sửa được ký và áp dụng từ mục tiếp theo; thay đổi được ghi vào nhật ký hành động và có thể hoàn tác ở đó.",
+  "dc_deck_key_open_lens": "mở bảng; các quyết định diễn ra ở đó",
+  "dc_deck_kind_build": "Xây dựng",
+  "dc_deck_kind_evidence": "Bằng chứng",
+  "dc_deck_kind_release": "Phát hành",
+  "dc_deck_no_lens": "Không có gì được ghi từ thẻ này.",
+  "dc_deck_yes_lens": "Mở bản thiết kế phía trên bộ thẻ; các quyết định diễn ra ở đó."
 }

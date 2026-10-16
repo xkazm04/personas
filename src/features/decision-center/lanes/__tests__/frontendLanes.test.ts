@@ -11,7 +11,14 @@ import { FRONTEND_LANE, frontendLaneOf } from '../frontendLanes';
 const ROUTER_RS = resolve(__dirname, '../../../../../src-tauri/engine/src/mandate_router.rs');
 
 /** RouteKind name (Rust) -> the frontend DecisionKind that carries it. */
-const RUST_KIND: Record<string, string> = { Question: 'question', Message: 'message' };
+const RUST_KIND: Record<string, string> = {
+  Question: 'question',
+  Message: 'message',
+  // lens-scan cards (spark one-control, WP3): frontend-derived, mandate keep-out.
+  LensBuild: 'build',
+  LensEvidence: 'evidence',
+  LensRelease: 'release',
+};
 
 function rustRows(): Map<string, { lane: string; clause: string }> {
   const src = readFileSync(ROUTER_RS, 'utf8');
@@ -42,9 +49,22 @@ describe('frontend lanes <-> UNSIGNED_LANE parity', () => {
   });
 
   it('routes nothing else on the frontend', () => {
-    expect(Object.keys(FRONTEND_LANE).sort()).toEqual(['message', 'question']);
+    expect(Object.keys(FRONTEND_LANE).sort()).toEqual(['build', 'evidence', 'message', 'question', 'release']);
     expect(frontendLaneOf('review')).toBeNull();
     expect(frontendLaneOf('question')).toEqual({ lane: 'breach', clause: 'unsigned' });
     expect(frontendLaneOf('message')).toEqual({ lane: 'talk', clause: 'none' });
+    expect(frontendLaneOf('build')).toEqual({ lane: 'breach', clause: 'unsigned' });
+    expect(frontendLaneOf('evidence')).toEqual({ lane: 'accept', clause: 'none' });
+    expect(frontendLaneOf('release')).toEqual({ lane: 'accept', clause: 'none' });
+  });
+
+  it('names each lens-scan kind on the Rust side with the frontend wire name', () => {
+    // RouteKind::wire() is what the snapshot would carry as `itemKind`; the keep-out
+    // rows must speak the frontend's kind names, or a future snapshot row would miss its card.
+    const src = readFileSync(ROUTER_RS, 'utf8');
+    for (const [rustKind, kind] of Object.entries(RUST_KIND)) {
+      if (!rustKind.startsWith('Lens')) continue;
+      expect(src).toMatch(new RegExp(`Self::${rustKind}\\s*=>\\s*"${kind}"`));
+    }
   });
 });

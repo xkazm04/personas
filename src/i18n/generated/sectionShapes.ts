@@ -827,6 +827,10 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     }
   },
   "decisionCenter": {
-    "blueprint": {}
+    "blueprint": {},
+    "lens": {},
+    "build": {},
+    "evidence": {},
+    "release": {}
   }
 } as Record<string, Record<string, unknown>>);

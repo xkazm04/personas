@@ -1555,5 +1555,11 @@
   "ml_verb_dropped": "已放弃",
   "ml_verb_kept": "已重新审阅并保留",
   "ml_reread_yes": "信封保持签署时的样子。只有当授权的操作数翻倍、其使用情况再次提出要求时，这张卡片才会回来。",
-  "ml_reread_no": "请先按 E：编辑后的信封会被签署，并从下一个事项起生效；更改会记入操作日志，可在那里撤销。"
+  "ml_reread_no": "请先按 E：编辑后的信封会被签署，并从下一个事项起生效；更改会记入操作日志，可在那里撤销。",
+  "dc_deck_key_open_lens": "打开图纸；决定在那里做出",
+  "dc_deck_kind_build": "构建",
+  "dc_deck_kind_evidence": "证据",
+  "dc_deck_kind_release": "发布",
+  "dc_deck_no_lens": "此卡片不会写入任何内容。",
+  "dc_deck_yes_lens": "在卡片组上方打开蓝图；决定在那里做出。"
 }

@@ -3,9 +3,13 @@
 // The product itself is the trimmed Kettle fixture (src/features/decision-center/blueprint/fixture/), bp's
 // SYNTHETIC sample: no row of any live store is on this tape or in the fixture.
 
+import { lensCardsTapes } from './lensCardsTapes.mjs';
+
 export function blueprintTapes({ RECORDED_AT }) {
   return {
     builders: {
+      // The lens-scan cards in the live deck (lensCardsTapes.mjs, one-control WP3).
+      ...lensCardsTapes({ RECORDED_AT }).builders,
       'decision-center/blueprint': () => ({
         version: 1,
         module: 'decision-center/blueprint',

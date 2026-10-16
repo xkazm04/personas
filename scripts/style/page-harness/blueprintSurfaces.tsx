@@ -12,6 +12,7 @@
  */
 import { useMemo, useState, type ReactNode } from 'react';
 import type { HarnessModule } from './registry';
+import { LENS_CARDS_MODULES } from './lensCardsSurfaces';
 
 interface BlueprintProbe { closed: number; actions: unknown }
 declare global { interface Window { __BLUEPRINT__?: BlueprintProbe } }
@@ -52,4 +53,6 @@ export const BLUEPRINT_MODULES: Record<string, HarnessModule> = {
     },
     providers: keyboardProvider,
   },
+  // The lens-scan cards in the live deck and the sheets they open (lensCardsSurfaces.tsx, one-control WP3).
+  ...LENS_CARDS_MODULES,
 };

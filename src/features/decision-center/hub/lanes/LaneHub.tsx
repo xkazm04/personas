@@ -36,6 +36,8 @@ import { Peek } from '../visual/Peek';
 import { LaneFooter } from './LaneFooter';
 import { LaneStrip, type LanePeekKey, type LaneRefs } from './LaneStrip';
 import { usePeekSignItems } from './usePeekSignItems';
+import { lensDealsLane } from '../../lens/lensKinds';
+import { useLensScanItems } from '../../lens/useLensScanItems';
 import { requestOrphanage } from '@/features/fleet/monitor/grid/prototype/entry-e/mandate/mandateDrawerRequest';
 
 interface OpenPeek { key: LanePeekKey; focusId: string | null }
@@ -61,10 +63,13 @@ export function LaneHub({ keysEnabled = true }: { keysEnabled?: boolean }) {
   const { decide, refresh, counts } = roster;
   const index = useMemo(() => indexLanes(lanesState.snapshot), [lanesState.snapshot]);
   const sign = usePeekSignItems(lane === 'sign');
-  const items = useMemo(
-    () => (lane ? laneQueue(lane, sign.items.length > 0 ? [...roster.items, ...sign.items] : roster.items, index) : []),
-    [lane, roster.items, sign.items, index],
-  );
+  // The lens-scan cards (build in Breach, evidence and release in Accept) are not roster chips.
+  const lens = useLensScanItems(lensDealsLane(lane));
+  const items = useMemo(() => {
+    if (!lane) return [];
+    const extra = [...sign.items, ...lens.items];
+    return laneQueue(lane, extra.length > 0 ? [...roster.items, ...extra] : roster.items, index);
+  }, [lane, roster.items, sign.items, lens.items, index]);
 
   const deckOpen = useDecisionDeckStore((s) => s.request !== null);
   const closedReturnTo = useDecisionDeckStore((s) => s.closedReturnTo);
@@ -127,6 +132,7 @@ export function LaneHub({ keysEnabled = true }: { keysEnabled?: boolean }) {
   }, { enabled: keysEnabled && !deckOpen, priority: ROUTE_DECISION_PRIORITY });
 
   const laneCounts = roster.lanes;
+  // The lens cards join when their read lands; a slow store never holds the lane's peek.
   const settled = useLoadSettled(lane, roster.loading) && sign.ready;
   if (!laneCounts) return null;
   const failed = lane !== null && (laneCounts[lane].failed || sign.failed) && settled && items.length === 0;

@@ -138,6 +138,33 @@ Athena's orb count Breach + Sign + Accept + Talk.
 - **Talk** keeps the chat thread; council cards say the council never admits
   work on its own.
 
+**Lens-scan cards** (2026-10-16, spark one-control WP3). Every code project
+whose repo holds a lens-scan store (`.ai/lens-scan/scan.db`) can hold up to
+three cards, one of each kind, read from `lens_scan_products` (one read
+app-wide; the lane buttons count them too):
+
+- **Build** (Breach, clause *unsigned*): proposals wait for approve or decline,
+  or approved items are not built yet. The body gives the counts.
+- **Evidence** (Accept): built items wait for triage (accept, rework, descope).
+- **Release** (Accept): a release waits on you (its pull request is open, or it
+  merged and was never finished), or accepted items wait for one. The body gives
+  the suggested version (bp's own rule, with the store's releases standing in
+  for git tags) and the item count.
+
+The cards never write. Their verdicts are printed **disabled**; `A` and `R`
+(on the card and on the peek row) only open it, and **`Enter` opens**: a Build
+card opens the product **blueprint** over the deck, an Evidence card opens it
+at the first feature waiting for triage (the L4 sheet with the compare panel),
+and every decision happens on the sheet. A Release card opens the release's
+**composition, read only** (version, items, notes); its one action, **Open in
+bp** (`Enter`), opens bp's Release tab in your browser at
+`<lens_scan.bp_url>/?product=<slug>&page=ledger&tab=release` (setting
+`lens_scan.bp_url`, default `http://localhost:3000`). When bp does not answer,
+the sheet says bp is not running and shows `npm run dev`, to run in bp's root.
+Closing a sheet, and every write on the blueprint, re-reads the products so the
+counts follow. No mandate ever acts on a lens-scan card, signed or not (the
+router's keep-out). A product whose store cannot be read shows no card.
+
 **Stewards plate.** In the supply column the Autopilot plate became the
 Stewards plate: the attention-loop switch on top (unchanged, same tour anchors
 `fleet-autopilot` / `fleet-autopilot-toggle`), Athena's CLI answerer as its own

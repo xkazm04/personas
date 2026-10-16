@@ -81,6 +81,12 @@ pub const CONTEST_LINEUPS: &str = "contest.lineups";
 /// `.ai/manifest.yaml` `registry.local` (`commands::contest::node`).
 pub const CONTEST_INSTRUMENT_PATH: &str = "contest.instrument_path";
 
+/// Base URL of bp, the product blueprint web app (spark one-control). The
+/// Decision Center's Release card opens `<bp_url>/?product=<slug>&page=ledger&tab=release`
+/// in the system browser, because bp composes and finishes releases. Unset
+/// means `http://localhost:3000` (Next's default port), applied by the reader.
+pub const LENS_SCAN_BP_URL: &str = "lens_scan.bp_url";
+
 /// Absolute directory under which `create_project_repository` scaffolds new
 /// project repositories: `<root>/<workspace-slug>/<project-name>`.
 ///
@@ -1497,6 +1503,7 @@ const ALLOWED_KEYS: &[&str] = &[
     KNOWLEDGE_REGISTRY_ROOT,
     CONTEST_LINEUPS,
     CONTEST_INSTRUMENT_PATH,
+    LENS_SCAN_BP_URL,
     SIMULATION_PROJECTS_ROOT,
     BROWSER_BRIDGE_PAIRING_TOKEN,
     EVENT_RETENTION_DAYS,

@@ -3,7 +3,7 @@
 
 use super::*;
 
-const ALL_KINDS: [RouteKind; 13] = [
+const ALL_KINDS: [RouteKind; 16] = [
     RouteKind::Review,
     RouteKind::Idea,
     RouteKind::Question,
@@ -17,6 +17,16 @@ const ALL_KINDS: [RouteKind; 13] = [
     RouteKind::Council,
     RouteKind::Message,
     RouteKind::Dispatch,
+    RouteKind::LensBuild,
+    RouteKind::LensEvidence,
+    RouteKind::LensRelease,
+];
+
+/// The lens-scan kinds with their fixed lanes (spark one-control, WP3).
+const LENS_KINDS: [(RouteKind, Lane, LaneClause); 3] = [
+    (RouteKind::LensBuild, Lane::Breach, LaneClause::Unsigned),
+    (RouteKind::LensEvidence, Lane::Accept, LaneClause::None),
+    (RouteKind::LensRelease, Lane::Accept, LaneClause::None),
 ];
 
 fn item(kind: RouteKind) -> RouteInput {
@@ -108,6 +118,10 @@ fn draft_and_suspended_charters_hold_everything_but_talk_claims_and_valves() {
             match k {
                 RouteKind::Message => assert_eq!(r.lane, Lane::Talk),
                 RouteKind::GoalClaim => assert_eq!(r.lane, Lane::Accept),
+                k if k.is_lens_scan() => {
+                    assert_ne!(r.lane, Lane::Held, "{k:?} {status:?}");
+                    assert!(r.act.is_none());
+                }
                 _ => {
                     assert_eq!(lc(&r), (Lane::Held, LaneClause::None), "{k:?} {status:?}");
                     assert_eq!(r.coalesce_key, "c1:held:none");
@@ -545,4 +559,76 @@ fn charter_status_parses_the_three_live_states_only() {
         Some(CharterStatus::Suspended)
     );
     assert_eq!(CharterStatus::parse("retired"), None);
+}
+
+/// The keep-out (spark one-control): under a SIGNED charter whose scopes would
+/// let the router act on anything it can, a lens-scan card still takes its
+/// fixed lane, and nothing is acted.
+#[test]
+fn a_lens_scan_card_is_never_acted_under_a_signed_charter() {
+    for (k, lane, clause) in LENS_KINDS {
+        for sev in [None, Some("info"), Some("low"), Some("critical")] {
+            let mut i = item(k);
+            i.severity = sev.map(Into::into);
+            for may_act in [true, false] {
+                let r = if may_act {
+                    route(&i, Some(&wide()))
+                } else {
+                    route_without_act(&i, Some(&wide()))
+                };
+                assert_eq!(lc(&r), (lane, clause), "{k:?} {sev:?}");
+                assert!(r.act.is_none(), "{k:?} {sev:?} must not be acted");
+                assert_eq!(r.charter_id.as_deref(), Some("c1"));
+                assert_eq!(
+                    r.coalesce_key,
+                    format!("c1:{}:{}", lane.as_str(), clause.as_str())
+                );
+            }
+        }
+    }
+}
+
+/// The keep-out holds without a charter, under an unsigned one, a draft and a
+/// suspended one: a lens-scan card is never an orphan, never held.
+#[test]
+fn a_lens_scan_card_takes_its_fixed_lane_whoever_holds_the_project() {
+    let charters = [
+        None,
+        Some(unsigned()),
+        Some(signed(&[])),
+        Some(charter(
+            CharterStatus::Draft,
+            2,
+            &personas_db::models::ALL_DECIDE_SCOPES,
+        )),
+        Some(charter(
+            CharterStatus::Suspended,
+            2,
+            &personas_db::models::ALL_DECIDE_SCOPES,
+        )),
+    ];
+    for (k, lane, clause) in LENS_KINDS {
+        for c in &charters {
+            let r = route(&item(k), c.as_ref());
+            assert_eq!(lc(&r), (lane, clause), "{k:?} {c:?}");
+            assert!(r.act.is_none(), "{k:?} {c:?}");
+        }
+        let r = route(&item(k), None);
+        assert_eq!(
+            r.coalesce_key,
+            format!("orphan:proj:{}:{}", lane.as_str(), clause.as_str())
+        );
+    }
+}
+
+/// Each keep-out row is the one the frontend applies (`frontendLanes.ts`
+/// parses this table), and its wire name is the frontend kind.
+#[test]
+fn the_lens_scan_rows_and_wire_names_match_the_frontend_kinds() {
+    for ((k, lane, clause), wire) in LENS_KINDS.into_iter().zip(["build", "evidence", "release"]) {
+        assert_eq!(unsigned_row(k), (lane, clause), "{k:?}");
+        assert_eq!(k.wire(), wire);
+        assert!(k.is_lens_scan());
+    }
+    assert!(!RouteKind::GoalClaim.is_lens_scan());
 }

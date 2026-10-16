@@ -9,6 +9,7 @@ import { useMemo } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { modalTypeOf, type DecisionItem, type DecisionTier } from '../../model/decisionModel';
+import { isLensKind } from '../../lens/lensKinds';
 
 const WORDS_PER_MINUTE = 220;
 
@@ -29,6 +30,8 @@ export function useRowCopy() {
       if (item.kind === 'question' && item.input) return tx(m.dc_hub_cost_answers, { count: item.input.fields.length });
       // A draft mandate is signed on its envelope, a read, never one key from the row.
       if (item.kind === 'mandate') return tx(m.dc_hub_cost_read, { count: readMinutes(item) });
+      // A lens-scan card opens the blueprint; its cost line says so (lensAdapters).
+      if (isLensKind(item.kind) && item.payload?.cost) return item.payload.cost;
       const type = modalTypeOf(item.kind);
       if (type === 'report') return tx(m.dc_hub_cost_read, { count: readMinutes(item) });
       if (type === 'chat') return m.dc_hub_cost_reply;

@@ -37,7 +37,11 @@ export type DecisionKind =
   | 'council'
   | 'message'
   | 'approval'
-  | 'mandate';
+  | 'mandate'
+  // lens-scan cards (spark one-control, `lens/lensKinds`): one per product, never written from the card.
+  | 'build'
+  | 'evidence'
+  | 'release';
 
 /** The seven decision chips on the CommandBar strip, in strip order. */
 export type DecisionChip =
@@ -145,6 +149,11 @@ const CHIP_OF: Record<DecisionKind, DecisionChip> = {
   message: 'chat',
   // A draft mandate waiting for its signature: dealt only by the Sign lane.
   mandate: 'proposals',
+  // lens-scan cards: dealt only by their fixed lanes (`frontendLanes`); the chip
+  // names their light and stays in step with the Rust rows' `replaces_chip`.
+  build: 'backlog',
+  evidence: 'proposals',
+  release: 'proposals',
 };
 
 export function chipOf(kind: DecisionKind): DecisionChip {
@@ -164,6 +173,9 @@ const MODAL_OF: Record<DecisionKind, DecisionModalType> = {
   council: 'report',
   message: 'chat',
   mandate: 'approval',
+  build: 'approval',
+  evidence: 'approval',
+  release: 'approval',
 };
 
 export function modalTypeOf(kind: DecisionKind): DecisionModalType {

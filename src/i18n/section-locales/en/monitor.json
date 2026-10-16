@@ -1555,5 +1555,11 @@
   "ml_verb_adopted": "Adopted",
   "ml_act_what_reason": "{what} (reason: {reason})",
   "ml_reread_yes": "The envelope stays as signed. This card comes back only once the mandate's acts have doubled and its use asks again.",
-  "ml_reread_no": "Press E first: the edited envelope is signed and binds from the next item; the change lands in the act log and can be reverted there."
+  "ml_reread_no": "Press E first: the edited envelope is signed and binds from the next item; the change lands in the act log and can be reverted there.",
+  "dc_deck_kind_build": "Build",
+  "dc_deck_kind_evidence": "Evidence",
+  "dc_deck_kind_release": "Release",
+  "dc_deck_yes_lens": "Opens the blueprint over the deck; decisions happen there.",
+  "dc_deck_no_lens": "Nothing is written from this card.",
+  "dc_deck_key_open_lens": "open the sheet; decisions happen there"
 }

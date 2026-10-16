@@ -37,6 +37,9 @@ import { isMandateWrite } from '../mandate/mandateWrites';
 import { useMandateDeck } from '../mandate/useMandateDeck';
 import { DeckLaneContext, type DeckLaneData } from './shapes/DeckLaneContext';
 import { withLaneIrreversible } from './shapes/cardShape';
+import { lensDealsLane } from '../lens/lensKinds';
+import { useLensScanItems } from '../lens/useLensScanItems';
+import { LensSheetHost } from '../lens/LensSheetHost';
 
 function loadOf(
   request: DeckRequest | null,
@@ -58,9 +61,11 @@ function LiveDeck({ request, session }: { request: DeckRequest | null; session: 
   const roster = useDecisionRoster({ load: loadOf(request, lanesState.snapshot), enabled: !!request, hosts });
   const lanes = useMemo(() => indexLanes(lanesState.snapshot), [lanesState.snapshot]);
   const mandateDeck = useMandateDeck(laneScope, lanesState.snapshot);
+  // The lens-scan cards (spark one-control): fixed lanes, appended like the Sign lane's mandates.
+  const lens = useLensScanItems(request?.scope.kind === 'lane' && lensDealsLane(request.scope.lane));
   const items = useMemo(
-    () => (laneScope ? withLaneIrreversible([...roster.items, ...mandateDeck.items], lanes) : roster.items),
-    [laneScope, roster.items, mandateDeck.items, lanes],
+    () => (laneScope ? withLaneIrreversible([...roster.items, ...mandateDeck.items, ...lens.items], lanes) : roster.items),
+    [laneScope, roster.items, mandateDeck.items, lens.items, lanes],
   );
   const laneData = useMemo<DeckLaneData>(
     () => ({ lanes, mandates: mandateDeck.mandates, charters: mandateDeck.charters }),
@@ -151,6 +156,8 @@ function LiveDeck({ request, session }: { request: DeckRequest | null; session: 
       onBack={closeDecisionDeck}
       onOpenLink={onOpenLink}
     />
+    {/* The blueprint sheet (or a release's composition) a lens-scan card opens, over the deck. */}
+    <LensSheetHost />
     </DeckLaneContext.Provider>
   );
 }

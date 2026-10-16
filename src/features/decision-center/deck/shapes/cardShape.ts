@@ -7,6 +7,9 @@
  *   breach   any other Breach item (not a build question, whose answer fields
  *            ARE its decision): clause, items behind it, amend / deny / suspend
  *   claim    a goal claim in Accept: met-when checklist and audit sample
+ *   lens     a lens-scan card (build, evidence, release; spark one-control):
+ *            its verdicts are printed and disabled, its one gesture opens the
+ *            blueprint (or the release composition); it never writes
  *   default  everything else keeps the shape of its modal type
  *
  * Shapes exist only where the lanes snapshot routed the item; a deck opened
@@ -19,10 +22,11 @@
 import type { LaneClause } from '@/lib/bindings/LaneClause';
 
 import type { DecisionItem } from '../../model/decisionModel';
+import { isLensKind } from '../../lens/lensKinds';
 import { laneOfItem, type LaneIndex } from '../../lanes/laneModel';
 import type { Lane } from '@/lib/bindings/Lane';
 
-export type CardShape = 'sign' | 'breach' | 'valve' | 'claim' | 'default';
+export type CardShape = 'sign' | 'breach' | 'valve' | 'claim' | 'lens' | 'default';
 
 export interface ShapeRoute {
   lane: Lane;
@@ -38,6 +42,8 @@ export function routeOf(item: DecisionItem, lanes: LaneIndex): ShapeRoute | null
 
 export function shapeOf(item: DecisionItem, route: ShapeRoute | null): CardShape {
   if (item.kind === 'mandate') return 'sign';
+  // Before any route: a lens-scan card never takes a writing shape, wherever it is dealt.
+  if (isLensKind(item.kind)) return 'lens';
   if (!route) return 'default';
   if (route.lane === 'breach') {
     if (route.clause === 'valve') return 'valve';
@@ -47,7 +53,7 @@ export function shapeOf(item: DecisionItem, route: ShapeRoute | null): CardShape
   return 'default';
 }
 
-export const BRANCH_OFFSET: Record<CardShape, number> = { sign: 0, valve: 0, default: 0, breach: 3, claim: 3 };
+export const BRANCH_OFFSET: Record<CardShape, number> = { sign: 0, valve: 0, default: 0, lens: 0, breach: 3, claim: 3 };
 
 /** "3 of 48": this valve's place among the valves of the queue. */
 export function valveStep(queue: readonly DecisionItem[], item: DecisionItem, lanes: LaneIndex): { index: number; total: number } {

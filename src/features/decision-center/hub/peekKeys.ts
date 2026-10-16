@@ -10,11 +10,14 @@
  * a question has fields to fill, a council rejection needs a written reason,
  * and a draft mandate is signed on its envelope (and dropped with a reason),
  * so A / R on those open the item instead of writing a deferral (or a
- * refusal) that would read as a landed decision.
+ * refusal) that would read as a landed decision. A lens-scan card (build,
+ * evidence, release) is never decided from the row or the card: it is
+ * decided on the blueprint sheet (or in bp), so A / R open it too.
  *
  * React-free; the hook that binds it is `usePeekKeyboard`.
  */
 import type { DecisionItem } from '../model/decisionModel';
+import { isLensKind } from '../lens/lensKinds';
 
 export type PeekAction =
   | { type: 'move'; step: 1 | -1 }
@@ -27,12 +30,12 @@ export type PeekAction =
 
 /** A can write `accept` from the row. */
 export function canAcceptFromRow(item: DecisionItem): boolean {
-  return item.kind !== 'question' && item.kind !== 'mandate';
+  return item.kind !== 'question' && item.kind !== 'mandate' && !isLensKind(item.kind);
 }
 
 /** R can write `reject` from the row. */
 export function canRejectFromRow(item: DecisionItem): boolean {
-  return item.kind !== 'question' && item.kind !== 'council' && item.kind !== 'mandate';
+  return item.kind !== 'question' && item.kind !== 'council' && item.kind !== 'mandate' && !isLensKind(item.kind);
 }
 
 /** D (done) applies: a report read, a thread answered. */

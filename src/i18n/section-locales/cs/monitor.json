@@ -1555,5 +1555,11 @@
   "ml_verb_dropped": "Zahozeno",
   "ml_verb_kept": "Znovu přečteno a ponecháno",
   "ml_reread_yes": "Obálka zůstává, jak byla podepsána. Karta se vrátí, až se počet úkonů mandátu zdvojnásobí a jeho používání si o to znovu řekne.",
-  "ml_reread_no": "Nejdřív stiskněte E: upravená obálka se podepíše a platí od další položky; změna se zapíše do záznamu úkonů a lze ji tam vrátit."
+  "ml_reread_no": "Nejdřív stiskněte E: upravená obálka se podepíše a platí od další položky; změna se zapíše do záznamu úkonů a lze ji tam vrátit.",
+  "dc_deck_key_open_lens": "otevřít list; rozhoduje se tam",
+  "dc_deck_kind_build": "Sestavení",
+  "dc_deck_kind_evidence": "Důkazy",
+  "dc_deck_kind_release": "Vydání",
+  "dc_deck_no_lens": "Z této karty se nic nezapisuje.",
+  "dc_deck_yes_lens": "Otevře blueprint nad balíčkem karet; rozhoduje se tam."
 }

@@ -11,11 +11,14 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   CircleHelp,
+  ClipboardCheck,
   Dna,
   FileText,
   Flag,
+  Hammer,
   Landmark,
   Lightbulb,
+  PackageCheck,
   MessagesSquare,
   ScrollText,
   ShieldCheck,
@@ -28,6 +31,7 @@ import type { TriageTone } from '@/features/agents/quick-answer/triage/triageTyp
 import type { DecisionChip, DecisionItem, DecisionKind, DecisionTier, HubChip } from '../model/decisionModel';
 import { chipOf, modalTypeOf } from '../model/decisionModel';
 import { decisionTier } from '../model/decisionOrder';
+import { isLensKind } from '../lens/lensKinds';
 
 /** The monitor section of the catalog — every deck word lives in it. */
 export type MonitorCopy = Translations['monitor'];
@@ -48,6 +52,9 @@ export const KIND_ICON: Record<DecisionKind, LucideIcon> = {
   report: FileText,
   message: MessagesSquare,
   mandate: ScrollText,
+  build: Hammer,
+  evidence: ClipboardCheck,
+  release: PackageCheck,
 };
 
 /** Aurora tone suffix (`au-t-*` / `au-l-*` in aurora.css). */
@@ -109,6 +116,9 @@ export function kindLabel(m: MonitorCopy, kind: DecisionKind): string {
     case 'report': return m.dc_deck_kind_report;
     case 'message': return m.dc_deck_kind_message;
     case 'mandate': return m.ml_mandate;
+    case 'build': return m.dc_deck_kind_build;
+    case 'evidence': return m.dc_deck_kind_evidence;
+    case 'release': return m.dc_deck_kind_release;
   }
 }
 
@@ -137,6 +147,10 @@ function yesOfKind(m: MonitorCopy, kind: DecisionKind): string {
     case 'report': return m.dc_deck_yes_report;
     case 'message': return m.dc_deck_yes_chat;
     case 'mandate': return m.ml_sign_yes;
+    // A lens-scan card never writes: its one verb opens the blueprint (or bp).
+    case 'build':
+    case 'evidence':
+    case 'release': return m.dc_deck_yes_lens;
   }
 }
 
@@ -160,7 +174,8 @@ export function readMinutes(item: DecisionItem): number {
 /** What clearing the item costs, in the unit that matters for its type. */
 export function costOf(m: MonitorCopy, tx: Interpolate, item: DecisionItem): string {
   // A Sign card's cost is what signing releases (mandateItem `signCostLine`).
-  if (item.kind === 'mandate' && item.payload?.cost) return item.payload.cost;
+  // A lens-scan card's cost is its one gesture, open (lensAdapters).
+  if ((item.kind === 'mandate' || isLensKind(item.kind)) && item.payload?.cost) return item.payload.cost;
   if (item.kind === 'question' && item.input) return tx(m.dc_deck_cost_answers, { count: item.input.fields.length });
   const type = modalTypeOf(item.kind);
   if (type === 'report') return tx(m.dc_deck_cost_read, { count: readMinutes(item) });

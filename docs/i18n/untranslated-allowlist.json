@@ -4270,5 +4270,11 @@
   "fr:decisionCenter.blueprint.note_label",
   "id:decisionCenter.blueprint.cmp_target",
   "id:decisionCenter.blueprint.cmp_pt_median",
-  "id:decisionCenter.blueprint.cmp_pt_target"
+  "id:decisionCenter.blueprint.cmp_pt_target",
+  "*:decisionCenter.lens.store_version",
+  "de:decisionCenter.release.fact_status",
+  "de:decisionCenter.release.fact_version",
+  "fr:decisionCenter.release.fact_version",
+  "fr:decisionCenter.release.notes_label",
+  "id:decisionCenter.release.fact_status"
 ]

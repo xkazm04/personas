@@ -1555,5 +1555,11 @@
   "ml_verb_dropped": "Verworfen",
   "ml_verb_kept": "Erneut gelesen und beibehalten",
   "ml_reread_yes": "Der Umschlag bleibt wie unterschrieben. Diese Karte kommt erst wieder, wenn sich die Akte des Mandats verdoppelt haben und seine Nutzung erneut danach fragt.",
-  "ml_reread_no": "Zuerst E drücken: Der bearbeitete Umschlag wird unterschrieben und gilt ab dem nächsten Element; die Änderung landet im Aktenprotokoll und lässt sich dort zurücknehmen."
+  "ml_reread_no": "Zuerst E drücken: Der bearbeitete Umschlag wird unterschrieben und gilt ab dem nächsten Element; die Änderung landet im Aktenprotokoll und lässt sich dort zurücknehmen.",
+  "dc_deck_key_open_lens": "Blatt öffnen; Entscheidungen fallen dort",
+  "dc_deck_kind_build": "Umsetzung",
+  "dc_deck_kind_evidence": "Nachweis",
+  "dc_deck_kind_release": "Veröffentlichung",
+  "dc_deck_no_lens": "Von dieser Karte wird nichts geschrieben.",
+  "dc_deck_yes_lens": "Öffnet den Blueprint über dem Stapel; Entscheidungen fallen dort."
 }

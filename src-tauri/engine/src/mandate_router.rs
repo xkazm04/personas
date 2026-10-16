@@ -17,6 +17,9 @@
 //! 1. `message` -> `talk` (never coalesces).
 //! 2. `goal` CLAIMS (a goal `awaiting_acceptance`) -> `accept` / `none`: the
 //!    operator accepts what a mandate claims is met, whoever holds the project.
+//!    The lens-scan cards (`build`, `evidence`, `release`; spark
+//!    one-control) take their fixed row the same way: no mandate ever acts on
+//!    a lens-scan item, signed or not (the keep-out).
 //! 3. A **valve** (`outbound-message`, `deletion`) -> `breach` / `valve`, never
 //!    coalesced: valves are never delegated and never batched (Director
 //!    decision), so not even an orphaned or held one may hide in a count.
@@ -159,6 +162,14 @@ pub enum RouteKind {
     Message,
     /// Accepted work awaiting dispatch.
     Dispatch,
+    /// A lens-scan product with proposals to approve or approved items to
+    /// build (spark one-control). Frontend-derived; never acted by a mandate.
+    LensBuild,
+    /// A lens-scan product with built items awaiting triage. Never acted.
+    LensEvidence,
+    /// A lens-scan product with a release waiting on the operator, or
+    /// accepted items no release holds. Never acted.
+    LensRelease,
 }
 
 impl RouteKind {
@@ -177,7 +188,19 @@ impl RouteKind {
             Self::Council => "council",
             Self::Message => "message",
             Self::Dispatch => "dispatch",
+            Self::LensBuild => "build",
+            Self::LensEvidence => "evidence",
+            Self::LensRelease => "release",
         }
+    }
+
+    /// A lens-scan card: decided on the blueprint sheet (or in bp), never by
+    /// a mandate (the keep-out).
+    pub fn is_lens_scan(self) -> bool {
+        matches!(
+            self,
+            Self::LensBuild | Self::LensEvidence | Self::LensRelease
+        )
     }
 }
 
@@ -440,6 +463,29 @@ pub const UNSIGNED_LANE: &[UnsignedRow] = &[
         clause: LaneClause::None,
         replaces_chip: "chat",
     },
+    // lens-scan (spark one-control): no chip ever carried these; the chip is
+    // `decisionModel.CHIP_OF`'s light for the kind. Approving a proposal is a
+    // judgment call, as an idea.
+    UnsignedRow {
+        kind: RouteKind::LensBuild,
+        lane: Lane::Breach,
+        clause: LaneClause::Unsigned,
+        replaces_chip: "backlog",
+    },
+    // lens-scan: built work claimed done, triaged on the blueprint, as a goal claim.
+    UnsignedRow {
+        kind: RouteKind::LensEvidence,
+        lane: Lane::Accept,
+        clause: LaneClause::None,
+        replaces_chip: "proposals",
+    },
+    // lens-scan: a release bp composes and the operator finishes.
+    UnsignedRow {
+        kind: RouteKind::LensRelease,
+        lane: Lane::Accept,
+        clause: LaneClause::None,
+        replaces_chip: "proposals",
+    },
 ];
 
 fn unsigned_row(kind: RouteKind) -> (Lane, LaneClause) {
@@ -524,6 +570,27 @@ fn route_with(item: &RouteInput, charter: Option<&CharterView>, may_act: bool) -
         return Route {
             lane: Lane::Accept,
             clause: LaneClause::None,
+            charter_id: charter_id.clone(),
+            coalesce_key: k,
+            act: None,
+        };
+    }
+    // 2b. The lens-scan keep-out: no mandate ever acts on a lens-scan card,
+    // signed or not. Each takes its fixed row before the charter is consulted.
+    if item.kind.is_lens_scan() {
+        let (lane, clause) = unsigned_row(item.kind);
+        let k = match &charter_id {
+            Some(c) => key(c, lane, clause),
+            None => format!(
+                "orphan:{}:{}:{}",
+                item.project_id.as_deref().unwrap_or("-"),
+                lane.as_str(),
+                clause.as_str()
+            ),
+        };
+        return Route {
+            lane,
+            clause,
             charter_id: charter_id.clone(),
             coalesce_key: k,
             act: None,
@@ -648,6 +715,12 @@ fn route_signed_kind(
         // Routed before the charter is consulted; kept total here.
         RouteKind::GoalClaim | RouteKind::Council => (Lane::Accept, LaneClause::None, None),
         RouteKind::Message => (Lane::Talk, LaneClause::None, None),
+        // Routed before the charter is consulted (the keep-out); kept total
+        // here, and never acted.
+        RouteKind::LensBuild | RouteKind::LensEvidence | RouteKind::LensRelease => {
+            let (lane, clause) = unsigned_row(item.kind);
+            (lane, clause, None)
+        }
     }
 }
 

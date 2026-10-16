@@ -27,6 +27,8 @@ export function shapeEntries(m: MonitorCopy, shape: CardShape, v: { accept: stri
         [['A'], v.accept.toLowerCase()], [['R'], m.ml_keys_send_back], [['1-3'], m.ml_keys_pick],
         [['V'], m.ml_keys_revert], [['N'], m.ml_keys_narrow], [['4-9'], m.dc_deck_key_branch], ...tail,
       ];
+    case 'lens':
+      return [[['↵'], m.dc_deck_key_open_lens], ...tail];
     case 'default':
       return null;
   }

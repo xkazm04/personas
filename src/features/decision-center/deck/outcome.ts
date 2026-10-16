@@ -42,6 +42,9 @@ export function noEffect(m: MonitorCopy, kind: DecisionKind): string {
     case 'report': return m.dc_deck_no_report;
     case 'message': return m.dc_deck_no_chat;
     case 'mandate': return m.ml_sign_no;
+    case 'build':
+    case 'evidence':
+    case 'release': return m.dc_deck_no_lens;
   }
 }
 

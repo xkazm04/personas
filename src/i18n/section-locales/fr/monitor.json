@@ -1555,5 +1555,11 @@
   "ml_verb_dropped": "Abandonné",
   "ml_verb_kept": "Relu et conservé",
   "ml_reread_yes": "L'enveloppe reste telle que signée. Cette carte ne revient que lorsque les actes du mandat ont doublé et que son usage le redemande.",
-  "ml_reread_no": "Appuyez d'abord sur E : l'enveloppe modifiée est signée et s'applique dès l'élément suivant ; le changement entre au journal des actes et peut y être annulé."
+  "ml_reread_no": "Appuyez d'abord sur E : l'enveloppe modifiée est signée et s'applique dès l'élément suivant ; le changement entre au journal des actes et peut y être annulé.",
+  "dc_deck_key_open_lens": "ouvrir la feuille ; les décisions s'y prennent",
+  "dc_deck_kind_build": "Construction",
+  "dc_deck_kind_evidence": "Preuves",
+  "dc_deck_kind_release": "Version",
+  "dc_deck_no_lens": "Rien n'est écrit depuis cette carte.",
+  "dc_deck_yes_lens": "Ouvre le blueprint par-dessus le paquet ; les décisions s'y prennent."
 }

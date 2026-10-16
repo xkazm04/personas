@@ -37,6 +37,8 @@ import {
   subscribePendingCountsStatus,
 } from './pendingCountsSource';
 import { useChatThreads } from './useChatThreads';
+import { lensCardKinds } from '../lens/lensKinds';
+import { LENS_SCAN_SOURCE, refreshLensScanProducts, useLensScanProducts } from './lensScanSource';
 import { useDecisionCopy } from './useDecisionCopy';
 import { useRosterRefresh } from './useRosterRefresh';
 
@@ -102,6 +104,9 @@ export function useDecisionCountsCore(chat: ChatCountInput, enabled: boolean): D
   });
 
   const lanesState = useLanesSnapshot(enabled);
+  // The lens-scan cards sit in fixed lanes; their products are a count source too.
+  const lensState = useLensScanProducts(enabled);
+  const lensKinds = useMemo(() => lensCardKinds(lensState.products ?? []), [lensState.products]);
 
   const counts = useMemo(
     () =>
@@ -124,13 +129,15 @@ export function useDecisionCountsCore(chat: ChatCountInput, enabled: boolean): D
         snapshotFailed: lanesState.failed,
         questions: questionCount,
         chat: { n: chat.n, failed: chat.failed },
+        lens: { kinds: lensKinds, failed: lensState.failed, source: LENS_SCAN_SOURCE },
       }),
-    [lanesState.snapshot, lanesState.failed, questionCount, chat.n, chat.failed],
+    [lanesState.snapshot, lanesState.failed, questionCount, chat.n, chat.failed, lensKinds, lensState.failed],
   );
 
   const refreshCounts = useCallback(() => {
     void refreshDecisionCounts();
     void refreshLanesSnapshot();
+    void refreshLensScanProducts();
     void refreshReady(refreshUndispatched).finally(() => setReadySettled(true));
   }, [refreshUndispatched]);
 

@@ -11,6 +11,9 @@
  *   claim    A accept · R send back · 1-3 pick an audited act · V revert it ·
  *            N narrow its scope · 4-9 the item's own branches.
  *   valve    the default A (armed twice) / R; never a batch branch.
+ *   lens     Enter opens the blueprint (or a release's composition). A, R
+ *            and the digits are inert: the card never writes (spark
+ *            one-control, WP3), decisions happen on the sheet.
  * None of E, X, V, N is bound anywhere else in the deck grammar.
  */
 import type { DecisionItem } from '../../model/decisionModel';
@@ -21,6 +24,8 @@ import { useBreachShape, type BreachShape } from './useBreachShape';
 import { useClaimShape, type ClaimShape } from './useClaimShape';
 import { useSignShape, type SignShape } from './useSignShape';
 import type { MandateSummary } from '@/lib/bindings/MandateSummary';
+import { openLensSheet } from '../../lens/lensSheetStore';
+import { isLensKind } from '../../lens/lensKinds';
 
 export interface ShapeController {
   shape: CardShape;
@@ -39,6 +44,8 @@ export interface ShapeController {
   accept: ((fallback: () => void) => void) | null;
   /** The shape's keys; true when the press was taken (or deliberately inert). */
   onKey: (e: KeyboardEvent, digit: number | null, fallback: () => void) => boolean;
+  /** A lens-scan card's one gesture: open its sheet. Null on every other shape. */
+  openLens: (() => void) | null;
 }
 
 export function useShapeController(item: DecisionItem | undefined, deck: DeckController): ShapeController {
@@ -52,7 +59,11 @@ export function useShapeController(item: DecisionItem | undefined, deck: DeckCon
   const breach = useBreachShape(shape === 'breach', item, route, mandate, deck);
   const claim = useClaimShape(shape === 'claim', item, route, mandate);
 
-  const accept = shape === 'sign' ? () => sign.sign() : shape === 'breach' ? breach.amend : null;
+  const lensKind = shape === 'lens' && item && isLensKind(item.kind) ? item.kind : null;
+  const lensProject = item?.sourceId ?? '';
+  const openLens = lensKind ? () => openLensSheet({ kind: lensKind, projectId: lensProject }) : null;
+  // A lens card's yes is inert (a no-op, never the default verb, which would write).
+  const accept = shape === 'sign' ? () => sign.sign() : shape === 'breach' ? breach.amend : shape === 'lens' ? () => undefined : null;
   const arms = shape === 'sign' ? sign.grants.length > 0 : shape === 'breach' ? !!breach.plan?.arms : false;
 
   const onKey = (e: KeyboardEvent, digit: number | null, fallback: () => void): boolean => {
@@ -68,6 +79,11 @@ export function useShapeController(item: DecisionItem | undefined, deck: DeckCon
       if (digit === 2) { breach.deny(); return true; }
       if (digit === 3) { breach.suspend(); return true; }
       return !digit && (k === 'a' || k === 'r');
+    }
+    if (shape === 'lens') {
+      if (e.key === 'Enter') { openLens?.(); return true; }
+      // Inert: A, R and the digits; S, I, the walk, ? and Esc stay the deck's.
+      return !!digit || k === 'a' || k === 'r' || k === 'd';
     }
     if (shape === 'claim') {
       if (digit && digit <= BRANCH_OFFSET.claim) return claim.pick(digit - 1);
@@ -90,5 +106,6 @@ export function useShapeController(item: DecisionItem | undefined, deck: DeckCon
     behind: shape === 'breach' && item ? behindIt(deck.queue, item, lanes) : [],
     accept,
     onKey,
+    openLens,
   };
 }

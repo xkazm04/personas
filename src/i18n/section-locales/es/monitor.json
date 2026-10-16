@@ -1555,5 +1555,11 @@
   "ml_verb_dropped": "Descartado",
   "ml_verb_kept": "Releído y mantenido",
   "ml_reread_yes": "El sobre queda como se firmó. Esta tarjeta solo vuelve cuando los actos del mandato se hayan duplicado y su uso lo pida de nuevo.",
-  "ml_reread_no": "Pulsa E primero: el sobre editado se firma y rige desde el siguiente elemento; el cambio queda en el registro de actos y puede revertirse allí."
+  "ml_reread_no": "Pulsa E primero: el sobre editado se firma y rige desde el siguiente elemento; el cambio queda en el registro de actos y puede revertirse allí.",
+  "dc_deck_key_open_lens": "abrir la hoja; las decisiones se toman allí",
+  "dc_deck_kind_build": "Construcción",
+  "dc_deck_kind_evidence": "Evidencia",
+  "dc_deck_kind_release": "Versión",
+  "dc_deck_no_lens": "Nada se escribe desde esta tarjeta.",
+  "dc_deck_yes_lens": "Abre el plano sobre la baraja; las decisiones se toman allí."
 }
