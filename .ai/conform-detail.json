@@ -3838,14 +3838,14 @@
       "subject": "trace-rollup-and-attribution",
       "bundle": "llm-observability",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T11:58:29.000Z",
-      "worker": "29f0765d-f59e-4740-91cd-b91741823aa4",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:15:34.000Z",
+      "worker": "ff11a5cc-5be1-488e-8985-10273c495128",
       "techniques": [
         {
           "technique": "unpriced-span-accounting",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_executions/libs/useBulkRerun.ts:115 never coerces null to zero (ingest half realized) but the rollup omits the unmeasured count, so the total at src/features/agents/sub_executions/components/list/BulkRerunReport.tsx:90 reads as complete"
+          "evidence": "src/features/agents/sub_executions/libs/useBulkRerun.ts:115 null is correctly not coerced, but the rollup carries no unmeasured count beside the sum and src/features/agents/sub_executions/components/list/BulkRerunReport.tsx:90 shows the total with no caveat"
         }
       ],
       "superseded": [
@@ -3862,6 +3862,13 @@
           "evaluatedAt": "2026-10-09T16:38:31.000Z",
           "worker": "9e22baac-f49b-4771-ac7d-a9cfb4228d1c",
           "reason": "replaced by 29f0765d-f59e-4740-91cd-b91741823aa4"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_executions/libs/useBulkRerun.ts:115 skips null origCost into totalCostOriginal and BulkRunCohort (src/features/agents/sub_executions/libs/useBulkRerun.ts:61) carries no unmeasured-run count, so src/features/agents/sub_executions/components/list/BulkRerunReport.tsx:90 prints a lower bound as the cohort total - re-verified 2026-10-12, files unchanged since 2026-09-03",
+          "evaluatedAt": "2026-10-12T11:58:29.000Z",
+          "worker": "29f0765d-f59e-4740-91cd-b91741823aa4",
+          "reason": "replaced by ff11a5cc-5be1-488e-8985-10273c495128"
         }
       ]
     },
@@ -3870,24 +3877,24 @@
       "subject": "trace-rollup-and-attribution",
       "bundle": "llm-observability",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T11:58:29.000Z",
-      "worker": "29f0765d-f59e-4740-91cd-b91741823aa4",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:15:34.000Z",
+      "worker": "ff11a5cc-5be1-488e-8985-10273c495128",
       "techniques": [
-        {
-          "technique": "single-shape-rule",
-          "verdict": "deviation",
-          "evidence": "src/features/agents/sub_executions/detail/inspector/TraceInspector.tsx:185 summary tile counts the raw span set while the list beneath renders the tree from src/features/agents/sub_executions/detail/inspector/useTraceData.ts:250 - the shape does not pin the collection"
-        },
         {
           "technique": "derived-trace-rollup",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_executions/libs/traceHelpers.ts:115 handles dangling parents (orphaned flag) but a parent cycle reaches no root and is silently dropped; duplicate span ids push one node twice"
+          "evidence": "src/features/agents/sub_executions/libs/traceHelpers.ts:110 byId.set overwrites a duplicate span id so the first claimant vanishes, and two spans parenting each other are attached as children and never reach roots - malformed input loses spans instead of every event appearing exactly once"
+        },
+        {
+          "technique": "single-shape-rule",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/detail/inspector/TraceInspector.tsx:185 the summary counts the raw span set while useTraceData.ts:250 renders the tree-reachable set; the collection is not handed down"
         },
         {
           "technique": "span-cap-truncation-signal",
-          "verdict": "realized",
-          "evidence": "src/features/agents/sub_executions/detail/inspector/TraceSummary.tsx:60 reads evicted_span_count and TraceInspector.tsx:193 warns on dropped live span events"
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_executions/detail/inspector/TraceSummary.tsx:60 reads evicted_span_count from the backend payload and TraceInspector.tsx:189 pairs it with the live-window overflow warning"
         }
       ],
       "superseded": [
@@ -3904,6 +3911,13 @@
           "evaluatedAt": "2026-10-09T16:38:31.000Z",
           "worker": "9e22baac-f49b-4771-ac7d-a9cfb4228d1c",
           "reason": "replaced by 29f0765d-f59e-4740-91cd-b91741823aa4"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_executions/detail/inspector/useTraceData.ts:250 builds the waterfall via buildSpanTree (src/features/agents/sub_executions/libs/traceHelpers.ts:115), which drops cycle spans and duplicates collided ids, while src/features/agents/sub_executions/detail/inspector/TraceInspector.tsx:185 counts unifiedTrace.spans.length - the Spans tile and the rows beneath it range over different sets - re-verified 2026-10-12",
+          "evaluatedAt": "2026-10-12T11:58:29.000Z",
+          "worker": "29f0765d-f59e-4740-91cd-b91741823aa4",
+          "reason": "replaced by ff11a5cc-5be1-488e-8985-10273c495128"
         }
       ]
     },
@@ -8008,17 +8022,17 @@
       "subject": "trace-rollup-and-attribution",
       "bundle": "llm-observability",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T11:58:29.000Z",
-      "worker": "29f0765d-f59e-4740-91cd-b91741823aa4",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:15:34.000Z",
+      "worker": "ff11a5cc-5be1-488e-8985-10273c495128",
       "techniques": [
         {
           "technique": "unpriced-span-accounting",
           "verdict": "deviation",
-          "evidence": "src/hooks/execution/useReasoningTrace.ts:100 substitutes 0 for an absent measurement (the technique's never-coerce rule, applied to duration); cost on the next line correctly stays undefined"
+          "evidence": "src/hooks/execution/useReasoningTrace.ts:100 durationMs: e.duration_ms ?? 0 presents absence as a measured zero (law never-present-absence-as-an-answer); cost on the next line is correctly passed through as-is"
         }
       ],
-      "registryProposal": "unpriced-span-accounting's never-coerce rule is stated for cost but bites identically on duration and tokens; the technique (or golden path) could name 'any nullable measure' explicitly so duration coercions are recognised as the same defect",
+      "registryProposal": "unpriced-span-accounting decision rule exempts latency (\"a missing latency treated as zero merely makes a duration conservative\"); that holds for one span inside a summed total but not when the coerced value is the run's ONLY duration figure, where 0 ms is a fabricated measurement. Narrow the carve-out: zero-default is acceptable as a summand, never as the sole displayed value.",
       "superseded": [
         {
           "state": "deviation",
@@ -8033,6 +8047,13 @@
           "evaluatedAt": "2026-10-09T16:38:31.000Z",
           "worker": "9e22baac-f49b-4771-ac7d-a9cfb4228d1c",
           "reason": "replaced by 29f0765d-f59e-4740-91cd-b91741823aa4"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/hooks/execution/useReasoningTrace.ts:100 coerces the optional ResultEvent.duration_ms (src/lib/types/terminalEvents.ts:56) to 0, and src/hooks/execution/useExecutionSummary.ts:82 hands it to src/features/agents/sub_executions/detail/views/ExecutionSummaryCard.tsx:124, whose != null guard cannot see the coercion, so an unmeasured run reads as 0 ms - re-verified 2026-10-12",
+          "evaluatedAt": "2026-10-12T11:58:29.000Z",
+          "worker": "29f0765d-f59e-4740-91cd-b91741823aa4",
+          "reason": "replaced by ff11a5cc-5be1-488e-8985-10273c495128"
         }
       ]
     },

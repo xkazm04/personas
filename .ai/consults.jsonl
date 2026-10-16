@@ -1477,3 +1477,6 @@
 {"ts":"2026-10-16T18:13:43Z","bundle":"software-engineering","subjects":["scoring-rubrics"],"techniques":["unmeasured-honesty","weight-design","normalization","score-explanation","gap-ranking","rubric-stability","weight-lenses"],"deviations":6}
 {"ts":"2026-10-16T18:14:16Z","bundle":"software-engineering","subjects":["error-handling"],"techniques":["crash-capture","error-doors","containment-boundary-restores-state"],"deviations":2}
 {"ts":"2026-10-16T18:14:16Z","bundle":"software-engineering","subjects":["error-handling"],"techniques":["taxonomy-design","user-facing-mapping"],"deviations":0}
+{"ts":"2026-10-16T18:15:34Z","bundle":"llm-observability","subjects":["trace-rollup-and-attribution"],"techniques":["unpriced-span-accounting"],"deviations":1}
+{"ts":"2026-10-16T18:15:34Z","bundle":"llm-observability","subjects":["trace-rollup-and-attribution"],"techniques":["derived-trace-rollup","single-shape-rule","span-cap-truncation-signal"],"deviations":1}
+{"ts":"2026-10-16T18:15:34Z","bundle":"llm-observability","subjects":["trace-rollup-and-attribution"],"techniques":["unpriced-span-accounting"],"deviations":1}
