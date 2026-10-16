@@ -4,7 +4,11 @@
 // watching. His prerequisite is the roster, so the two sections are one story
 // read downwards - the switch states what is missing, the section below is
 // where you fix it.
-import { Eye } from 'lucide-react';
+//
+// Laid out exactly as Athena's Setup is: a centered body and the shared
+// SettingsScaffold, so the two companions' setup pages share one width, one
+// card rhythm and one type ramp. Two sections need no quick-nav rail.
+import { Eye, Power, Star } from 'lucide-react';
 
 import { SettingRow } from '@/features/shared/components/forms/SettingRow';
 import {
@@ -12,6 +16,8 @@ import {
   ContentBox,
   ContentHeader,
 } from '@/features/shared/components/layout/ContentLayout';
+import { DeferUntilIdle } from '@/features/shared/components/layout/DeferUntilIdle';
+import { SettingsScaffold, type SettingsSection } from '@/features/shared/components/layout/settings/SettingsScaffold';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { useCompanionSwitch } from '../../status/useCompanionSwitch';
@@ -21,39 +27,58 @@ export default function OverseerSetupPage() {
   const { t } = useTranslation();
   const { status, loading, locked, prerequisite, toggle } = useCompanionSwitch('overseer');
 
+  const sections: SettingsSection[] = [
+    {
+      id: 'overseer-enable',
+      label: t.companions.setup.enable_section,
+      icon: <Power className="w-4 h-4 text-role-agent" />,
+      content: (
+        <SettingRow
+          icon={<Eye className="w-4 h-4 text-violet-400" />}
+          label={t.companions.setup.overseer_enable}
+          description={
+            <>
+              {t.companions.setup.overseer_enable_desc}
+              {/* Locked is not broken: the control says on itself which
+                  prerequisite is missing, instead of going grey in silence. */}
+              {prerequisite ? (
+                <span className="block mt-1 text-[var(--status-warning)]">{prerequisite}</span>
+              ) : null}
+            </>
+          }
+          checked={status?.enabled ?? false}
+          disabled={loading || locked}
+          onChange={() => void toggle()}
+          testId="overseer-enable-toggle"
+        />
+      ),
+    },
+    {
+      id: 'overseer-watched',
+      label: t.companions.setup.overseer_scope_title,
+      subtitle: t.companions.setup.overseer_scope_desc,
+      icon: <Star className="w-4 h-4 text-role-agent" />,
+      // The roster is the deeper part (it may fetch the agent list), so it
+      // arrives just after the switch has painted rather than in its commit.
+      content: (
+        <DeferUntilIdle priority="next-frame" order={1} enter>
+          <WatchedAgentsSection />
+        </DeferUntilIdle>
+      ),
+    },
+  ];
+
   return (
     <ContentBox>
       <ContentHeader
-        icon={<Eye className="w-4 h-4" />}
+        icon={<Eye className="w-5 h-5" />}
         iconColor="violet"
         title={t.companions.nav.group_overseer}
         subtitle={t.companions.identity.overseer_tagline}
       />
-      <ContentBody>
-        <div className="space-y-6 max-w-3xl">
-          <section className="space-y-2">
-            <h3 className="typo-title">{t.companions.setup.enable_section}</h3>
-            <SettingRow
-              icon={<Eye className="w-4 h-4 text-violet-400" />}
-              label={t.companions.setup.overseer_enable}
-              description={
-                <>
-                  {t.companions.setup.overseer_enable_desc}
-                  {/* Locked is not broken: the control says on itself which
-                      prerequisite is missing, instead of going grey in silence. */}
-                  {prerequisite ? (
-                    <span className="block mt-1 text-[var(--status-warning)]">{prerequisite}</span>
-                  ) : null}
-                </>
-              }
-              checked={status?.enabled ?? false}
-              disabled={loading || locked}
-              onChange={() => void toggle()}
-              testId="overseer-enable-toggle"
-            />
-          </section>
-
-          <WatchedAgentsSection />
+      <ContentBody centered>
+        <div className="animate-fade-slide-in h-full">
+          <SettingsScaffold sections={sections} navAriaLabel={t.companions.nav.group_overseer} showNav={false} />
         </div>
       </ContentBody>
     </ContentBox>

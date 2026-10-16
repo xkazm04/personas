@@ -582,6 +582,31 @@ pub fn list_requests(pool: &DbPool, limit: u32) -> Result<Vec<CuratorRequest>, A
     })
 }
 
+/// The settled half of the lane, newest first, one page at a time.
+///
+/// The open half is short and always drawn whole by [`list_requests`]; this
+/// is the history behind it, which only grows, so the surface pages through
+/// it rather than holding all of it. `settled_at` orders it because that is
+/// when a row became history; `created_at` and `id` break the ties.
+pub fn list_settled_requests(
+    pool: &DbPool,
+    limit: u32,
+    offset: u32,
+) -> Result<Vec<CuratorRequest>, AppError> {
+    timed_query!("curator_request", "curator::list_settled_requests", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {REQUEST_COLUMNS} FROM curator_request
+              WHERE state NOT IN ('queued','dispatched')
+              ORDER BY COALESCE(settled_at, created_at) DESC, created_at DESC, id DESC
+              LIMIT ?1 OFFSET ?2"
+        ))?;
+        let rows = stmt.query_map(params![limit, offset], row_to_request)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
+    })
+}
+
 /// Put one request in the lane. It always arrives `queued`; there is no door
 /// here for writing a row that is already in flight.
 ///
@@ -2229,6 +2254,49 @@ mod tests {
 
         // The limit is a limit, not a suggestion.
         assert_eq!(list_requests(&pool, 2).unwrap().len(), 2);
+    }
+
+    /// The history page holds only settled rows, newest first, and the offset
+    /// walks it without repeating a row.
+    #[test]
+    fn the_history_pages_settled_rows_newest_first() {
+        let pool = init_test_db().unwrap();
+        seed_lane(&pool);
+        claim_next_queued(&pool, Some("s1"), "2026-09-24T12:00:00Z").unwrap();
+        settle_request(
+            &pool,
+            "r1",
+            CuratorRequestState::Landed,
+            Some("ok"),
+            None,
+            None,
+            "2026-09-24T12:30:00Z",
+        )
+        .unwrap();
+        claim_next_queued(&pool, Some("s2"), "2026-09-24T12:35:00Z").unwrap();
+        settle_request(
+            &pool,
+            "r2",
+            CuratorRequestState::Failed,
+            None,
+            None,
+            Some("boom"),
+            "2026-09-24T12:40:00Z",
+        )
+        .unwrap();
+
+        let ids = |limit, offset| -> Vec<String> {
+            list_settled_requests(&pool, limit, offset)
+                .unwrap()
+                .into_iter()
+                .map(|r| r.id)
+                .collect()
+        };
+        // r3 is still queued, so it is not history.
+        assert_eq!(ids(20, 0), vec!["r2", "r1"]);
+        assert_eq!(ids(1, 0), vec!["r2"]);
+        assert_eq!(ids(1, 1), vec!["r1"]);
+        assert!(ids(20, 2).is_empty());
     }
 
     // -----------------------------------------------------------------------

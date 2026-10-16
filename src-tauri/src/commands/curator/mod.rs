@@ -610,6 +610,29 @@ pub async fn curator_requests_list(
     .await
 }
 
+/// The largest history page one call may ask for.
+const HISTORY_PAGE_MAX: u32 = 100;
+
+/// One page of the lane's settled history, newest first.
+///
+/// The open half stays on [`curator_requests_list`]; this is the part that
+/// only grows, so the queue drawer pages through it on demand instead of
+/// drawing a week of landed rows under the two the operator is waiting on.
+#[tauri::command]
+pub async fn curator_requests_history(
+    state: State<'_, Arc<AppState>>,
+    limit: u32,
+    offset: u32,
+) -> Result<Vec<CuratorRequest>, AppError> {
+    require_auth(&state).await?;
+    let db = state.db.clone();
+    let limit = limit.clamp(1, HISTORY_PAGE_MAX);
+    blocking("curator_requests_history", move || {
+        repo::list_settled_requests(&db, limit, offset)
+    })
+    .await
+}
+
 /// Put one request in the lane, vetted against the registry's own disk.
 ///
 /// A blank `note` or `argument` is stored as NULL rather than as `""`: the

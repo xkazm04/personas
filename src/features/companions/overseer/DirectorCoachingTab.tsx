@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { Clapperboard, RefreshCw, UserPlus, Gauge, Star, Coins, BarChart3, Cpu, Brain, ExternalLink, Layers, Tags, Inbox } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
@@ -9,6 +9,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { StatCard } from '@/features/shared/components/display/StatCard';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
+import { DeferUntilIdle } from '@/features/shared/components/layout/DeferUntilIdle';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { COACHING_GLYPH } from '@/features/shared/glyph/glyphs/coachingGlyph';
@@ -20,8 +21,6 @@ import { useDirector } from './useDirector';
 import { DirectorSection } from './DirectorSection';
 import { scoreTone } from './directorScore';
 import { PersonaCoachingTable } from './components/PersonaCoachingTable';
-import { PersonaDetailModal } from './components/PersonaDetailModal';
-import { AddToScopeModal } from './components/AddToScopeModal';
 import { ValueLeakBar } from './components/ValueLeakBar';
 import { PeriodSelect } from './components/PeriodSelect';
 import { ScoreDistribution } from './components/ScoreDistribution';
@@ -31,12 +30,28 @@ import { MomentumSummary } from './components/MomentumSummary';
 import { ReviewFilteredAction } from './components/ReviewFilteredAction';
 import { StaleSweepButton } from './components/StaleSweepButton';
 import { BatchOutcomeLine } from './components/BatchOutcomeLine';
-import { CampaignReportPanel } from './components/CampaignReportPanel';
-import { WatchedPipelines } from './components/WatchedPipelines';
 import { filterRoster, type RosterFilter } from './rosterFilter';
 import { describeBatchOutcome } from './batchOutcome';
 import { resolveDirectorSurface } from './directorSurface';
 import type { DirectorRosterEntry } from '@/api/director';
+import { lazyRetry } from '@/lib/lazyRetry';
+
+// The deep parts of the tab load as their own chunks. The two modals load on
+// their first open and stay mounted after it (so their close animation plays);
+// the campaign report and the watched pipelines sit below the coaching table
+// and arrive one after the other once the scorecard above them has painted.
+const PersonaDetailModal = lazyRetry(() =>
+  import('./components/PersonaDetailModal').then((m) => ({ default: m.PersonaDetailModal })),
+);
+const AddToScopeModal = lazyRetry(() =>
+  import('./components/AddToScopeModal').then((m) => ({ default: m.AddToScopeModal })),
+);
+const CampaignReportPanel = lazyRetry(() =>
+  import('./components/CampaignReportPanel').then((m) => ({ default: m.CampaignReportPanel })),
+);
+const WatchedPipelines = lazyRetry(() =>
+  import('./components/WatchedPipelines').then((m) => ({ default: m.WatchedPipelines })),
+);
 
 /**
  * Director coaching — a single Overview sub-tab consolidating what used to be
@@ -56,6 +71,15 @@ export default function DirectorCoachingTab() {
   const [selected, setSelected] = useState<DirectorRosterEntry | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [rosterFilter, setRosterFilter] = useState<RosterFilter | null>(null);
+  // One-way latches: a modal's chunk loads on its first open, then it stays.
+  const [detailMounted, setDetailMounted] = useState(false);
+  const [addMounted, setAddMounted] = useState(false);
+  useEffect(() => {
+    if (selected) setDetailMounted(true);
+  }, [selected]);
+  useEffect(() => {
+    if (addOpen) setAddMounted(true);
+  }, [addOpen]);
 
   // One-shot entrance ripple for the scorecard sections (docs/design/overview-loading.md
   // §"Panels & metric grids"): plays only the render where `ready` first flips true.
@@ -225,7 +249,9 @@ export default function DirectorCoachingTab() {
               </p>
             </EmptyState>
           </div>
-          <WatchedPipelines />
+          <DeferUntilIdle priority="next-frame" order={1} enter suspend>
+            <WatchedPipelines />
+          </DeferUntilIdle>
           </div>
         ) : !p ? null : (
           <div className="space-y-4 pb-6">
@@ -323,8 +349,12 @@ export default function DirectorCoachingTab() {
             </DirectorSection>
 
             {/* Director's Lab — campaign report (batch-3 v1) */}
-            <CampaignReportPanel verdicts={d.verdicts} playEntrance={playEntrance} />
-            <WatchedPipelines />
+            <DeferUntilIdle priority="next-frame" order={2} suspend>
+              <CampaignReportPanel verdicts={d.verdicts} playEntrance={playEntrance} />
+            </DeferUntilIdle>
+            <DeferUntilIdle priority="next-frame" order={4} enter suspend>
+              <WatchedPipelines />
+            </DeferUntilIdle>
           </div>
         )}
         </div>
@@ -332,8 +362,14 @@ export default function DirectorCoachingTab() {
       </ContentBody>
 
       {/* Modals */}
-      <PersonaDetailModal entry={selected} onClose={() => setSelected(null)} onRunReview={d.runOnPersona} />
-      <AddToScopeModal open={addOpen} onClose={() => setAddOpen(false)} personas={d.personas} onAdd={(id) => d.setStarred(id, true)} />
+      <Suspense fallback={null}>
+        {detailMounted && (
+          <PersonaDetailModal entry={selected} onClose={() => setSelected(null)} onRunReview={d.runOnPersona} />
+        )}
+        {addMounted && (
+          <AddToScopeModal open={addOpen} onClose={() => setAddOpen(false)} personas={d.personas} onAdd={(id) => d.setStarred(id, true)} />
+        )}
+      </Suspense>
     </ContentBox>
   );
 }

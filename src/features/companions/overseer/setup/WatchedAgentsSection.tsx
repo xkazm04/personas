@@ -5,23 +5,33 @@
 // loud (`overseer_scope_desc`) because the same star also marks a favourite
 // elsewhere in the app - a shared meaning the operator should learn from the
 // control rather than discover from the consequence.
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { Star, UserPlus } from 'lucide-react';
 
 import { setPersonaStarred } from '@/api/agents/personas';
-import { AddToScopeModal } from '@/features/companions/overseer/components/AddToScopeModal';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import Button from '@/features/shared/components/buttons/Button';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
+import { lazyRetry } from '@/lib/lazyRetry';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useAgentStore } from '@/stores/agentStore';
+
+// The picker loads on its first open and stays mounted after, so its close
+// animation still plays.
+const AddToScopeModal = lazyRetry(() =>
+  import('@/features/companions/overseer/components/AddToScopeModal').then((m) => ({ default: m.AddToScopeModal })),
+);
 
 export function WatchedAgentsSection() {
   const { t } = useTranslation();
   const personas = useAgentStore((s) => s.personas);
   const [addOpen, setAddOpen] = useState(false);
+  const [addMounted, setAddMounted] = useState(false);
+  useEffect(() => {
+    if (addOpen) setAddMounted(true);
+  }, [addOpen]);
 
   const watched = useMemo(() => personas.filter((p) => p.starred), [personas]);
 
@@ -54,12 +64,10 @@ export function WatchedAgentsSection() {
   }, []);
 
   return (
-    <section className="space-y-3">
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <h3 className="typo-title">{t.companions.setup.overseer_scope_title}</h3>
-          <p className="typo-caption mt-1">{t.companions.setup.overseer_scope_desc}</p>
-        </div>
+    <div className="space-y-3">
+      {/* The title and the scope sentence are the section card's own head
+          (OverseerSetupPage); the body carries only the control and the list. */}
+      <div className="flex items-center justify-end">
         <Button
           size="sm"
           variant="secondary"
@@ -90,12 +98,16 @@ export function WatchedAgentsSection() {
         </ul>
       )}
 
-      <AddToScopeModal
-        open={addOpen}
-        onClose={() => setAddOpen(false)}
-        personas={personas}
-        onAdd={(personaId) => void setStar(personaId, true)}
-      />
-    </section>
+      {addMounted && (
+        <Suspense fallback={null}>
+          <AddToScopeModal
+            open={addOpen}
+            onClose={() => setAddOpen(false)}
+            personas={personas}
+            onAdd={(personaId) => void setStar(personaId, true)}
+          />
+        </Suspense>
+      )}
+    </div>
   );
 }

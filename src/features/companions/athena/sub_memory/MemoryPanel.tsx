@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { Suspense, useCallback, useState } from 'react';
 import { Loader2, RadioTower, RefreshCw, Sparkles, TrendingDown } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
@@ -10,7 +10,13 @@ import {
 } from '@/api/companion';
 import { BrainViewer } from '../BrainViewer';
 import { useAthenaStore } from '../athenaStore';
-import { ConsolidationReview } from './ConsolidationReview';
+import { lazyRetry } from '@/lib/lazyRetry';
+
+// The consolidation review is the secondary view, opened from the toolbar; it
+// loads as its own chunk on that click rather than with the tab.
+const ConsolidationReview = lazyRetry(() =>
+  import('./ConsolidationReview').then((m) => ({ default: m.ConsolidationReview })),
+);
 
 type MemoryView = 'brain' | 'consolidation';
 
@@ -184,7 +190,11 @@ export default function MemoryPanel() {
       </div>
       <div className="flex-1 min-h-0">
         {view === 'consolidation' ? (
-          <ConsolidationReview onClose={() => setView('brain')} />
+          <Suspense fallback={null}>
+            <div className="h-full animate-fade-in">
+              <ConsolidationReview onClose={() => setView('brain')} />
+            </div>
+          </Suspense>
         ) : (
           <BrainViewer />
         )}

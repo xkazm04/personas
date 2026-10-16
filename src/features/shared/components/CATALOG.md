@@ -212,7 +212,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 |---|---|
 | `ActionRow` | Left-aligned content (filters, status chips, project picker, etc. |
 | `ContentHeaderSkeleton` | _(add a `@catalog` tag)_ |
-| `DeferUntilIdle` | _(add a `@catalog` tag)_ |
+| `DeferUntilIdle` | DeferUntilIdle - postpone a heavy or below-fold subtree until idle / next frame, optionally staggered by order with a fade-in entr |
 | `FullScreenOverlay` | _(add a `@catalog` tag)_ |
 | `ListSkeleton` | ListSkeleton — calm, non-pulsing placeholder rows for a list/table body while the first page loads, so panel chrome lands before d |
 | `PanelTabBar` | Horizontal tab bar for in-panel navigation. |
@@ -272,4 +272,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_173 components, 40 without a `@catalog` description._
+_173 components, 39 without a `@catalog` description._

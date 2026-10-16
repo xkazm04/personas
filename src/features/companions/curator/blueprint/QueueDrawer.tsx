@@ -13,8 +13,13 @@
  * existing lane here rather than drawing a second one is also what keeps one
  * row per request in the ledger's own row rhythm: `RequestRow` already draws
  * it, and it is the same component it always was.
+ *
+ * It opens on what is PENDING. The settled history is one click away in the
+ * head and is handed in as its own node, mounted only while it is showing, so
+ * the drawer never reads a history nobody asked for. Closing the drawer
+ * returns it to pending: the next open answers "what is waiting" first.
  */
-import { type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 import Button from '@/features/shared/components/buttons/Button';
 
@@ -23,12 +28,21 @@ import { useWords } from './words';
 export interface QueueDrawerProps {
   open: boolean;
   onClose: () => void;
-  /** The lane, handed in by the page. Absent in a harness with no loop. */
+  /** The pending lane, handed in by the page. Absent in a harness with no loop. */
   children?: ReactNode;
+  /** The settled history, mounted only once the head's switch asks for it. */
+  history?: ReactNode;
 }
 
-export function QueueDrawer({ open, onClose, children }: QueueDrawerProps) {
+type QueueView = 'pending' | 'history';
+
+export function QueueDrawer({ open, onClose, children, history }: QueueDrawerProps) {
   const { w } = useWords();
+  const [view, setView] = useState<QueueView>('pending');
+  useEffect(() => {
+    if (!open) setView('pending');
+  }, [open]);
+  const showingHistory = view === 'history' && history !== undefined;
   return (
     <section
       className={`cb-drawer cb-queue${open ? ' cb-open' : ''}`}
@@ -39,6 +53,23 @@ export function QueueDrawer({ open, onClose, children }: QueueDrawerProps) {
       <div className="cb-dk-head" data-role="cb-queue-head">
         <h2 className="typo-section-title">{w.console.lane_title}</h2>
         <span className="cb-sp" />
+        {history !== undefined && (
+          <div className="cb-q-views" role="group" aria-label={w.console.lane_view_label}>
+            {(['pending', 'history'] as const).map((v) => (
+              <Button
+                key={v}
+                variant="ghost"
+                size="sm"
+                className="cb-keep cb-tbtn typo-caption"
+                aria-pressed={view === v}
+                data-role={`cb-queue-view-${v}`}
+                onClick={() => setView(v)}
+              >
+                {v === 'pending' ? w.console.lane_view_pending : w.console.lane_view_history}
+              </Button>
+            ))}
+          </div>
+        )}
         <Button
           variant="ghost"
           size="sm"
@@ -51,7 +82,7 @@ export function QueueDrawer({ open, onClose, children }: QueueDrawerProps) {
         </Button>
       </div>
       <div className="cb-q-body">
-        {children}
+        {showingHistory ? history : children}
         {/* HER, at the one moment this drawer has room for her: an empty lane,
             or one nobody could read. The element is always here and the
             stylesheet withdraws it the moment the lane draws a row - a

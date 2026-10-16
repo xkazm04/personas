@@ -26561,6 +26561,14 @@ export type Translations = {
         lane_empty: string;
         lane_unread: string;
         lane_unread_tip: string;
+        lane_view_label: string;
+        lane_view_pending: string;
+        lane_view_history: string;
+        lane_pending_empty: string;
+        lane_history_empty: string;
+        lane_history_end: string;
+        lane_history_unread: string;
+        lane_history_more: string;
         request_state: {
           queued: string;
           dispatched: string;

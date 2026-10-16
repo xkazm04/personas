@@ -27,9 +27,11 @@ vi.mock('@/i18n/useTranslation', async (importOriginal) => {
 import DirectorCoachingTab from '../DirectorCoachingTab';
 
 describe('Overseer > Reviews with an empty coaching scope', () => {
-  it('renders the empty scope AND the watched pipelines', () => {
+  it('renders the empty scope AND the watched pipelines', async () => {
     render(<DirectorCoachingTab />);
     expect(screen.getByText(en.director.empty_title)).toBeTruthy();
-    expect(screen.getByTestId('watched-stub')).toBeTruthy();
+    // The pipelines are a lazy, staggered part of the tab: they arrive just
+    // after the empty scope has painted, not in its commit.
+    expect(await screen.findByTestId('watched-stub')).toBeTruthy();
   });
 });

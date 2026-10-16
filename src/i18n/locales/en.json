@@ -26555,6 +26555,14 @@
         "lane_empty": "Nothing filed yet. Anything you file goes to the front of her work, before her own plan.",
         "lane_unread": "your queue could not be read",
         "lane_unread_tip": "Its door did not answer. That is not an empty queue: nobody knows what is in it.",
+        "lane_view_label": "Show in the queue",
+        "lane_view_pending": "Pending",
+        "lane_view_history": "History",
+        "lane_pending_empty": "Nothing pending. Anything you file goes to the front of her work, before her own plan.",
+        "lane_history_empty": "Nothing has settled yet.",
+        "lane_history_end": "That is the whole history.",
+        "lane_history_unread": "the history could not be read",
+        "lane_history_more": "Load more",
         "request_state": {
           "queued": "queued",
           "dispatched": "running",
@@ -27249,7 +27257,14 @@
       "error_registry": "lens-scan is not installed for this product.",
       "error_node": "Node.js is not on PATH, so lens-scan cannot run here.",
       "error_hint": "Nothing on this sheet writes. Close it, fix the cause, and open the card again.",
-      "close": "Close"
+      "close": "Close",
+      "tab_blueprint": "Blueprint",
+      "tab_blueprint_hint": "Every lens-scan product's drawing set. Open one to approve, decline and triage.",
+      "picker_title": "Lens-scan products",
+      "picker_empty": "No project holds a lens-scan store yet",
+      "picker_empty_hint": "A code project appears here once its repo has .ai/lens-scan/scan.db.",
+      "picker_failed": "The lens-scan products could not be read.",
+      "product_counts": "Proposed: {proposed} · Approved: {approved} · To triage: {triage}"
     },
     "build": {
       "title": "{product}: build queue",

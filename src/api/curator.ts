@@ -71,6 +71,15 @@ export async function curatorRequestsList(): Promise<CuratorRequest[]> {
 }
 
 /**
+ * One page of the lane's settled history, newest first. The open half stays
+ * on `curatorRequestsList`; this is the part that only grows, so the queue
+ * drawer pages through it on demand.
+ */
+export async function curatorRequestsHistory(limit: number, offset: number): Promise<CuratorRequest[]> {
+  return invoke<CuratorRequest[]>("curator_requests_history", { limit, offset });
+}
+
+/**
  * File one request against a registry skill.
  *
  * `argument` is `null` only for a skill that DOCUMENTS running bare. A skill

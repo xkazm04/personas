@@ -56,11 +56,12 @@
  * mounted - and the shape below cannot reintroduce it, because there is no
  * branch above the hooks to reintroduce it from.
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { curatorPlanCurrent, curatorPlanRefresh, curatorPolicyGet, curatorProjectsList } from '@/api/curator';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CuratorPlan } from '@/lib/bindings/CuratorPlan';
+import { lazyRetry } from '@/lib/lazyRetry';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 import { Blueprint } from './Blueprint';
@@ -76,6 +77,10 @@ import { unmeasuredModel } from './model/unmeasured';
 import type { BlueprintWords } from './words';
 
 import './blueprint.css';
+
+// The settled history is behind a click in the queue drawer's head, so its
+// chunk loads on that click and never on the page's cold open.
+const RequestHistory = lazyRetry(() => import('./console/RequestHistory'));
 
 /**
  * The last read of this session, so a remount paints warm, not a re-ghost.
@@ -224,6 +229,11 @@ export default function BlueprintPage() {
         />
       }
       queue={<RequestLane requests={loop.requests} onCancel={loop.cancel} />}
+      queueHistory={
+        <Suspense fallback={null}>
+          <RequestHistory onCancel={loop.cancel} />
+        </Suspense>
+      }
       gaps={gaps}
       onDrawerChange={onDrawerChange}
     />

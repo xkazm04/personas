@@ -1,5 +1,6 @@
 import { AudioWaveform, Sparkles } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
+import { DeferUntilIdle } from '@/features/shared/components/layout/DeferUntilIdle';
 import { Slider } from '@/features/shared/components/forms/Slider';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -7,9 +8,14 @@ import {
   normalizeAthenaTtsEngine,
   type AthenaTtsEngine,
 } from '@/stores/slices/system/athenaSlice';
-import KokoroVoicePanel from './KokoroVoicePanel';
-import PocketVoicePanel from './PocketVoicePanel';
-import SttPanel from './SttPanel';
+import { lazyRetry } from '@/lib/lazyRetry';
+
+// The engine panels are the tab's heavy parts (model lists, previews,
+// downloads). They load as their own chunks and arrive one after the other
+// under the engine selector, so the tab's first paint is only its chrome.
+const KokoroVoicePanel = lazyRetry(() => import('./KokoroVoicePanel'));
+const PocketVoicePanel = lazyRetry(() => import('./PocketVoicePanel'));
+const SttPanel = lazyRetry(() => import('./SttPanel'));
 
 /**
  * Voice tab entry point. Owns the engine selector at the top and dispatches
@@ -38,13 +44,17 @@ export default function VoicePanel() {
           {t.athena.voice_section_output}
         </h2>
         <EngineSelectorCard />
-        {engine === 'pocket_tts' ? <PocketVoicePanel /> : <KokoroVoicePanel />}
+        <DeferUntilIdle priority="next-frame" order={1} enter suspend>
+          {engine === 'pocket_tts' ? <PocketVoicePanel /> : <KokoroVoicePanel />}
+        </DeferUntilIdle>
       </section>
       <section className="space-y-4 min-w-0">
         <h2 className="typo-label text-foreground px-1">
           {t.athena.voice_section_input}
         </h2>
-        <SttPanel />
+        <DeferUntilIdle priority="next-frame" order={2} enter suspend>
+          <SttPanel />
+        </DeferUntilIdle>
       </section>
     </div>
   );

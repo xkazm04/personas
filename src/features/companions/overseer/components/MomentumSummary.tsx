@@ -45,7 +45,7 @@ export function MomentumSummary({
 
   return (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 px-1">
-      <span className="typo-caption uppercase tracking-wider text-foreground">{t.director.momentum_label}</span>
+      <span className="typo-eyebrow text-foreground">{t.director.momentum_label}</span>
       {!moving && (
         <span className="inline-flex items-center gap-1.5 typo-caption text-foreground">
           <Minus className="w-3.5 h-3.5 shrink-0" style={{ color: MOMENTUM_TONE.flat }} />

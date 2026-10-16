@@ -5,7 +5,6 @@ import {
   ContentBody,
 } from '@/features/shared/components/layout/ContentLayout';
 import { IconCompanion } from '@/features/plugins/PluginIcons';
-import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import { useSystemStore } from '@/stores/systemStore';
 import { athenaTabOfPage } from '../types';
@@ -27,6 +26,10 @@ const DecisionsPanel = lazy(() => import('./sub_decisions/DecisionsPanel'));
  * why the Companions router mounts it as ONE branch: switching between her
  * tabs never re-mounts her surface. (The former Dashboard tab was retired —
  * Cockpit is the dynamic dashboard surface now.)
+ *
+ * No loading skeleton: a panel's chunk is small and arrives inside the tab's
+ * own fade, so a skeleton only ever flashed for a frame before the panel it
+ * stood in for. Each panel staggers its own deep parts in after it mounts.
  */
 export default function AthenaPage() {
   const { t } = useTranslation();
@@ -46,7 +49,7 @@ export default function AthenaPage() {
       <ContentBody centered={tab !== 'memory'}>
         <div key={tab} className="animate-fade-slide-in h-full">
           <ErrorBoundary name="Companion">
-            <Suspense fallback={<RouteChunkSkeleton />}>
+            <Suspense fallback={null}>
               {tab === 'create-athena' && <CreateAthenaPanel />}
               {tab === 'setup' && <SetupPanel />}
               {tab === 'memory' && <MemoryPanel />}
