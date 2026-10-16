@@ -26223,7 +26223,11 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/static_scan.rs:113 the 'read-only' Static Scan (StaticScanCard.tsx:38) spawns knip/fallow in the project root with no digest approval of the configs they evaluate, so a planted statement in a scanned repo's config or its local imports runs silently",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:f5666db1094acd9f",
+          "evaluatedRevision": 6
         },
         {
           "subject": "delivery-analytics",
@@ -30121,7 +30125,11 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/core/data_portability/import_skills.rs:86 a bundle entry with an unsafe path is skipped with a warning and the rest of that bundle's skill files are still written into <project>/.claude/skills, and :158 writes each file in place with no quarantine-then-promote, so a hostile bundle partly lands and a failed write leaves a half-written skill directory agents will load",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:f5666db1094acd9f",
+          "evaluatedRevision": 6
         },
         {
           "subject": "module-design",
@@ -32722,7 +32730,11 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/cloud/sync/mod.rs:3 the context is a push-only writer of secret-free JSON row projections to the user's Supabase tenant; it crosses no dependency graph, permission manifest, archive, history or code-loading boundary the subject governs",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:f5666db1094acd9f",
+          "evaluatedRevision": 6
         },
         {
           "subject": "table",
