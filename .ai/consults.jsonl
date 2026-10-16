@@ -1474,3 +1474,4 @@
 {"ts":"2026-10-16T18:11:36Z","bundle":"software-engineering","subjects":["table"],"techniques":["client-server-split","sorting","loading-and-empty-states","pagination"],"deviations":2,"context":"03960450-6979-4412-9de3-35c897fe56d2"}
 {"ts":"2026-10-16T18:11:36Z","bundle":"software-engineering","subjects":["table"],"techniques":["loading-and-empty-states","sorting","client-server-split","pagination"],"deviations":2,"context":"f7a0fdbc-ccc1-46c1-a62f-c2b20321997b"}
 {"ts":"2026-10-16T18:11:36Z","bundle":"software-engineering","subjects":["table"],"techniques":["loading-and-empty-states","grid-keyboard-model","performance","pagination"],"deviations":2,"context":"ba0d4722-bfde-40aa-8e1d-52591719f834"}
+{"ts":"2026-10-16T18:13:43Z","bundle":"software-engineering","subjects":["scoring-rubrics"],"techniques":["unmeasured-honesty","weight-design","normalization","score-explanation","gap-ranking","rubric-stability","weight-lenses"],"deviations":6}
