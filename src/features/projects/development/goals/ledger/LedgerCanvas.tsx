@@ -22,12 +22,12 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 
-import { GoalStatusBadge } from '../../GoalStatusBadge';
-import { CanvasFrame } from '../canvasParts';
-import { useProgressView } from '../canvasHost';
+import { GoalStatusBadge } from '../GoalStatusBadge';
+import { CanvasFrame } from '../shared/canvasParts';
+import { useProgressView } from '../shared/canvasHost';
 import { LedgerLaneCell } from './LedgerLaneCell';
-import type { MilestoneLane } from '../milestoneOps';
-import type { ProgressNode } from '../useProgressModel';
+import type { MilestoneLane } from '../shared/milestoneOps';
+import type { ProgressNode } from '../shared/useProgressModel';
 
 export interface LedgerRow {
   node: ProgressNode;

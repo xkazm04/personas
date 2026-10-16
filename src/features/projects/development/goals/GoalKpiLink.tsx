@@ -21,8 +21,8 @@ import type { DevKpi } from '@/lib/bindings/DevKpi';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 
-import { kpiTrack } from '../sub_kpis/kpiMath';
-import { paceSentence, categoryMeta, TRACK_COLOR } from '../sub_kpis/kpiMeta';
+import { kpiTrack } from '@/features/teams/sub_kpis/kpiMath';
+import { paceSentence, categoryMeta, TRACK_COLOR } from '@/features/teams/sub_kpis/kpiMeta';
 
 /** Format a value with its unit: word-units get a space ("0 errors"), "%" doesn't. */
 function fmt(v: number | null, unit: string): string {

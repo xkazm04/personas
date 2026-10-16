@@ -40,10 +40,10 @@ import { SegmentedTabs, segmentedTabPanelProps } from '@/features/shared/compone
 
 import { GoalAtmosphere } from './goalsTheme';
 import { ProgressLegend, ProgressEmpty, ProgressGhost, useGoalDrawer } from './progressShared';
-import { ProgressViewProvider, useCanvasHost } from './progress/canvasHost';
-import { useProgressModel, type DoneFilter } from './progress/useProgressModel';
-import { LedgerCanvas } from './progress/variants/LedgerCanvas';
-import { NotesLayers } from './progress/layers/notes/NotesLayers';
+import { ProgressViewProvider, useCanvasHost } from './shared/canvasHost';
+import { useProgressModel, type DoneFilter } from './shared/useProgressModel';
+import { LedgerCanvas } from './ledger/LedgerCanvas';
+import { NotesLayers } from './notes/NotesLayers';
 
 const LEFT_W = 200;
 

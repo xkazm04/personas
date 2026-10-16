@@ -24,11 +24,11 @@ import type { DevNote } from '@/lib/bindings/DevNote';
 import { QuestRoom } from '@/features/notepad/overview/questlog/QuestRoom';
 import { deleteNote, patchNote } from '@/features/notepad/notepadStore';
 
-import { ChronologyHeader } from '../../ChronologyHeader';
-import { useProgressView } from '../../canvasHost';
-import { FilmstripCanvas } from '../../variants/FilmstripCanvas';
+import { ChronologyHeader } from '../shared/ChronologyHeader';
+import { useProgressView } from '../shared/canvasHost';
+import { FilmstripCanvas } from './FilmstripCanvas';
 import { ProjectRail } from './ProjectRail';
-import { useLayerNav, useProjectLayer } from '../useLayers';
+import { useLayerNav, useProjectLayer } from './useLayers';
 import { useMilestoneGroups } from './MilestoneBands';
 import { NoteEditorPane } from './NoteEditorPane';
 import { useRoomData } from './useRoomData';

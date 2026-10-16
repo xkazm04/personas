@@ -12,11 +12,11 @@ import { CalendarClock, Hourglass } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { QuestMilestoneGroup } from '@/features/notepad/overview/questlog/QuestRoomBands';
 
-import { useProgressView } from '../../canvasHost';
-import { isDeadlineMissed, laneToneOf } from '../../rowCanvas';
-import type { MilestoneCard, ProjectLayer } from '../layerModel';
-import { milestoneMeta } from '../milestoneMeta';
-import { formatPct, formatTarget } from '../layerFormat';
+import { useProgressView } from '../shared/canvasHost';
+import { isDeadlineMissed, laneToneOf } from '../shared/rowCanvas';
+import type { MilestoneCard, ProjectLayer } from './layerModel';
+import { milestoneMeta } from './milestoneMeta';
+import { formatPct, formatTarget } from './layerFormat';
 import { GoalList } from './GoalList';
 import { GoalSegments } from './goalFigures';
 import { StartBrief } from './StartBrief';

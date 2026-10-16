@@ -17,7 +17,7 @@ import type { DevNote } from '@/lib/bindings/DevNote';
 import { load as loadNotepad } from '@/features/notepad/notepadStore';
 import { useNotepadNotes, useNotepadStatus } from '@/features/notepad/useNotepad';
 
-import { useProgressView } from '../canvasHost';
+import { useProgressView } from '../shared/canvasHost';
 import { buildProjectLayer, type ProjectLayer } from './layerModel';
 
 /** `UNASSIGNED` stands in for a milestone id when L2 shows the unbound goals. */

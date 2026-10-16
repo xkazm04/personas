@@ -23,7 +23,7 @@ vi.mock('@/stores/systemStore', () => ({
 // The real editor pulls the whole system store; this test only proves the
 // steering panel hands it the right project + pre-linked KPI.
 const editorProps: Record<string, unknown>[] = [];
-vi.mock('../../sub_goals/GoalEditorModal', () => ({
+vi.mock('../../../projects/development/goals/GoalEditorModal', () => ({
   GoalEditorModal: (props: Record<string, unknown>) => {
     editorProps.push(props);
     return <div data-testid="goal-editor-stub" />;

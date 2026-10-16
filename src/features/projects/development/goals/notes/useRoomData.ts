@@ -23,7 +23,7 @@ import { loadThreadUnread, useNoteUnreadMap } from '@/features/notepad/thread/no
 import { buildZones, isLate, lateDays, type QuestZone } from '@/features/notepad/overview/questlog/questlogModel';
 import type { GoalSignals } from '@/features/notepad/overview/questlog/goalSignals';
 
-import { useBriefNotes } from '../useLayers';
+import { useBriefNotes } from './useLayers';
 
 export function useRoomData() {
   const { t } = useTranslation();

@@ -8,8 +8,8 @@ import { Plus } from 'lucide-react';
 import { AsyncButton } from '@/features/shared/components/buttons';
 import { atCap, createNote, linkMilestone } from '@/features/notepad/notepadStore';
 
-import { useProgressView } from '../../canvasHost';
-import type { MilestoneCard } from '../layerModel';
+import { useProgressView } from '../shared/canvasHost';
+import type { MilestoneCard } from './layerModel';
 
 export function StartBrief({ card, projectId }: { card: MilestoneCard; projectId: string }) {
   const { dl } = useProgressView();

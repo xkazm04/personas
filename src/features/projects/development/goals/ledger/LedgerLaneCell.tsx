@@ -11,9 +11,9 @@
  */
 import { useTranslation } from '@/i18n/useTranslation';
 
-import { useProgressView } from '../canvasHost';
-import { DeadlineDate, LaneGlyph } from '../canvasParts';
-import { laneToneOf, useMenuKey } from '../rowCanvas';
+import { useProgressView } from '../shared/canvasHost';
+import { DeadlineDate, LaneGlyph } from '../shared/canvasParts';
+import { laneToneOf, useMenuKey } from '../shared/rowCanvas';
 import type { LedgerRow } from './LedgerCanvas';
 
 export function LedgerLaneCell({ row }: { row: LedgerRow }) {

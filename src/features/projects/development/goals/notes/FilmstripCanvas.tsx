@@ -18,11 +18,11 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 
-import { AddGoalButton, NODE_PX } from '../../progressShared';
-import { AddLaneButton, CanvasFrame, LaneChip, UnassignedLane } from '../canvasParts';
-import { useProgressView } from '../canvasHost';
-import { useMenuKey } from '../rowCanvas';
-import type { ProgressRow } from '../useProgressModel';
+import { AddGoalButton, NODE_PX } from '../progressShared';
+import { AddLaneButton, CanvasFrame, LaneChip, UnassignedLane } from '../shared/canvasParts';
+import { useProgressView } from '../shared/canvasHost';
+import { useMenuKey } from '../shared/rowCanvas';
+import type { ProgressRow } from '../shared/useProgressModel';
 
 /** `onOpenProject` turns each project name into the door to that project's
  *  milestones - the layered views use the filmstrip as their layer 0. */

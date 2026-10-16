@@ -26,8 +26,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 
-import { GoalEditorModal } from '../sub_goals/GoalEditorModal';
-import { GoalStatusBadge } from '../sub_goals/GoalStatusBadge';
+import { GoalEditorModal } from '../../projects/development/goals/GoalEditorModal';
+import { GoalStatusBadge } from '../../projects/development/goals/GoalStatusBadge';
 import { kpiTrack } from './kpiMath';
 import { silentCatch } from '@/lib/silentCatch';
 import { KpiSection } from './KpiDetailSection';

@@ -7,8 +7,8 @@
  */
 import type { StatusToken } from '@/lib/design/statusTokens';
 
-import type { DevLifecycleT } from '../../progressShared';
-import { laneTone } from '../rowCanvas';
+import type { DevLifecycleT } from '../progressShared';
+import { laneTone } from '../shared/rowCanvas';
 
 export type MilestoneStatus = 'planned' | 'active' | 'shipped';
 

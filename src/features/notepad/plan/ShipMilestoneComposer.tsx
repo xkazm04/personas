@@ -10,7 +10,7 @@ import { ArrowLeft, Target, X, Zap } from 'lucide-react';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { DispatchChooserModal } from '@/features/shared/dispatch/DispatchChooser';
-import { GoalEditorModal } from '@/features/teams/sub_goals/GoalEditorModal';
+import { GoalEditorModal } from '@/features/projects/development/goals/GoalEditorModal';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { buildGoalAssistPrompt } from './ShipDispatch';

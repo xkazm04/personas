@@ -39,7 +39,7 @@ import { useToastStore } from '@/stores/toastStore';
 
 import { useTranslation } from '@/i18n/useTranslation';
 
-import { isOngoing } from '@/features/teams/sub_goals/goalStatus';
+import { isOngoing } from '@/features/projects/development/goals/goalStatus';
 
 import { DataHealthBar } from './lib/DataHealthBar';
 import { DemoNotice } from './lib/DemoNotice';

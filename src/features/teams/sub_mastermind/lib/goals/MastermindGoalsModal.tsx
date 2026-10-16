@@ -9,9 +9,9 @@ import { Target } from 'lucide-react';
 
 import { listGoals } from '@/api/devTools/devTools';
 import { BaseModal } from '@/features/shared/components/modals';
-import { GoalsTriage } from '@/features/teams/sub_goals/triage/GoalsTriage';
-import { TriageHeaderBand } from '@/features/teams/sub_goals/triage/triageBits';
-import { toRows, type GoalKpi, type TriageGoal } from '@/features/teams/sub_goals/triage/triageModel';
+import { GoalsTriage } from '@/features/projects/development/goals/triage/GoalsTriage';
+import { TriageHeaderBand } from '@/features/projects/development/goals/triage/triageBits';
+import { toRows, type GoalKpi, type TriageGoal } from '@/features/projects/development/goals/triage/triageModel';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';

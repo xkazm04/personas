@@ -5,7 +5,7 @@ import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useImproveActivityStore, selectAnyImproveRunning } from '@/stores/improveActivityStore';
-import { isOngoing } from '@/features/teams/sub_goals/goalStatus';
+import { isOngoing } from '@/features/projects/development/goals/goalStatus';
 import { navSection, passesGates } from '@/lib/navigation/registry';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import type { TeamsTab, GoalsTab, KpisTab } from '@/lib/types/types';

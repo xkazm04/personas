@@ -24,7 +24,7 @@ import { tokenLabel } from '@/i18n/tokenMaps';
 import type { DevGoalItem } from '@/lib/bindings/DevGoalItem';
 import type { TeamAssignmentStep } from '@/lib/bindings/TeamAssignmentStep';
 import type { Persona } from '@/lib/bindings/Persona';
-import { TeamReadinessChip } from '../components/TeamReadinessChip';
+import { TeamReadinessChip } from '@/features/teams/components/TeamReadinessChip';
 
 interface Props {
   steps: TeamAssignmentStep[];

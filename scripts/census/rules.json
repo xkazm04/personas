@@ -3971,7 +3971,7 @@
           "reason": "this file is the COMPLIANT form and must not be counted as a violation: the comment says the source of truth lives in `events.rs::MAX_MANUAL_RETRIES` and the DLQ tab FETCHES the value on mount, so the client never holds a second definition of the rule — exactly what §2 (b) prescribes"
         },
         {
-          "path": "src/features/teams/sub_goals/GoalTaskTable.tsx",
+          "path": "src/features/projects/development/goals/GoalTaskTable.tsx",
           "reason": "the comment describes what the BACKEND does ('goal_advance.rs mirrors a decomposed goal's steps into dev_goal_items by exact title') rather than declaring a client-side copy of a server rule; the client here consumes the backend's output, it does not re-derive it"
         },
         {

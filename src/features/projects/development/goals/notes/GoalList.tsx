@@ -10,10 +10,10 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 
-import { useProgressView } from '../../canvasHost';
-import { Section } from '../../../goalDetail/parts';
-import { goalStatusLabel, goalStatusMeta } from '../../../goalStatus';
-import { goalWeight } from '../layerModel';
+import { useProgressView } from '../shared/canvasHost';
+import { Section } from '../goalDetail/parts';
+import { goalStatusLabel, goalStatusMeta } from '../goalStatus';
+import { goalWeight } from './layerModel';
 import { GoalBar } from './goalFigures';
 
 // The row is a Button so it carries the shared focus ring and press response;

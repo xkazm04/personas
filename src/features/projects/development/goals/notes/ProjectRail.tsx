@@ -11,9 +11,9 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import Button from '@/features/shared/components/buttons/Button';
 
-import { goalStatusMeta } from '../../../goalStatus';
-import { useProgressView } from '../../canvasHost';
-import type { ProgressRow } from '../../useProgressModel';
+import { goalStatusMeta } from '../goalStatus';
+import { useProgressView } from '../shared/canvasHost';
+import type { ProgressRow } from '../shared/useProgressModel';
 import { CardShell } from './CardShell';
 
 export const RAIL_W = 220;

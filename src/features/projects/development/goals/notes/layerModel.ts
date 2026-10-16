@@ -14,8 +14,8 @@
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 import type { DevNote } from '@/lib/bindings/DevNote';
 
-import { isComplete } from '../../goalStatus';
-import type { MilestoneLane } from '../milestoneOps';
+import { isComplete } from '../goalStatus';
+import type { MilestoneLane } from '../shared/milestoneOps';
 
 /** One milestone as every L1 layout draws it. */
 export interface MilestoneCard {

@@ -39,7 +39,7 @@ const CreatePersonaEntry = lazyRetry(() => import('@/features/personas/sub_found
 // Mid-build resume renders the build progress surface directly (not the
 // create-mode chooser) — a session in flight already picked its path.
 const UnifiedBuildEntry = lazyRetry(() => import('@/features/agents/components/matrix/UnifiedBuildEntry').then(m => ({ default: m.UnifiedBuildEntry })));
-const GoalsPage = lazyRetry(() => import('@/features/teams/sub_goals/GoalsPage'));
+const GoalsPage = lazyRetry(() => import('@/features/projects/development/goals/GoalsPage'));
 const KPIsPage = lazyRetry(() => import('@/features/teams/sub_kpis/KPIsPage'));
 const FactoryPage = lazyRetry(() => import('@/features/teams/sub_factory/FactoryPage'));
 const ProjectManagerPage = lazyRetry(() => import('@/features/plugins/dev-tools/sub_projects/ProjectManagerPage'));
@@ -258,7 +258,7 @@ export default function PersonasPage() {
         : []),
       // Projects (teams) submodule primaries — previously un-prefetched, so a
       // cold first-open paid full chunk fetch+eval behind the route skeleton.
-      () => import('@/features/teams/sub_goals/GoalsPage'),
+      () => import('@/features/projects/development/goals/GoalsPage'),
       () => import('@/features/teams/sub_kpis/KPIsPage'),
       () => import('@/features/plugins/dev-tools/sub_projects/ProjectManagerPage'),
       () => import('@/features/plugins/dev-tools/sub_lifecycle/LifecyclePage'),

@@ -5,8 +5,8 @@
  */
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 
-import { goalStatusMeta } from '../../../goalStatus';
-import { goalWeight } from '../layerModel';
+import { goalStatusMeta } from '../goalStatus';
+import { goalWeight } from './layerModel';
 
 const MAX_SEGMENTS = 40;
 const SEG = 10;
