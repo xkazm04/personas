@@ -1,0 +1,6 @@
+{"schema": "conform-run/1", "worker": "f9e84d6b-7c57-4856-8794-f59b86ff6d1b", "subject": "build-economics",
+ "evaluatedAt": "2026-10-16T17:14:51Z",
+ "pairs": [],
+ "declined": [{"subject": "build-economics", "context": "(none)",
+   "reason": "No work: .ai/registry-map.json (generatedAt 2026-10-14T18:25:17Z) lists build-economics in zero contexts' subjects[] and in no orphan, so --subject has no pair to judge. Structural cause: context-map.json's 219 contexts / 3438 file_paths include no path under scripts/, src-tauri/Cargo.toml, src-tauri/.cargo/, package.json, vite.config or tauri.*.conf.json - the build toolchain (ensure-ort-cache, run-codegen, lite/full feature variants, clean:ort/clean:rust, check-build-cache) is outside every context, so no pairing could be added even by hand. Coverage question for the registry/context scan, not a code verdict; the '4 consumer deviations' ranking finding was not raised in this repo's map."}],
+ "consults": []}
