@@ -1324,3 +1324,5 @@
 {"ts":"2026-10-16T17:24:50.608Z","bundle":"software-engineering","subjects":["p2p-networking"],"techniques":["exposure-controls"],"deviations":1,"context":"219fe76c-1a70-4d42-88e2-393b7b98121a"}
 {"ts":"2026-10-16T17:24:50.608Z","bundle":"software-engineering","subjects":["p2p-networking"],"techniques":["exposure-controls"],"deviations":1,"context":"7159d27d-86c2-43be-a83f-8b50c4c816be"}
 {"ts":"2026-10-16T17:26:16Z","bundle":"software-engineering","subjects":["session-resume"],"techniques":["last-seen-anchors","delta-briefings","first-run-and-quiet-silence","resume-affordances"],"deviations":3}
+{"ts":"2026-10-16T17:26:25Z","bundle":"software-engineering","subjects":["undo-history"],"techniques":["redo-semantics","gesture-coalescing"],"deviations":1}
+{"ts":"2026-10-16T17:26:25Z","bundle":"software-engineering","subjects":["undo-history"],"techniques":[],"deviations":0}

@@ -3450,8 +3450,8 @@
           "revision": 3,
           "changedAt": "2026-09-04",
           "state": "deviation",
-          "evidence": "src/features/agents/sub_editor/libs/EditorDocument.tsx:224 truncates redo only inside pushUndo, reached after the 800ms debounce (src/features/agents/sub_editor/libs/useEditorSave.ts:217) and the IPC await, and undo (EditorDocument.tsx:228) neither closes nor cancels the pending save, so redo stays live after a divergent edit and Ctrl+Z inside the window reverts the previous step while the open edit then lands on top; re-confirmed 2026-10-12, code unchanged",
-          "evaluatedAt": "2026-10-12",
+          "evidence": "src/features/agents/sub_editor/libs/EditorDocument.tsx:224 truncates redo only inside pushUndo, reached after the 800ms debounce (src/features/agents/sub_editor/libs/useEditorSave.ts:217) and the IPC await, so redo stays live after a divergent edit and Ctrl+Z inside the window reverts the previous step while the open edit lands on top; re-confirmed 2026-10-16, code unchanged since 2026-10-12",
+          "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:6b331b14c940f6a7",
           "evaluatedRevision": 3,
           "revisionsBehind": 0
@@ -24878,8 +24878,8 @@
           "changedAt": "2026-09-04",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "context-map.json:7596 file_paths is empty and the entry point src/features/plugins/artist/sub_media_studio/hooks/useMediaStudio.ts is not in git ls-files; the 80-step undo was deleted with the Artist plugin, so no surface exists to judge; reconfirmed 2026-10-12",
-          "evaluatedAt": "2026-10-12",
+          "evidence": "context-map.json:7596 file_paths is empty and git ls-files lists nothing under src/features/plugins/artist; the 80-step undo was deleted with the Artist plugin, no surface to judge; reconfirmed 2026-10-16",
+          "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:6b331b14c940f6a7",
           "evaluatedRevision": 3,
           "revisionsBehind": 0

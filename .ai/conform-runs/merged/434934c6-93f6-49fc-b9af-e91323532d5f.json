@@ -1,0 +1,15 @@
+{"schema":"conform-run/1","worker":"434934c6-93f6-49fc-b9af-e91323532d5f","subject":"undo-history","evaluatedAt":"2026-10-16T17:26:25Z",
+"pairs":[
+{"context":"1ff7809a-171b-4baa-9c9b-12d888b017f0","subject":"undo-history","bundle":"software-engineering","state":"deviation",
+"evidence":"src/features/agents/sub_editor/libs/EditorDocument.tsx:224 truncates redo only inside pushUndo, reached after the 800ms debounce (src/features/agents/sub_editor/libs/useEditorSave.ts:217) and the IPC await, so redo stays live after a divergent edit and Ctrl+Z inside the window reverts the previous step while the open edit lands on top; re-confirmed 2026-10-16, code unchanged since 2026-10-12",
+"techniques":[
+{"technique":"redo-semantics","verdict":"deviation","evidence":"src/features/agents/sub_editor/libs/EditorDocument.tsx:224 redo branch cleared only at commit time, not at the divergent keystroke"},
+{"technique":"gesture-coalescing","verdict":"deviation","evidence":"src/features/agents/sub_editor/libs/useEditorSave.ts:217 debounce window is the coalescing unit but undo (EditorDocument.tsx:228) neither closes nor cancels the open window"}]},
+{"context":"b2d7acbc-0191-46e4-8a4d-87c229410c7e","subject":"undo-history","bundle":"software-engineering","state":"not-applicable",
+"evidence":"context-map.json:7596 file_paths is empty and git ls-files lists nothing under src/features/plugins/artist; the 80-step undo was deleted with the Artist plugin, no surface to judge; reconfirmed 2026-10-16",
+"techniques":[],
+"registryProposal":"context b2d7acbc (plugins-artist-media-studio-hooks) has no files; it is a dead context that the context map should drop on its next scan rather than carry a not-applicable verdict"}],
+"declined":[],
+"consults":[
+{"ts":"2026-10-16T17:26:25Z","bundle":"software-engineering","subjects":["undo-history"],"techniques":["redo-semantics","gesture-coalescing"],"deviations":1},
+{"ts":"2026-10-16T17:26:25Z","bundle":"software-engineering","subjects":["undo-history"],"techniques":[],"deviations":0}]}

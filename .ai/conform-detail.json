@@ -9655,34 +9655,37 @@
       "subject": "undo-history",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T12:31:00.000Z",
-      "worker": "efe0cdc1-8d71-42e1-b6bf-7d6c6922dccc",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:26:25.000Z",
+      "worker": "434934c6-93f6-49fc-b9af-e91323532d5f",
       "techniques": [
         {
           "technique": "redo-semantics",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_editor/libs/EditorDocument.tsx:224 redo is truncated on the save landing, not on the edit; redo control stays enabled for >=800ms after a divergent edit"
+          "evidence": "src/features/agents/sub_editor/libs/EditorDocument.tsx:224 redo branch cleared only at commit time, not at the divergent keystroke"
         },
         {
           "technique": "gesture-coalescing",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_editor/libs/EditorDocument.tsx:228 undo does not close/flush the open debounced step, so it reverts the previous step while the current one accumulates (prohibition 5)"
+          "evidence": "src/features/agents/sub_editor/libs/useEditorSave.ts:217 debounce window is the coalescing unit but undo (EditorDocument.tsx:228) neither closes nor cancels the open window"
         },
         {
           "technique": "stack-policy",
           "verdict": "conformant",
-          "evidence": "src/features/agents/sub_editor/libs/EditorDocument.tsx:222 hard cap MAX_UNDO_DEPTH=50 with oldest-first shift; clearHistory tied to the persona-switch event at src/features/agents/sub_editor/hooks/useEditorDraft.ts:88"
+          "evidence": "src/features/agents/sub_editor/libs/EditorDocument.tsx:222 hard cap MAX_UNDO_DEPTH=50 with oldest-first shift; clearHistory tied to the persona-switch event at src/features/agents/sub_editor/hooks/useEditorDraft.ts:88",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "undo-model-selection",
           "verdict": "conformant",
-          "evidence": "src/features/agents/sub_editor/libs/useEditorSave.ts:121 snapshot of the small draft slice (prev/next per key set), persisted through the same op builder as the forward save (useEditorSave.ts:141)"
+          "evidence": "src/features/agents/sub_editor/libs/useEditorSave.ts:121 snapshot of the small draft slice (prev/next per key set), persisted through the same op builder as the forward save (useEditorSave.ts:141)",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "undo-scope",
           "verdict": "conformant",
-          "evidence": "src/features/agents/sub_editor/libs/useEditorSave.ts:185 undo entries capture only SETTINGS_KEYS/MODEL_KEYS document fields, restored through the one save door, no view state"
+          "evidence": "src/features/agents/sub_editor/libs/useEditorSave.ts:185 undo entries capture only SETTINGS_KEYS/MODEL_KEYS document fields, restored through the one save door, no view state",
+          "carriedFrom": "2026-10-12"
         }
       ],
       "superseded": [
@@ -9706,6 +9709,13 @@
           "evaluatedAt": "2026-10-10T12:03:50.000Z",
           "worker": "b1101ce6-de04-4a30-a0c7-14db21a3c63f",
           "reason": "replaced by efe0cdc1-8d71-42e1-b6bf-7d6c6922dccc"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_editor/libs/EditorDocument.tsx:224 truncates redo only inside pushUndo, reached after the 800ms debounce (src/features/agents/sub_editor/libs/useEditorSave.ts:217) and the IPC await, and undo (EditorDocument.tsx:228) neither closes nor cancels the pending save, so redo stays live after a divergent edit and Ctrl+Z inside the window reverts the previous step while the open edit then lands on top; re-confirmed 2026-10-12, code unchanged",
+          "evaluatedAt": "2026-10-12T12:31:00.000Z",
+          "worker": "efe0cdc1-8d71-42e1-b6bf-7d6c6922dccc",
+          "reason": "replaced by 434934c6-93f6-49fc-b9af-e91323532d5f"
         }
       ]
     },
@@ -9714,11 +9724,11 @@
       "subject": "undo-history",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T12:31:00.000Z",
-      "worker": "efe0cdc1-8d71-42e1-b6bf-7d6c6922dccc",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:26:25.000Z",
+      "worker": "434934c6-93f6-49fc-b9af-e91323532d5f",
       "techniques": [],
-      "registryProposal": "Dead context (no files) still matched at 827 on description vocabulary alone; the map builder should not pair subjects onto contexts with empty file_paths.",
+      "registryProposal": "context b2d7acbc (plugins-artist-media-studio-hooks) has no files; it is a dead context that the context map should drop on its next scan rather than carry a not-applicable verdict",
       "superseded": [
         {
           "state": "not-applicable",
@@ -9733,6 +9743,13 @@
           "evaluatedAt": "2026-10-09T00:00:00.000Z",
           "worker": "7c3c7bc7-594a-41c7-a2dc-8838a215fada",
           "reason": "replaced by efe0cdc1-8d71-42e1-b6bf-7d6c6922dccc"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "context-map.json:7596 file_paths is empty and the entry point src/features/plugins/artist/sub_media_studio/hooks/useMediaStudio.ts is not in git ls-files; the 80-step undo was deleted with the Artist plugin, so no surface exists to judge; reconfirmed 2026-10-12",
+          "evaluatedAt": "2026-10-12T12:31:00.000Z",
+          "worker": "efe0cdc1-8d71-42e1-b6bf-7d6c6922dccc",
+          "reason": "replaced by 434934c6-93f6-49fc-b9af-e91323532d5f"
         }
       ]
     },
