@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useEndReached } from '@/hooks/utility/interaction/useEndReached';
 import { Table2, Pin, Key, ChevronRight, Database } from 'lucide-react';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { announceImperative } from '@/features/shared/components/feedback/AriaLiveProvider';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -171,16 +172,14 @@ export function TableListSidebar({
 
         {/* SQL / API tables */}
         {!isRedis && !loading && !error && filteredTables.length === 0 && tables.length === 0 && (
-          <div className="flex flex-col items-center py-8 gap-1">
-            <p className="typo-body text-foreground text-center">
-              {isApi ? dbt.no_databases_found : dbt.no_tables_found}
-            </p>
+          <div className="flex flex-col items-center gap-1">
+            <ScenarioEmptyState art="folder" size="sm" title={isApi ? dbt.no_databases_found : dbt.no_tables_found} />
             {credentialId && <SidebarTestConnection credentialId={credentialId} />}
           </div>
         )}
 
         {!isRedis && !loading && !error && filteredTables.length === 0 && tables.length > 0 && (
-          <p className="typo-body text-foreground text-center py-8">{dbt.no_matching_tables}</p>
+          <ScenarioEmptyState art="search" size="sm" title={dbt.no_matching_tables} />
         )}
 
         {!isRedis && filteredTables.map((table) => {
@@ -220,11 +219,11 @@ export function TableListSidebar({
 
         {/* Redis keys */}
         {isRedis && !loading && !error && filteredKeys.length === 0 && redisKeys.length === 0 && (
-          <p className="typo-body text-foreground text-center py-8">{dbt.no_keys_found}</p>
+          <ScenarioEmptyState art="vault" size="sm" title={dbt.no_keys_found} />
         )}
 
         {isRedis && !loading && !error && filteredKeys.length === 0 && redisKeys.length > 0 && (
-          <p className="typo-body text-foreground text-center py-8">{dbt.no_matching_keys}</p>
+          <ScenarioEmptyState art="search" size="sm" title={dbt.no_matching_keys} />
         )}
 
         {isRedis && filteredKeys.map((keyInfo) => {

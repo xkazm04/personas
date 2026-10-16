@@ -1,5 +1,6 @@
 import { useTranslation } from '@/i18n/useTranslation';
-import { RefreshCw, AlertCircle, Clock, Check, Server } from 'lucide-react';
+import { RefreshCw, AlertCircle, Clock, Check } from 'lucide-react';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import type { McpToolResult } from '@/api/agents/mcpTools';
 
 // -- Helpers ------------------------------------------------------
@@ -64,21 +65,11 @@ export function EmptyState({ onDiscover }: { onDiscover: () => void }) {
   const { t } = useTranslation();
   const sh = t.vault.shared;
   return (
-    <div className="flex flex-col items-center justify-center py-16 space-y-4">
-      <Server className="w-10 h-10 text-foreground" />
-      <div className="text-center space-y-1">
-        <p className="typo-body text-foreground">{sh.discover_mcp}</p>
-        <p className="typo-body text-foreground">
-          {sh.discover_mcp_hint}
-        </p>
-      </div>
-      <button
-        onClick={onDiscover}
-        className="flex items-center gap-1.5 px-4 py-2 rounded-modal typo-body bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
-      >
-        <RefreshCw className="w-3.5 h-3.5" />
-        {sh.discover_tools}
-      </button>
-    </div>
+    <ScenarioEmptyState
+      art="link"
+      title={sh.discover_mcp}
+      description={sh.discover_mcp_hint}
+      action={{ label: sh.discover_tools, onClick: onDiscover, icon: RefreshCw }}
+    />
   );
 }

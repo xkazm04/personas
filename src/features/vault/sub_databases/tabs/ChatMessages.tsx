@@ -1,5 +1,6 @@
-import { X, Sparkles, Loader2 } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import { AssistantSqlBlock } from './AssistantSqlBlock';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { QueryResult } from '@/api/vault/database/dbSchema';
@@ -126,16 +127,12 @@ function EmptyState({
   const { t, tx } = useTranslation();
   const db = t.vault.databases;
   return (
-    <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
-      <div className="w-12 h-12 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
-        <Sparkles className="w-6 h-6 text-violet-400" />
-      </div>
-      <div>
-        <p className="typo-body text-foreground">{db.ask_plain_english}</p>
-        <p className="typo-body text-foreground mt-1 max-w-md">
-          {tx(db.describe_query, { language: language === 'sql' ? 'SQL' : language })}
-        </p>
-      </div>
+    <ScenarioEmptyState
+      art="chat"
+      title={db.ask_plain_english}
+      description={tx(db.describe_query, { language: language === 'sql' ? 'SQL' : language })}
+      className="h-full"
+    >
       {suggestions.length > 0 && (
         <div className="flex flex-wrap gap-2 max-w-lg justify-center mt-2">
           {suggestions.map((s, i) => (
@@ -150,7 +147,7 @@ function EmptyState({
           ))}
         </div>
       )}
-    </div>
+    </ScenarioEmptyState>
   );
 }
 

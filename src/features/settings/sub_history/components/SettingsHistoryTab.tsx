@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { History, RefreshCw, AlertTriangle, ChevronDown } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import {
@@ -168,9 +169,7 @@ export default function SettingsHistoryTab() {
             <HistoryGhostRows />
           </>
         ) : visible.length === 0 ? (
-          <div className="typo-caption text-foreground py-10 text-center bg-secondary/20 rounded">
-            {categoryFilter ? s.empty_filtered : s.empty}
-          </div>
+          <ScenarioEmptyState art={categoryFilter ? 'search' : 'archive'} size="sm" title={categoryFilter ? s.empty_filtered : s.empty} />
         ) : (
           <div className="space-y-1">
             {visible.map((entry, index) => {

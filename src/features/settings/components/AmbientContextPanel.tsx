@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { Radio, RefreshCw, Clipboard, FolderOpen, AppWindow, Zap, Plus, Trash2, Activity } from 'lucide-react';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
@@ -236,7 +237,7 @@ export function AmbientContextPanel() {
           )}
 
           {ambientSnapshot.signals.length === 0 ? (
-            <p className="typo-caption text-foreground italic">{s.no_signals}</p>
+            <ScenarioEmptyState art="stream" size="sm" title={s.no_signals} />
           ) : (
             <div className="max-h-40 overflow-y-auto space-y-1">
               {ambientSnapshot.signals.map((signal, i) => {
@@ -468,7 +469,7 @@ export function AmbientContextPanel() {
 
           {/* Existing rules list */}
           {contextRules.length === 0 ? (
-            <p className="typo-caption text-foreground italic">{s.no_rules}</p>
+            <ScenarioEmptyState art="shield" size="sm" title={s.no_rules} />
           ) : (
             <div className="space-y-1.5">
               {contextRules.map((rule) => (

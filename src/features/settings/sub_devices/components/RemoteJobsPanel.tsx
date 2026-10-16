@@ -131,6 +131,7 @@ export function RemoteJobsPanel() {
           getRowKey={(row) => row.id}
           isLoading={jobs.isLoading}
           onRowClick={(row) => toggleSelected(row.id)}
+          emptyArt="runs"
           emptyTitle={st.remote_jobs_empty_title}
           emptyDescription={st.remote_jobs_empty_hint}
         />

@@ -166,7 +166,7 @@ export default function GeneratedReviewsTab({
     return <GalleryLoadError onRetry={gallery.refresh} />;
   }
   if (!gallery.isLoading && gallery.total === 0 && !gallery.search && gallery.connectorFilter.length === 0 && gallery.categoryFilter.length === 0 && gallery.coverageFilter === 'all' && !gallery.aiSearchActive) {
-    return <EmptyState />;
+    return <EmptyState size="lg" />;
   }
 
   const noActiveFilters = !gallery.search && gallery.connectorFilter.length === 0 && gallery.categoryFilter.length === 0;

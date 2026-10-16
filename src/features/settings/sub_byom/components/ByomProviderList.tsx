@@ -341,8 +341,6 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
         ) : (
           <EmptyState
             icon={CloudCog}
-            iconColor="text-cyan-400/80"
-            iconContainerClassName="bg-cyan-500/10 border-cyan-500/20"
             title={s.usage_empty_title}
             description={s.usage_empty_description}
             action={onAddKey ? { label: s.usage_empty_action, onClick: onAddKey, icon: KeyRound } : undefined}

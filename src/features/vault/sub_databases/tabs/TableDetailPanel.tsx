@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
-import { Table2, Pin, Eye, Key, Database } from 'lucide-react';
+import { Table2, Pin, Key, Database } from 'lucide-react';
 import { announceImperative } from '@/features/shared/components/feedback/AriaLiveProvider';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -197,22 +198,14 @@ export function TableDetailPanel({
 
       {/* Empty state */}
       {!isRedis && !selectedTable && (
-        <div className="flex-1 flex flex-col items-center justify-center gap-2">
-          {isApi ? (
-            <Database className="w-6 h-6 text-foreground" />
-          ) : (
-            <Eye className="w-6 h-6 text-foreground" />
-          )}
-          <p className="typo-body text-foreground">
-            {isApi ? dbt.select_db_hint : dbt.select_table_hint}
-          </p>
+        <div className="flex-1 flex flex-col items-center justify-center">
+          <ScenarioEmptyState art="folder" size="sm" title={isApi ? dbt.select_db_hint : dbt.select_table_hint} />
         </div>
       )}
 
       {isRedis && !selectedKey && (
-        <div className="flex-1 flex flex-col items-center justify-center gap-2">
-          <Key className="w-6 h-6 text-foreground" />
-          <p className="typo-body text-foreground">{dbt.select_key_hint}</p>
+        <div className="flex-1 flex flex-col items-center justify-center">
+          <ScenarioEmptyState art="vault" size="sm" title={dbt.select_key_hint} />
         </div>
       )}
     </div>

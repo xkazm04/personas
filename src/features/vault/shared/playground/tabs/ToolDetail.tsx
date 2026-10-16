@@ -1,5 +1,6 @@
 import { useTranslation } from '@/i18n/useTranslation';
-import { Play, Server } from 'lucide-react';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import { Play } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { Button } from '@/features/shared/components/buttons';
@@ -88,12 +89,6 @@ export function ToolEmptyList({ hasLoaded, toolCount, loading }: ToolEmptyListPr
   if (!hasLoaded || loading || toolCount > 0) return null;
 
   return (
-    <div className="flex flex-col items-center justify-center py-16 space-y-2">
-      <Server className="w-8 h-8 text-foreground" />
-      <p className="typo-body text-foreground">{sh.no_tools_found}</p>
-      <p className="typo-body text-foreground">
-        {sh.no_tools_hint}
-      </p>
-    </div>
+    <ScenarioEmptyState art="link" title={sh.no_tools_found} description={sh.no_tools_hint} />
   );
 }

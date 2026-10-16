@@ -71,7 +71,7 @@ export function BrokerPanel() {
           <Banner severity="error" compact message={b.load_error} onRetry={() => void refresh()} />
         )}
         {consumers !== null && !loadError && consumers.length === 0 && (
-          <ScenarioEmptyState icon={KeyRound} title={b.empty_title} subtitle={b.empty_body} />
+          <ScenarioEmptyState icon={KeyRound} size="sm" title={b.empty_title} subtitle={b.empty_body} />
         )}
         {consumers !== null && consumers.length > 0 && (
           <div className="divide-y divide-foreground/5">

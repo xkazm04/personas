@@ -1,6 +1,6 @@
 import { useTranslation } from '@/i18n/useTranslation';
-import { Upload, FileText, Globe, X, CheckCircle2, XCircle, MinusCircle } from 'lucide-react';
-import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
+import { Upload, FileText, X, CheckCircle2, XCircle, MinusCircle } from 'lucide-react';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { Button } from '@/features/shared/components/buttons';
 import { RequestBuilder } from '../RequestBuilder';
@@ -15,12 +15,12 @@ export function EmptyState({ onUpload, onPaste }: { onUpload: () => void; onPast
   const vt = t.vault.playground_extra;
   const sh = t.vault.shared;
   return (
-    <EmptyIllustration
-      icon={Globe}
-      heading={vt.no_endpoints}
+    <ScenarioEmptyState
+      art="link"
+      title={vt.no_endpoints}
       description={vt.no_endpoints_hint}
-      cta={
-        <div className="flex items-center gap-2">
+    >
+        <div className="flex items-center gap-2 mt-4">
           <Button
             variant="accent"
             size="sm"
@@ -39,9 +39,7 @@ export function EmptyState({ onUpload, onPaste }: { onUpload: () => void; onPast
             {sh.paste_openapi}
           </Button>
         </div>
-      }
-      className="py-16"
-    />
+    </ScenarioEmptyState>
   );
 }
 

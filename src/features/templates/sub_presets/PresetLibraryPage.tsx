@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Layers, Users } from 'lucide-react';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import { Users } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useIsDarkTheme } from '@/stores/themeStore';
 import type { TeamPreset } from '@/lib/bindings/TeamPreset';
@@ -72,11 +73,7 @@ export default function PresetLibraryPage() {
         {showGhost ? (
           <PresetGhostTiles />
         ) : ranked.length === 0 ? (
-          <div className="text-center py-12">
-            <Layers className="w-10 h-10 mx-auto text-foreground mb-3" />
-            <h2 className="typo-heading-lg text-foreground/90 mb-1">{t.templates.presets.empty_title}</h2>
-            <p className="typo-body text-foreground max-w-md mx-auto">{t.templates.presets.empty_hint}</p>
-          </div>
+          <ScenarioEmptyState art="templates" size="lg" title={t.templates.presets.empty_title} description={t.templates.presets.empty_hint} />
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-4 auto-rows-[130px] gap-3">
             {ranked.map((p, idx) => (
