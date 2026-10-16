@@ -45,6 +45,7 @@ import { BayGhosts } from './Ghosts';
 import { Engraved } from './parts';
 import { RemoteLine } from './RemoteLine';
 import { useAmbientMotionClass } from './useAmbientMotion';
+import { useMonitorSchedules } from './useMonitorSchedules';
 import type { PanelFilter } from './boardFilter';
 import type { WorkspaceScope } from './workspaceScope';
 
@@ -217,6 +218,8 @@ export function ClassicPanel({
   // and under the ticker's old 1 Hz contagion that was once a second.
   const now = useQuantizedNow(TICK_MS);
   const motion = useAmbientMotionClass();
+  // The lines' next start: the Monitor's one `list_cron_agents` read, here and nowhere per line.
+  useMonitorSchedules();
   const { unfilteredModel: model, select, focusKey, bubbles, unseen, setTerminal, setRecap, scope, toggleScope } = surface;
 
   const keep = useCallback((row: ColumnRow): boolean => {

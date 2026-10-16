@@ -1,33 +1,40 @@
-// An agent as ONE LINE of its bay, worn as a pile tile (`grid/skin/`): the line's whole
-// background is its pile (a solid tone fill when it needs you, lit theme
-// colour while it works, glass at rest, hatched when off), so a bay of forty
-// sorts itself before a name is read. Inside: the persona's framed face, its
-// name, and at the right edge the one fact worth a glance - the run time
-// while it works (its age also drawn along the foot), otherwise why it needs
-// you (the Board's reason glyph and count, the reason in words where the line
-// has the width, "+n" for the rest). Everything else is in the tooltip.
+// An agent as ONE LINE of its bay (WP11, V1 "Tail"): the bay nameplate's
+// grammar applied to a persona. A flat hairline row (`.ae-line`): the framed
+// face, the bold name, then what it is doing as glyph + time tokens (its last
+// run's outcome and age, or its run's queue; then its next start), and at the
+// right edge the one figure worth a glance (why it needs you, or the run's
+// elapsed time) and the lamp, exactly where a bay's nameplate puts its count
+// and lamp. State is the lamp plus a tone edge, never a fill: needs-you lights
+// the edge and a soft wash, critical a stronger one, a run keeps only the edge.
+// The tokens give way by priority in a narrow column (`PersonaTail.tsx`); the
+// tooltip always carries the whole sentence (`personaTailModel.ts` `tailSentence`).
 //
 // A PEER's agent (device mesh) is the same line with `peer` set: no drawer to
 // open and no local menu, the device glyph beside the name, the axis its device
-// reported, and its on/off switch run on that device, with the answer on a row
-// of its own under the name.
+// reported, its state as the lead word (the snapshot carries no last run and no
+// schedule, so both are absent), and its on/off switch run on that device, with
+// the answer on a row of its own under the name.
 
 import { memo, useCallback, type KeyboardEvent } from 'react';
 import type { DeviceAgent } from '@/lib/bindings/DeviceAgent';
 import { agentOutcomeKey } from '@/stores/slices/network/meshSlice';
+import { useAgentStore } from '@/stores/agentStore';
 import { Hourglass, MessageCircle, MessageSquareText } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { useOffProjectForPersona } from '@/features/plugins/dev-tools/sub_projects/projectSwitch/useProjectSwitch';
 import { primaryDrawerSection, type DrawerSection, type PersonaCardModel } from '../../../monitorModel';
-import { PILE_VISUAL } from '../../skin/piles';
-import { NeedGlyph } from '../../skin/NeedGlyph';
-import { runAgeFraction, useTileState } from '../../skin/tileState';
+import { useTileState } from '../../skin/tileState';
 import type { ChatBubble } from '../../channelBubbleModel';
-import { shortElapsed, usePersonaFacts } from '../shared';
-import { personaLinePileKey, pileSkin } from './pileSkin';
+import { usePersonaFacts } from '../shared';
+import { personaLinePileKey, pileOfKey } from './pileSkin';
 import { usePersonaMenu } from './PersonaMenu';
+import { Lamp } from './parts';
+import { toneClass } from './tone';
+import { personaTail, tailSentence } from './personaTailModel';
+import { TailFigure, TailHead } from './PersonaTail';
+import { useNextStartMs } from './useMonitorSchedules';
 import { DeviceGlyph, PersonaResource } from './devices/DeviceGlyph';
 import { ResourceGlyph } from './devices/ResourceGlyph';
 import { PeerAgentToggle } from './devices/PeerAgentToggle';
@@ -45,19 +52,14 @@ export interface PeerLineInfo {
 }
 
 /**
- * The reply, READABLE, under the name - not an icon whose text dies with the
- * tooltip. Two states and no third: a quiet persistent Hourglass while the
- * persona is thinking (a quick-chat answer can be half an hour away, and a
- * spinner running that long on a board of fifty lines is noise, not progress),
- * and the sentence itself once it lands. Clamped to two lines: the model caps
- * the text at 160 characters and the full exchange is one click away. On a
- * needs fill it is ink like the rest of the line.
+ * The reply, READABLE, under the name: a quiet persistent Hourglass while the
+ * persona is thinking (a quick-chat answer can be half an hour away; a spinner
+ * that long on a board of fifty lines is noise), and the sentence itself once
+ * it lands, clamped to two lines (the model caps it at 160 characters).
  */
-function BubbleLine({ bubble, label, onFill }: { bubble: ChatBubble; label: string; onFill: boolean }) {
+function BubbleLine({ bubble, label }: { bubble: ChatBubble; label: string }) {
   return (
-    <span className={`flex w-full min-w-0 items-start gap-1.5 pb-1 pl-8 typo-caption ${
-      bubble.pending || onFill ? 'text-current' : 'text-status-info'}`}
-    >
+    <span className={`flex w-full min-w-0 items-start gap-1.5 pb-1 pl-8 typo-caption ${bubble.pending ? 'text-foreground' : 'text-status-info'}`}>
       {bubble.pending
         ? <Hourglass className="mt-px h-3 w-3 flex-shrink-0" aria-hidden />
         : <MessageSquareText className="mt-px h-3 w-3 flex-shrink-0" aria-hidden />}
@@ -78,12 +80,17 @@ export const PersonaLine = memo(function PersonaLine({
   now: number;
   peer?: PeerLineInfo | null;
 }) {
-  const { t, tx } = useTranslation();
+  const { t, tx, language } = useTranslation();
   const facts = usePersonaFacts()(card);
   const state = useTileState(card);
   const offProject = useOffProjectForPersona(peer ? null : card.personaId);
-  const key = personaLinePileKey(card, offProject !== null || peer?.agent.projectEnabled === false);
-  const skin = pileSkin(key, card.personaId);
+  const lastRunAt = useAgentStore((s) => (peer ? null : s.personaLastRun[card.personaId] ?? null));
+  const nextMs = useNextStartMs(peer ? null : card.personaId, now);
+  const kind = personaLinePileKey(card, offProject !== null || peer?.agent.projectEnabled === false);
+  const tail = personaTail({
+    kind, peer: peer !== null, runningSince: card.runningSince, queued: card.queued,
+    lastStatus: card.recentStatuses[0] ?? null, lastRunAt, nextMs, now,
+  });
   const lead = facts.pending[0] ?? null;
   const open = useCallback(() => onSelect(card.personaId, primaryDrawerSection(card)), [onSelect, card]);
   const menu = usePersonaMenu(card);
@@ -96,7 +103,7 @@ export const PersonaLine = memo(function PersonaLine({
   };
 
   const lines = [
-    `${facts.name} · ${state}`,
+    `${facts.name} · ${tailSentence(state, tail, t.monitor, tx, language, now)}`,
     ...(peer ? [tx(t.monitor.remote_on_device, { device: peer.device })] : []),
     ...(offProject ? [tx(t.plugins.dev_projects.project_off_hint, { project: offProject.name })]
       : facts.off ? [t.monitor.grid_persona_disabled] : []),
@@ -106,8 +113,8 @@ export const PersonaLine = memo(function PersonaLine({
       ? tx(t.monitor.grid_chat_pending_aria, { name: facts.name, text: bubble.text })
       : tx(t.monitor.grid_chat_bubble_aria, { name: facts.name, text: bubble.text })] : []),
   ];
-  const runningSince = skin.pile === 'working' ? card.runningSince : null;
-  const Off = PILE_VISUAL.off.glyph;
+  const edge = kind === 'critical' ? 'is-lit is-critical' : kind === 'warning' ? 'is-lit'
+    : kind === 'working' ? 'is-working' : kind === 'off' ? 'is-off' : '';
 
   return (
     <Tooltip content={<span className="whitespace-pre-line">{lines.join('\n')}</span>} placement="right" delay={450}>
@@ -123,39 +130,31 @@ export const PersonaLine = memo(function PersonaLine({
         data-persona-id={card.personaId}
         data-peer-id={peer?.peerId}
         data-state={facts.state}
-        data-pile={skin.pile}
+        data-pile={pileOfKey(kind)}
+        data-kind={kind}
         data-action={lead?.key ?? 'none'}
-        className={`${skin.className} flex min-w-0 flex-col justify-center px-1.5 ${selected ? 'is-selected' : ''} ${flash ? 'is-flash' : ''}`}
-        style={{ ...skin.style, minHeight: PERSONA_LINE_H }}
+        className={`ae-line ${toneClass(tail.tone)} ${edge} flex min-w-0 flex-col ${peer ? '' : 'cursor-pointer'} ${selected ? 'is-selected' : ''} ${flash ? 'is-flash' : ''}`}
+        style={{ minHeight: PERSONA_LINE_H }}
       >
-        <span className="flex w-full min-w-0 items-center gap-2">
+        <span className="ae-prow flex w-full min-w-0 items-center gap-1.5 pl-2 pr-2.5" style={{ height: PERSONA_LINE_H }}>
           <PersonaIcon icon={card.personaIcon} color={card.personaColor} name={card.personaName} display="framed" frameSize="sm" frameClass="fb-face" />
-          <span className="min-w-0 flex-1 truncate typo-heading">{facts.name}</span>
-          {peer && <DeviceGlyph peerId={peer.peerId} name={peer.device} />}
-          {peer ? <ResourceGlyph axis={peer.agent.dominant} /> : <PersonaResource personaId={card.personaId} />}
-          {unseenChat > 0 && (
-            <span className="inline-flex flex-shrink-0 items-center gap-0.5 typo-label tabular-nums">
-              <MessageCircle className="h-3.5 w-3.5" aria-hidden />{unseenChat}
-            </span>
-          )}
-          {runningSince !== null ? (
-            <span className="flex-shrink-0 typo-label tabular-nums">{shortElapsed(runningSince, now)}</span>
-          ) : skin.pile === 'needs' ? (
-            <span className="inline-flex min-w-0 flex-shrink-0 items-center gap-1.5 typo-label">
-              <span className="ae-word truncate">{state}</span>
-              <NeedGlyph card={card} size="md" />
-              {facts.pending.length > 1 && <span className="tabular-nums">+{facts.pending.length - 1}</span>}
-            </span>
-          ) : skin.pile === 'off' && !peer ? (
-            <Off className="h-4 w-4 flex-shrink-0" aria-hidden />
-          ) : null}
-          {peer && <PeerAgentToggle peerId={peer.peerId} device={peer.device} agent={peer.agent} stale={peer.stale} />}
+          <TailHead name={facts.name} tail={tail} now={now} />
+          {/* The right edge, one cluster: what the bay nameplate puts there (figure, then lamp). */}
+          <span className="ml-auto flex flex-shrink-0 items-center gap-2 pl-1">
+            {peer && <DeviceGlyph peerId={peer.peerId} name={peer.device} />}
+            {peer ? <ResourceGlyph axis={peer.agent.dominant} /> : <PersonaResource personaId={card.personaId} />}
+            {unseenChat > 0 && (
+              <span className="inline-flex flex-shrink-0 items-center gap-0.5 typo-label tabular-nums text-status-info">
+                <MessageCircle className="h-3.5 w-3.5" aria-hidden />{unseenChat}
+              </span>
+            )}
+            <TailFigure tail={tail} card={card} more={Math.max(0, facts.pending.length - 1)} />
+            {peer && <PeerAgentToggle peerId={peer.peerId} device={peer.device} agent={peer.agent} stale={peer.stale} />}
+            <Lamp lamp={tail.lamp} />
+          </span>
         </span>
         {peer && <MeshOutcomeLine outcomeKey={agentOutcomeKey(peer.peerId, card.personaId)} device={peer.device} className="pb-1 pl-8" />}
-        {bubble && <BubbleLine bubble={bubble} label={t.monitor.quick_chat_awaiting} onFill={skin.pile === 'needs'} />}
-        {runningSince !== null && (
-          <i className="fb-age" aria-hidden style={{ width: `${runAgeFraction(runningSince, Math.floor(now / 60_000)) * 100}%` }} />
-        )}
+        {bubble && <BubbleLine bubble={bubble} label={t.monitor.quick_chat_awaiting} />}
       </div>
     </Tooltip>
   );

@@ -217,6 +217,20 @@
 .ae-line.is-off { opacity: 0.5; filter: grayscale(1); }
 .ae-line.is-over { box-shadow: inset 2px 0 0 var(--status-warning); }
 .ae-line.is-flash { animation: ae-flash 900ms ease-out 3; }
+/* A persona line (`PersonaLine`, WP11 V1): a run keeps the tone edge without
+   the wash, so a busy bay stays calm and needs-you stays the loudest thing on
+   it; critical outranks needs-you with a stronger wash and a wider edge. */
+.ae-line.is-working { box-shadow: inset 2px 0 0 var(--ae-tone); }
+.ae-line.is-lit.is-critical {
+  background-image: linear-gradient(90deg, color-mix(in srgb, var(--ae-tone) 28%, transparent), transparent 80%);
+  box-shadow: inset 3px 0 0 var(--ae-tone);
+}
+.ae-line:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+/* The persona line's row measures itself: in the narrowest columns its
+   "+n more" count leaves (the tooltip lists every reason), so the name keeps
+   its floor beside the figure and the lamp (`PersonaTail.tsx`). */
+.ae-prow { container-type: inline-size; }
+@container (width < 280px) { .ae-pmore { display: none; } }
 
 /* The bay's roster drawn as its states: a 3px bar under the nameplate. */
 .ae-share { display: flex; height: 3px; gap: 1px; border-radius: 2px; overflow: hidden; background: var(--ae-edge); }

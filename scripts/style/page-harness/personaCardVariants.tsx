@@ -7,12 +7,16 @@
  *   monitor/persona-cards/peer   the board scoped to Studio Desktop: the peer
  *                                bay with its agents' on/off switches
  *
- * `--query "variant=before|v1|v2|v3"`. `before` is today's `PersonaLine`,
- * untouched. A variant leaves `PersonaLine` mounted (its tooltip, click, menu,
- * keys, testids and selection outline stay real) and portals the variant card
- * INTO each `fleet-grid-square`, reading the props the line was rendered with
- * off its fiber; a scoped stylesheet hides the line's own face and strips the
- * pile fill. Harness-only: phase B ports the winner into `PersonaLine.tsx`.
+ * `--query "variant=before|v1|v2|v3"`. `before` (or no variant) is the
+ * production `PersonaLine`, untouched: since WP11 phase B that IS V1 "Tail",
+ * ported (`entry-e/PersonaLine.tsx` + `PersonaTail.tsx`), so the board renders
+ * the shipped card and `v1` here is the phase-A sketch it was ported from.
+ * `&narrow=1` pins every bay column to the masonry's 250px floor (`.ae-bays`),
+ * the narrowest column the board can draw, to prove the tail degrades by
+ * priority there. A variant leaves `PersonaLine` mounted (its tooltip, click,
+ * menu, keys, testids and selection outline stay real) and portals the variant
+ * card INTO each `fleet-grid-square`, reading the props the line was rendered
+ * with off its fiber; a scoped stylesheet hides the line's own face and fill.
  */
 import { useEffect, useState, type ComponentType } from 'react';
 import { createPortal } from 'react-dom';
@@ -74,6 +78,10 @@ function CardSwap({ Card }: { Card: ComponentType<LineProps> }) {
   );
 }
 
+/** Five bay columns at exactly the masonry floor (250px each, 10px gaps). */
+const NARROW_CSS = '.ae-bays { columns: 5 250px !important; width: 1290px !important; max-width: none !important; }';
+const narrowOf = (): boolean => new URLSearchParams(window.location.search).get('narrow') === '1';
+
 function variantOf(): CardVariant | null {
   const v = new URLSearchParams(window.location.search).get('variant');
   return v === 'v1' || v === 'v2' || v === 'v3' ? v : null;
@@ -113,6 +121,7 @@ function cards(extra: Step[], mesh: boolean): HarnessModule {
           return (
             <div data-wp11={variant ?? undefined} className="contents">
               {Card && <style>{CSS}</style>}
+              {narrowOf() && <style>{NARROW_CSS}</style>}
               <Drive steps={plan}><PersonaMonitor onClose={() => undefined} /></Drive>
               {Card && <CardSwap Card={Card} />}
             </div>
