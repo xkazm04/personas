@@ -1,0 +1,6 @@
+{"schema": "conform-run/1", "worker": "2d72f387-60de-435e-b868-ae0c86d7aa23", "subject": "telemetry-pii-redaction",
+ "evaluatedAt": "2026-10-16T17:40:00Z",
+ "pairs": [],
+ "declined": [{"subject": "telemetry-pii-redaction", "context": "0a73aef0-7c50-4be1-b990-cbddad3671bd",
+   "reason": "No-op: the map (generated 2026-10-14T18:25:17Z) holds zero pairs for telemetry-pii-redaction and no subjectIndex entry, so --subject has nothing to judge; workers may not add pairs. Missing pairing for the registry/operator: the repo's scrubbers are src/lib/sentry.ts:215 (beforeSend) + :255 (beforeBreadcrumb) and src-tauri/src/main.rs:114 (Rust before_send), but src/lib/sentry.ts and src-tauri/src/main.rs sit in NO context's file_paths in context-map.json, so the matcher could never pair them; lib-analytics (src/lib/analytics/sink.ts:16 routes events through that scrubber) is the nearest context and is named here only as the candidate. Fix: add sentry.ts/silentFailureTelemetry.ts to a context (context-map coverage hole), rebuild the map with build-registry-map.mjs, then run /conform --subject telemetry-pii-redaction."}],
+ "consults": []}
