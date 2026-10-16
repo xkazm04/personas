@@ -44,7 +44,6 @@ import { MANDATE_CARDS_MODULES } from './mandateCardsSurfaces';
 import { MANDATE_WP6_MODULES } from './mandateWp6Surfaces';
 import { BREACH_STATES_MODULES } from './breachStatesSurfaces';
 import { ATHENA_CHAT_MODULES } from './athenaChatSurfaces';
-import { CONVERSATION_VARIANTS_MODULES } from './conversationVariantsSurfaces';
 import { PERSONA_CARD_MODULES } from './personaCardVariants';
 
 type Wrap = (children: ReactNode) => ReactNode;
@@ -105,7 +104,6 @@ export const MODULES: Record<string, HarnessModule> = {
   ...MANDATE_CARDS_MODULES,
   ...MANDATE_WP6_MODULES, // Re-read, met-when, Scopes and the Orphanage (mandateWp6Surfaces.tsx, WP6).
   ...BREACH_STATES_MODULES, // Breach head lines and mandate states (breachStatesSurfaces.tsx, WP5P).
-  ...CONVERSATION_VARIANTS_MODULES, // Conversations restructure variants in the real Monitor (conversationVariantsSurfaces.tsx, WP12).
   ...PERSONA_CARD_MODULES, // Persona card variants over the real board (personaCardVariants.tsx, WP11).
   ...TONE_MODULES,
   ...TRIAGE_MODULES,
