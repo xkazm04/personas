@@ -1,0 +1,72 @@
+{
+ "schema": "conform-run/1",
+ "worker": "e4206a64-7d0f-4ef1-bca2-c7c1a66d95d2",
+ "subject": "pipeline-dag",
+ "evaluatedAt": "2026-10-16T17:34:47Z",
+ "pairs": [
+  {
+   "context": "de8b648f-7971-452b-88dc-773b215c5f09",
+   "subject": "pipeline-dag",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/engine/pipeline_executor.rs:162 `return true;` on malformed condition JSON (and :205 for an unknown operator) - an unevaluable predicate fires the gated branch with its side effects and the run completes green; still live at 5ab86317e9, re-judged 2026-10-16",
+   "techniques": [
+    {
+     "technique": "conditional-edges",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/engine/pipeline_executor.rs:162 malformed condition resolves to fire (fail-open, rationalised at :144); :205 unknown operator also fires - unevaluable is collapsed into true instead of an error on the evaluation"
+    },
+    {
+     "technique": "graph-validation",
+     "verdict": "deviation",
+     "evidence": "src-tauri/db/src/repos/resources/teams.rs:772 INSERT persists `condition` unparsed - cycle detection is at the door (:734, realized) but a malformed predicate or unknown operator passes it and is discovered only at run time, where the evaluator fails open"
+    },
+    {
+     "technique": "composite-condition-verdicts",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/engine/pipeline_executor.rs:135 ConditionSpec is a single leaf {field, op, value}; no and/or/none combinator exists, and every leaf reads a local, already-recorded predecessor output"
+    }
+   ]
+  },
+  {
+   "context": "77b8c703-0803-42bc-808a-f255725cc293",
+   "subject": "pipeline-dag",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/vault/sub_dependencies/credentialGraph.ts:365 buildCredentialGraph derives the graph from credentials/personas/dependents - nothing is user-authored as an executable graph and nothing is run over it; simulateRevocation (:270) is pure what-if analysis, so the subject precondition (executing an authored DAG of dependent steps) does not hold",
+   "techniques": [],
+   "registryProposal": "technique-shaped resonance: matched strong on graph/dependency/node vocabulary, but pipeline-dag is about executing a user-authored step graph; a derived, read-only relationship graph (blast-radius analysis) should route by precondition, not vocabulary. Separately, teams-canvas (6e3e06ef) names deleted sub_canvas entry points - a context-map rescan question, not a registry one."
+  }
+ ],
+ "declined": [
+  {
+   "subject": "pipeline-dag",
+   "context": "6e3e06ef-e5d0-4b4d-807f-688123370b14",
+   "reason": "teams-canvas describes the legacy team DAG canvas, but its entry points (src/features/teams/sub_canvas/...) no longer exist; its file_paths are an assignment-progress event listener and the Mastermind portfolio page. The step orchestrator those listeners observe lives outside the context, so a verdict here would grade a listener for the engine's behaviour - left unknown."
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-16T17:34:47Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "pipeline-dag"
+   ],
+   "techniques": [
+    "conditional-edges",
+    "graph-validation",
+    "composite-condition-verdicts"
+   ],
+   "deviations": 2
+  },
+  {
+   "ts": "2026-10-16T17:34:47Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "pipeline-dag"
+   ],
+   "techniques": [],
+   "deviations": 0
+  }
+ ]
+}

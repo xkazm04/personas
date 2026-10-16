@@ -24309,8 +24309,8 @@
           "changedAt": "2026-09-04",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/engine/pipeline_executor.rs:162 `return true;` on malformed condition JSON (and :205 `true` for an unknown operator, rationalised at :144 as 'fail-open is the safe default') - a typo in a predicate runs the gated branch, side effects included, and the run completes green.",
-          "evaluatedAt": "2026-09-23",
+          "evidence": "src-tauri/src/engine/pipeline_executor.rs:162 `return true;` on malformed condition JSON (and :205 for an unknown operator) - an unevaluable predicate fires the gated branch with its side effects and the run completes green; still live at 5ab86317e9, re-judged 2026-10-16",
+          "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:396bc727ea6bcf37",
           "evaluatedRevision": 9,
           "revisionsBehind": 0
@@ -39833,7 +39833,11 @@
           "revision": 9,
           "changedAt": "2026-09-04",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/vault/sub_dependencies/credentialGraph.ts:365 buildCredentialGraph derives the graph from credentials/personas/dependents - nothing is user-authored as an executable graph and nothing is run over it; simulateRevocation (:270) is pure what-if analysis, so the subject precondition (executing an authored DAG of dependent steps) does not hold",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:396bc727ea6bcf37",
+          "evaluatedRevision": 9
         },
         {
           "subject": "markdown-vault",

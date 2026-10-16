@@ -2906,48 +2906,63 @@
       "subject": "pipeline-dag",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-9",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:34:47.000Z",
+      "worker": "e4206a64-7d0f-4ef1-bca2-c7c1a66d95d2",
       "techniques": [
         {
           "technique": "conditional-edges",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/pipeline_executor.rs:162 malformed condition returns true (fail-open), :205 unknown operator returns true; the evaluator is bool-valued with no unevaluable outcome, the exact fail-open pole the technique names."
+          "evidence": "src-tauri/src/engine/pipeline_executor.rs:162 malformed condition resolves to fire (fail-open, rationalised at :144); :205 unknown operator also fires - unevaluable is collapsed into true instead of an error on the evaluation"
         },
         {
           "technique": "graph-validation",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/teams/teams.rs:172 create_team_connection forwards `condition` unparsed to the repo; no well-formedness check at the door, so a malformed predicate is first met mid-run."
-        },
-        {
-          "technique": "node-execution-model",
-          "verdict": "conformant",
-          "evidence": "src-tauri/src/engine/pipeline_executor.rs:74 persists node_statuses via update_pipeline_run before the PIPELINE_STATUS emit (persist-then-broadcast)."
+          "evidence": "src-tauri/db/src/repos/resources/teams.rs:772 INSERT persists `condition` unparsed - cycle detection is at the door (:734, realized) but a malformed predicate or unknown operator passes it and is discovered only at run time, where the evaluator fails open"
         },
         {
           "technique": "composite-condition-verdicts",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/pipeline_executor.rs:135 ConditionSpec is a single leaf {field, op, value} with no all/any/none combinator, so there is no fold to carry a third value through."
+          "evidence": "src-tauri/src/engine/pipeline_executor.rs:135 ConditionSpec is a single leaf {field, op, value}; no and/or/none combinator exists, and every leaf reads a local, already-recorded predecessor output"
+        },
+        {
+          "technique": "node-execution-model",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/pipeline_executor.rs:74 persists node_statuses via update_pipeline_run before the PIPELINE_STATUS emit (persist-then-broadcast).",
+          "carriedFrom": "2026-09-23"
         },
         {
           "technique": "pause-and-gate-nodes",
           "verdict": "unread",
-          "evidence": ""
+          "evidence": "",
+          "carriedFrom": "2026-09-23"
         },
         {
           "technique": "deterministic-vs-model-nodes",
           "verdict": "unread",
-          "evidence": ""
+          "evidence": "",
+          "carriedFrom": "2026-09-23"
         },
         {
           "technique": "external-adapter-nodes",
           "verdict": "unread",
-          "evidence": ""
+          "evidence": "",
+          "carriedFrom": "2026-09-23"
         },
         {
           "technique": "valid-but-degraded-plans",
           "verdict": "unread",
-          "evidence": ""
+          "evidence": "",
+          "carriedFrom": "2026-09-23"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/pipeline_executor.rs:162 `return true;` on malformed condition JSON (and :205 `true` for an unknown operator, rationalised at :144 as 'fail-open is the safe default') - a typo in a predicate runs the gated branch, side effects included, and the run completes green.",
+          "evaluatedAt": "2026-09-23",
+          "worker": null,
+          "reason": "replaced by e4206a64-7d0f-4ef1-bca2-c7c1a66d95d2"
         }
       ]
     },
@@ -24142,6 +24157,17 @@
         }
       ],
       "registryProposal": "matcher paired this on lexical tokens (editor, share, bar) with use_when grounding; an editor tab bar is not a reading surface - the golden path could name tabbed entity editors explicitly in its stops-here section to suppress this resonance"
+    },
+    "77b8c703-0803-42bc-808a-f255725cc293/pipeline-dag": {
+      "context": "vault-dependency-graph",
+      "subject": "pipeline-dag",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:34:47.000Z",
+      "worker": "e4206a64-7d0f-4ef1-bca2-c7c1a66d95d2",
+      "techniques": [],
+      "registryProposal": "technique-shaped resonance: matched strong on graph/dependency/node vocabulary, but pipeline-dag is about executing a user-authored step graph; a derived, read-only relationship graph (blast-radius analysis) should route by precondition, not vocabulary. Separately, teams-canvas (6e3e06ef) names deleted sub_canvas entry points - a context-map rescan question, not a registry one."
     }
   }
 }
