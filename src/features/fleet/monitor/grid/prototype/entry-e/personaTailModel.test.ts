@@ -116,3 +116,31 @@ describe('tailSentence: the tooltip carries the whole story', () => {
     expect(tailSentence('Last run failed', failed, m, tx, 'en', NOW)).toBe('Last run failed');
   });
 });
+
+describe('running AND needs you: the need glyph is amber, the rest is the run tone (polish P1, item 5)', () => {
+  it('keeps the run frame (edge, lamp, sweep) and tones only the need glyph amber', () => {
+    const t = personaTail({ ...base, kind: 'warning', runningSince: NOW - 3 * MIN });
+    expect(t.tone).toBe('run');
+    expect(t.lamp).toEqual({ tone: 'run', lit: true });
+    expect(t.signal).toEqual({ tone: 'run', edge: 'is-working', sweep: true, need: 'warn' });
+    expect(t.figure).toEqual({ kind: 'need' });
+    // The run glyph and its elapsed move to the lead, where `PersonaTail` draws them in the run tone.
+    expect(t.lead).toEqual({ kind: 'run', elapsed: '3m', queued: 0 });
+  });
+
+  it('a need that is not running is amber throughout, with no wash class and no sweep', () => {
+    expect(personaTail({ ...base, kind: 'warning' }).signal).toEqual({ tone: 'warn', edge: 'is-lit', sweep: false, need: 'warn' });
+  });
+
+  it('critical keeps its red frame even while it runs', () => {
+    const t = personaTail({ ...base, kind: 'critical', runningSince: NOW - 3 * MIN });
+    expect(t.signal).toEqual({ tone: 'err', edge: 'is-lit is-critical', sweep: false, need: 'err' });
+    expect(t.lamp).toEqual({ tone: 'err', lit: true });
+  });
+
+  it('a plain run sweeps in the run tone, rest and off do not', () => {
+    expect(personaTail({ ...base, kind: 'working', runningSince: NOW - MIN }).signal).toEqual({ tone: 'run', edge: 'is-working', sweep: true, need: null });
+    expect(personaTail(base).signal.sweep).toBe(false);
+    expect(personaTail({ ...base, kind: 'off', runningSince: NOW - MIN }).signal).toEqual({ tone: 'off', edge: 'is-off', sweep: false, need: null });
+  });
+});

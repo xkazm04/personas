@@ -1355,6 +1355,33 @@ full Runway rung stays a ladder on purpose. Cold bays and lanes draw line
 ghosts in the same geometry. Harness tape with sessions sent to a device:
 `scripts/style/page-harness/bayRowsTape.mjs`; shots `wp11-shots/c-*`.
 
+**Bays polish (P1, 2026-10-16).** After the owner's live look, five fixes to
+the bay rows. (1) A row name is the body weight every Monitor list row uses
+(`LineParts.tsx` `ROW_NAME`, `typo-body`, 400) and its tokens the caption role's
+own ink, so a bay reads bay name (bold) > row name > tokens. (2) Fleet rows (a
+session, a device's session, a queue rung) stand on a fine dot ground
+(`.ae-line.is-fleet`, set by `sessionLineClass`); persona rows stay plain. Dots
+rather than a hatch, because a hatch already means "off" on this panel.
+(3) A session an App Master dispatched joins its project's bay instead of the
+Ungrouped tray (`grid/sessionHome.ts`). Its cwd is a worktree of its own, so the
+cwd rule cannot place it; two other facts on `FleetSession` can: a headless
+`/appmaster` builder carries the label `fleet-door:app_master:cli-master:<slug>`,
+where `<slug>` is the project root's last path segment slugified (the skill's
+own `slugOf`, which a test reads from `.claude/skills/appmaster/lib/contract.mjs`),
+and a worker of the in-app App Master carries the `personaId` of the persona
+that dispatched it, whose `home_team_id` is its bay (`useBoardModel` applies
+this one). A slug two projects on different teams share names neither, and a
+session nothing names stays in the tray. (4) A row that needs you has no
+background wash: the amber edge, need glyph and lamp say it. Critical keeps
+its stronger red wash and wider edge, so it stays the one alarm in a bay.
+(5) A row that runs AND needs you keeps the run frame: the edge, lamp, run
+glyph and sweep are the run tone and only the need glyph and its count are
+amber. One rule decides all of this for persona and session rows alike
+(`tone.ts` `lineSignal`), and a running persona row now sweeps as a running
+session row always did. Harness tape `bayPolishTape.mjs` (a running persona that
+needs you, an App Master's two CLI builders shaped like the live FireTV rows);
+shots `docs/design/mandate-lanes/polish-shots/bays-*`.
+
 ## Card context menus
 
 Every card on the Activity board carries its verbs on a right-click, and both

@@ -28,7 +28,7 @@ import { sessionStateIcon } from './sessionBits';
 import { SessionResource } from './devices/DeviceGlyph';
 import { Lamp } from './parts';
 import { toneClass } from './tone';
-import { GlyphFace, LineHead, lineEdgeClass, Tok, TOK_ICON, TOK_TYPE } from './LineParts';
+import { GlyphFace, LineHead, Tok, TOK_ICON, TOK_TYPE } from './LineParts';
 import { sessionSentence, sessionTail, type SessionTail } from './sessionTailModel';
 
 export const SESSION_LINE_H = 36;
@@ -53,9 +53,13 @@ export function SessionHead({
   );
 }
 
-/** The line's classes: tone, edge, sweep while it runs. */
+/**
+ * The line's classes: tone, edge, sweep while it runs, and `is-fleet`, the
+ * quiet dot ground every fleet row (session, device session, queue rung) wears
+ * so it reads apart from the plain persona rows of the same bay.
+ */
 export function sessionLineClass(tail: SessionTail): string {
-  return `ae-line ae-row ${toneClass(tail.tone)} ${lineEdgeClass(tail.kind)} ${tail.kind === 'working' ? 'ae-sweep' : ''}`;
+  return `ae-line ae-row is-fleet ${toneClass(tail.tone)} ${tail.signal.edge} ${tail.signal.sweep ? 'ae-sweep' : ''}`;
 }
 
 export const lineStyle = (seed: string): CSSProperties => ({ height: SESSION_LINE_H, '--ae-sd': sweepDelay(seed) } as CSSProperties);

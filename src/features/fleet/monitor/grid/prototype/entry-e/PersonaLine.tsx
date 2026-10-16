@@ -1,11 +1,13 @@
 // An agent as ONE LINE of its bay (WP11, V1 "Tail"): the bay nameplate's
 // grammar applied to a persona. A flat hairline row (`.ae-line`): the framed
-// face, the bold name, then what it is doing as glyph + time tokens (its last
+// face, the name (body weight; the bay name above it is the bold one), then what it is doing as glyph + time tokens (its last
 // run's outcome and age, or its run's queue; then its next start), and at the
 // right edge the one figure worth a glance (why it needs you, or the run's
 // elapsed time) and the lamp, exactly where a bay's nameplate puts its count
-// and lamp. State is the lamp plus a tone edge, never a fill: needs-you lights
-// the edge and a soft wash, critical a stronger one, a run keeps only the edge.
+// and lamp. State is the lamp plus a tone edge, never a fill (`tone.ts`
+// `lineSignal`): needs-you lights the amber edge with no wash, critical a red
+// edge and wash, a run the run edge and sweep; a run that also needs you keeps
+// the run frame and only its need glyph is amber.
 // The tokens give way by priority in a narrow column (`PersonaTail.tsx`); the
 // tooltip always carries the whole sentence (`personaTailModel.ts` `tailSentence`).
 //
@@ -15,7 +17,7 @@
 // schedule, so both are absent), and its on/off switch run on that device, with
 // the answer on a row of its own under the name.
 
-import { memo, useCallback, type KeyboardEvent } from 'react';
+import { memo, useCallback, type CSSProperties, type KeyboardEvent } from 'react';
 import type { DeviceAgent } from '@/lib/bindings/DeviceAgent';
 import { agentOutcomeKey } from '@/stores/slices/network/meshSlice';
 import { useAgentStore } from '@/stores/agentStore';
@@ -28,13 +30,12 @@ import { primaryDrawerSection, type DrawerSection, type PersonaCardModel } from 
 import { useTileState } from '../../skin/tileState';
 import type { ChatBubble } from '../../channelBubbleModel';
 import { usePersonaFacts } from '../shared';
-import { personaLinePileKey, pileOfKey } from './pileSkin';
+import { personaLinePileKey, pileOfKey, sweepDelay } from './pileSkin';
 import { usePersonaMenu } from './PersonaMenu';
 import { Lamp } from './parts';
 import { toneClass } from './tone';
 import { personaTail, tailSentence } from './personaTailModel';
 import { TailFigure, TailHead } from './PersonaTail';
-import { lineEdgeClass } from './LineParts';
 import { useNextStartMs } from './useMonitorSchedules';
 import { DeviceGlyph, PersonaResource } from './devices/DeviceGlyph';
 import { ResourceGlyph } from './devices/ResourceGlyph';
@@ -114,7 +115,8 @@ export const PersonaLine = memo(function PersonaLine({
       ? tx(t.monitor.grid_chat_pending_aria, { name: facts.name, text: bubble.text })
       : tx(t.monitor.grid_chat_bubble_aria, { name: facts.name, text: bubble.text })] : []),
   ];
-  const edge = lineEdgeClass(kind);
+  // Edge, sweep and the need glyph's tone come from the one rule sessions share (`tone.ts` `lineSignal`).
+  const { edge, sweep } = tail.signal;
 
   return (
     <Tooltip content={<span className="whitespace-pre-line">{lines.join('\n')}</span>} placement="right" delay={450}>
@@ -133,8 +135,8 @@ export const PersonaLine = memo(function PersonaLine({
         data-pile={pileOfKey(kind)}
         data-kind={kind}
         data-action={lead?.key ?? 'none'}
-        className={`ae-line ${toneClass(tail.tone)} ${edge} flex min-w-0 flex-col ${peer ? '' : 'cursor-pointer'} ${selected ? 'is-selected' : ''} ${flash ? 'is-flash' : ''}`}
-        style={{ minHeight: PERSONA_LINE_H }}
+        className={`ae-line ${toneClass(tail.tone)} ${edge} ${sweep ? 'ae-sweep' : ''} flex min-w-0 flex-col ${peer ? '' : 'cursor-pointer'} ${selected ? 'is-selected' : ''} ${flash ? 'is-flash' : ''}`}
+        style={{ minHeight: PERSONA_LINE_H, '--ae-sd': sweepDelay(card.personaId) } as CSSProperties}
       >
         <span className="ae-prow flex w-full min-w-0 items-center gap-1.5 pl-2 pr-2.5" style={{ height: PERSONA_LINE_H }}>
           <PersonaIcon icon={card.personaIcon} color={card.personaColor} name={card.personaName} display="framed" frameSize="sm" frameClass="fb-face" />

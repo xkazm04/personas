@@ -18,8 +18,8 @@
 // (reason in words, activity, next start) is always in the tooltip.
 
 import type { PileKey } from '../../skin/piles';
-import type { Lamp, Tone } from './tone';
-import { compactAge } from './tone';
+import type { Lamp, LineSignal, Tone } from './tone';
+import { compactAge, lineSignal } from './tone';
 
 export type Outcome = 'completed' | 'failed' | 'cancelled' | 'unknown';
 
@@ -36,7 +36,10 @@ export type TailFigure = { kind: 'elapsed'; text: string } | { kind: 'need' } | 
 
 export interface Tail {
   kind: PileKey;
+  /** Edge, lamp, run glyph and sweep tone: `signal.tone`. */
   tone: Tone;
+  /** The line's whole state treatment, from the one rule (`tone.ts` `lineSignal`). */
+  signal: LineSignal;
   lamp: Lamp;
   lead: LeadToken;
   /** Epoch ms of the next scheduled start, or null when none is known. */
@@ -57,8 +60,6 @@ export interface TailInput {
   now: number;
 }
 
-export const KIND_TONE: Record<PileKey, Tone> = { critical: 'err', warning: 'warn', working: 'run', resting: 'off', off: 'off' };
-
 /** `12s`, `4m`, `1h 20m`: the run's elapsed time (the board's `shortElapsed`). */
 export function elapsedText(fromMs: number, now: number): string {
   const s = Math.max(0, Math.round((now - fromMs) / 1000));
@@ -73,10 +74,11 @@ function outcomeOf(status: string | null): Outcome {
 }
 
 export function personaTail(i: TailInput): Tail {
-  const tone = KIND_TONE[i.kind];
-  const lamp: Lamp = { tone, lit: i.kind !== 'resting' && i.kind !== 'off' };
   const needs = i.kind === 'critical' || i.kind === 'warning';
   const running = i.runningSince !== null && i.kind !== 'off';
+  const signal = lineSignal(i.kind, running);
+  const tone = signal.tone;
+  const lamp: Lamp = { tone, lit: i.kind !== 'resting' && i.kind !== 'off' };
   const figure: TailFigure = needs ? { kind: 'need' }
     : running ? { kind: 'elapsed', text: elapsedText(i.runningSince as number, i.now) }
       : i.kind === 'off' && !i.peer ? { kind: 'off' } : null;
@@ -96,7 +98,7 @@ export function personaTail(i: TailInput): Tail {
 
   // An off persona (or one whose project is off) will not start, whatever its trigger says.
   const next = i.peer || i.kind === 'off' || i.nextMs === null || i.nextMs <= i.now ? null : i.nextMs;
-  return { kind: i.kind, tone, lamp, lead, next, figure };
+  return { kind: i.kind, tone, signal, lamp, lead, next, figure };
 }
 
 /** `14:30` today, `Tue 14:30` within the week, `13 Oct` beyond it, in the reader's language. */

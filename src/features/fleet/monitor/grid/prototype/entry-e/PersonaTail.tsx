@@ -14,6 +14,7 @@ import type { PersonaCardModel } from '../../../monitorModel';
 import { NeedGlyph } from '../../skin/NeedGlyph';
 import { clockText, type LeadToken, type Outcome, type Tail } from './personaTailModel';
 import { LineHead, nameFlex, Tok, TOK_ICON, TOK_TYPE } from './LineParts';
+import { toneClass } from './tone';
 
 const OUTCOME: Record<Outcome, { Icon: LucideIcon; ink: string }> = {
   completed: { Icon: CheckCircle2, ink: 'text-status-success' },
@@ -83,7 +84,7 @@ export function TailFigure({ tail, card, more }: { tail: Tail; card: PersonaCard
   if (!f) return null;
   if (f.kind === 'need') {
     return (
-      <span className="inline-flex flex-shrink-0 items-center gap-1 ae-tone-text">
+      <span className={`inline-flex flex-shrink-0 items-center gap-1 ae-tone-text ${toneClass(tail.signal.need ?? tail.tone)}`}>
         <NeedGlyph card={card} size="md" />
         {more > 0 && <span className="ae-pmore typo-label tabular-nums">+{more}</span>}
       </span>

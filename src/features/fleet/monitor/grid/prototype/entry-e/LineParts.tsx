@@ -14,11 +14,18 @@
 import type { CSSProperties, ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import type { PileKey } from '../../skin/piles';
+import { lineSignal } from './tone';
 
 /** Every glyph inside a token. */
 export const TOK_ICON = 'h-3 w-3 flex-shrink-0';
-/** Every token's type: caption, tabular, foreground ink. */
-export const TOK_TYPE = 'typo-caption tabular-nums text-foreground';
+/**
+ * Every token's type: caption, tabular, in the caption role's own ink. The
+ * line reads bay name (heading, bold) > row name (body, regular) > tokens
+ * (caption): the type scale carries the order, never an opacity utility.
+ */
+export const TOK_TYPE = 'typo-caption tabular-nums';
+/** A row's name: the body weight every Monitor list row uses (queue rung, schedule, plan rows). */
+export const ROW_NAME = 'truncate typo-body text-foreground';
 
 /** One token: a glyph and its figure or word, never broken, never shrunk. */
 export function Tok({ children, label, className = '' }: { children: ReactNode; label?: string; className?: string }) {
@@ -63,7 +70,7 @@ export function LineHead({
   return (
     <>
       <span className="flex h-6 min-w-0 flex-wrap items-center gap-x-1.5 overflow-hidden" style={{ flex: '0 1 auto' }}>
-        <span className="truncate typo-heading text-foreground" style={nameFlex(name)}>{name}</span>
+        <span className={ROW_NAME} style={nameFlex(name)}>{name}</span>
         {lead && (
           <span data-testid={leadTestId} className={`inline-flex flex-shrink-0 items-center gap-1.5 whitespace-nowrap ${TOK_TYPE}`}>
             {lead}
@@ -89,12 +96,7 @@ export function GlyphFace({ Icon, className = 'text-foreground' }: { Icon: Lucid
   );
 }
 
-/**
- * The line's state as an edge (`.ae-line`, entryE.css): needs-you lights the
- * edge and a soft wash, critical a stronger one, a run keeps only the edge,
- * off is greyed, rest is flat.
- */
-export function lineEdgeClass(kind: PileKey): string {
-  return kind === 'critical' ? 'is-lit is-critical' : kind === 'warning' ? 'is-lit'
-    : kind === 'working' ? 'is-working' : kind === 'off' ? 'is-off' : '';
+/** The line's state as an edge (`.ae-line`, entryE.css): the shared rule, `tone.ts` `lineSignal`. */
+export function lineEdgeClass(kind: PileKey, running = false): string {
+  return lineSignal(kind, running).edge;
 }

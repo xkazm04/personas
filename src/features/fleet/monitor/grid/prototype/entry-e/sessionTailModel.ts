@@ -20,7 +20,7 @@
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import type { PileKey } from '../../skin/piles';
 import { sessionPileKey } from './pileSkin';
-import { compactAge, sessionLamp, type Lamp, type Tone } from './tone';
+import { compactAge, lineSignal, sessionLamp, type Lamp, type LineSignal, type Tone } from './tone';
 
 export interface SessionTailInput {
   state: FleetSessionState;
@@ -33,6 +33,8 @@ export interface SessionTailInput {
 export interface SessionTail {
   kind: PileKey;
   tone: Tone;
+  /** Edge, sweep and need tone, from the rule persona lines share (`tone.ts` `lineSignal`). */
+  signal: LineSignal;
   lamp: Lamp;
   /** The state word is drawn after the glyph. */
   word: boolean;
@@ -48,7 +50,9 @@ export function sessionTail(i: SessionTailInput): SessionTail {
   const lamp: Lamp = kind === 'critical' ? { tone: 'err', lit: true }
     : kind === 'warning' ? { tone: 'warn', lit: true }
       : restingDark(sessionLamp(i.state));
-  return { kind, tone: lamp.tone, lamp, word: kind !== 'working', age: compactAge(Math.max(0, i.now - i.startedAt)) };
+  // A session's state is one value, so it never both runs and needs you; it still goes through the shared rule.
+  const signal = lineSignal(kind, kind === 'working');
+  return { kind, tone: lamp.tone, signal, lamp, word: kind !== 'working', age: compactAge(Math.max(0, i.now - i.startedAt)) };
 }
 
 /** The `t.monitor` keys the sentence speaks with (all existing keys). */

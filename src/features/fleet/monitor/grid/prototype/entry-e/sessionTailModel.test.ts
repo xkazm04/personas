@@ -71,3 +71,19 @@ describe('sessionSentence', () => {
       .toBe('Docs pass · On Studio · Running for 1h');
   });
 });
+
+describe('sessions speak the persona line\'s one rule (polish P1, item 5)', () => {
+  it('a running session sweeps in the run tone; one waiting on you is amber with no sweep', () => {
+    expect(tail('running').signal).toEqual({ tone: 'run', edge: 'is-working', sweep: true, need: null });
+    expect(tail('awaiting_input').signal).toEqual({ tone: 'warn', edge: 'is-lit', sweep: false, need: 'warn' });
+    expect(tail('exited', 1).signal).toEqual({ tone: 'err', edge: 'is-lit is-critical', sweep: false, need: 'err' });
+  });
+
+  it('the edge the line draws is the rule\'s edge, and the tone the lamp\'s', () => {
+    for (const s of ['running', 'awaiting_input', 'stale', 'queued', 'finished'] as const) {
+      const t = tail(s);
+      expect(t.signal.edge).toBe(lineEdgeClass(t.kind, t.kind === 'working'));
+      if (t.lamp.lit) expect(t.signal.tone).toBe(t.tone);
+    }
+  });
+});

@@ -18,6 +18,7 @@ import { pileOfKey } from './pileSkin';
 import { sessionStateIcon } from './sessionBits';
 import { DeviceGlyph } from './devices/DeviceGlyph';
 import { Lamp } from './parts';
+import { lineSignal } from './tone';
 import { GlyphFace } from './LineParts';
 import { SessionHead, lineStyle, sessionLineClass } from './SessionLine';
 import { sessionSentence, sessionTail } from './sessionTailModel';
@@ -35,7 +36,8 @@ export const RemoteLine = memo(function RemoteLine({
   const state = read === 'unknown' ? null : read;
   const known = state !== null;
   const base = sessionTail({ state: state ?? 'exited', exitCode: null, startedAt: view.createdAtMs, now });
-  const tail = known ? base : { ...base, kind: 'off' as const, tone: 'off' as const, lamp: { tone: 'off' as const, lit: false } };
+  const tail = known ? base
+    : { ...base, kind: 'off' as const, tone: 'off' as const, signal: lineSignal('off', false), lamp: { tone: 'off' as const, lit: false } };
   const title = view.title?.trim() || view.projectLabel || view.jobId.slice(0, 8);
   const device = view.peerDisplayName || view.peerId.slice(0, 8);
   const stateLabel = state ? (t.plugins.fleet[sessionStateMeta(state).labelKey] as string) : m.remote_state_unknown;

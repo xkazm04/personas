@@ -209,10 +209,9 @@
 .ae-line { position: relative; border-top: 1px solid var(--ae-edge); transition: background-color 120ms ease; }
 .ae-line:first-child { border-top-color: transparent; }
 .ae-line:hover { background-color: var(--ae-glass-hi); }
-.ae-line.is-lit {
-  background-image: linear-gradient(90deg, color-mix(in srgb, var(--ae-tone) 16%, transparent), transparent 70%);
-  box-shadow: inset 2px 0 0 var(--ae-tone);
-}
+/* Needs you is the amber edge, lamp and glyph, and NO wash: three marks were
+   already saying it (polish P1, the owner's item 4). */
+.ae-line.is-lit { box-shadow: inset 2px 0 0 var(--ae-tone); }
 .ae-line.is-selected { background-color: color-mix(in srgb, var(--primary) 12%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 55%, transparent); }
 .ae-line.is-off { opacity: 0.5; filter: grayscale(1); }
 .ae-line.is-over { box-shadow: inset 2px 0 0 var(--status-warning); }
@@ -224,6 +223,18 @@
 .ae-line.is-lit.is-critical {
   background-image: linear-gradient(90deg, color-mix(in srgb, var(--ae-tone) 28%, transparent), transparent 80%);
   box-shadow: inset 3px 0 0 var(--ae-tone);
+}
+/* A fleet row (a session, a device's session, a queue rung) stands on a fine
+   dot ground, so a bay's processes read apart from its plain persona rows.
+   Dots, not a hatch: a hatch already means "off" on this panel (.ae-win.is-off). */
+.ae-line.is-fleet {
+  --ae-dots: radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--foreground) 13%, transparent) 0.75px, transparent 1.1px);
+  background-image: var(--ae-dots);
+  background-size: 5px 5px;
+}
+.ae-line.is-fleet.is-lit.is-critical {
+  background-image: linear-gradient(90deg, color-mix(in srgb, var(--ae-tone) 28%, transparent), transparent 80%), var(--ae-dots);
+  background-size: auto, 5px 5px;
 }
 .ae-line:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
 /* Every other row of a bay wears the same line (WP11 C: `SessionLine`,
