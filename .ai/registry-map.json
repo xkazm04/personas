@@ -9487,12 +9487,11 @@
           "changedAt": "2026-10-14",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/core/src/lifecycle.rs:153 The exported declare_lifecycle! macro splices bare Serialize, Deserialize and TS into the caller, so those names resolve in the caller's scope rather than from a root.",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:a33adfb4a8edc0eb",
-          "evaluatedRevision": 17,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/core/src/lifecycle.rs:153 The exported macro emits unqualified third-party derive names, requiring callers to supply imports that are absent from its explicit interface.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:7c8008f2207b1946",
+          "evaluatedRevision": 18,
+          "revisionsBehind": 1
         },
         {
           "subject": "voice-io",
@@ -14841,12 +14840,11 @@
           "changedAt": "2026-10-14",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/hooks/design/oauth/useOAuthPolling.ts:141 The give-up decision sits inside the effect that also calls pollFn, sleeps and writes React state, so the transition is not testable as values.",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:a33adfb4a8edc0eb",
-          "evaluatedRevision": 17,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/hooks/design/oauth/useOAuthPolling.ts:141 OAuth give-up policy executes inside the effect that polls, schedules timers and mutates React state, preventing direct value-based testing of that transition.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:7c8008f2207b1946",
+          "evaluatedRevision": 18,
+          "revisionsBehind": 1
         },
         {
           "subject": "prompt-assembly",
@@ -28845,12 +28843,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/core/src/models/build_session.rs:480 The only two build modes are named in a comment while the field stays Option<String>, so a third spelling still compiles.",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:a33adfb4a8edc0eb",
-          "evaluatedRevision": 17,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/core/src/models/build_session.rs:483 The hydration model represents its documented two-mode vocabulary as arbitrary text, leaving accepted membership outside the type checker.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:7c8008f2207b1946",
+          "evaluatedRevision": 18,
+          "revisionsBehind": 1
         },
         {
           "subject": "fleet-orchestration",
@@ -36278,12 +36275,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/templates/sub_recipes/libs/useAdoption.ts:223 recipeToUseCase is documented as pure but draws the use-case id from crypto.randomUUID or Date.now and Math.random, so nondeterminism is not a parameter.",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:a33adfb4a8edc0eb",
-          "evaluatedRevision": 17,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/templates/sub_recipes/libs/substituteBindings.ts:37 Substitution asserts that a changed string retains arbitrary generic type T, although literal or branded string inputs need not retain that type.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:7c8008f2207b1946",
+          "evaluatedRevision": 18,
+          "revisionsBehind": 1
         },
         {
           "subject": "templates-scaffolding",
@@ -38125,12 +38121,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/vault/sub_catalog/components/design/phases/AnalyzingPhase.tsx:20 Stage progress is correct only while backend log lines keep those English phrases, a category boundary this UI does not own.",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:a33adfb4a8edc0eb",
-          "evaluatedRevision": 17,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/vault/sub_catalog/components/design/phases/AnalyzingPhase.tsx:20 The UI derives completion from backend prose, so changing producer wording requires a coordinated classifier change to preserve progress behavior.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:7c8008f2207b1946",
+          "evaluatedRevision": 18,
+          "revisionsBehind": 1
         },
         {
           "subject": "connector-catalog",

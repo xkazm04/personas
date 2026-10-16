@@ -16965,121 +16965,150 @@
       "subject": "module-design",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T18:03:10.456Z",
-      "worker": "05db54f3-b9c4-4068-9b38-dd68e1f77c66",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T02:13:42.594Z",
+      "worker": "bc98fd83-e34e-4f3e-a9fc-25c41a74e98f",
       "techniques": [
         {
           "technique": "borrowed-surface",
           "verdict": "conformant",
-          "evidence": "src-tauri/core/src/pool.rs:14 The alias is full substitutability on purpose: it only places the pool name in the bottom crate, and construction stays elsewhere."
+          "evidence": "src-tauri/core/src/crypto.rs:233 SecureString keeps its String private and exposes deliberate operations instead of implicitly forwarding its mutators."
         },
         {
           "technique": "concurrency-at-the-edge",
           "verdict": "conformant",
-          "evidence": "src-tauri/core/src/url_safety.rs:214 The offload is one blocking getaddrinfo call inside the async resolver, which is the single-call hatch."
+          "evidence": "src-tauri/src/cloud/runner.rs:68 The cloud runner drives a long-lived polling session; removing its waiting would require recreating coordination."
         },
         {
           "technique": "declarative-or-sequential",
           "verdict": "conformant",
-          "evidence": "src-tauri/core/src/cron.rs:409 Next-fire search advances an explicit cursor and returns early; the loop is the algorithm."
+          "evidence": "src-tauri/src/cloud/runner.rs:175 Explicit branches emit status events and return different terminal outcomes, fitting sequential effectful control flow."
         },
         {
           "technique": "emitted-code-names-from-a-root",
           "verdict": "deviation",
-          "evidence": "src-tauri/core/src/lifecycle.rs:153 macro_export expansion uses bare serde and ts-rs names; both call sites today sit in this crate and import them."
+          "evidence": "src-tauri/core/src/lifecycle.rs:153 Serialize, Deserialize and TS are generator-authored names resolved in the invocation's scope rather than through defining-crate re-exports."
         },
         {
           "technique": "io-free-core",
-          "verdict": "deviation",
-          "evidence": "src-tauri/core/src/healthcheck_ledger.rs:118 append_healthcheck_entry is a ring-buffer transition but reads the clock itself, so a test cannot supply the instant."
-        },
-        {
-          "technique": "locality-and-leverage",
           "verdict": "conformant",
-          "evidence": "src-tauri/core/src/lib.rs:17 The crate boundary is justified by a counted scatter: re-export keeps a move local."
-        },
-        {
-          "technique": "marked-unverifiable-region",
-          "verdict": "deviation",
-          "evidence": "src-tauri/core/src/crypto.rs:1169 DPAPI protect is one large unsafe block with no written invariant for the foreign pointer or the length."
-        },
-        {
-          "technique": "mirror-type-at-the-edge",
-          "verdict": "deviation",
-          "evidence": "src-tauri/src/cloud/runner.rs:25 Backoff, cancel and failure decisions live in the function that takes the Tauri handle, with no plain mirror and no branchless shim."
+          "evidence": "src-tauri/core/src/lifecycle.rs:181 Lifecycle transitions consume state values and return state or error without performing I/O or scheduling."
         },
         {
           "technique": "module-depth",
           "verdict": "conformant",
-          "evidence": "src-tauri/core/src/engine_kind.rs:79 The accepted engine set is a closed enum forced exhaustive at compile time, not a free string."
+          "evidence": "src-tauri/core/src/topology_graph.rs:60 One operation hides indegree bookkeeping, queue traversal and cycle detection behind a result containing ordering and cycle nodes."
+        },
+        {
+          "technique": "locality-and-leverage",
+          "verdict": "conformant",
+          "evidence": "src-tauri/core/src/lib.rs:17 The crate boundary is justified by a counted scatter: re-export keeps a move local.",
+          "carriedFrom": "2026-10-12"
+        },
+        {
+          "technique": "marked-unverifiable-region",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/crypto.rs:1169 DPAPI protect is one large unsafe block with no written invariant for the foreign pointer or the length.",
+          "carriedFrom": "2026-10-12"
+        },
+        {
+          "technique": "mirror-type-at-the-edge",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/cloud/runner.rs:25 Backoff, cancel and failure decisions live in the function that takes the Tauri handle, with no plain mirror and no branchless shim.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "seams-and-adapters",
           "verdict": "deviation",
-          "evidence": "src-tauri/core/src/http_clients.rs:39 The comment says only one proxy branch may use this client, but the value is a public static, so the door is a convention."
+          "evidence": "src-tauri/core/src/http_clients.rs:39 The comment says only one proxy branch may use this client, but the value is a public static, so the door is a convention.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "state-carrier-decides-the-lane",
           "verdict": "conformant",
-          "evidence": "src-tauri/core/src/run_budget.rs:197 The spend accumulator is updated inside the shared mutex, not cloned into a lane and dropped."
+          "evidence": "src-tauri/core/src/run_budget.rs:197 The spend accumulator is updated inside the shared mutex, not cloned into a lane and dropped.",
+          "carriedFrom": "2026-10-12"
         }
       ],
-      "registryProposal": "change-class-is-the-workload, scoreable-designs-are-built-not-argued, structural-improvement-loop and structure-is-not-delegable trigger on a planning act, not a code shape. A module context with no decision record cannot honestly be conformant or a deviation for them; the subject should say that case is not-applicable."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/core/src/lifecycle.rs:153 The exported declare_lifecycle! macro splices bare Serialize, Deserialize and TS into the caller, so those names resolve in the caller's scope rather than from a root.",
+          "evaluatedAt": "2026-10-12T18:03:10.456Z",
+          "worker": "05db54f3-b9c4-4068-9b38-dd68e1f77c66",
+          "reason": "replaced by bc98fd83-e34e-4f3e-a9fc-25c41a74e98f"
+        }
+      ]
     },
     "c5228746-931d-4733-9cf7-84519a2c9605/module-design": {
       "context": "hooks-design",
       "subject": "module-design",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T18:03:10.456Z",
-      "worker": "05db54f3-b9c4-4068-9b38-dd68e1f77c66",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T02:13:42.594Z",
+      "worker": "bc98fd83-e34e-4f3e-a9fc-25c41a74e98f",
       "techniques": [
-        {
-          "technique": "concurrency-at-the-edge",
-          "verdict": "conformant",
-          "evidence": "src/hooks/design/oauth/useOAuthPolling.ts:121 One live poll loop, aborted and generation-guarded, is the session the hook is for; removing it would reintroduce that coordination by hand."
-        },
         {
           "technique": "declarative-or-sequential",
           "verdict": "conformant",
-          "evidence": "src/hooks/design/credential/negotiatorStepGraph.ts:114 First matching skip predicate wins, so the scan is an explicit sequence rather than a pipeline of filters."
+          "evidence": "src/hooks/design/credential/negotiatorStepGraph.ts:149 One explicit pass builds visible and skipped collections plus both index mappings, matching the multiple-output rule."
         },
         {
           "technique": "io-free-core",
           "verdict": "deviation",
-          "evidence": "src/hooks/design/oauth/useOAuthPolling.ts:141 Attempt limit, timeout message and status writes are inside the poll effect instead of a transition that returns the next wait."
+          "evidence": "src/hooks/design/oauth/useOAuthPolling.ts:141 The timeout transition remains in the polling driver; the inspected hook test supplies start/poll functions and mocks external URL opening and document visibility to exercise a decision."
+        },
+        {
+          "technique": "concurrency-at-the-edge",
+          "verdict": "conformant",
+          "evidence": "src/hooks/design/oauth/useOAuthPolling.ts:121 One live poll loop, aborted and generation-guarded, is the session the hook is for; removing it would reintroduce that coordination by hand.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "locality-and-leverage",
           "verdict": "conformant",
-          "evidence": "src/hooks/design/credential/negotiatorStepGraph.ts:42 Skip rules for authorize, capture, verify and account creation live in one predicate list."
+          "evidence": "src/hooks/design/credential/negotiatorStepGraph.ts:42 Skip rules for authorize, capture, verify and account creation live in one predicate list.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "marked-unverifiable-region",
           "verdict": "deviation",
-          "evidence": "src/hooks/design/credential/useCredentialNegotiator.ts:186 The cast asserts the connector is an open record and states no invariant the checker cannot see."
+          "evidence": "src/hooks/design/credential/useCredentialNegotiator.ts:186 The cast asserts the connector is an open record and states no invariant the checker cannot see.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "mirror-type-at-the-edge",
           "verdict": "deviation",
-          "evidence": "src/hooks/design/core/useTauriStream.ts:56 Status logic receives the raw event bag; the hook never converts the payload into a constructible mirror before branching."
+          "evidence": "src/hooks/design/core/useTauriStream.ts:56 Status logic receives the raw event bag; the hook never converts the payload into a constructible mirror before branching.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "module-depth",
           "verdict": "conformant",
-          "evidence": "src/hooks/design/core/useTauriStream.ts:18 Callers pass event names and phase labels; the ring cap and generation invalidation stay inside the hook."
+          "evidence": "src/hooks/design/core/useTauriStream.ts:18 Callers pass event names and phase labels; the ring cap and generation invalidation stay inside the hook.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "seams-and-adapters",
           "verdict": "conformant",
-          "evidence": "src/hooks/design/oauth/useOAuthPolling.ts:38 The poll is injected, and the hook's own test supplies a pollFn, so the seam is actually substituted."
+          "evidence": "src/hooks/design/oauth/useOAuthPolling.ts:38 The poll is injected, and the hook's own test supplies a pollFn, so the seam is actually substituted.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "state-carrier-decides-the-lane",
           "verdict": "conformant",
-          "evidence": "src/hooks/design/core/playbookCache.ts:79 usageCount is an accumulator on the shared in-memory record, updated in place and then persisted."
+          "evidence": "src/hooks/design/core/playbookCache.ts:79 usageCount is an accumulator on the shared in-memory record, updated in place and then persisted.",
+          "carriedFrom": "2026-10-12"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/hooks/design/oauth/useOAuthPolling.ts:141 The give-up decision sits inside the effect that also calls pollFn, sleeps and writes React state, so the transition is not testable as values.",
+          "evaluatedAt": "2026-10-12T18:03:10.456Z",
+          "worker": "05db54f3-b9c4-4068-9b38-dd68e1f77c66",
+          "reason": "replaced by bc98fd83-e34e-4f3e-a9fc-25c41a74e98f"
         }
       ]
     },
@@ -17088,39 +17117,51 @@
       "subject": "module-design",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T18:03:10.456Z",
-      "worker": "05db54f3-b9c4-4068-9b38-dd68e1f77c66",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T02:13:42.594Z",
+      "worker": "bc98fd83-e34e-4f3e-a9fc-25c41a74e98f",
       "techniques": [
-        {
-          "technique": "borrowed-surface",
-          "verdict": "conformant",
-          "evidence": "src-tauri/core/src/models/agent_ir.rs:23 The legacy payload key is restated on the struct this crate owns, so a rename shows up in this file."
-        },
         {
           "technique": "declarative-or-sequential",
           "verdict": "conformant",
-          "evidence": "src-tauri/core/src/models/trigger.rs:315 The overnight window's two arms test different weekdays, so the explicit branch is the rule."
+          "evidence": "src-tauri/core/src/models/build_session.rs:75 BuildPhase transition rules use an explicit enumerated state match, making state-dependent progression directly readable."
         },
         {
           "technique": "io-free-core",
-          "verdict": "deviation",
-          "evidence": "src-tauri/core/src/models/trigger.rs:676 Parsing a trigger config calls the crypto capability inside the model, so the transition is not a function of values."
-        },
-        {
-          "technique": "locality-and-leverage",
           "verdict": "conformant",
-          "evidence": "src-tauri/core/src/models/trigger.rs:60 Wire spellings and the SQL CHECK list are derived from this one array rather than a second hand-written vocabulary."
+          "evidence": "src-tauri/core/src/models/build_session.rs:69 Transition validation takes ordinary state values and returns a verdict without host dependencies, enabling direct exploration of state pairs."
         },
         {
           "technique": "module-depth",
           "verdict": "deviation",
-          "evidence": "src-tauri/core/src/models/build_session.rs:480 A two-value mode the frontend switches on is documented in prose and stored as Option<String>."
+          "evidence": "src-tauri/core/src/models/build_session.rs:483 The adjacent documentation closes membership to interactive and one_shot, but the model does not; the inspected manager rejects unknown strings at runtime, which does not close this model's type."
+        },
+        {
+          "technique": "borrowed-surface",
+          "verdict": "conformant",
+          "evidence": "src-tauri/core/src/models/agent_ir.rs:23 The legacy payload key is restated on the struct this crate owns, so a rename shows up in this file.",
+          "carriedFrom": "2026-10-12"
+        },
+        {
+          "technique": "locality-and-leverage",
+          "verdict": "conformant",
+          "evidence": "src-tauri/core/src/models/trigger.rs:60 Wire spellings and the SQL CHECK list are derived from this one array rather than a second hand-written vocabulary.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "state-carrier-decides-the-lane",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/build_session.rs:497 This builds a frontend view from the row; it is not a shared runner carrier copied into a forked lane."
+          "evidence": "src-tauri/core/src/models/build_session.rs:497 This builds a frontend view from the row; it is not a shared runner carrier copied into a forked lane.",
+          "carriedFrom": "2026-10-12"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/core/src/models/build_session.rs:480 The only two build modes are named in a comment while the field stays Option<String>, so a third spelling still compiles.",
+          "evaluatedAt": "2026-10-12T18:03:10.456Z",
+          "worker": "05db54f3-b9c4-4068-9b38-dd68e1f77c66",
+          "reason": "replaced by bc98fd83-e34e-4f3e-a9fc-25c41a74e98f"
         }
       ]
     },
@@ -17129,49 +17170,69 @@
       "subject": "module-design",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T18:03:10.456Z",
-      "worker": "05db54f3-b9c4-4068-9b38-dd68e1f77c66",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T02:13:42.594Z",
+      "worker": "bc98fd83-e34e-4f3e-a9fc-25c41a74e98f",
       "techniques": [
-        {
-          "technique": "borrowed-surface",
-          "verdict": "deviation",
-          "evidence": "src/features/vault/sub_catalog/components/design/phases/AnalyzingPhase.tsx:20 The stage index assumes upstream log sentences stay disjoint and match these substrings."
-        },
-        {
-          "technique": "concurrency-at-the-edge",
-          "verdict": "conformant",
-          "evidence": "src/features/vault/sub_catalog/components/design/phases/AnalyzingPhase.tsx:39 The elapsed tick is one timer in the view, not a pipeline handed to another pool."
-        },
         {
           "technique": "declarative-or-sequential",
           "verdict": "conformant",
-          "evidence": "src/features/vault/sub_catalog/components/design/phases/AnalyzingPhase.tsx:18 The reverse scan returns one of several stage indexes from different phrase tests, so a pipeline would hide the search."
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel.tsx:86 The field-signature calculation uses a pure map/join pipeline producing one string."
         },
         {
-          "technique": "io-free-core",
-          "verdict": "conformant",
-          "evidence": "src/features/vault/sub_catalog/components/design/phases/AnalyzingPhase.tsx:17 Stage derivation takes lines and returns an index; it does not fetch logs or read the clock."
-        },
-        {
-          "technique": "locality-and-leverage",
-          "verdict": "conformant",
-          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel.tsx:113 The panel keeps the phase sequence and renders a different component for consent, browser and review."
-        },
-        {
-          "technique": "mirror-type-at-the-edge",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/design/phases/AnalyzingPhase.tsx:10 The phase already receives plain strings, which a test can construct without the host event type."
+          "technique": "marked-unverifiable-region",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/helpers/types.ts:149 Checking only that kind is a string cannot establish the closed kind union or required message, guidance, retryable and context fields; the assertion carries no invariant establishing them."
         },
         {
           "technique": "module-depth",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_catalog/components/autoCred/helpers/TauriPlaywrightAdapter.ts:32 Guided versus Playwright is a boolean that switches the saved-procedure step inside one class."
+          "evidence": "src/features/vault/sub_catalog/components/design/phases/AnalyzingPhase.tsx:20 Progress knowledge is encoded independently in the UI and credential_design.rs's producer messages, realizing information leakage across the boundary."
+        },
+        {
+          "technique": "borrowed-surface",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/design/phases/AnalyzingPhase.tsx:20 The stage index assumes upstream log sentences stay disjoint and match these substrings.",
+          "carriedFrom": "2026-10-12"
+        },
+        {
+          "technique": "concurrency-at-the-edge",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_catalog/components/design/phases/AnalyzingPhase.tsx:39 The elapsed tick is one timer in the view, not a pipeline handed to another pool.",
+          "carriedFrom": "2026-10-12"
+        },
+        {
+          "technique": "io-free-core",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_catalog/components/design/phases/AnalyzingPhase.tsx:17 Stage derivation takes lines and returns an index; it does not fetch logs or read the clock.",
+          "carriedFrom": "2026-10-12"
+        },
+        {
+          "technique": "locality-and-leverage",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel.tsx:113 The panel keeps the phase sequence and renders a different component for consent, browser and review.",
+          "carriedFrom": "2026-10-12"
+        },
+        {
+          "technique": "mirror-type-at-the-edge",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/design/phases/AnalyzingPhase.tsx:10 The phase already receives plain strings, which a test can construct without the host event type.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "seams-and-adapters",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_catalog/components/autoCred/helpers/TauriPlaywrightAdapter.ts:188 PlaywrightAdapter has a single implementing class; the guided export is a second instance of that class, not a second adapter."
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/helpers/TauriPlaywrightAdapter.ts:188 PlaywrightAdapter has a single implementing class; the guided export is a second instance of that class, not a second adapter.",
+          "carriedFrom": "2026-10-12"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/design/phases/AnalyzingPhase.tsx:20 Stage progress is correct only while backend log lines keep those English phrases, a category boundary this UI does not own.",
+          "evaluatedAt": "2026-10-12T18:03:10.456Z",
+          "worker": "05db54f3-b9c4-4068-9b38-dd68e1f77c66",
+          "reason": "replaced by bc98fd83-e34e-4f3e-a9fc-25c41a74e98f"
         }
       ]
     },
@@ -17180,49 +17241,64 @@
       "subject": "module-design",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T18:03:10.456Z",
-      "worker": "05db54f3-b9c4-4068-9b38-dd68e1f77c66",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T02:13:42.594Z",
+      "worker": "bc98fd83-e34e-4f3e-a9fc-25c41a74e98f",
       "techniques": [
-        {
-          "technique": "borrowed-surface",
-          "verdict": "conformant",
-          "evidence": "src/features/templates/sub_recipes/libs/recipeAdapter.ts:57 Foreign category spellings are restated in a map this module owns instead of being assumed to match the union."
-        },
         {
           "technique": "declarative-or-sequential",
           "verdict": "conformant",
-          "evidence": "src/features/templates/sub_recipes/libs/substituteBindings.ts:15 Placeholder substitution is one string in and one string out, written as a replace."
-        },
-        {
-          "technique": "io-free-core",
-          "verdict": "deviation",
-          "evidence": "src/features/templates/sub_recipes/libs/useAdoption.ts:223 The projection reaches the environment for an id; resolveEligibility nearby does take only values."
-        },
-        {
-          "technique": "locality-and-leverage",
-          "verdict": "deviation",
-          "evidence": "src/features/templates/sub_recipes/libs/recipeAdapter.ts:20 Category is an open string on the backend row and a second union on the frontend Recipe, joined by this adapter."
+          "evidence": "src/features/templates/sub_recipes/eligibility.ts:36 Connector filtering expresses a pure collection transformation directly, without effectful steps in the pipeline."
         },
         {
           "technique": "marked-unverifiable-region",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_recipes/libs/recipeAdapter.ts:91 The cast follows a set membership test but does not write the invariant that makes the assertion valid."
+          "evidence": "src/features/templates/sub_recipes/libs/substituteBindings.ts:37 The unconstrained generic assertion lacks a written validity invariant or an input restriction that excludes string types invalidated by substitution."
+        },
+        {
+          "technique": "borrowed-surface",
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_recipes/libs/recipeAdapter.ts:57 Foreign category spellings are restated in a map this module owns instead of being assumed to match the union.",
+          "carriedFrom": "2026-10-12"
+        },
+        {
+          "technique": "io-free-core",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_recipes/libs/useAdoption.ts:223 The projection reaches the environment for an id; resolveEligibility nearby does take only values.",
+          "carriedFrom": "2026-10-12"
+        },
+        {
+          "technique": "locality-and-leverage",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_recipes/libs/recipeAdapter.ts:20 Category is an open string on the backend row and a second union on the frontend Recipe, joined by this adapter.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "module-depth",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_recipes/libs/recipeAdapter.ts:93 Values outside the closed category union are silently folded into automation instead of failing at the boundary."
+          "evidence": "src/features/templates/sub_recipes/libs/recipeAdapter.ts:93 Values outside the closed category union are silently folded into automation instead of failing at the boundary.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "seams-and-adapters",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_recipes/eligibility.ts:8 Eligibility takes connector sets as values, so there is no collaborator here to put a seam in front of."
+          "evidence": "src/features/templates/sub_recipes/eligibility.ts:8 Eligibility takes connector sets as values, so there is no collaborator here to put a seam in front of.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "state-carrier-decides-the-lane",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_recipes/libs/useAdoption.ts:178 recipeToUseCase assembles a new use case from arguments; it does not copy an existing shared carrier across a lane."
+          "evidence": "src/features/templates/sub_recipes/libs/useAdoption.ts:178 recipeToUseCase assembles a new use case from arguments; it does not copy an existing shared carrier across a lane.",
+          "carriedFrom": "2026-10-12"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/templates/sub_recipes/libs/useAdoption.ts:223 recipeToUseCase is documented as pure but draws the use-case id from crypto.randomUUID or Date.now and Math.random, so nondeterminism is not a parameter.",
+          "evaluatedAt": "2026-10-12T18:03:10.456Z",
+          "worker": "05db54f3-b9c4-4068-9b38-dd68e1f77c66",
+          "reason": "replaced by bc98fd83-e34e-4f3e-a9fc-25c41a74e98f"
         }
       ]
     },
