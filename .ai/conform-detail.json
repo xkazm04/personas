@@ -26732,6 +26732,69 @@
       "worker": "39257128-e405-46a7-a1c0-81eff9fba292",
       "techniques": [],
       "registryProposal": "matcher resonance on 'execution/scope/changes' tokens; hooks that stream execution output are not governed by hitl-approval"
+    },
+    "895b4bb2-16fd-4e8e-aae8-11315fe6436b/mcp-tools": {
+      "context": "api-agents",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:23:55.000Z",
+      "worker": "5f45a205-d269-4e76-958a-fe58b368b0bc",
+      "techniques": [
+        {
+          "technique": "client-integration",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/mcp_tools.rs:837 collision management by server prefix is defeated because the prefix (display_name) is not unique per gateway; src-tauri/src/commands/credentials/mcp_gateways.rs:40 guards the separator but not duplicates"
+        },
+        {
+          "technique": "client-integration",
+          "verdict": "realized (degrade per-server)",
+          "evidence": "src-tauri/src/engine/mcp_tools.rs:643 a failing member is logged and skipped while the rest of the federation still lists"
+        },
+        {
+          "technique": "authentication-and-scoping",
+          "verdict": "realized (host IPC side)",
+          "evidence": "src-tauri/src/commands/credentials/mcp_gateways.rs:19 gateway membership commands sit behind #[requires(privileged)]"
+        },
+        {
+          "technique": "server-composition",
+          "verdict": "realized (consumer dispatch door)",
+          "evidence": "src-tauri/src/engine/mcp_tools.rs:793 rate-limit key uses the server-assigned credential id, not the caller-influenced prefix, and :811 validates argument structure before any member dispatch"
+        }
+      ],
+      "registryProposal": "client-integration names collision management by server prefix but not the failure where the prefix is a user-chosen label without a uniqueness constraint - worth one sentence: the prefix must be unique per federation at write time, or first-match routing silently shadows a whole server."
+    },
+    "7159d27d-86c2-43be-a83f-8b50c4c816be/mcp-tools": {
+      "context": "settings-network",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:23:55.000Z",
+      "worker": "5f45a205-d269-4e76-958a-fe58b368b0bc",
+      "techniques": [],
+      "registryProposal": "Lexical match (expose/capability/network) without the subject precondition; a likely technique-shaped resonance with authentication-and-scoping rather than governance - p2p-networking and device-pairing govern this context."
+    },
+    "ae80cd74-5beb-4d76-ae0a-16a4b581a2df/mcp-tools": {
+      "context": "recipe-build-models",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:23:55.000Z",
+      "worker": "5f45a205-d269-4e76-958a-fe58b368b0bc",
+      "techniques": []
+    },
+    "c5f662f2-458b-4b5d-b03b-e4acf8f54049/mcp-tools": {
+      "context": "plugins-dev-tools-projects",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:23:55.000Z",
+      "worker": "5f45a205-d269-4e76-958a-fe58b368b0bc",
+      "techniques": []
     }
   }
 }

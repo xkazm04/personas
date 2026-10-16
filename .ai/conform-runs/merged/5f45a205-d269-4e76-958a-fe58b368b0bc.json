@@ -1,0 +1,125 @@
+{
+  "schema": "conform-run/1",
+  "worker": "5f45a205-d269-4e76-958a-fe58b368b0bc",
+  "subject": "mcp-tools",
+  "evaluatedAt": "2026-10-16T18:23:55Z",
+  "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+  "evaluatedRevision": 34,
+  "pairs": [
+    {
+      "context": "895b4bb2-16fd-4e8e-aae8-11315fe6436b",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/engine/mcp_tools.rs:837 routes a gateway call to the FIRST enabled member whose display_name matches, and src-tauri/db/src/migrations/incremental/c01_plugin_tables.rs:78 makes only (gateway, member) unique - two members named alike both list as <name>::tool (src-tauri/src/engine/mcp_tools.rs:634) and every call dispatches to the first member credential, so the second is unreachable and calls hit the wrong server; src/api/credentials/mcpGateways.ts:44 states uniqueness only as advice",
+      "techniques": [
+        {
+          "technique": "client-integration",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/mcp_tools.rs:837 collision management by server prefix is defeated because the prefix (display_name) is not unique per gateway; src-tauri/src/commands/credentials/mcp_gateways.rs:40 guards the separator but not duplicates"
+        },
+        {
+          "technique": "client-integration",
+          "verdict": "realized (degrade per-server)",
+          "evidence": "src-tauri/src/engine/mcp_tools.rs:643 a failing member is logged and skipped while the rest of the federation still lists"
+        },
+        {
+          "technique": "authentication-and-scoping",
+          "verdict": "realized (host IPC side)",
+          "evidence": "src-tauri/src/commands/credentials/mcp_gateways.rs:19 gateway membership commands sit behind #[requires(privileged)]"
+        },
+        {
+          "technique": "server-composition",
+          "verdict": "realized (consumer dispatch door)",
+          "evidence": "src-tauri/src/engine/mcp_tools.rs:793 rate-limit key uses the server-assigned credential id, not the caller-influenced prefix, and :811 validates argument structure before any member dispatch"
+        }
+      ],
+      "registryProposal": "client-integration names collision management by server prefix but not the failure where the prefix is a user-chosen label without a uniqueness constraint - worth one sentence: the prefix must be unique per federation at write time, or first-match routing silently shadows a whole server."
+    },
+    {
+      "context": "7159d27d-86c2-43be-a83f-8b50c4c816be",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/settings/sub_network/components/ExposureManager.tsx:34 the exposed surface is P2P sharing of persona/template/knowledge/connector records, not a model-invoked tool protocol; no MCP host, client or server lives in this context",
+      "techniques": [],
+      "registryProposal": "Lexical match (expose/capability/network) without the subject precondition; a likely technique-shaped resonance with authentication-and-scoping rather than governance - p2p-networking and device-pairing govern this context."
+    },
+    {
+      "context": "ae80cd74-5beb-4d76-ae0a-16a4b581a2df",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/core/src/models/agent_ir.rs:206 tools here are design-time IR name references (string or object) inside persona definitions, not a wire contract a server enforces - the golden path excludes a model-facing declaration format with no process boundary",
+      "techniques": []
+    },
+    {
+      "context": "c5f662f2-458b-4b5d-b03b-e4acf8f54049",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/plugins/dev-tools/sub_projects/ProjectModal.tsx:6 the context is project CRUD (team switch, repo, branch, test env) with no MCP host, client, server or tool catalog anywhere in its files",
+      "techniques": []
+    }
+  ],
+  "declined": [
+    {
+      "subject": "mcp-tools",
+      "context": "3f38546e-e970-4837-97f7-f0504aa32daf",
+      "reason": "context-map.json lists no file paths for plugins-companion-decision, so there is no code to read; an unread verdict would be a guess"
+    },
+    {
+      "subject": "mcp-tools",
+      "context": "*",
+      "reason": "Map lags the registry for this subject (pairs carry sha256-b2:afba7a2b8c938ae1 rev 31; index has sha256-b2:ed8e615f51454325 rev 34) and no pair is flagged stale, so the 9 existing deviation verdicts were judged against rev 31; re-judge them with /conform --stale after node ../ai-registry/scripts/build-registry-map.mjs --project personas"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-16T18:23:55Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "mcp-tools"
+      ],
+      "techniques": [
+        "client-integration",
+        "authentication-and-scoping",
+        "server-composition",
+        "tool-identity-vs-tool-name",
+        "one-server-many-registrations"
+      ],
+      "deviations": 1,
+      "context": "895b4bb2-16fd-4e8e-aae8-11315fe6436b"
+    },
+    {
+      "ts": "2026-10-16T18:23:55Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "mcp-tools"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "7159d27d-86c2-43be-a83f-8b50c4c816be"
+    },
+    {
+      "ts": "2026-10-16T18:23:55Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "mcp-tools"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "ae80cd74-5beb-4d76-ae0a-16a4b581a2df"
+    },
+    {
+      "ts": "2026-10-16T18:23:55Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "mcp-tools"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "c5f662f2-458b-4b5d-b03b-e4acf8f54049"
+    }
+  ]
+}

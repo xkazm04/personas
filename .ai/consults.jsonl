@@ -1506,3 +1506,7 @@
 {"ts":"2026-10-16T18:24:02Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":[],"deviations":0,"context":"b39776f5-3909-41e3-b69f-14c9a6c70bec"}
 {"ts":"2026-10-16T18:24:02Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":[],"deviations":0,"context":"647d6a54-3813-4149-bbf7-2d96a57a77c7"}
 {"ts":"2026-10-16T18:24:02Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":[],"deviations":0,"context":"55d6d7cb-b016-4d73-8386-b5c18beafdae"}
+{"ts":"2026-10-16T18:23:55Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["client-integration","authentication-and-scoping","server-composition","tool-identity-vs-tool-name","one-server-many-registrations"],"deviations":1,"context":"895b4bb2-16fd-4e8e-aae8-11315fe6436b"}
+{"ts":"2026-10-16T18:23:55Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":[],"deviations":0,"context":"7159d27d-86c2-43be-a83f-8b50c4c816be"}
+{"ts":"2026-10-16T18:23:55Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":[],"deviations":0,"context":"ae80cd74-5beb-4d76-ae0a-16a4b581a2df"}
+{"ts":"2026-10-16T18:23:55Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":[],"deviations":0,"context":"c5f662f2-458b-4b5d-b03b-e4acf8f54049"}

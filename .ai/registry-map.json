@@ -4120,7 +4120,11 @@
           "revision": 31,
           "changedAt": "2026-10-06",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/mcp_tools.rs:837 routes a gateway call to the FIRST enabled member whose display_name matches, and src-tauri/db/src/migrations/incremental/c01_plugin_tables.rs:78 makes only (gateway, member) unique - two members named alike both list as <name>::tool (src-tauri/src/engine/mcp_tools.rs:634) and every call dispatches to the first member credential, so the second is unreachable and calls hit the wrong server; src/api/credentials/mcpGateways.ts:44 states uniqueness only as advice",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34
         },
         {
           "subject": "test-harness",
@@ -26196,7 +26200,11 @@
           "revision": 31,
           "changedAt": "2026-10-06",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_projects/ProjectModal.tsx:6 the context is project CRUD (team switch, repo, branch, test env) with no MCP host, client, server or tool catalog anywhere in its files",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34
         },
         {
           "subject": "prompt-assembly",
@@ -29071,7 +29079,11 @@
           "revision": 31,
           "changedAt": "2026-10-06",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/core/src/models/agent_ir.rs:206 tools here are design-time IR name references (string or object) inside persona definitions, not a wire contract a server enforces - the golden path excludes a model-facing declaration format with no process boundary",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34
         },
         {
           "subject": "module-design",
@@ -30048,7 +30060,11 @@
           "revision": 31,
           "changedAt": "2026-10-06",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/settings/sub_network/components/ExposureManager.tsx:34 the exposed surface is P2P sharing of persona/template/knowledge/connector records, not a model-invoked tool protocol; no MCP host, client or server lives in this context",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34
         },
         {
           "subject": "settings",
