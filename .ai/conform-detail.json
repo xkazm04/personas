@@ -26625,6 +26625,65 @@
           "reason": "replaced by 52e4bc33-6779-4a22-a09b-c7acc0bc4611"
         }
       ]
+    },
+    "6a81750d-fdbf-4518-bae6-689303e1a884/hitl-approval": {
+      "context": "test-runner-lab",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:22:31.000Z",
+      "worker": "39257128-e405-46a7-a1c0-81eff9fba292",
+      "techniques": [
+        {
+          "technique": "resume-after-decision",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/incident_continuation.rs:307 a failed continuation start is only logged; the incident's continued_at (set by the claim at src-tauri/db/src/repos/execution/audit_incidents.rs:578) is identical for success and failure, so the decision trail ends at 'claimed' not 'executed at T'"
+        },
+        {
+          "technique": "resume-after-decision",
+          "verdict": "realized (partial: re-validate world + at-most-once)",
+          "evidence": "src-tauri/src/engine/incident_continuation.rs:348 admission is re-checked at resume time, :222 refuses a simulation origin, :135 atomic claim makes the resume at-most-once"
+        }
+      ],
+      "registryProposal": "resume-after-decision could name the claim-before-work shape explicitly: an at-most-once claim column doubles as the 'continued' marker readers trust, so the claim and the outcome need two columns (claimed_at vs continued_execution_id/continuation_outcome); this repo's lane reads the claim as the outcome"
+    },
+    "fbfcd99a-a333-42da-b85e-2ec1f560b4be/hitl-approval": {
+      "context": "agents-connectors",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:22:31.000Z",
+      "worker": "39257128-e405-46a7-a1c0-81eff9fba292",
+      "techniques": [
+        {
+          "technique": "consent-gates",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_connectors/components/automation/AutomationConditionStep.tsx:53 informed consent requires the operation with its actual parameters bound; the preview discloses the AI recommendation, not the workflow nodes deployed at src-tauri/src/engine/platforms/deploy.rs:136"
+        },
+        {
+          "technique": "decision-records",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_connectors/libs/useAutomationSetup.ts:229 the Deploy click goes straight to deployAutomation; no record of who approved which design version having seen what is written, only the resulting automation row"
+        },
+        {
+          "technique": "resume-after-decision",
+          "verdict": "realized (exactly-once traversal)",
+          "evidence": "src/features/agents/sub_connectors/libs/useAutomationSetup.ts:216 a synchronous in-flight ref blocks a double-submitted deploy"
+        }
+      ]
+    },
+    "a6843b83-43a1-4eab-ae40-26f23b949a0d/hitl-approval": {
+      "context": "hooks-execution",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:22:31.000Z",
+      "worker": "39257128-e405-46a7-a1c0-81eff9fba292",
+      "techniques": [],
+      "registryProposal": "matcher resonance on 'execution/scope/changes' tokens; hooks that stream execution output are not governed by hitl-approval"
     }
   }
 }

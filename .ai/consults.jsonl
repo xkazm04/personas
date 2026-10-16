@@ -1497,3 +1497,6 @@
 {"ts":"2026-10-16T18:19:14Z","bundle":"software-engineering","subjects":["authorization"],"techniques":["authorization-audit"],"deviations":1}
 {"ts":"2026-10-16T18:19:27Z","bundle":"software-engineering","subjects":["data-viz"],"techniques":["metric-identity"],"deviations":1}
 {"ts":"2026-10-16T18:21:16Z","bundle":"software-engineering","subjects":["modal-stack"],"techniques":["stack-ownership","dismissal-semantics","focus-and-scroll-containment","layering-and-precedence","destructive-confirmation","anchored-positioning"],"deviations":5}
+{"ts":"2026-10-16T18:22:31Z","bundle":"software-engineering","subjects":["hitl-approval"],"techniques":["resume-after-decision"],"deviations":1}
+{"ts":"2026-10-16T18:22:31Z","bundle":"software-engineering","subjects":["hitl-approval"],"techniques":["consent-gates","decision-records","resume-after-decision"],"deviations":2}
+{"ts":"2026-10-16T18:22:31Z","bundle":"software-engineering","subjects":["hitl-approval"],"techniques":[],"deviations":0}

@@ -2738,7 +2738,11 @@
           "revision": 22,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_connectors/components/automation/AutomationConditionStep.tsx:53 the deploy review shows the model's own platform_reasoning, name, setup steps and connectors but never the workflow_definition, which src-tauri/src/engine/platforms/deploy.rs:136 creates and :146 immediately activates on the external n8n instance - the human approves an externally visible, live workflow from a summary written by the gated party, and the deploy leaves no decision record of what was shown",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9",
+          "evaluatedRevision": 22
         },
         {
           "subject": "test-harness",
@@ -15306,7 +15310,11 @@
           "revision": 22,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/hooks/execution/usePersonaExecution.ts:172 the context's only contact with human review is firing a notification check after a run; these hooks consume the execution stream and own no consequence boundary, pause state, decision surface, record or continuation - the gate lives in the review/approval contexts",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9",
+          "evaluatedRevision": 22
         },
         {
           "subject": "trace-rollup-and-attribution",
@@ -37111,7 +37119,11 @@
           "revision": 22,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/incident_continuation.rs:135 the continuation claim stamps continued_at BEFORE any work, and nothing writes the outcome back: a refused contextless resume (:239), a vanished persona/execution, or a failed start_execution (:307) all leave the same stamp, which the Autonomous lane reads as handled (src/features/overview/sub_incidents/components/AutonomousLane.tsx:18) - a resolve whose continuation never ran is spelled as one that did, and no continuation execution id is linked to the incident",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9",
+          "evaluatedRevision": 22
         },
         {
           "subject": "agent-instruction-files",
