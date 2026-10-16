@@ -9323,22 +9323,38 @@
       "subject": "retrieval",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T16:51:50.000Z",
-      "worker": "54c37b07-286c-4378-a077-f14b84e260c0",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:24:02.000Z",
+      "worker": "5e9587ee-8a2e-49ec-9bb8-9d7344b3a29c",
       "techniques": [],
-      "registryProposal": "Lexical resonance: 'lane'/'lanes' in a roadmap UI matched retrieval's lane vocabulary. Not a hole; the subject's precondition (a query over a corpus) is absent."
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/home/sub_releases/roadmapItems.ts:32 the 'lanes' are fixed NOW/NEXT/LATER priority buckets of a small curated roadmap list - no query, no corpus too large to hand over whole, nothing ranked by relevance; the matcher scored the word 'lane'",
+          "evaluatedAt": "2026-10-09T16:51:50.000Z",
+          "worker": "54c37b07-286c-4378-a077-f14b84e260c0",
+          "reason": "replaced by 5e9587ee-8a2e-49ec-9bb8-9d7344b3a29c"
+        }
+      ]
     },
     "55d6d7cb-b016-4d73-8386-b5c18beafdae/retrieval": {
       "context": "vault-database-shell",
       "subject": "retrieval",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T16:51:50.000Z",
-      "worker": "54c37b07-286c-4378-a077-f14b84e260c0",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:24:02.000Z",
+      "worker": "5e9587ee-8a2e-49ec-9bb8-9d7344b3a29c",
       "techniques": [],
-      "registryProposal": "Lexical resonance on 'query'/'queries'/'table': SQL console surfaces will keep matching retrieval; the matcher could down-weight retrieval where sql-console scores strongly on the same context."
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:31 executeDbQuery runs operator-written SQL verbatim against an external database - an exact predicate query with no relevance ranking, floors or fusion; the governing subject is sql-console, not retrieval",
+          "evaluatedAt": "2026-10-09T16:51:50.000Z",
+          "worker": "54c37b07-286c-4378-a077-f14b84e260c0",
+          "reason": "replaced by 5e9587ee-8a2e-49ec-9bb8-9d7344b3a29c"
+        }
+      ]
     },
     "ca705961-f138-494a-b0fe-f882c674d25a/multi-project": {
       "context": "mastermind-popovers",
@@ -13242,11 +13258,19 @@
       "subject": "retrieval",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T01:40:16.000Z",
-      "worker": "bc76142d-231d-4f9d-a063-f2a2572c26d1",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:24:02.000Z",
+      "worker": "5e9587ee-8a2e-49ec-9bb8-9d7344b3a29c",
       "techniques": [],
-      "registryProposal": "Matcher resonance on relations/similarity vocabulary: a precomputed pairwise matrix rendered as graph edges is canvas-graph / data-viz territory, not retrieval."
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/lib/deriveScene.ts:115 consumes a similarity_matrix the backend already computed and draws pairs >=0.5 as canvas edges - no query, no corpus sliced for a consumer, nothing ranked; the 0.5 cut is an edge-drawing threshold, not a relevance floor",
+          "evaluatedAt": "2026-10-10T01:40:16.000Z",
+          "worker": "bc76142d-231d-4f9d-a063-f2a2572c26d1",
+          "reason": "replaced by 5e9587ee-8a2e-49ec-9bb8-9d7344b3a29c"
+        }
+      ]
     },
     "63a0a6fc-fa9a-453c-943d-4579b83f0ca3/retrieval": {
       "context": "stores",
@@ -13264,22 +13288,38 @@
       "subject": "retrieval",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T01:40:16.000Z",
-      "worker": "bc76142d-231d-4f9d-a063-f2a2572c26d1",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:24:02.000Z",
+      "worker": "5e9587ee-8a2e-49ec-9bb8-9d7344b3a29c",
       "techniques": [],
-      "registryProposal": "Same store/slice token resonance; the one query-shaped path here is a predicate filter, which the retrieval golden path hands to the search subject."
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/stores/slices/overview/memorySlice.ts:117 forwards a search string that the backend applies as a LIKE %q% predicate (src-tauri/db/src/repos/core/memories.rs:97) ordered by a caller-chosen sort_column - an exact filter over a paginated list, not a relevance-ranked slice; the search subject owns that surface",
+          "evaluatedAt": "2026-10-10T01:40:16.000Z",
+          "worker": "bc76142d-231d-4f9d-a063-f2a2572c26d1",
+          "reason": "replaced by 5e9587ee-8a2e-49ec-9bb8-9d7344b3a29c"
+        }
+      ]
     },
     "c06088ef-d143-4aa4-b60a-9d6f7aff9aba/retrieval": {
       "context": "stores-slices-system",
       "subject": "retrieval",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T01:40:16.000Z",
-      "worker": "bc76142d-231d-4f9d-a063-f2a2572c26d1",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:24:02.000Z",
+      "worker": "5e9587ee-8a2e-49ec-9bb8-9d7344b3a29c",
       "techniques": [],
-      "registryProposal": "The token \"indexing\" here means codebase-scanning (context grouping), not an inverted/vector index - a vocabulary collision the matcher cannot see."
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/stores/slices/system/devToolsContextSlice.ts:5 holds DevContext rows fetched over IPC for CRUD - the scanning/indexing the matcher scored (\"indexing\") is codebase-context grouping done in the backend, and no slice here issues a query against a corpus or ranks by relevance",
+          "evaluatedAt": "2026-10-10T01:40:16.000Z",
+          "worker": "bc76142d-231d-4f9d-a063-f2a2572c26d1",
+          "reason": "replaced by 5e9587ee-8a2e-49ec-9bb8-9d7344b3a29c"
+        }
+      ]
     },
     "0aded02d-f5c5-4e24-8366-90783fb343b1/retrieval": {
       "context": "stores-util",
@@ -13296,11 +13336,19 @@
       "subject": "retrieval",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T01:40:16.000Z",
-      "worker": "bc76142d-231d-4f9d-a063-f2a2572c26d1",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:24:02.000Z",
+      "worker": "5e9587ee-8a2e-49ec-9bb8-9d7344b3a29c",
       "techniques": [],
-      "registryProposal": "Sibling context vault-database-shell was already judged not-applicable for the same reason (sql-console governs); query/queries/table tokens are SQL vocabulary, not retrieval vocabulary."
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/vault/sub_databases/tabs/TableListSidebar.tsx:122 the table \"search\" is a client-side substring includes() over an already-loaded table list, and the console/queries tabs run operator SQL verbatim - no relevance ranking, floors or fusion; search and sql-console govern",
+          "evaluatedAt": "2026-10-10T01:40:16.000Z",
+          "worker": "bc76142d-231d-4f9d-a063-f2a2572c26d1",
+          "reason": "replaced by 5e9587ee-8a2e-49ec-9bb8-9d7344b3a29c"
+        }
+      ]
     },
     "54236947-3775-4d0a-8e14-1a709dd4d8bc/multi-project": {
       "context": "teams-factory",

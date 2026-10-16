@@ -1500,3 +1500,9 @@
 {"ts":"2026-10-16T18:22:31Z","bundle":"software-engineering","subjects":["hitl-approval"],"techniques":["resume-after-decision"],"deviations":1}
 {"ts":"2026-10-16T18:22:31Z","bundle":"software-engineering","subjects":["hitl-approval"],"techniques":["consent-gates","decision-records","resume-after-decision"],"deviations":2}
 {"ts":"2026-10-16T18:22:31Z","bundle":"software-engineering","subjects":["hitl-approval"],"techniques":[],"deviations":0}
+{"ts":"2026-10-16T18:24:02Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":[],"deviations":0,"context":"532bbf10-3fd3-4b57-a8ea-95a957645697"}
+{"ts":"2026-10-16T18:24:02Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":[],"deviations":0,"context":"c06088ef-d143-4aa4-b60a-9d6f7aff9aba"}
+{"ts":"2026-10-16T18:24:02Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":[],"deviations":0,"context":"e0ea6f08-ebdf-4c9e-aab4-969eee32f573"}
+{"ts":"2026-10-16T18:24:02Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":[],"deviations":0,"context":"b39776f5-3909-41e3-b69f-14c9a6c70bec"}
+{"ts":"2026-10-16T18:24:02Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":[],"deviations":0,"context":"647d6a54-3813-4149-bbf7-2d96a57a77c7"}
+{"ts":"2026-10-16T18:24:02Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":[],"deviations":0,"context":"55d6d7cb-b016-4d73-8386-b5c18beafdae"}

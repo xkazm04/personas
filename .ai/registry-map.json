@@ -14590,10 +14590,10 @@
           "changedAt": "2026-09-30",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/home/sub_releases/roadmapItems.ts:32 the 'lanes' are fixed NOW/NEXT/LATER priority buckets of a small curated roadmap list - no query, no corpus too large to hand over whole, nothing ranked by relevance; the matcher scored the word 'lane'",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:9f05c1f381f9d83f",
-          "evaluatedRevision": 17,
+          "evidence": "src/features/home/sub_releases/roadmapItems.ts:32 the lanes are fixed now/next/later priority buckets of a small curated roadmap list - no query and no corpus too large to hand over whole - re-judged against rev 19",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:a49d27f889212d3f",
+          "evaluatedRevision": 19,
           "revisionsBehind": 0
         },
         {
@@ -18638,10 +18638,10 @@
           "changedAt": "2026-09-30",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/teams/sub_mastermind/lib/deriveScene.ts:115 consumes a similarity_matrix the backend already computed and draws pairs >=0.5 as canvas edges - no query, no corpus sliced for a consumer, nothing ranked; the 0.5 cut is an edge-drawing threshold, not a relevance floor",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:9f05c1f381f9d83f",
-          "evaluatedRevision": 17,
+          "evidence": "src/features/teams/sub_mastermind/lib/deriveScene.ts:115 consumes a backend-computed similarity matrix and draws pairs >=0.5 as canvas edges - no query, no slice packed for a consumer; the cut is an edge threshold, not a relevance floor - re-judged against rev 19",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:a49d27f889212d3f",
+          "evaluatedRevision": 19,
           "revisionsBehind": 0
         },
         {
@@ -32135,10 +32135,10 @@
           "changedAt": "2026-09-30",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/stores/slices/overview/memorySlice.ts:117 forwards a search string that the backend applies as a LIKE %q% predicate (src-tauri/db/src/repos/core/memories.rs:97) ordered by a caller-chosen sort_column - an exact filter over a paginated list, not a relevance-ranked slice; the search subject owns that surface",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:9f05c1f381f9d83f",
-          "evaluatedRevision": 17,
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:97 the memory search forwarded at src/stores/slices/overview/memorySlice.ts:117 is a LIKE predicate over title/content with a caller-chosen sort - an exact filter over a paginated list, no relevance ranking, floors or period vote; search governs - re-judged against rev 19",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:a49d27f889212d3f",
+          "evaluatedRevision": 19,
           "revisionsBehind": 0
         },
         {
@@ -32405,10 +32405,10 @@
           "changedAt": "2026-09-30",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/stores/slices/system/devToolsContextSlice.ts:5 holds DevContext rows fetched over IPC for CRUD - the scanning/indexing the matcher scored (\"indexing\") is codebase-context grouping done in the backend, and no slice here issues a query against a corpus or ranks by relevance",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:9f05c1f381f9d83f",
-          "evaluatedRevision": 17,
+          "evidence": "src/stores/slices/system/devToolsContextSlice.ts:50 fetches context groups over IPC for CRUD display; no slice in the context (obsidianBrainSlice, ambientContextSlice included) issues a query against a corpus or ranks by relevance - re-judged against rev 19",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:a49d27f889212d3f",
+          "evaluatedRevision": 19,
           "revisionsBehind": 0
         },
         {
@@ -39555,10 +39555,10 @@
           "changedAt": "2026-09-30",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:31 executeDbQuery runs operator-written SQL verbatim against an external database - an exact predicate query with no relevance ranking, floors or fusion; the governing subject is sql-console, not retrieval",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:9f05c1f381f9d83f",
-          "evaluatedRevision": 17,
+          "evidence": "src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:45 executeDbQuery runs operator-written SQL verbatim against an external database - an exact predicate query with no relevance ranking; sql-console governs - re-judged against rev 19",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:a49d27f889212d3f",
+          "evaluatedRevision": 19,
           "revisionsBehind": 0
         },
         {
@@ -39927,10 +39927,10 @@
           "changedAt": "2026-09-30",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/vault/sub_databases/tabs/TableListSidebar.tsx:122 the table \"search\" is a client-side substring includes() over an already-loaded table list, and the console/queries tabs run operator SQL verbatim - no relevance ranking, floors or fusion; search and sql-console govern",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:9f05c1f381f9d83f",
-          "evaluatedRevision": 17,
+          "evidence": "src/features/vault/sub_databases/tabs/TableListSidebar.tsx:122 table search is a substring includes() over an already-loaded list, and src/features/vault/sub_databases/tabs/ChatTab.tsx:164 hands the NL question to the backend for SQL generation - no ranking, floors or fusion in this context; search and sql-console govern - re-judged against rev 19",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:a49d27f889212d3f",
+          "evaluatedRevision": 19,
           "revisionsBehind": 0
         },
         {
