@@ -1,0 +1,6 @@
+{"schema": "conform-run/1", "worker": "a9bf1d51-e5ba-4209-badc-9ec67114092a", "subject": "declarative-resource-lifecycle",
+ "evaluatedAt": "2026-10-16T17:38:35Z",
+ "pairs": [],
+ "declined": [],
+ "consults": [],
+ "note": "no work: .ai/registry-map.json (generatedAt 2026-10-14T18:25:17Z, 219 contexts, 1890 pairs) lists declarative-resource-lifecycle in zero contexts and subjectIndex has no entry for it; --subject judges only pairs the map lists, and this worker may not add pairs. Subject digest at registry 11037a6c: sha256-b2:d17485a3a3a8ddea rev 2. No missing pairing proposed: the golden path scopes the subject to a declarative control plane with several independent lock-free writers of one shared record, a precondition a single-operator local-first desktop app does not obviously meet."}
