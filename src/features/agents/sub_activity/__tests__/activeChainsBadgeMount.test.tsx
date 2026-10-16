@@ -4,7 +4,7 @@
  * `ActiveChainsBadge` is the sole UI consumer of `list_active_chains` and its
  * only mount was inside `ExecutionList`, which had no consumers — so a chain
  * running across three personas right now rendered nowhere. It is now on the
- * persona Activity tab's PERMANENT header, above the tab strip, so it is
+ * persona Activity tab's permanent chrome, above the filter strip, so it is
  * visible from every Activity tab rather than only from the runs one.
  *
  * Both directions are pinned: nothing in flight renders literally nothing (the
@@ -33,7 +33,7 @@ vi.mock('@/api/agents/executions', () => ({
   listActiveChains: () => listActiveChains(),
 }));
 
-import { ActivityHeader } from '../ActivityHeader';
+import { ActiveChainsBadge } from '../../sub_executions/components/ActiveChainsBadge';
 
 function chain(over: Partial<ActiveChain> = {}): ActiveChain {
   return {
@@ -47,19 +47,19 @@ function chain(over: Partial<ActiveChain> = {}): ActiveChain {
   } as ActiveChain;
 }
 
-describe('the Activity tab header mounts the active-chains badge', () => {
+describe('the Activity tab mounts the active-chains badge', () => {
   beforeEach(() => { vi.clearAllMocks(); });
 
   it('renders nothing at all when no chain is in flight', async () => {
     listActiveChains.mockResolvedValue([]);
-    render(<ActivityHeader personaId="p1" itemCount={0} isLoading={false} onRefresh={() => {}} />);
+    render(<ActiveChainsBadge />);
     await waitFor(() => expect(listActiveChains).toHaveBeenCalled());
     expect(screen.queryByTestId('active-chains-badge')).toBeNull();
   });
 
   it('renders the badge, with one row per chain, when work is in flight', async () => {
     listActiveChains.mockResolvedValue([chain(), chain({ chainTraceId: 'ffffffff11112222' })]);
-    render(<ActivityHeader personaId="p1" itemCount={0} isLoading={false} onRefresh={() => {}} />);
+    render(<ActiveChainsBadge />);
     await waitFor(() => {
       expect(screen.getByTestId('active-chains-badge')).toBeTruthy();
     });
