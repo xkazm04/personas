@@ -9,7 +9,7 @@
 //!   command payload.
 //! - Types that are lens-scan's own answers (`LensScanDecideResult`,
 //!   `LensScanTriageResult`, `LensScanSkipped`) keep the STORE's field names
-//!   (`packs_triaged`, `packs_reopened`) so they equal `src/lib/lensScan/wire.ts`
+//!   (`packs_triaged`, `packs_reopened`, spelled out under `camelCase`) so they equal `src/lib/lensScan/wire.ts`
 //!   (ported from bp) name for name, and a store.mjs answer passes through
 //!   unchanged.
 //!
@@ -119,8 +119,10 @@ pub struct LensScanIdentity {
 /// An item a store.mjs write left as it was.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
-// The store's own field names, verbatim (they ARE snake_case); stated rather than defaulted.
-#[serde(rename_all = "snake_case")]
+// camelCase like every binding (ts-bindings-camelcase); the store's two multi-word
+// names are spelled out field by field below, so a store.mjs answer still passes
+// through name for name (`wire.ts TriageResult`).
+#[serde(rename_all = "camelCase")]
 pub struct LensScanSkipped {
     pub id: String,
     pub status: String,
@@ -132,8 +134,10 @@ pub struct LensScanSkipped {
 /// What store.mjs `decide` answers, with the store's own field names.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
-// The store's own field names, verbatim (they ARE snake_case); stated rather than defaulted.
-#[serde(rename_all = "snake_case")]
+// camelCase like every binding (ts-bindings-camelcase); the store's two multi-word
+// names are spelled out field by field below, so a store.mjs answer still passes
+// through name for name (`wire.ts TriageResult`).
+#[serde(rename_all = "camelCase")]
 pub struct LensScanDecideResult {
     /// `approved` | `declined`.
     pub decision: String,
@@ -146,8 +150,10 @@ pub struct LensScanDecideResult {
 /// What store.mjs `triage` answers, with the store's own field names.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
-// The store's own field names, verbatim (they ARE snake_case); stated rather than defaulted.
-#[serde(rename_all = "snake_case")]
+// camelCase like every binding (ts-bindings-camelcase); the store's two multi-word
+// names are spelled out field by field below, so a store.mjs answer still passes
+// through name for name (`wire.ts TriageResult`).
+#[serde(rename_all = "camelCase")]
 pub struct LensScanTriageResult {
     /// `accepted` | `rework` | `descoped` | `reopened`.
     pub decision: String,
@@ -155,10 +161,14 @@ pub struct LensScanTriageResult {
     pub triaged: Vec<String>,
     #[serde(default)]
     pub skipped: Vec<LensScanSkipped>,
-    #[serde(default)]
+    #[serde(default, rename = "packs_triaged")]
     pub packs_triaged: Vec<String>,
     /// v3, reopen only.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        default,
+        rename = "packs_reopened",
+        skip_serializing_if = "Option::is_none"
+    )]
     #[ts(optional)]
     pub packs_reopened: Option<Vec<String>>,
 }
