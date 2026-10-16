@@ -6505,10 +6505,10 @@
           "changedAt": "2026-10-12",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/companion/stt.rs:33 companion_stt_transcribe returns a bare String, so no-speech crosses IPC as AppError::Internal text (src-tauri/src/companion/stt/whisper.rs:210) and src/features/companions/athena/useLocalDictation.ts:266 renders err.message - silence, no-speech and engine failure cannot stay three typed facts across the boundary",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
-          "evaluatedRevision": 20,
+          "evidence": "src-tauri/src/commands/companion/stt.rs:33 companion_stt_transcribe still returns a bare Result<String>, so no-speech crosses IPC as AppError::Internal text (src-tauri/src/companion/stt/whisper.rs:210) and useLocalDictation.ts:266 renders err.message - silence, no-speech and engine failure are not three typed facts; re-checked at rev 21",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:fa03abeab38c89c7",
+          "evaluatedRevision": 21,
           "revisionsBehind": 0
         },
         {
@@ -8403,10 +8403,10 @@
           "changedAt": "2026-10-12",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/companions/athena/sub_voice/voiceEngineShared.tsx:145 the Voice settings install is a second implementation of the setup install (useCreateAthenaInstall.ts:3 \"Mirrors VoiceEngineInstallBlock\") and its preview (:322/:330) has no latest-wins gate, so a stopped or superseded synthesis still plays - the drift voice-setup-experience rule 5 predicts; rev-19 findings persist (athenaSlice.ts:353 browser STT default, BubbleReadAloud.tsx:65 raw markdown to synthesis)",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
-          "evaluatedRevision": 20,
+          "evidence": "src/features/companions/athena/sub_voice/voiceEngineShared.tsx:322 a preview stopped during 'synth' resets state but the awaited synthesize still reaches play() at :330 with no latest-wins gate, so a stopped preview plays anyway; BubbleReadAloud.tsx:66 still sends raw markdown to synthesis and athenaSlice.ts:353 still defaults STT to 'browser'; re-checked at rev 21",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:fa03abeab38c89c7",
+          "evaluatedRevision": 21,
           "revisionsBehind": 0
         },
         {
@@ -8912,10 +8912,10 @@
           "changedAt": "2026-10-12",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/companion/tts/kokoro.rs:222 spawns a fresh sherpa process per utterance, reloading the model every call (~1.5s of a 2.6-3.0s preview), so the default live engine pays the process boundary on every reply (real-time-synthesis-budget); whisper.rs:210 no-speech is AppError::Internal like a crash; kokoro_installer.rs:44 install lock is per-process only",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
-          "evaluatedRevision": 20,
+          "evidence": "src-tauri/src/companion/tts/kokoro.rs:222 still spawns a fresh sherpa process per utterance, reloading the model on every live reply (real-time-synthesis-budget counts the process boundary in the rate); re-checked at rev 21, whisper.rs:210 no-speech is still AppError::Internal and kokoro_installer.rs:44 the install lock is still per-process",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:fa03abeab38c89c7",
+          "evaluatedRevision": 21,
           "revisionsBehind": 0
         },
         {
@@ -20233,10 +20233,10 @@
           "changedAt": "2026-10-12",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/onboarding/components/useTourNarration.ts:102 tour narration plays through its own raw element from play() with no shared speech arbiter (BubbleReadAloud.tsx holds a separate one), so a step narration and an Athena read-aloud can be audible at once; its 'error' status renders identical to idle (TourNarrationButton.tsx:30) and its audio cache is keyed by step id alone (:121), so a mid-tour voice change replays the old voice",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
-          "evaluatedRevision": 20,
+          "evidence": "src/features/onboarding/components/useTourNarration.ts:102 tour narration still calls play() on a private element with no shared speech arbiter, so it can overlap an Athena read-aloud; TourNarrationButton.tsx:30 still renders 'error' like idle and :121 caches audio by step key alone, so a voice change replays the old voice; re-checked at rev 21",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:fa03abeab38c89c7",
+          "evaluatedRevision": 21,
           "revisionsBehind": 0
         },
         {
@@ -24984,10 +24984,10 @@
           "changedAt": "2026-10-12",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/companions/athena/useHoldToTalk.ts:117 runs whichever option a bare spoken digit names, including approve (src/features/companions/athena/decision/useDecisionQueue.ts:112), with no confirmation, and src/features/companions/athena/decision/actionRisk.ts:23 never gates execution - destructive spoken actions must confirm with the interpretation echoed back",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
-          "evaluatedRevision": 20,
+          "evidence": "src/features/companions/athena/useHoldToTalk.ts:117 still runs whichever option a bare spoken digit names, approve included, with no confirmation echoing the interpretation, and src/features/companions/athena/decision/actionRisk.ts:23 states risk never gates execution; re-checked at rev 21",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:fa03abeab38c89c7",
+          "evaluatedRevision": 21,
           "revisionsBehind": 0
         },
         {
