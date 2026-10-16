@@ -1330,3 +1330,7 @@
 {"ts":"2026-10-16T17:27:31Z","bundle":"software-engineering","subjects":["long-form-reading-surface"],"techniques":["fixed-chrome-offset-budget","scroll-spy-reading-band","anchor-id-single-assigner","focus-transfer-on-in-place-navigation","server-parsed-once-reused"],"deviations":1}
 {"ts":"2026-10-16T17:27:31Z","bundle":"software-engineering","subjects":["long-form-reading-surface"],"techniques":["focus-transfer-on-in-place-navigation","fixed-chrome-offset-budget"],"deviations":0}
 {"ts":"2026-10-16T17:27:31Z","bundle":"software-engineering","subjects":["long-form-reading-surface"],"techniques":["focus-transfer-on-in-place-navigation","anchor-id-single-assigner"],"deviations":0}
+{"ts":"2026-10-16T17:28:03Z","bundle":"software-engineering","subjects":["draft-editing"],"techniques":["draft-model","dirty-tracking"],"deviations":1}
+{"ts":"2026-10-16T17:28:03Z","bundle":"software-engineering","subjects":["draft-editing"],"techniques":["navigation-guards"],"deviations":1}
+{"ts":"2026-10-16T17:28:03Z","bundle":"software-engineering","subjects":["draft-editing"],"techniques":[],"deviations":0}
+{"ts":"2026-10-16T17:28:03Z","bundle":"software-engineering","subjects":["draft-editing"],"techniques":["debounced-save-groups","draft-model"],"deviations":1}
