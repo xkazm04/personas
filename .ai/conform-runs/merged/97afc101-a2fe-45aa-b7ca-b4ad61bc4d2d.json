@@ -1,0 +1,80 @@
+{
+  "schema": "conform-run/1",
+  "worker": "97afc101-a2fe-45aa-b7ca-b4ad61bc4d2d",
+  "subject": "templates-scaffolding",
+  "evaluatedAt": "2026-10-16T18:26:31.456Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "templates-scaffolding",
+      "context": "b26fe932-b123-4b9e-8d1c-bbbf4e508265",
+      "reason": "already judged deviation on 2026-10-10 against sha256-b2:3dd9549b75f4f998 rev 3, which is still the registry index digest at 11037a6c; git log shows no commit to the verdict anchor files since that date - re-judging would repeat a current verdict"
+    },
+    {
+      "subject": "templates-scaffolding",
+      "context": "835ed922-2ebd-425b-a542-dbe5996e1e78",
+      "reason": "already judged deviation on 2026-10-10 against sha256-b2:3dd9549b75f4f998 rev 3, which is still the registry index digest at 11037a6c; git log shows no commit to the verdict anchor files since that date - re-judging would repeat a current verdict"
+    },
+    {
+      "subject": "templates-scaffolding",
+      "context": "b4439e30-fcff-4095-97dd-d9d7da2247dd",
+      "reason": "already judged not-applicable on 2026-10-10 against sha256-b2:3dd9549b75f4f998 rev 3, which is still the registry index digest at 11037a6c; git log shows no commit to the verdict anchor files since that date - re-judging would repeat a current verdict"
+    },
+    {
+      "subject": "templates-scaffolding",
+      "context": "b88ef121-d028-4999-bf34-6e44aed99959",
+      "reason": "already judged deviation on 2026-10-12 against sha256-b2:3dd9549b75f4f998 rev 3, which is still the registry index digest at 11037a6c; git log shows no commit to the verdict anchor files since that date - re-judging would repeat a current verdict"
+    },
+    {
+      "subject": "templates-scaffolding",
+      "context": "e76afaf6-ba3b-4341-b1ad-f444f08da8b8",
+      "reason": "already judged conformant on 2026-10-09 against sha256-b2:3dd9549b75f4f998 rev 3, which is still the registry index digest at 11037a6c; git log shows no commit to the verdict anchor files since that date - re-judging would repeat a current verdict"
+    },
+    {
+      "subject": "templates-scaffolding",
+      "context": "80e0534a-d0ea-469a-9c3a-cf12910ecde9",
+      "reason": "already judged deviation on 2026-10-09 against sha256-b2:3dd9549b75f4f998 rev 3, which is still the registry index digest at 11037a6c; git log shows no commit to the verdict anchor files since that date - re-judging would repeat a current verdict"
+    },
+    {
+      "subject": "templates-scaffolding",
+      "context": "9b6cc17c-3add-4152-a349-c189b15a109f",
+      "reason": "already judged not-applicable on 2026-10-10 against sha256-b2:3dd9549b75f4f998 rev 3, which is still the registry index digest at 11037a6c; git log shows no commit to the verdict anchor files since that date - re-judging would repeat a current verdict"
+    },
+    {
+      "subject": "templates-scaffolding",
+      "context": "d3346f2c-d747-4d85-b6e6-c1450da57ec9",
+      "reason": "already judged deviation on 2026-10-10 against sha256-b2:3dd9549b75f4f998 rev 3, which is still the registry index digest at 11037a6c; git log shows no commit to the verdict anchor files since that date - re-judging would repeat a current verdict"
+    },
+    {
+      "subject": "templates-scaffolding",
+      "context": "4be04ef0-88db-4f48-859c-92e6ba4d203f",
+      "reason": "already judged deviation on 2026-10-12 against sha256-b2:3dd9549b75f4f998 rev 3, which is still the registry index digest at 11037a6c; git log shows no commit to the verdict anchor files since that date - re-judging would repeat a current verdict"
+    },
+    {
+      "subject": "templates-scaffolding",
+      "context": "b38217f2-397e-49a7-ac32-4cce440c7e74",
+      "reason": "already judged deviation on 2026-10-12 against sha256-b2:3dd9549b75f4f998 rev 3, which is still the registry index digest at 11037a6c; git log shows no commit to the verdict anchor files since that date - re-judging would repeat a current verdict"
+    },
+    {
+      "subject": "templates-scaffolding",
+      "context": "2a54cdc2-87af-4298-b490-9eb87f230df7",
+      "reason": "already judged deviation on 2026-10-09 against sha256-b2:3dd9549b75f4f998 rev 3, which is still the registry index digest at 11037a6c; git log shows no commit to the verdict anchor files since that date - re-judging would repeat a current verdict"
+    },
+    {
+      "subject": "templates-scaffolding",
+      "context": "7dddb34a-3a9b-4ce0-832f-55ea352c12b5",
+      "reason": "already judged deviation on 2026-10-03 against sha256-b2:3dd9549b75f4f998 rev 3, which is still the registry index digest at 11037a6c; git log shows no commit to the verdict anchor files since that date - re-judging would repeat a current verdict"
+    },
+    {
+      "subject": "templates-scaffolding",
+      "context": "9fca099d-94e4-4fd0-8460-3cf5d8c85acf",
+      "reason": "already judged deviation on 2026-10-16 against sha256-b2:3dd9549b75f4f998 rev 3, which is still the registry index digest at 11037a6c; git log shows no commit to the verdict anchor files since that date - re-judging would repeat a current verdict"
+    },
+    {
+      "subject": "templates-scaffolding",
+      "context": "e13cfc6c-f666-4959-81c0-2cfbc4815f04",
+      "reason": "already judged deviation on 2026-10-12 against sha256-b2:3dd9549b75f4f998 rev 3, which is still the registry index digest at 11037a6c; git log shows no commit to the verdict anchor files since that date - re-judging would repeat a current verdict"
+    }
+  ],
+  "consults": []
+}
