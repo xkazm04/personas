@@ -2346,40 +2346,43 @@
       "subject": "analytics-time-windows",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-13",
-      "evaluatedTs": "2026-10-13T12:47:07.654Z",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:31:42.000Z",
+      "worker": "f7b33d0d-90b5-4ed6-bdf0-4d58c5540ca2",
       "techniques": [
         {
           "technique": "half-open-interval-policy",
           "verdict": "deviation",
-          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:30 Positional array cut violates the dense-series caveat because non-empty bucket feeds shift the boundary during quiet intervals."
-        },
-        {
-          "technique": "baseline-as-window-start",
-          "verdict": "not-applicable",
-          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:25 Precondition does not hold: usage and token counts are flow/event metrics without state, where point baseline is not applicable."
-        },
-        {
-          "technique": "calendar-arithmetic",
-          "verdict": "not-applicable",
-          "evidence": "src/features/overview/sub_usage/components/DayRangePicker.tsx:10 Precondition does not hold: dashboard presets offer rolling technical durations (24h, 7d, 30d, 90d) rather than calendar-aligned monthly/quarterly boundaries."
+          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:30 positional split on a sparse series - the technique's named dense-series failure; same cut duplicated at src/features/overview/libs/computeTrends.ts:43, so the trend badges carry it too"
         },
         {
           "technique": "canonical-zone-single-source",
           "verdict": "deviation",
-          "evidence": "src/features/overview/sub_usage/components/DayRangePicker.tsx:86 Custom range popover truncates in UTC via toISOString while formatRangeLabel parses in local time, lacking a unified canonical zone accessor."
+          "evidence": "src-tauri/db/src/repos/execution/metrics.rs:1263 buckets the dashboard by UTC DATE(created_at) while the sibling Overview heatmap buckets by the client's local day (metrics.rs:2237), two zones feeding the same Overview surface"
+        },
+        {
+          "technique": "range-precedence-resolution",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_activity/libs/useExecutionMetrics.ts:39 passes a bare day count down (fetchDays) and each layer re-derives the range - the backend from datetime('now', '-N days') - instead of a resolved window value with bounds and zone"
+        },
+        {
+          "technique": "baseline-as-window-start",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_activity/libs/useExecutionMetrics.ts:99 compares flow metrics (cost, completed, failed counts), which the technique excludes: events have no as-of state, only a prior total"
         },
         {
           "technique": "cohort-matched-comparison",
           "verdict": "not-applicable",
-          "evidence": "src/features/overview/sub_usage/libs/pivotToolUsage.ts:31 Precondition does not hold: aggregated tool invocations represent event counts across time rather than a cohort of evolving entity identities."
+          "evidence": "src/features/overview/libs/computeTrends.ts:116 trends are whole-population sums/averages of executions, not per-entity movement over a changing population"
         },
         {
-          "technique": "range-precedence-resolution",
+          "technique": "calendar-arithmetic",
           "verdict": "not-applicable",
-          "evidence": "src/features/overview/sub_usage/components/DayRangePicker.tsx:24 Precondition does not hold: component receives range state via props without resolving multi-source precedence or returning provenance."
+          "evidence": "src/features/overview/sub_usage/components/DayRangePicker.tsx:10 Precondition does not hold: dashboard presets offer rolling technical durations (24h, 7d, 30d, 90d) rather than calendar-aligned monthly/quarterly boundaries.",
+          "carriedFrom": "2026-10-13"
         }
       ],
+      "registryProposal": "The ranked anchors for this context's deviation live outside its paths (useExecutionMetrics.ts in sub_activity, computeTrends.ts in overview/libs, metrics.rs in db): the context owns the splitter, not the read that makes it wrong. A verdict here cannot be fixed inside the context's own files; the comparison pipeline spans three contexts and the map has no context that owns it end to end.",
       "superseded": [
         {
           "state": "deviation",
@@ -2388,53 +2391,49 @@
           "worker": null,
           "reason": "replaced by 91382f36-fb69-46e2-9349-71da7ab161be"
         }
-      ],
-      "withdrawn": {
-        "worker": "91382f36-fb69-46e2-9349-71da7ab161be",
-        "state": "deviation",
-        "at": "2026-10-13T12:48:34.239549+00:00",
-        "reason": "reviewer (sonnet): I could not confirm that the series is sparse: the only caller of mergePreviousPeriod is in sub_activity/useExecutionMetrics.ts, outside this context, and I did not find the backend code that builds daily_points, so I could not tell whether quiet days are zero-filled."
-      }
+      ]
     },
     "56a0fd55-279d-428b-b2f6-7c89154abd6f/analytics-time-windows": {
       "context": "schedules-components",
       "subject": "analytics-time-windows",
       "bundle": "software-engineering",
       "state": "conformant",
-      "evaluatedAt": "2026-10-13",
-      "evaluatedTs": "2026-10-13T12:47:07.654Z",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:31:42.000Z",
+      "worker": "f7b33d0d-90b5-4ed6-bdf0-4d58c5540ca2",
       "techniques": [
-        {
-          "technique": "calendar-arithmetic",
-          "verdict": "conformant",
-          "evidence": "src/features/schedules/libs/calendarHelpers.ts:346 Derives run-matching tolerance dynamically from slot spacing by capping tolerance at half the gap to neighbouring slots."
-        },
         {
           "technique": "canonical-zone-single-source",
           "verdict": "conformant",
-          "evidence": "src/features/schedules/libs/calendarHelpers.ts:154 Day bucket keys and day boundary snapping consistently use local date getters to prevent cross-zone skew."
+          "evidence": "src/features/schedules/libs/calendarHelpers.ts:43 setHours(0,0,0,0) snaps in local time and :154 keys buckets with the same local getters - one zone for snap and key"
+        },
+        {
+          "technique": "calendar-arithmetic",
+          "verdict": "conformant",
+          "evidence": "src/features/schedules/libs/calendarHelpers.ts:76 month range from new Date(y, m+1, 0) and setDate day steps, no 86400/30-day literals; weeks align to a named weekday (Sunday) rather than epoch division"
         },
         {
           "technique": "half-open-interval-policy",
           "verdict": "conformant",
-          "evidence": "src/features/schedules/libs/calendarHelpers.ts:135 Month grid generation advances with cursor < end, strictly upholding the half-open interval policy."
+          "evidence": "src/features/schedules/libs/calendarHelpers.ts:64 end = start + 7 days exclusive, consumed as cursor < end (:135) and cursor < endMs in src/features/schedules/libs/useCronPreview.ts:278"
         },
         {
           "technique": "baseline-as-window-start",
           "verdict": "not-applicable",
-          "evidence": "src/features/schedules/libs/scheduleHelpers.ts:8 Precondition does not hold: calendar visualizes trigger schedules and execution states rather than computing period-over-period metric deltas."
+          "evidence": "src/features/schedules/components/ScheduleCalendar.tsx:53 renders one week/month range with no period comparison"
         },
         {
           "technique": "cohort-matched-comparison",
           "verdict": "not-applicable",
-          "evidence": "src/features/schedules/libs/calendarHelpers.ts:7 Precondition does not hold: events represent discrete fire slots rather than an evolving population of entities with measurable movement."
+          "evidence": "src/features/schedules/components/ScheduleCalendar.tsx:53 no period delta exists in the calendar"
         },
         {
           "technique": "range-precedence-resolution",
           "verdict": "not-applicable",
-          "evidence": "src/features/schedules/components/ScheduleCalendar.tsx:40 Precondition does not hold: calendar anchors to current date without resolving conflicting range preferences or org defaults."
+          "evidence": "src/features/schedules/components/ScheduleCalendar.tsx:53 single-source range (view + anchor), which the technique exempts from needing a resolver"
         }
       ],
+      "registryProposal": "Week start is hardcoded to Sunday (calendarHelpers.ts:62) in an app shipping 14 locales; canonical-zone-single-source says week alignment travels with the zone/locale decision but no decision rule says whether a consistent fixed weekday is acceptable or a deviation when locale varies. Worth one decision rule.",
       "superseded": [
         {
           "state": "conformant",
@@ -2443,13 +2442,7 @@
           "worker": null,
           "reason": "replaced by 91382f36-fb69-46e2-9349-71da7ab161be"
         }
-      ],
-      "withdrawn": {
-        "worker": "91382f36-fb69-46e2-9349-71da7ab161be",
-        "state": "conformant",
-        "at": "2026-10-13T12:48:34.139115+00:00",
-        "reason": "reviewer (sonnet): The not-applicable anchor scheduleHelpers.ts:8 is just the ScheduleEntry interface declaration and does not show that period-over-period deltas are absent; the 'avoids split-brain' claim is also unconfirmed, because fire times come from the backend in each agent's own timezone (useCronPreview.ts pas"
-      }
+      ]
     },
     "4bdc9d46-06f1-4eb7-98f5-f6546aa5ef6e/terminal-multiplexing": {
       "context": "fleet-terminal-manager",

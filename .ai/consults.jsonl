@@ -1340,3 +1340,5 @@
 {"ts":"2026-10-16T17:31:07Z","bundle":"software-engineering","subjects":["companion-identity"],"techniques":["disk-truth-db-index"],"deviations":1}
 {"ts":"2026-10-16T17:31:07Z","bundle":"software-engineering","subjects":["companion-identity"],"techniques":["anchored-identity-diffs"],"deviations":1}
 {"ts":"2026-10-16T17:31:07Z","bundle":"software-engineering","subjects":["companion-identity"],"techniques":["anchored-identity-diffs","operator-profile-synthesis"],"deviations":1}
+{"ts":"2026-10-16T17:31:42Z","bundle":"software-engineering","subjects":["analytics-time-windows"],"techniques":["half-open-interval-policy","canonical-zone-single-source","range-precedence-resolution","baseline-as-window-start","cohort-matched-comparison"],"deviations":3}
+{"ts":"2026-10-16T17:31:42Z","bundle":"software-engineering","subjects":["analytics-time-windows"],"techniques":["canonical-zone-single-source","calendar-arithmetic","half-open-interval-policy"],"deviations":0}

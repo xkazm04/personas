@@ -22713,10 +22713,11 @@
           "changedAt": "2026-09-30",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:30 splits the doubled read by array position on a series that only carries non-empty buckets (pivotToolUsage.ts:49 keys off observed dates), so a quiet interval silently labels part of the current period as the baseline. [re-judged 2026-09-22: triage re-stamp, not a fresh read: every file this context owns is unchanged since the verdict, the standard only GAINED techniques since (none it names was edited, the golden path body was not edited), and an added requirement cannot clear a deviation; each cited line was then checked by hand and still shows the cited construct]",
-          "evaluatedAt": "2026-09-22",
+          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:30 splits the doubled read by array position, but the dashboard series carries only observed days (src-tauri/db/src/repos/execution/metrics.rs:1414 builds dates from non-empty buckets, no densify anywhere), so a quiet day shifts the cut and part of the current period is drawn and summed as the previous one",
+          "evaluatedAt": "2026-10-16",
           "source": "conform",
-          "stale": true
+          "evaluatedAgainst": "sha256-b2:9b81f64365c4edae",
+          "evaluatedRevision": 6
         },
         {
           "subject": "mcp-tools",
@@ -29604,9 +29605,10 @@
           "changedAt": "2026-09-30",
           "confidence": "probable",
           "state": "conformant",
-          "evidence": "src/features/schedules/libs/calendarHelpers.ts:43 snaps day boundaries in the local zone and dayKey (:153) keys buckets with the same local getters; the UTC-key/local-label split recorded against ScheduleRowHistoryPanel.tsx went away with that file (deleted in 5447a03ef8) and no surviving file in the context repeats it.",
-          "evaluatedAt": "2026-09-23",
-          "stale": true
+          "evidence": "src/features/schedules/libs/calendarHelpers.ts:43 snaps day boundaries in the local zone and dayKey (:154) keys with the same local getters; week/month ranges are calendar-unit arithmetic with exclusive ends (:64, :76) iterated as cursor < end (:135)",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:9b81f64365c4edae",
+          "evaluatedRevision": 6
         },
         {
           "subject": "eval-harness",
