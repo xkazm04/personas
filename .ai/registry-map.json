@@ -12433,8 +12433,8 @@
           "changedAt": "2026-09-26",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/hooks/execution/useReplayTimeline.ts:265 still apportions line timestamps evenly across the run when a log carries no recorded tempo; `hasRecordedTempo` only gates the silence shading (TimelineScrubber.tsx:138), so the scrubber plays over invented time with no per-element label (estimate-labeling: the label must survive playback; timeline-derivation: this record does not support a timeline).",
-          "evaluatedAt": "2026-10-15",
+          "evidence": "src/hooks/execution/useReplayTimeline.ts:265 apportions lines evenly when the log has no recorded tempo, and the per-line `recorded` flag (useReplayTimeline.ts:22) is read by nothing outside the hook, so lines animate in at invented moments with no per-element estimate mark and the readout (TimelineScrubber.tsx:193) prints exact time over reconstructed ground",
+          "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:798a88c318279127",
           "evaluatedRevision": 5
         },

@@ -1787,28 +1787,38 @@
       "subject": "time-travel-replay",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-8",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:26:16.000Z",
+      "worker": "ac15c147-f45f-457d-9472-4f756a0b0725",
       "techniques": [
-        {
-          "technique": "timeline-derivation",
-          "verdict": "deviation",
-          "evidence": "src/hooks/execution/useReplayTimeline.ts:258 falls back to even apportionment (index/len * totalMs) when recordedSpanMs is null, manufacturing per-line timings from one total and playing them as recorded; for timestamped logs the derivation is honest (offsets parsed at :242, silences found at :317)"
-        },
         {
           "technique": "estimate-labeling",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_executions/replay/TimelineScrubber.tsx:35 'Nothing extra is drawn' when the log has no timestamps; the per-line recorded flag (useReplayTimeline.ts:22) never reaches the UI, so apportioned timing carries no marker or provenance note before playback"
+          "evidence": "src/hooks/execution/useReplayTimeline.ts:22 `recorded` is computed per line but never rendered (no consumer outside the hook); TimelineScrubber.tsx:193 formatMs prints 1.2s/ms precision regardless of tempo provenance, and the replay has no provenance summary before play"
+        },
+        {
+          "technique": "timeline-derivation",
+          "verdict": "deviation",
+          "evidence": "src/hooks/execution/useReplayTimeline.ts:265 no-tempo fallback spaces lines proportionally over totalMs - the 'proportional-looking spacing over apportioned timestamps' the standard refuses; gaps with recorded tempo are disclosed (TimelineScrubber.tsx:138)"
         },
         {
           "technique": "transport-and-time-mapping",
-          "verdict": "deviation",
-          "evidence": "src/hooks/execution/useReplayTimeline.ts:499 auto-skip jumps the playhead over a recorded silence with no in-flow 'Xm skipped' marker - only the scrubber hatch (TimelineScrubber.tsx:138) records it, and no elapsed figure names which clock it quotes; compression is correctly an opt-in playback policy over true record time"
+          "verdict": "conformant",
+          "evidence": "src/hooks/execution/useReplayTimeline.ts:494 skip-silence is a toggle-style control gated on recorded tempo and confined to the silence the playhead is inside"
         },
         {
           "technique": "accrual-overlays",
           "verdict": "conformant",
-          "evidence": "src/features/agents/sub_executions/replay/ReplayCostPanel.tsx:46 running cost shown with a '~' prefix, so the apportioned accrual declares itself an estimate beside the settled total"
+          "evidence": "src/features/agents/sub_executions/replay/ReplayCostPanel.tsx:46 cost re-accrues with position (useReplayTimeline.ts:413) and is prefixed ~ as an estimate against the real total"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/hooks/execution/useReplayTimeline.ts:265 still apportions line timestamps evenly across the run when a log carries no recorded tempo; `hasRecordedTempo` only gates the silence shading (TimelineScrubber.tsx:138), so the scrubber plays over invented time with no per-element label (estimate-labeling: the label must survive playback; timeline-derivation: this record does not support a timeline).",
+          "evaluatedAt": "2026-10-15",
+          "worker": null,
+          "reason": "replaced by ac15c147-f45f-457d-9472-4f756a0b0725"
         }
       ]
     },

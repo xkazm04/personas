@@ -1326,3 +1326,4 @@
 {"ts":"2026-10-16T17:26:16Z","bundle":"software-engineering","subjects":["session-resume"],"techniques":["last-seen-anchors","delta-briefings","first-run-and-quiet-silence","resume-affordances"],"deviations":3}
 {"ts":"2026-10-16T17:26:25Z","bundle":"software-engineering","subjects":["undo-history"],"techniques":["redo-semantics","gesture-coalescing"],"deviations":1}
 {"ts":"2026-10-16T17:26:25Z","bundle":"software-engineering","subjects":["undo-history"],"techniques":[],"deviations":0}
+{"ts":"2026-10-16T17:26:16Z","bundle":"software-engineering","subjects":["time-travel-replay"],"techniques":["estimate-labeling","timeline-derivation","transport-and-time-mapping","accrual-overlays"],"deviations":1}
