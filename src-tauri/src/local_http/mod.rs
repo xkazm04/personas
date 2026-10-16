@@ -159,8 +159,36 @@ pub fn port() -> Option<u16> {
 /// A same-user, non-sandboxed process CAN still read it — but such a process
 /// could run the Claude CLI directly, so that residual is not what this file
 /// is defending.
+///
+/// **One instance, one handshake.** An ISOLATED instance (`PERSONAS_DATA_DIR`
+/// set: a smoke, a `/mesh-onboard` second instance, a tour run) owns ONLY
+/// `<PERSONAS_DATA_DIR>/local-http.json`; it never writes, reads its token from,
+/// or clears `~/.personas/local-http.json`, which is the operator's real app's.
+/// Until 2026-10-16 it wrote both, so a throwaway instance overwrote the real
+/// handshake (every terminal skill then drove the throwaway) and deleted it on
+/// exit. Every reader that drives an isolated instance already looks in the
+/// data dir first (`scripts/mesh/client.mjs`, `scripts/fleet/personas-run.mjs`).
 pub fn handshake_path() -> Option<PathBuf> {
-    dirs::home_dir().map(|h| h.join(".personas").join("local-http.json"))
+    handshake_path_from(
+        std::env::var("PERSONAS_DATA_DIR").ok().as_deref(),
+        dirs::home_dir(),
+    )
+}
+
+/// [`handshake_path`] over its two inputs: the isolated path when
+/// `PERSONAS_DATA_DIR` is set and not blank, else `<home>/.personas/local-http.json`.
+fn handshake_path_from(data_dir: Option<&str>, home: Option<PathBuf>) -> Option<PathBuf> {
+    isolated_handshake_path_from(data_dir)
+        .or_else(|| home.map(|h| h.join(".personas").join("local-http.json")))
+}
+
+/// Where THIS instance's handshake is, as a brief to a worker states it: the
+/// data-dir path for an isolated instance, else the conventional `~` form.
+pub fn handshake_hint() -> String {
+    match isolated_handshake_path() {
+        Some(p) => p.display().to_string(),
+        None => "~/.personas/local-http.json".to_string(),
+    }
 }
 
 /// The exact document [`write_handshake`] serialises.
@@ -180,14 +208,12 @@ fn handshake_body(port: u16) -> serde_json::Value {
     })
 }
 
-/// The DEV-ONLY second handshake of an isolated instance:
-/// `<PERSONAS_DATA_DIR>/local-http.json`, or `None` when the env is unset or
-/// blank (read exactly as `boot::paths::resolve_app_data_dir` reads it).
-///
-/// Two isolated instances on one machine both overwrite the default
-/// `~/.personas/local-http.json`, so a terminal driving ONE of them (the
-/// `/mesh-onboard` client: `PERSONAS_DATA_DIR` set → this file first) needs a
-/// handshake that is only that instance's.
+/// The handshake of an isolated instance: `<PERSONAS_DATA_DIR>/local-http.json`,
+/// or `None` when the env is unset or blank (read exactly as
+/// `boot::paths::resolve_app_data_dir` reads it). When `Some`, it is the ONLY
+/// handshake the instance writes (see [`handshake_path`]), so a terminal driving
+/// ONE of two isolated instances (the `/mesh-onboard` client: `PERSONAS_DATA_DIR`
+/// set → this file first) reads a handshake that is only that instance's.
 pub fn isolated_handshake_path() -> Option<PathBuf> {
     isolated_handshake_path_from(std::env::var("PERSONAS_DATA_DIR").ok().as_deref())
 }
@@ -202,18 +228,14 @@ fn isolated_handshake_path_from(data_dir: Option<&str>) -> Option<PathBuf> {
 /// the credential. Best effort: a failure here degrades those skills, it must
 /// never stop the server.
 ///
-/// An isolated instance (`PERSONAS_DATA_DIR` set) ALSO writes the same
-/// document to [`isolated_handshake_path`], with the same restrict-then-rename
-/// ordering. Without the env only the default path is written, as before.
+/// ONE file: [`handshake_path`], which for an isolated instance
+/// (`PERSONAS_DATA_DIR` set) is its data dir's and never `~/.personas`'.
 fn write_handshake(port: u16) {
     let Some(path) = handshake_path() else {
         tracing::warn!("local_http: home dir not resolvable; handshake file not written");
         return;
     };
     write_handshake_at(&path, port);
-    if let Some(isolated) = isolated_handshake_path() {
-        write_handshake_at(&isolated, port);
-    }
 }
 
 /// One handshake file at `path`. SECURITY-SENSITIVE: the token is restricted
@@ -287,7 +309,12 @@ fn write_handshake_at(path: &std::path::Path, port: u16) {
 /// function — the pid in the file is what a caller checks for those.
 pub fn clear_handshake() {
     let Some(path) = handshake_path() else { return };
-    let Ok(text) = std::fs::read_to_string(&path) else {
+    clear_handshake_at(&path);
+}
+
+/// [`clear_handshake`] at one path: removed only when the pid in it is ours.
+fn clear_handshake_at(path: &std::path::Path) {
+    let Ok(text) = std::fs::read_to_string(path) else {
         return;
     };
     let ours = serde_json::from_str::<serde_json::Value>(&text)
@@ -297,7 +324,7 @@ pub fn clear_handshake() {
     if !ours {
         return;
     }
-    match std::fs::remove_file(&path) {
+    match std::fs::remove_file(path) {
         Ok(()) => tracing::info!(path = %path.display(), "local_http: handshake cleared on exit"),
         Err(e) => tracing::warn!(error = %e, "local_http: could not clear the handshake"),
     }
@@ -388,8 +415,8 @@ mod tests {
         );
     }
 
-    /// The dev-only second handshake exists only for an isolated instance, and
-    /// sits in ITS data dir under the name the `/mesh` client reads.
+    /// The isolated handshake exists only for an isolated instance, and sits in
+    /// ITS data dir under the name the `/mesh` client reads.
     #[test]
     fn isolated_handshake_lands_in_the_data_dir_only_when_set() {
         assert_eq!(isolated_handshake_path_from(None), None);
@@ -397,6 +424,60 @@ mod tests {
         assert_eq!(
             isolated_handshake_path_from(Some(" C:/smoke/data-A ")),
             Some(PathBuf::from("C:/smoke/data-A").join("local-http.json"))
+        );
+    }
+
+    /// Close-out item 3: an isolated instance's ONE handshake is its data dir's;
+    /// the operator's `~/.personas/local-http.json` is never its write, its
+    /// token source or its clear. Without the env, the global path, as before.
+    #[test]
+    fn an_isolated_instance_owns_only_its_data_dir_handshake() {
+        let home = Some(PathBuf::from("C:/Users/op"));
+        let global = PathBuf::from("C:/Users/op")
+            .join(".personas")
+            .join("local-http.json");
+        // Env unset or blank: the operator's real handshake.
+        assert_eq!(
+            handshake_path_from(None, home.clone()),
+            Some(global.clone())
+        );
+        assert_eq!(
+            handshake_path_from(Some("  "), home.clone()),
+            Some(global.clone())
+        );
+        // Env set: the data dir's, and never the global one.
+        let isolated = handshake_path_from(Some("C:/smoke/data-A"), home.clone());
+        assert_eq!(
+            isolated,
+            Some(PathBuf::from("C:/smoke/data-A").join("local-http.json"))
+        );
+        assert_ne!(isolated, Some(global));
+        // An isolated instance needs no home dir to find its own.
+        assert!(handshake_path_from(Some("C:/smoke/data-A"), None).is_some());
+        assert_eq!(handshake_path_from(None, None), None);
+    }
+
+    /// The write and the clear go through one path: a clear removes only a
+    /// handshake this process wrote, never a sibling's or the operator's.
+    #[test]
+    fn a_handshake_is_written_and_cleared_at_one_path_only() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let ours = dir.path().join("data-A").join("local-http.json");
+        let operators = dir
+            .path()
+            .join("home")
+            .join(".personas")
+            .join("local-http.json");
+        std::fs::create_dir_all(operators.parent().unwrap()).unwrap();
+        std::fs::write(&operators, r#"{"port":17400,"token":"real","pid":1}"#).unwrap();
+        write_handshake_at(&ours, 17409);
+        assert!(ours.is_file());
+        clear_handshake_at(&ours);
+        assert!(!ours.exists(), "our own handshake is cleared");
+        clear_handshake_at(&operators);
+        assert!(
+            operators.is_file(),
+            "a handshake another pid wrote is never cleared"
         );
     }
 
