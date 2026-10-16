@@ -1119,12 +1119,42 @@ step_done / ...), so consecutive lifecycle rows never read as duplicates.
 
 ### Conversations
 
-The messenger, and the only place you write. Team channels (bands for
-assignments/deliberations interleaved with talk bubbles, composer with
-goal-routing) and **persona conversations** (chat bubbles with optimistic
-echo, Reports as clamped markdown previews with an attachment chip opening
-the full Report viewer, events/memories as subtle system lines, human
-reviews as inline quick-decide cards with an open-in-Reviews forward).
+The messenger, and the only place you write. Since WP12 (2026-10-16, the
+owner's pick "V1") it is three plates in the Activity board's language:
+
+- **Projects** (left): one line per project in the Stewards row grammar - the
+  project's colour edge, its name, its members' presence as a share strip
+  (working / waiting / idle), then two figures under engraved column heads:
+  **NEW** (unread) and **YOU** (reviews and questions it holds for you), and a
+  lamp lit only while it holds something. Hovering a row says who works,
+  waits or idles, when each was last seen, a live deliberation and the last
+  message's time. Persona conversations follow on the same grid.
+- **The thread** (middle): runs and deliberations are bands that say the
+  OUTCOME first. A run band's eyebrow is its state (Waiting on you, Running,
+  Run done, Run failed) and its title is what happened (the step waiting on
+  you, or the newest output); steps, outputs and Pause / Resume fold behind
+  the chevron. A run stays ONE band even when a message lands between its
+  steps. A deliberation band shows its status, spend meter and round, the
+  converged proposal as "Leaning: ..." once the engine wrote one, and **Drive**.
+  Talk lines carry the speaker's glyph tile; your own lines sit right.
+  **Persona conversations** keep chat with optimistic echo, Reports as clamped
+  previews opening the full Report viewer, events and memories as caption
+  lines, and reviews in the Decision Deck's card anatomy (outcome pair, the
+  deck's verdict pair, suggested actions as branches, Open in Reviews).
+- **Needs you** (right): reviews and held build questions (formerly the
+  Reviews and Quick tabs) are ONE queue, a review that holds a team step
+  first, then the longest wait. The ask in hand wears the deck's card head
+  with "If you approve / If you reject"; the rest are one-line rows; the
+  deck's fixed verdict dock sits at the foot. Keys: **A** approve (or answer a
+  question), **R** reject (asks "Why?" first; Enter sends no reason) or skip a
+  question, **S** later, **J / K** walk, **1-9** a suggested action, a
+  question's option or Open in builder. Keys never fire while a field has
+  focus. The tab's lamp is lit with the count while anything waits and stays
+  dark (never "0") while the queue is unread or unreadable. **Drive** on a
+  deliberation turns the rail to its controls (advance, run to budget / stop,
+  split, run all tracks, merge, the gated capability, the escalation, the
+  proposal, the agenda), each with its digit. With a persona open, the rail
+  lists only that persona's asks.
 
 The team composer never disables itself. Pressing Enter while a directive
 or a goal-route is still in flight puts the next prompt in a visible **queued
@@ -1136,7 +1166,7 @@ behind it keep going. Switching projects abandons the outbox, because a
 directive is addressed to one team. On send, your own row is posed at the top
 of the viewport with a reserve below it that shrinks as replies land, so the
 pose is a legitimate bottom and follow-to-bottom stays armed. Both side
-rails - the projects sidebar (left) and the Reviews/Deliberation rail (right)
+rails - the projects plate (left) and the Needs you / Deliberation rail (right)
 - resize by drag or arrow keys and remember their width, exactly like the
 Activity rail. A deliberation whose engine-written JSON is malformed no
 longer blanks the rail; its status caption is translated.
