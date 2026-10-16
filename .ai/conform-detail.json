@@ -1977,19 +1977,19 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:04:48.459Z",
+      "worker": "8fb27c07-7f33-4b12-ad6b-9b9a01366973",
       "techniques": [
         {
           "technique": "decay-and-forgetting",
-          "verdict": "not realized: no demote-before-delete tier for team memories",
-          "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:477"
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:477 cap enforcement is a trapdoor DELETE ordered by importance/created_at, not demotion"
         },
         {
           "technique": "memory-governance",
-          "verdict": "partly: update appends a revision log",
-          "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:226"
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:289 operator delete is a hard DELETE; edits keep a revision log (:226) but retirement keeps none"
         }
       ],
       "superseded": [
@@ -2006,6 +2006,13 @@
           "evaluatedAt": "2026-10-09T15:39:28.000Z",
           "worker": "3429d36b-b462-4b05-bc18-7d9e1c2e1e35",
           "reason": "replaced by eb06c63f-1bdf-4963-bd38-1f3a60ec203b"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:477 evict_excess, run after every pipeline run that created memories (src-tauri/src/engine/pipeline_executor.rs:1107), hard-DELETEs the lowest-importance auto memories, and UI delete (src/features/teams/sub_teamMemory/useTeamMemories.ts:146) is a hard DELETE (src-tauri/db/src/repos/resources/team_memories.rs:289): cap and retire skip demotion tiers, so a scoring bug becomes permanent amnesia. Edits are audited by a 20-deep revision log (src-tauri/db/src/repos/resources/team_memories.rs:226)",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
+          "reason": "replaced by 8fb27c07-7f33-4b12-ad6b-9b9a01366973"
         }
       ]
     },
@@ -6710,19 +6717,30 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:04:48.459Z",
+      "worker": "8fb27c07-7f33-4b12-ad6b-9b9a01366973",
       "techniques": [
         {
           "technique": "consolidation",
-          "verdict": "not realized: merge replaces rather than supersedes",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:1661"
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1662 merge closes two beliefs by deletion, not supersedence with a validity window"
+        },
+        {
+          "technique": "decay-and-forgetting",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1506 delete_all hard-DELETEs every non-core memory; no demotion tier, audit trail lost"
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/migrations/incremental/e16_living_agent.rs:107 source rows cascade away with the merged originals, so the merged belief can no longer answer where it came from"
         },
         {
           "technique": "rollup-compaction",
           "verdict": "not realized: compiled item replaces the record it summarizes",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:1642"
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1642",
+          "carriedFrom": "2026-10-14"
         }
       ],
       "superseded": [
@@ -6739,6 +6757,13 @@
           "evaluatedAt": "2026-10-09T15:39:28.000Z",
           "worker": "3429d36b-b462-4b05-bc18-7d9e1c2e1e35",
           "reason": "replaced by eb06c63f-1bdf-4963-bd38-1f3a60ec203b"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1661 merge() hard-DELETEs both originals in the merge tx; persona_memory_sources is ON DELETE CASCADE (src-tauri/db/src/migrations/incremental/e16_living_agent.rs:107) and the merged INSERT (:1642) carries source_execution_id/home_team_id forward (:1625) but no source rows or fact_key, so both items' episode provenance and fact identity are destroyed with no supersedence link. Sharper under revision 48: the raw record must stay reachable behind the claim layer",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
+          "reason": "replaced by 8fb27c07-7f33-4b12-ad6b-9b9a01366973"
         }
       ]
     },
@@ -11745,19 +11770,25 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:04:48.459Z",
+      "worker": "8fb27c07-7f33-4b12-ad6b-9b9a01366973",
       "techniques": [
         {
           "technique": "recall-injection",
-          "verdict": "not realized: stop-on-overflow instead of skip",
-          "evidence": "src-tauri/db/src/repos/dev_memories.rs:163"
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/dev_memories.rs:163 `break` on overflow instead of skipping to the next item that fits"
+        },
+        {
+          "technique": "consolidation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/dev_memories.rs:11 append + read only: a reversed constraint is never superseded and keeps reciting itself"
         },
         {
           "technique": "decay-and-forgetting",
           "verdict": "not realized: nothing retires a stale constraint",
-          "evidence": "src-tauri/db/src/repos/dev_memories.rs:11"
+          "evidence": "src-tauri/db/src/repos/dev_memories.rs:11",
+          "carriedFrom": "2026-10-14"
         }
       ],
       "superseded": [
@@ -11767,6 +11798,13 @@
           "evaluatedAt": "2026-10-10T01:06:00.000Z",
           "worker": "cc8123ad-a2a0-475b-9a88-c705d9790f61",
           "reason": "replaced by eb06c63f-1bdf-4963-bd38-1f3a60ec203b"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/dev_memories.rs:163 render_for_prompt breaks at the first line that overflows the budget, so one fat project memory silently drops every lower-ranked item behind it; the store is append-only by design (:11) with no cap, decay or supersedence, so a reversed constraint keeps reciting itself",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
+          "reason": "replaced by 8fb27c07-7f33-4b12-ad6b-9b9a01366973"
         }
       ]
     },
@@ -11775,21 +11813,27 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:04:48.459Z",
+      "worker": "8fb27c07-7f33-4b12-ad6b-9b9a01366973",
       "techniques": [
         {
           "technique": "memory-value-model",
-          "verdict": "not realized: two orderings, retirement not gated by the shared value model",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:2024"
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:2024 a second value ordering beside decay_score: the janitor and the read path disagree about what an item is worth"
+        },
+        {
+          "technique": "exposure-is-not-credit",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:1347 increment_access_batch fires on every injection of prepared memories, so access_count counts delivery and then ranks survival - rank raises delivery raises rank"
         },
         {
           "technique": "decay-and-forgetting",
-          "verdict": "mitigated: archive tier keeps rows out of default reads, not out of reach",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:2020"
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/memory.rs:225 contract records the archival ordering as a deliberate exception to decay_score - the forgetting gate does not run on the scored value"
         }
       ],
+      "registryProposal": "exposure-is-not-credit (revision 51) applies to plain access-count recency/frequency ranking, not only to outcome-feedback learners; its use_when triggers name feedback/verdicts, so a store whose only signal is an injection counter would not reach it by trigger - consider a use_when for \"ranking or retaining by access count incremented on delivery\"",
       "superseded": [
         {
           "state": "deviation",
@@ -11797,6 +11841,13 @@
           "evaluatedAt": "2026-10-10T01:06:00.000Z",
           "worker": "cc8123ad-a2a0-475b-9a88-c705d9790f61",
           "reason": "replaced by eb06c63f-1bdf-4963-bd38-1f3a60ec203b"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/core/src/models/memory.rs:225 the memory contract keeps ACTIVE_CAP overflow-archival on importance/access_count/created_at order (src-tauri/db/src/repos/core/memories.rs:2024) while recall ranks by decay_score (src-tauri/db/src/memory_recall.rs:157), so the cap archives items the read path ranks above survivors: the second-door janitor memory-value-model forbids",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
+          "reason": "replaced by 8fb27c07-7f33-4b12-ad6b-9b9a01366973"
         }
       ]
     },
@@ -22291,19 +22342,19 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:04:48.459Z",
+      "worker": "8fb27c07-7f33-4b12-ad6b-9b9a01366973",
       "techniques": [
         {
           "technique": "observation-clock",
-          "verdict": "not realized: no pinned prompt clock in the live consolidation prompt",
-          "evidence": "src-tauri/src/companion/brain/consolidation.rs:1166"
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/brain/consolidation.rs:1166 prompt prints episode instants, never `now`, never a grounding instruction - the inverse failure the technique names"
         },
         {
           "technique": "filter-at-the-id-door",
-          "verdict": "realized: importance>0 filter at the id lookup",
-          "evidence": "src-tauri/src/companion/brain/retrieval.rs:734"
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/companion/brain/retrieval.rs:734 vector hits re-filtered by id with importance > 0, so retired nodes cannot re-enter"
         }
       ],
       "superseded": [
@@ -22313,6 +22364,13 @@
           "evaluatedAt": "2026-10-06",
           "worker": null,
           "reason": "replaced by eb06c63f-1bdf-4963-bd38-1f3a60ec203b"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/brain/consolidation.rs:1166 build_consolidation_prompt stamps episodes with their instant (:1253) but never states today nor tells the model to ground relative dates (:1191 only says 'today' is an episode), so a deferred or replayed pass mis-dates relative facts; the sibling prompt grounds it outright (src-tauri/src/companion/brain/sleep_cycle/prompts.rs:61). Realized: retired items filtered at the vector id door (src-tauri/src/companion/brain/retrieval.rs:734)",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
+          "reason": "replaced by 8fb27c07-7f33-4b12-ad6b-9b9a01366973"
         }
       ]
     },

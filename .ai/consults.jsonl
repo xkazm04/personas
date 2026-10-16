@@ -1434,3 +1434,8 @@
 {"ts":"2026-10-16T18:00:28Z","bundle":"software-engineering","subjects":["self-healing"],"techniques":["failure-diagnosis","strategy-selection","effectiveness-accounting","blast-radius-bounds"],"deviations":3}
 {"ts":"2026-10-16T18:00:28Z","bundle":"software-engineering","subjects":["self-healing"],"techniques":["effectiveness-accounting"],"deviations":1}
 {"ts":"2026-10-16T18:00:28Z","bundle":"software-engineering","subjects":["self-healing"],"techniques":["effectiveness-accounting"],"deviations":1}
+{"ts":"2026-10-16T18:04:48.459Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["consolidation","decay-and-forgetting","memory-governance"],"deviations":3}
+{"ts":"2026-10-16T18:04:48.459Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["decay-and-forgetting","memory-governance"],"deviations":2}
+{"ts":"2026-10-16T18:04:48.459Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["recall-injection","consolidation"],"deviations":2}
+{"ts":"2026-10-16T18:04:48.459Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["observation-clock","filter-at-the-id-door"],"deviations":1}
+{"ts":"2026-10-16T18:04:48.459Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["memory-value-model","exposure-is-not-credit","decay-and-forgetting"],"deviations":3}
