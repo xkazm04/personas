@@ -6,6 +6,18 @@ import type { WorkItem } from '../model/work';
 export const fmtNum = (language: string, v: number): string =>
   new Intl.NumberFormat(language, { maximumFractionDigits: 1 }).format(v);
 
+/**
+ * A unit as data wrote it, made singular for exactly one: "1 states" reads "1 state". Units come from the lens
+ * manifest and the store in English, so no locale's plural rules reach them; only a plain lowercase word of four
+ * letters or more is touched, which leaves symbols and short units (ms, px, %, /s) as they are.
+ */
+export function unitFor(unit: string, v: number | undefined): string {
+  if (Math.abs(v ?? 0) !== 1 || !/^[a-z]{4,}$/.test(unit)) return unit;
+  if (unit.endsWith('ies')) return unit.slice(0, -3) + 'y';
+  if (/(ss|ch|sh|x|z)es$/.test(unit)) return unit.slice(0, -2);
+  return unit.endsWith('s') && !/(ss|us|is)$/.test(unit) ? unit.slice(0, -1) : unit;
+}
+
 export const signed = (language: string, v: number): string =>
   (v > 0 ? '+' : '') + fmtNum(language, v);
 

@@ -49,11 +49,11 @@ export type StartAction = 'execute' | 'measure' | 'propagate';
 export interface StartRequest {
   action: StartAction;
   lens: string;
-  /** `execute`: the approved items to build (never `--approve-proposed`). */
+  /** `execute`: the approved items to build (never `--approve-proposed`); `propagate`: the landed upgrade. */
   ids?: string[];
-  /** `measure`: the features to cover; absent = every gap of the lens. */
+  /** `measure`: the features to re-measure; absent = every gap of the lens. */
   features?: string[];
-  /** `propagate`: the standard to spread. */
+  /** `propagate`: the house line whose landed upgrade to spread; absent (and no ids) = every landed upgrade. */
   standard?: string;
 }
 

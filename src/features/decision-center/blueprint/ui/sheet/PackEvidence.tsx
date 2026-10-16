@@ -1,6 +1,6 @@
 import { useSheet } from '../../controller/SheetContext';
 import type { WorkItem } from '../../model/work';
-import { fmtNum, metricLabel } from '../format';
+import { fmtNum, metricLabel, unitFor } from '../format';
 
 /**
  * A built item's evidence: the metric before the build and after it, with the value, the unit and the judge's own
@@ -18,7 +18,7 @@ export function PackEvidence({ p }: { p: WorkItem }) {
         {rows.map((m) => (
           <tr key={m.id}>
             <td className="typo-code">{(m.phase === 'before' ? B.evidence_before : B.evidence_after).toUpperCase()}</td>
-            <td className="bp-num typo-data">{fmtNum(language, m.value)} <span className="bp-u typo-code">{m.unit ?? ''}</span></td>
+            <td className="bp-num typo-data">{fmtNum(language, m.value)} <span className="bp-u typo-code">{unitFor(m.unit ?? '', m.value)}</span></td>
             <td><div className="bp-evt">{m.evidence ?? m.method ?? ''}</div></td>
           </tr>
         ))}

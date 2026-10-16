@@ -235,8 +235,9 @@
 .bp-ttl { display: flex; align-items: center; gap: 1rem; margin: 0.9rem 0 0.6rem; }
 .bp-no { width: 4.4rem; height: 4.4rem; border: 1.5px solid var(--bp-ink); border-radius: 50%; display: grid; place-items: center; position: relative; font-weight: 700; }
 .bp-no::after { content: ''; position: absolute; left: 0.6rem; right: 0.6rem; top: 50%; border-top: 1px solid var(--bp-ink); }
-.bp-no span { position: absolute; top: 0.7rem; font-size: var(--bp-t2); }
-.bp-no em { position: absolute; bottom: 0.6rem; font-style: normal; font-weight: 500; }
+/* both halves hang off the divider, not the rim, so a smaller circle cannot make them meet */
+.bp-no span { position: absolute; bottom: calc(50% + 0.2rem); font-size: var(--bp-t2); line-height: 1; }
+.bp-no em { position: absolute; top: calc(50% + 0.25rem); font-style: normal; font-weight: 500; line-height: 1; }
 .bp-h2 { margin: 2px 0 0; font-size: var(--bp-t5); font-weight: 600; letter-spacing: -0.01em; color: var(--bp-ink-hi); }
 .bp-legend { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; align-self: flex-start; }
 .bp-legend span { display: flex; align-items: center; gap: 6px; padding: 3px 0.5rem; border: 1px solid var(--bp-line); border-radius: 3px; letter-spacing: 0.06em; color: var(--bp-ink); }
@@ -339,9 +340,8 @@
 .bp-fs-cmp .bp-ttl { margin: 0.45rem 0 0.35rem; }
 .bp-fs-cmp .bp-legend { align-self: center; }
 .bp-fs-cmp .bp-legend span:not(.bp-on) { display: none; }
-.bp-fs-cmp .bp-no { width: 3.2rem; height: 3.2rem; }
-.bp-fs-cmp .bp-no span { top: 0.4rem; }
-.bp-fs-cmp .bp-no em { bottom: 0.35rem; }
+.bp-fs-cmp .bp-no { width: 3.4rem; height: 3.4rem; }
+.bp-fs-cmp .bp-no span { font-size: var(--bp-t1); }
 .bp-fs-cmp .bp-h2 { font-size: var(--bp-t4); }
 .bp-fs-cmp .bp-tab { padding: 0.35rem 0.7rem 0.4rem; }
 .bp-fs-cmp .bp-tab .typo-body { display: none; }

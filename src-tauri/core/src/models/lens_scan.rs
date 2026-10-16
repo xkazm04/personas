@@ -228,15 +228,18 @@ pub enum LensScanStartAction {
 pub struct LensScanStartRequest {
     pub action: LensScanStartAction,
     pub lens: String,
-    /// `execute`: the approved items to build.
+    /// `execute`: the approved items to build; `propagate`: the landed
+    /// baseline-upgrade to spread.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub ids: Option<Vec<String>>,
-    /// `measure`: the features to cover (drive.mjs has no feature filter yet).
+    /// `measure`: the features to re-measure; absent or empty = every gap of
+    /// the lens.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub features: Option<Vec<String>>,
-    /// `propagate`: the standard to spread (drive.mjs has no propagate verb yet).
+    /// `propagate`: the house line (`house:<subject>/<line>`) whose landed
+    /// upgrade to spread; with no ids either, every landed upgrade of the lens.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub standard: Option<String>,

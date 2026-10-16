@@ -2,7 +2,7 @@ import type { Comparison, Verdict } from '@/lib/lensScan/compare';
 import type { Measurement } from '@/lib/lensScan/wire';
 import { useSheet } from '../../controller/SheetContext';
 import type { BpText } from '../../controller/useBlueprintText';
-import { fmtNum } from '../format';
+import { fmtNum, unitFor } from '../format';
 
 const VERDICT_KEY = { moved: 'cmp_v_moved', flat: 'cmp_v_flat', worse: 'cmp_v_worse', unmeasured: 'cmp_v_unmeasured' } as const satisfies Record<Verdict, keyof BpText>;
 const VERDICT_TONE: Record<Verdict, string> = { moved: 'ok', flat: 'wait', worse: 'fail', unmeasured: 'no' };
@@ -45,7 +45,7 @@ export function MetricLine({ c }: { c: Comparison }) {
           <s>{b ? fmtNum(language, b.value) : '–'}</s>
           <span aria-hidden="true">{'→'}</span>
           <b>{a ? fmtNum(language, a.value) : '–'}</b>
-          {unit ? <span className="bp-u typo-code">{unit}</span> : null}
+          {unit ? <span className="bp-u typo-code">{unitFor(unit, a?.value ?? b?.value)}</span> : null}
         </div>
         <div className="bp-met-k typo-body">
           <span><span className="typo-code">{field?.label ?? p.metric ?? B.cmp_no_metric}</span> <VerdictChip B={B} verdict={c.verdict} /></span>

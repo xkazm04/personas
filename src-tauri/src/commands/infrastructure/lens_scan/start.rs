@@ -7,10 +7,12 @@
 //! every session drive opens enters the fleet's ONE admission queue as origin
 //! `lens_scan`, carrying `PERSONAS_RUN_LABEL` in its run label.
 //!
-//! What this module never does: pass `--approve-proposed` (approval is a
-//! person's `lens_scan_decide`, never a side effect of starting a build), and
-//! invent a verb drive does not have (`propagate`, a feature filter for
-//! `cover`) - those answer a typed `Validation` error saying so.
+//! The three actions map onto drive's verbs: `execute` -> `execute`,
+//! `measure` -> `cover` (with `--features` when the person named some),
+//! `propagate` -> `propagate` (lens-scan 1.7.0; `--ids` or `--standard` names
+//! the landed upgrade). What this module never does: pass `--approve-proposed`
+//! (approval is a person's `lens_scan_decide`, never a side effect of starting
+//! a build).
 
 use std::path::{Path, PathBuf};
 
@@ -34,11 +36,38 @@ fn validate_lens(lens: &str) -> Result<(), AppError> {
     }
 }
 
+/// A house standard line as drive accepts it (`house:<subject>/<line>`):
+/// letters, digits and `. _ : / -`, not starting with `-`, 200 at most.
+fn validate_standard(standard: &str) -> Result<(), AppError> {
+    let ok = !standard.is_empty()
+        && standard.len() <= 200
+        && !standard.starts_with('-')
+        && standard
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | ':' | '/' | '-'));
+    if ok {
+        Ok(())
+    } else {
+        Err(AppError::Validation(format!(
+            "standard {standard:?} must be a house line (house:<subject>/<line>)"
+        )))
+    }
+}
+
 /// The drive.mjs argv for a request: the verb and its flags. `execute` NEVER
 /// carries `--approve-proposed`.
 pub(super) fn drive_args(req: &LensScanStartRequest, root: &Path) -> Result<Vec<String>, AppError> {
     validate_lens(&req.lens)?;
     let root = root.to_string_lossy().into_owned();
+    let verb = |v: &str| {
+        vec![
+            v.to_string(),
+            "--lens".into(),
+            req.lens.clone(),
+            "--root".into(),
+            root.clone(),
+        ]
+    };
     match req.action {
         LensScanStartAction::Execute => {
             if req.features.is_some() || req.standard.is_some() {
@@ -46,13 +75,7 @@ pub(super) fn drive_args(req: &LensScanStartRequest, root: &Path) -> Result<Vec<
                     "execute takes a lens and optional ids; features and standard belong to measure and propagate".into(),
                 ));
             }
-            let mut args = vec![
-                "execute".to_string(),
-                "--lens".into(),
-                req.lens.clone(),
-                "--root".into(),
-                root,
-            ];
+            let mut args = verb("execute");
             if let Some(ids) = &req.ids {
                 validate_ids(ids)?;
                 args.push("--ids".into());
@@ -61,27 +84,45 @@ pub(super) fn drive_args(req: &LensScanStartRequest, root: &Path) -> Result<Vec<
             Ok(args)
         }
         LensScanStartAction::Measure => {
-            if req.features.as_ref().is_some_and(|f| !f.is_empty()) {
-                return Err(AppError::Validation(
-                    "drive.mjs cover has no feature filter: it covers every gap of the lens (start measure without features)".into(),
-                ));
-            }
             if req.ids.is_some() || req.standard.is_some() {
                 return Err(AppError::Validation(
-                    "measure takes only a lens".into(),
+                    "measure takes a lens and optional features".into(),
                 ));
             }
-            Ok(vec![
-                "cover".to_string(),
-                "--lens".into(),
-                req.lens.clone(),
-                "--root".into(),
-                root,
-            ])
+            let mut args = verb("cover");
+            // absent or empty = every gap of the lens; named = exactly those, a re-measure
+            if let Some(features) = req.features.as_ref().filter(|f| !f.is_empty()) {
+                validate_ids(features)?;
+                args.push("--features".into());
+                args.push(features.join(","));
+            }
+            Ok(args)
         }
-        LensScanStartAction::Propagate => Err(AppError::Validation(
-            "drive.mjs has no propagate verb: lens-scan propagates a standard through a skill session, not through drive".into(),
-        )),
+        LensScanStartAction::Propagate => {
+            if req.features.is_some() {
+                return Err(AppError::Validation(
+                    "propagate takes a lens and the upgrade (ids or standard), not features".into(),
+                ));
+            }
+            if req.ids.is_some() && req.standard.is_some() {
+                return Err(AppError::Validation(
+                    "propagate names its upgrade by ids or by standard, not both".into(),
+                ));
+            }
+            // neither = every landed baseline-upgrade of the lens
+            let mut args = verb("propagate");
+            if let Some(ids) = &req.ids {
+                validate_ids(ids)?;
+                args.push("--ids".into());
+                args.push(ids.join(","));
+            }
+            if let Some(standard) = &req.standard {
+                validate_standard(standard)?;
+                args.push("--standard".into());
+                args.push(standard.clone());
+            }
+            Ok(args)
+        }
     }
 }
 
@@ -251,25 +292,82 @@ mod tests {
     }
 
     #[test]
-    fn measure_maps_to_cover_and_refuses_what_drive_cannot_do() {
+    fn measure_maps_to_cover_with_the_named_features() {
         let root = Path::new("/repo");
         assert_eq!(
             drive_args(&req(LensScanStartAction::Measure), root).unwrap(),
             ["cover", "--lens", "design", "--root", "/repo"]
         );
         let mut r = req(LensScanStartAction::Measure);
-        r.features = Some(vec!["login".into()]);
-        assert!(
-            matches!(drive_args(&r, root), Err(AppError::Validation(m)) if m.contains("no feature filter"))
+        r.features = Some(vec!["login".into(), "invoice-ocr".into()]);
+        assert_eq!(
+            drive_args(&r, root).unwrap(),
+            [
+                "cover",
+                "--lens",
+                "design",
+                "--root",
+                "/repo",
+                "--features",
+                "login,invoice-ocr"
+            ]
         );
         // an empty list is "every gap", as absent
         r.features = Some(vec![]);
-        assert!(drive_args(&r, root).is_ok());
-        let mut p = req(LensScanStartAction::Propagate);
-        p.standard = Some("house:x/y".into());
-        assert!(
-            matches!(drive_args(&p, root), Err(AppError::Validation(m)) if m.contains("no propagate verb"))
+        assert_eq!(drive_args(&r, root).unwrap().len(), 5);
+        r.features = Some(vec!["--root".into()]);
+        assert!(drive_args(&r, root).is_err());
+        r.features = None;
+        r.standard = Some("house:x/y".into());
+        assert!(drive_args(&r, root).is_err());
+    }
+
+    #[test]
+    fn propagate_maps_to_drive_propagate_naming_the_upgrade_one_way() {
+        let root = Path::new("/repo");
+        assert_eq!(
+            drive_args(&req(LensScanStartAction::Propagate), root).unwrap(),
+            ["propagate", "--lens", "design", "--root", "/repo"]
         );
+        let mut p = req(LensScanStartAction::Propagate);
+        p.standard = Some("house:table/sticky-head".into());
+        assert_eq!(
+            drive_args(&p, root).unwrap(),
+            [
+                "propagate",
+                "--lens",
+                "design",
+                "--root",
+                "/repo",
+                "--standard",
+                "house:table/sticky-head"
+            ]
+        );
+        p.ids = Some(vec!["p-1a2b3c".into()]);
+        assert!(
+            matches!(drive_args(&p, root), Err(AppError::Validation(m)) if m.contains("not both"))
+        );
+        p.standard = None;
+        assert_eq!(
+            drive_args(&p, root).unwrap(),
+            [
+                "propagate",
+                "--lens",
+                "design",
+                "--root",
+                "/repo",
+                "--ids",
+                "p-1a2b3c"
+            ]
+        );
+        for bad in ["", "-x", "house:x;rm", "house:a b"] {
+            let mut q = req(LensScanStartAction::Propagate);
+            q.standard = Some(bad.into());
+            assert!(drive_args(&q, root).is_err(), "{bad:?}");
+        }
+        let mut f = req(LensScanStartAction::Propagate);
+        f.features = Some(vec!["login".into()]);
+        assert!(drive_args(&f, root).is_err());
     }
 
     #[test]

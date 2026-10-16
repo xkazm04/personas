@@ -7,14 +7,17 @@ import type { LensScanStartAction } from "./LensScanStartAction";
  */
 export type LensScanStartRequest = { action: LensScanStartAction, lens: string, 
 /**
- * `execute`: the approved items to build.
+ * `execute`: the approved items to build; `propagate`: the landed
+ * baseline-upgrade to spread.
  */
 ids?: Array<string>, 
 /**
- * `measure`: the features to cover (drive.mjs has no feature filter yet).
+ * `measure`: the features to re-measure; absent or empty = every gap of
+ * the lens.
  */
 features?: Array<string>, 
 /**
- * `propagate`: the standard to spread (drive.mjs has no propagate verb yet).
+ * `propagate`: the house line (`house:<subject>/<line>`) whose landed
+ * upgrade to spread; with no ids either, every landed upgrade of the lens.
  */
 standard?: string, };
