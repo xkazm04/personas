@@ -1,0 +1,8 @@
+{"schema": "conform-run/1", "worker": "d6959726-ad4e-4173-91d9-ca70d647435d", "subject": "multi-project",
+ "evaluatedAt": "2026-10-16T17:13:10Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "multi-project", "context": "19e4120b-6020-4103-8a3d-a9fd0e13640b", "reason": "only unjudged pair; context plugins-research-lab-reports is governance:weak and the match is lexical-only ('project','projects') - a coverage question, not a pair to judge by default"},
+  {"subject": "multi-project", "context": "*", "reason": "the 9 governed pairs (7 deviation, 2 not-applicable) are all evaluatedAgainst sha256-b2:07b32de44fd25fc6 = registry index digest at 328bf071 (revision 3, revisionsBehind 0); git log since each verdict shows no change to any anchored file except one-line edits (ProjectsLayer.tsx:182 empty-state art, populateDispatch.ts, atlas word/figure lines) that leave anchors ProjectsLayer.tsx:58/82/136-140 and InstrumentParts.tsx:45 intact - re-judging would only re-read current verdicts"}
+ ],
+ "consults": []}
