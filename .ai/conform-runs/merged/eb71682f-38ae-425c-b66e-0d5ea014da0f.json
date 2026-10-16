@@ -1,0 +1,6 @@
+{"schema": "conform-run/1", "worker": "eb71682f-38ae-425c-b66e-0d5ea014da0f", "subject": "peer-benchmarking",
+ "evaluatedAt": "2026-10-16T17:54:16Z",
+ "pairs": [],
+ "declined": [],
+ "consults": [],
+ "note": "No work: .ai/registry-map.json lists zero peer-benchmarking pairs (absent from every context, from subjectIndex and from orphans[]; stats.orphanedVerdicts 0), and no conform-runs file mentions it, so the '1 consumer deviation' that ranked this dispatch does not exist in this repo's map - likely another consumer's verdict attributed here. No missing pairing either: the golden path's precondition is ranking a tenant against other tenants, and .ai/manifest.yaml:100 scopes Personas to 'local-first storage, one operator per install'; the only 'cohort' hits (src/features/companions/curator/process/engine/spine.ts:151, a process-mining cohort of one operator's runs) are not a cross-tenant corpus. Registry subject read at sha256-b2:a3239df32fc1070b, revision 3."}
