@@ -1626,38 +1626,49 @@
       "subject": "p2p-networking",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-2",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:24:50.608Z",
+      "worker": "5627fe53-0fa4-46b0-a10b-cab04e16bac5",
       "techniques": [
         {
-          "technique": "discovery-advertisement",
-          "verdict": "conformant",
-          "evidence": "src-tauri/engine/src/p2p/mdns.rs:219 broadcasts only peer_id, display_name and protocol version plus the port; the first-run display name is opaque (engine/src/identity.rs:149 'User-<id prefix>', never the hostname); peer_ids are structurally validated (:39), names truncate on character boundaries with the listener-killing crash they prevent documented (:49-66), addresses are parsed and capped (:69), and bursts are buffered and flushed on cadence, cancellation and channel close (:301-328)."
+          "technique": "resilience-and-reconnection",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/p2p/mod.rs:741 fixed-interval sleep is the only schedule; signal preemption (discovery_signal) and link-up replay exist, but backoff/jitter/ceiling do not, and connection.rs:155 max_retries is a dead knob"
         },
         {
           "technique": "connection-lifecycle",
           "verdict": "conformant",
-          "evidence": "src-tauri/engine/src/p2p/connection.rs:26 is an RAII guard that releases the in-flight-dial entry even when the future is abandoned (:244); :273-347 does tie-break, capacity and insert in one write lock with the TOCTOU rationale and a standing rule against a second capacity check; per-phase 10s handshake timeouts at :408,:579,:662; a failed DB write rolls back the in-memory insert (:517) so observers never see a phantom-connected peer."
+          "evidence": "src-tauri/engine/src/p2p/connection.rs:604 handshake phases each carry a 10s timeout; connection.rs:445 deterministic simultaneous-dial tie-break keeps one session"
         },
         {
-          "technique": "manifest-negotiation",
+          "technique": "discovery-advertisement",
           "verdict": "conformant",
-          "evidence": "src-tauri/engine/src/p2p/manifest_sync.rs:24 caps accepted entries, connection.rs:426 refuses a version mismatch before anything else, the per-peer digest cache skips unchanged re-offers (manifest_sync.rs:67) and is reaped for departed peers with the leak it prevents named (:378-387), and the supersede is a DELETE+INSERT inside one transaction (:274)."
+          "evidence": "src-tauri/engine/src/p2p/mdns.rs:244 TXT record carries only peer_id, display_name and protocol version"
         },
         {
           "technique": "peer-state-honesty",
-          "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/p2p/mdns.rs:470 DELETEs the discovered_peers row once a peer goes quiet, so absence erases the peer rather than demoting it — there is no stale state carrying 'last seen N ago', and types.rs:35 offers no 'reachable' rung at all while types.rs:60 carries one undifferentiated last_seen_at, so hearing a multicast packet and completing a probe are recorded as the same fact. (Restart-voids-connected is correctly realized at mod.rs:86-95 and identity failure at types.rs:113-119.)"
-        },
-        {
-          "technique": "resilience-and-reconnection",
-          "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/p2p/types.rs:12 NetworkConfig.auto_connect is exported to TypeScript and read by no Rust code; PeerConnectionInfo.retry_count is set to 0 at connection.rs:500 and :711 and never incremented or read (the struct is #[allow(dead_code)], types.rs:122); and stale_peer_timeout_secs only sets the prune task's interval while the cutoff is hardcoded 120 at mod.rs:238 — this is the technique's named failure mode verbatim, a config surface promising auto-reconnect that a reader can only disprove by tracing consumers."
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/p2p/mod.rs:751 reachability derives Connected/Stale/Offline from live session vs retained discovered row; mdns.rs:501 demotes absent peers to stale"
         },
         {
           "technique": "exposure-controls",
           "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/p2p/manifest_sync.rs:233-241 builds the local manifest with no peer predicate and connection.rs:914-916 serves that identical result to any connected peer, so 'it is paired, so it is trusted' is exactly the implication in force. (The requires_auth fail-closed rule at manifest_sync.rs:225-232 and the expiry reaper at db/src/repos/resources/exposure.rs:70 are both realized well.)"
+          "evidence": "src-tauri/engine/src/p2p/manifest_sync.rs:237 build_local_manifest takes no peer identity: every connected peer gets the same manifest (fails closed on requires_auth, but no per-peer grant)"
+        },
+        {
+          "technique": "manifest-negotiation",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/p2p/manifest_sync.rs:24 caps accepted entries, connection.rs:426 refuses a version mismatch before anything else, the per-peer digest cache skips unchanged re-offers (manifest_sync.rs:67) and is reaped for departed peers with the leak it prevents named (:378-387), and the supersede is a DELETE+INSERT inside one transaction (:274).",
+          "carriedFrom": "2026-08-29"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/p2p/types.rs:12 auto_connect is read by nothing, retry_count is written 0 at connection.rs:500 and never incremented, and mdns.rs:470 DELETEs absent peers instead of demoting them to stale — three knobs promising reconnection that does not exist, over a peer list with no stale state. [re-judged 2026-09-22: triage re-stamp, not a fresh read: every file this context owns is unchanged since the verdict, the standard only GAINED techniques since (none it names was edited, the golden path body was not edited), and an added requirement cannot clear a deviation; each cited line was then checked by hand and still shows the cited construct]",
+          "evaluatedAt": "2026-09-22",
+          "worker": null,
+          "reason": "replaced by 5627fe53-0fa4-46b0-a10b-cab04e16bac5"
         }
       ]
     },
@@ -1666,38 +1677,53 @@
       "subject": "p2p-networking",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-2",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:24:50.608Z",
+      "worker": "5627fe53-0fa4-46b0-a10b-cab04e16bac5",
       "techniques": [
         {
           "technique": "exposure-controls",
           "verdict": "deviation",
-          "evidence": "src-tauri/core/src/models/exposure.rs:101-113 defines ExposedResource with resource, level, fields and expiry but no peer_id, and src-tauri/src/commands/network/exposure.rs:94-109 assembles the manifest from every exposed resource with no requesting peer in scope — the per-peer declaration the technique makes the whole authorization artifact does not exist."
+          "evidence": "src-tauri/core/src/models/exposure.rs:101 no grantee field; src-tauri/src/commands/network/exposure.rs:100 list_exposed_resources unfiltered by peer"
         },
         {
           "technique": "peer-state-honesty",
           "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/network/discovery.rs:128-139 resolves the local identity through local_peer_id_for_status and returns identity_degraded rather than an empty peer id, and ships is_running alongside discovered_peer_count so an empty list can be told from a dead subsystem."
+          "evidence": "src-tauri/src/commands/network/discovery.rs:128-139 resolves the local identity through local_peer_id_for_status and returns identity_degraded rather than an empty peer id, and ships is_running alongside discovered_peer_count so an empty list can be told from a dead subsystem.",
+          "carriedFrom": "2026-08-29"
         },
         {
           "technique": "discovery-advertisement",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/network/discovery.rs:31-37 only reads the peer table; the advertisement's contents, sanitisation and consent all live in the engine's mdns module, so this command layer has no advertisement surface to design."
+          "evidence": "src-tauri/src/commands/network/discovery.rs:31-37 only reads the peer table; the advertisement's contents, sanitisation and consent all live in the engine's mdns module, so this command layer has no advertisement surface to design.",
+          "carriedFrom": "2026-08-29"
         },
         {
           "technique": "connection-lifecycle",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/network/discovery.rs:41-84 delegates connect/disconnect straight to ConnectionManager; no state machine, timeout or teardown path exists in this context to judge."
+          "evidence": "src-tauri/src/commands/network/discovery.rs:41-84 delegates connect/disconnect straight to ConnectionManager; no state machine, timeout or teardown path exists in this context to judge.",
+          "carriedFrom": "2026-08-29"
         },
         {
           "technique": "manifest-negotiation",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/network/discovery.rs:98-106 is a one-line delegation to ManifestSync::sync_manifest; the negotiation, capping and verification are the engine's."
+          "evidence": "src-tauri/src/commands/network/discovery.rs:98-106 is a one-line delegation to ManifestSync::sync_manifest; the negotiation, capping and verification are the engine's.",
+          "carriedFrom": "2026-08-29"
         },
         {
           "technique": "resilience-and-reconnection",
           "verdict": "unknown",
-          "evidence": "src-tauri/src/commands/network/discovery.rs:41 exposes only manual connect/disconnect; whether a reconnection policy is wired at all is decided in the engine's start loop (engine/src/p2p/mod.rs:115), outside this context, and I could not find its caller within the paths I am allowed to read."
+          "evidence": "src-tauri/src/commands/network/discovery.rs:41 exposes only manual connect/disconnect; whether a reconnection policy is wired at all is decided in the engine's start loop (engine/src/p2p/mod.rs:115), outside this context, and I could not find its caller within the paths I am allowed to read.",
+          "carriedFrom": "2026-08-29"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/core/src/models/exposure.rs:101 carries no peer identity on the grant and src-tauri/src/commands/network/exposure.rs:94 returns the whole exposure set from one un-scoped command, so the allowlist is global rather than per-peer. [re-judged 2026-09-22: triage re-stamp, not a fresh read: every file this context owns is unchanged since the verdict, the standard only GAINED techniques since (none it names was edited, the golden path body was not edited), and an added requirement cannot clear a deviation; each cited line was then checked by hand and still shows the cited construct]",
+          "evaluatedAt": "2026-09-22",
+          "worker": null,
+          "reason": "replaced by 5627fe53-0fa4-46b0-a10b-cab04e16bac5"
         }
       ]
     },
@@ -1706,38 +1732,53 @@
       "subject": "p2p-networking",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-9",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:24:50.608Z",
+      "worker": "5627fe53-0fa4-46b0-a10b-cab04e16bac5",
       "techniques": [
         {
           "technique": "exposure-controls",
           "verdict": "deviation",
-          "evidence": "src/features/settings/sub_network/components/ExposureManager.tsx:128 fields_exposed: [] which src-tauri/src/engine/bundle.rs:673 treats as all fields - the default is 'everything crosses', not an allowlist, and the grant cannot name a peer."
+          "evidence": "src-tauri/src/engine/bundle.rs:711 empty whitelist returns without filtering; src-tauri/core/src/models/exposure.rs:117 create input has no peer identity"
         },
         {
           "technique": "peer-state-honesty",
           "verdict": "deviation",
-          "evidence": "src/features/settings/sub_network/components/PeerCard.tsx:36 turns any peer without a live session into 'Disconnected', so heard-but-unprobed and probe-failed read the same."
+          "evidence": "src/features/settings/sub_network/components/PeerCard.tsx:36 turns any peer without a live session into 'Disconnected', so heard-but-unprobed and probe-failed read the same.",
+          "carriedFrom": "2026-09-23"
         },
         {
           "technique": "discovery-advertisement",
           "verdict": "deviation",
-          "evidence": "src/features/settings/sub_network/components/IdentitySettings.tsx:122 the network settings expose the broadcast display name but no discoverability on/off control exists in src/ or src-tauri/src, so being announced is not a consented setting."
+          "evidence": "src/features/settings/sub_network/components/IdentitySettings.tsx:122 the network settings expose the broadcast display name but no discoverability on/off control exists in src/ or src-tauri/src, so being announced is not a consented setting.",
+          "carriedFrom": "2026-09-23"
         },
         {
           "technique": "connection-lifecycle",
           "verdict": "unread",
-          "evidence": ""
+          "evidence": "",
+          "carriedFrom": "2026-09-23"
         },
         {
           "technique": "manifest-negotiation",
           "verdict": "unread",
-          "evidence": ""
+          "evidence": "",
+          "carriedFrom": "2026-09-23"
         },
         {
           "technique": "resilience-and-reconnection",
           "verdict": "unread",
-          "evidence": ""
+          "evidence": "",
+          "carriedFrom": "2026-09-23"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/settings/sub_network/components/ExposureManager.tsx:128 creates every exposure with fields_exposed: [], and src-tauri/src/engine/bundle.rs:673 reads an empty list as 'expose all fields', so every field is shared by default and any column added later crosses to peers unreviewed; there is no per-peer grant either (the create input at src-tauri/core/src/models/exposure.rs:117 carries no peer identity).",
+          "evaluatedAt": "2026-09-23",
+          "worker": null,
+          "reason": "replaced by 5627fe53-0fa4-46b0-a10b-cab04e16bac5"
         }
       ]
     },

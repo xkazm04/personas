@@ -1,0 +1,113 @@
+{
+  "schema": "conform-run/1",
+  "worker": "5627fe53-0fa4-46b0-a10b-cab04e16bac5",
+  "subject": "p2p-networking",
+  "evaluatedAt": "2026-10-16T17:24:50.608Z",
+  "pairs": [
+    {
+      "context": "eba8081c-3a43-4529-b172-9bef07493935",
+      "subject": "p2p-networking",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/engine/src/p2p/mod.rs:741 the auto-connect sweep redials every owned/trusted peer with a discovered row on a fixed health-check interval forever - no per-peer backoff, no jitter, no ceiling-then-rest - while connection.rs:155 max_retries stays #[allow(dead_code)] and connection.rs:700 writes retry_count 0 that nothing increments [fresh read 2026-10-16: the 09-22 auto_connect and DELETE-prune findings are FIXED at mod.rs:814 and mdns.rs:501]",
+      "techniques": [
+        {
+          "technique": "resilience-and-reconnection",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/p2p/mod.rs:741 fixed-interval sleep is the only schedule; signal preemption (discovery_signal) and link-up replay exist, but backoff/jitter/ceiling do not, and connection.rs:155 max_retries is a dead knob"
+        },
+        {
+          "technique": "connection-lifecycle",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/p2p/connection.rs:604 handshake phases each carry a 10s timeout; connection.rs:445 deterministic simultaneous-dial tie-break keeps one session"
+        },
+        {
+          "technique": "discovery-advertisement",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/p2p/mdns.rs:244 TXT record carries only peer_id, display_name and protocol version"
+        },
+        {
+          "technique": "peer-state-honesty",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/p2p/mod.rs:751 reachability derives Connected/Stale/Offline from live session vs retained discovered row; mdns.rs:501 demotes absent peers to stale"
+        },
+        {
+          "technique": "exposure-controls",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/p2p/manifest_sync.rs:237 build_local_manifest takes no peer identity: every connected peer gets the same manifest (fails closed on requires_auth, but no per-peer grant)"
+        }
+      ]
+    },
+    {
+      "context": "219fe76c-1a70-4d42-88e2-393b7b98121a",
+      "subject": "p2p-networking",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/core/src/models/exposure.rs:101 ExposedResource carries no peer identity and src-tauri/src/commands/network/exposure.rs:94 builds the manifest from the whole un-scoped exposure list, so the allowlist is global rather than per-peer [fresh read 2026-10-16, construct unchanged]",
+      "techniques": [
+        {
+          "technique": "exposure-controls",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/exposure.rs:101 no grantee field; src-tauri/src/commands/network/exposure.rs:100 list_exposed_resources unfiltered by peer"
+        }
+      ]
+    },
+    {
+      "context": "7159d27d-86c2-43be-a83f-8b50c4c816be",
+      "subject": "p2p-networking",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/settings/sub_network/components/ExposureManager.tsx:128 creates every exposure with fields_exposed: [] and src-tauri/src/engine/bundle.rs:711 reads an empty list as expose-all-fields, so a column added later crosses to peers unreviewed (denylist by default) [fresh read 2026-10-16, construct unchanged]",
+      "techniques": [
+        {
+          "technique": "exposure-controls",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/bundle.rs:711 empty whitelist returns without filtering; src-tauri/core/src/models/exposure.rs:117 create input has no peer identity"
+        }
+      ]
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-16T17:24:50.608Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "p2p-networking"
+      ],
+      "techniques": [
+        "resilience-and-reconnection",
+        "connection-lifecycle",
+        "discovery-advertisement",
+        "peer-state-honesty",
+        "exposure-controls"
+      ],
+      "deviations": 1,
+      "context": "eba8081c-3a43-4529-b172-9bef07493935"
+    },
+    {
+      "ts": "2026-10-16T17:24:50.608Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "p2p-networking"
+      ],
+      "techniques": [
+        "exposure-controls"
+      ],
+      "deviations": 1,
+      "context": "219fe76c-1a70-4d42-88e2-393b7b98121a"
+    },
+    {
+      "ts": "2026-10-16T17:24:50.608Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "p2p-networking"
+      ],
+      "techniques": [
+        "exposure-controls"
+      ],
+      "deviations": 1,
+      "context": "7159d27d-86c2-43be-a83f-8b50c4c816be"
+    }
+  ]
+}
