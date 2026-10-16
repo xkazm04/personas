@@ -9530,12 +9530,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/core/src/error.rs:91 Internal(String) is a cause-dropping catch-all minted 1,488 times across src-tauri (708 as format!(\"..{e}\") over a foreign error) and re-classified from its own prose at :134 - self-minted timeouts (src-tauri/engine/src/p2p/manifest_sync.rs:146) have no variant to carry the category the mint site knew; supersedes the prior conformant, which read :134 as a rare fallback",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:e561e382d42cb2f2",
-          "evaluatedRevision": 15,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/core/src/error.rs:91 Internal(String) operates as a cause-dropping catch-all variant that flattens errors to bare strings, forcing category resolution to re-parse prose rather than preserving structured categories.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:d811928687fd4faf",
+          "evaluatedRevision": 17,
+          "revisionsBehind": 1
         },
         {
           "subject": "guest-execution-bounding",
@@ -12514,11 +12513,7 @@
           "confidence": "probable",
           "state": "deviation",
           "evidence": "src/features/shared/components/feedback/ErrorBoundary.tsx:43 the section boundary (36 call sites) catches render crashes before the root Sentry.withErrorBoundary (src/main.tsx:223) and opens no Sentry door - every handled render crash is dark to operator telemetry and persists with no breadcrumb trail (src/lib/utils/crashPersistence.ts:114)",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:e561e382d42cb2f2",
-          "evaluatedRevision": 15,
-          "revisionsBehind": 1,
-          "stale": true
+          "evaluatedAt": "2026-10-10"
         },
         {
           "subject": "test-harness",
@@ -15979,12 +15974,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/lib/errors/errorRegistry.ts:716 resolveError still takes only a raw string and matches prose (:723), ignoring the category the backend serialises (src-tauri/core/src/error.rs:210); a generic-fallback miss is recorded only as a Sentry breadcrumb (:735) - re-confirmed live at the current digest",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:e561e382d42cb2f2",
-          "evaluatedRevision": 15,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/lib/errors/errorRegistry.ts:716 The error message registry accepts only raw prose strings and matches regexes rather than structured error categories, recording unclassified fallback misses solely as breadcrumbs rather than operator telemetry events.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:d811928687fd4faf",
+          "evaluatedRevision": 17,
+          "revisionsBehind": 1
         },
         {
           "subject": "mcp-tools",
