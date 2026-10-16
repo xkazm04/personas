@@ -4427,51 +4427,64 @@
       "subject": "web-scraping",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-9",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:22:12.000Z",
+      "worker": "de66d4b0-835f-413d-b124-ecf395987aaf",
       "techniques": [
         {
           "technique": "extraction-rule-dsl",
           "verdict": "deviation",
-          "evidence": "src/features/scraper/useScrapeForm.ts:13 RuleField declares locator params only, with no mandatory failure-semantics member."
+          "evidence": "src/features/scraper/useScrapeForm.ts:13 RuleField (and wire ScrapeRule / pumper extract::Rule) has no failure-semantics member; no field can be required, so collapse is indistinguishable from a quiet day. Flat-form-serialized-at-edges IS realized (useScrapeForm.ts:56 fieldToRule)"
         },
         {
           "technique": "dry-run-preview",
-          "verdict": "conformant",
-          "evidence": "src/features/scraper/useScrapeForm.ts:230 canSave requires previewProven for an armed scrape; the proof is a signature over urls plus compiled rules, so an edit after preview re-blocks the save."
+          "verdict": "realized",
+          "evidence": "src/features/scraper/useScrapeForm.ts:230 save of an enabled scrape is disabled until a preview produced a record for exactly the current urls+rules; src-tauri/engine/src/scraper.rs:310 preview runs the production extract_one with no writes. Per-rule miss/required rendering absent (follows from the DSL gap)"
         },
         {
           "technique": "shape-change-detection",
           "verdict": "deviation",
-          "evidence": "src/features/scraper/useScraperData.ts:230 collapse = 0 new and 0 changed against a non-empty dataset, ignoring the unchanged count the engine emits, so a healthy re-scrape where every record matched unchanged is painted collapsed - an oversensitive detector that trains users to click past the real collapse."
+          "evidence": "src-tauri/engine/src/scraper.rs:621 a run whose rules all missed still records 'ok - ...'; the only detector is a UI-side heuristic (src/features/scraper/useScraperData.ts:227) requiring new+changed==0, which the null-overwrite path defeats; no quarantine, no per-rule hit counts, no baseline"
+        },
+        {
+          "technique": "dedup-and-datasets",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/scraper.rs:275 key falls back to the URL when key_field extracts nothing (phantom identity); scraper.rs:276 suspect harvests reconcile; no absent/tombstone outcome exists (new/changed/unchanged only)"
+        },
+        {
+          "technique": "scrape-scheduling",
+          "verdict": "realized",
+          "evidence": "src-tauri/engine/src/scraper.rs:463 next run seeded by config id (deterministic jitter); scraper.rs:640 enabled is a state the scheduler filters on, not a deletion. No 'collapsed'/'blocked' run outcome vocabulary (owned by the detection gap)"
         },
         {
           "technique": "llm-assisted-rule-authoring",
           "verdict": "deviation",
-          "evidence": "src/features/scraper/LlmRuleBuilder.tsx:39 picks merge vs replace automatically (merge whenever fields exist) with no human choice or collision view; the merge drops every proposed rule whose name already exists, so dead rules cannot be replaced through the builder."
-        },
-        {
-          "technique": "dedup-and-datasets",
-          "verdict": "unread",
-          "evidence": ""
-        },
-        {
-          "technique": "scrape-scheduling",
-          "verdict": "unread",
-          "evidence": ""
+          "evidence": "src/features/scraper/LlmRuleBuilder.tsx:39 picks merge vs replace automatically (merge whenever fields exist) with no human choice or collision view; the merge drops every proposed rule whose name already exists, so dead rules cannot be replaced through the builder.",
+          "carriedFrom": "2026-09-23"
         },
         {
           "technique": "negotiated-representation-probe",
           "verdict": "unread",
-          "evidence": ""
+          "evidence": "",
+          "carriedFrom": "2026-09-23"
         },
         {
           "technique": "soak-mode-and-verdict-replay",
           "verdict": "unread",
-          "evidence": ""
+          "evidence": "",
+          "carriedFrom": "2026-09-23"
         }
       ],
-      "registryProposal": "shape-change-detection could state that a harvest with zero new and zero changed records is collapse only when matched/unchanged is also zero - 'nothing new' is not 'nothing extracted'."
+      "registryProposal": "The application react--extraction-rule-dsl.md cites useScrapeForm.ts:13-23 as the realized flat form; it should also state that this RuleField lacks the mandatory failure-semantics member, or readers will take it as a full exemplar. Also worth a shape-change-detection note: a UI-side 'zero new + zero changed' collapse heuristic is defeated whenever the reconciler stores null records as 'changed' - detection must sit before reconciliation, which the technique implies but does not name as a failure mode.",
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/scraper/useScrapeForm.ts:13 RuleField still has no failure-semantics member (required/optional/defaulted), so no field can be required and extraction collapse cannot be told apart from a quiet day at the rule level; the old 'unpreviewed rule set saves armed' clause is fixed (:230).",
+          "evaluatedAt": "2026-09-23",
+          "worker": null,
+          "reason": "replaced by de66d4b0-835f-413d-b124-ecf395987aaf"
+        }
+      ]
     },
     "3effd422-2610-4c8a-bc02-53aceafd827c/companion-identity": {
       "context": "commands-companion",

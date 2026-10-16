@@ -29732,8 +29732,8 @@
           "changedAt": "2026-09-05",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/scraper/useScrapeForm.ts:13 RuleField still has no failure-semantics member (required/optional/defaulted), so no field can be required and extraction collapse cannot be told apart from a quiet day at the rule level; the old 'unpreviewed rule set saves armed' clause is fixed (:230).",
-          "evaluatedAt": "2026-09-23",
+          "evidence": "src-tauri/engine/src/scraper.rs:276 every harvest is upserted unconditionally: on a redesign every rule yields Null, the null record hashes differently and OVERWRITES the good row as 'changed' (or mints a phantom URL-keyed row when key_field misses), so the dataset is corrupted and the UI collapse check (changed===0) never fires",
+          "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:19cc38b48911ea64",
           "evaluatedRevision": 1,
           "revisionsBehind": 0
