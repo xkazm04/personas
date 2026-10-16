@@ -3047,14 +3047,14 @@
       "subject": "companion-runtime",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T12:33:40.000Z",
-      "worker": "7ebfa425-34fb-4871-8a6e-9346b53e9173",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:48:29.000Z",
+      "worker": "e5a005a2-7aa8-43d9-80d7-5a026c271c78",
       "techniques": [
         {
           "technique": "action-catalog-single-source",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/companion/approvals/approval_lifecycle.rs:370 string match with an unknown-action arm is the runtime shrug the technique names; src-tauri/src/companion/dispatcher/tests.rs:160 asserts membership, not set equality"
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_lifecycle.rs:374 string match with a runtime-shrug arm; no set-equality pin between catalog.rs:11 and the lifecycle arms"
         }
       ],
       "superseded": [
@@ -3071,6 +3071,13 @@
           "evaluatedAt": "2026-10-10T12:12:02.000Z",
           "worker": "529daf0c-daf4-423d-9a30-a4f3a61037c3",
           "reason": "replaced by 7ebfa425-34fb-4871-8a6e-9346b53e9173"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_lifecycle.rs:223 matches the approval action as a &str and :370 ends in `other => Err(unknown action)`, so a kind added to ALLOWED_ACTIONS (src-tauri/src/companion/dispatcher/catalog.rs:11, 58 entries) without an arm compiles and fails only when approved; all 58 have arms today but no test derives both sets (dispatcher/tests.rs pins membership only) (re-confirmed 2026-10-12)",
+          "evaluatedAt": "2026-10-12T12:33:40.000Z",
+          "worker": "7ebfa425-34fb-4871-8a6e-9346b53e9173",
+          "reason": "replaced by e5a005a2-7aa8-43d9-80d7-5a026c271c78"
         }
       ]
     },
@@ -3141,14 +3148,14 @@
       "subject": "companion-runtime",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T12:12:02.000Z",
-      "worker": "529daf0c-daf4-423d-9a30-a4f3a61037c3",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:48:29.000Z",
+      "worker": "e5a005a2-7aa8-43d9-80d7-5a026c271c78",
       "techniques": [
         {
           "technique": "action-catalog-single-source",
           "verdict": "deviation",
-          "evidence": "src/features/companions/athena/athenaLabels.ts:115 default arm returns titleCase(action); surface ships in the same artifact as the table, so the technique calls for exhaustive-over-generated-type or a source-reading pin"
+          "evidence": "src/features/companions/athena/athenaLabels.ts:115 unpinned co-deployed fallback"
         }
       ],
       "superseded": [
@@ -3158,6 +3165,13 @@
           "evaluatedAt": "2026-10-05",
           "worker": null,
           "reason": "replaced by 529daf0c-daf4-423d-9a30-a4f3a61037c3"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/companions/athena/athenaLabels.ts:115 falls back to titleCase(action) in a bundle that ships with the catalog, and no test compares its 37 cases to the 58 ALLOWED_ACTIONS at src-tauri/src/companion/dispatcher/catalog.rs:11 (23 unlabeled); the co-deployed fallback hides exactly the drift actionRisk.test.ts already gates for the risk table (re-confirmed 2026-10-10).",
+          "evaluatedAt": "2026-10-10T12:12:02.000Z",
+          "worker": "529daf0c-daf4-423d-9a30-a4f3a61037c3",
+          "reason": "replaced by e5a005a2-7aa8-43d9-80d7-5a026c271c78"
         }
       ]
     },
@@ -3192,19 +3206,14 @@
       "subject": "companion-runtime",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T12:12:02.000Z",
-      "worker": "529daf0c-daf4-423d-9a30-a4f3a61037c3",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:48:29.000Z",
+      "worker": "e5a005a2-7aa8-43d9-80d7-5a026c271c78",
       "techniques": [
         {
           "technique": "action-catalog-single-source",
           "verdict": "deviation",
-          "evidence": "src/features/companions/athena/decision/useDecisionQueue.ts:89 const label = actionLabel(t, approval.action) - unpinned label surface"
-        },
-        {
-          "technique": "action-catalog-single-source",
-          "verdict": "realized",
-          "evidence": "src/features/companions/athena/decision/actionRisk.ts:83 ELEVATED_RISK named beside LOW_RISK (:48), set-pinned against catalog.rs with instrument check at src/features/companions/athena/decision/__tests__/actionRisk.test.ts:36"
+          "evidence": "src/features/companions/athena/athenaLabels.ts:115 label surface not exhaustive; src/features/companions/athena/decision/actionRisk.ts:83 risk surface names both arms (conformant part)"
         }
       ],
       "superseded": [
@@ -3214,6 +3223,13 @@
           "evaluatedAt": "2026-10-05",
           "worker": null,
           "reason": "replaced by 529daf0c-daf4-423d-9a30-a4f3a61037c3"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/companions/athena/decision/useDecisionQueue.ts:89 builds the orb decision prompt from actionLabel, whose co-deployed titleCase fallback (src/features/companions/athena/athenaLabels.ts:115) is unpinned, so 23 of 58 approval kinds are voiced as synthesized slugs with no failing check; the risk table is conformant (actionRisk.ts:48/:83 name both arms, pinned by decision/__tests__/actionRisk.test.ts:36) (re-confirmed 2026-10-10).",
+          "evaluatedAt": "2026-10-10T12:12:02.000Z",
+          "worker": "529daf0c-daf4-423d-9a30-a4f3a61037c3",
+          "reason": "replaced by e5a005a2-7aa8-43d9-80d7-5a026c271c78"
         }
       ]
     },
@@ -5331,14 +5347,14 @@
       "subject": "companion-runtime",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T12:33:40.000Z",
-      "worker": "7ebfa425-34fb-4871-8a6e-9346b53e9173",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:48:29.000Z",
+      "worker": "e5a005a2-7aa8-43d9-80d7-5a026c271c78",
       "techniques": [
         {
           "technique": "action-catalog-single-source",
           "verdict": "deviation",
-          "evidence": "src/features/companions/athena/DevOpLedger.tsx:112 fallback tone on a surface that ships in the same artifact as its vocabulary"
+          "evidence": "src/features/companions/athena/DevOpLedger.tsx:112 co-deployed surface falls back instead of being exhaustive over a generated type"
         }
       ],
       "superseded": [
@@ -5355,6 +5371,13 @@
           "evaluatedAt": "2026-10-09T00:00:00.000Z",
           "worker": "b4932d6d-c4ab-44e3-b98b-d3d32fd308d2",
           "reason": "replaced by 7ebfa425-34fb-4871-8a6e-9346b53e9173"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/api/companion.ts:425 types the dev-op status as a bare string (tokens only in the :419 comment), so src/features/companions/athena/DevOpLedger.tsx:103 renders an unknown status as its raw token and :112 as a grey dot in a co-deployed bundle; a sixth backend status fails nothing (re-confirmed 2026-10-12)",
+          "evaluatedAt": "2026-10-12T12:33:40.000Z",
+          "worker": "7ebfa425-34fb-4871-8a6e-9346b53e9173",
+          "reason": "replaced by e5a005a2-7aa8-43d9-80d7-5a026c271c78"
         }
       ]
     },
@@ -5393,14 +5416,14 @@
       "subject": "companion-runtime",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T12:33:40.000Z",
-      "worker": "7ebfa425-34fb-4871-8a6e-9346b53e9173",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:48:29.000Z",
+      "worker": "e5a005a2-7aa8-43d9-80d7-5a026c271c78",
       "techniques": [
         {
           "technique": "action-catalog-single-source",
           "verdict": "deviation",
-          "evidence": "src/features/companions/athena/athenaLabels.ts:115 co-deployed surface keeps a hand list with a plausible-guess fallback instead of an exhaustive generated type or a pin reading catalog.rs"
+          "evidence": "src/features/companions/athena/athenaLabels.ts:115 co-deployed fallback hides drift; no test reads catalog.rs against the label switch"
         }
       ],
       "superseded": [
@@ -5417,6 +5440,13 @@
           "evaluatedAt": "2026-10-09T00:00:00.000Z",
           "worker": "b4932d6d-c4ab-44e3-b98b-d3d32fd308d2",
           "reason": "replaced by 7ebfa425-34fb-4871-8a6e-9346b53e9173"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/companions/athena/athenaLabels.ts:115 default arm title-cases the raw slug in the bundle that ships with the catalog; 23 of the 58 ALLOWED_ACTIONS (src-tauri/src/companion/dispatcher/catalog.rs:11) have no case and ApprovalCard.tsx:40 renders that guess, so a new kind ships unlabeled with nothing failing (re-confirmed 2026-10-12, code unchanged)",
+          "evaluatedAt": "2026-10-12T12:33:40.000Z",
+          "worker": "7ebfa425-34fb-4871-8a6e-9346b53e9173",
+          "reason": "replaced by e5a005a2-7aa8-43d9-80d7-5a026c271c78"
         }
       ]
     },
@@ -13153,27 +13183,36 @@
       "subject": "companion-runtime",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T02:10:24.000Z",
-      "worker": "248886f3-87ba-4ad6-8ba3-4f8697ca03c4",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:48:29.000Z",
+      "worker": "e5a005a2-7aa8-43d9-80d7-5a026c271c78",
       "techniques": [
+        {
+          "technique": "autonomous-cycle-hosting",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/proactive/triggers.rs:75 failure folded to empty success (failure-not-empty-success)"
+        },
         {
           "technique": "signal-economy-contract",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/proactive/triggers.rs:75 swallowed trigger errors break 'tell a quiet companion from a broken one'; the producer-side report-or-absorb itself is realized at src-tauri/src/companion/proactive/execution_review.rs:816 (drop/digest/deep_dive counts on the turn ledger, decided before any turn is minted)"
-        },
-        {
-          "technique": "autonomous-cycle-hosting",
-          "verdict": "realized",
-          "evidence": "src-tauri/src/companion/proactive/execution_review.rs:697 in-process single-flight InflightGuard; :717 wake-window admission gate before the cursor; :131/:136 declared scan/batch caps with overflow counted (:173); :734 two-phase cursor advances only on success; src-tauri/src/companion/proactive/budget.rs:23 conservative default delivery ceiling"
+          "evidence": "src-tauri/src/companion/proactive/incident_triggers.rs:99 a failed read reports zero candidates, a count without its predicate"
         },
         {
           "technique": "metered-llm-seam",
           "verdict": "realized",
-          "evidence": "src-tauri/src/companion/proactive/execution_review.rs:752 the triage leg goes through src-tauri/src/companion/athena_reaction.rs:420 cli_text_tracked_on with required leg kind + tier, one ledger row per call and failures recorded via record_failed_leg"
+          "evidence": "src-tauri/src/companion/proactive/execution_review.rs:752 the triage leg goes through src-tauri/src/companion/athena_reaction.rs:420 cli_text_tracked_on with required leg kind + tier, one ledger row per call and failures recorded via record_failed_leg",
+          "carriedFrom": "2026-10-10"
         }
       ],
-      "registryProposal": "Upward lesson for signal-economy-contract: this repo's execution_review.rs records the triage verdict split (drop/digest/deep_dive) as the turn-ledger outcome of the very leg that decided it, which makes 'the ratio is the instrument' fall out of the metering row for free - worth an application (rust--signal-economy-contract). Also: the technique names failure-not-empty-success for cycles but not for the CANDIDATE-GATHERING stage that feeds the gate; a per-source unwrap_or_default is the commonest way the quiet/broken distinction dies and deserves one sentence."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/proactive/triggers.rs:75 collect_all folds every trigger's Err into an empty Vec with no log (also :328 dev_goal_nudges, incident_triggers.rs:99), so a failed goal/backlog/incident read is indistinguishable from 'nothing to report' and the tick's warn at commands/companion/mod.rs:657 never sees it; conversation_resume latches at triggers.rs:207 before reading, so one failed read loses welcome-back for the process. credential_triggers.rs:106 is the in-repo contrast that logs.",
+          "evaluatedAt": "2026-10-10T02:10:24.000Z",
+          "worker": "248886f3-87ba-4ad6-8ba3-4f8697ca03c4",
+          "reason": "replaced by e5a005a2-7aa8-43d9-80d7-5a026c271c78"
+        }
+      ]
     },
     "336089a8-bb18-449c-a62e-ca76b02097fb/companion-runtime": {
       "context": "test-bridge-core",

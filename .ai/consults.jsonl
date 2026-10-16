@@ -1393,3 +1393,9 @@
 {"ts":"2026-10-16T17:48:30Z","bundle":"software-engineering","subjects":["codebase-scanning"],"techniques":["sensor-pipeline","llm-assisted-scanning"],"deviations":1}
 {"ts":"2026-10-16T17:48:30Z","bundle":"software-engineering","subjects":["codebase-scanning"],"techniques":["incremental-scanning","verify-after-generate"],"deviations":1}
 {"ts":"2026-10-16T17:48:30Z","bundle":"software-engineering","subjects":["codebase-scanning"],"techniques":[],"deviations":0}
+{"ts":"2026-10-16T17:48:29Z","bundle":"software-engineering","subjects":["companion-runtime"],"techniques":["action-catalog-single-source"],"deviations":1}
+{"ts":"2026-10-16T17:48:29Z","bundle":"software-engineering","subjects":["companion-runtime"],"techniques":["action-catalog-single-source"],"deviations":1}
+{"ts":"2026-10-16T17:48:29Z","bundle":"software-engineering","subjects":["companion-runtime"],"techniques":["action-catalog-single-source"],"deviations":1}
+{"ts":"2026-10-16T17:48:29Z","bundle":"software-engineering","subjects":["companion-runtime"],"techniques":["action-catalog-single-source"],"deviations":1}
+{"ts":"2026-10-16T17:48:29Z","bundle":"software-engineering","subjects":["companion-runtime"],"techniques":["action-catalog-single-source"],"deviations":1}
+{"ts":"2026-10-16T17:48:29Z","bundle":"software-engineering","subjects":["companion-runtime"],"techniques":["autonomous-cycle-hosting","signal-economy-contract"],"deviations":2}
