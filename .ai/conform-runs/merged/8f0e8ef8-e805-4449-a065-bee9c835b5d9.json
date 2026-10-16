@@ -1,0 +1,29 @@
+{"schema":"conform-run/1","worker":"8f0e8ef8-e805-4449-a065-bee9c835b5d9","subject":"triage-queues","evaluatedAt":"2026-10-16T17:32:48Z",
+"pairs":[
+{"context":"ef73ca1c-fc54-4b9c-83ec-390c54929192","subject":"triage-queues","bundle":"software-engineering","state":"deviation",
+"evidence":"src/features/overview/sub_manual-review/components/ManualReviewList.tsx:287 the Clear-stale door (and the startup sweep, src-tauri/src/engine/background/lifecycle.rs:558) runs a severity-blind GC (src-tauri/db/src/repos/communication/manual_reviews.rs:867) beside an autopilot that leaves HIGH/critical for a human (src-tauri/src/engine/subscription/autonomy_reviews.rs:32), so the sweep's intake is dominated by exactly the reviews judged too important to automate; supersedes the 10-09 ReviewFocusFlow anchor, since Pending now hands verdicts to the Decision Deck",
+"techniques":[
+{"technique":"queue-lifecycle","verdict":"deviation","evidence":"src-tauri/db/src/repos/communication/manual_reviews.rs:867 GC selects by created_at alone and writes status='resolved' (:892), the human-verdict vocabulary distinguished only by a note sentinel; composed with autonomy_reviews.rs:32 the janitor receives the high/critical population"},
+{"technique":"bulk-triage","verdict":"deviation","evidence":"src/features/overview/sub_manual-review/components/BulkActionBar.tsx:35 bulk approve and bulk reject share one bare-count confirm with no predicate and no extra friction for accept, though an approved review dispatches its chosen action; selection is an id Set frozen at click (ManualReviewList.tsx:248) and partial failure is counted (:258) but not listed"},
+{"technique":"verdict-writeback","verdict":"conformant","evidence":"src/features/overview/sub_manual-review/components/ManualReviewList.tsx:252 bulk verdicts write per item through a bounded pool and a lost compare-and-swap is reported, not swallowed"},
+{"technique":"focus-mode","verdict":"not-applicable","evidence":"src/features/overview/sub_manual-review/components/PendingDecisionList.tsx:165 the pending list opens the global Decision Deck (decision-center) for card verdicts; no deck for reviews lives in this context any more"},
+{"technique":"queue-ordering-and-identity","verdict":"not-applicable","evidence":"src/features/overview/sub_manual-review/components/PendingDecisionList.tsx:180 rows are a sortable browse table keyed by id that opens the deck with that review on top; policy ordering is the deck's (src/features/decision-center/model/decisionOrder.ts:57)"}],
+"registryProposal":"Upward evidence for queue-lifecycle's composed-exits paragraph: this tree is a second live instance of the canonical failure (autonomy_reviews.rs:32 vs manual_reviews.rs:867), worth a react/tauri application citing both anchors."},
+{"context":"a76a8bc2-39eb-4cf1-92e6-93fba40ce96f","subject":"triage-queues","bundle":"software-engineering","state":"deviation",
+"evidence":"src/features/home/sub_cockpit/widgets/DecisionsPanelWidget.tsx:94 a failed source still surfaces only as the EMPTY title: with rows present, roster.errors (:50) renders nothing, so a dark chip reads as a calm partial list; re-judged after the 10-15 Lanes rewrite, which replaced the chipCounts total with laneTotal (:44) but not the dark-source marker",
+"techniques":[
+{"technique":"source-normalization","verdict":"deviation","evidence":"src/features/home/sub_cockpit/widgets/DecisionsPanelWidget.tsx:94 per-source failure is only consulted when the table is empty; source-count honesty requires the non-empty list to say a source is dark"},
+{"technique":"queue-ordering-and-identity","verdict":"conformant","evidence":"src/features/decision-center/model/decisionOrder.ts:57 rows are roster.items (DecisionsPanelWidget.tsx:38) under a tiered comparator with an id tiebreak, keyed by item.id"},
+{"technique":"verdict-writeback","verdict":"conformant","evidence":"src/features/decision-center/useDecisionRoster.ts:346 the drawer's verdict goes through roster.decide, optimistic with restore-and-reject on a failed write"},
+{"technique":"focus-mode","verdict":"not-applicable","evidence":"src/features/home/sub_cockpit/widgets/DecisionsPanelWidget.tsx:100 one item opens in a drawer; the tile holds no deck"},
+{"technique":"bulk-triage","verdict":"not-applicable","evidence":"src/features/home/sub_cockpit/widgets/DecisionsPanelWidget.tsx:87 the widget table has no multi-select"}]}
+],
+"declined":[
+{"subject":"triage-queues","context":"8cfb82ac-ebd6-4826-921d-d1399dba7a60","reason":"conformant verdict of 2026-10-09 is against the current digest (70c2c3eb, rev 3) and src/features/agents/quick-answer has no commits since; re-reading would restate it"},
+{"subject":"triage-queues","context":"50f50f97-be0e-4a93-8f1c-c0b967cd45d0","reason":"conformant verdict of 2026-10-03 is current; the only later commit to these files (6031d4080d) restyles SensorScoreboard header classes, outside every technique"},
+{"subject":"triage-queues","context":"11fe7642-7a1a-47c5-8910-499850aa04fe","reason":"weak context (empty paths) left unjudged by rule; note its carried deviation anchors src/features/companions/athena/inbox/hooks/useUnifiedInbox.ts, which f5a1c27d2b deleted on 2026-10-06, so the verdict is a claim about code that no longer exists - coverage question: re-route or retire this pairing"}
+],
+"consults":[
+{"ts":"2026-10-16T17:32:48Z","bundle":"software-engineering","subjects":["triage-queues"],"techniques":["queue-lifecycle","bulk-triage","verdict-writeback","focus-mode","queue-ordering-and-identity"],"deviations":2},
+{"ts":"2026-10-16T17:32:48Z","bundle":"software-engineering","subjects":["triage-queues"],"techniques":["source-normalization","queue-ordering-and-identity","verdict-writeback","focus-mode","bulk-triage"],"deviations":1}
+]}

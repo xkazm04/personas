@@ -4443,31 +4443,37 @@
       "subject": "triage-queues",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T16:58:23.000Z",
-      "worker": "f39eaa05-d7e4-4991-8a71-e559b4230ccc",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:32:48.000Z",
+      "worker": "8f0e8ef8-e805-4449-a065-bee9c835b5d9",
       "techniques": [
         {
-          "technique": "queue-ordering-and-identity",
+          "technique": "queue-lifecycle",
           "verdict": "deviation",
-          "evidence": "src/features/overview/sub_manual-review/components/ManualReviewList.tsx:137 the sort is newest-first by created_at only, with no severity tier and no identity tiebreak, so the oldest items starve"
-        },
-        {
-          "technique": "focus-mode",
-          "verdict": "deviation",
-          "evidence": "src/features/overview/sub_manual-review/components/ReviewFocusFlow.tsx:132 the cursor is a stored index (reviewIdx), not the first remaining id"
-        },
-        {
-          "technique": "verdict-writeback",
-          "verdict": "realized",
-          "evidence": "src/features/overview/sub_manual-review/components/ManualReviewList.tsx:223 one write door (resolveReviewRow) for local and cloud reviews; a failure toasts and re-reads instead of advancing silently"
+          "evidence": "src-tauri/db/src/repos/communication/manual_reviews.rs:867 GC selects by created_at alone and writes status='resolved' (:892), the human-verdict vocabulary distinguished only by a note sentinel; composed with autonomy_reviews.rs:32 the janitor receives the high/critical population"
         },
         {
           "technique": "bulk-triage",
-          "verdict": "partial",
-          "evidence": "src/features/overview/sub_manual-review/components/ManualReviewList.tsx:270 a partial bulk failure is reported as a count, not as a list of the failed items"
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_manual-review/components/BulkActionBar.tsx:35 bulk approve and bulk reject share one bare-count confirm with no predicate and no extra friction for accept, though an approved review dispatches its chosen action; selection is an id Set frozen at click (ManualReviewList.tsx:248) and partial failure is counted (:258) but not listed"
+        },
+        {
+          "technique": "verdict-writeback",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_manual-review/components/ManualReviewList.tsx:252 bulk verdicts write per item through a bounded pool and a lost compare-and-swap is reported, not swallowed"
+        },
+        {
+          "technique": "focus-mode",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_manual-review/components/PendingDecisionList.tsx:165 the pending list opens the global Decision Deck (decision-center) for card verdicts; no deck for reviews lives in this context any more"
+        },
+        {
+          "technique": "queue-ordering-and-identity",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_manual-review/components/PendingDecisionList.tsx:180 rows are a sortable browse table keyed by id that opens the deck with that review on top; policy ordering is the deck's (src/features/decision-center/model/decisionOrder.ts:57)"
         }
       ],
+      "registryProposal": "Upward evidence for queue-lifecycle's composed-exits paragraph: this tree is a second live instance of the canonical failure (autonomy_reviews.rs:32 vs manual_reviews.rs:867), worth a react/tauri application citing both anchors.",
       "superseded": [
         {
           "state": "deviation",
@@ -4475,6 +4481,13 @@
           "evaluatedAt": "2026-09-23",
           "worker": null,
           "reason": "replaced by f39eaa05-d7e4-4991-8a71-e559b4230ccc"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_manual-review/components/ReviewFocusFlow.tsx:132 the restored (10-06) focus view still tracks the reviewer as an integer index into a pending array the cloud poll replaces (ManualReviewList.tsx:128), ordered newest-first with no severity tier or id tiebreak (ManualReviewList.tsx:137), so an arrival above the cursor swaps the review under the reviewer",
+          "evaluatedAt": "2026-10-09T16:58:23.000Z",
+          "worker": "f39eaa05-d7e4-4991-8a71-e559b4230ccc",
+          "reason": "replaced by 8f0e8ef8-e805-4449-a065-bee9c835b5d9"
         }
       ]
     },
@@ -8950,37 +8963,36 @@
       "subject": "triage-queues",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T12:18:00.000Z",
-      "worker": "843bd899-65f5-4738-9f93-359f56279ece",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:32:48.000Z",
+      "worker": "8f0e8ef8-e805-4449-a065-bee9c835b5d9",
       "techniques": [
         {
           "technique": "source-normalization",
           "verdict": "deviation",
-          "evidence": "src/features/home/sub_cockpit/widgets/DecisionsPanelWidget.tsx:43 `failed` is computed from roster.errors but consumed only at :87 as emptyTitle; the headline count at :40-42 never says any source is dark"
+          "evidence": "src/features/home/sub_cockpit/widgets/DecisionsPanelWidget.tsx:94 per-source failure is only consulted when the table is empty; source-count honesty requires the non-empty list to say a source is dark"
         },
         {
           "technique": "queue-ordering-and-identity",
-          "verdict": "realized",
-          "evidence": "src/features/decision-center/model/decisionOrder.ts:57 tier, then weight, oldest-first, then id - a total order the widget renders as-is, keyed by item.id (DecisionsPanelWidget.tsx:83)"
+          "verdict": "conformant",
+          "evidence": "src/features/decision-center/model/decisionOrder.ts:57 rows are roster.items (DecisionsPanelWidget.tsx:38) under a tiered comparator with an id tiebreak, keyed by item.id"
         },
         {
           "technique": "verdict-writeback",
-          "verdict": "realized",
-          "evidence": "src/features/decision-center/useDecisionRoster.ts:353 an optimistic removal by id is rolled back on a failed write, a lost CAS re-reads (:351), and the drawer stays open and toasts (src/features/home/sub_cockpit/widgets/DecisionDrawer.tsx:89)"
+          "verdict": "conformant",
+          "evidence": "src/features/decision-center/useDecisionRoster.ts:346 the drawer's verdict goes through roster.decide, optimistic with restore-and-reject on a failed write"
         },
         {
           "technique": "focus-mode",
           "verdict": "not-applicable",
-          "evidence": "src/features/home/sub_cockpit/widgets/DecisionsPanelWidget.tsx:85 a row click opens one drawer; the one-at-a-time deck lives in src/features/decision-center/deck/, outside this context"
+          "evidence": "src/features/home/sub_cockpit/widgets/DecisionsPanelWidget.tsx:100 one item opens in a drawer; the tile holds no deck"
         },
         {
           "technique": "bulk-triage",
           "verdict": "not-applicable",
-          "evidence": "src/features/home/sub_cockpit/widgets/DecisionsPanelWidget.tsx:80 the WidgetTable carries no selection; no multi-item verdict exists in this context"
+          "evidence": "src/features/home/sub_cockpit/widgets/DecisionsPanelWidget.tsx:87 the widget table has no multi-select"
         }
       ],
-      "registryProposal": "Matcher miss: src/features/decision-center/ (roster, adapters, decisionOrder, deck, dispatch - the repo's actual unified triage queue since 10-06) is covered by no context in the map carrying triage-queues; the subject now governs it more directly than any of its five current pairs. Rescan the context map, then pair it.",
       "superseded": [
         {
           "state": "deviation",
@@ -8995,6 +9007,13 @@
           "evaluatedAt": "2026-10-09T16:58:23.000Z",
           "worker": "f39eaa05-d7e4-4991-8a71-e559b4230ccc",
           "reason": "replaced by 843bd899-65f5-4738-9f93-359f56279ece"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/home/sub_cockpit/widgets/DecisionsPanelWidget.tsx:87 a failed source is surfaced only as the EMPTY title, so when one chip's fetch fails while others load the tile shows a calm partial list and a total (chipCounts.ts:7 keeps the dark chip's last number) with no dark-source marker; supersedes the 10-09 verdict, whose useUnifiedInbox.ts anchor was deleted 10-06 (f5a1c27d2b) - ordering now IS the roster's total policy",
+          "evaluatedAt": "2026-10-12T12:18:00.000Z",
+          "worker": "843bd899-65f5-4738-9f93-359f56279ece",
+          "reason": "replaced by 8f0e8ef8-e805-4449-a065-bee9c835b5d9"
         }
       ]
     },
