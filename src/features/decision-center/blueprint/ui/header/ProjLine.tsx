@@ -1,5 +1,7 @@
 import { useLayoutEffect, useRef } from 'react';
+import '../../styles/page-switch.css';
 import { useSheet } from '../../controller/SheetContext';
+import { Press } from '../Press';
 
 /** The sheet number the title line prints: G-001 for the General arrangement, the lens's short code for a lens sheet. */
 export function sheetNumber(short: string | null): string {
@@ -7,11 +9,28 @@ export function sheetNumber(short: string | null): string {
 }
 
 /**
+ * bp's page switch (Header.tsx PageSwitch, page-switch.css): DRAWING SET | LEDGER n, 18 px, the pressed side ink-filled,
+ * the amber count of open (proposed) findings on the LEDGER side. It dispatches `page`; L does the same.
+ */
+function PageSwitch() {
+  const s = useSheet();
+  const { B } = s.text;
+  const open = s.data.scan.proposals.reduce((n, p) => n + (p.status === 'proposed' ? 1 : 0), 0);
+  return (
+    <span className="pgsw" role="group" aria-label={B.lg_page_switch} data-testid="blueprint-page-switch">
+      <Press on={s.ui.page === 'plan'} onClick={() => s.dispatch({ type: 'page', page: 'plan' })}>{B.drawing_set}</Press>
+      <Press on={s.ui.page === 'ledger'} onClick={() => s.dispatch({ type: 'page', page: 'ledger' })} data-testid="blueprint-page-ledger">
+        {B.lg_ledger}{open ? <b>{open}</b> : null}
+      </Press>
+    </span>
+  );
+}
+
+/**
  * The title line (bp Header ProjLine): "DRAWING SET · sheet G-001 · General arrangement", 12 px mono uppercase. Too
  * narrow for the whole line, the sheet's title drops first, then the sheet itself (the active lens tab names it too);
- * measured on resize and when the sheet changes (bp's data-fit, Header.tsx:278-307). The DRAWING SET | LEDGER page
- * switch arrives in Stage B: only its DRAWING SET segment is drawn. The last thing the sheet said rides at the end,
- * as the live region.
+ * measured on resize and when the sheet changes (bp's data-fit, Header.tsx:278-307). It opens with bp's page switch,
+ * DRAWING SET | LEDGER n (PageSwitch). The last thing the sheet said rides at the end, as the live region.
  */
 export function ProjLine() {
   const s = useSheet();
@@ -33,7 +52,7 @@ export function ProjLine() {
   }, [no, title]);
   return (
     <div className="bp-l1" ref={ref}>
-      <span className="pgsw"><span>{B.drawing_set}</span></span>
+      <PageSwitch />
       <span className="pj-sheet"> {'·'} <b><span className="pj-no">{B.sheet} {no}</span><span className="pj-ttl"> {'·'} {title}</span></b></span>
       <span className="bp-say" role="status" aria-live="polite" key={s.ui.say?.key ?? 0}>{s.ui.say?.text ?? ''}</span>
     </div>

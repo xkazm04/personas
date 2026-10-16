@@ -1,66 +1,76 @@
-import { useMemo } from 'react';
-import { ChevronDown, ChevronUp, X } from 'lucide-react';
-import { Button } from '@/features/shared/components/buttons';
+import '../../styles/ledger-train.css';
+import '../../styles/ledger-compare.css';
+import { useMemo, useState } from 'react';
 import { useSheet } from '../../controller/SheetContext';
-import { keysFor } from '../../model/keymap';
-import { comparisonOf, packOrder, placeInPack } from '../../model/triage';
-import { Keycap } from '../Keycap';
-import { LensGlyphIcon } from '../LensGlyphIcon';
-import { StatusChip } from '../StatusChip';
+import { Decide } from '../../ledger/Decide';
+import { Btn } from '../../ledger/Controls';
+import { LensTag, StateMark, stateHint } from '../../ledger/Marks';
+import type { CompareView } from '../../ledger/ledgerStore';
+import { isFlagged } from '../../model/ledgerRules';
+import { comparisonOf, packOrder } from '../../model/triage';
+import type { TriageDecisionInput } from '../../source';
 import { CompareBody } from './CompareBody';
-import { TriageBar } from './TriageBar';
+
+/** What the findings ledger hands the panel: its page state, its item order (J/K) and its own verbs. */
+export interface LedgerCompare {
+  view: CompareView;
+  wide: boolean;
+  order: readonly string[];
+  onView(v: CompareView): void;
+  onWide(): void;
+  onClose(): void;
+  onGo(id: string): void;
+  onMove(move: TriageDecisionInput): void;
+}
 
 /**
- * The compare panel (bp ComparePanel, the release ledger's side sheet), docked in the L4 feature sheet beside the
- * feature: one built item's evidence, so the operator triages it while seeing what it changed. The head names the item
- * (lens, id, pack and its place in it, feature, title) with previous / next (K / J walk every built item in pack order)
- * and close (Esc); the body is CompareBody, keyed by the item so its local state resets; the foot is the item's state
- * over the triage strip. Everything is read from the store's rows through compare.ts; nothing is decided here.
+ * The compare panel (bp ledger train/compare/ComparePanel): one built item's evidence, docked beside the ledger's In
+ * packs table (`ledger`) or in the L4 feature sheet. The head names the item (lens, id, pack and its place, feature)
+ * over its title, with previous / next, Wide (the ledger only) and close; the body is CompareBody, keyed by the item;
+ * the foot is the item's state over its triage note (or what the state means) and the compact triage strip. In the L4
+ * sheet the screens' theme and mode are the panel's own; in the ledger they are the ledger's (they outlive the item).
  */
-export function ComparePanel({ id }: { id: string }) {
+export function ComparePanel({ id, ledger }: { id: string; ledger?: LedgerCompare }) {
   const s = useSheet();
   const { B, tx } = s.text;
+  const [own, setOwn] = useState<CompareView>({ theme: 'light', mode: 'side' });
   const c = useMemo(() => comparisonOf(s.data.scan, s.plan, id), [s.data.scan, s.plan, id]);
   const p = s.work.byId.get(id);
-  const order = useMemo(() => packOrder(s.work, s.ui.sheetLens), [s.work, s.ui.sheetLens]);
-  const at = order.findIndex((x) => x.id === id);
-  const close = () => s.nav.compare(null);
-  const nav = (
-    <div className="bp-cmp-nav">
-      <Button variant="ghost" size="icon-sm" onClick={() => s.nav.step(-1)} disabled={order.length < 2} aria-label={B.cmp_prev} data-testid="blueprint-cmp-prev"><ChevronUp className="w-4 h-4" /></Button>
-      <Button variant="ghost" size="icon-sm" onClick={() => s.nav.step(1)} disabled={order.length < 2} aria-label={B.cmp_next} data-testid="blueprint-cmp-next"><ChevronDown className="w-4 h-4" /></Button>
-      <Button variant="ghost" size="icon-sm" onClick={close} aria-label={B.cmp_close} data-testid="blueprint-cmp-close"><X className="w-4 h-4" /></Button>
-    </div>
+  const order = useMemo(() => ledger?.order ?? packOrder(s.work, s.ui.sheetLens).map((x) => x.id), [ledger?.order, s.work, s.ui.sheetLens]);
+  const at = order.indexOf(id), prev = at > 0 ? order[at - 1] : undefined, next = at >= 0 ? order[at + 1] : undefined;
+  const go = (to: string | undefined, d: 1 | -1) => (!to ? undefined : ledger ? () => ledger.onGo(to) : () => s.nav.step(d));
+  const close = ledger ? ledger.onClose : () => s.nav.compare(null);
+  const row = c?.p;
+  const mates = row?.pack_id ? order.filter((x) => s.data.scan.proposals.find((q) => q.id === x)?.pack_id === row.pack_id) : [];
+  const fname = row ? s.plan.S.features.find((f) => f.slug === row.feature)?.name ?? row.feature : '';
+  const move = (m: TriageDecisionInput) => { if (ledger) ledger.onMove(m); else if (p) { s.nav.select(p); s.writes.askTriage(p, m); } };
+  const head = (
+    <header className="tr-cmp-h">
+      <div className="tt">
+        <small>{row ? <><LensTag id={row.lens} /><span>{row.id}</span>{row.pack_id ? <span>{tx(B.lg_cmp_place, { pack: row.pack_id, n: mates.indexOf(row.id) + 1, of: mates.length })}</span> : null}<span>{fname}</span></> : <span>{id}</span>}</small>
+        <h3 id="bp-cmp-title">{row ? row.title : B.cmp_not_found}</h3>
+      </div>
+      <div className="nav">
+        <Btn size="nav" disabled={!prev} onClick={go(prev, -1)} label={B.cmp_prev} tip={B.lg_cmp_prev_tip} testId="blueprint-cmp-prev">↑</Btn>
+        <Btn size="nav" disabled={!next} onClick={go(next, 1)} label={B.cmp_next} tip={B.lg_cmp_next_tip} testId="blueprint-cmp-next">↓</Btn>
+        {ledger ? <Btn size="nav" pressed={ledger.wide} onClick={ledger.onWide} tip={B.lg_cmp_wide_tip} testId="blueprint-cmp-wide">{ledger.wide ? B.lg_cmp_narrow : B.lg_cmp_wide}</Btn> : null}
+        <Btn size="nav" onClick={close} label={B.cmp_close} tip={B.lg_cmp_close_tip} testId="blueprint-cmp-close">✕</Btn>
+      </div>
+    </header>
   );
-  if (!c || !p) {
-    return (
-      <section className="bp-cmp" aria-label={B.cmp_title} data-testid="blueprint-compare">
-        <header className="bp-cmp-h"><div className="bp-cmp-tt"><span className="typo-eyebrow">{B.cmp_title}</span><h3 className="typo-heading">{id}</h3></div>{nav}</header>
-        <p className="bp-empty typo-body">{B.cmp_not_found}</p>
-      </section>
-    );
-  }
-  const L = s.plan.LENS[p.lens];
-  const place = placeInPack(s.work, p);
+  if (!c || !row) return <aside className={'tr-cmp' + (ledger?.wide ? ' wide' : '')} aria-label={B.cmp_title} data-testid="blueprint-compare">{head}<div className="tr-cmp-b"><p className="tr-dim">{B.cmp_not_found}</p></div></aside>;
+  const flagged = row.status === 'accepted' && isFlagged({ status: row.triaged_from ?? row.status }, c.verdict);
   return (
-    <section className="bp-cmp" aria-labelledby="bp-cmp-title" data-testid="blueprint-compare" data-item={p.id} data-status={p.status}>
-      <header className="bp-cmp-h">
-        <div className="bp-cmp-tt">
-          <span className="typo-eyebrow bp-cmp-eb">
-            {place ? tx(B.cmp_eyebrow, { pack: p.pack ?? '', n: place.n, count: place.of }) : B.cmp_title}
-            {at >= 0 ? <span className="bp-kcs"><Keycap k={keysFor('prev')[0] ?? 'k'} /><Keycap k={keysFor('next')[0] ?? 'j'} /></span> : null}
-          </span>
-          <h3 className="typo-heading bp-cmp-title" id="bp-cmp-title">
-            <span className="bp-g"><LensGlyphIcon glyph={L?.glyph ?? null} /></span>{p.title}
-          </h3>
-          <span className="bp-cmp-meta typo-code">
-            <span>{L?.short ?? p.lens}</span><span>{p.id}</span><span>{p.f.name}</span><StatusChip B={B} status={p.status} />
-          </span>
-        </div>
-        {nav}
-      </header>
-      <CompareBody key={p.id} c={c} p={p} />
-      <TriageBar p={p} />
-    </section>
+    <aside className={'tr-cmp' + (ledger?.wide ? ' wide' : '')} aria-labelledby="bp-cmp-title" data-testid="blueprint-compare" data-item={row.id} data-status={row.status}>
+      {head}
+      <CompareBody key={row.id} c={c} fname={fname} view={ledger?.view ?? own} onView={ledger?.onView ?? setOwn} wide={!!ledger?.wide} />
+      <footer className="tr-cmp-d">
+        <span className="st" data-testid="blueprint-cmp-state">
+          <StateMark status={row.status} flagged={flagged} pending={s.ui.busy} />
+          <span>{row.triage_note ? '“' + row.triage_note + '”' : stateHint(B, row.status)}{row.release_id ? ' · ' + row.release_id : ''}</span>
+        </span>
+        <Decide ids={[row.id]} compact onMove={move} />
+      </footer>
+    </aside>
   );
 }

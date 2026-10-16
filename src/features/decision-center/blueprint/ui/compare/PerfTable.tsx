@@ -2,11 +2,12 @@ import { useMemo } from 'react';
 import { FRAME_MS, type Comparison } from '@/lib/lensScan/compare';
 import { useSheet } from '../../controller/SheetContext';
 import type { BpText } from '../../controller/useBlueprintText';
+import { VerdictChip } from '../../ledger/Marks';
 import { atTarget, perfFigures, shortUnit, type PerfFigures } from '../../model/perf';
 import { comparisonOf } from '../../model/triage';
 import type { LensField } from '../../standard/types';
 import { fmtNum, signed } from '../format';
-import { latestOf, VerdictChip } from './MetricLine';
+import { latestOf } from './MetricLine';
 import { PerfRange } from './PerfRange';
 
 interface Context { key: string; label: string; unit: string; value: number; target?: number; better: 'up' | 'down' }
@@ -26,7 +27,7 @@ function perfItem(c: Comparison, fname: string, F: Readonly<Record<string, LensF
     const fd = F?.[m.metric];
     seen.set(m.metric, { key: m.metric, label: fd?.label ?? m.metric, unit: m.unit ?? fd?.unit ?? '', value: m.value, better: fd?.metric?.better ?? 'down', ...(fd?.metric?.target !== undefined ? { target: fd.metric.target } : {}) });
   }
-  return { c, fname, label: field?.label ?? p.metric ?? '', unit, f: perfFigures(runsOf(c), a?.value, unit), field, context: [...seen.values()] };
+  return { c, fname, label: p.metric ?? '', unit, f: perfFigures(runsOf(c), a?.value, unit), field, context: [...seen.values()] };
 }
 
 /** Why the verdict is what it is, in one sentence over the item's figures (bp perfReason). */
@@ -39,34 +40,32 @@ function why(B: BpText, tx: ReturnType<typeof useSheet>['text']['tx'], language:
 }
 
 function Rows({ it }: { it: PerfItem }) {
-  const s = useSheet();
-  const { B, language } = s.text;
+  const { B, language } = useSheet().text;
   const n = (v: number) => fmtNum(language, v);
   const pct = (v: number) => new Intl.NumberFormat(language, { style: 'percent', maximumFractionDigits: 0, signDisplay: 'exceptZero' }).format(v / 100);
   const { f, unit, field } = it, better = field?.metric?.better ?? 'down', target = field?.metric?.target, u = shortUnit(unit);
-  const tone = f.change === undefined || f.change === 0 ? '' : (f.change < 0) === (better === 'down') ? ' bp-good' : ' bp-bad';
+  const U = () => (u ? <u>{u}</u> : null);
+  const tone = f.change === undefined || f.change === 0 ? '' : (f.change < 0) === (better === 'down') ? ' good' : ' bad';
   const cmp = better === 'up' ? '≥ ' : '≤ ';
   return (
     <>
-      <tr className="bp-pt-name">
-        <th scope="colgroup" colSpan={6}><b>{it.fname}</b> <span>{it.label}{u ? ` · ${u}` : ''}</span> <VerdictChip B={B} verdict={it.c.verdict} /></th>
+      <tr className="main">
+        <th className="l" scope="row" rowSpan={2}><b>{it.fname}</b><span>{it.label}{u ? ' · ' + u : ''}</span><em><VerdictChip verdict={it.c.verdict} failed={it.c.p.status === 'failed'} /></em></th>
+        <td className="runs">{f.runs.map((x, i) => <span key={i} className={f.outlier[i] ? 'out' : undefined}>{n(x)}{f.outlier[i] ? <span className="sr-only"> {B.cmp_pt_outlier}</span> : null}</span>)}</td>
+        <td>{n(f.median)}<U /></td>
+        <td className="aft">{f.after !== undefined ? <>{n(f.after)}<U /></> : '–'}</td>
+        <td className={'chg' + tone}>{f.change !== undefined ? <>{signed(language, f.change)}<U />{f.pct !== undefined ? <small>{pct(f.pct)}</small> : null}</> : '–'}</td>
+        <td>{n(f.noise)}<U /><small>{f.frame ? B.cmp_pt_frame : B.cmp_pt_spread}</small></td>
+        <td>{target !== undefined ? <>{cmp}{n(target)}<U /></> : '–'}</td>
       </tr>
-      <tr className="bp-pt-main">
-        <td className="bp-pt-runs">{f.runs.map((x, i) => <span key={i} className={f.outlier[i] ? 'bp-out' : undefined}>{n(x)}{f.outlier[i] ? <span className="sr-only"> {B.cmp_pt_outlier}</span> : null}</span>)}</td>
-        <td>{n(f.median)}</td>
-        <td className="bp-pt-aft">{f.after !== undefined ? n(f.after) : '–'}</td>
-        <td className={'bp-pt-chg' + tone}>{f.change !== undefined ? <>{signed(language, f.change)}{f.pct !== undefined ? <small>{pct(f.pct)}</small> : null}</> : '–'}</td>
-        <td>{n(f.noise)}<small>{f.frame ? B.cmp_pt_frame : B.cmp_pt_spread}</small></td>
-        <td>{target !== undefined ? cmp + n(target) : '–'}</td>
-      </tr>
-      <tr className="bp-pt-strip"><td colSpan={6}><PerfRange f={f} unit={u} target={target} warn={field?.metric?.warn_at} /></td></tr>
+      <tr className="strip"><td colSpan={6} className="l rng"><PerfRange f={f} unit={u} target={target} warn={field?.metric?.warn_at} /></td></tr>
       {it.context.map((o) => {
         const ok = o.target === undefined ? undefined : atTarget(o.value, o.target, o.better);
         return (
-          <tr key={o.key} className="bp-pt-ctx">
-            <th scope="row"><span>{o.label}{o.unit ? ` · ${shortUnit(o.unit)}` : ''}</span><small>{B.cmp_pt_not_rerun}</small></th>
-            <td>{n(o.value)}</td><td>–</td><td>–</td><td>–</td>
-            <td>{ok === undefined ? '–' : <><span className={ok ? 'bp-good' : 'bp-bad'}>{ok ? B.cmp_pt_at_target : B.cmp_pt_over_target}</span> {(o.better === 'up' ? '≥ ' : '≤ ') + n(o.target ?? 0)}</>}</td>
+          <tr key={o.key} className="ctx">
+            <th className="l" scope="row"><span>{o.label}{o.unit ? ` · ${shortUnit(o.unit)}` : ''}</span></th>
+            <td className="runs dim">{B.cmp_pt_not_rerun}</td><td>{n(o.value)}</td><td className="dim">–</td><td className="dim">–</td><td className="dim">–</td>
+            <td>{ok === undefined ? null : <b className={'tr-tg ' + (ok ? 'ok' : 'over')} aria-label={ok ? B.cmp_pt_at_target : B.cmp_pt_over_target}>{ok ? '✓' : '△'}</b>}{o.target !== undefined ? (o.better === 'up' ? '≥ ' : '≤ ') + n(o.target) : '–'}</td>
           </tr>
         );
       })}
@@ -77,9 +76,9 @@ function Rows({ it }: { it: PerfItem }) {
 function Table({ items }: { items: readonly PerfItem[] }) {
   const { B } = useSheet().text;
   return (
-    <div className="bp-pt-wrap">
-      <table className="bp-pt typo-body">
-        <thead><tr><th scope="col">{B.cmp_pt_runs}</th><th scope="col">{B.cmp_pt_median}</th><th scope="col">{B.cmp_pt_after}</th><th scope="col">{B.cmp_pt_change}</th><th scope="col">{B.cmp_pt_noise}</th><th scope="col">{B.cmp_pt_target}</th></tr></thead>
+    <div className="tr-pt-wrap">
+      <table className="tr-perf">
+        <thead><tr><th className="l">{B.lg_cmp_pt_scene}</th><th>{B.cmp_pt_runs}</th><th>{B.cmp_pt_median}</th><th>{B.cmp_pt_after}</th><th>{B.cmp_pt_change}</th><th>{B.cmp_pt_noise}</th><th>{B.cmp_pt_target}</th></tr></thead>
         <tbody>{items.map((it) => <Rows key={it.c.p.id} it={it} />)}</tbody>
       </table>
     </div>
@@ -88,9 +87,8 @@ function Table({ items }: { items: readonly PerfItem[] }) {
 
 /**
  * The performance table (bp PerfTable), for an item measured in baseline runs: each run (an outlier outlined), their
- * median, the after, the change and its percentage, the noise a change must beat (compare.ts runStats: the spread, at
- * least one frame for a timing), the target, and the range strip; then the feature's other metrics of the lens from
- * their base reading. Below it, the rest of the pack measured in runs. Metrics and targets come from the lens manifest.
+ * median, the after, the change and its percentage, the noise a change must beat, the target and the range strip; the
+ * feature's other metrics of the lens from their base reading; the legend and why. Then the rest of the pack in runs.
  */
 export function PerfTable({ c }: { c: Comparison }) {
   const s = useSheet();
@@ -98,19 +96,18 @@ export function PerfTable({ c }: { c: Comparison }) {
   const F = s.plan.LENS[c.p.lens]?.F;
   const me = useMemo(() => perfItem(c, s.plan.L.TILE[c.p.feature]?.f.name ?? c.p.feature, F), [c, s.plan, F]);
   const mates = useMemo(() => {
-    const ids = c.p.pack_id ? s.work.items.filter((x) => x.pack === c.p.pack_id && x.id !== c.p.id).map((x) => x.id) : [];
-    return ids.map((id) => comparisonOf(s.data.scan, s.plan, id)).filter((x): x is Comparison => !!x && hasRuns(x))
-      .map((x) => perfItem(x, s.plan.L.TILE[x.p.feature]?.f.name ?? x.p.feature, F));
-  }, [c.p, s.work, s.data.scan, s.plan, F]);
+    const ids = c.p.pack_id ? s.data.scan.proposals.filter((x) => x.pack_id === c.p.pack_id && x.id !== c.p.id).map((x) => x.id) : [];
+    return ids.map((id) => comparisonOf(s.data.scan, s.plan, id)).filter((x): x is Comparison => !!x && hasRuns(x)).map((x) => perfItem(x, s.plan.L.TILE[x.p.feature]?.f.name ?? x.p.feature, F));
+  }, [c.p, s.data.scan, s.plan, F]);
   return (
     <>
-      <section className="bp-cmp-sec" data-testid="blueprint-perf">
-        <h4 className="typo-eyebrow bp-eyebrow">{tx(B.cmp_perf, { metric: me.label })}</h4>
+      <section className="tr-sec" data-testid="blueprint-perf">
+        <h4>{tx(B.cmp_perf, { metric: me.label })}</h4>
         <Table items={[me]} />
-        <div className="bp-pt-key typo-code"><span><i className="bp-k-run" />{B.cmp_pt_key_run}</span><span><i className="bp-k-aft" />{B.cmp_pt_after}</span><span><i className="bp-k-band" />{tx(B.cmp_pt_key_band, { ms: fmtNum(language, FRAME_MS) })}</span><span><i className="bp-k-t" />{B.cmp_pt_target}</span></div>
-        <p className="bp-ink typo-body">{why(B, tx, language, me)}</p>
+        <div className="tr-pt-key"><span><i className="k-run" />{B.cmp_pt_key_run}</span><span><i className="k-aft" />{B.cmp_pt_after}</span><span><i className="k-band" />{tx(B.cmp_pt_key_band, { ms: fmtNum(language, FRAME_MS) })}</span><span><i className="k-t" />{B.cmp_pt_target}</span></div>
+        <p className="tr-pt-why">{why(B, tx, language, me)}</p>
       </section>
-      {mates.length ? <section className="bp-cmp-sec"><h4 className="typo-eyebrow bp-eyebrow">{B.cmp_pt_pack}</h4><Table items={[me, ...mates]} /></section> : null}
+      {mates.length ? <section className="tr-sec"><h4>{B.cmp_pt_pack}</h4><Table items={[me, ...mates]} /></section> : null}
     </>
   );
 }
