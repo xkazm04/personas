@@ -15317,8 +15317,8 @@
           "changedAt": "2026-09-03",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/hooks/lab/useLabEvents.ts:43 subscribes to the string literal 'lab-arena-status', absent from both src/lib/eventRegistry.ts and src-tauri/core/src/events.rs (the Rust emitter uses its own literal at src-tauri/engine/src/test_runner/modes.rs:229), so a rename on either side silently stops Lab progress updates in a way indistinguishable from an idle run",
-          "evaluatedAt": "2026-09-23",
+          "evidence": "src/hooks/lab/useLabEvents.ts:43 still subscribes to the literal 'lab-arena-status' (and lab-ab/matrix/eval), absent from src/lib/eventRegistry.ts and src-tauri/core/src/events.rs; the gate's call-site regex (scripts/check-event-registry.mjs:268) only sees literal listen('x')/emit('x'), so binding-routed names pass unchecked and a rename silently stops Lab progress",
+          "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:a0685592373df03f",
           "evaluatedRevision": 6,
           "revisionsBehind": 0

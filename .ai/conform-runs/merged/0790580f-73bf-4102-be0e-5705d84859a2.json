@@ -1,0 +1,13 @@
+{"schema": "conform-run/1", "worker": "0790580f-73bf-4102-be0e-5705d84859a2", "subject": "realtime-events",
+ "evaluatedAt": "2026-10-16T17:56:03Z",
+ "pairs": [{"context": "03e7f46a-3f19-47b8-98a5-398efed815b4", "subject": "realtime-events", "bundle": "software-engineering",
+  "state": "deviation",
+  "evidence": "src/hooks/lab/useLabEvents.ts:43 still subscribes to the literal 'lab-arena-status' (and lab-ab/matrix/eval), absent from src/lib/eventRegistry.ts and src-tauri/core/src/events.rs; the gate's call-site regex (scripts/check-event-registry.mjs:268) only sees literal listen('x')/emit('x'), so binding-routed names pass unchecked and a rename silently stops Lab progress",
+  "techniques": [
+   {"technique": "event-registry", "verdict": "deviation", "evidence": "scripts/check-event-registry.mjs:268 CALL_SITE regex matches only a literal first argument to listen()/emit(), so names passed through RunEventBinding (src/hooks/lab/useLabEvents.ts:43) or held in a Rust struct field (src-tauri/engine/src/test_runner/modes.rs:326 'lab-consensus-status', which no TS code listens to) are invisible to every pass; gate-sees-target fails"},
+   {"technique": "subscription-lifecycle", "verdict": "realized", "evidence": "src/hooks/realtime/createSingletonListener.ts:115 one native listener per name with bounded early-arrival buffer (drops counted at :83), handshake-race teardown at :130, per-attempt cancelled flag at :164/:181"},
+   {"technique": "coalescing-and-batching", "verdict": "realized", "evidence": "src/hooks/realtime/createSingletonListener.ts:55 per-frame queue flushes a burst once per animation frame so React batches N events into one render"}
+  ],
+  "registryProposal": "event-registry's gate section says 'a name emitted or subscribed anywhere' but gives no rule for names that reach listen()/emit() indirectly (a binding table, a struct field); this repo's gate is literal-call-site-shaped and goes blind exactly there. Worth a sentence: the gate must follow names to the boundary call, or the call must accept only registry-typed names (e.g. EventName keyof) so indirection cannot carry a bare string. Separately: context e0563a39 (triggers-test) is weak-governed; left unjudged as a coverage question."}],
+ "declined": [{"subject": "realtime-events", "context": "e0563a39-fb7e-485f-a698-f9c4dc1004a7", "reason": "weak-governed context (triggers-test); the match on subscribe/events tokens is the doubtful part, so judging it would manufacture a verdict. Reported as a coverage question."}],
+ "consults": [{"ts": "2026-10-16T17:56:03Z", "bundle": "software-engineering", "subjects": ["realtime-events"], "techniques": ["event-registry", "subscription-lifecycle", "coalescing-and-batching"], "deviations": 1}]}

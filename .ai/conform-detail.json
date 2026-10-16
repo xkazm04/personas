@@ -4591,23 +4591,34 @@
       "subject": "realtime-events",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-8",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:56:03.000Z",
+      "worker": "0790580f-73bf-4102-be0e-5705d84859a2",
       "techniques": [
         {
           "technique": "event-registry",
           "verdict": "deviation",
-          "evidence": "src/hooks/lab/useLabEvents.ts:43 literal event name outside the registry; RunEventBinding types eventName as a bare string (src/hooks/realtime/useRunEventListener.ts:45), so nothing forces lab/test-run subscriptions through EventName (useEventBusListener.ts:14 does use EventName.EVENT_BUS)"
+          "evidence": "scripts/check-event-registry.mjs:268 CALL_SITE regex matches only a literal first argument to listen()/emit(), so names passed through RunEventBinding (src/hooks/lab/useLabEvents.ts:43) or held in a Rust struct field (src-tauri/engine/src/test_runner/modes.rs:326 'lab-consensus-status', which no TS code listens to) are invisible to every pass; gate-sees-target fails"
         },
         {
           "technique": "subscription-lifecycle",
-          "verdict": "conformant",
-          "evidence": "src/hooks/realtime/createSingletonListener.ts:130 tears down the native listener when every consumer left during setup; one native listener per name fanned out to a subscriber set, cancelled flag at :185, bounded early buffer"
+          "verdict": "realized",
+          "evidence": "src/hooks/realtime/createSingletonListener.ts:115 one native listener per name with bounded early-arrival buffer (drops counted at :83), handshake-race teardown at :130, per-attempt cancelled flag at :164/:181"
         },
         {
           "technique": "coalescing-and-batching",
-          "verdict": "conformant",
-          "evidence": "src/hooks/realtime/createSingletonListener.ts:65 one flush per animation frame so React batches a burst into one commit; each subscriber throw contained"
+          "verdict": "realized",
+          "evidence": "src/hooks/realtime/createSingletonListener.ts:55 per-frame queue flushes a burst once per animation frame so React batches N events into one render"
+        }
+      ],
+      "registryProposal": "event-registry's gate section says 'a name emitted or subscribed anywhere' but gives no rule for names that reach listen()/emit() indirectly (a binding table, a struct field); this repo's gate is literal-call-site-shaped and goes blind exactly there. Worth a sentence: the gate must follow names to the boundary call, or the call must accept only registry-typed names (e.g. EventName keyof) so indirection cannot carry a bare string. Separately: context e0563a39 (triggers-test) is weak-governed; left unjudged as a coverage question.",
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/hooks/lab/useLabEvents.ts:43 subscribes to the string literal 'lab-arena-status', absent from both src/lib/eventRegistry.ts and src-tauri/core/src/events.rs (the Rust emitter uses its own literal at src-tauri/engine/src/test_runner/modes.rs:229), so a rename on either side silently stops Lab progress updates in a way indistinguishable from an idle run",
+          "evaluatedAt": "2026-09-23",
+          "worker": null,
+          "reason": "replaced by 0790580f-73bf-4102-be0e-5705d84859a2"
         }
       ]
     },
