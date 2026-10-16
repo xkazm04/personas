@@ -1,0 +1,341 @@
+{
+  "module": "monitor/persona-cards/peer",
+  "kit": null,
+  "query": "variant=v3",
+  "reducedMotion": true,
+  "steps": null,
+  "label": "peer-v3",
+  "createdAt": "2026-10-16T04:59:36.368Z",
+  "browser": "153.0.8010.12",
+  "tape": {
+    "path": "C:\\Users\\kazda\\AppData\\Local\\Temp\\claude\\C--Users-kazda-kiro-personas\\280a8953-d775-4c5e-9416-b6c27d2b2f6b\\scratchpad\\wp11-tape.json",
+    "source": "synthetic",
+    "recordedAt": "2026-09-22T15:40:00.000Z",
+    "calls": 38,
+    "note": "Synthetic: 30 personas shaped like the operator fleet (12 / 2 / 11 singletons / 5 teamless, 2 empty workspace groups). Plus 10 sessions in every painted state and a queue of 4 (3 dev projects tie them to bays); dev servers running / stopped / external on those 3 projects. Plus a Personas Desktop conversation (talk, a live and a settled assignment, a converging deliberation) and one held step for its first member (monitorRoofTape.mjs). Plus the mandate lanes (mandateLanesTapes.mjs) with seven charters (mandateRoofTape.mjs). Rebalanced for the persona-card variants (personaCardVariantsTape.mjs): 8 unread, a warning and a critical review, a failed last run, 8 cron schedules, one persona that never ran."
+  },
+  "ok": true,
+  "unknownIpcCommands": [
+    "lens_scan_products",
+    "fleet_autopilot_status",
+    "fleet_scheduled_tasks",
+    "fleet_cli_usage",
+    "get_network_status",
+    "fleet_set_auto_hibernate",
+    "fleet_set_state_cutoffs",
+    "list_remote_sessions",
+    "list_dispatch_devices"
+  ],
+  "shots": [
+    {
+      "file": "peer-v3-1280x800-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "lens_scan_products",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_autopilot_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_scheduled_tasks",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "get_network_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_set_auto_hibernate",
+          "args": {
+            "afterMinutes": 30,
+            "enabled": false
+          },
+          "answered": null
+        },
+        {
+          "cmd": "fleet_set_state_cutoffs",
+          "args": {
+            "staleSecs": 360,
+            "stalledSecs": 120
+          },
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "list_remote_sessions",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "list_dispatch_devices",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "lens_scan_products",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_autopilot_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_scheduled_tasks",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "list_remote_sessions",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "list_dispatch_devices",
+          "args": {},
+          "answered": []
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "list_personas": 1,
+        "list_cron_agents": 1,
+        "get_persona_summaries": 3,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_set_active": 1,
+        "decision_lanes_snapshot": 2,
+        "lens_scan_products": 2,
+        "dev_tools_pending_counts": 2,
+        "dev_tools_undispatched_ideas": 2,
+        "mandate_list": 4,
+        "fleet_autopilot_status": 2,
+        "fleet_scheduled_tasks": 2,
+        "fleet_claude_accounts_list": 4,
+        "fleet_claude_usage": 4,
+        "fleet_cli_usage": 4,
+        "dev_servers_list": 1,
+        "get_network_status": 1,
+        "fleet_set_auto_hibernate": 1,
+        "fleet_set_state_cutoffs": 1,
+        "fleet_list_sessions": 2,
+        "get_pending_review_counts_by_persona": 2,
+        "list_manual_reviews_page": 2,
+        "get_unread_report_counts_by_persona": 2,
+        "list_teams": 1,
+        "get_team_counts": 1,
+        "get_app_settings_bulk": 2,
+        "dev_tools_get_autopilot_mode": 14,
+        "list_team_channel": 13,
+        "count_team_channel_kinds": 39,
+        "list_remote_sessions": 2,
+        "list_dispatch_devices": 2,
+        "fleet_queue_snapshot": 2
+      },
+      "stable": true,
+      "textLength": 686,
+      "textSample": "Persona Monitor Activity Conversations Map 42 6 12 1 23 Breach 4 Sign 1 Accept 2 Talk 1 Orphans 3 Ready to dispatch 0 Bays Queue All devices 2 of 3 reporting This device 3 0 Studio Desktop 2 3 Travel ",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "peer-v3-1280x800-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "lens_scan_products",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_autopilot_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_scheduled_tasks",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "get_network_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_set_auto_hibernate",
+          "args": {
+            "afterMinutes": 30,
+            "enabled": false
+          },
+          "answered": null
+        },
+        {
+          "cmd": "fleet_set_state_cutoffs",
+          "args": {
+            "staleSecs": 360,
+            "stalledSecs": 120
+          },
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "list_remote_sessions",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "list_dispatch_devices",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "lens_scan_products",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_autopilot_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_scheduled_tasks",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "list_remote_sessions",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "list_dispatch_devices",
+          "args": {},
+          "answered": []
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "list_personas": 1,
+        "list_cron_agents": 1,
+        "get_persona_summaries": 3,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_list_projects": 2,
+        "dev_tools_workspace_set_active": 1,
+        "decision_lanes_snapshot": 2,
+        "lens_scan_products": 2,
+        "dev_tools_pending_counts": 2,
+        "dev_tools_undispatched_ideas": 2,
+        "mandate_list": 4,
+        "fleet_autopilot_status": 2,
+        "fleet_scheduled_tasks": 2,
+        "fleet_claude_accounts_list": 4,
+        "fleet_claude_usage": 4,
+        "fleet_cli_usage": 4,
+        "dev_servers_list": 1,
+        "get_network_status": 1,
+        "fleet_set_auto_hibernate": 1,
+        "fleet_set_state_cutoffs": 1,
+        "fleet_list_sessions": 2,
+        "get_pending_review_counts_by_persona": 2,
+        "list_manual_reviews_page": 2,
+        "get_unread_report_counts_by_persona": 2,
+        "list_teams": 1,
+        "get_team_counts": 1,
+        "get_app_settings_bulk": 2,
+        "dev_tools_get_autopilot_mode": 14,
+        "list_team_channel": 13,
+        "count_team_channel_kinds": 39,
+        "list_remote_sessions": 2,
+        "list_dispatch_devices": 2,
+        "fleet_queue_snapshot": 2
+      },
+      "stable": true,
+      "textLength": 686,
+      "textSample": "Persona Monitor Activity Conversations Map 42 6 12 1 23 Breach 4 Sign 1 Accept 2 Talk 1 Orphans 3 Ready to dispatch 0 Bays Queue All devices 2 of 3 reporting This device 3 0 Studio Desktop 2 3 Travel ",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    }
+  ]
+}
