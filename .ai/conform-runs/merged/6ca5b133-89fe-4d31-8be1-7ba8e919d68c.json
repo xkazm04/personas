@@ -1,0 +1,25 @@
+{"schema":"conform-run/1","worker":"6ca5b133-89fe-4d31-8be1-7ba8e919d68c","subject":"status-vocabulary","evaluatedAt":"2026-10-16T17:57:41Z",
+"pairs":[
+{"context":"89eddf81-0c57-441d-a07d-de36bf022cb5","subject":"status-vocabulary","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/lib/utils/formatters.ts:635 re-verified: ms/s still route to formatDuration, which concatenates English unit glyphs (formatters.ts:704 `${ms}ms`) with no locale in all 14 locales; formatters.ts:114 still clamps any future instant to 'now' with no tolerance or telemetry",
+ "techniques":[
+  {"technique":"number-formatting","verdict":"deviation","evidence":"src/lib/utils/formatters.ts:704 duration renders concatenate a hardcoded unit glyph onto a number; formatDuration takes no locale, so the unit is not part of a locale-rendered value (locale IS bound inside the primitive for cost at formatters.ts:278)"},
+  {"technique":"timestamp-display","verdict":"deviation","evidence":"src/lib/utils/formatters.ts:114 Math.max(0, ...) clamps every future instant to zero with no stated tolerance, no absolute fallback and no telemetry breadcrumb; the technique requires past-tolerance skew to abandon relative rendering and report"}]},
+{"context":"3c749d5b-3169-4ea8-8faa-98558f9b5df5","subject":"status-vocabulary","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/features/shared/components/forms/FormField.tsx:323 re-verified: AvailabilityStatus is still coloured by a nested ternary to raw text-emerald-400/text-amber-400 with icons in a parallel chain (:335-343), not one table keyed by the union; a new member silently gets neither colour nor icon",
+ "techniques":[
+  {"technique":"status-color-mapping","verdict":"deviation","evidence":"src/features/shared/components/forms/FormField.tsx:323 raw palette literals per member instead of semantic roles, and colour and icon decided in two parallel chains rather than one entry per member of AvailabilityStatus (useAsyncFieldValidation.ts:11)"}]},
+{"context":"647d6a54-3813-4149-bbf7-2d96a57a77c7","subject":"status-vocabulary","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/features/vault/sub_databases/tabs/QuerySidebar.tsx:118 re-verified (anchor moved from :117): a saved query's last-run outcome is still a bare bg-emerald-400/bg-red-400 dot, raw palette, no semantic role, no shape or label, so colour alone carries the status",
+ "techniques":[
+  {"technique":"status-color-mapping","verdict":"deviation","evidence":"src/features/vault/sub_databases/tabs/QuerySidebar.tsx:118 violates 'never color alone' and vocabulary->role->themed value: ok/failed differ only by a hand-picked hue, with no accessible label"}]}
+],
+"declined":[
+ {"subject":"status-vocabulary","context":"1d8a480b-eac4-4110-a60e-47a6ab281c97","reason":"weak-governed context (glyph-persona-card); skill never evaluates weak pairs by default; existing 2026-10-10 deviation at current revision 5 left as is"},
+ {"subject":"status-vocabulary","context":"417112d1-004b-41d5-a656-57997a47d818","reason":"weak-governed context (timing-utility-hooks); skill never evaluates weak pairs by default; existing 2026-10-10 deviation at current revision 5 left as is"}
+],
+"consults":[
+ {"ts":"2026-10-16T17:57:41Z","bundle":"software-engineering","subjects":["status-vocabulary"],"techniques":["number-formatting","timestamp-display"],"deviations":2},
+ {"ts":"2026-10-16T17:57:41Z","bundle":"software-engineering","subjects":["status-vocabulary"],"techniques":["status-color-mapping"],"deviations":1},
+ {"ts":"2026-10-16T17:57:41Z","bundle":"software-engineering","subjects":["status-vocabulary"],"techniques":["status-color-mapping"],"deviations":1}
+]}

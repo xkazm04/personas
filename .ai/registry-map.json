@@ -11087,8 +11087,8 @@
           "changedAt": "2026-09-20",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/lib/utils/formatters.ts:635 Numeric unit ms/s routes to formatDuration with neither the bound locale nor precision, so every duration renders hand-concatenated English unit glyphs (4s, 2m 5s) in all 14 locales; formatters.ts:114 also clamps ANY future instant to 'now' with no tolerance or telemetry",
-          "evaluatedAt": "2026-10-09",
+          "evidence": "src/lib/utils/formatters.ts:635 re-verified: ms/s still route to formatDuration, which concatenates English unit glyphs (formatters.ts:704 `${ms}ms`) with no locale in all 14 locales; formatters.ts:114 still clamps any future instant to 'now' with no tolerance or telemetry",
+          "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:bea7b30fd48d528d",
           "evaluatedRevision": 5,
           "revisionsBehind": 0
@@ -30719,8 +30719,8 @@
           "changedAt": "2026-09-20",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/shared/components/forms/FormField.tsx:323 the AvailabilityStatus union is coloured by a nested ternary to raw text-emerald-400/text-amber-400, with icons in a second parallel chain - not one table keyed by the union, so a new member silently gets neither colour nor icon",
-          "evaluatedAt": "2026-10-09",
+          "evidence": "src/features/shared/components/forms/FormField.tsx:323 re-verified: AvailabilityStatus is still coloured by a nested ternary to raw text-emerald-400/text-amber-400 with icons in a parallel chain (:335-343), not one table keyed by the union; a new member silently gets neither colour nor icon",
+          "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:bea7b30fd48d528d",
           "evaluatedRevision": 5,
           "revisionsBehind": 0
@@ -39834,8 +39834,8 @@
           "changedAt": "2026-09-20",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/vault/sub_databases/tabs/QuerySidebar.tsx:117 a saved query's last-run outcome is a bare emerald/red dot - raw palette, no semantic role, no shape or label; colour alone carries the status",
-          "evaluatedAt": "2026-10-09",
+          "evidence": "src/features/vault/sub_databases/tabs/QuerySidebar.tsx:118 re-verified (anchor moved from :117): a saved query's last-run outcome is still a bare bg-emerald-400/bg-red-400 dot, raw palette, no semantic role, no shape or label, so colour alone carries the status",
+          "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:bea7b30fd48d528d",
           "evaluatedRevision": 5,
           "revisionsBehind": 0

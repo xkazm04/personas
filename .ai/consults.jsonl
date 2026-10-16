@@ -1421,3 +1421,6 @@
 {"ts":"2026-10-16T17:56:07Z","bundle":"software-engineering","subjects":["retry-backoff"],"techniques":["durable-retries","error-classification-for-retry","backoff-design","jittered-revocation-with-irrevocable-terminal"],"deviations":1}
 {"ts":"2026-10-16T17:56:03Z","bundle":"software-engineering","subjects":["realtime-events"],"techniques":["event-registry","subscription-lifecycle","coalescing-and-batching"],"deviations":1}
 {"ts":"2026-10-16T17:57:16Z","bundle":"software-engineering","subjects":["session-continuation"],"techniques":["continuation-as-state","single-loop-authority","ordered-teardown"],"deviations":0}
+{"ts":"2026-10-16T17:57:41Z","bundle":"software-engineering","subjects":["status-vocabulary"],"techniques":["number-formatting","timestamp-display"],"deviations":2}
+{"ts":"2026-10-16T17:57:41Z","bundle":"software-engineering","subjects":["status-vocabulary"],"techniques":["status-color-mapping"],"deviations":1}
+{"ts":"2026-10-16T17:57:41Z","bundle":"software-engineering","subjects":["status-vocabulary"],"techniques":["status-color-mapping"],"deviations":1}

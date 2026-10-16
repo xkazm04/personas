@@ -11567,76 +11567,101 @@
       "subject": "status-vocabulary",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T17:57:12.000Z",
-      "worker": "9061f5f5-0062-4700-ad12-643df28f3dea",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:57:41.000Z",
+      "worker": "6ca5b133-89fe-4d31-8be1-7ba8e919d68c",
       "techniques": [
         {
           "technique": "number-formatting",
           "verdict": "deviation",
-          "evidence": "src/lib/utils/formatters.ts:635 the ms/s branch of formatNumeric drops opts.language and opts.precision, and formatDuration concatenates ms/s/m/h to raw integers (unit welded outside the locale) - while the primitive binds the locale correctly at src/features/shared/components/display/Numeric.tsx:77 and formatCost keeps null/zero/sub-cent as three facts at src/lib/utils/formatters.ts:69"
+          "evidence": "src/lib/utils/formatters.ts:704 duration renders concatenate a hardcoded unit glyph onto a number; formatDuration takes no locale, so the unit is not part of a locale-rendered value (locale IS bound inside the primitive for cost at formatters.ts:278)"
         },
         {
           "technique": "timestamp-display",
           "verdict": "deviation",
-          "evidence": "src/lib/utils/formatters.ts:114 Math.max(0, ...) renders every future moment, however far ahead, as the calmest label ('now') with no stated tolerance, no fall-back to the absolute moment and no skew breadcrumb; the rest is realized - locale bound in both primitives (src/features/shared/components/display/RelativeTime.tsx:39, src/features/shared/components/display/AbsoluteTime.tsx:58), one shared ticker (RelativeTime.tsx:48), platform elapsed vocabulary via Intl.RelativeTimeFormat (src/lib/utils/formatters.ts:73)"
+          "evidence": "src/lib/utils/formatters.ts:114 Math.max(0, ...) clamps every future instant to zero with no stated tolerance, no absolute fallback and no telemetry breadcrumb; the technique requires past-tolerance skew to abandon relative rendering and report"
         },
         {
           "technique": "untrusted-label-rendering",
           "verdict": "conformant",
-          "evidence": "src/features/shared/components/display/TruncateWithTooltip.tsx:41 renders the string as a text node with CSS truncation and recovers the full value in a Tooltip (:48) - the primitive owns geometry"
+          "evidence": "src/features/shared/components/display/TruncateWithTooltip.tsx:41 renders the string as a text node with CSS truncation and recovers the full value in a Tooltip (:48) - the primitive owns geometry",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "status-color-mapping",
           "verdict": "not-applicable",
-          "evidence": "src/features/shared/components/display/AbsoluteTime.tsx:11 the context's only closed table is a date-format variant map; no status vocabulary is presented by this context's files"
+          "evidence": "src/features/shared/components/display/AbsoluteTime.tsx:11 the context's only closed table is a date-format variant map; no status vocabulary is presented by this context's files",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "vocabulary-chain-integrity",
           "verdict": "not-applicable",
-          "evidence": "src/features/shared/components/display/Numeric.tsx:2 the context consumes quantity and moment formatters only; it owns no storage/wire/label chain"
+          "evidence": "src/features/shared/components/display/Numeric.tsx:2 the context consumes quantity and moment formatters only; it owns no storage/wire/label chain",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "vocabulary-evolution-checklist",
           "verdict": "not-applicable",
-          "evidence": "src/features/shared/components/display/Numeric.tsx:2 no status vocabulary member is minted or retired here"
+          "evidence": "src/features/shared/components/display/Numeric.tsx:2 no status vocabulary member is minted or retired here",
+          "carriedFrom": "2026-10-09"
         }
       ],
-      "registryProposal": "Upward/stale application: applications/react--timestamp-display.md (verified_on 2026-08-18) says both time primitives are locale-blind and the shared ladder is hardcoded English; this repo has since fixed all three (RelativeTime.tsx:39, AbsoluteTime.tsx:58, formatters.ts:73 Intl.RelativeTimeFormat), so the application now teaches a defect that no longer exists and should be re-verified. The technique could also name 'clamp everything to zero' explicitly as the incomplete fix: the comment at src/lib/utils/formatters.ts:109 cites skew as its reason and still lands on the failure-not-empty-success shape."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/lib/utils/formatters.ts:635 Numeric unit ms/s routes to formatDuration with neither the bound locale nor precision, so every duration renders hand-concatenated English unit glyphs (4s, 2m 5s) in all 14 locales; formatters.ts:114 also clamps ANY future instant to 'now' with no tolerance or telemetry",
+          "evaluatedAt": "2026-10-09T17:57:12.000Z",
+          "worker": "9061f5f5-0062-4700-ad12-643df28f3dea",
+          "reason": "replaced by 6ca5b133-89fe-4d31-8be1-7ba8e919d68c"
+        }
+      ]
     },
     "647d6a54-3813-4149-bbf7-2d96a57a77c7/status-vocabulary": {
       "context": "vault-databases-tabs",
       "subject": "status-vocabulary",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T17:57:12.000Z",
-      "worker": "9061f5f5-0062-4700-ad12-643df28f3dea",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:57:41.000Z",
+      "worker": "6ca5b133-89fe-4d31-8be1-7ba8e919d68c",
       "techniques": [
         {
           "technique": "status-color-mapping",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_databases/tabs/QuerySidebar.tsx:117 last_run_ok renders bg-emerald-400 / bg-red-400 with no icon, text or aria label - violates both vocabulary->role->themed value and never-colour-alone"
+          "evidence": "src/features/vault/sub_databases/tabs/QuerySidebar.tsx:118 violates 'never color alone' and vocabulary->role->themed value: ok/failed differ only by a hand-picked hue, with no accessible label"
         },
         {
           "technique": "untrusted-label-rendering",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_databases/tabs/TableListSidebar.tsx:207 external-database table names (and saved-query titles at QuerySidebar.tsx:114) are clipped by a call-site truncate with no recoverable full value although display/TruncateWithTooltip exists; escape-by-default is realized - model-written chat text renders as a text node at src/features/vault/sub_databases/tabs/ChatMessages.tsx:96"
+          "evidence": "src/features/vault/sub_databases/tabs/TableListSidebar.tsx:207 external-database table names (and saved-query titles at QuerySidebar.tsx:114) are clipped by a call-site truncate with no recoverable full value although display/TruncateWithTooltip exists; escape-by-default is realized - model-written chat text renders as a text node at src/features/vault/sub_databases/tabs/ChatMessages.tsx:96",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "vocabulary-chain-integrity",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_databases/tabs/TableListSidebar.tsx:212 the table_type token is displayed as a hardcoded literal VIEW instead of a catalog label keyed by the token"
+          "evidence": "src/features/vault/sub_databases/tabs/TableListSidebar.tsx:212 the table_type token is displayed as a hardcoded literal VIEW instead of a catalog label keyed by the token",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "timestamp-display",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_databases/tabs/QuerySidebar.tsx:116 the only per-query run metadata rendered is last_run_ok; no moment is displayed by this context's files"
+          "evidence": "src/features/vault/sub_databases/tabs/QuerySidebar.tsx:116 the only per-query run metadata rendered is last_run_ok; no moment is displayed by this context's files",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "vocabulary-evolution-checklist",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_databases/tabs/TableListSidebar.tsx:212 table_type is an external database's vocabulary, not one this repo extends"
+          "evidence": "src/features/vault/sub_databases/tabs/TableListSidebar.tsx:212 table_type is an external database's vocabulary, not one this repo extends",
+          "carriedFrom": "2026-10-09"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_databases/tabs/QuerySidebar.tsx:117 a saved query's last-run outcome is a bare emerald/red dot - raw palette, no semantic role, no shape or label; colour alone carries the status",
+          "evaluatedAt": "2026-10-09T17:57:12.000Z",
+          "worker": "9061f5f5-0062-4700-ad12-643df28f3dea",
+          "reason": "replaced by 6ca5b133-89fe-4d31-8be1-7ba8e919d68c"
         }
       ]
     },
@@ -11645,34 +11670,47 @@
       "subject": "status-vocabulary",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T17:57:12.000Z",
-      "worker": "9061f5f5-0062-4700-ad12-643df28f3dea",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:57:41.000Z",
+      "worker": "6ca5b133-89fe-4d31-8be1-7ba8e919d68c",
       "techniques": [
         {
           "technique": "status-color-mapping",
           "verdict": "deviation",
-          "evidence": "src/features/shared/components/forms/FormField.tsx:323 raw palette instead of status roles, and colour/icon split across two ternary chains over idle|checking|available|taken (src/features/shared/components/forms/useAsyncFieldValidation.ts:11) rather than one total Record keyed by the union"
+          "evidence": "src/features/shared/components/forms/FormField.tsx:323 raw palette literals per member instead of semantic roles, and colour and icon decided in two parallel chains rather than one entry per member of AvailabilityStatus (useAsyncFieldValidation.ts:11)"
         },
         {
           "technique": "number-formatting",
           "verdict": "conformant",
-          "evidence": "src/features/shared/components/forms/CharBudget.tsx:64 counts render through display/Numeric, which binds the active locale"
+          "evidence": "src/features/shared/components/forms/CharBudget.tsx:64 counts render through display/Numeric, which binds the active locale",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "untrusted-label-rendering",
           "verdict": "conformant",
-          "evidence": "src/features/shared/components/forms/ThemedSelect.tsx:229 option labels pass through highlightMatch, which returns text slices and a mark element as React text nodes - no markup door"
+          "evidence": "src/features/shared/components/forms/ThemedSelect.tsx:229 option labels pass through highlightMatch, which returns text slices and a mark element as React text nodes - no markup door",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "timestamp-display",
           "verdict": "not-applicable",
-          "evidence": "src/features/shared/components/forms/FormField.tsx:17 the context's state vocabulary is availability; no moment is rendered by these form controls"
+          "evidence": "src/features/shared/components/forms/FormField.tsx:17 the context's state vocabulary is availability; no moment is rendered by these form controls",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "vocabulary-chain-integrity",
           "verdict": "not-applicable",
-          "evidence": "src/features/shared/components/forms/useAsyncFieldValidation.ts:11 AvailabilityStatus is a client-local union with no storage or wire layer; labels are caller-supplied messages"
+          "evidence": "src/features/shared/components/forms/useAsyncFieldValidation.ts:11 AvailabilityStatus is a client-local union with no storage or wire layer; labels are caller-supplied messages",
+          "carriedFrom": "2026-10-09"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/shared/components/forms/FormField.tsx:323 the AvailabilityStatus union is coloured by a nested ternary to raw text-emerald-400/text-amber-400, with icons in a second parallel chain - not one table keyed by the union, so a new member silently gets neither colour nor icon",
+          "evaluatedAt": "2026-10-09T17:57:12.000Z",
+          "worker": "9061f5f5-0062-4700-ad12-643df28f3dea",
+          "reason": "replaced by 6ca5b133-89fe-4d31-8be1-7ba8e919d68c"
         }
       ]
     },
