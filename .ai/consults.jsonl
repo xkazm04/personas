@@ -1407,3 +1407,8 @@
 {"ts":"2026-10-16T17:52:42Z","bundle":"software-engineering","subjects":["form"],"techniques":["field-composition","error-aggregation-and-focus","validation-timing"],"deviations":1}
 {"ts":"2026-10-16T17:52:42Z","bundle":"software-engineering","subjects":["form"],"techniques":["server-error-mapping","field-composition","error-aggregation-and-focus"],"deviations":1}
 {"ts":"2026-10-16T17:52:42Z","bundle":"software-engineering","subjects":["form"],"techniques":["field-composition","validation-timing"],"deviations":1}
+{"ts":"2026-10-16T17:53:38Z","bundle":"software-engineering","subjects":["model-routing"],"techniques":["routing-policy","policy-governance"],"deviations":1}
+{"ts":"2026-10-16T17:53:38Z","bundle":"software-engineering","subjects":["model-routing"],"techniques":[],"deviations":0}
+{"ts":"2026-10-16T17:53:38Z","bundle":"software-engineering","subjects":["model-routing"],"techniques":[],"deviations":0}
+{"ts":"2026-10-16T17:53:38Z","bundle":"software-engineering","subjects":["model-routing"],"techniques":[],"deviations":0}
+{"ts":"2026-10-16T17:53:38Z","bundle":"software-engineering","subjects":["model-routing"],"techniques":[],"deviations":0}

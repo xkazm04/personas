@@ -4802,21 +4802,22 @@
       "subject": "model-routing",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T12:28:00.000Z",
-      "worker": "d11750fc-4ece-474d-ad5b-ba29efcd39ac",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:53:38.000Z",
+      "worker": "ab812473-03dd-40e7-8bdb-4ba162e58cb8",
       "techniques": [
-        {
-          "technique": "policy-governance",
-          "verdict": "deviation",
-          "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:161 saves the policy directly with no diff/approval step; src-tauri/db/src/byom.rs:305 overwrites one settings key with no version, so src/lib/bindings/ProviderAuditEntry.ts:6 can name a rule but never the policy version that served a call"
-        },
         {
           "technique": "routing-policy",
           "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/failover.rs:770 filters blocked providers with no empty-chain check (src-tauri/src/engine/runner/mod.rs:2067 consumes it unchecked), so 'no candidate survives the cascade' reaches the user as src-tauri/src/engine/runner/mod.rs:2398 'All providers failed or have open circuit breakers' - a policy outcome disguised as a transport failure"
+          "evidence": "src-tauri/engine/src/failover.rs:770 filter drops blocked candidates with no empty-chain check before src-tauri/src/engine/runner/mod.rs:2401 falls back to the circuit-breaker message - failure-not-empty-success unmet"
+        },
+        {
+          "technique": "policy-governance",
+          "verdict": "deviation",
+          "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:161 applies the edit in place via src-tauri/db/src/byom.rs:305 settings::set with no version; src/lib/bindings/ProviderAuditEntry.ts:6 carries routing/compliance rule names but no policy version, so an audit cannot tell a violated rule from one that did not exist yet"
         }
       ],
+      "registryProposal": "Missing pairing: the code that actually makes routing decisions - src-tauri/engine/src/failover.rs (build_failover_chain_with_policy), the BYOM evaluator and src-tauri/src/engine/runner/mod.rs:2070 - is not paired with model-routing in any context; the map only reaches it through the settings UI context. A Rust engine context should carry model-routing at strong confidence.",
       "superseded": [
         {
           "state": "deviation",
@@ -4838,6 +4839,13 @@
           "evaluatedAt": "2026-10-10T02:01:16.000Z",
           "worker": "26023e29-a519-41bd-a385-db29656f9be7",
           "reason": "replaced by d11750fc-4ece-474d-ad5b-ba29efcd39ac"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:161 applies an edited BYOM policy in place as bare unversioned JSON (src-tauri/db/src/byom.rs:305) that no audit row cites (src/lib/bindings/ProviderAuditEntry.ts:6), and src-tauri/engine/src/failover.rs:770 silently drops blocked providers so an emptied chain surfaces as the generic src-tauri/src/engine/runner/mod.rs:2398 message - re-anchored 2026-10-12 (failover.rs moved to engine crate in 9708af6d23)",
+          "evaluatedAt": "2026-10-12T12:28:00.000Z",
+          "worker": "d11750fc-4ece-474d-ad5b-ba29efcd39ac",
+          "reason": "replaced by ab812473-03dd-40e7-8bdb-4ba162e58cb8"
         }
       ]
     },
@@ -4846,18 +4854,30 @@
       "subject": "model-routing",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-7",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:53:38.000Z",
+      "worker": "ab812473-03dd-40e7-8bdb-4ba162e58cb8",
       "techniques": [
         {
           "technique": "turn-classification",
           "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_studio/libs/studioCommit.ts:105 builds a chain trigger. The context selects no model, so there is no call class to assign."
+          "evidence": "src/features/triggers/sub_studio/libs/studioCommit.ts:105 builds a chain trigger. The context selects no model, so there is no call class to assign.",
+          "carriedFrom": "2026-09-23"
         },
         {
           "technique": "routing-policy",
           "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_studio/libs/studioCommit.ts:105 routes events between personas, not calls to models. There is no provider policy to evaluate."
+          "evidence": "src/features/triggers/sub_studio/libs/studioCommit.ts:105 routes events between personas, not calls to models. There is no provider policy to evaluate.",
+          "carriedFrom": "2026-09-23"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "Precondition unmet: 'routing' here wires one persona's completion to another's start. src/features/triggers/sub_studio/libs/studioCommit.ts:5 commits persona links directly as a `chain` trigger; no class, tier, effort, provider or model appears in the context's 34 files.",
+          "evaluatedAt": "2026-10-05",
+          "worker": null,
+          "reason": "replaced by ab812473-03dd-40e7-8bdb-4ba162e58cb8"
         }
       ]
     },
@@ -25160,6 +25180,63 @@
         }
       ],
       "registryProposal": "Not a corpus finding but a context-map one: this context is described as the n8n draft editor (entry point src/features/templates/draft-editor/DraftEditStep.tsx), which no longer exists in git; its file_paths now cover template explore + presets. The form pairing still holds via PresetQuestionnaireForm, but the context should be re-described or split on the next context scan."
+    },
+    "ba0d4722-bfde-40aa-8e1d-52591719f834/model-routing": {
+      "context": "lab-shared-primitives",
+      "subject": "model-routing",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:53:38.000Z",
+      "worker": "ab812473-03dd-40e7-8bdb-4ba162e58cb8",
+      "techniques": [],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "Precondition unmet: the context renders Lab results, it makes no routing decision. src/features/agents/sub_lab/components/shared/ScenarioDetailPanel.tsx:155 and LabProgress.tsx:102 only print a result's modelId; no class, tier, effort or policy appears in its 23 files. The matcher's tokens (diff, chart, quality) are display vocabulary.",
+          "evaluatedAt": "2026-10-05",
+          "worker": null,
+          "reason": "replaced by ab812473-03dd-40e7-8bdb-4ba162e58cb8"
+        }
+      ]
+    },
+    "9fff7e41-4fc5-4c31-846b-c04ca1c79757/model-routing": {
+      "context": "overview-incidents",
+      "subject": "model-routing",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:53:38.000Z",
+      "worker": "ab812473-03dd-40e7-8bdb-4ba162e58cb8",
+      "techniques": [],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "Precondition unmet: the incidents inbox triages persisted failure rows, it makes no routing decision. Its only contact with routing is src/features/overview/sub_incidents/components/IncidentsFilterBar.tsx:20 listing provider_audit_log as a source kind (failover rows as low-severity incidents); no class, tier, effort or policy is read or written in its 17 files.",
+          "evaluatedAt": "2026-10-05",
+          "worker": null,
+          "reason": "replaced by ab812473-03dd-40e7-8bdb-4ba162e58cb8"
+        }
+      ]
+    },
+    "54236947-3775-4d0a-8e14-1a709dd4d8bc/model-routing": {
+      "context": "teams-factory",
+      "subject": "model-routing",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:53:38.000Z",
+      "worker": "ab812473-03dd-40e7-8bdb-4ba162e58cb8",
+      "techniques": [],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "Precondition unmet: the Factory page manages KPIs, it routes no model calls. The only 'tier' is KPI importance at src/features/teams/sub_factory/addKpiPrimitives.tsx:14 (TIER_OPTS), unrelated to capability tiers; no class, effort, provider or model selection appears in its 18 files. The matcher's tokens (model, traffic, task) are generic.",
+          "evaluatedAt": "2026-10-05",
+          "worker": null,
+          "reason": "replaced by ab812473-03dd-40e7-8bdb-4ba162e58cb8"
+        }
+      ]
     }
   }
 }
