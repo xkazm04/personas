@@ -27971,7 +27971,11 @@
           "revision": 11,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:3 Research Lab plugin removed 2026-09-14 (commit 0697f13438), and it was an arXiv/Crossref literature-search client; nothing here publishes evaluation results outside the org, the subject's precondition",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:1bb6a4d8f620f867",
+          "evaluatedRevision": 11
         }
       ],
       "governance": "weak"

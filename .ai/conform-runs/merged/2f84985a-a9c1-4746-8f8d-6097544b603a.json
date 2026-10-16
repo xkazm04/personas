@@ -1,0 +1,10 @@
+{"schema": "conform-run/1", "worker": "2f84985a-a9c1-4746-8f8d-6097544b603a", "subject": "federated-benchmark-sharing",
+ "evaluatedAt": "2026-10-16T17:40:37Z",
+ "pairs": [{"context": "742be60e-3ddf-4160-b7cb-4c5cac5965a0", "subject": "federated-benchmark-sharing", "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:3 Research Lab plugin removed 2026-09-14 (commit 0697f13438), and it was an arXiv/Crossref literature-search client; nothing here publishes evaluation results outside the org, the subject's precondition",
+   "evaluatedAgainst": "sha256-b2:1bb6a4d8f620f867", "evaluatedRevision": 11,
+   "techniques": [],
+   "registryProposal": "Lexical resonance, not a hole or a matcher miss: the match rode on 'sources/ingestion/shared' (literature sources), while the golden path is about pooling eval results across organizations. Separately, this context is dead: every entry_point in context-map.json is gone since 0697f13438, yet stats.deadContexts reads 0; a context rescan should retire it. No Personas surface publishes benchmark results externally (grep over src/ and src-tauri/ found none), so no missing pairing to add."}],
+ "declined": [],
+ "consults": [{"ts": "2026-10-16T17:40:37Z", "bundle": "llm-observability", "subjects": ["federated-benchmark-sharing"], "techniques": [], "deviations": 0}]}

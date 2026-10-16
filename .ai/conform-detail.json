@@ -24499,6 +24499,17 @@
         }
       ],
       "registryProposal": "Matcher matched on 'goal'/'progress'/'team' vocabulary (use_when grounding), but the subject's precondition is an OUTWARD reader who cannot check. Internal progress surfaces in a local-first operator app are a technique-shaped resonance, not governance; consider a negative cue (internal/operator/dashboard) or routing by the golden path's 'reader cannot check' precondition. measurement-honesty is the sibling that governs internal numbers."
+    },
+    "742be60e-3ddf-4160-b7cb-4c5cac5965a0/federated-benchmark-sharing": {
+      "context": "plugins-research-lab-shared",
+      "subject": "federated-benchmark-sharing",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:40:37.000Z",
+      "worker": "2f84985a-a9c1-4746-8f8d-6097544b603a",
+      "techniques": [],
+      "registryProposal": "Lexical resonance, not a hole or a matcher miss: the match rode on 'sources/ingestion/shared' (literature sources), while the golden path is about pooling eval results across organizations. Separately, this context is dead: every entry_point in context-map.json is gone since 0697f13438, yet stats.deadContexts reads 0; a context rescan should retire it. No Personas surface publishes benchmark results externally (grep over src/ and src-tauri/ found none), so no missing pairing to add."
     }
   }
 }
