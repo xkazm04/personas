@@ -7804,10 +7804,10 @@
           "digest": "sha256-b2:14e6e49e4c386292",
           "revision": 12,
           "changedAt": "2026-09-04",
-          "evidence": "src-tauri/src/commands/fleet/headless.rs:72 headless close/hibernate kills one pid with p.kill() (PTY lane likewise via src-tauri/src/commands/fleet/pty.rs:649 clone_killer, no polite rung) and never the tree, although src-tauri/src/webbuild/devserver.rs:595 kill_tree exists - a closed claude session orphans its MCP servers and tool shells (re-verified 2026-10-12, unchanged since 2026-10-10)",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:14e6e49e4c386292",
-          "evaluatedRevision": 12,
+          "evidence": "src-tauri/src/commands/fleet/headless.rs:72 headless close/hibernate kills one pid via p.kill() (PTY lane likewise, src-tauri/src/commands/fleet/pty.rs:649 clone_killer, routed by src-tauri/src/commands/fleet/registry.rs:549 kill_child_of) with no polite rung and never the tree, though src-tauri/src/webbuild/devserver.rs:595 kill_tree exists - a closed claude session orphans its MCP servers and tool shells (re-verified at rev 14, unchanged)",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:c9b34849dd8fed39",
+          "evaluatedRevision": 14,
           "revisionsBehind": 0
         }
       ],
@@ -36969,10 +36969,10 @@
           "digest": "sha256-b2:14e6e49e4c386292",
           "revision": 12,
           "changedAt": "2026-09-04",
-          "evidence": "src-tauri/engine/src/session_pool.rs:145 the warm-session fingerprint hashes tool_count, not tool identity, and omits credentials and CLI version though session_pool.rs:9 promises credential invalidation; src-tauri/src/commands/tools/tools.rs:73 assign_tool never invalidates - swapping one tool or credential for another resumes a session built in a different world (re-verified 2026-10-12, unchanged)",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:14e6e49e4c386292",
-          "evaluatedRevision": 12,
+          "evidence": "src-tauri/engine/src/session_pool.rs:145 the warm-session fingerprint hashes tool_count, not tool identity, and omits credentials and CLI version though session_pool.rs:9 promises credential invalidation; src-tauri/src/commands/tools/tools.rs:73 assign_tool never invalidates - swapping one tool or credential resumes a session built in a different world (re-verified at rev 14, unchanged)",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:c9b34849dd8fed39",
+          "evaluatedRevision": 14,
           "revisionsBehind": 0
         }
       ],

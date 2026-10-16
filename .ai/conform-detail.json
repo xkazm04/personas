@@ -10570,14 +10570,19 @@
       "subject": "subprocess-lifecycle",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T12:37:17.000Z",
-      "worker": "233ec975-4841-4a10-af85-79e9aa2eede6",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:35:18.000Z",
+      "worker": "9d3d8062-c5b7-42ad-b739-4810032d942c",
       "techniques": [
         {
           "technique": "termination-and-reaping",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/fleet/headless.rs:72 single-pid forcible kill, no polite rung or deadline, no tree kill; src-tauri/src/commands/fleet/commands.rs:251 documents the hard-kill-first path"
+          "evidence": "src-tauri/src/commands/fleet/headless.rs:72 single-pid kill, no graceful rung, no descendant kill"
+        },
+        {
+          "technique": "decode-child-output-per-line",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/fleet/pty.rs:183 the only child is the claude CLI, which writes UTF-8 through an incremental UTF-8 decoder; the technique's when-not section excludes children that write in the host encoding"
         }
       ],
       "superseded": [
@@ -10594,6 +10599,13 @@
           "evaluatedAt": "2026-10-10T02:15:00.000Z",
           "worker": "e50cbae6-90f8-4a1e-b1cc-44a0b22ef80a",
           "reason": "replaced by 233ec975-4841-4a10-af85-79e9aa2eede6"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/headless.rs:72 headless close/hibernate kills one pid with p.kill() (PTY lane likewise via src-tauri/src/commands/fleet/pty.rs:649 clone_killer, no polite rung) and never the tree, although src-tauri/src/webbuild/devserver.rs:595 kill_tree exists - a closed claude session orphans its MCP servers and tool shells (re-verified 2026-10-12, unchanged since 2026-10-10)",
+          "evaluatedAt": "2026-10-12T12:37:17.000Z",
+          "worker": "233ec975-4841-4a10-af85-79e9aa2eede6",
+          "reason": "replaced by 9d3d8062-c5b7-42ad-b739-4810032d942c"
         }
       ]
     },
@@ -10602,16 +10614,27 @@
       "subject": "subprocess-lifecycle",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T12:37:17.000Z",
-      "worker": "233ec975-4841-4a10-af85-79e9aa2eede6",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:35:18.000Z",
+      "worker": "9d3d8062-c5b7-42ad-b739-4810032d942c",
       "techniques": [
         {
           "technique": "session-reuse",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/execution/executions.rs:589 passes tools.len() into compute_config_hash; the technique requires over-inclusion (executable version, behavior-altering env, tool identity) and exact-match retirement"
+          "evidence": "src-tauri/engine/src/session_pool.rs:145 tool_count.hash - a same-count tool swap keeps the fingerprint"
+        },
+        {
+          "technique": "decode-child-output-per-line",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/engine/kpi_eval.rs:236 KPI command stdout goes through personas_core::utils::process::decode_output, the one per-line decode"
+        },
+        {
+          "technique": "spawn-contract",
+          "verdict": "realized",
+          "evidence": "src-tauri/engine/src/verification_command.rs:236 SetHandleInformation clears HANDLE_FLAG_INHERIT on own std handles before the detached dev-server spawn (the rev-14 amendment)"
         }
       ],
+      "registryProposal": "rev 14 added decode-child-output-per-line and the spawn-contract handle-inheritance amendment; both were forged from this context (kpi_eval.rs, verification_command.rs) and are realized here, but the pair stays a deviation on the unchanged session-reuse finding",
       "superseded": [
         {
           "state": "deviation",
@@ -10626,6 +10649,13 @@
           "evaluatedAt": "2026-10-10T02:15:00.000Z",
           "worker": "e50cbae6-90f8-4a1e-b1cc-44a0b22ef80a",
           "reason": "replaced by 233ec975-4841-4a10-af85-79e9aa2eede6"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/session_pool.rs:145 the warm-session fingerprint hashes tool_count, not tool identity, and omits credentials and CLI version though session_pool.rs:9 promises credential invalidation; src-tauri/src/commands/tools/tools.rs:73 assign_tool never invalidates - swapping one tool or credential for another resumes a session built in a different world (re-verified 2026-10-12, unchanged)",
+          "evaluatedAt": "2026-10-12T12:37:17.000Z",
+          "worker": "233ec975-4841-4a10-af85-79e9aa2eede6",
+          "reason": "replaced by 9d3d8062-c5b7-42ad-b739-4810032d942c"
         }
       ]
     },
