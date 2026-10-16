@@ -7,6 +7,7 @@
 import { Check, ChevronUp } from 'lucide-react';
 
 import { Listbox } from '@/features/shared/components/forms/Listbox';
+import { DOCK_CHIP, DOCK_CHIP_ON } from './dock/dockChrome';
 
 export function DockPresetSelect({
   presets,
@@ -37,17 +38,12 @@ export function DockPresetSelect({
           aria-expanded={isOpen}
           aria-label={ariaLabel}
           data-testid={testId}
-          // The Launch Rail's instrument pill: a pill rather than a rounded
-          // rectangle, so the preset reads as a setting on the console and not
-          // as a second button next to the launch. Set = accent-tinted.
-          className={`typo-code flex h-6 items-center gap-1.5 whitespace-nowrap rounded-pill border px-2.5 transition-colors ${
-            value
-              ? 'border-accent/45 bg-accent/10 text-accent'
-              : `border-card-border bg-card-bg text-foreground opacity-80 hover:border-primary/45 hover:opacity-100 [[data-theme^='light']_&]:border-primary/35 [[data-theme^='light']_&]:bg-secondary/50`
-          }`}
+          // The dock's chip (`dockChrome`): the command bar's window, lit in
+          // the run tone once a preset is set, dark glass on the default.
+          className={`${DOCK_CHIP} flex items-center gap-1.5 ${value ? DOCK_CHIP_ON : ''}`}
         >
           <span className="whitespace-nowrap">{format(value)}</span>
-          <ChevronUp className={`h-3 w-3 opacity-70 transition-transform ${isOpen ? '' : 'rotate-180'}`} aria-hidden />
+          <ChevronUp className={`h-3 w-3 transition-transform ${isOpen ? '' : 'rotate-180'}`} aria-hidden />
         </button>
       )}
     >

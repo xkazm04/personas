@@ -30,6 +30,7 @@ import Button from '@/features/shared/components/buttons/Button';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import { CompanionMark } from './prototype/entry-e/CompanionMark';
+import { DOCK_CHIP, DOCK_CHIP_ON } from './dock/dockChrome';
 
 export function DockAthenaToggle({ armed, onToggle, disabled, remote }: {
   armed: boolean;
@@ -61,17 +62,17 @@ export function DockAthenaToggle({ armed, onToggle, disabled, remote }: {
         aria-label={t.monitor.grid_dock_athena_label}
         aria-pressed={armed && !remote}
         data-testid="quick-dispatch-athena-toggle"
-        className={`typo-label flex h-6 flex-shrink-0 items-center gap-1.5 rounded-pill border px-2 ${
-          armed && !remote
-            ? 'border-primary/55 bg-primary/10 text-primary'
-            : `border-card-border bg-card-bg text-foreground hover:border-primary/45 [[data-theme^='light']_&]:border-primary/35 [[data-theme^='light']_&]:bg-secondary/50`
-        }`}
+        // The dock's chip: lit in the run tone while armed. Her mark goes in
+        // the Button's `icon` slot, so mark and name sit on one line (as
+        // children they stacked: the primitive wraps children in one inline
+        // span, and the mark is a block).
+        className={`${DOCK_CHIP} ${armed && !remote ? DOCK_CHIP_ON : ''}`}
+        icon={<CompanionMark companion="athena" active={armed && !remote} />}
       >
-        <CompanionMark companion="athena" active={armed && !remote} />
         {/* Her name, from the key the channels surface already owns: a brand
             name is the same byte string in all 14 locales and the untranslated
             gate allowlists exactly that one, not a second copy of it. */}
-        <span>{t.monitor.channels_author_athena}</span>
+        {t.monitor.channels_author_athena}
       </Button>
     </Tooltip>
   );

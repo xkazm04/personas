@@ -366,8 +366,8 @@ describe('QuickDispatchDock — the anti-shake contract', () => {
     return deck?.className.match(/\bh-\[?[\w.]+\]?/)?.[0] ?? '';
   };
 
-  /** The shell's row map: toolbar, manifest, chips, command, meta. */
-  const SHAPE = ['h-[34px]', 'h-[30px]', 'h-6', '', 'h-5'];
+  /** The shell's row map: toolbar, manifest (with the chips), command, meta. */
+  const SHAPE = ['h-9', 'h-7', '', 'h-5'];
 
   beforeEach(() => localStorage.clear());
 
@@ -405,6 +405,43 @@ describe('QuickDispatchDock — the anti-shake contract', () => {
       expect(screen.getByTestId('quick-dispatch-gauge-cost')).toBeTruthy();
       expect(screen.getByTestId('quick-dispatch-status-pill')).toBeTruthy();
     }
+  });
+});
+
+describe('QuickDispatchDock — it fits the Monitor (polish P2)', () => {
+  beforeEach(() => localStorage.clear());
+  const PX: Record<string, number> = { 'h-5': 20, 'h-7': 28, 'h-9': 36, 'h-11': 44 };
+  const px = (cls: string) => PX[cls] ?? Number(/h-\[(\d+)px\]/.exec(cls)?.[1] ?? NaN);
+
+  it('the console is a plate whose reserved rows add up to at most 150px, so the board keeps its height at 1280x800', () => {
+    render(<QuickDispatchDock />);
+    expand();
+    const dock = screen.getByTestId('quick-dispatch-dock');
+    expect(dock.className).toContain('ae-dock');
+    expect(dock.querySelector('.ae-plate')).toBeTruthy();
+    const rows = Array.from(dock.querySelectorAll<HTMLElement>('[data-dock-row]'))
+      .map((el) => el.className.match(/\bh-\[?[\w.]+\]?/)?.[0] ?? DECK_HEIGHT);
+    const total = rows.reduce((sum, cls) => sum + px(cls), 0);
+    expect(total).toBeLessThanOrEqual(150);
+  });
+
+  it('no row of the console can wrap or widen the dock: the toolbar scrolls, the target truncates', () => {
+    render(<QuickDispatchDock />);
+    expand();
+    expect(screen.getByTestId('quick-dispatch-toolbar').className).toMatch(/\boverflow-x-auto\b/);
+    expect(screen.getByTestId('quick-dispatch-target').className).toMatch(/\btruncate\b/);
+    expect(screen.getByTestId('quick-dispatch-chips').className).toMatch(/\boverflow-x-auto\b/);
+    // Track, glyph and label share one line: the toggle's track rides in the icon slot.
+    expect(screen.getByTestId('quick-dispatch-headless-toggle').querySelector('.block.rounded-pill')).toBeTruthy();
+  });
+
+  it('rests as one 40px plate whose door is the shared Button, the tally as lamp chips', () => {
+    render(<QuickDispatchDock />);
+    const door = screen.getByTestId('quick-dispatch-dock-expand');
+    expect(door.className).toContain('ae-win');
+    expect(door.closest('.ae-plate')?.className).toMatch(/\bh-10\b/);
+    expect(screen.getByTestId('quick-dispatch-dock-needs-you').querySelector('.ae-lamp.is-lit')).toBeTruthy();
+    expect(screen.getByTestId('quick-dispatch-dock-working').getAttribute('aria-label')).toMatch(/^\d+ working$/);
   });
 });
 

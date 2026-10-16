@@ -2,9 +2,16 @@
 
 import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 
-/** The dock's footprint while its chunk loads: the same 36px collapsed bar. */
+/**
+ * The dock's footprint while its chunk loads: the resting plate's 52px (a 40px
+ * plate in a 4px / 8px gutter, `DockRestingRow`), as an empty plate.
+ */
 export function DockPlaceholder() {
-  return <div aria-hidden className="h-9 flex-shrink-0 border-t border-border bg-foreground/[0.015]" />;
+  return (
+    <div aria-hidden className="flex-shrink-0 px-2.5 pb-2 pt-1">
+      <div className="h-10 rounded-card border border-border" />
+    </div>
+  );
 }
 
 /** A channel surface's footprint while its chunk loads: header ghost, no body. */

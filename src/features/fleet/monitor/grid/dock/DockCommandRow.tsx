@@ -28,7 +28,7 @@ import { QuickDispatchChips, QuickDispatchMetaLine } from '@/features/plugins/fl
 import { FIELD_MIN_PX, OBJECTIVE_MAX, type DockConsole } from './useDockConsole';
 
 /** The command well's reserved box. A literal, shared by all three variants. */
-export const DECK_HEIGHT = 'h-[66px]';
+export const DECK_HEIGHT = 'h-[58px]';
 
 export function DockCommandRow({
   console: d,
@@ -40,13 +40,13 @@ export function DockCommandRow({
 }) {
   const { c, firing, fieldRef, submit } = d;
   return (
-    <div className="relative z-[1] px-3" data-dock-row onKeyDownCapture={c.onComposerKeyDownCapture}>
+    <div className="relative z-[1] px-2" data-dock-row onKeyDownCapture={c.onComposerKeyDownCapture}>
       <div
         data-dock-deck
-        className={`flex ${DECK_HEIGHT} items-stretch gap-2 rounded-card border p-2 transition-[border-color,box-shadow,background] ${
-          c.sending
-            ? 'border-status-info/55 bg-status-info/[0.06]'
-            : `border-card-border bg-foreground/[0.03] focus-within:border-primary/55 focus-within:shadow-[0_0_0_1px_color-mix(in_srgb,var(--primary)_30%,transparent),inset_0_0_22px_color-mix(in_srgb,var(--primary)_7%,transparent)] ${frameClassName}`
+        // The well is the panel's window (`ae-win`): dark glass at rest, the
+        // run tone's lit edge while focused, the info tone while sending.
+        className={`ae-win flex ${DECK_HEIGHT} items-stretch gap-2 rounded-card p-1.5 ${
+          c.sending ? 'is-lit ae-t-info' : `ae-dock-well ${frameClassName}`
         }`}
       >
         <div className="flex min-w-0 flex-1 items-start">
@@ -107,23 +107,26 @@ export function DockCommandRow({
   );
 }
 
-/** ALWAYS mounted at a fixed height, chips or empty — the rail cannot appear. */
-export function DockChipRail({ console: d }: { console: DockConsole }) {
+/**
+ * ALWAYS mounted, chips or empty, at the head of the manifest row (it held a
+ * 24px row of its own until polish P2): it takes what the chips need, up to
+ * half the row, and scrolls past that rather than wrapping.
+ */
+export function DockChips({ console: d }: { console: DockConsole }) {
   return (
-    <div
-      className="relative z-[1] flex h-6 items-center gap-1 overflow-x-auto px-3"
-      data-dock-row
+    <span
+      className="flex min-w-0 max-w-[50%] flex-shrink-0 items-center gap-1 overflow-x-auto empty:hidden"
       data-testid="quick-dispatch-chips"
     >
       <QuickDispatchChips c={d.c} />
-    </div>
+    </span>
   );
 }
 
 /** The reserved swap slot: headless caption / error / success, never a mount. */
 export function DockMetaRow({ console: d, children }: { console: DockConsole; children?: ReactNode }) {
   return (
-    <div className="relative z-[1] flex h-5 min-w-0 items-center gap-2 px-3" data-dock-row>
+    <div className="relative z-[1] flex h-5 min-w-0 items-center gap-2 px-2" data-dock-row>
       <div className="min-w-0 flex-1">
         <QuickDispatchMetaLine c={d.c} />
       </div>

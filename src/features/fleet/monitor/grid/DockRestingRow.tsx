@@ -1,57 +1,52 @@
 // DockRestingRow: the dispatch dock collapsed to one row (QuickDispatchDock's
 // resting state, split out 2026-10-15 when WP7 added the act ticker). The
-// row pays rent with the live fleet tally and the stewards' act ticker; its height is reserved (h-9) whatever it
-// carries, so nothing in it ever moves the board above.
+// row pays rent with the live fleet tally and the stewards' act ticker; its
+// height is reserved (the plate's h-10) whatever it carries, so nothing in it
+// ever moves the board above.
+//
+// THE PLATE (polish P2, 2026-10-16). The row was a full-width strip of mono
+// text and coloured dots under a board of plates and chips. It is now a plate
+// of the panel (`.ae-dock` + `.ae-plate`) whose door is a window (`ae-win`,
+// the command bar's chip glass) holding the composer's prompt, followed by the
+// act ticker at caption weight and the tally as the bar's lamp chips. The
+// door is the shared `Button`, so the row has no hand-rolled button and the
+// ticker beside it is its own button, never nested in another.
 
-import { Terminal } from 'lucide-react';
+import { ChevronUp, Terminal } from 'lucide-react';
 
+import { Button } from '@/features/shared/components/buttons';
 import { DockActTicker } from './DockActTicker';
-import { DOCK_COLUMN } from './dock/DockParts';
+import { DockTally } from './dock/DockTally';
 import type { DockConsole } from './dock/useDockConsole';
+import './prototype/entry-e/entryE.css';
 
 export function DockRestingRow({ console: d }: { console: DockConsole }) {
   const { c, tally } = d;
-  // The expand door is ONE button laid under the whole row; the row's
-  // readings sit above it and let the pointer through, so the act ticker
-  // (WP7) can be its own button without nesting one inside the other.
   return (
-    <div className="group relative flex-shrink-0 border-t border-border bg-foreground/[0.015]">
-      <span className="dock-rail pointer-events-none absolute inset-x-0 -top-px z-[4] h-px overflow-hidden" aria-hidden />
-      <button
-        type="button"
-        onClick={d.expand}
-        aria-label={c.quickT.title}
-        data-testid="quick-dispatch-dock-expand"
-        className="absolute inset-0 block w-full transition-colors hover:bg-secondary/30"
-      />
-      <span className={`${DOCK_COLUMN} pointer-events-none relative flex h-9 items-center gap-2 px-3`}>
-        <Terminal className="h-3.5 w-3.5 flex-shrink-0 text-primary" aria-hidden />
-        <span className="dock-caret h-3.5 w-[7px] flex-shrink-0 rounded-[1px] bg-primary" aria-hidden />
-        {/* The composer's placeholder keeps its whole width; the ticker takes
-            what is left and yields first. */}
-        <span className="flex-shrink-0 truncate font-mono text-xs text-muted transition-colors group-hover:text-foreground">
-          {c.quickT.placeholder}
-        </span>
+    <div className="ae-dock relative flex-shrink-0 px-2.5 pb-2 pt-1">
+      <div className="ae-plate @container/dock relative flex h-10 items-center gap-2 rounded-card px-1.5">
+        <span className="dock-rail pointer-events-none absolute inset-x-3 -top-px z-[4] h-px overflow-hidden" aria-hidden />
+        {/* The door: the composer's prompt in a window. It keeps its floor
+            width; the ticker beside it takes what is left and yields first. */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={d.expand}
+          aria-label={c.quickT.title}
+          data-testid="quick-dispatch-dock-expand"
+          icon={<Terminal className="h-3.5 w-3.5 text-primary" aria-hidden />}
+          iconRight={<ChevronUp className="h-3.5 w-3.5 text-foreground" aria-hidden />}
+          className="ae-win ae-focus group h-8 min-w-[15rem] flex-[0_1_30rem] rounded-input [&>span:nth-child(2)]:min-w-0 [&>span:nth-child(2)]:flex-1"
+        >
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="dock-caret h-3.5 w-[7px] flex-shrink-0 rounded-interactive bg-primary" aria-hidden />
+            <span className="min-w-0 truncate typo-caption text-left">{c.quickT.placeholder}</span>
+            <span className="ml-auto hidden flex-shrink-0 typo-caption @[48rem]/dock:inline">{c.quickT.title}</span>
+          </span>
+        </Button>
         <DockActTicker />
-        {/* The rent this row pays: what the fleet is doing right now. */}
-        <span className="flex flex-shrink-0 items-center gap-2.5" data-testid="quick-dispatch-dock-tally">
-          {tally.needsYou > 0 && (
-            <span className="typo-label flex items-center gap-1 text-role-highlight">
-              <span className="h-1.5 w-1.5 rounded-full bg-role-highlight" aria-hidden />
-              {c.tx(c.quickT.rest_tally_needs_you, { count: tally.needsYou })}
-            </span>
-          )}
-          {tally.working > 0 && (
-            <span className="typo-label flex items-center gap-1 text-status-info">
-              <span className="h-1.5 w-1.5 rounded-full bg-status-info" aria-hidden />
-              {c.tx(c.quickT.rest_tally_working, { count: tally.working })}
-            </span>
-          )}
-        </span>
-        <span className="typo-label flex-shrink-0 text-muted transition-colors group-hover:text-primary">
-          {c.quickT.title}
-        </span>
-      </span>
+        <DockTally needsYou={tally.needsYou} working={tally.working} />
+      </div>
     </div>
   );
 }

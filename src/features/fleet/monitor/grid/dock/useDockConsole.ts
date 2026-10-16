@@ -43,7 +43,7 @@ export const OBJECTIVE_MAX = 1200;
  * the board above cannot move.
  */
 export const FIELD_MIN_PX = 34;
-export const FIELD_MAX_PX = 50;
+export const FIELD_MAX_PX = 44;
 
 export type DockConsole = ReturnType<typeof useDockConsole>;
 
