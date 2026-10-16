@@ -1467,3 +1467,6 @@
 {"ts":"2026-10-16T18:11:15Z","bundle":"software-engineering","subjects":["design-tokens"],"techniques":["density-and-scale-axes","token-enforcement"],"deviations":1}
 {"ts":"2026-10-16T18:11:15Z","bundle":"software-engineering","subjects":["design-tokens"],"techniques":["motion-tokens"],"deviations":1}
 {"ts":"2026-10-16T18:11:15Z","bundle":"software-engineering","subjects":["design-tokens"],"techniques":["token-taxonomy","token-enforcement"],"deviations":1}
+{"ts":"2026-10-16T18:11:06Z","bundle":"software-engineering","subjects":["terminal-multiplexing"],"techniques":["keystroke-injection","pty-management","bounded-replay-buffers","occupant-state-detection","injected-hook-reconvergence","multiplexer-state","multi-client-fan-out"],"deviations":1}
+{"ts":"2026-10-16T18:11:06Z","bundle":"software-engineering","subjects":["terminal-multiplexing"],"techniques":["keystroke-injection"],"deviations":1}
+{"ts":"2026-10-16T18:11:06Z","bundle":"software-engineering","subjects":["terminal-multiplexing"],"techniques":["keystroke-injection"],"deviations":1}

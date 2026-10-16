@@ -2511,13 +2511,23 @@
       "subject": "terminal-multiplexing",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-8",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:11:06.000Z",
+      "worker": "709f051b-7fb5-41f2-ac67-96bd6a3a54fd",
       "techniques": [
         {
           "technique": "keystroke-injection",
           "verdict": "deviation",
-          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:136 builds text + '\\r' as one write rather than a paste followed by Enter as a separate keystroke, which fleetTerminalManager.ts:635 term.paste does"
+          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:136 payload = pressEnter ? text+CR : text - paste and press are one string, told apart downstream by shape"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:136 sends a multi-line broadcast with 'press Enter' unticked as raw text, and src-tauri/src/commands/fleet/commands.rs:199 routes only newline-TERMINATED payloads through write_text_line's frame_paste (src-tauri/src/commands/fleet/registry.rs:1566), so that path reaches the PTY unframed and each internal newline submits a partial prompt - paste and press are inferred from payload shape at the IPC door instead of being separate verbs (keystroke-injection). Re-judged 2026-10-06: the earlier claim that the Enter path sits unsubmitted no longer holds (src-tauri/src/commands/fleet/commands.rs:199-200 splits text from Enter and confirms the submit), and the reference application's other two deviations are fixed (src/features/plugins/fleet/fleetTerminalManager.ts:644 skips no-op resizes; src/features/plugins/fleet/FleetTerminalPane.tsx:27 takes a live prop)",
+          "evaluatedAt": "2026-10-06",
+          "worker": null,
+          "reason": "replaced by 709f051b-7fb5-41f2-ac67-96bd6a3a54fd"
         }
       ]
     },
@@ -7694,27 +7704,37 @@
       "subject": "terminal-multiplexing",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T16:30:39.000Z",
-      "worker": "a28dc0ce-25c9-49f0-81c1-ed526248964b",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:11:06.000Z",
+      "worker": "709f051b-7fb5-41f2-ac67-96bd6a3a54fd",
       "techniques": [
         {
           "technique": "keystroke-injection",
           "verdict": "deviation",
-          "evidence": "src/features/plugins/fleet/__tests__/SkillLibraryDrawer.test.tsx:123-124 says 'The carriage return is what submits it' and asserts '/compact'+CR as a single writeInput payload; the technique requires paste-this and press-this-key as separate verbs, and the backend has to split them again at src-tauri/src/commands/fleet/commands.rs:199"
+          "evidence": "src/features/plugins/fleet/__tests__/SkillLibraryDrawer.test.tsx:124 expects '/compact'+CR as a single write"
         },
         {
           "technique": "attach-detach-lifecycle",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/fleet/__tests__/FleetTerminalOverlay.test.tsx:11 stubs the tiles so xterm never loads; the ladder is tested in files outside this context (fleetTerminalAttachOrder.test.ts, FleetTerminalOverlayKeepAlive.test.tsx)"
+          "evidence": "src/features/plugins/fleet/__tests__/FleetTerminalOverlay.test.tsx:11 stubs the tiles so xterm never loads; the ladder is tested in files outside this context (fleetTerminalAttachOrder.test.ts, FleetTerminalOverlayKeepAlive.test.tsx)",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "occupant-state-detection",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/fleet/__tests__/fleetAttention.test.ts:26 pins attention to the Rust hook-derived stateReason verdict, not to screen scraping; the technique says not to build a screen classifier when the occupant emits lifecycle hooks"
+          "evidence": "src/features/plugins/fleet/__tests__/fleetAttention.test.ts:26 pins attention to the Rust hook-derived stateReason verdict, not to screen scraping; the technique says not to build a screen classifier when the occupant emits lifecycle hooks",
+          "carriedFrom": "2026-10-09"
         }
       ],
-      "registryProposal": "Ownership gap, not a corpus gap: src/features/plugins/fleet/__tests__/FleetBroadcastPayload.test.tsx belongs to no context in context-map.json, and it is the file that pins the live keystroke-injection deviation as expected behaviour (~line 115 expects a raw 'draft\\nonly' payload with no paste framing). Several other fleet terminal tests (fleetTerminalAttachOrder, FleetTerminalOverlayKeepAlive, FleetTerminalPaneLiveness) also look unassigned to this context, so this pair is judged on a context that omits most of the fleet terminal tests. A rescan should assign them to plugins-fleet-tests or fleet-terminal-manager."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/plugins/fleet/__tests__/SkillLibraryDrawer.test.tsx:124 (and src/features/plugins/fleet/__tests__/FleetBroadcastModal.test.tsx:101) assert one write of text + CR as the submit contract, so the suite locks in 'paste' and 'press' as one verb inferred from payload shape; no test here covers a multi-line send with Enter off, which is the path that still reaches the PTY unframed",
+          "evaluatedAt": "2026-10-09T16:30:39.000Z",
+          "worker": "a28dc0ce-25c9-49f0-81c1-ed526248964b",
+          "reason": "replaced by 709f051b-7fb5-41f2-ac67-96bd6a3a54fd"
+        }
+      ]
     },
     "03e7f46a-3f19-47b8-98a5-398efed815b4/terminal-multiplexing": {
       "context": "hooks-realtime",
@@ -26081,6 +26101,62 @@
       "evaluatedTs": "2026-10-16T18:08:01.000Z",
       "worker": "652f57b8-e2d7-45bb-b03a-790b19356197",
       "techniques": []
+    },
+    "2de6333f-8375-404b-8fdc-fe0fb15d4f95/terminal-multiplexing": {
+      "context": "commands-fleet",
+      "subject": "terminal-multiplexing",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:11:06.000Z",
+      "worker": "709f051b-7fb5-41f2-ac67-96bd6a3a54fd",
+      "techniques": [
+        {
+          "technique": "keystroke-injection",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/commands.rs:199 only newline-terminated multi-char text reaches write_text_line's framing (src-tauri/src/commands/fleet/registry.rs:1584); keys.rs:146 rejects unknown keys loudly but parse_plan is test-only, so the notation is not the one authority"
+        },
+        {
+          "technique": "pty-management",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/fleet/pty.rs:994 finalize_child_exit is the exit path distinct from the reader; src-tauri/src/commands/fleet/registry.rs:1706 resize keeps master, dims and parser in step"
+        },
+        {
+          "technique": "bounded-replay-buffers",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/fleet/registry.rs:34 OUTPUT_RING_CAP 512 KiB byte-budgeted ring; registry.rs:1846 subscribe_output returns the tail snapshot to hydrate a re-attach"
+        },
+        {
+          "technique": "occupant-state-detection",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/fleet/hooks.rs:115 occupant state is driven by the runtime's own hooks, with revive_to_running_on_activity correcting a stale awaiting-input"
+        },
+        {
+          "technique": "injected-hook-reconvergence",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/fleet/hook_install.rs:235 needs_upgrade flags port/token/command drift so the installed hook re-converges instead of being trusted once"
+        },
+        {
+          "technique": "multiplexer-state",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/fleet/commands.rs:376 wake threads lineage onto the new row id via adopt_lineage"
+        },
+        {
+          "technique": "multi-client-fan-out",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/fleet/registry.rs:45 one subscribed bool per session; the product never has two viewers of one session"
+        }
+      ],
+      "registryProposal": "Re-judged from conformant: the prior verdict credited write_text_line's framing to the whole IPC door, but the door's shape test at commands.rs:199 lets the Enter-off multi-line case bypass it - the same defect fleet-terminal-manager already recorded from the caller side. A technique realized in a helper is not realized at the door unless every caller reaches it; keystroke-injection could say so.",
+      "superseded": [
+        {
+          "state": "conformant",
+          "evidence": "pty.rs spawns via portable-pty with a dedicated reaper (pty.rs:957-1036 finalize_child_exit) distinct from the byte reader, so process exit never gets confused with stream end (pty-management); registry.rs:1430-1452 resize() keeps PTY master + stored dims + VT parser in sync so wrapped output tracks the new width (pty-management); registry.rs:1261-1298 write_text_line distinguishes a typed Enter (lone \r chunk) from a pasted one and frames multi-line payloads as bracketed paste before fleet_write_input (commands.rs:197-202) ever reaches the PTY (keystroke-injection); registry.rs:34,1564-1588 OutputRing (OUTPUT_RING_CAP=512KiB) buffers unsubscribed sessions and replays the tail snapshot on (re)subscribe (bounded-replay-buffers, attach-detach-lifecycle); hooks.rs:1-120 drives occupant state off Claude Code's own Notification/Stop/PreToolUse hooks rather than guessing from PTY bytes, with revive_to_running_on_activity correcting a stale AwaitingInput (occupant-state-detection); hook_install.rs:160,236-280 dedupes fleet-tagged hook entries on reinstall and flags needs_upgrade on port/token/legacy-command drift mid-session (injected-hook-reconvergence, capability-revalidation); fleet_wake_session (commands.rs:325-378) mints a new row id on hibernate->wake (a fresh OS process is unavoidable) but explicitly threads lineage (created_at_ms, name, device ownership) through adopt_lineage/carry_over so the conversation's identity is not lost, just its row id (multiplexer-state). multi-client-fan-out does not apply: the frontend keeps exactly one ManagedTerminal per sessionId in a module-level registry (fleetTerminalManager.ts:306-308, with the deliberate rationale at :459 that a refcount is the wrong instrument here), matching the backend's single subscribed:bool (registry.rs:45) — the product never has two simultaneous viewers of one session.",
+          "evaluatedAt": "2026-10-03",
+          "worker": null,
+          "reason": "replaced by 709f051b-7fb5-41f2-ac67-96bd6a3a54fd"
+        }
+      ]
     }
   }
 }
