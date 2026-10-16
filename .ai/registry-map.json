@@ -3399,7 +3399,11 @@
           "revision": 3,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_editor/components/EditorTabBar.tsx:16 the context is a tabbed form editor (activity/design/lab/settings) with no long-form article, heading address space or contents panel; its in-place swaps are tabs within one entity (EditorBody.tsx:200), the case the subject names as its when-not",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:ee082e781491937e",
+          "evaluatedRevision": 3
         },
         {
           "subject": "markdown-vault",
@@ -30295,12 +30299,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:170 the swap this effect handles is an L1 sidebar section change that replaces the whole content region - app-shell primary navigation, ground the golden path hands to app-shell (it governs chrome around one document; this context has no heading ids, contents panel, scroll spy or offset budget); the old deviation's substance was fixed in f4065579f0 (focus now moves on section change, :189, first mount guarded)",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256-b2:0073dc38cb06cee0",
-          "evaluatedRevision": 2,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:170 the swap handled here is an L1 product-section change replacing the whole content region - primary route navigation, which the golden path hands to app-shell; this context owns no document chrome (no heading ids, contents panel, scroll spy or offset budget); re-judged against rev 3, unchanged",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:ee082e781491937e",
+          "evaluatedRevision": 3,
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-memory",
@@ -30746,12 +30749,11 @@
           "changedAt": "2026-10-14",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/shared/components/layout/settings/useSectionScrollSpy.ts:35 the band top and jump clearance are a bare 12px literal that ignores the sticky jumplist pinned at the top of the same scroll container below md (SettingsScaffold.tsx:71), with scroll-mt-4 (SettingsScaffold.tsx:119) a third independent number - on narrow widths a jump lands its heading under the jumplist and the band counts hidden headings as current",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256-b2:0073dc38cb06cee0",
-          "evaluatedRevision": 2,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/shared/components/layout/settings/useSectionScrollSpy.ts:35 band top and jump clearance are a bare 12px literal blind to the sticky top-0 jumplist below md (SettingsScaffold.tsx:71), with scroll-mt-4 (SettingsScaffold.tsx:119) a third number - on narrow widths a jump lands its heading under the jumplist and the band calls hidden headings current; re-judged against rev 3, unchanged",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:ee082e781491937e",
+          "evaluatedRevision": 3,
+          "revisionsBehind": 1
         },
         {
           "subject": "render-mount-pipeline",

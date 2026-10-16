@@ -3342,69 +3342,91 @@
       "subject": "long-form-reading-surface",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-8",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:27:31.000Z",
+      "worker": "a123fe21-3ac8-4b86-b150-0b0c56ba35ec",
       "techniques": [
         {
           "technique": "focus-transfer-on-in-place-navigation",
           "verdict": "not-applicable",
-          "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:170 an L1 section change is route-level shell navigation, not an article swap inside a reading surface"
-        },
-        {
-          "technique": "anchor-id-single-assigner",
-          "verdict": "not-applicable",
-          "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:76 the context tracks the active product section (sidebarSection), not an address space of headings in a document"
-        },
-        {
-          "technique": "scroll-spy-reading-band",
-          "verdict": "not-applicable",
-          "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:76 no document with sections is tracked; the only position state is the active product section"
+          "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:182 a route-level section-identity guard in the never-unmounting shell - the accessibility/app-shell contract, not an article swap; rev 3s remount-guard clause does not bite because the shell does not remount"
         },
         {
           "technique": "fixed-chrome-offset-budget",
           "verdict": "not-applicable",
-          "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:76 the context is the shell chrome itself; no anchored document is pinned against it here"
+          "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:170 the shell supplies the fixed chrome a reading surface measures; no pinned descendant of one document lives in this context"
+        },
+        {
+          "technique": "anchor-id-single-assigner",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:76 the context tracks the active product section (sidebarSection), not an address space of headings in a document",
+          "carriedFrom": "2026-09-23"
+        },
+        {
+          "technique": "scroll-spy-reading-band",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:76 no document with sections is tracked; the only position state is the active product section",
+          "carriedFrom": "2026-09-23"
         },
         {
           "technique": "server-parsed-once-reused",
           "verdict": "not-applicable",
-          "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:76 no document structure is extracted or shipped in this context"
+          "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:76 no document structure is extracted or shipped in this context",
+          "carriedFrom": "2026-09-23"
         }
       ],
-      "registryProposal": "Re-pair this context to accessibility/keyboard-navigation-models and app-shell rather than long-form-reading-surface; the residual gap is real there - focus lands on the sidebar's own L2 heading (Sidebar.tsx:189), not the new content's heading, and that heading suppresses its focus indicator (Sidebar.tsx:257 focus:outline-none)."
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:170 the swap this effect handles is an L1 sidebar section change that replaces the whole content region - app-shell primary navigation, ground the golden path hands to app-shell (it governs chrome around one document; this context has no heading ids, contents panel, scroll spy or offset budget); the old deviation's substance was fixed in f4065579f0 (focus now moves on section change, :189, first mount guarded)",
+          "evaluatedAt": "2026-09-23",
+          "worker": null,
+          "reason": "replaced by a123fe21-3ac8-4b86-b150-0b0c56ba35ec"
+        }
+      ]
     },
     "283b44f6-a4af-4a1f-8a0e-8b2dedb9adc0/long-form-reading-surface": {
       "context": "shared-components-layout",
       "subject": "long-form-reading-surface",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-8",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:27:31.000Z",
+      "worker": "a123fe21-3ac8-4b86-b150-0b0c56ba35ec",
       "techniques": [
-        {
-          "technique": "scroll-spy-reading-band",
-          "verdict": "deviation",
-          "evidence": "src/features/shared/components/layout/settings/useSectionScrollSpy.ts:147 every heading's getBoundingClientRect is read on every scroll event (handler :156) - the per-heading geometry polling the technique replaces with intersection observation; the band itself is now realized (topmost-in-band :72, empty band keeps previous :91), fixing the recorded 28px-edge deviation (c0cc22b7f7)"
-        },
         {
           "technique": "fixed-chrome-offset-budget",
           "verdict": "deviation",
-          "evidence": "src/features/shared/components/layout/settings/useSectionScrollSpy.ts:35 BAND_TOP_INSET=12 is shared by spy and jumpTo (:174) but omits the second pinned element, the sticky jumplist (SettingsScaffold.tsx:71); scroll-mt-4 (SettingsScaffold.tsx:119) is an independent third offset"
+          "evidence": "src/features/shared/components/layout/settings/SettingsScaffold.tsx:71 the sticky jumplist claims the top of the scroll container but no module states its height; useSectionScrollSpy.ts:35 (12px), SettingsScaffold.tsx:119 (scroll-mt-4 = 16px) and :86 (top-1) are three independent local guesses"
+        },
+        {
+          "technique": "scroll-spy-reading-band",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/layout/settings/useSectionScrollSpy.ts:147 measures every heading with getBoundingClientRect on each scroll event (:156) instead of observing intersections; topmost-wins, empty-band-keeps-previous (:75-91) and a fractional band (:37) are realized, and the rail states the current entry via aria-current (SettingsScaffold.tsx:96), but the band top does not derive from the chrome it must clear"
         },
         {
           "technique": "anchor-id-single-assigner",
           "verdict": "not-applicable",
-          "evidence": "src/features/shared/components/layout/settings/SettingsScaffold.tsx:119 section ids are author-declared (id={s.id}), not text-derived, so there is no assigner to share"
+          "evidence": "src/features/shared/components/layout/settings/SettingsScaffold.tsx:119 section ids are caller-supplied keys (s.id), not minted from heading text, so there is no slug/duplicate/fallback address space to share"
         },
         {
           "technique": "focus-transfer-on-in-place-navigation",
           "verdict": "not-applicable",
-          "evidence": "src/features/shared/components/layout/settings/SettingsScaffold.tsx:96 the rail jumps within one page (aria-current on the current entry); no document is swapped in place"
+          "evidence": "src/features/shared/components/layout/settings/SettingsScaffold.tsx:95 the rail jumps within one already-rendered document; no content swaps in place, which the technique names as its when-not case"
         },
         {
           "technique": "server-parsed-once-reused",
           "verdict": "not-applicable",
-          "evidence": "src/features/shared/components/layout/settings/SettingsScaffold.tsx:119 sections are client-composed React content with no preparation side that parses structure"
+          "evidence": "src/features/shared/components/layout/settings/SettingsScaffold.tsx:119 sections arrive as React children, not a parsed document body, so there is no structure extraction to ship or re-derive"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/shared/components/layout/settings/useSectionScrollSpy.ts:35 the band top and jump clearance are a bare 12px literal that ignores the sticky jumplist pinned at the top of the same scroll container below md (SettingsScaffold.tsx:71), with scroll-mt-4 (SettingsScaffold.tsx:119) a third independent number - on narrow widths a jump lands its heading under the jumplist and the band counts hidden headings as current",
+          "evaluatedAt": "2026-09-23",
+          "worker": null,
+          "reason": "replaced by a123fe21-3ac8-4b86-b150-0b0c56ba35ec"
         }
       ]
     },
@@ -23988,6 +24010,28 @@
         }
       ],
       "registryProposal": "If addMiddleware ever gets a non-host caller (plugins), this pair flips: pipeline.ts:744 runs entries unisolated and a throw skips every successor - the propagated-failure mode operator-tier-code-loading names"
+    },
+    "1ff7809a-171b-4baa-9c9b-12d888b017f0/long-form-reading-surface": {
+      "context": "agents-editor",
+      "subject": "long-form-reading-surface",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:27:31.000Z",
+      "worker": "a123fe21-3ac8-4b86-b150-0b0c56ba35ec",
+      "techniques": [
+        {
+          "technique": "focus-transfer-on-in-place-navigation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_editor/components/EditorBody.tsx:200 a tab switch inside one persona editor, which the technique says should keep focus where the reader put it, not move it to a heading"
+        },
+        {
+          "technique": "anchor-id-single-assigner",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_editor/components/EditorTabBar.tsx:16 navigation targets are a fixed tab enum, not addresses minted from heading text"
+        }
+      ],
+      "registryProposal": "matcher paired this on lexical tokens (editor, share, bar) with use_when grounding; an editor tab bar is not a reading surface - the golden path could name tabbed entity editors explicitly in its stops-here section to suppress this resonance"
     }
   }
 }
