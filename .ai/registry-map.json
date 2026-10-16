@@ -2987,7 +2987,11 @@
           "revision": 6,
           "changedAt": "2026-10-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_deployment/components/cloud/CloudDeploymentsPanel.tsx:88 The deployment action submits an existing persona and budget, and searches found no plugin, sandbox, or manifest references in the context directory, supporting exclusion of an extension installation or hosting lifecycle here.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:a23407994bc4b9db",
+          "evaluatedRevision": 6
         }
       ],
       "governance": "governed"
@@ -4066,7 +4070,11 @@
           "revision": 6,
           "changedAt": "2026-10-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_settings/components/PersonaAssertionsSection.tsx:63 The supplied files configure persona settings and declarative phrase assertions, and searches found no plugin, sandbox, or manifest references in their directory, supporting exclusion of an untrusted extension host here.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:a23407994bc4b9db",
+          "evaluatedRevision": 6
         },
         {
           "subject": "agent-memory",
@@ -39606,7 +39614,11 @@
           "revision": 6,
           "changedAt": "2026-10-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/vault/sub_databases/introspectionQueries.ts:9 This module selects built-in database integrations, and searches found no plugin, sandbox, or manifest references in the context directory, supporting exclusion of an administrator-installed extension host here.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:a23407994bc4b9db",
+          "evaluatedRevision": 6
         },
         {
           "subject": "retrieval",

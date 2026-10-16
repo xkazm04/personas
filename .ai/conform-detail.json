@@ -27484,6 +27484,69 @@
           "evidence": "src/features/companions/athena/chat/athenaChatStream.ts:60 CLI and terminal handling use conversation identity without comparing the event's turnId to the live turn, allowing an old turn's events to affect its successor."
         }
       ]
+    },
+    "55d6d7cb-b016-4d73-8386-b5c18beafdae/untrusted-extension-host": {
+      "context": "vault-database-shell",
+      "subject": "untrusted-extension-host",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T22:40:48.315Z",
+      "worker": "984e7801-5dad-4d0c-8bce-4121b05bc61f",
+      "techniques": [
+        {
+          "technique": "declared-schema-extension-storage",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:45 The explorer executes the user's query against a selected credential; this is not persistence allocated to an installed extension."
+        },
+        {
+          "technique": "safe-mode-registration",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_databases/hooks/useQuerySafeMode.ts:43 This safe mode requests confirmation for database mutations; it is not a boot mode for recovering from extension failures."
+        }
+      ]
+    },
+    "e0a448bc-24d4-4663-ba31-27d4ce378a14/untrusted-extension-host": {
+      "context": "agents-deployment",
+      "subject": "untrusted-extension-host",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T22:40:48.315Z",
+      "worker": "984e7801-5dad-4d0c-8bce-4121b05bc61f",
+      "techniques": [
+        {
+          "technique": "pluggable-isolation-runner",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_deployment/hooks/useDeploymentHealth.ts:72 This hook reads execution telemetry; it does not instantiate, load, limit, or tear down extension runtimes."
+        },
+        {
+          "technique": "two-tier-extension-format",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_deployment/components/UnifiedDeploymentDashboard.tsx:103 The dashboard classifies persona deployment destinations, not extension formats or execution privilege tiers."
+        }
+      ]
+    },
+    "5d538a29-a2bb-4d61-8ec2-c51bcde105fe/untrusted-extension-host": {
+      "context": "agents-use-cases",
+      "subject": "untrusted-extension-host",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T22:40:48.315Z",
+      "worker": "984e7801-5dad-4d0c-8bce-4121b05bc61f",
+      "techniques": [
+        {
+          "technique": "canonicalizable-privilege-declaration",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_settings/components/PersonaAssertionsSection.tsx:29 The closed choice selects a host-defined assertion operation, not an extension's privilege declaration."
+        },
+        {
+          "technique": "per-callback-failure-policy",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_settings/components/PersonaAssertionsSection.tsx:31 This configures the response to a built-in output assertion; it does not register foreign callbacks."
+        }
+      ]
     }
   }
 }
