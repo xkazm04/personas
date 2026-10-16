@@ -2429,8 +2429,8 @@
           "changedAt": "2026-09-04",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/agents/sub_health/useHealthDigestScheduler.ts:107 all-healthy notification keys on totalIssues === 0, which excludes undetermined (src/stores/slices/agents/healthCheckSlice.ts:206) and :101 never reads undeterminedCount - a fleet whose sub-checks could not run is announced as all healthy (re-affirmed 2026-10-12 against rev 11, code unchanged since 2026-10-09)",
-          "evaluatedAt": "2026-10-12",
+          "evidence": "src/features/agents/sub_health/useHealthDigestScheduler.ts:107 all-healthy notification keys on totalIssues === 0, which excludes undetermined (src/stores/slices/agents/healthCheckSlice.ts:206) and :101 never reads undeterminedCount - a fleet whose sub-checks could not run is announced as all healthy (re-affirmed 2026-10-16 against rev 11, code unchanged since 2026-09-14)",
+          "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:9254e4fb7feef6b1",
           "evaluatedRevision": 11,
           "revisionsBehind": 0
@@ -33117,8 +33117,8 @@
           "changedAt": "2026-09-04",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/system/health.rs:111 count_since(..).unwrap_or(0) turns an unreadable crash table into 'no crashes', the section is omitted and all_ok (:147) stays true - HealthCheckStatus (:22) has no could-not-determine member, so unverifiable collapses into green (re-affirmed 2026-10-12 against rev 11, code unchanged since 2026-10-09)",
-          "evaluatedAt": "2026-10-12",
+          "evidence": "src-tauri/src/commands/infrastructure/system/health.rs:111 count_since(..).unwrap_or(0) turns an unreadable crash table into 'no crashes', the section is omitted and all_ok (:147) stays true - HealthCheckStatus (:22) has no could-not-determine member, so unverifiable collapses into green (re-affirmed 2026-10-16 against rev 11, code unchanged since 2026-09-14)",
+          "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:9254e4fb7feef6b1",
           "evaluatedRevision": 11,
           "revisionsBehind": 0
