@@ -1275,3 +1275,8 @@
 {"ts":"2026-10-16T17:09:20Z","bundle":"software-engineering","subjects":["motion"],"techniques":["one-shot-guarding","unprompted-motion-lifecycle"],"deviations":1}
 {"ts":"2026-10-16T17:10:50Z","bundle":"software-engineering","subjects":["search"],"techniques":["query-parsing","full-text-indexing"],"deviations":1}
 {"ts":"2026-10-16T17:10:50Z","bundle":"software-engineering","subjects":["search"],"techniques":["query-parsing","faceting-and-filters"],"deviations":2}
+{"ts":"2026-10-16T17:11:26Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":["relevance-floors","hybrid-lane-fusion","named-period-vote"],"deviations":2}
+{"ts":"2026-10-16T17:11:26Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":["retrieval-triggering","relevance-floors","named-period-vote"],"deviations":3}
+{"ts":"2026-10-16T17:11:26Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":["relevance-floors","retrieval-evaluation"],"deviations":2}
+{"ts":"2026-10-16T17:11:26Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":["chunking-and-indexing","named-period-vote"],"deviations":1}
+{"ts":"2026-10-16T17:11:26Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":["relevance-floors"],"deviations":0}

@@ -8481,19 +8481,19 @@
       "subject": "retrieval",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T12:07:14.000Z",
-      "worker": "faf0f483-09c3-4c23-8412-6ef2de87e364",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:11:26.000Z",
+      "worker": "7749bf3f-85ef-47fa-9fd9-8c4812c4c473",
       "techniques": [
         {
           "technique": "relevance-floors",
           "verdict": "deviation",
-          "evidence": "src-tauri/core/src/retrieval/mod.rs:50 one uncalibrated constant for two consumers whose standard floors point in opposite directions"
+          "evidence": "src-tauri/core/src/retrieval/mod.rs:50 one uncalibrated constant serves two consumers with opposite cost asymmetries"
         },
         {
           "technique": "retrieval-evaluation",
           "verdict": "deviation",
-          "evidence": "src-tauri/core/src/retrieval/mod.rs:48 the floor's only calibration path is a debug log read by hand, not a labeled query set"
+          "evidence": "src-tauri/core/src/retrieval/mod.rs:48 the floor names a debug log, not a labeled query set, as its calibration source"
         }
       ],
       "superseded": [
@@ -8503,6 +8503,13 @@
           "evaluatedAt": "2026-10-09T16:51:50.000Z",
           "worker": "54c37b07-286c-4378-a077-f14b84e260c0",
           "reason": "replaced by faf0f483-09c3-4c23-8412-6ef2de87e364"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/core/src/retrieval/mod.rs:50 MAX_VECTOR_DISTANCE=1.30 is a felt floor (:48 'calibrate ... if it proves too loose/tight'; src-tauri/src/companion/brain/retrieval.rs:168 says it was set blind) shared by the context packer (retrieval.rs:309) and the human KB pane (vector_kb.rs:985), so neither consumer's cost asymmetry set it - re-confirmed unchanged at 517d211c7a",
+          "evaluatedAt": "2026-10-12T12:07:14.000Z",
+          "worker": "faf0f483-09c3-4c23-8412-6ef2de87e364",
+          "reason": "replaced by 7749bf3f-85ef-47fa-9fd9-8c4812c4c473"
         }
       ]
     },
@@ -8511,14 +8518,19 @@
       "subject": "retrieval",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T12:07:14.000Z",
-      "worker": "faf0f483-09c3-4c23-8412-6ef2de87e364",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:11:26.000Z",
+      "worker": "7749bf3f-85ef-47fa-9fd9-8c4812c4c473",
       "techniques": [
         {
           "technique": "chunking-and-indexing",
           "verdict": "deviation",
           "evidence": "src-tauri/db/src/lib.rs:899 the drift check reads a view the source answers on the index's behalf, which the technique names as the failure"
+        },
+        {
+          "technique": "named-period-vote",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/db/src/lib.rs:958 kb_chunks carries no event-time column (only ingestion provenance); the technique says an item with no recorded event time does not vote"
         }
       ],
       "superseded": [
@@ -8535,6 +8547,13 @@
           "evaluatedAt": "2026-10-10T11:46:15.000Z",
           "worker": "68e3207d-b1d6-4d51-b35d-5136d21a4447",
           "reason": "replaced by faf0f483-09c3-4c23-8412-6ef2de87e364"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/lib.rs:899 the FTS drift check counts kb_chunks_fts, an external-content table (:985 content='kb_chunks') whose COUNT is answered by kb_chunks itself, so the rebuild at :907 can never fire and a never-indexed chunk stays invisible to BM25 with no signal - re-confirmed unchanged at 517d211c7a",
+          "evaluatedAt": "2026-10-12T12:07:14.000Z",
+          "worker": "faf0f483-09c3-4c23-8412-6ef2de87e364",
+          "reason": "replaced by 7749bf3f-85ef-47fa-9fd9-8c4812c4c473"
         }
       ]
     },
@@ -13741,24 +13760,30 @@
       "subject": "retrieval",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T12:07:14.000Z",
-      "worker": "faf0f483-09c3-4c23-8412-6ef2de87e364",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:11:26.000Z",
+      "worker": "7749bf3f-85ef-47fa-9fd9-8c4812c4c473",
       "techniques": [
         {
           "technique": "relevance-floors",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/credentials/vector_kb.rs:985 floor is the shared felt constant (src-tauri/core/src/retrieval/mod.rs:50) rather than one calibrated for an exploring human's low-floor cost asymmetry"
+          "evidence": "src-tauri/src/commands/credentials/vector_kb.rs:985 reuses the context-packer floor, so an exploring human gets the packer's cost asymmetry (should sit lower with a labeled weak tail)"
         },
         {
           "technique": "hybrid-lane-fusion",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/credentials/vector_kb.rs:995 BM25 is a reorder inside the vector pool, not an independent lane unioned in, so the lexical lane cannot cover the vector lane's identifier blind spot"
+          "evidence": "src-tauri/src/commands/credentials/vector_kb.rs:995 BM25 is a re-ranker inside the vector pool, not a peer lane, so the lexical lane's reason for a seat (identifiers) is unreachable"
+        },
+        {
+          "technique": "named-period-vote",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/db/src/lib.rs:958 kb_chunks carries no event-time column (only ingestion provenance); the technique says an item with no recorded event time does not vote"
         },
         {
           "technique": "embedding-lifecycle",
           "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/credentials/vector_kb.rs:948 search refuses when the KB's stamped model/dims differ from the active embedder and names the reindex path"
+          "evidence": "src-tauri/src/commands/credentials/vector_kb.rs:948 search refuses when the KB's stamped model/dims differ from the active embedder and names the reindex path",
+          "carriedFrom": "2026-10-12"
         }
       ],
       "superseded": [
@@ -13775,6 +13800,13 @@
           "evaluatedAt": "2026-10-10T11:46:15.000Z",
           "worker": "68e3207d-b1d6-4d51-b35d-5136d21a4447",
           "reason": "replaced by faf0f483-09c3-4c23-8412-6ef2de87e364"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/credentials/vector_kb.rs:985 the human KB pane is floored by the companion context-packer's uncalibrated MAX_VECTOR_DISTANCE and BM25 at :995 only re-ranks that floored vector pool, so a lexical-only hit (identifier, error code) can never reach the slice - re-confirmed at 517d211c7a after the 2026-10-11 ingest-lock change",
+          "evaluatedAt": "2026-10-12T12:07:14.000Z",
+          "worker": "faf0f483-09c3-4c23-8412-6ef2de87e364",
+          "reason": "replaced by 7749bf3f-85ef-47fa-9fd9-8c4812c4c473"
         }
       ]
     },
@@ -13783,19 +13815,24 @@
       "subject": "retrieval",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T12:07:14.000Z",
-      "worker": "faf0f483-09c3-4c23-8412-6ef2de87e364",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:11:26.000Z",
+      "worker": "7749bf3f-85ef-47fa-9fd9-8c4812c4c473",
       "techniques": [
         {
           "technique": "retrieval-triggering",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/prompt/build.rs:177 unconditional per-turn recall; no single authority returns retrieved/skipped with a reason"
+          "evidence": "src-tauri/src/companion/prompt/build.rs:177 recall is unconditional per turn; no decision with a reason, no skip/empty/unavailable distinction"
         },
         {
           "technique": "relevance-floors",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/brain/retrieval.rs:267 a failed vector lane collapses into the honest-empty spelling instead of a labeled degraded slice"
+          "evidence": "src-tauri/src/companion/brain/retrieval.rs:267 a failed vector lane becomes an empty Vec, collapsing failure into honest empty"
+        },
+        {
+          "technique": "named-period-vote",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/brain/retrieval.rs:265 the query goes to the lanes with no period parse, though episodes carry created_at (src-tauri/src/companion/brain/episodic.rs:163), so 'what did we decide back in March' is answered by the newest or most repeated statement - new technique at rev 19"
         }
       ],
       "superseded": [
@@ -13812,6 +13849,13 @@
           "evaluatedAt": "2026-10-10T11:46:15.000Z",
           "worker": "68e3207d-b1d6-4d51-b35d-5136d21a4447",
           "reason": "replaced by faf0f483-09c3-4c23-8412-6ef2de87e364"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/prompt/build.rs:177 recall_for runs every turn with no trigger decision or reason code, and src-tauri/src/companion/brain/retrieval.rs:267 unwrap_or_default turns an embedder failure into zero vector hits, so a degraded slice reaches the model looking like an honest empty - re-confirmed unchanged at 517d211c7a",
+          "evaluatedAt": "2026-10-12T12:07:14.000Z",
+          "worker": "faf0f483-09c3-4c23-8412-6ef2de87e364",
+          "reason": "replaced by 7749bf3f-85ef-47fa-9fd9-8c4812c4c473"
         }
       ]
     },
@@ -23157,6 +23201,32 @@
         }
       ],
       "registryProposal": "Coverage gap in the PROJECT context map, not the corpus: src-tauri/src/browser_bridge/ (mcp.rs, policy.rs, backend.rs - the substrate that enforces this context's policy) belongs to no context, so no pair can be anchored on it directly; this verdict anchors there because the consequence lands on the policy this page curates. Upward note for gate-state-machines: a 'derive class from declared manifest flags' gate needs an explicit rule that the flags are read from the system's own capture (scan report or live page), never from the request echo."
+    },
+    "876c0b4e-6472-4544-a21b-56e7529fb6b3/retrieval": {
+      "context": "vault-shared-vector",
+      "subject": "retrieval",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:11:26.000Z",
+      "worker": "7749bf3f-85ef-47fa-9fd9-8c4812c4c473",
+      "techniques": [
+        {
+          "technique": "relevance-floors",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/shared/vector/search/SearchResultCard.tsx:25 displays the score only; flooring happens at src-tauri/src/commands/credentials/vector_kb.rs:985"
+        }
+      ],
+      "registryProposal": "technique-shaped resonance: this UI context matched on backend vocabulary (corpus, ingest, embedding); search governs the surface, not retrieval",
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "This context is presentation-only: src/features/vault/shared/vector/search/SearchResultCard.tsx:25,52,79,87-94 DISPLAYS the score/distance the backend already computed (ScoreBadge, distance_label) and implements none of the retrieval techniques itself -- the relevance-floor / RRF fusion / ranking-budget / embedding-lifecycle machinery behind this UI lives in commands/credentials/vector_kb.rs, paired with retrieval this run (state: conformant) as the commands-credentials context. Coverage note for the registry: the matcher scored THIS UI context on vocabulary ('corpus','ingest','embedding') that actually describes the backend one layer down -- a technique-shaped resonance, not a vocabulary miss.",
+          "evaluatedAt": "2026-10-03",
+          "worker": null,
+          "reason": "replaced by 7749bf3f-85ef-47fa-9fd9-8c4812c4c473"
+        }
+      ]
     }
   }
 }
