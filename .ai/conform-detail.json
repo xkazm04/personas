@@ -27201,6 +27201,140 @@
         }
       ],
       "registryProposal": "listing-tier-by-initiator says the installer writes the consumer's listed / name-only / hidden setting. installSkill here takes name, source, target, and overwrite only, so the tier has nowhere to go."
+    },
+    "ee9d4d9e-0414-4460-b159-5d9c7c4108a7/hitl-approval": {
+      "context": "vault-credentials-components-features",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T21:54:13.271Z",
+      "techniques": [
+        {
+          "technique": "gate-state-machines",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_credentials/components/gateway/PendingAuthModal.tsx:52 Pending gate state is held in ephemeral React useState rather than durable storage surviving restarts."
+        },
+        {
+          "technique": "resume-after-decision",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_credentials/components/gateway/PendingAuthModal.tsx:46 Continuation relies on in-memory onRetry callback closure instead of a durable, self-sufficient paused execution record."
+        },
+        {
+          "technique": "decision-records",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_credentials/components/gateway/PendingAuthModal.tsx:70 No immutable decision record is recorded capturing decider identity, timestamp, version, or what was shown."
+        },
+        {
+          "technique": "consent-gates",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_credentials/components/gateway/PendingAuthModal.tsx:104 Consent prompt discloses only the bare tool name without disclosing bound parameters, scope, cost, or reversibility."
+        },
+        {
+          "technique": "human-performed-steps",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_credentials/components/gateway/PendingAuthModal.tsx:118 External OAuth authentication is provided as static prose instructions without executable runbook step verification."
+        }
+      ],
+      "withdrawn": {
+        "worker": "4e5a7732-9d8d-4998-b746-58324069b6a8",
+        "state": "deviation",
+        "at": "2026-10-16T21:54:47.443307+00:00",
+        "reason": "reviewer (sonnet): PendingAuthModal.tsx sits in components/gateway/, which is not among this context's files (all under components/features/). The verdict is about a different context. The modal also only relays an external OAuth consent URL, so the decision is not made there."
+      }
+    },
+    "7826a48f-5883-4f26-8476-c3c515bda745/hitl-approval": {
+      "context": "lib-personas",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T21:54:13.271Z",
+      "techniques": [
+        {
+          "technique": "gate-state-machines",
+          "verdict": "deviation",
+          "evidence": "src/lib/personas/parsers/workflowPipeline.ts:241 Protocol capabilities detected from foreign workflows are retained only as advisory metadata without creating runtime execution gates."
+        },
+        {
+          "technique": "author-advisories-yield-to-the-users-mode",
+          "verdict": "deviation",
+          "evidence": "src/lib/personas/platformDefinitions.ts:369 External author approval and wait patterns are normalized into manual review capabilities without evaluating or yielding to the executing user's policy mode."
+        },
+        {
+          "technique": "truncated-verdict-space",
+          "verdict": "deviation",
+          "evidence": "src/lib/personas/templates/seedTemplates.ts:89 Seeded design reviews are automatically minted with positive status 'passed' without a human decision record."
+        }
+      ],
+      "withdrawn": {
+        "worker": "4e5a7732-9d8d-4998-b746-58324069b6a8",
+        "state": "deviation",
+        "at": "2026-10-16T21:54:47.552929+00:00",
+        "reason": "reviewer (sonnet): Line 228 of workflowPipeline.ts is a generic 'execute the steps in order' prompt and does not mention approval or wait steps. I found no code showing that protocol_capabilities are never turned into gates. The seedTemplates.ts:89 technique is in templates/, which is outside this context's file list."
+      }
+    },
+    "a1223fbb-1e53-471b-9829-075cce8014f8/hitl-approval": {
+      "context": "lab-arena",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T21:54:13.271Z",
+      "worker": "4e5a7732-9d8d-4998-b746-58324069b6a8",
+      "techniques": [
+        {
+          "technique": "gate-state-machines",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:284 Spend preflight confirmation runs within an unpersisted UI handler without creating a durable state machine in the execution layer."
+        },
+        {
+          "technique": "fail-loud-classification-default",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx:90 Unparseable verdict JSON falls through to raw string content without raising an error marker or defaulting to the most severe category."
+        },
+        {
+          "technique": "decision-records",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx:387 User verdicts on arena match outcomes are recorded as ratings without binding parameter fingerprints, disclosures, or immutable audit records."
+        },
+        {
+          "technique": "consent-gates",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/use-cases/useUseCaseExecution.ts:109 Use case execution directly triggers side-effecting persona runs without parameter-bound consent checks or impact disclosure."
+        }
+      ]
+    },
+    "ad601e35-b998-4029-97a5-77487f00d561/hitl-approval": {
+      "context": "lib-types",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T21:54:13.271Z",
+      "worker": "4e5a7732-9d8d-4998-b746-58324069b6a8",
+      "techniques": [
+        {
+          "technique": "gate-state-machines",
+          "verdict": "deviation",
+          "evidence": "src/lib/types/frontendTypes.ts:202 The trust_llm review policy allows the machine to auto-resolve manual reviews to 'resolved', violating human-only transition authority."
+        },
+        {
+          "technique": "fail-closed-profile-for-headless",
+          "verdict": "deviation",
+          "evidence": "src/lib/types/frontendTypes.ts:190 The 'off' review setting silently drops manual reviews at dispatch rather than enforcing a fail-closed refusal profile."
+        },
+        {
+          "technique": "severity-sla-ladder",
+          "verdict": "deviation",
+          "evidence": "src/lib/types/frontendTypes.ts:75 Declares a three-valued severity vocabulary without defining an SLA ladder, deadline structure, or terminal action mapping (auto-approve/escalate/hold)."
+        },
+        {
+          "technique": "truncated-verdict-space",
+          "verdict": "deviation",
+          "evidence": "src/lib/types/frontendTypes.ts:162 Review policy models mode as an open optional string allowing auto_triage/trust_llm without enforcing a truncated verdict space where machine admission is structurally impossible."
+        }
+      ]
     }
   }
 }

@@ -1,0 +1,155 @@
+{
+  "schema": "conform-run/1",
+  "worker": "4e5a7732-9d8d-4998-b746-58324069b6a8",
+  "subject": "hitl-approval",
+  "evaluatedAt": "2026-10-16T21:54:13.271205+00:00",
+  "provider": "agy",
+  "model": "gemini-3.8-flash-high",
+  "pairs": [
+    {
+      "context": "lab-arena",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:279 Arena preflight spend authorization is an ephemeral frontend dialog rather than a durable execution gate, and use-case execution triggers side-effects directly.",
+      "techniques": [
+        {
+          "technique": "gate-state-machines",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:284 Spend preflight confirmation runs within an unpersisted UI handler without creating a durable state machine in the execution layer."
+        },
+        {
+          "technique": "fail-loud-classification-default",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx:90 Unparseable verdict JSON falls through to raw string content without raising an error marker or defaulting to the most severe category."
+        },
+        {
+          "technique": "decision-records",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx:387 User verdicts on arena match outcomes are recorded as ratings without binding parameter fingerprints, disclosures, or immutable audit records."
+        },
+        {
+          "technique": "consent-gates",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/use-cases/useUseCaseExecution.ts:109 Use case execution directly triggers side-effecting persona runs without parameter-bound consent checks or impact disclosure."
+        }
+      ]
+    },
+    {
+      "context": "lib-types",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/lib/types/frontendTypes.ts:194 Generation settings permit a trust_llm review mode that auto-resolves manual reviews to resolved, allowing machine self-approval to bypass the human gate.",
+      "techniques": [
+        {
+          "technique": "gate-state-machines",
+          "verdict": "deviation",
+          "evidence": "src/lib/types/frontendTypes.ts:202 The trust_llm review policy allows the machine to auto-resolve manual reviews to 'resolved', violating human-only transition authority."
+        },
+        {
+          "technique": "fail-closed-profile-for-headless",
+          "verdict": "deviation",
+          "evidence": "src/lib/types/frontendTypes.ts:190 The 'off' review setting silently drops manual reviews at dispatch rather than enforcing a fail-closed refusal profile."
+        },
+        {
+          "technique": "severity-sla-ladder",
+          "verdict": "deviation",
+          "evidence": "src/lib/types/frontendTypes.ts:75 Declares a three-valued severity vocabulary without defining an SLA ladder, deadline structure, or terminal action mapping (auto-approve/escalate/hold)."
+        },
+        {
+          "technique": "truncated-verdict-space",
+          "verdict": "deviation",
+          "evidence": "src/lib/types/frontendTypes.ts:162 Review policy models mode as an open optional string allowing auto_triage/trust_llm without enforcing a truncated verdict space where machine admission is structurally impossible."
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "hitl-approval",
+      "context": "fleet-triage-columns",
+      "reason": "No files were specified in the prompt for this context, and its historical triage files (src/features/fleet/monitor/triage/) were deleted and consolidated in commit 926796dfce, leaving no active source files to judge."
+    },
+    {
+      "subject": "hitl-approval",
+      "context": "vault-credentials-components-features",
+      "reason": "withdrawn after review: reviewer (sonnet): PendingAuthModal.tsx sits in components/gateway/, which is not among this context's files (all under components/features/). The verdict is about a different context. The modal also only relays an external OAuth consent URL, so the decision is not made there."
+    },
+    {
+      "subject": "hitl-approval",
+      "context": "lib-personas",
+      "reason": "withdrawn after review: reviewer (sonnet): Line 228 of workflowPipeline.ts is a generic 'execute the steps in order' prompt and does not mention approval or wait steps. I found no code showing that protocol_capabilities are never turned into gates. The seedTemplates.ts:89 technique is in templates/, which is outside this context's file list."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-16T21:54:13.271205+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "hitl-approval"
+      ],
+      "techniques": [
+        "consent-gates",
+        "decision-records",
+        "gate-state-machines",
+        "human-performed-steps",
+        "resume-after-decision"
+      ],
+      "deviations": 1,
+      "context": "vault-credentials-components-features",
+      "via": "curator-multi:agy",
+      "model": "gemini-3.8-flash-high"
+    },
+    {
+      "ts": "2026-10-16T21:54:13.271205+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "hitl-approval"
+      ],
+      "techniques": [
+        "author-advisories-yield-to-the-users-mode",
+        "gate-state-machines",
+        "truncated-verdict-space"
+      ],
+      "deviations": 1,
+      "context": "lib-personas",
+      "via": "curator-multi:agy",
+      "model": "gemini-3.8-flash-high"
+    },
+    {
+      "ts": "2026-10-16T21:54:13.271205+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "hitl-approval"
+      ],
+      "techniques": [
+        "consent-gates",
+        "decision-records",
+        "fail-loud-classification-default",
+        "gate-state-machines"
+      ],
+      "deviations": 1,
+      "context": "lab-arena",
+      "via": "curator-multi:agy",
+      "model": "gemini-3.8-flash-high"
+    },
+    {
+      "ts": "2026-10-16T21:54:13.271205+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "hitl-approval"
+      ],
+      "techniques": [
+        "fail-closed-profile-for-headless",
+        "gate-state-machines",
+        "severity-sla-ladder",
+        "truncated-verdict-space"
+      ],
+      "deviations": 1,
+      "context": "lib-types",
+      "via": "curator-multi:agy",
+      "model": "gemini-3.8-flash-high"
+    }
+  ]
+}

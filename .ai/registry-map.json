@@ -16541,7 +16541,11 @@
           "revision": 22,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:279 Arena preflight spend authorization is an ephemeral frontend dialog rather than a durable execution gate, and use-case execution triggers side-effects directly.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9",
+          "evaluatedRevision": 22
         }
       ],
       "governance": "governed"
@@ -18102,7 +18106,11 @@
           "revision": 22,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/lib/types/frontendTypes.ts:194 Generation settings permit a trust_llm review mode that auto-resolves manual reviews to resolved, allowing machine self-approval to bypass the human gate.",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9",
+          "evaluatedRevision": 22
         },
         {
           "subject": "settings",
