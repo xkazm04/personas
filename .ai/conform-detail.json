@@ -6617,24 +6617,34 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T15:40:00.000Z",
-      "worker": "910f5999-b183-4f5d-a67e-e49e43242f9b",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:05:34.000Z",
+      "worker": "74b319ac-90c8-4ce1-9f66-08bdc2eb8324",
       "techniques": [
         {
           "technique": "severity-by-construction",
           "verdict": "deviation",
-          "evidence": "scripts/generate-template-checksums.mjs:184 [error] findings are printed and never reach process.exit; scripts/run-codegen.mjs:195 fails only on a child exit code, so error-labelled template lint is advisory by construction"
+          "evidence": "scripts/generate-template-checksums.mjs:184 'error' label with no exit path from finding to build decision"
         },
         {
           "technique": "gate-liveness",
-          "verdict": "realized",
-          "evidence": "src/lib/personas/templates/templateCatalog.ts:117 load status separates failed (all candidates dropped for an error) from empty (all intentionally unpublished), and :219 refuses to serve a catalog with duplicate ids instead of last-wins"
+          "verdict": "deviation",
+          "evidence": "scripts/generate-template-checksums.mjs:141 the error branch has never been able to turn the run red, so the gate cannot be proven alive"
         },
         {
           "technique": "refusal-names-a-reachable-remedy",
           "verdict": "realized",
-          "evidence": "src/lib/personas/templates/templateChecksums.ts:3 names the in-tree regenerator, and the catalog skip reasons (src/lib/personas/templates/templateCatalog.ts:176 missing_checksum, :194 schema_invalid) are distinct per cause"
+          "evidence": "src/lib/personas/templates/templateChecksums.ts:3 names the in-tree regenerator, and the catalog skip reasons (src/lib/personas/templates/templateCatalog.ts:176 missing_checksum, :194 schema_invalid) are distinct per cause",
+          "carriedFrom": "2026-10-09"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "scripts/generate-template-checksums.mjs:184 prints the error-level P8 rule (optional connector without fallback_note, :141) and has no exit path, so the codegen task that writes this context's src/lib/personas/templates/templateChecksums.ts reports ok - the only checker of that rule can never fail a build (severity-by-construction)",
+          "evaluatedAt": "2026-10-09T15:40:00.000Z",
+          "worker": "910f5999-b183-4f5d-a67e-e49e43242f9b",
+          "reason": "replaced by 74b319ac-90c8-4ce1-9f66-08bdc2eb8324"
         }
       ]
     },
@@ -6680,24 +6690,35 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T15:40:00.000Z",
-      "worker": "910f5999-b183-4f5d-a67e-e49e43242f9b",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:05:34.000Z",
+      "worker": "74b319ac-90c8-4ce1-9f66-08bdc2eb8324",
       "techniques": [
         {
           "technique": "gate-laddering",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/core/personas.rs:142 the binding door writes enabled without consulting triggers/subscriptions or credentials; the refusal exists only at src/features/agents/sub_editor/components/PersonaEditorHeader.tsx:95"
+          "evidence": "src-tauri/src/commands/core/personas.rs:142 the binding rung (the command) carries no copy of the check the UI rung enforces"
         },
         {
           "technique": "refusal-names-a-reachable-remedy",
           "verdict": "realized",
-          "evidence": "src/features/agents/sub_editor/libs/usePersonaReadiness.ts:19 every blocker carries the editor tab (and sub-tab) that fixes it, so the refusal routes to its remedy"
+          "evidence": "src/features/agents/sub_editor/libs/usePersonaReadiness.ts:19 every blocker carries the editor tab (and sub-tab) that fixes it, so the refusal routes to its remedy",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "policy-projection",
           "verdict": "realized",
-          "evidence": "src/features/agents/sub_editor/libs/usePersonaReadiness.ts:45 one resolver feeds both the header popover and the Design-tab badge, so the reason list and the badge count cannot drift"
+          "evidence": "src/features/agents/sub_editor/libs/usePersonaReadiness.ts:45 one resolver feeds both the header popover and the Design-tab badge, so the reason list and the badge count cannot drift",
+          "carriedFrom": "2026-10-09"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_editor/components/PersonaEditorHeader.tsx:95 is the only place readiness refuses an enable; src-tauri/src/commands/core/personas.rs:142 set_persona_enabled and :226 update_persona (UpdateSettings carries enabled) re-check nothing, so any other caller enables a persona with no trigger or missing credentials (gate-laddering: UI-only courtesy)",
+          "evaluatedAt": "2026-10-09T15:40:00.000Z",
+          "worker": "910f5999-b183-4f5d-a67e-e49e43242f9b",
+          "reason": "replaced by 74b319ac-90c8-4ce1-9f66-08bdc2eb8324"
         }
       ]
     },
@@ -11942,34 +11963,47 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T01:09:48.799Z",
-      "worker": "3ebd8e48-554f-40a8-bc1e-31658ecf232f",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:05:34.000Z",
+      "worker": "74b319ac-90c8-4ce1-9f66-08bdc2eb8324",
       "techniques": [
         {
           "technique": "refusal-names-a-reachable-remedy",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:104 remedy for the ambiguous-match refusal (:965 -> :588) is to add a credential, which keeps exact.len()>1 at :964; the remedy applied as worded does not clear the check (CliLogin at :129 does resolve its login command per connector)"
+          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:104 the remedy, applied as worded, cannot clear the ambiguity refusal at :961"
         },
         {
           "technique": "false-positive-economics",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:767 persona_live_blockers resolves readiness by connector name from vault-global state (persona_declared_connectors :695 reads names only), so a persona whose credentialLinks binds one of two same-service credentials is refused at every run"
+          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:767 persona_live_blockers resolves readiness by connector name from vault-global state (persona_declared_connectors :695 reads names only), so a persona whose credentialLinks binds one of two same-service credentials is refused at every run",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "unmeasurable-criteria",
           "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:548 a blank connector declaration and :619 an unwired probe arm both fail closed as Misconfigured instead of reading as ready"
+          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:548 a blank connector declaration and :619 an unwired probe arm both fail closed as Misconfigured instead of reading as ready",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "policy-projection",
           "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:3 one resolver serves adopt, promote and run gate; :1230 the gallery's readiness is derived from it instead of a parallel TS computation"
+          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:3 one resolver serves adopt, promote and run gate; :1230 the gallery's readiness is derived from it instead of a parallel TS computation",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "severity-by-construction",
           "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/design/template_adopt.rs:40 the inert adoption integrity gate was removed rather than left as decoration, and :52 labels the surviving verifier a detector, not a gate"
+          "evidence": "src-tauri/src/commands/design/template_adopt.rs:40 the inert adoption integrity gate was removed rather than left as decoration, and :52 labels the surviving verifier a detector, not a gate",
+          "carriedFrom": "2026-10-10"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:965 an exact match with 2+ vault credentials resolves to None and :588 refuses as VaultCredential, whose remedy :104 'add the credential in Settings -> Vault' cannot clear it (another credential keeps :964 true), and the run gate :767 never reads the persona's design_context.credentialLinks binding - a correctly bound persona is refused with a remedy that makes it worse",
+          "evaluatedAt": "2026-10-10T01:09:48.799Z",
+          "worker": "3ebd8e48-554f-40a8-bc1e-31658ecf232f",
+          "reason": "replaced by 74b319ac-90c8-4ce1-9f66-08bdc2eb8324"
         }
       ]
     },
@@ -14157,27 +14191,36 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T11:13:52.000Z",
-      "worker": "2d8e0e50-5978-4133-8647-1bbaae10b6ce",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:05:34.000Z",
+      "worker": "74b319ac-90c8-4ce1-9f66-08bdc2eb8324",
       "techniques": [
         {
           "technique": "false-positive-economics",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/quality_gate.rs:95 'has no' and :80 'api_key' substring rules default to Reject (:109) via plain contains (:130); no precision measurement against the review population exists, and a rejected review is logged only to the execution log (src-tauri/src/engine/dispatch.rs:992) with no counted audit row, so neither precision nor recall can ever be computed"
-        },
-        {
-          "technique": "severity-by-construction",
-          "verdict": "realized",
-          "evidence": "src-tauri/src/engine/dispatch.rs:904 Reject returns before mem_repo::create, so the label's severity is the construction's severity (Tag/Warn fall through to store)"
+          "evidence": "src-tauri/db/src/quality_gate.rs:95 substring detector earned Reject severity with no precision measurement over the review population"
         },
         {
           "technique": "unmeasurable-criteria",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/quality_gate.rs:146 an unparseable saved config is replaced by the defaults with only a warn, so an operator's narrowed rule set silently reverts to the shipped Reject rules - a broken instrument input read as a valid policy"
+          "evidence": "src-tauri/src/engine/dispatch.rs:1043 rejection is not counted or audited (contrast audit_policy_event at :1035), so the skip is invisible on every surface"
+        },
+        {
+          "technique": "severity-by-construction",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/engine/dispatch.rs:904 Reject returns before mem_repo::create, so the label's severity is the construction's severity (Tag/Warn fall through to store)",
+          "carriedFrom": "2026-10-10"
         }
       ],
-      "registryProposal": "false-positive-economics' 'nobody was entitled to the artifact' carve-out (machine-generated candidates) should say what happens when the refused machine candidate IS a request for a human decision: dropping it removes the human from the loop, so a false positive costs a missed decision, not a wasted generation."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/quality_gate.rs:95 ships a default Reject rule on the bare substring 'has no' (also matches 'has now'/'has not'), applied at src-tauri/src/engine/dispatch.rs:992 to every agent ManualReview, so legitimate human-decision reviews are silently discarded by a detector whose precision was never measured and whose rejections reach no audit record (the policy-off drop at :863 does)",
+          "evaluatedAt": "2026-10-10T11:13:52.000Z",
+          "worker": "2d8e0e50-5978-4133-8647-1bbaae10b6ce",
+          "reason": "replaced by 74b319ac-90c8-4ce1-9f66-08bdc2eb8324"
+        }
+      ]
     },
     "50f50f97-be0e-4a93-8f1c-c0b967cd45d0/quality-gates": {
       "context": "plugins-dev-tools-triage",
@@ -14239,22 +14282,36 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T11:13:52.000Z",
-      "worker": "2d8e0e50-5978-4133-8647-1bbaae10b6ce",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:05:34.000Z",
+      "worker": "74b319ac-90c8-4ce1-9f66-08bdc2eb8324",
       "techniques": [
         {
           "technique": "unmeasurable-criteria",
           "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/recipe_eligibility.rs:234 the instrument ran and could not decide (unparseable serialized UC) and the result reads as compliance; the module already fails closed on a declared-but-unparseable tool_requirements (:108), so only this branch is open"
+          "evidence": "src-tauri/engine/src/recipe_eligibility.rs:234 an unreadable instrument input resolves to compliance instead of a refused or announced verdict"
+        },
+        {
+          "technique": "unparseable-form-is-a-finding",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/recipe_eligibility.rs:477 the test pins the unparseable form as Eligible rather than as a finding"
         },
         {
           "technique": "gate-liveness",
           "verdict": "realized-at-caller",
-          "evidence": "src-tauri/engine/src/template_checksums.rs:190 verify_templates_batch reports all_valid:true over zero inputs; the only caller refuses that case first (src/lib/personas/templates/templateCatalog.ts:421 returns null), so the empty-success sits in the instrument, guarded one level up"
+          "evidence": "src-tauri/engine/src/template_checksums.rs:190 verify_templates_batch reports all_valid:true over zero inputs; the only caller refuses that case first (src/lib/personas/templates/templateCatalog.ts:421 returns null), so the empty-success sits in the instrument, guarded one level up",
+          "carriedFrom": "2026-10-10"
         }
       ],
-      "registryProposal": "Coverage: this context is a grab-bag of 31 engine files (webhook relay, oauth, autopilot, recipe eligibility, template checksums); quality-gates governs only recipe_eligibility.rs and template_checksums.rs, and the context's name names neither."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/recipe_eligibility.rs:234 a prompt_template that is not valid JSON is silently skipped and the recipe scores vacuously Eligible (pinned by the test at :477), and src-tauri/src/commands/recipes/recipe_adoption.rs:87 refuses adoption only on Incompatible - a gate that could not read the canonical requirement signal waves the recipe through as one-click",
+          "evaluatedAt": "2026-10-10T11:13:52.000Z",
+          "worker": "2d8e0e50-5978-4133-8647-1bbaae10b6ce",
+          "reason": "replaced by 74b319ac-90c8-4ce1-9f66-08bdc2eb8324"
+        }
+      ]
     },
     "ba0d4722-bfde-40aa-8e1d-52591719f834/diff-comparison": {
       "context": "lab-shared-primitives",
@@ -17615,29 +17672,46 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T17:10:35.225Z",
-      "worker": "925f60bc-036c-44a2-a5b9-30fe21c4a991",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T18:05:34.000Z",
+      "worker": "74b319ac-90c8-4ce1-9f66-08bdc2eb8324",
       "techniques": [
         {
           "technique": "blocking-by-input-determinism",
           "verdict": "deviation",
-          "evidence": ".github/workflows/ci.yml:978 Advisories are unsplit from licenses, bans and sources; deny.toml makes vulnerabilities errors, and ci-verdict requires rust-deny."
+          "evidence": ".github/workflows/ci.yml:1149 the deterministic half (licenses, bans, sources) and the externally-fed advisories half share one blocking invocation; no split, no written promotion trigger"
+        },
+        {
+          "technique": "enforcement-binding",
+          "verdict": "conformant",
+          "evidence": ".github/workflows/ci.yml:1514 rust-deny is enumerated in the aggregator's required set and a skipped class fails unless carried green"
         },
         {
           "technique": "gate-liveness",
           "verdict": "conformant",
-          "evidence": "scripts/census/self-test.mjs:384 For the shared census, a deliberately drifting fixture must produce a failing verdict."
+          "evidence": "scripts/census/self-test.mjs:384 For the shared census, a deliberately drifting fixture must produce a failing verdict.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "hook-hygiene",
           "verdict": "deviation",
-          "evidence": "lefthook.yml:63 Default Lefthook pre-commit handling hides and restores partially staged working-tree content."
+          "evidence": "lefthook.yml:63 Default Lefthook pre-commit handling hides and restores partially staged working-tree content.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "severity-by-construction",
           "verdict": "conformant",
-          "evidence": "scripts/census/run-census.mjs:146 The shared census converts detected drift into a nonzero exit, propagated at line 322."
+          "evidence": "scripts/census/run-census.mjs:146 The shared census converts detected drift into a nonzero exit, propagated at line 322.",
+          "carriedFrom": "2026-10-12"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": ".github/workflows/ci.yml:978 The blocking Rust policy job combines moving advisory data with deterministic checks, allowing unrelated changes to inherit externally introduced failures.",
+          "evaluatedAt": "2026-10-12T17:10:35.225Z",
+          "worker": "925f60bc-036c-44a2-a5b9-30fe21c4a991",
+          "reason": "replaced by 74b319ac-90c8-4ce1-9f66-08bdc2eb8324"
         }
       ]
     },

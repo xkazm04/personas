@@ -1439,3 +1439,9 @@
 {"ts":"2026-10-16T18:04:48.459Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["recall-injection","consolidation"],"deviations":2}
 {"ts":"2026-10-16T18:04:48.459Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["observation-clock","filter-at-the-id-door"],"deviations":1}
 {"ts":"2026-10-16T18:04:48.459Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["memory-value-model","exposure-is-not-credit","decay-and-forgetting"],"deviations":3}
+{"ts":"2026-10-16T18:05:34Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":["false-positive-economics","unmeasurable-criteria"],"deviations":1}
+{"ts":"2026-10-16T18:05:34Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":["severity-by-construction","gate-liveness"],"deviations":1}
+{"ts":"2026-10-16T18:05:34Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":["blocking-by-input-determinism","enforcement-binding"],"deviations":1}
+{"ts":"2026-10-16T18:05:34Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":["gate-laddering"],"deviations":1}
+{"ts":"2026-10-16T18:05:34Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":["unmeasurable-criteria","unparseable-form-is-a-finding"],"deviations":1}
+{"ts":"2026-10-16T18:05:34Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":["refusal-names-a-reachable-remedy"],"deviations":1}

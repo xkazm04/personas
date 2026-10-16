@@ -3341,12 +3341,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/agents/sub_editor/components/PersonaEditorHeader.tsx:95 is the only place readiness refuses an enable; src-tauri/src/commands/core/personas.rs:142 set_persona_enabled and :226 update_persona (UpdateSettings carries enabled) re-check nothing, so any other caller enables a persona with no trigger or missing credentials (gate-laddering: UI-only courtesy)",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
-          "evaluatedRevision": 53,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/agents/sub_editor/components/PersonaEditorHeader.tsx:95 is the only place readiness refuses an enable; src-tauri/src/commands/core/personas.rs:142 set_persona_enabled and :217 update_persona re-check nothing, so any other caller enables a persona with no trigger or missing credentials - a UI-only courtesy, not a gate",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54,
+          "revisionsBehind": 1
         },
         {
           "subject": "native-document-format",
@@ -7360,12 +7359,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:965 an exact match with 2+ vault credentials resolves to None and :588 refuses as VaultCredential, whose remedy :104 'add the credential in Settings -> Vault' cannot clear it (another credential keeps :964 true), and the run gate :767 never reads the persona's design_context.credentialLinks binding - a correctly bound persona is refused with a remedy that makes it worse",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
-          "evaluatedRevision": 53,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:961 an exact service_type match with 2+ vault credentials resolves to None and :584 refuses as VaultCredential, whose remedy :104 'add the credential in Settings -> Vault' adds a candidate and cannot clear it; persona_live_blockers :763 never reads design_context.credentialLinks, so a correctly bound persona is refused with a remedy that makes it worse",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54,
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-memory",
@@ -10532,12 +10530,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/db/src/quality_gate.rs:95 ships a default Reject rule on the bare substring 'has no' (also matches 'has now'/'has not'), applied at src-tauri/src/engine/dispatch.rs:992 to every agent ManualReview, so legitimate human-decision reviews are silently discarded by a detector whose precision was never measured and whose rejections reach no audit record (the policy-off drop at :863 does)",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
-          "evaluatedRevision": 53,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/db/src/quality_gate.rs:95 default Reject rule on bare case-insensitive substring 'has no' (also hits 'has now'/'has not') applied at src-tauri/src/engine/dispatch.rs:1043 to every agent ManualReview; a match discards the review with only a logger line while the policy-off drop at :1035 writes an audit event - an unmeasured detector silently deleting human-decision reviews",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54,
+          "revisionsBehind": 1
         },
         {
           "subject": "test-harness",
@@ -11941,12 +11938,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": ".github/workflows/ci.yml:978 The blocking Rust policy job combines moving advisory data with deterministic checks, allowing unrelated changes to inherit externally introduced failures.",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
-          "evaluatedRevision": 53,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": ".github/workflows/ci.yml:1149 runs the bundled 'cargo deny check' (advisories with licenses/bans/sources) in rust-deny, which ci-verdict requires at :1514; its own note records it red on RUSTSEC-2023-0071 with no patched release, so every Rust push is refused by an external feed no author changed",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54,
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-memory",
@@ -17778,12 +17774,11 @@
           "changedAt": "2026-10-14",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "scripts/generate-template-checksums.mjs:184 prints the error-level P8 rule (optional connector without fallback_note, :141) and has no exit path, so the codegen task that writes this context's src/lib/personas/templates/templateChecksums.ts reports ok - the only checker of that rule can never fail a build (severity-by-construction)",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
-          "evaluatedRevision": 53,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "scripts/generate-template-checksums.mjs:184 prints the error-level P8 findings collected at :141 (optional connector without fallback_note) and the script has no process.exit/exitCode anywhere, so the checksums codegen task reports ok at any error count - the only checker of that rule cannot fail a build",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54,
+          "revisionsBehind": 1
         },
         {
           "subject": "import-normalization",
@@ -40998,12 +40993,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/engine/src/recipe_eligibility.rs:234 a prompt_template that is not valid JSON is silently skipped and the recipe scores vacuously Eligible (pinned by the test at :477), and src-tauri/src/commands/recipes/recipe_adoption.rs:87 refuses adoption only on Incompatible - a gate that could not read the canonical requirement signal waves the recipe through as one-click",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
-          "evaluatedRevision": 53,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/engine/src/recipe_eligibility.rs:234 a prompt_template that is not a JSON object is silently skipped and the recipe scores vacuously Eligible (pinned by the test at :477), and src-tauri/src/commands/recipes/recipe_adoption.rs:86 refuses adoption only on Incompatible - a gate that could not read its canonical signal waves the recipe through",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54,
+          "revisionsBehind": 1
         },
         {
           "subject": "supply-chain",
