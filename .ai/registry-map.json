@@ -33864,7 +33864,11 @@
           "revision": 3,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/projects/development/goals/progressShared.tsx:67 the goals board reads the operator's own goals from the local DB in a desktop app; the subject's precondition is an outward-facing surface (roadmap, status page, marketing counter) whose reader cannot audit the value, and this one has none",
+          "evaluatedAt": "2026-10-16",
+          "evaluatedAgainst": "sha256-b2:60eb54ef03f44a69",
+          "evaluatedRevision": 3
         },
         {
           "subject": "prompt-assembly",

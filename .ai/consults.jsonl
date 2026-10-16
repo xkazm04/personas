@@ -1366,3 +1366,4 @@
 {"ts":"2026-10-16T17:38:11Z","bundle":"software-engineering","subjects":["voice-io"],"techniques":["spoken-intent-parsing","bounded-playback-wait"],"deviations":1}
 {"ts":"2026-10-16T17:38:37Z","bundle":"software-engineering","subjects":["wizard-flows"],"techniques":["ai-driven-elicitation","step-state-model","snapshot-and-resume"],"deviations":0}
 {"ts":"2026-10-16T17:38:37Z","bundle":"software-engineering","subjects":["wizard-flows"],"techniques":["step-state-model","commit-boundary","progress-communication"],"deviations":0}
+{"ts":"2026-10-16T17:39:53Z","bundle":"software-engineering","subjects":["public-claim-provenance"],"techniques":["derived-numerator-authored-denominator","build-time-derivation-off-the-client-bundle","degraded-never-claims-live"],"deviations":0}

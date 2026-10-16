@@ -24472,6 +24472,33 @@
         }
       ],
       "registryProposal": "Technique-shaped resonance: usePresetAdoption.ts is a single-screen review+multi-part apply that realizes commit-boundary's partial-failure doctrine well (per-part outcomes, retry-only-failed, handoff-repair as a named compensating action) without being a wizard. commit-boundary's partial-failure section may deserve a home outside wizard-flows (e.g. a bulk-apply / batch-commit subject) so non-wizard multi-part commits can be judged against it; the matcher paired this context on 'draft/wizard/committed' tokens from a stale description."
+    },
+    "fd961ee9-bf7c-4ec7-90c3-a728045d3d44/public-claim-provenance": {
+      "context": "teams-goals",
+      "subject": "public-claim-provenance",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-16",
+      "evaluatedTs": "2026-10-16T17:39:53.000Z",
+      "worker": "be1b375e-215c-4cc8-884b-9a766097c3dd",
+      "techniques": [
+        {
+          "technique": "derived-numerator-authored-denominator",
+          "verdict": "not-applicable",
+          "evidence": "src/features/projects/development/goals/progressShared.tsx:58 goal progress is shown to the operator who owns and edits the goal, not published as a public fraction"
+        },
+        {
+          "technique": "build-time-derivation-off-the-client-bundle",
+          "verdict": "not-applicable",
+          "evidence": "src/features/projects/development/goals/GoalsPage.tsx:35 data is fetched at runtime from the local store; there is no stranger-facing bundle carrying a catalog"
+        },
+        {
+          "technique": "degraded-never-claims-live",
+          "verdict": "not-applicable",
+          "evidence": "src/features/projects/development/goals/GoalsPage.tsx:34 no public counter or liveness badge; the operator-facing load state belongs to async-ui-states"
+        }
+      ],
+      "registryProposal": "Matcher matched on 'goal'/'progress'/'team' vocabulary (use_when grounding), but the subject's precondition is an OUTWARD reader who cannot check. Internal progress surfaces in a local-first operator app are a technique-shaped resonance, not governance; consider a negative cue (internal/operator/dashboard) or routing by the golden path's 'reader cannot check' precondition. measurement-honesty is the sibling that governs internal numbers."
     }
   }
 }

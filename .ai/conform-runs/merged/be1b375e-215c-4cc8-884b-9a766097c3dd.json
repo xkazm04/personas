@@ -1,0 +1,14 @@
+{"schema": "conform-run/1", "worker": "be1b375e-215c-4cc8-884b-9a766097c3dd", "subject": "public-claim-provenance",
+ "evaluatedAt": "2026-10-16T17:39:53Z",
+ "pairs": [{"context": "fd961ee9-bf7c-4ec7-90c3-a728045d3d44", "subject": "public-claim-provenance", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/projects/development/goals/progressShared.tsx:67 the goals board reads the operator's own goals from the local DB in a desktop app; the subject's precondition is an outward-facing surface (roadmap, status page, marketing counter) whose reader cannot audit the value, and this one has none",
+   "techniques": [
+     {"technique": "derived-numerator-authored-denominator", "verdict": "not-applicable", "evidence": "src/features/projects/development/goals/progressShared.tsx:58 goal progress is shown to the operator who owns and edits the goal, not published as a public fraction"},
+     {"technique": "build-time-derivation-off-the-client-bundle", "verdict": "not-applicable", "evidence": "src/features/projects/development/goals/GoalsPage.tsx:35 data is fetched at runtime from the local store; there is no stranger-facing bundle carrying a catalog"},
+     {"technique": "degraded-never-claims-live", "verdict": "not-applicable", "evidence": "src/features/projects/development/goals/GoalsPage.tsx:34 no public counter or liveness badge; the operator-facing load state belongs to async-ui-states"}
+   ],
+   "registryProposal": "Matcher matched on 'goal'/'progress'/'team' vocabulary (use_when grounding), but the subject's precondition is an OUTWARD reader who cannot check. Internal progress surfaces in a local-first operator app are a technique-shaped resonance, not governance; consider a negative cue (internal/operator/dashboard) or routing by the golden path's 'reader cannot check' precondition. measurement-honesty is the sibling that governs internal numbers."}],
+ "declined": [{"subject": "public-claim-provenance", "context": "9b013060-5483-4162-9f8a-6b69109d623d", "reason": "teams-kpis is a weak-governance row; the skill does not judge weak pairs by default. Coverage question: an internal KPI dashboard is likely governed by measurement-honesty, not by this outward-surface subject"}],
+ "consults": [{"ts": "2026-10-16T17:39:53Z", "bundle": "software-engineering", "subjects": ["public-claim-provenance"], "techniques": ["derived-numerator-authored-denominator", "build-time-derivation-off-the-client-bundle", "degraded-never-claims-live"], "deviations": 0}]
+}
