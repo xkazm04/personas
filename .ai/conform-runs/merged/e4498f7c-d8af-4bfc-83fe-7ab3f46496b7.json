@@ -1,0 +1,5 @@
+{"schema": "conform-run/1", "worker": "e4498f7c-d8af-4bfc-83fe-7ab3f46496b7", "subject": "packaging",
+ "evaluatedAt": "2026-10-16T18:22:53Z",
+ "pairs": [],
+ "declined": [{"subject": "packaging", "context": "(none)", "reason": "No work: .ai/registry-map.json (generated 2026-10-14T18:25:17Z) lists zero packaging pairs in contexts[] and orphans[], so --subject packaging has nothing to judge. The 5 deviations that ranked this subject are not in this repo's map. Coverage hole, not a matcher miss: no context in context-map.json includes the installer surface (src-tauri/tauri.conf.json, src-tauri/tauri.lite.conf.json, .github/workflows/release.yml, scripts/ensure-ort-cache.mjs), even though this repo ships NSIS/MSI installers and bundles ONNX Runtime. That is exactly the precondition packaging is about. Fix: add a build/packaging context through a context rescan, rebuild the map, then judge adoption-time-packaging-audit, installed-tree-acceptance and installer-authoring against it."}],
+ "consults": []}
