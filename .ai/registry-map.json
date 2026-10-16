@@ -22351,7 +22351,7 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/overview/sub_observability/libs/useGlobalAlertEvaluator.ts:53 evaluates every rule against an UNSCOPED 1-day bundle (and useObservabilityData.ts:70 against the tab's range/persona) under the one rule.id cooldown the scoped Rust evaluator also reads, so a client fire on the wrong window or scope mutes the correct server alert for an hour",
+          "evidence": "src/features/overview/sub_observability/libs/useGlobalAlertEvaluator.ts:53 still evaluates every rule against an UNSCOPED 1-day bundle (and useObservabilityData.ts:70 against the tab's range/persona) under the one rule.id cooldown the scoped Rust evaluator also reads, so a wrong-scope client fire mutes the correct server alert for an hour",
           "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:183ec8b74ed943d6",
           "evaluatedRevision": 5,
@@ -32076,7 +32076,7 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/stores/slices/overview/alertSlice.ts:450 evaluateRule runs a persona-scoped rule against whatever snapshot the caller passed and ignores rule.persona_id, then :431 shares one rule.id cooldown with the scoped server evaluator, so a wrong-scope client fire both misreports the value and suppresses the true alert",
+          "evidence": "src/stores/slices/overview/alertSlice.ts:450 evaluateRule still ignores rule.persona_id and runs on whatever snapshot the caller passed, then :431 shares the rule.id cooldown with the scoped server evaluator, so a wrong-scope client fire misreports the value and suppresses the true alert",
           "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:183ec8b74ed943d6",
           "evaluatedRevision": 5
