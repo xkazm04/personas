@@ -18,9 +18,16 @@ describe('pragueTime', () => {
     expect(pragueTime(winter, 'en', winter - 3_600_000)).toContain('23:00');
   });
 
-  it('names the weekday within the week and the date beyond it', () => {
-    expect(pragueTime(summer, 'en', summer - 3_600_000)).toMatch(/Tue/);
+  it('speaks the Monitor clock token: the time today, the weekday within the week, the date beyond it', () => {
+    expect(pragueTime(summer, 'en', summer - 3_600_000)).toBe('23:00');
+    expect(pragueTime(summer, 'en', summer - 26 * 3_600_000)).toMatch(/^Tue,? 23:00$/);
     expect(pragueTime(winter, 'en', summer)).toMatch(/Dec/);
+    expect(pragueTime(winter, 'en', summer)).toContain('23:00');
+  });
+
+  it('decides "today" on the Prague calendar, not the machine one', () => {
+    // 2026-10-13 22:30 UTC is already Wednesday 00:30 in Prague: not "today" for a 23:00 Tuesday read.
+    expect(pragueTime(Date.UTC(2026, 9, 13, 22, 30), 'en', summer - 3_600_000)).toMatch(/^Wed/);
   });
 
   it('falls back to English for a language the runtime does not know', () => {

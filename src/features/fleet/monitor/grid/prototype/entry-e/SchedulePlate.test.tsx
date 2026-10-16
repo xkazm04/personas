@@ -49,4 +49,27 @@ describe('SchedulePlate', () => {
     });
     expect(setEnabled).toHaveBeenCalledWith('CuratorNight', false);
   });
+
+  it('draws each item as two rows: the name alone first, then the next start and the switch', async () => {
+    list.mockResolvedValue([
+      night,
+      { ...night, name: 'Run', title: 'Nightly vault backup', state: 'Running' },
+      { ...night, name: 'Off', title: 'Weekly digest', enabled: false, state: 'Disabled', nextRunMs: null },
+    ]);
+    render(<SchedulePlate />);
+    await act(async () => {});
+    const [first, running, off] = screen.getAllByTestId('entry-e-schedule-line');
+    // Row 1 is the name and nothing else; row 2 carries the time and the toggle.
+    const name = first!.querySelector('[data-testid="entry-e-schedule-name"]')!;
+    expect(name.textContent).toBe('Curator night');
+    const when = first!.querySelector('[data-testid="entry-e-schedule-when"]')!;
+    expect(when.textContent).toMatch(/\d{2}:\d{2}/);
+    expect(when.textContent).not.toMatch(/AM|PM/);
+    expect(when.getAttribute('aria-label')).toContain(when.textContent!);
+    expect(when.parentElement!.querySelector('[data-testid="entry-e-schedule-toggle"]')).toBeTruthy();
+    expect(name.parentElement!.querySelector('[data-testid="entry-e-schedule-toggle"]')).toBeNull();
+    expect(running!.querySelector('[data-testid="entry-e-schedule-when"]')!.textContent).toBe('running now');
+    expect(off!.querySelector('[data-testid="entry-e-schedule-when"]')!.textContent).toBe('off');
+    expect(off!.getAttribute('data-enabled')).toBeNull();
+  });
 });
