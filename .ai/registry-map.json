@@ -39160,8 +39160,8 @@
           "changedAt": "2026-09-05",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/vault/sub_databases/QueryResultTable.tsx:48 copies a NULL cell as the text 'NULL' (formatCell :221), so a copied NULL is indistinguishable from the string 'NULL'; src/features/vault/sub_databases/SqlEditor.tsx:34 runs the whole buffer (no run-selection, no schema-aware completion) - below the editor floor",
-          "evaluatedAt": "2026-10-10",
+          "evidence": "src/features/vault/sub_databases/QueryResultTable.tsx:48 copies a NULL cell via formatCell, which returns the text NULL (:221), so a copied NULL is indistinguishable from the string NULL; src/features/vault/sub_databases/SqlEditor.tsx:34 Ctrl+Enter runs the whole buffer with no run-selection - re-confirmed 2026-10-16, unchanged",
+          "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:60a26f15745fd8c1",
           "evaluatedRevision": 1,
           "revisionsBehind": 0
@@ -39351,8 +39351,8 @@
           "changedAt": "2026-09-05",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/vault/sub_databases/__tests__/QueryResultTable.test.tsx:59 asserts only the text 'NULL', which a literal string 'NULL' satisfies identically, so the NULL marker can regress with the suite green; :80 matches /truncated/ without the 500-row bound",
-          "evaluatedAt": "2026-10-10",
+          "evidence": "src/features/vault/sub_databases/__tests__/QueryResultTable.test.tsx:59 asserts only getByText(\"NULL\"), which a literal string NULL satisfies identically, so the NULL marker can regress with the suite green; :80 matches /truncated/ without the row bound - re-confirmed 2026-10-16",
+          "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:60a26f15745fd8c1",
           "evaluatedRevision": 1,
           "revisionsBehind": 0
@@ -39454,8 +39454,8 @@
           "changedAt": "2026-09-05",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:43 composes a Redis TYPE \"<key>\" command client-side with hand-rolled escaping and executes it via executeDbQuery - a live second introspection door that introspectionQueries.ts:6 says was deleted; history (ConsoleTab.tsx:92) records successes only",
-          "evaluatedAt": "2026-10-10",
+          "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:43 composes TYPE \"<key>\" client-side with hand-rolled escaping and runs it through executeDbQuery - a live second introspection door that introspectionQueries.ts:6 says was deleted; ConsoleTab.tsx:97 records history only via onSuccess - re-confirmed 2026-10-16",
+          "evaluatedAt": "2026-10-16",
           "evaluatedAgainst": "sha256-b2:60a26f15745fd8c1",
           "evaluatedRevision": 1,
           "revisionsBehind": 0

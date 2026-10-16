@@ -1,0 +1,118 @@
+{
+  "schema": "conform-run/1",
+  "worker": "b6f61523-1d21-4801-ba03-b8e6efac157b",
+  "subject": "sql-console",
+  "evaluatedAt": "2026-10-16T17:02:38Z",
+  "pairs": [
+    {
+      "context": "55d6d7cb-b016-4d73-8386-b5c18beafdae",
+      "subject": "sql-console",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_databases/QueryResultTable.tsx:48 copies a NULL cell via formatCell, which returns the text NULL (:221), so a copied NULL is indistinguishable from the string NULL; src/features/vault/sub_databases/SqlEditor.tsx:34 Ctrl+Enter runs the whole buffer with no run-selection - re-confirmed 2026-10-16, unchanged",
+      "techniques": [
+        {
+          "technique": "result-fidelity",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/QueryResultTable.tsx:221 NULL and undefined both render and copy as the literal text NULL"
+        },
+        {
+          "technique": "editor-ergonomics",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/SqlEditor.tsx:34 onExecute runs the whole buffer; no selection or statement-at-cursor execution"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:60a26f15745fd8c1",
+      "evaluatedRevision": 1
+    },
+    {
+      "context": "e1bc4bef-5cf0-4bc0-9b12-a26e88065857",
+      "subject": "sql-console",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_databases/__tests__/QueryResultTable.test.tsx:59 asserts only getByText(\"NULL\"), which a literal string NULL satisfies identically, so the NULL marker can regress with the suite green; :80 matches /truncated/ without the row bound - re-confirmed 2026-10-16",
+      "techniques": [
+        {
+          "technique": "result-fidelity",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/__tests__/QueryResultTable.test.tsx:59 the test cannot tell a NULL from the string NULL"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:60a26f15745fd8c1",
+      "evaluatedRevision": 1
+    },
+    {
+      "context": "647d6a54-3813-4149-bbf7-2d96a57a77c7",
+      "subject": "sql-console",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:43 composes TYPE \"<key>\" client-side with hand-rolled escaping and runs it through executeDbQuery - a live second introspection door that introspectionQueries.ts:6 says was deleted; ConsoleTab.tsx:97 records history only via onSuccess - re-confirmed 2026-10-16",
+      "techniques": [
+        {
+          "technique": "introspection-architecture",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:43 interpolated Redis TYPE command bypasses the parameterized introspect_db_* door"
+        },
+        {
+          "technique": "editor-ergonomics",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/tabs/ConsoleTab.tsx:97 recordHistory is passed as onSuccess (useDbQueryRunner.ts:48), so failed statements never enter history"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:60a26f15745fd8c1",
+      "evaluatedRevision": 1
+    }
+  ],
+  "declined": [
+    {
+      "subject": "sql-console",
+      "context": "1ff7809a-171b-4baa-9c9b-12d888b017f0",
+      "reason": "agents-editor: not-applicable verdict already stands against the current digest (rev 1, revisionsBehind 0); not re-read this run, so it is carried forward unchanged instead of being re-stamped"
+    },
+    {
+      "subject": "sql-console",
+      "context": "739b6d67-2c36-41ee-9794-a74bc0b25cfd",
+      "reason": "display-table-primitives: not-applicable verdict already stands against the current digest (rev 1, revisionsBehind 0); not re-read this run, so it is carried forward unchanged instead of being re-stamped"
+    },
+    {
+      "subject": "sql-console",
+      "context": "ab849301-d5ce-4d91-a12e-0e87a0417585",
+      "reason": "feedback-primitives: not-applicable verdict already stands against the current digest (rev 1, revisionsBehind 0); not re-read this run, so it is carried forward unchanged instead of being re-stamped"
+    },
+    {
+      "subject": "sql-console",
+      "context": "d3346f2c-d747-4d85-b6e6-c1450da57ec9",
+      "reason": "template-gallery-modals: not-applicable verdict already stands against the current digest (rev 1, revisionsBehind 0); not re-read this run, so it is carried forward unchanged instead of being re-stamped"
+    },
+    {
+      "subject": "sql-console",
+      "context": "2a54cdc2-87af-4298-b490-9eb87f230df7",
+      "reason": "templates-draft-editor: not-applicable verdict already stands against the current digest (rev 1, revisionsBehind 0); not re-read this run, so it is carried forward unchanged instead of being re-stamped"
+    },
+    {
+      "subject": "sql-console",
+      "context": "c4a2fa9d-1b41-4141-894b-c90663aa0433",
+      "reason": "vault-catalog-autocred-ui: not-applicable verdict already stands against the current digest (rev 1, revisionsBehind 0); not re-read this run, so it is carried forward unchanged instead of being re-stamped"
+    },
+    {
+      "subject": "sql-console",
+      "context": "b62fa237-32b4-41c3-bf56-3e498b643da9",
+      "reason": "vault-credentials-components-forms: not-applicable verdict already stands against the current digest (rev 1, revisionsBehind 0); not re-read this run, so it is carried forward unchanged instead of being re-stamped"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-16T17:02:38Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "sql-console"
+      ],
+      "techniques": [
+        "result-fidelity",
+        "editor-ergonomics",
+        "introspection-architecture"
+      ],
+      "deviations": 3
+    }
+  ]
+}
