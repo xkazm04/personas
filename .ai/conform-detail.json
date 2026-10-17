@@ -27629,6 +27629,167 @@
           "evidence": "src/features/teams/sub_mastermind/MastermindPage.tsx:2 A sounding chart of project urgency is not a planner-authored execution graph, so shape comparison across runs does not apply."
         }
       ]
+    },
+    "c06088ef-d143-4aa4-b60a-9d6f7aff9aba/voice-io": {
+      "context": "stores-slices-system",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-17",
+      "evaluatedTs": "2026-10-17T00:02:26.925Z",
+      "techniques": [
+        {
+          "technique": "tts-pipeline",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/system/tourSlice.ts:223 Playback is delegated to companion_tts; this slice does not own the queue, stop, or device."
+        },
+        {
+          "technique": "engine-abstraction",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/system/twinSlice.ts:592 The store action takes ElevenLabs stability/similarity/style knobs. TwinVoiceProfile.ts:5 says the only provider is elevenlabs, and the get at line 583 stores that row with no adapter or normalization door."
+        },
+        {
+          "technique": "voice-ux-integration",
+          "verdict": "conformant",
+          "evidence": "src/stores/slices/system/tourSlice.ts:1083 localizeTour speaks a step only when narration is a non-empty string, so a quiet step stays a text coach-mark."
+        },
+        {
+          "technique": "on-device-vs-cloud",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/twin.rs:151 The profile stores a credential the user attached. This slice does not choose placement or fall back from a local engine."
+        },
+        {
+          "technique": "speech-ready-text",
+          "verdict": "conformant",
+          "evidence": "src/stores/slices/system/tourSlice.ts:778 Narration is separate ear-text; the URL is spoken as 'obsidian dot md' while the on-screen hint at line 774 keeps obsidian.md."
+        },
+        {
+          "technique": "transcript-normalization",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/system/twinSlice.ts:27 Twin 'voice' here is a writing-tone directive, not a speech transcript to clean before a reader."
+        },
+        {
+          "technique": "authored-voice-identity",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/twin.rs:154 The slice only forwards a pasted voice id. Cloning and described voices are deferred, so no authored specification is stored."
+        },
+        {
+          "technique": "caller-scoped-voice-binding",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/system/twinSlice.ts:73 One profile slot per twin, which is a single narrator, not a row per unhosted caller."
+        },
+        {
+          "technique": "voice-setup-experience",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/system/onboardingSlice.ts:18 First-run steps are appearance through execute. onboardingSlice and setupSlice have no voice install or compare-by-ear step."
+        },
+        {
+          "technique": "bounded-playback-wait",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/system/tourSlice.ts:776 The step ends on an app event, so nothing in this slice waits for audio to finish."
+        }
+      ],
+      "registryProposal": "Say explicitly that a client store which persists one vendor's voice id and that vendor's sliders is engine-abstraction surface code, even when the file never plays audio.",
+      "withdrawn": {
+        "worker": "117a75ae-750a-41f4-804a-979a2101e5eb",
+        "state": "deviation",
+        "at": "2026-10-17T00:02:57.505924+00:00",
+        "reason": "reviewer (sonnet): The deviation rests on a 'retired engine' that I could not find for twin voice: TwinVoiceProfile.ts:5 and twin.rs:151 say elevenlabs is the only provider, so no retired id can reach twinSlice.ts:583. The retired-engine concept lives in the companion TTS code (athena/useTtsVoiceSelection), which is o"
+      }
+    },
+    "3619ab0d-0367-43d0-b4eb-ec39c1302d65/voice-io": {
+      "context": "vault-catalog-picker",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-17",
+      "evaluatedTs": "2026-10-17T00:02:26.925Z",
+      "worker": "117a75ae-750a-41f4-804a-979a2101e5eb",
+      "techniques": [
+        {
+          "technique": "stt-pipeline",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/picker/CredentialPicker.tsx:31 The action is choosing a connector type, not opening a microphone."
+        },
+        {
+          "technique": "voice-setup-experience",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/picker/ConnectorCard.tsx:7 The card renders a connector's auth method and license, not a voice install or compare-by-ear step."
+        }
+      ]
+    },
+    "7dddb34a-3a9b-4ce0-832f-55ea352c12b5/voice-io": {
+      "context": "templates-generated-adoption-ucpicker",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-17",
+      "evaluatedTs": "2026-10-17T00:02:26.925Z",
+      "worker": "117a75ae-750a-41f4-804a-979a2101e5eb",
+      "techniques": [
+        {
+          "technique": "stt-pipeline",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucPickerTypes.ts:30 Trigger labels are schedule and event modes, not a listening pipeline."
+        },
+        {
+          "technique": "voice-setup-experience",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucPicker.tsx:10 The wizard step renders template use cases. An empty template stays empty; there is no voice setup flow."
+        }
+      ]
+    },
+    "2de6333f-8375-404b-8fdc-fe0fb15d4f95/voice-io": {
+      "context": "commands-fleet",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-17",
+      "evaluatedTs": "2026-10-17T00:02:26.925Z",
+      "worker": "117a75ae-750a-41f4-804a-979a2101e5eb",
+      "techniques": [
+        {
+          "technique": "stt-pipeline",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/fleet/screen_activity.rs:3 Liveness is PTY bytes, not microphone audio."
+        },
+        {
+          "technique": "tts-pipeline",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/fleet/screen_activity.rs:21 What is observed is a terminal grid, not a synthesis queue."
+        },
+        {
+          "technique": "transcript-normalization",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/fleet/transcript.rs:4 The transcript is a coding-session JSONL log, not dictated speech to rewrite for a reader."
+        },
+        {
+          "technique": "transcript-handoff-receipts",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/fleet/transcript.rs:36 Disposition is a filesystem watch for liveness, not a paste into another application's cursor."
+        }
+      ]
+    },
+    "d7525012-ab19-4b29-99bb-0d4b6b9e084b/voice-io": {
+      "context": "plugins-fleet-tests",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-17",
+      "evaluatedTs": "2026-10-17T00:02:26.925Z",
+      "worker": "117a75ae-750a-41f4-804a-979a2101e5eb",
+      "techniques": [
+        {
+          "technique": "spoken-intent-parsing",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/fleet/__tests__/fleetAttention.test.ts:23 Attention classification keys off a Claude CLI attach failure string, not a parsed spoken command."
+        },
+        {
+          "technique": "transcript-normalization",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/fleet/sub_activity/FleetActivityPage.tsx:16 The transcript is a Claude Code session rollup, not dictated speech to clean."
+        }
+      ]
     }
   }
 }

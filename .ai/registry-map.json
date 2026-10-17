@@ -7764,8 +7764,12 @@
           "revision": 20,
           "changedAt": "2026-10-12",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 16
+          "state": "not-applicable",
+          "priorNotApplicable": 16,
+          "evidence": "src-tauri/src/commands/fleet/transcript.rs:4 Fleet's transcript is a Claude Code JSONL file watched for session liveness; searches for tts, microphone, whisper, dictation, and speechSynthesis under commands/fleet returned nothing.",
+          "evaluatedAt": "2026-10-17",
+          "evaluatedAgainst": "sha256-b2:fa03abeab38c89c7",
+          "evaluatedRevision": 21
         },
         {
           "subject": "agent-instruction-files",
@@ -27171,8 +27175,12 @@
           "revision": 20,
           "changedAt": "2026-10-12",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 16
+          "state": "not-applicable",
+          "priorNotApplicable": 16,
+          "evidence": "src/features/plugins/fleet/sub_activity/FleetActivityPage.tsx:16 The activity page lists Claude Code session transcripts for project and tool search; the fleet plugin tree has no tts, microphone, whisper, dictation, or speechSynthesis identifiers.",
+          "evaluatedAt": "2026-10-17",
+          "evaluatedAgainst": "sha256-b2:fa03abeab38c89c7",
+          "evaluatedRevision": 21
         },
         {
           "subject": "agent-memory",
@@ -32356,8 +32364,8 @@
           "revision": 20,
           "changedAt": "2026-10-12",
           "confidence": "strong",
-          "state": "unknown",
-          "priorNotApplicable": 16
+          "priorNotApplicable": 16,
+          "state": "unknown"
         },
         {
           "subject": "mcp-tools",
@@ -36138,8 +36146,12 @@
           "revision": 20,
           "changedAt": "2026-10-12",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 16
+          "state": "not-applicable",
+          "priorNotApplicable": 16,
+          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucPickerTypes.ts:30 The adoption picker shows calendar and event triggers for a template; a search of the adoption tree found no tts, microphone, whisper, dictation, or speechSynthesis.",
+          "evaluatedAt": "2026-10-17",
+          "evaluatedAgainst": "sha256-b2:fa03abeab38c89c7",
+          "evaluatedRevision": 21
         },
         {
           "subject": "generated-workflow-candidates",
@@ -38694,8 +38706,12 @@
           "revision": 20,
           "changedAt": "2026-10-12",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 16
+          "state": "not-applicable",
+          "priorNotApplicable": 16,
+          "evidence": "src/features/vault/sub_catalog/components/picker/CredentialPicker.tsx:31 Picking a connector records a catalog view and calls onPickType; a search of the picker, design, and negotiator trees found no tts, microphone, whisper, dictation, or speechSynthesis.",
+          "evaluatedAt": "2026-10-17",
+          "evaluatedAgainst": "sha256-b2:fa03abeab38c89c7",
+          "evaluatedRevision": 21
         },
         {
           "subject": "prompt-assembly",
