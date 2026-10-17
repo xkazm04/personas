@@ -21096,7 +21096,11 @@
           "revision": 6,
           "changedAt": "2026-09-04",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/overview/components/health/SystemHealthPanel.tsx:139 The crash viewer is gated by import.meta.env.DEV, leaving production users without this in-product path to stored crash evidence.",
+          "evaluatedAt": "2026-10-17",
+          "evaluatedAgainst": "sha256-b2:5f1eca73a0e27036",
+          "evaluatedRevision": 6
         },
         {
           "subject": "mcp-tools",
@@ -33253,7 +33257,11 @@
           "revision": 6,
           "changedAt": "2026-09-04",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/logging.rs:460 The native crash store writes unbounded, unscrubbed panic text directly to its final filename, risking secret persistence and partially written evidence.",
+          "evaluatedAt": "2026-10-17",
+          "evaluatedAgainst": "sha256-b2:5f1eca73a0e27036",
+          "evaluatedRevision": 6
         },
         {
           "subject": "remote-capability-probing",

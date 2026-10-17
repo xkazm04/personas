@@ -28844,6 +28844,48 @@
         "at": "2026-10-17T02:51:35.079200+00:00",
         "reason": "reviewer (sonnet): The anchor at UnifiedBuildEntry.tsx:581 only shows createPersona, so it is incidental and does not show that machine-paced delivery is absent. The code I opened in useLifecycle.ts:193-210 has an automated test-then-promote gate (the backend promote gate in oneshot.rs is cited in a comment there), wh"
       }
+    },
+    "dd45411d-8955-4579-906e-5a3b00ba16da/observability-telemetry": {
+      "context": "system-health",
+      "subject": "observability-telemetry",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-17",
+      "evaluatedTs": "2026-10-17T21:16:10.739Z",
+      "worker": "8607e57d-bcc0-40aa-b760-11545643c364",
+      "techniques": [
+        {
+          "technique": "crash-record-storage",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/frontend_crashes.rs:25 report_frontend_crash forwards IPC strings directly into this INSERT without storage-boundary sanitization or field-length limits; frontend scrubbing cannot enforce the store's gate."
+        },
+        {
+          "technique": "log-architecture",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/system/mod.rs:26 The full caller-supplied URL enters persistent logging; the inspected JSONL field collector and writer preserve strings without scrubbing, allowing URL credentials or query tokens onto disk."
+        },
+        {
+          "technique": "rotation-and-retention",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/logging.rs:407 Native crash pruning runs when the hook is installed, while the inspected panic writer adds files without enforcing the cap on insertion."
+        }
+      ]
+    },
+    "456eb952-9b93-4de4-bad5-79e6f101aeb1/observability-telemetry": {
+      "context": "overview-components",
+      "subject": "observability-telemetry",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-17",
+      "evaluatedTs": "2026-10-17T21:16:10.739Z",
+      "worker": "8607e57d-bcc0-40aa-b760-11545643c364",
+      "techniques": [
+        {
+          "technique": "diagnostic-access",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/components/health/SystemHealthPanel.tsx:48 This flag controls the crash viewer mount at line 139, so the viewer is unavailable in production builds."
+        }
+      ]
     }
   }
 }
