@@ -4299,5 +4299,8 @@
   "id:decisionCenter.blueprint.lg_col_item",
   "id:decisionCenter.blueprint.lg_col_status",
   "id:decisionCenter.blueprint.lg_rel_build_label",
-  "id:decisionCenter.blueprint.lg_status"
+  "id:decisionCenter.blueprint.lg_status",
+  "fr:decisionCenter.blueprint.started_sessions",
+  "fr:decisionCenter.blueprint.agents_f_sessions",
+  "fr:decisionCenter.blueprint.console_started_state"
 ]
