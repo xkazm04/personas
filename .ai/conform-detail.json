@@ -13656,14 +13656,83 @@
       "subject": "cross-provider-benchmark-operations",
       "bundle": "llm-observability",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T02:06:36.108Z",
-      "worker": "f4f3f23e-7e29-41b6-ae49-4520669d6cab",
+      "evaluatedAt": "2026-10-17",
+      "evaluatedTs": "2026-10-17T00:57:12.869Z",
+      "worker": "70c688b6-b087-4dc4-a1d9-03efb620e714",
       "techniques": [
+        {
+          "technique": "async-run-queue-with-cancel",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/useBuild.ts:131 Cancellation controls persona construction, not a benchmark job."
+        },
+        {
+          "technique": "axes-and-caveats-live-at-the-surface",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/useBuild.ts:70 Matrix completeness counts resolved persona-build dimensions rather than benchmark axes."
+        },
+        {
+          "technique": "budget-preflight-and-ceiling",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/UnifiedBuildEntry.tsx:639 The launch generates a persona build, outside benchmark-matrix spend approval."
+        },
+        {
+          "technique": "cheapest-sufficient-configuration",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/buildTemplateMatchConfidence.ts:64 Template suitability uses keyword overlap, not measured cost and paired model-quality evidence."
+        },
+        {
+          "technique": "dataset-sampling-anonymize-freeze",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/BuildSimulatePanel.tsx:156 The preview reads one capability's sample input rather than sampling a benchmark corpus."
+        },
+        {
+          "technique": "determinism-stamping",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/useLifecycle.ts:202 The pass condition summarizes tool checks, not a reproducible benchmark score."
+        },
+        {
+          "technique": "entitlement-exhaustion-is-not-ill-health",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/useLifecycle.ts:185 The report tests one draft persona's tools rather than a matrix of plan-reached targets."
+        },
+        {
+          "technique": "failure-clustering-recommendations",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/useLifecycle.ts:234 Refinement submits operator feedback to a build conversation, not benchmark failure-cluster recommendations."
+        },
+        {
+          "technique": "graded-case-difficulty",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/buildTemplateMatchConfidence.ts:53 The threshold governs lexical template matching, not case difficulty."
+        },
+        {
+          "technique": "handicap-disclosure-in-the-result-row",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/BuildSimulatePanel.tsx:144 The panel retrieves one preview execution's artifacts, not comparative result rows."
+        },
+        {
+          "technique": "sampling-knobs-are-axes-not-strings",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/useBuild.ts:97 The option selects build interaction mode rather than a benchmark reasoning-effort axis."
+        },
+        {
+          "technique": "self-hosted-residency-is-part-of-the-target",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/UnifiedBuildEntry.tsx:581 The launch creates a persona record rather than admitting a local model to a benchmark."
+        },
         {
           "technique": "target-matrix-runs",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/components/matrix/BuildSimulatePanel.tsx:4 one capability, one optional input override, one preview - no declared targets and no shared case set"
+          "evidence": "src/features/agents/components/matrix/useLifecycle.ts:189 Stored results are per-tool draft checks rather than provider/model/prompt-by-case measurements."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/BuildSimulatePanel.tsx:2 the only execution here is a dry-run preview of one draft capability on one input; \"matrix\" is the persona build-dimension grid, not a provider x model target matrix, so no benchmark evidence is produced",
+          "evaluatedAt": "2026-10-10T02:06:36.108Z",
+          "worker": "f4f3f23e-7e29-41b6-ae49-4520669d6cab",
+          "reason": "replaced by 70c688b6-b087-4dc4-a1d9-03efb620e714"
         }
       ]
     },
@@ -13699,14 +13768,83 @@
       "subject": "cross-provider-benchmark-operations",
       "bundle": "llm-observability",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T02:06:36.108Z",
-      "worker": "f4f3f23e-7e29-41b6-ae49-4520669d6cab",
+      "evaluatedAt": "2026-10-17",
+      "evaluatedTs": "2026-10-17T00:57:12.869Z",
+      "worker": "70c688b6-b087-4dc4-a1d9-03efb620e714",
       "techniques": [
+        {
+          "technique": "async-run-queue-with-cancel",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/composeTask.ts:76 The background task composes KPI measurement machinery, not benchmark cells."
+        },
+        {
+          "technique": "axes-and-caveats-live-at-the-surface",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/ContextMatrix.tsx:26 These columns describe project KPI categories, not benchmark target axes."
+        },
+        {
+          "technique": "budget-preflight-and-ceiling",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/MeasureSetupModal.tsx:145 The paid activity configures a KPI measurement; it is not a comparative benchmark matrix."
+        },
+        {
+          "technique": "cheapest-sufficient-configuration",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/factoryModel.ts:177 The aggregate computes KPI health rather than recommending a model configuration."
+        },
+        {
+          "technique": "dataset-sampling-anonymize-freeze",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/factoryData.tsx:282 The data source loads KPI measurement history, not evaluation-case samples."
+        },
+        {
+          "technique": "determinism-stamping",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/factoryPrimitives.tsx:33 The visualization consumes numerical series rather than benchmark generation/judging verdicts."
+        },
+        {
+          "technique": "entitlement-exhaustion-is-not-ill-health",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/factoryData.tsx:276 This failure path concerns loading project KPIs, not a plan-reached benchmark target."
+        },
+        {
+          "technique": "failure-clustering-recommendations",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/factoryModel.ts:264 Attention items identify critical project KPIs rather than rubric failure clusters."
+        },
+        {
+          "technique": "graded-case-difficulty",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/factoryModel.ts:165 Tiers encode KPI priority, not ordered evaluation-case difficulty."
+        },
+        {
+          "technique": "handicap-disclosure-in-the-result-row",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/KpiConsole.tsx:60 The rationale explains a KPI derivation decision, not a comparative workload concession."
+        },
+        {
+          "technique": "sampling-knobs-are-axes-not-strings",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/useAddKpi.ts:106 The declaration configures a KPI's measurement and cadence, not model sampling settings."
+        },
+        {
+          "technique": "self-hosted-residency-is-part-of-the-target",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/ProjectsLayer.tsx:55 The comparison data consists of project-readiness passports rather than locally served model targets."
+        },
         {
           "technique": "target-matrix-runs",
           "verdict": "not-applicable",
-          "evidence": "src/features/teams/sub_factory/factoryModel.ts:2 columns are KPIs, not commensurable provider/model targets"
+          "evidence": "src/features/teams/sub_factory/factoryData.tsx:286 The matrix assembles projects, code contexts, and KPIs rather than target-by-case results."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/factoryModel.ts:2 the matrix is dev-project context x KPI with readings from dev_tools rows; no model targets, no cases, no scorecard - lexical match on matrix/model/console",
+          "evaluatedAt": "2026-10-10T02:06:36.108Z",
+          "worker": "f4f3f23e-7e29-41b6-ae49-4520669d6cab",
+          "reason": "replaced by 70c688b6-b087-4dc4-a1d9-03efb620e714"
         }
       ]
     },
@@ -13715,14 +13853,83 @@
       "subject": "cross-provider-benchmark-operations",
       "bundle": "llm-observability",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T02:06:36.108Z",
-      "worker": "f4f3f23e-7e29-41b6-ae49-4520669d6cab",
+      "evaluatedAt": "2026-10-17",
+      "evaluatedTs": "2026-10-17T00:57:12.869Z",
+      "worker": "70c688b6-b087-4dc4-a1d9-03efb620e714",
       "techniques": [
+        {
+          "technique": "async-run-queue-with-cancel",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_context/useUseCases.ts:109 The background operation scans project features, not benchmark cases."
+        },
+        {
+          "technique": "axes-and-caveats-live-at-the-surface",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_context/ContextLedger.tsx:100 Grid columns represent active use cases, not benchmark target axes."
+        },
+        {
+          "technique": "budget-preflight-and-ceiling",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts:131 The hook reads existing tracing data rather than initiating a paid benchmark matrix."
+        },
+        {
+          "technique": "cheapest-sufficient-configuration",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts:92 Cost is attributed to source contexts rather than used to select a sufficient model."
+        },
+        {
+          "technique": "dataset-sampling-anonymize-freeze",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_context/useUseCases.ts:48 The fetched rows describe project features, not production-derived evaluation cases."
+        },
+        {
+          "technique": "determinism-stamping",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_context/ContextMapPage.tsx:90 Scan completion refreshes source-context groups rather than publishing a benchmark verdict."
+        },
+        {
+          "technique": "entitlement-exhaustion-is-not-ill-health",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts:159 The error feed retrieves Sentry issues, not terminal refusals from benchmark targets."
+        },
+        {
+          "technique": "failure-clustering-recommendations",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts:75 Errors are attributed by source context rather than clustered from per-case rubric scores."
+        },
+        {
+          "technique": "graded-case-difficulty",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_context/useCaseKind.ts:15 Use-case kinds classify software features rather than ordered evaluation difficulty."
+        },
+        {
+          "technique": "handicap-disclosure-in-the-result-row",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts:138 The aggregation sums observed feature spend rather than publishing comparative workload measurements."
+        },
+        {
+          "technique": "sampling-knobs-are-axes-not-strings",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_context/ContextDetail.tsx:72 The authored setting selects manual KPI measurement, not model sampling controls."
+        },
+        {
+          "technique": "self-hosted-residency-is-part-of-the-target",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_context/ContextDetail.tsx:36 Pinning applies to a source-code context, not model weights or accelerator residency."
+        },
         {
           "technique": "target-matrix-runs",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_context/contextKpiStatus.ts:3 worst-wins KPI rollup per code context - no target declaration exists"
+          "evidence": "src/features/plugins/dev-tools/sub_context/ContextGroupRowsStats.tsx:64 The cross-tab counts feature-to-context memberships rather than target-by-case results."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_context/contextKpiStatus.ts:1 the context is the Context Map runtime (scan state, per-context KPI health, use-case rows); \"use case\" is a codebase feature unit, not a benchmark case, and nothing runs against models",
+          "evaluatedAt": "2026-10-10T02:06:36.108Z",
+          "worker": "f4f3f23e-7e29-41b6-ae49-4520669d6cab",
+          "reason": "replaced by 70c688b6-b087-4dc4-a1d9-03efb620e714"
         }
       ]
     },
@@ -15567,19 +15774,83 @@
       "subject": "cross-provider-benchmark-operations",
       "bundle": "llm-observability",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T12:07:04.000Z",
-      "worker": "f9423480-bb6c-424a-9616-ef7002896726",
+      "evaluatedAt": "2026-10-17",
+      "evaluatedTs": "2026-10-17T00:57:12.869Z",
+      "worker": "70c688b6-b087-4dc4-a1d9-03efb620e714",
       "techniques": [
-        {
-          "technique": "target-matrix-runs",
-          "verdict": "not-applicable",
-          "evidence": "tests/playwright/companion-stop-button.spec.ts:12 stream state is injected; no model is run, let alone a provider x model matrix"
-        },
         {
           "technique": "async-run-queue-with-cancel",
           "verdict": "not-applicable",
-          "evidence": "tests/playwright/companion-stop-button.spec.ts:12 the Stop button under test cancels a chat stream, not a benchmark run"
+          "evidence": "tests/playwright/companion-stop-button.spec.ts:77 The exercised Stop control interrupts companion chat, not a queued benchmark run."
+        },
+        {
+          "technique": "axes-and-caveats-live-at-the-surface",
+          "verdict": "not-applicable",
+          "evidence": "tests/playwright/companion-header-controls.spec.ts:36 This checks toolbar presence, not a benchmark declaration or scorecard renderer."
+        },
+        {
+          "technique": "budget-preflight-and-ceiling",
+          "verdict": "not-applicable",
+          "evidence": "tests/playwright/companion-autonomous-mode.spec.ts:7 The toggle tests avoid model calls rather than operating a paid benchmark matrix."
+        },
+        {
+          "technique": "cheapest-sufficient-configuration",
+          "verdict": "not-applicable",
+          "evidence": "tests/playwright/team-functionality.spec.ts:97 The routing-named test checks team decomposition functionality, not cost-aware model selection."
+        },
+        {
+          "technique": "dataset-sampling-anonymize-freeze",
+          "verdict": "not-applicable",
+          "evidence": "tests/playwright/template-marathon-fixtures.ts:83 Fixtures supply template-adoption answers rather than production-derived benchmark cases."
+        },
+        {
+          "technique": "determinism-stamping",
+          "verdict": "not-applicable",
+          "evidence": "tests/playwright/companion-stream-phase.spec.ts:56 Forced rendering state is a UI fixture, not a benchmark generation/judging call."
+        },
+        {
+          "technique": "entitlement-exhaustion-is-not-ill-health",
+          "verdict": "not-applicable",
+          "evidence": "tests/playwright/companion-backend-commands.spec.ts:32 This probes interrupt-command behavior for an unknown turn, not provider allowance exhaustion."
+        },
+        {
+          "technique": "failure-clustering-recommendations",
+          "verdict": "not-applicable",
+          "evidence": "tests/playwright/companion-fleet-orchestration.spec.ts:121 Failure means a fleet operation's exit status, not a cluster of low-scoring benchmark cases."
+        },
+        {
+          "technique": "graded-case-difficulty",
+          "verdict": "not-applicable",
+          "evidence": "tests/playwright/companion-design-cards.spec.ts:92 The use-case set is injected chat-card content for rendering tests, not a graded comparison corpus."
+        },
+        {
+          "technique": "handicap-disclosure-in-the-result-row",
+          "verdict": "not-applicable",
+          "evidence": "tests/playwright/getting-started-tour-mock.spec.ts:18 Mocking drives tour transitions; it does not weaken a competitor's measured workload."
+        },
+        {
+          "technique": "sampling-knobs-are-axes-not-strings",
+          "verdict": "not-applicable",
+          "evidence": "tests/playwright/companion-stream-phase.spec.ts:91 Thinking is an injected display phase, not a provider reasoning-effort setting."
+        },
+        {
+          "technique": "self-hosted-residency-is-part-of-the-target",
+          "verdict": "not-applicable",
+          "evidence": "tests/playwright/adoption-bridge.ts:71 The bridge queries WebView nodes rather than serving or measuring local model weights."
+        },
+        {
+          "technique": "target-matrix-runs",
+          "verdict": "not-applicable",
+          "evidence": "tests/playwright/template-marathon-fixtures.ts:257 Marathon targets are templates to adopt, not models receiving a shared evaluation workload."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "tests/playwright/companion-stop-button.spec.ts:12 the context is Playwright UI specs that force companion state synthetically via the test bridge to avoid real LLM turns; no model targets, no case set, no scorecard - lexical match on spec/controls/stop",
+          "evaluatedAt": "2026-10-10T12:07:04.000Z",
+          "worker": "f9423480-bb6c-424a-9616-ef7002896726",
+          "reason": "replaced by 70c688b6-b087-4dc4-a1d9-03efb620e714"
         }
       ]
     },
@@ -27890,6 +28161,91 @@
           "technique": "periodic-digest",
           "verdict": "deviation",
           "evidence": "src/stores/slices/overview/alertSlice.ts:482 Every fire is queued as an immediate toast. This context has no content-gated summary, no per-window claim, and no class allowed to wait. The only digest hit in the directory is Athena's triage.digest bucket count."
+        }
+      ]
+    },
+    "a3cb83b5-7325-4d1c-b10d-b249ab1a186f/cross-provider-benchmark-operations": {
+      "context": "run-desk",
+      "subject": "cross-provider-benchmark-operations",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-17",
+      "evaluatedTs": "2026-10-17T00:57:12.869Z",
+      "worker": "70c688b6-b087-4dc4-a1d9-03efb620e714",
+      "techniques": [
+        {
+          "technique": "async-run-queue-with-cancel",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/RunDeskPage.tsx:121 Cancellation operates on a development task, outside benchmark-run operations."
+        },
+        {
+          "technique": "axes-and-caveats-live-at-the-surface",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/useTaskQueue.ts:60 The exposed vocabulary describes task status, not benchmark target axes."
+        },
+        {
+          "technique": "budget-preflight-and-ceiling",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/RunDeskControls.tsx:122 This starts project task execution with a parallelism setting, not a benchmark matrix."
+        },
+        {
+          "technique": "cheapest-sufficient-configuration",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/RunDeskPage.tsx:111 The action retries development work rather than selecting a model configuration."
+        },
+        {
+          "technique": "dataset-sampling-anonymize-freeze",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/RunDeskControls.tsx:97 Batch inputs come from accepted development ideas, not an evaluation dataset."
+        },
+        {
+          "technique": "determinism-stamping",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/TaskCard.tsx:101 The card consumes task output logs, not generated-and-judged benchmark verdicts."
+        },
+        {
+          "technique": "entitlement-exhaustion-is-not-ill-health",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/AutoRunBanner.tsx:36 The banner reads a project's development auto-run status, not matrix-target coverage."
+        },
+        {
+          "technique": "failure-clustering-recommendations",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/SelfHealingPanel.tsx:53 Failure patterns classify development tasks for healing, not rubric failures for model recommendations."
+        },
+        {
+          "technique": "graded-case-difficulty",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/TaskModal.tsx:60 Depth belongs to an authored development task, not a benchmark case's difficulty grade."
+        },
+        {
+          "technique": "handicap-disclosure-in-the-result-row",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/TaskCard.tsx:138 These are task context warnings, not concessions attached to comparative measurements."
+        },
+        {
+          "technique": "sampling-knobs-are-axes-not-strings",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/TaskModal.tsx:24 The option declares development-task depth rather than a benchmark sampling axis."
+        },
+        {
+          "technique": "self-hosted-residency-is-part-of-the-target",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/PrBridge.tsx:269 This target is a source repository destination, not a self-hosted model."
+        },
+        {
+          "technique": "target-matrix-runs",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/RunDeskPage.tsx:141 Rows are grouped by task status rather than provider/model/prompt target."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/RunDeskPage.tsx:24 the queue unit is a DevTask (dispatched dev work), not a benchmark target x case cell; no model comparison or scorecard exists here, so the precondition does not hold - lexical match on run/runner",
+          "evaluatedAt": "2026-10-05",
+          "worker": null,
+          "reason": "replaced by 70c688b6-b087-4dc4-a1d9-03efb620e714"
         }
       ]
     }

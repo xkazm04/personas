@@ -9385,13 +9385,12 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "tests/playwright/companion-stop-button.spec.ts:12 the context is Playwright UI specs that force companion state synthetically via the test bridge to avoid real LLM turns; no model targets, no case set, no scorecard - lexical match on spec/controls/stop",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:529238b95e86e429",
-          "evaluatedRevision": 11,
+          "evidence": "tests/playwright/companion-stop-button.spec.ts:51 Recursive searches found neither benchmark nor prompt_variant in tests/playwright, and the opened specs test companion, tour, and adoption behavior through synthetic state and some real turns rather than comparative model measurements.",
+          "evaluatedAt": "2026-10-17",
+          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
+          "evaluatedRevision": 12,
           "source": "retained",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         }
       ],
       "governance": "governed"
@@ -23623,12 +23622,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/agents/components/matrix/BuildSimulatePanel.tsx:2 the only execution here is a dry-run preview of one draft capability on one input; \"matrix\" is the persona build-dimension grid, not a provider x model target matrix, so no benchmark evidence is produced",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:529238b95e86e429",
-          "evaluatedRevision": 11,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/agents/components/matrix/BuildSimulatePanel.tsx:137 Recursive searches found neither benchmark nor prompt_variant, and the opened simulation call previews one selected draft capability while lifecycle testing checks tools rather than comparing model targets.",
+          "evaluatedAt": "2026-10-17",
+          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
+          "evaluatedRevision": 12,
+          "revisionsBehind": 1
         },
         {
           "subject": "translation-pipeline-topology",
@@ -25763,13 +25761,12 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_context/contextKpiStatus.ts:1 the context is the Context Map runtime (scan state, per-context KPI health, use-case rows); \"use case\" is a codebase feature unit, not a benchmark case, and nothing runs against models",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:529238b95e86e429",
-          "evaluatedRevision": 11,
+          "evidence": "src/features/plugins/dev-tools/sub_context/ContextLedger.tsx:86 Recursive searches found neither benchmark nor prompt_variant, and the opened ledger maps feature membership across source contexts while runtime hooks project existing spend and Sentry issues rather than execute comparative benchmarks.",
+          "evaluatedAt": "2026-10-17",
+          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
+          "evaluatedRevision": 12,
           "source": "retained",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         }
       ],
       "governance": "governed"
@@ -29753,12 +29750,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_runner/RunDeskPage.tsx:24 the queue unit is a DevTask (dispatched dev work), not a benchmark target x case cell; no model comparison or scorecard exists here, so the precondition does not hold - lexical match on run/runner",
-          "evaluatedAt": "2026-10-05",
-          "evaluatedAgainst": "sha256-b2:529238b95e86e429",
-          "evaluatedRevision": 11,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/plugins/dev-tools/sub_runner/useTaskQueue.ts:109 Recursive searches found neither benchmark nor prompt_variant in this context, whose queue fetches development tasks by project and status rather than executing benchmark cases across model targets.",
+          "evaluatedAt": "2026-10-17",
+          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
+          "evaluatedRevision": 12,
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-cli-transport",
@@ -33824,12 +33820,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/teams/sub_factory/factoryModel.ts:2 the matrix is dev-project context x KPI with readings from dev_tools rows; no model targets, no cases, no scorecard - lexical match on matrix/model/console",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:529238b95e86e429",
-          "evaluatedRevision": 11,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/teams/sub_factory/ContextMatrix.tsx:77 Recursive searches found neither benchmark nor prompt_variant, while the opened matrix declares KPI-category columns and the scorecard search hit describes project readiness rather than provider comparison.",
+          "evaluatedAt": "2026-10-17",
+          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
+          "evaluatedRevision": 12,
+          "revisionsBehind": 1
         },
         {
           "subject": "multi-project",
