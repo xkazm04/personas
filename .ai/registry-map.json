@@ -37149,7 +37149,11 @@
           "revision": 3,
           "changedAt": "2026-09-04",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/test_runner/execution.rs:414 After stdout collection finishes, the Lab awaits process exit without a deadline, allowing a child that closes stdout but keeps running to escape the 300-second ceiling.",
+          "evaluatedAt": "2026-10-17",
+          "evaluatedAgainst": "sha256-b2:a59e479b7cea486b",
+          "evaluatedRevision": 3
         },
         {
           "subject": "session-continuation",

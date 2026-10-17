@@ -28248,6 +28248,63 @@
           "reason": "replaced by 70c688b6-b087-4dc4-a1d9-03efb620e714"
         }
       ]
+    },
+    "6a81750d-fdbf-4518-bae6-689303e1a884/guest-execution-bounding": {
+      "context": "test-runner-lab",
+      "subject": "guest-execution-bounding",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-17",
+      "evaluatedTs": "2026-10-17T01:19:12.712Z",
+      "worker": "23e18193-0c80-425c-a0a2-598980dc8964",
+      "techniques": [
+        {
+          "technique": "cost-budget-cooperative-yield",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/eval.rs:623 LLM evaluation executes in a subprocess rather than an interpreter sharing the host executor."
+        },
+        {
+          "technique": "count-host-reentry-in-recursion-depth",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/test_runner/execution.rs:263 Scenario execution uses a separate CLI process, without guest/native recursion sharing the host stack."
+        },
+        {
+          "technique": "nested-liveness-ceilings",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/test_runner/execution.rs:247 The coordinator's 300-second timer covers stdout collection; stdin delivery precedes it and finish awaits process exit afterward without an enclosing lifetime deadline."
+        },
+        {
+          "technique": "one-terminator-many-armed-slots",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/test_runner/execution.rs:224 Each invocation creates its own child process, which the technique explicitly exempts from an in-process terminator slot registry."
+        },
+        {
+          "technique": "terminate-from-outside-when-you-cannot-count",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/test_runner/execution.rs:414 Collection timeout kills the child, but successful collection disarms that timer before this unbounded wait; stdout EOF does not establish process termination."
+        }
+      ]
+    },
+    "468953eb-0204-4013-b366-9357b2161138/guest-execution-bounding": {
+      "context": "core",
+      "subject": "guest-execution-bounding",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-17",
+      "evaluatedTs": "2026-10-17T01:19:12.712Z",
+      "techniques": [
+        {
+          "technique": "terminate-from-outside-when-you-cannot-count",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/cloud/runner.rs:222 Explicit cancellation calls cancel_execution at line 42, but the polling-limit branch only emits failure and returns without requesting remote termination."
+        }
+      ],
+      "withdrawn": {
+        "worker": "23e18193-0c80-425c-a0a2-598980dc8964",
+        "state": "deviation",
+        "at": "2026-10-17T01:19:27.061082+00:00",
+        "reason": "reviewer (sonnet): The code claim is true (the polling-limit branch at src-tauri/src/cloud/runner.rs:222 returns without calling cancel_execution), but runner.rs is in the app crate's cloud module. It is not among the core context's files (src-tauri/core/src/*), and core is a lower crate that can't call it, so I could"
+      }
     }
   }
 }
