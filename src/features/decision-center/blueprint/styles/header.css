@@ -36,7 +36,7 @@
 
 /* the right of the header: switcher, last-scan pill, lens tabs, the way out */
 .bp-hdr-r { display: flex; gap: 8px; align-items: flex-start; flex: 0 1 auto; min-width: 0; }
-.bp-hdr-r > :not(.bp-sheets-col) { flex: 0 0 auto; }
+.bp-hdr-r > :not(.bp-sheets) { flex: 0 0 auto; }
 
 /* bp LivePill (blueprint.css:370-376): 30 px, 12 px mono uppercase, an 8 px dot */
 .bp-live { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 1px solid var(--bp-ink-3); background: var(--bp-panel); font: 500 var(--bp-fs-12) var(--bp-font-mono); letter-spacing: var(--bp-ls-3); text-transform: uppercase; color: var(--bp-ink); white-space: nowrap; }
@@ -47,6 +47,13 @@
 .bp-live.off > i { background: var(--bp-amber); }
 
 /* the lens tabs (blueprint.css:51-66): a ruled box, 54 px tabs (27 px on two rows), the lens underline sliding */
+.bp-sheets { display: flex; align-items: stretch; flex: 0 1 auto; min-width: 0; }
+/* the chip at a cut edge: how many sheets are out of view, and the way to bring the next one in */
+.bp-sheets .bp-more { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 2px; padding: 0 6px; border: 1px solid var(--bp-ink-3); border-bottom: 2px solid var(--bp-ink-2); background: var(--bp-panel); color: var(--bp-amber-2); font: 600 var(--bp-fs-12)/1 var(--bp-font-mono); }
+.bp-sheets .bp-more:hover { background: color-mix(in srgb, var(--bp-accent) 9%, transparent); color: var(--bp-ink-hi); }
+.bp-sheets .bp-more svg { width: 14px; height: 14px; }
+.bp-sheets .bp-more[data-more='before'] { border-right: 0; }
+.bp-sheets .bp-more[data-more='after'] { border-left: 0; }
 .bp-sheets-col { position: relative; display: flex; flex-direction: column; flex: 0 1 auto; min-width: 0; overflow: auto hidden; scrollbar-width: none; border: 1px solid var(--bp-ink-3); border-bottom: 2px solid var(--bp-ink-2); background: var(--bp-panel); }
 .bp-sheets-col .tab-row { display: flex; }
 .bp-sheets-col .tab-row.custom { border-top: 1px solid var(--bp-ink-4); }

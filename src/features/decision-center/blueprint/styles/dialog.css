@@ -9,7 +9,11 @@
 .bp-dlg-h p { grid-column: 1; margin: 0; font: 500 var(--bp-fs-12) var(--bp-font-mono); letter-spacing: var(--bp-ls-3); text-transform: uppercase; color: var(--bp-ink-2); }
 .bp-dlg-h .bp-x { grid-row: 1 / 3; grid-column: 2; height: 28px; padding: 0 8px; border: 1px solid var(--bp-ink-3); font: 500 var(--bp-fs-12) var(--bp-font-mono); letter-spacing: var(--bp-ls-2); text-transform: uppercase; color: var(--bp-ink-2); }
 .bp-dlg-h .bp-x:hover { border-color: var(--bp-ink); color: var(--bp-ink-hi); }
-.bp-dlg-b { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 14px 18px 16px; scrollbar-width: thin; scrollbar-color: var(--bp-ink-3) transparent; }
+.bp-dlg-b { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 14px 18px 16px; scrollbar-width: thin; scrollbar-color: var(--bp-ink-3) transparent;
+  /* a body that scrolls shows it: a shadow under the edge that has more behind it (the two covers travel with the
+     content, the two shadows stay put), so no row is ever cut off without a sign */
+  background: linear-gradient(var(--bp-card-hi) 30%, transparent) top / 100% 28px no-repeat local, linear-gradient(transparent, var(--bp-card-hi) 70%) bottom / 100% 28px no-repeat local,
+    linear-gradient(var(--bp-shadow), transparent) top / 100% 14px no-repeat scroll, linear-gradient(transparent, var(--bp-shadow)) bottom / 100% 14px no-repeat scroll; }
 .bp-dlg-f { display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 9px 18px; border-top: 1px solid var(--bp-ink-3); font: 500 var(--bp-fs-12) var(--bp-font-mono); letter-spacing: var(--bp-ls-2); text-transform: uppercase; color: var(--bp-ink-2); }
 .bp-dlg-f span { display: inline-flex; gap: 6px; align-items: center; }
 
@@ -38,9 +42,17 @@
 .bp-dlg-cmd .bp-kick { margin-right: 8px; color: var(--bp-term-dim); letter-spacing: var(--bp-ls-3); text-transform: uppercase; font-size: var(--bp-fs-12); }
 
 /* the key sheet: bp's .tbk ladder (2 px ink frame, 1 px rules) */
-.bp-keys { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 22px; }
-.bp-kg { border: 1.5px solid var(--bp-ink-3); }
+/* two columns that pack: a short group fills under a long one instead of leaving a hole, so the whole keymap is shorter */
+.bp-keys { column-count: 2; column-gap: 22px; }
+.bp-kg { border: 1.5px solid var(--bp-ink-3); break-inside: avoid; margin-bottom: 14px; }
 .bp-kg h3 { margin: 0; padding: 6px 10px 5px; border-bottom: 1px solid var(--bp-ink-3); font: 500 var(--bp-fs-12) var(--bp-font-mono); letter-spacing: var(--bp-ls-5); text-transform: uppercase; color: var(--bp-ink-2); }
 .bp-kr { display: grid; grid-template-columns: 112px 1fr; gap: 10px; align-items: baseline; padding: 5px 10px; border-bottom: 1px solid var(--bp-ink-4); font-size: var(--bp-fs-14); color: var(--bp-ink); }
 .bp-kr:last-child { border-bottom: 0; }
 .bp-kc { display: inline-flex; gap: 6px; flex-wrap: wrap; align-items: center; font: 500 var(--bp-fs-12) var(--bp-font-mono); color: var(--bp-ink-2); }
+/* a short window: the key sheet tightens its rows and gaps so the whole keymap shows without scrolling at 800 px */
+@media (max-height: 860px) {
+  .bp-dlg .bp-dlg-b:has(.bp-keys) { padding-top: 10px; padding-bottom: 10px; }
+  .bp-keys { column-gap: 18px; }
+  .bp-kg { margin-bottom: 10px; }
+  .bp-kr { padding-top: 3px; padding-bottom: 3px; }
+}

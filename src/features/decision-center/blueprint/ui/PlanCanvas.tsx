@@ -8,17 +8,43 @@ import type { EngineWords, Hooks } from '../engine/types';
 import type { Plan } from '../model/plan';
 import type { Work } from '../model/work';
 import type { ViewStore } from '../state/viewStore';
+import { FLY_ATTR, flyInset, flyRoomOf } from './flyRoom';
 
 /** The part of the canvas the chrome leaves free: header, right rail, bottom bars (px from each edge). */
 export const SAFE = { l: 8, t: 80, r: 84, b: 84 } as const;
 
-/** The safe area with its top at the title block's real bottom: one band on a wide plan, two on a narrow one (WP4b). */
+/** Below the crumb line the plan's own wing title needs this much (its 36 px stand-off above a place less the room pad). */
+const CRUMB_GAP = 24;
+
+/**
+ * The safe area with its top at the title block's real bottom (one band on a wide plan, two on a narrow one, WP4b) and
+ * below the crumb line, so the wing title the plan draws above a place never lands on it; its right edge at an open
+ * flyout's left edge (the flyout reports its measured width on the plan, see flyRoom.ts), so the drawing fits the
+ * room that is left instead of hiding under the panel.
+ */
 export function safeOf(host: HTMLElement | null): Safe {
   const plan = host?.closest('.bp-plan'), hd = plan?.querySelector<HTMLElement>('.bp-hd');
   if (!plan || !hd) return SAFE;
   const box = plan.getBoundingClientRect(), bottom = hd.getBoundingClientRect().bottom - box.top;
+  const crumbs = hd.querySelector<HTMLElement>('.bp-l2')?.getBoundingClientRect().bottom;
+  const crumbBottom = crumbs === undefined ? 0 : crumbs - box.top;
   // a header taller than a third of the plan is not a laid-out title block (a test DOM measures every box alike)
-  return bottom > 0 && bottom < box.height / 3 ? { ...SAFE, t: Math.max(SAFE.t, Math.round(bottom + 10)) } : SAFE;
+  const laid = bottom > 0 && bottom < box.height / 3;
+  const t = laid ? Math.max(SAFE.t, Math.round(bottom + 10), crumbBottom > 0 ? Math.round(crumbBottom + CRUMB_GAP) : 0) : SAFE.t;
+  return { ...SAFE, t, r: SAFE.r + flyInset(flyRoomOf(plan), box.width) };
+}
+
+/**
+ * Fit the drawing to a changed safe area. The camera keeps its place unless it was at home (the whole-site fit), which
+ * glides to the new home instead of jumping; reduced motion lands at once (Camera.flyTo).
+ */
+export function refit(e: Engine): void {
+  const c = e.cam, was = { x: c.x, y: c.y, k: c.k };
+  e.resize();
+  if (c.x === was.x && c.y === was.y && c.k === was.k) return;
+  const home = { x: c.x, y: c.y, k: c.k };
+  c.x = was.x; c.y = was.y; c.k = was.k;
+  c.flyTo(home, 320);
 }
 
 interface Props {
@@ -77,6 +103,15 @@ export function PlanCanvas({ plan, work, words, lens, view, hooks, onEngine, des
     return () => { e.dispose(); engine.current = null; onEngine(null); };
   // built once per mount (onEngine and view are stable); plan, work, words and lens reach it through the effects below
   }, [onEngine, view]);
+
+  // a flyout opening, resizing or closing changes the safe area: fit again, gliding when the camera was at home
+  useEffect(() => {
+    const el = host.current?.closest('.bp-plan');
+    if (!el || typeof MutationObserver === 'undefined') return;
+    const mo = new MutationObserver(() => { const e = engine.current; if (e) refit(e); });
+    mo.observe(el, { attributes: true, attributeFilter: [FLY_ATTR] });
+    return () => mo.disconnect();
+  }, []);
 
   useEffect(() => { const e = engine.current; if (e && e.plan !== plan) e.setPlan(plan); }, [plan]);
   useEffect(() => { engine.current?.setWork(work); }, [work]);

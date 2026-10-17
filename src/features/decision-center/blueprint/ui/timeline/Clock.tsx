@@ -18,8 +18,8 @@ export function Clock() {
       <div className="t"><span>{B.tl_as_of}</span><span className={'tl-st' + (now ? '' : ' warn')}>{now ? B.now : B.tl_history_state}</span></div>
       <div className="hm">{fmtDay(language, t)}<small>{tx(B.rev, { n: rev })}</small></div>
       <div className="lv">
-        {B.tl_scan} {st}
-        {at && <> {'·'} <RelativeTime timestamp={at} fallback={B.never} showTooltip={false} /></>}
+        <span>{B.tl_scan} {st}{at ? ' ·' : ''}</span>
+        {at && <span><RelativeTime timestamp={at} fallback={B.never} showTooltip={false} /></span>}
       </div>
     </div>
   );

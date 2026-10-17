@@ -80,7 +80,9 @@
 .tl-clock .tl-st.warn { color: var(--bp-amber-2); }
 .tl-clock .hm { font: 500 var(--bp-fs-26)/1 var(--bp-font-mono); color: var(--bp-ink-hi); letter-spacing: 0.02em; text-transform: uppercase; white-space: nowrap; }
 .tl-clock .hm small { font: 500 var(--bp-fs-12)/1 var(--bp-font-mono); color: var(--bp-ink-2); margin-left: 6px; letter-spacing: var(--bp-ls-3); }
-.tl-clock .lv { font: 500 var(--bp-fs-12)/1.2 var(--bp-font-mono); color: var(--bp-ink-2); letter-spacing: var(--bp-ls-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: uppercase; }
+.tl-clock .lv { font: 500 var(--bp-fs-12)/1.2 var(--bp-font-mono); color: var(--bp-ink-2); letter-spacing: var(--bp-ls-1); display: flex; flex-wrap: wrap; column-gap: 6px; text-transform: uppercase; }
+/* the scan state and its age each stay whole; when both do not fit on one line the age wraps under, never ellipsized */
+.tl-clock .lv > span { white-space: nowrap; }
 .tl-revs { flex: 1 1 auto; min-width: 0; position: relative; }
 .tl-revs svg { width: 100%; height: 100%; display: block; overflow: visible; touch-action: none; cursor: ew-resize; }
 .tl-revs svg[data-still] { cursor: default; }

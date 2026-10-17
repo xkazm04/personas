@@ -17,6 +17,7 @@ import './styles/timeline.css';
 import './styles/queue.css';
 import './styles/dialog.css';
 import { useEffect, useRef } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { SheetContext } from './controller/SheetContext';
 import { useSheetController } from './controller/useSheetController';
@@ -82,7 +83,7 @@ export function BlueprintSheet({ data, actions, onClose, initialFeature }: Bluep
             {sheet.ui.timelineOpen && <TimelinePanel />}
             <FeatureSheet />
             {sheet.ui.page === 'ledger' && <LedgerPage />}
-            {sheet.ui.flyout && <Flyout />}
+            <AnimatePresence>{sheet.ui.flyout && <Flyout key="fly" />}</AnimatePresence>
           </div>
           {ov?.kind === 'find' && <FindDialog />}
           {ov?.kind === 'reason' && <ReasonDialog itemId={ov.itemId} move={ov.move} ids={ov.ids} />}
