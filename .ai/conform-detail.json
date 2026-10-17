@@ -28337,6 +28337,241 @@
         }
       ],
       "registryProposal": "Clarify canonical fallback unit boundaries for structured template catalogs whose translations are partial field overlays."
+    },
+    "4be04ef0-88db-4f48-859c-92e6ba4d203f/chat-transcript": {
+      "context": "template-gallery-search",
+      "subject": "chat-transcript",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-17",
+      "evaluatedTs": "2026-10-17T01:58:28.172Z",
+      "techniques": [
+        {
+          "technique": "composer-turn-queue",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/search/suggestions/SearchChipInput.tsx:101 Submits a search query; there is no conversational turn composer."
+        },
+        {
+          "technique": "immutable-model-cached-layout",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/search/suggestions/useStructuredQuery.ts:123 The collection contains query chips, not transcript messages."
+        },
+        {
+          "technique": "inline-structured-rows",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/search/TemplateSearchFilterRow.tsx:104 These are gallery facets, not conversational tool or approval rows."
+        },
+        {
+          "technique": "markdown-and-code-rendering",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/search/suggestions/AiSearchStatusBar.tsx:38 Displays search rationale outside any transcript."
+        },
+        {
+          "technique": "progress-narration",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/search/suggestions/AiSearchStatusBar.tsx:33 Search loading status has no conversational turn or settled trail."
+        },
+        {
+          "technique": "transcript-scroll",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/search/suggestions/SearchAutocomplete.tsx:158 The scrollable content is an autocomplete menu."
+        },
+        {
+          "technique": "turn-metadata",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/search/TemplateSearchFilterRow.tsx:59 Counts gallery results, not turn usage or duration."
+        },
+        {
+          "technique": "turn-model",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/search/suggestions/SearchChipInput.tsx:75 Identity belongs to search chips, without chat-turn phases."
+        },
+        {
+          "technique": "virtual-filtered-channel",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/search/filters/ComponentFilterDropdown.tsx:66 Filters a snapshot of component options, not a message channel."
+        }
+      ],
+      "withdrawn": {
+        "worker": "3f248d37-eb86-442d-9567-f7a65d88281b",
+        "state": "not-applicable",
+        "at": "2026-10-17T01:59:02.663913+00:00",
+        "reason": "reviewer (sonnet): The primary anchor TemplateSearchBar.tsx:34 is just a useStructuredQuery hook call and doesn't show that a transcript is absent, so it is incidental. The technique anchors describe chips and facets, but the 'absence' rests only on a grep for three terms."
+      }
+    },
+    "b88ef121-d028-4999-bf34-6e44aed99959/chat-transcript": {
+      "context": "template-adoption-persona-layout",
+      "subject": "chat-transcript",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-17",
+      "evaluatedTs": "2026-10-17T01:58:28.172Z",
+      "techniques": [
+        {
+          "technique": "composer-turn-queue",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/AdoptionAnswerCard.tsx:296 Updates questionnaire answers rather than submitting conversational turns."
+        },
+        {
+          "technique": "immutable-model-cached-layout",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/PersonaLayoutAdoption.tsx:90 Renders the fixed capability dimensions, without message history."
+        },
+        {
+          "technique": "inline-structured-rows",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/ErrorPolicyCard.tsx:73 Configures an error policy; it is not a turn's interactive event row."
+        },
+        {
+          "technique": "markdown-and-code-rendering",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/PersonaLayoutAdoption.tsx:138 Displays a capability description outside a transcript."
+        },
+        {
+          "technique": "progress-narration",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/useAdoptionDimensionModel.tsx:326 Progress measures configuration completeness, without a machine-turn trail."
+        },
+        {
+          "technique": "transcript-scroll",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/AdoptionAnswerCard.tsx:146 Navigation selects a questionnaire item, not a transcript reading position."
+        },
+        {
+          "technique": "turn-metadata",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/PersonaLayoutAdoption.tsx:141 The chip summarizes capability configuration, not a completed turn."
+        },
+        {
+          "technique": "turn-model",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/useAdoptionDimensionModel.tsx:284 State tracks selected capability and question, without conversational turn identity."
+        },
+        {
+          "technique": "virtual-filtered-channel",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/useAdoptionDimensionModel.tsx:213 Filters questionnaire data rather than a live message channel."
+        }
+      ],
+      "withdrawn": {
+        "worker": "3f248d37-eb86-442d-9567-f7a65d88281b",
+        "state": "not-applicable",
+        "at": "2026-10-17T01:59:02.756434+00:00",
+        "reason": "reviewer (sonnet): The primary anchor PersonaLayoutAdoption.tsx:155 is a PersonaLayout props block (mode=\"adoption\") and doesn't show that conversational turns, composer or transcript are absent, so it is incidental."
+      }
+    },
+    "aa2197a5-6b7c-46ff-a6cd-8172d2984f50/chat-transcript": {
+      "context": "onboarding-components",
+      "subject": "chat-transcript",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-17",
+      "evaluatedTs": "2026-10-17T01:58:28.172Z",
+      "techniques": [
+        {
+          "technique": "composer-turn-queue",
+          "verdict": "not-applicable",
+          "evidence": "src/features/onboarding/components/TourPanelBody.tsx:194 Advances a tour step; no conversational composer is present."
+        },
+        {
+          "technique": "immutable-model-cached-layout",
+          "verdict": "not-applicable",
+          "evidence": "src/features/onboarding/components/StepProgress.tsx:33 Renders predefined tour steps rather than transcript history."
+        },
+        {
+          "technique": "inline-structured-rows",
+          "verdict": "not-applicable",
+          "evidence": "src/features/onboarding/components/TourPanelBody.tsx:112 Rows are instructional checklist items, not machine-turn events."
+        },
+        {
+          "technique": "markdown-and-code-rendering",
+          "verdict": "not-applicable",
+          "evidence": "src/features/onboarding/components/TourIntroCard.tsx:33 Renders predefined tour copy outside a transcript."
+        },
+        {
+          "technique": "progress-narration",
+          "verdict": "not-applicable",
+          "evidence": "src/features/onboarding/components/TourProgressArc.tsx:15 Measures completion of a finite tour, not progress within a machine turn."
+        },
+        {
+          "technique": "transcript-scroll",
+          "verdict": "not-applicable",
+          "evidence": "src/features/onboarding/components/TourPanelBody.tsx:152 Locates a tour target rather than following growing conversation content."
+        },
+        {
+          "technique": "turn-metadata",
+          "verdict": "not-applicable",
+          "evidence": "src/features/onboarding/components/StepProgress.tsx:76 Displays checklist progress, without turn accounting."
+        },
+        {
+          "technique": "turn-model",
+          "verdict": "not-applicable",
+          "evidence": "src/features/onboarding/components/StepProgress.tsx:43 Identity belongs to predefined tour steps, without machine-turn phases."
+        },
+        {
+          "technique": "virtual-filtered-channel",
+          "verdict": "not-applicable",
+          "evidence": "src/features/onboarding/components/StepProgress.tsx:34 Reads tour completion state; no filtered message channel exists here."
+        }
+      ],
+      "withdrawn": {
+        "worker": "3f248d37-eb86-442d-9567-f7a65d88281b",
+        "state": "not-applicable",
+        "at": "2026-10-17T01:59:02.925087+00:00",
+        "reason": "reviewer (sonnet): The primary anchor TourPanelBody.tsx:49 is a getLocalizedTourSteps call and doesn't show absence. The directory also holds ExecutionStep.tsx, which renders streamed agent output lines from executionOutput, plus TourNarrativeDeck.tsx and GuidedTour.tsx with live narration captions. The 'no transcript"
+      }
+    },
+    "d77a22ee-23cb-42f3-a910-590f8622977f/chat-transcript": {
+      "context": "companion-core-store",
+      "subject": "chat-transcript",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-17",
+      "evaluatedTs": "2026-10-17T01:58:28.172Z",
+      "worker": "3f248d37-eb86-442d-9567-f7a65d88281b",
+      "techniques": [
+        {
+          "technique": "composer-turn-queue",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/athenaStore.ts:1305 The store shifts one prompt, and athenaChatQueue.ts:61-62 sends it alone per completion; consecutive plain follow-ups are not combined, and queued entries expose no versioned edit operation."
+        },
+        {
+          "technique": "progress-narration",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/athenaStore.ts:1386 athenaChatStream.ts:173-180 invokes this reset on error without attaching the narration to a failed turn, erasing the failure's activity detail from the store."
+        }
+      ]
+    },
+    "4eb0030b-e8a2-4993-bfab-81aee6943054/chat-transcript": {
+      "context": "notepad-overview",
+      "subject": "chat-transcript",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-17",
+      "evaluatedTs": "2026-10-17T01:58:28.172Z",
+      "techniques": [
+        {
+          "technique": "inline-structured-rows",
+          "verdict": "deviation",
+          "evidence": "src/features/notepad/thread/threadActions.ts:124 A missing suggestion card makes resolveCardRows return null; this path nevertheless stamps approved instead of consulting the proposal authority or refusing the unavailable action."
+        },
+        {
+          "technique": "markdown-and-code-rendering",
+          "verdict": "deviation",
+          "evidence": "src/features/notepad/thread/NoteThreadPopover.tsx:224 Machine-authored bodyMd is clipped at 1,200 characters and rendered as plain text, without Markdown/code-block rendering or verbatim code-copy controls."
+        },
+        {
+          "technique": "turn-model",
+          "verdict": "deviation",
+          "evidence": "src/features/notepad/thread/threadActions.ts:62 The operator's comment is ingested only after the server returns; there is no immediate optimistic row with a locally minted identity submitted alongside the content."
+        }
+      ],
+      "withdrawn": {
+        "worker": "3f248d37-eb86-442d-9567-f7a65d88281b",
+        "state": "deviation",
+        "at": "2026-10-17T01:59:03.031056+00:00",
+        "reason": "reviewer (sonnet): The cited files (notepad/thread/threadActions.ts and NoteThreadPopover.tsx) are not in the notepad-overview context file list, which covers overview/* only. The code's own comment at threadActions.ts:80-90 says stamping the verdict when the card isn't loaded is intentional, so 'approved' is not a pl"
+      }
     }
   }
 }

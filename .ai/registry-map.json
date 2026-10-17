@@ -8714,7 +8714,11 @@
           "revision": 5,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/companions/athena/athenaStore.ts:1301 Queued prompts receive identities and survive restart as drafts, but lack versioned editing and drain individually into separate machine turns.",
+          "evaluatedAt": "2026-10-17",
+          "evaluatedAgainst": "sha256-b2:5b4e7d399a4d924e",
+          "evaluatedRevision": 5
         },
         {
           "subject": "companion-identity",
