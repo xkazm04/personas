@@ -139,7 +139,34 @@ Reference shots: bp itself on :3010 (Kettle sample and live products), compared 
 | Swarm line, room art | no data in the stores the sheet reads |
 | bp's Kettle-only named wings | the fixture takes the path a live product takes: one wing per domain |
 
+## Wave three (/perfect, 2026-10-17): live data you can trust
+
+Not a bp port: Personas additions on top of round two, aimed at realtime transparency.
+
+- **Live sheet:** the sheet re-reads its product on the app's PollingCoordinator (5 s while a store run runs or a
+  started build is unsettled, a 60 s sweep otherwise, on focus/visibility, never while hidden). An identical read
+  changes no state and no canvas raster (`controller/useSheetData.ts` `mergeRead`); an older completion is dropped
+  (`createLatestWins`). bp re-reads its store on its own simulation clock; the stores here have no push channel.
+- **Started builds:** a build started from the sheet follows the fleet sessions carrying its `personas:<uuid>` run
+  label (`live/startedModel.ts`), settles only when no running execute run still covers its items, re-reads the
+  moment its last session ends, and marks its queue rows "building". Aborted runs are their own state.
+- **One count:** `model/counts.ts` is the single source of the sheet's DOM figures (in trouble = bad; watch its own
+  figure; live counts flagged inside it). Off-plan proposals are named in the queue column, never dropped.
+- **Absent is absent:** no later reading poses as a before; risk not stated; not measured; kinds in words; a store
+  that did not open says so in the project list.
+- **Room to work:** the flyout narrows the plan when the plan keeps 480 px beside it (bp's `setFlyoutWidth` only
+  keeps overlays clear; this is a design call), else lies over it as in bp; bp's flyout exit animation is now
+  brought. The lens strip counts the sheets it cuts off; the crumbs clear the drawn titles; the key sheet and the
+  timeline clock fit at 1280. The queue footer lists L, T, Space and a clickable `?`.
+- **Not built:** a "read N s ago" freshness stamp, a "could not refresh / Retry" note and a Retry on the error frame
+  (proposed, declined by the operator).
+
 ## WP4b: the compare panel and triage in the L4 sheet
+
+> **Superseded in part by round two:** Wide (W), blink, the change map, the release package pill, multi-item
+> decisions (Space, the decision bar) and the "why not" tooltip on the decision buttons all exist now in the
+> ledger's compare panel (`ui/compare/ComparePanel.tsx`, `ScreenModes.tsx`, `useChangeMap.ts`, `ledger/Decide.tsx`).
+> The "dropped" verdicts below record the L4 sheet of Stage 2 and are kept as history.
 
 Spark one-control, Stage 2, WP4b. bp's release ledger (`bp/src/components/ledger/train/`, commits `4044c29`,
 `99693aa`, `48171a1`) holds the compare panel beside a packs table; here it docks in the L4 feature sheet in the side

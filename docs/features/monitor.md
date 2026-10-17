@@ -186,6 +186,20 @@ panels, bp's full feature page, the expanded timeline with time travel (T), the 
 card and multi-select (Space, Shift+click) with batch moves. See
 `src/features/decision-center/blueprint/PARITY.md`.
 
+**The drawing set stays live** (2026-10-17). While it is open it re-reads its product by itself: every 5 s
+while a lens-scan run is running or a build started from the sheet is still working, every minute otherwise,
+and at once when the window comes back into focus; never while the window is hidden. A read that finds
+nothing new redraws nothing. A build started from the sheet follows its fleet sessions (matched by its
+`personas:<uuid>` run label): queued, running, waiting, done or failed, with its session count and time in
+the Agents panel and the dock console, and its waiting items say **building** in the queue; when its last
+session ends the sheet re-reads at once. Every figure on the sheet comes from one count (in trouble = bad,
+watch shown on its own, live includes partly open), and findings whose feature is not on the plan are
+named in the queue column with a link to the ledger. A missing value shows as missing: no later reading
+posing as a before, "risk not stated", "not measured", and a project whose store did not open says so in
+the project list. A rail panel narrows the plan when there is room beside it and lies over it when there
+is not; the lens strip shows how many sheets it cut off; the queue footer lists L, T, Space and a clickable
+`?` for all keys.
+
 **Stewards plate.** In the supply column the Autopilot plate became the
 Stewards plate: the attention-loop switch on top (unchanged, same tour anchors
 `fleet-autopilot` / `fleet-autopilot-toggle`), Athena's CLI answerer as its own
