@@ -28572,6 +28572,103 @@
         "at": "2026-10-17T01:59:03.031056+00:00",
         "reason": "reviewer (sonnet): The cited files (notepad/thread/threadActions.ts and NoteThreadPopover.tsx) are not in the notepad-overview context file list, which covers overview/* only. The code's own comment at threadActions.ts:80-90 says stamping the verdict when the card isn't loaded is intentional, so 'approved' is not a pl"
       }
+    },
+    "2dcda6bf-9982-422b-b63f-1481c414cdab/codebase-scanning": {
+      "context": "plugins-dev-tools-llm-overview",
+      "subject": "codebase-scanning",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-17",
+      "evaluatedTs": "2026-10-17T02:21:14.757Z",
+      "worker": "73642847-8db1-4f7e-9715-6b91cd0403bd",
+      "techniques": [
+        {
+          "technique": "sensor-pipeline",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:510 One connector dispatcher throws when a service has no adapter; there is no multi-sensor code sweep."
+        },
+        {
+          "technique": "rule-precision-discipline",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/__tests__/llmTracingAdapters.test.ts:276 The cross-check equates a table chip with llm_cost drafts on trace rows, not a source-matching detection rule."
+        },
+        {
+          "technique": "finding-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/LlmOverviewPage.tsx:183 Dedup stops an archived use-case slug being proposed again; it is not a finding identity."
+        },
+        {
+          "technique": "llm-assisted-scanning",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:10 Rows come from vendor tracing APIs; no model emits findings about source."
+        },
+        {
+          "technique": "incremental-scanning",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:47 The window is a telemetry time range, not a content-digest ledger of source units."
+        },
+        {
+          "technique": "ingestion-budget",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:113 The cap bounds SaaS trace pages, not a rationed read of a foreign repository."
+        },
+        {
+          "technique": "evidence-scoping",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/AssignmentMatrix.tsx:4 The meter counts projects with a connector assigned, not where a detector may look."
+        },
+        {
+          "technique": "the-tree-is-not-the-population",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/MonitoringSection.tsx:6 The sibling tab reads live Sentry stats; nothing walks a source tree."
+        },
+        {
+          "technique": "causes-beside-the-finding-count",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:564 The count is named trace rows over a dollar threshold, not scan emissions beside causes."
+        },
+        {
+          "technique": "the-narrowest-view-owns-the-number",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:123 The floor flag describes a trace page cap, not a figure that prices a code judgment."
+        }
+      ]
+    },
+    "17f44718-7d6d-4579-91bf-86191e29595a/codebase-scanning": {
+      "context": "commands-recipes",
+      "subject": "codebase-scanning",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-17",
+      "evaluatedTs": "2026-10-17T02:21:14.757Z",
+      "worker": "73642847-8db1-4f7e-9715-6b91cd0403bd",
+      "techniques": [
+        {
+          "technique": "sensor-pipeline",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/recipes/mod.rs:64 Empty Claude output fails one recipe execution; there is no sensor roster."
+        },
+        {
+          "technique": "llm-assisted-scanning",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/recipes/recipe_generation.rs:4 The model is asked to design a recipe, not to quote defects in a tree."
+        },
+        {
+          "technique": "incremental-scanning",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/recipes/recipe_match.rs:35 Full-scan here means scoring the in-memory recipe catalog, not re-examining changed source."
+        },
+        {
+          "technique": "verify-after-generate",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/recipes/recipe_generation.rs:21 A failed JSON extract is a generation error; this module owns the generator and writes no scan artifact."
+        },
+        {
+          "technique": "the-narrowest-view-owns-the-number",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/recipes/recipe_parameter_coverage.rs:11 The figure is how many input_schema fields become editable parameters, not a scan-view coverage weight."
+        }
+      ]
     }
   }
 }

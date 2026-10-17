@@ -1,0 +1,171 @@
+{
+ "schema": "conform-run/1",
+ "worker": "73642847-8db1-4f7e-9715-6b91cd0403bd",
+ "subject": "codebase-scanning",
+ "evaluatedAt": "2026-10-17T02:21:14.757256+00:00",
+ "provider": "grok",
+ "model": "grok-4.7",
+ "pairs": [
+  {
+   "context": "plugins-dev-tools-llm-overview",
+   "subject": "codebase-scanning",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:79 This directory loads rolling-window use-case rollups from LLM-observability HTTP APIs, and searches for sensor, ruleset, reachability, census, and dead-code returned no hits; the finding, dedup, coverage, and truncation strings that do appear describe trace-cost rows, use-case slugs, and connector wiring.",
+   "techniques": [
+    {
+     "technique": "sensor-pipeline",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:510 One connector dispatcher throws when a service has no adapter; there is no multi-sensor code sweep."
+    },
+    {
+     "technique": "rule-precision-discipline",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_llm_overview/__tests__/llmTracingAdapters.test.ts:276 The cross-check equates a table chip with llm_cost drafts on trace rows, not a source-matching detection rule."
+    },
+    {
+     "technique": "finding-lifecycle",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_llm_overview/LlmOverviewPage.tsx:183 Dedup stops an archived use-case slug being proposed again; it is not a finding identity."
+    },
+    {
+     "technique": "llm-assisted-scanning",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:10 Rows come from vendor tracing APIs; no model emits findings about source."
+    },
+    {
+     "technique": "incremental-scanning",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:47 The window is a telemetry time range, not a content-digest ledger of source units."
+    },
+    {
+     "technique": "ingestion-budget",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:113 The cap bounds SaaS trace pages, not a rationed read of a foreign repository."
+    },
+    {
+     "technique": "evidence-scoping",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_llm_overview/AssignmentMatrix.tsx:4 The meter counts projects with a connector assigned, not where a detector may look."
+    },
+    {
+     "technique": "the-tree-is-not-the-population",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_llm_overview/MonitoringSection.tsx:6 The sibling tab reads live Sentry stats; nothing walks a source tree."
+    },
+    {
+     "technique": "causes-beside-the-finding-count",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:564 The count is named trace rows over a dollar threshold, not scan emissions beside causes."
+    },
+    {
+     "technique": "the-narrowest-view-owns-the-number",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:123 The floor flag describes a trace page cap, not a figure that prices a code judgment."
+    }
+   ],
+   "absenceTerms": [
+    "sensor",
+    "ruleset",
+    "reachability",
+    "census"
+   ]
+  },
+  {
+   "context": "commands-recipes",
+   "subject": "codebase-scanning",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/commands/recipes/recipe_generation.rs:73 Generation pulls a recipe object out of model text by the keys name and prompt_template, and searches for sensor, ruleset, reachability, census, and finding returned no hits; the scan strings that do appear are a single-pass placeholder substitution and an in-memory pass over the recipe catalog.",
+   "techniques": [
+    {
+     "technique": "sensor-pipeline",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/recipes/mod.rs:64 Empty Claude output fails one recipe execution; there is no sensor roster."
+    },
+    {
+     "technique": "llm-assisted-scanning",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/recipes/recipe_generation.rs:4 The model is asked to design a recipe, not to quote defects in a tree."
+    },
+    {
+     "technique": "incremental-scanning",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/recipes/recipe_match.rs:35 Full-scan here means scoring the in-memory recipe catalog, not re-examining changed source."
+    },
+    {
+     "technique": "verify-after-generate",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/recipes/recipe_generation.rs:21 A failed JSON extract is a generation error; this module owns the generator and writes no scan artifact."
+    },
+    {
+     "technique": "the-narrowest-view-owns-the-number",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/recipes/recipe_parameter_coverage.rs:11 The figure is how many input_schema fields become editable parameters, not a scan-view coverage weight."
+    }
+   ],
+   "absenceTerms": [
+    "sensor",
+    "ruleset",
+    "reachability",
+    "census",
+    "finding"
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "codebase-scanning",
+   "context": "overview-patterns",
+   "reason": "context-map file_paths is empty and the entry-point directory src/features/overview/sub_patterns does not exist. Searches for PracticeDetailModal, PracticeDetailLedger, CreatePracticeModal, ExtractionMenu, and decideWorkspaceKnowledge found no implementation, only a comment that a backlog ledger once mirrored PracticeDetailLedger. No context files to judge."
+  },
+  {
+   "subject": "codebase-scanning",
+   "context": "plugins-artist-hooks",
+   "reason": "context-map file_paths is empty and src/features/plugins/artist does not exist. Searches for useArtistAssets, artistScanFolder, artistListAssets, useGallerySelection, and useBlenderMcp found no implementation. No context files to judge."
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-17T02:21:14.757256+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "codebase-scanning"
+   ],
+   "techniques": [
+    "causes-beside-the-finding-count",
+    "evidence-scoping",
+    "finding-lifecycle",
+    "incremental-scanning",
+    "ingestion-budget",
+    "llm-assisted-scanning",
+    "rule-precision-discipline",
+    "sensor-pipeline",
+    "the-narrowest-view-owns-the-number",
+    "the-tree-is-not-the-population"
+   ],
+   "deviations": 0,
+   "context": "plugins-dev-tools-llm-overview",
+   "via": "curator-multi:grok",
+   "model": "grok-4.7"
+  },
+  {
+   "ts": "2026-10-17T02:21:14.757256+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "codebase-scanning"
+   ],
+   "techniques": [
+    "incremental-scanning",
+    "llm-assisted-scanning",
+    "sensor-pipeline",
+    "the-narrowest-view-owns-the-number",
+    "verify-after-generate"
+   ],
+   "deviations": 0,
+   "context": "commands-recipes",
+   "via": "curator-multi:grok",
+   "model": "grok-4.7"
+  }
+ ]
+}
