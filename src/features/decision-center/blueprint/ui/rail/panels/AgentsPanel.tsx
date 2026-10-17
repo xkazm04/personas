@@ -4,10 +4,11 @@
 // command line and items; or the overview, the store's latest lines.
 // EDIT (port): bp's crews, swarm states (waiting, blocked, paused), steering and job Cancel are not brought: the store
 // keeps no swarm and Personas has no cancel door for a run. bp's queued state does not exist in the store either.
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useQuantizedNow } from '@/hooks/utility/timing/relativeTimeTicker';
 import { useSheet } from '../../../controller/SheetContext';
 import { LensGlyphIcon } from '../../LensGlyphIcon';
-import { newestFirst, runFacts, scopeOf, startLines } from './agentsModel';
+import { newestFirst, runFacts, scopeOf, startElapsed, startLines, startWord, tallyRuns } from './agentsModel';
 import { Overview, RunDetail, StartDetail, useRunWords } from './AgentsDetail';
 import { Group, Row, Workbench, mmss, useListRef, useWalk } from './shell';
 
@@ -22,16 +23,14 @@ export function AgentsPanel() {
   const starts = useMemo(() => startLines(s.ui.lines), [s.ui.lines]);
   const [sel, setSel] = useState<string | null>(null);
   const listRef = useListRef();
-  const running = runs.some((r) => r.status === 'running');
-  // the elapsed clocks: one 1 s interval, only while something runs
-  const [, setTick] = useState(0);
-  useEffect(() => { if (!running) return; const t = setInterval(() => setTick((n) => n + 1), 1000); return () => clearInterval(t); }, [running]);
+  const tally = useMemo(() => tallyRuns(runs), [runs]);
+  const states = s.live.started;
+  // the elapsed clocks ride the shared ticker: 1 s while a run or a started build works, an hour otherwise (idle)
+  const working = tally.running > 0 || starts.some((l) => states.get(l.result.label)?.settled === false);
+  const now = useQuantizedNow(working ? 1000 : 3_600_000);
   const ids = useMemo(() => [null as string | null, ...runs.map((r) => key('run', r.id)), ...starts.map((l) => key('start', l.result.label))], [runs, starts]);
   const cur = sel && ids.includes(sel) ? sel : null;
   const onKey = useWalk(ids, cur, setSel, listRef);
-  const now = Date.now();
-  const tally = { running: 0, done: 0, failed: 0 };
-  for (const r of runs) { if (r.status === 'running') tally.running++; else if (r.status === 'done') tally.done++; else tally.failed++; }
 
   const list = (
     <>
@@ -56,10 +55,10 @@ export function AgentsPanel() {
       </Group>
       <Group head={B.agents_started} n={starts.length} label={B.agents_started}>
         {starts.length ? starts.map((l) => {
-          const k = key('start', l.result.label), d = s.plan.LENS[l.lens];
+          const k = key('start', l.result.label), d = s.plan.LENS[l.lens], st = states.get(l.result.label);
           return (
-            <Row key={l.key} id={k} on={cur === k} onPick={() => setSel(k)} cls="job">
-              <span className="rk">{d ? <LensGlyphIcon glyph={d.glyph} /> : null}<span className="st running">{B.agents_started_word}</span><span>{tx(B.agents_pid, { pid: l.result.pid })}</span></span>
+            <Row key={l.key} id={k} on={cur === k} onPick={() => setSel(k)} cls={'job st-' + (st?.phase ?? 'queued')}>
+              <span className="rk">{d ? <LensGlyphIcon glyph={d.glyph} /> : null}{st ? <><span className={'st ' + st.phase}>{startWord(B, st.phase)}</span><span>{mmss(startElapsed(st, now))}</span><span>{tx(B.started_sessions, { count: st.sessions })}</span></> : <span className="st running">{B.agents_started_word}</span>}</span>
               <span className="rt one">{l.result.label}</span>
               <span className="rm"><span>{d?.name ?? l.lens}</span><span>{tx(B.agents_items, { count: l.ids.length })}</span></span>
             </Row>
@@ -71,14 +70,15 @@ export function AgentsPanel() {
 
   const run = cur?.startsWith('run:') ? runs.find((r) => key('run', r.id) === cur) : undefined;
   const start = cur?.startsWith('start:') ? starts.find((l) => key('start', l.result.label) === cur) : undefined;
-  const detail = run ? <RunDetail r={run} now={now} /> : start ? <StartDetail l={start} /> : <Overview />;
+  const detail = run ? <RunDetail r={run} now={now} /> : start ? <StartDetail l={start} now={now} /> : <Overview />;
   return (
     <Workbench cls="wb-agents" list={list} listLabel={B.agents_list} listRef={listRef} onKey={onKey} detailKey={cur ?? 'overview'} detailLabel={B.agents_detail}
       strip={(
         <>
           <div className="wb-count t-mint"><b>{tally.running}</b><span>{B.agents_s_running}</span></div>
           <div className="wb-count"><b>{tally.done}</b><span>{B.agents_s_done}</span></div>
-          <div className={'wb-count' + (tally.failed ? ' t-red' : '')}><b>{tally.failed}</b><span>{B.agents_s_failed}</span></div>
+          <div className={'wb-count' + (tally.failed ? ' t-red' : '')}><b>{tally.failed}</b><span>{B.agents_s_failed_only}</span></div>
+          <div className="wb-count"><b>{tally.aborted}</b><span>{B.agents_s_aborted}</span></div>
           <div className="wb-count"><b>{starts.length}</b><span>{B.agents_s_started}</span></div>
           <span className="wb-src">{B.agents_store}</span>
         </>

@@ -3,6 +3,8 @@
 // console's lines. Nothing here is invented: a figure the store has no row for is left out, never shown as zero.
 import type { ProposalStatus, Run, ScanSnapshot } from '@/lib/lensScan/wire';
 import type { ConsoleLine } from '../../../state/uiState';
+import type { BpText } from '../../../controller/useBlueprintText';
+import type { StartPhase, StartState } from '../../../live/startedModel';
 
 /** A proposal that a build got through: built, then triaged or released (a failed build is not one). */
 const BUILT: ReadonlySet<ProposalStatus> = new Set<ProposalStatus>(['done', 'accepted', 'rework', 'descoped', 'released']);
@@ -57,3 +59,18 @@ export function scopeOf(r: Run): { group: string } | { proposals: number } | { f
 export const newestFirst = (runs: readonly Run[]): Run[] => runs.slice().sort((a, b) => (a.started_at < b.started_at ? 1 : -1));
 
 export const startLines = (lines: readonly ConsoleLine[]): StartLine[] => lines.filter((l): l is StartLine => l.kind === 'start');
+
+/** The store's runs counted by what they did. `aborted` is its own count: a stopped run is not a failed one. */
+export function tallyRuns(runs: readonly Run[]): { running: number; done: number; failed: number; aborted: number } {
+  const t = { running: 0, done: 0, failed: 0, aborted: 0 };
+  for (const r of runs) t[r.status === 'running' ? 'running' : r.status === 'done' ? 'done' : r.status === 'aborted' ? 'aborted' : 'failed']++;
+  return t;
+}
+
+/** The word a started build's phase speaks in. */
+export function startWord(B: BpText, phase: StartPhase): string {
+  return ({ queued: B.started_queued, running: B.started_running, waiting: B.started_waiting, done: B.started_done, failed: B.started_failed, silent: B.started_silent })[phase];
+}
+
+/** How long a start has worked (settled: how long it took), in ms. */
+export const startElapsed = (st: StartState, now: number): number => Math.max(0, (st.until ?? now) - st.since);

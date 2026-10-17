@@ -77,6 +77,7 @@
 .bp-fly.wide .wb-sec p { margin: 0 0 9px; font-size: var(--bp-fs-16); line-height: 1.55; color: var(--bp-ink); max-width: 72ch; overflow-wrap: anywhere; }
 .bp-fly.wide .wb-sec p.wb-help { margin-top: 12px; font-size: var(--bp-fs-14); color: var(--bp-ink-2); }
 .bp-fly.wide .wb-help svg { vertical-align: -1px; }
+.bp-fly.wide .wb-note { margin: 12px 0 0; padding: 10px 14px; border-left: 3px solid var(--bp-ink-3); font-size: var(--bp-fs-15); color: var(--bp-ink); background: color-mix(in srgb, var(--bp-ink) 5%, transparent); }
 .bp-fly.wide .wb-err { margin: 12px 0 0; padding: 10px 14px; border-left: 3px solid var(--bp-red); font-size: var(--bp-fs-15); color: var(--bp-red-2); background: color-mix(in srgb, var(--bp-red) 7%, transparent); }
 
 /* figures */
@@ -101,11 +102,13 @@
 /* ---------- agents: runs and their log */
 .bp-fly.wide .st { font: 500 var(--bp-fs-12)/1.2 var(--bp-font-mono); letter-spacing: 0.07em; text-transform: uppercase; color: var(--bp-ink-2); }
 .bp-fly.wide .st.running { color: var(--bp-mint-2); }
-.bp-fly.wide .st.failed, .bp-fly.wide .st.aborted { color: var(--bp-red-2); }
+.bp-fly.wide .st.failed { color: var(--bp-red-2); }
+.bp-fly.wide .st.waiting, .bp-fly.wide .st.silent { color: var(--bp-amber-2); }
 .bp-fly.wide .wb-kick .st { padding: 1px 7px; border: 1px solid currentColor; }
 .bp-fly.wide .wb-row .bar { display: flex; height: 4px; margin-top: 3px; background: var(--bp-ink-4); overflow: hidden; }
 .bp-fly.wide .wb-row .bar i { background: var(--bp-mint); }
-.bp-fly.wide .wb-row.st-failed .bar i, .bp-fly.wide .wb-row.st-aborted .bar i { background: var(--bp-red); }
+.bp-fly.wide .wb-row.st-failed .bar i { background: var(--bp-red); }
+.bp-fly.wide .wb-row.st-aborted .bar i { background: var(--bp-ink-2); }
 .bp-fly.wide .wb-prog { height: 6px; margin: 0 0 6px; background: var(--bp-ink-4); }
 .bp-fly.wide .wb-prog i { display: block; height: 100%; background: var(--bp-mint); transition: width 0.4s; }
 .bp-fly.wide .wb-log { margin: 0; max-height: 440px; overflow: auto; padding: 12px 14px; background: color-mix(in srgb, var(--bp-ink) 6%, transparent); border: 1px solid var(--bp-ink-4); font: 400 var(--bp-fs-13)/1.55 var(--bp-font-mono); color: var(--bp-ink); white-space: pre-wrap; overflow-wrap: anywhere; }

@@ -119,7 +119,28 @@ const STATES = {
   'lg-backlog': async (p) => { await k(p, 'l'); await p.click('[data-testid="blueprint-ledger-filters"] .tr-seg .tr-seg-b:nth-child(2)'); await k(p, 'j'); await k(p, 'Space'); await k(p, 'j'); await k(p, 'Space'); },
   'lg-matrix': async (p) => { await k(p, 'l'); await k(p, '2'); },
   'lg-release': async (p) => { await k(p, 'l'); await k(p, '3'); },
+  // /perfect wave 1, lot A: a build this sheet started, followed on the fleet (the system store's session registry,
+  // fed here by hand): queued with no session, running, failed; its Agents row and detail, the console line, the queue row
+  'live-started-queued': async (p) => { await liveStart(p, null); },
+  'live-started-running': async (p) => { await liveStart(p, { state: 'running', exitCode: null }); },
+  'live-started-failed': async (p) => { await liveStart(p, { state: 'exited', exitCode: 1 }); },
 };
+
+/** Approve and build the first item, optionally give its start one fleet session, open the start in the Agents panel. */
+async function liveStart(p, session) {
+  await k(p, 'j'); await k(p, 'a'); await k(p, 'b'); await k(p, 'b');
+  if (session) {
+    const label = await p.evaluate(() => document.querySelector('[data-testid="blueprint-start-state"]')?.getAttribute('data-label') ?? null);
+    if (label) await p.evaluate(async ([l, over]) => {
+      const m = await import('/src/stores/systemStore.ts');
+      m.useSystemStore.setState({ fleetSessions: [{ id: 'shot-session', runLabel: 'fleet-door:lens_scan:' + l, createdAtMs: Date.now() - 95_000, lastActivityMs: Date.now() - 5_000, ...over }] });
+    }, [label, session]);
+    await p.waitForTimeout(400);
+  }
+  await p.click('[data-testid="blueprint-rail"] [data-k="agents"]');
+  await p.waitForTimeout(300);
+  await p.click('[data-testid="blueprint-flyout"] [data-row^="start:"]');
+}
 
 /** The feature a state opens on (`?feature=`), its L4 sheet open at once. */
 const FEATURE = {
@@ -128,7 +149,7 @@ const FEATURE = {
   'page-general': 'tax-handling', 'page-lens-good': 'tax-handling', 'page-lens-bad': 'tax-handling',
 };
 /** Frames taken at every size: the levels and the compare panel. */
-const EVERY_SIZE = new Set([...LEVELS, 'state-compare', 'page-general', 'page-lens-good', 'page-lens-bad', 'fly-agents', 'fly-plan', 'fly-view', 'tl-open', 'tl-travel', 'tl-travel-open', 'ov-hover', 'ov-decision', 'ov-select', 'lg-triage', 'lg-matrix', 'lg-release']);
+const EVERY_SIZE = new Set([...LEVELS, 'state-compare', 'page-general', 'page-lens-good', 'page-lens-bad', 'fly-agents', 'live-started-running', 'fly-plan', 'fly-view', 'tl-open', 'tl-travel', 'tl-travel-open', 'ov-hover', 'ov-decision', 'ov-select', 'lg-triage', 'lg-matrix', 'lg-release']);
 
 /** The title block, measured: what is clipped, what the lens sheets cover, whether the sheets leave the block. */
 const TITLE_CHECK = () => {

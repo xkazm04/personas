@@ -1,6 +1,7 @@
 import { useSheet } from '../controller/SheetContext';
 import type { ConsoleLine } from '../state/uiState';
 import type { BpText } from '../controller/useBlueprintText';
+import { startWord } from './rail/panels/agentsModel';
 import { isTriageReason, type TriageReason } from '../model/states';
 
 type Tx = ReturnType<typeof useSheet>['text']['tx'];
@@ -38,6 +39,18 @@ function TriageEntry({ line, B, tx, old }: { line: Extract<ConsoleLine, { kind: 
   );
 }
 
+/** A started build: the command as it ran, the label, and where the fleet has it now (its state follows the sessions). */
+function StartEntry({ line, B, tx, old }: { line: Extract<ConsoleLine, { kind: 'start' }>; B: BpText; tx: Tx; old?: boolean }) {
+  const st = useSheet().live.started.get(line.result.label);
+  return (
+    <div className={`bp-entry${old ? ' bp-old' : ''}`}>
+      <div className={`bp-cmd${old ? ' bp-old' : ''}`} data-testid="blueprint-command">{line.result.command}</div>
+      <div className="bp-why">{tx(B.console_started, { lens: line.lens, label: line.result.label, pid: line.result.pid })}</div>
+      {st && <div className="bp-why" data-testid="blueprint-start-state" data-label={line.result.label} data-phase={st.phase}>{tx(B.console_started_state, { state: startWord(B, st.phase), count: st.sessions })}</div>}
+    </div>
+  );
+}
+
 /** One console entry, exactly as the store answered: ids decided, each skipped row with its status and reason, the command started. */
 function Entry({ line, B, tx, old }: { line: ConsoleLine; B: BpText; tx: Tx; old?: boolean }) {
   if (line.kind === 'failed') {
@@ -45,14 +58,7 @@ function Entry({ line, B, tx, old }: { line: ConsoleLine; B: BpText; tx: Tx; old
     return <div className={`bp-cmd bp-fail${old ? ' bp-old' : ''}`}>{tx(B.console_failed, { verb, message: line.message })}</div>;
   }
   if (line.kind === 'triage') return <TriageEntry line={line} B={B} tx={tx} old={old} />;
-  if (line.kind === 'start') {
-    return (
-      <div className={`bp-entry${old ? ' bp-old' : ''}`}>
-        <div className={`bp-cmd${old ? ' bp-old' : ''}`} data-testid="blueprint-command">{line.result.command}</div>
-        <div className="bp-why">{tx(B.console_started, { lens: line.lens, label: line.result.label, pid: line.result.pid })}</div>
-      </div>
-    );
-  }
+  if (line.kind === 'start') return <StartEntry line={line} B={B} tx={tx} old={old} />;
   const r = line.result;
   return (
     <div className={`bp-entry${old ? ' bp-old' : ''}`} data-testid="blueprint-decide-result">

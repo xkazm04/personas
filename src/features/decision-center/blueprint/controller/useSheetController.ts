@@ -10,6 +10,9 @@ import { ViewStore, useViewLevel } from '../state/viewStore';
 import type { Sheet } from './SheetContext';
 import { useBlueprintText, useEngineWords } from './useBlueprintText';
 import { useEngineHooks } from './useEngineHooks';
+import { startLines } from '../ui/rail/panels/agentsModel';
+import { useStartedBuilds } from '../live/useStartedBuilds';
+import { useLiveRefresh } from './useLiveRefresh';
 import { useNavigation } from './useNavigation';
 import { useSheetData } from './useSheetData';
 import { useSheetKeys } from './useSheetKeys';
@@ -25,7 +28,7 @@ interface Props {
 export function useSheetController({ data: initial, actions, onClose, initialFeature }: Props) {
   const text = useBlueprintText();
   const words = useEngineWords(text);
-  const { data, plan, work, reload } = useSheetData(initial, actions);
+  const { data, plan, work, reload, readAt } = useSheetData(initial, actions);
   const [ui, dispatch] = useReducer(uiReducer, undefined, () => initialUi());
   const view = useRef(new ViewStore()).current;
   const tip = useRef(new TipStore()).current;
@@ -53,6 +56,12 @@ export function useSheetController({ data: initial, actions, onClose, initialFea
       disarmed: () => B.say_disarmed,
     };
   }, [B, tx]);
+  // the builds this sheet started, followed on the fleet; the last session of one ending is one immediate reload
+  const starts = useMemo(() => startLines(ui.lines), [ui.lines]);
+  const started = useStartedBuilds(starts, reload, data.scan.runs);
+  const fast = started.unsettled || data.scan.runs.some((r) => r.status === 'running');
+  useLiveRefresh({ reload, readAt, fast });
+  const live = useMemo(() => ({ building: started.building, started: started.byLabel }), [started.building, started.byLabel]);
   const writes = useWrites({ actions, work, ui, dispatch, reload, say });
   const hooks = useEngineHooks({ engine, plan, work, lens: ui.lens, nav, dispatch, tip });
 
@@ -70,8 +79,8 @@ export function useSheetController({ data: initial, actions, onClose, initialFea
   }, [engine, initialFeature, plan, nav]);
 
   const sheet = useMemo<Sheet>(
-    () => ({ data, actions, plan, work, ui, dispatch, engine, view, text, words, scope, queue, queueAll, current, nav, writes, onClose }),
-    [data, actions, plan, work, ui, engine, view, text, words, scope, queue, queueAll, current, nav, writes, onClose],
+    () => ({ data, actions, plan, work, ui, dispatch, engine, view, text, words, scope, queue, queueAll, current, nav, writes, live, onClose }),
+    [data, actions, plan, work, ui, engine, view, text, words, scope, queue, queueAll, current, nav, writes, live, onClose],
   );
   return { sheet, words, hooks, tip, setEngine };
 }

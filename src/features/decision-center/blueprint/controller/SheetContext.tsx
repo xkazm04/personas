@@ -6,12 +6,21 @@ import type { EngineWords } from '../engine/types';
 import type { Plan } from '../model/plan';
 import type { Scope } from '../model/scope';
 import type { Work, WorkItem } from '../model/work';
+import type { StartState } from '../live/startedModel';
 import type { BlueprintActions, BlueprintData } from '../source';
 import type { UiAction, UiState } from '../state/uiState';
 import type { ViewStore } from '../state/viewStore';
 import type { BlueprintText } from './useBlueprintText';
 import type { Nav } from './useNavigation';
 import type { Writes } from './useWrites';
+
+/** What is in flight right now, read off the fleet (the builds this sheet started). */
+export interface LiveState {
+  /** Proposal ids of every build this sheet started that has not settled. */
+  building: ReadonlySet<string>;
+  /** Each start's state, by its `personas:<uuid>` label. */
+  started: ReadonlyMap<string, StartState>;
+}
 
 export interface Sheet {
   data: BlueprintData;
@@ -33,6 +42,7 @@ export interface Sheet {
   current: WorkItem | null;
   nav: Nav;
   writes: Writes;
+  live: LiveState;
   onClose(): void;
 }
 

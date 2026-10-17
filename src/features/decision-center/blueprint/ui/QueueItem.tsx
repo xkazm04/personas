@@ -23,21 +23,24 @@ export function QueueItem({ p }: { p: WorkItem }) {
   const open = () => { if (s.ui.itemId === p.id) s.nav.openSheet(p.fid); else s.nav.select(p, true); };
   const accent = s.engine ? s.engine.accentOf(p.lens) : undefined;
   const tone = STATUS[p.status].tone;
+  // a build this sheet started for the item is still in flight on the fleet: the row says so until it settles
+  const building = s.live.building.has(p.id);
   const urg = p.status === 'proposed' && (p.risk ?? 0) >= HIGH_RISK ? 'high' : tone;
   return (
     <Press
-      tone={`bp-it u-${urg} bp-tone-${tone}`}
+      tone={`bp-it u-${urg} bp-tone-${tone}${building ? ' is-building' : ''}`}
       current={s.ui.itemId === p.id}
       onClick={open}
       onMouseEnter={() => { if (s.engine) { s.engine.hot = p.fid; s.engine.dirty = true; } }}
       onMouseLeave={() => { if (s.engine) { s.engine.hot = null; s.engine.dirty = true; } }}
       data-item={p.id}
       data-status={p.status}
+      data-building={building ? 'true' : undefined}
     >
       <span className="urg" aria-hidden="true" />
       <span className="rk">
         <span className="lz"><span className="bp-g" style={accent ? { color: accent } : undefined}><LensGlyphIcon glyph={L?.glyph ?? null} /></span>{L?.short ?? p.lens}</span>
-        <span className="uw">{statusWord(B, p.status)}</span>
+        <span className="uw">{building ? B.item_building : statusWord(B, p.status)}</span>
       </span>
       <span className="rt">{p.title}</span>
       <span className="rm"><span>{deltaText(s.plan, p, language)}</span><span>{tx(B.size_risk, { size: p.size, risk: p.risk ?? '-' })}</span></span>
