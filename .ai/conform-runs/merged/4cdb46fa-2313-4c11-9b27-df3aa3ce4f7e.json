@@ -1,0 +1,160 @@
+{
+ "schema": "conform-run/1",
+ "worker": "4cdb46fa-2313-4c11-9b27-df3aa3ce4f7e",
+ "subject": "alerting",
+ "evaluatedAt": "2026-10-17T00:40:15.332613+00:00",
+ "provider": "grok",
+ "model": "grok-4.7",
+ "pairs": [
+  {
+   "context": "triggers-triggers",
+   "subject": "alerting",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/triggers/sub_triggers/TriggerAddForm.tsx:29 This surface creates persona automation triggers (cron, webhook, file watcher, and the other types imported in the same form), and a search of this directory found none of the alert-rule vocabulary.",
+   "techniques": [
+    {
+     "technique": "rule-authoring-validation",
+     "verdict": "not-applicable",
+     "evidence": "src/features/triggers/sub_triggers/TriggerAddForm.tsx:29 Authors a trigger type plus a config blob, not a metric, comparator, threshold, and window."
+    },
+    {
+     "technique": "evaluation-loop",
+     "verdict": "not-applicable",
+     "evidence": "src/features/triggers/sub_triggers/TriggerAddForm.tsx:7 Cron preview is for a schedule trigger. No alert evaluator or metric window in this directory."
+    },
+    {
+     "technique": "absence-as-a-condition",
+     "verdict": "not-applicable",
+     "evidence": "src/features/triggers/sub_triggers/triggerListTypes.ts:14 Unknown here means the trigger has no runs yet, not a no-data alert policy or an evaluator heartbeat."
+    },
+    {
+     "technique": "dedup-and-cooldown",
+     "verdict": "not-applicable",
+     "evidence": "src/features/triggers/sub_triggers/RateLimitControls.tsx:98 This cooldown is TriggerRateLimitConfig between persona-trigger executions, the scheduling shape alerting says it does not own. No fire record."
+    },
+    {
+     "technique": "flap-control",
+     "verdict": "not-applicable",
+     "evidence": "src/features/triggers/sub_triggers/triggerListTypes.ts:12 Health is consecutive trigger-run outcomes, not a threshold sustain or recovery band."
+    },
+    {
+     "technique": "alert-lifecycle",
+     "verdict": "not-applicable",
+     "evidence": "src/features/triggers/sub_triggers/PendingTriggerApprovals.tsx:40 Approve or discard a held automation fire. Not an alert episode with acknowledgment and resolution kinds."
+    },
+    {
+     "technique": "escalation-routing",
+     "verdict": "not-applicable",
+     "evidence": "src/features/triggers/sub_triggers/PendingTriggerApprovals.tsx:23 A firing trigger is the automation that started a run. No severity reach table in this directory."
+    },
+    {
+     "technique": "periodic-digest",
+     "verdict": "not-applicable",
+     "evidence": "src/features/triggers/sub_triggers/TriggerAddForm.tsx:10 Interval and cron decide when a trigger runs an agent. No news-gated alert summary in this directory."
+    }
+   ],
+   "absenceTerms": [
+    "hysteresis",
+    "FiredAlert",
+    "alertRules",
+    "not_evaluable",
+    "quiet_hours"
+   ]
+  },
+  {
+   "context": "overview-observability",
+   "subject": "alerting",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/overview/sub_observability/libs/useObservabilityData.ts:70 The observability tab still evaluates alert rules against the filtered metrics whenever that series changes, so the viewed range and persona become part of the predicate, and that call writes fires.",
+   "techniques": [
+    {
+     "technique": "rule-authoring-validation",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_observability/libs/useGlobalAlertEvaluator.ts:26 The window is an evaluator constant. AlertRule stores metric, operator, threshold, severity, and persona only. The save path checks a finite number; the backend door rejects only >= 0 and > negative, and nothing previews how often the rule would have fired."
+    },
+    {
+     "technique": "evaluation-loop",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_observability/libs/useObservabilityData.ts:70 This call passes no private snapshot, so it uses the tab's filtered metrics. useGlobalAlertEvaluator does fetch its own 1-day bundle, skips an overlapping tick, and is mounted from BackgroundServices, but both paths still call evaluateAlertRules, and an empty rate window is stored as 0."
+    },
+    {
+     "technique": "absence-as-a-condition",
+     "verdict": "deviation",
+     "evidence": "src/stores/slices/overview/alertSlice.ts:103 No decided runs become success rate 0, so a below-threshold rule fires on idle data. There is no not-evaluable state, no per-rule no-data policy, and alertEvalHealth is written by the evaluator itself. The Rust test empty_window_never_fires_rate_rules only asserts a > rule stays quiet."
+    },
+    {
+     "technique": "dedup-and-cooldown",
+     "verdict": "deviation",
+     "evidence": "src/stores/slices/overview/alertSlice.ts:453 The in-memory cooldown is stamped when the condition is detected, before createFiredAlert settles, and the 1-hour window is the constant FIRED_COOLDOWN_MS. The Rust loop is named the authority but this client path still inserts fires; a failed persist leaves the window spent. Repeats are new FiredAlert ids, with no suppressed count."
+    },
+    {
+     "technique": "flap-control",
+     "verdict": "deviation",
+     "evidence": "src/stores/slices/overview/alertSlice.ts:134 Breach is a level compare of the current snapshot. AlertRule has no sustain, recovery band, or persisted breaching state, and nothing notifies when the condition ends. The 1-hour cooldown is what stops repeats."
+    },
+    {
+     "technique": "alert-lifecycle",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_observability/components/AlertHistoryPanel.tsx:62 The only human ending is a boolean dismiss. fired_alerts has no acknowledged state, resolution kind, or actor. The fire row does snapshot value and threshold. Clear deletes every row; the 200-row list cap is a query limit, not a retention policy named at creation."
+    },
+    {
+     "technique": "escalation-routing",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_observability/components/AlertToastContainer.tsx:26 Info, warning, and critical all enter the same polite toast and leave after 8 seconds. Severity is a closed trio on the rule, but reach does not differ: no routing table, no escalation on unacknowledged age, no quiet-hours delivery filter."
+    },
+    {
+     "technique": "periodic-digest",
+     "verdict": "deviation",
+     "evidence": "src/stores/slices/overview/alertSlice.ts:482 Every fire is queued as an immediate toast. This context has no content-gated summary, no per-window claim, and no class allowed to wait. The only digest hit in the directory is Athena's triage.digest bucket count."
+    }
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-17T00:40:15.332613+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "alerting"
+   ],
+   "techniques": [
+    "absence-as-a-condition",
+    "alert-lifecycle",
+    "dedup-and-cooldown",
+    "escalation-routing",
+    "evaluation-loop",
+    "flap-control",
+    "periodic-digest",
+    "rule-authoring-validation"
+   ],
+   "deviations": 0,
+   "context": "triggers-triggers",
+   "via": "curator-multi:grok",
+   "model": "grok-4.7"
+  },
+  {
+   "ts": "2026-10-17T00:40:15.332613+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "alerting"
+   ],
+   "techniques": [
+    "absence-as-a-condition",
+    "alert-lifecycle",
+    "dedup-and-cooldown",
+    "escalation-routing",
+    "evaluation-loop",
+    "flap-control",
+    "periodic-digest",
+    "rule-authoring-validation"
+   ],
+   "deviations": 1,
+   "context": "overview-observability",
+   "via": "curator-multi:grok",
+   "model": "grok-4.7"
+  }
+ ]
+}

@@ -22427,7 +22427,11 @@
           "revision": 4,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_observability/libs/useObservabilityData.ts:70 The observability tab still evaluates alert rules against the filtered metrics whenever that series changes, so the viewed range and persona become part of the predicate, and that call writes fires.",
+          "evaluatedAt": "2026-10-17",
+          "evaluatedAgainst": "sha256-b2:90e16e9a2b80434b",
+          "evaluatedRevision": 4
         },
         {
           "subject": "agent-memory",
@@ -38361,13 +38365,16 @@
           "score": 0,
           "why": [],
           "confidence": "strong",
-          "state": "unknown",
+          "state": "not-applicable",
           "source": "conform",
           "grounding": "precondition",
-          "evidence": "added by /conform triage 2026-08-29: the golden path precondition governs this context; the matcher paired on vocabulary",
+          "evidence": "src/features/triggers/sub_triggers/TriggerAddForm.tsx:29 This surface creates persona automation triggers (cron, webhook, file watcher, and the other types imported in the same form), and a search of this directory found none of the alert-rule vocabulary.",
           "digest": "sha256-b2:90e16e9a2b80434b",
           "revision": 4,
-          "changedAt": "2026-09-29"
+          "changedAt": "2026-09-29",
+          "evaluatedAt": "2026-10-17",
+          "evaluatedAgainst": "sha256-b2:90e16e9a2b80434b",
+          "evaluatedRevision": 4
         }
       ],
       "governance": "governed"
