@@ -6959,7 +6959,11 @@
           "revision": 17,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/core/memory_compile.rs:251 Failed memory inserts are discarded while compilation returns success with only its created count, concealing partial or complete write failure.",
+          "evaluatedAt": "2026-10-17",
+          "evaluatedAgainst": "sha256-b2:641cb6bf0b2c6916",
+          "evaluatedRevision": 17
         },
         {
           "subject": "review-iteration-loops",
@@ -14897,7 +14901,11 @@
           "revision": 17,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/home/sub_welcome/lib/useNavCardStatus.ts:74 Unavailable activity data becomes zero counts and trends, making a failed initial read indistinguishable from confirmed inactivity.",
+          "evaluatedAt": "2026-10-17",
+          "evaluatedAgainst": "sha256-b2:641cb6bf0b2c6916",
+          "evaluatedRevision": 17
         },
         {
           "subject": "agent-memory",
@@ -40312,7 +40320,11 @@
           "revision": 17,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_dependencies/credentialGraph.ts:305 Missing health data contributes a definite zero to the displayed cost-impact estimate instead of preserving an unavailable quantity.",
+          "evaluatedAt": "2026-10-17",
+          "evaluatedAgainst": "sha256-b2:641cb6bf0b2c6916",
+          "evaluatedRevision": 17
         },
         {
           "subject": "declared-process-graph",

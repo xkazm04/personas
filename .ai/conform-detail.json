@@ -28886,6 +28886,59 @@
           "evidence": "src/features/overview/components/health/SystemHealthPanel.tsx:48 This flag controls the crash viewer mount at line 139, so the viewer is unavailable in production builds."
         }
       ]
+    },
+    "4560e824-e952-45a9-8aef-fe88d721952e/optional-dependency-degradation": {
+      "context": "home-welcome",
+      "subject": "optional-dependency-degradation",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-17",
+      "evaluatedTs": "2026-10-17T22:10:26.595Z",
+      "worker": "fc0ed6f0-3e55-48ad-97da-0b3fd3104b91",
+      "techniques": [
+        {
+          "technique": "capability-honest-refusal",
+          "verdict": "deviation",
+          "evidence": "src/features/home/sub_welcome/lib/useNavCardStatus.ts:74 The store preserves null when its initial fetch fails, but this hook replaces it with ZERO_WINDOW and renders definite numeric activity and trend values."
+        }
+      ]
+    },
+    "77b8c703-0803-42bc-808a-f255725cc293/optional-dependency-degradation": {
+      "context": "vault-dependency-graph",
+      "subject": "optional-dependency-degradation",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-17",
+      "evaluatedTs": "2026-10-17T22:10:26.595Z",
+      "worker": "fc0ed6f0-3e55-48ad-97da-0b3fd3104b91",
+      "techniques": [
+        {
+          "technique": "capability-honest-refusal",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_dependencies/credentialGraph.ts:305 Missing health records become zero burn rates; the revenue-loss reduction sums these values and SimulationPanel displays the total without an unavailable-data qualification."
+        }
+      ]
+    },
+    "e62cdb2d-a626-4a0b-afdf-ac3d7aada9f0/optional-dependency-degradation": {
+      "context": "commands-core",
+      "subject": "optional-dependency-degradation",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-17",
+      "evaluatedTs": "2026-10-17T22:10:26.595Z",
+      "worker": "fc0ed6f0-3e55-48ad-97da-0b3fd3104b91",
+      "techniques": [
+        {
+          "technique": "absent-degrades-malformed-fails-fast",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/core/gallery.rs:41 PERSONAS_WEB_URL silently loses surrounding whitespace rather than rejecting structural damage, and the reader performs no URL-shape validation before feature use."
+        },
+        {
+          "technique": "capability-honest-refusal",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/core/memory_compile.rs:251 The insert loop discards database errors; MemoryCompileResult returns created IDs and their count without failed-item results or a failure count."
+        }
+      ]
     }
   }
 }
