@@ -29,7 +29,8 @@ export function DecisionCard() {
   const shown = !!p && !!moves && !s.ui.sheet && !s.ui.overlay && s.ui.page === 'plan' && !s.ui.selected.length;
   useCardPlace(ref, s.engine, s.view, shown && p ? p.fid : null, W);
   if (!shown || !p || !moves) return null;
-  const risk = p.risk ?? 0, urg = risk >= HIGH_RISK ? B.dc_urgent : risk >= 2 ? B.dc_soon : B.dc_when;
+  // a missing risk is not a low one: it reads "risk not stated", never the low-urgency word
+  const risk = p.risk ?? 0, urg = p.risk == null ? B.dc_risk_unstated : risk >= HIGH_RISK ? B.dc_urgent : risk >= 2 ? B.dc_soon : B.dc_when;
   const sum = proposalSummary(p.title, p.body), lens = s.plan.LENS[p.lens], pos = s.queue.findIndex((q) => q.id === p.id) + 1;
   const run = (m: CardMove) => {
     if (m === 'approve') void s.writes.approve(p);

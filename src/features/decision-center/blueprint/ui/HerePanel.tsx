@@ -1,4 +1,5 @@
 import { useSheet } from '../controller/SheetContext';
+import { approvedOf, waitingOf } from '../model/counts';
 import { useViewLevel } from '../state/viewStore';
 import { Press } from './Press';
 import { placeName } from './QueueList';
@@ -16,10 +17,10 @@ export function HerePanel() {
   const lv = useViewLevel(s.view);
   const n = s.ui.sheet ? 4 : lv.n;
   const names = [B.level_site, B.level_wing, B.level_room, B.level_bay, B.level_feature];
-  const waiting = s.queue.filter((p) => p.status === 'proposed').length;
-  const approved = s.queue.length - waiting;
+  const waiting = waitingOf(s.queue);
+  const approved = approvedOf(s.queue);
   const packItems = s.work.packFlow ? s.work.items.filter((p) => p.pack && p.status === 'done' && (!s.scope.feats || s.scope.feats.has(p.fid))).length : 0;
-  const all = s.queueAll.filter((p) => p.status === 'proposed').length;
+  const all = waitingOf(s.queueAll);
   const lensShort = s.plan.LENS[s.ui.lens]?.short ?? '';
   const place = placeName(s);
   return (

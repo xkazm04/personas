@@ -2,6 +2,7 @@ import type { ReactNode, Ref } from 'react';
 import { useSheet } from '../../controller/SheetContext';
 import { capOf } from '../../model/keymap';
 import { AsOfBar, StageLadder } from '../page/bits';
+import { kindWord } from '../format';
 import { Press } from '../Press';
 
 /**
@@ -17,7 +18,7 @@ export function SheetHead({ fid, closeRef, tabs }: { fid: string; closeRef?: Ref
   if (!T) return null;
   const f = T.f;
   const ms = f.milestone ? s.plan.S.milestones.find((m) => m.id === f.milestone) : undefined;
-  const kicker = [f.priority, f.kind, ms ? (ms.code ? ms.code + ' ' : '') + ms.name : null].filter(Boolean).join(' · ') || B.pg_kind_default;
+  const kicker = [f.priority, f.kind ? kindWord(B, f.kind) : null, ms ? (ms.code ? ms.code + ' ' : '') + ms.name : null].filter(Boolean).join(' · ') || B.pg_kind_default;
   const crumb = (n: number, label: string) => <span key={n}><i aria-hidden="true">{'›'}</i><Press onClick={() => s.nav.toLevel(n)}>{label}</Press></span>;
   return (
     <header className="pg-head">

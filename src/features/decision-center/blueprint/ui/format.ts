@@ -1,7 +1,18 @@
 // Small formatters the panels share. Numbers render in the active language; metric names come from the lens
 // manifest's own field label (data), never from a key of ours.
+import type { BpText } from '../controller/useBlueprintText';
 import type { Plan } from '../model/plan';
 import type { WorkItem } from '../model/work';
+
+/** "Wing · Room", or the name once when the wing and the room share it ("Scheduling & classes" twice reads as a stutter). */
+export const placeLine = (wing: string, room: string): string => (wing === room ? wing : wing + ' · ' + room);
+
+/** A feature kind in words: a known kind has a key; an unknown one is spaced and lower-cased, never raw caps. */
+const KIND_KEY = { user_flow: 'kind_user_flow', capability: 'kind_capability' } as const satisfies Record<string, keyof BpText>;
+export function kindWord(B: BpText, kind: string): string {
+  const k = KIND_KEY[kind as keyof typeof KIND_KEY];
+  return k ? B[k] : kind.replace(/[_-]+/g, ' ').trim().toLowerCase();
+}
 
 export const fmtNum = (language: string, v: number): string =>
   new Intl.NumberFormat(language, { maximumFractionDigits: 1 }).format(v);

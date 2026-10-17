@@ -17,6 +17,12 @@ import type { ReadinessLevel } from '../blueprint/source';
 type ReadinessFields = Pick<LensScanProduct, 'hasMap' | 'measuredFacets' | 'hasEvents'>;
 
 /**
+ * The store did not open: its counts are unknown, not zero. Every surface that prints a figure from the store says so
+ * instead of reading the zeros an unopened store leaves behind (a project that failed to open is not "map only").
+ */
+export const storeUnreadable = (p: Pick<LensScanProduct, 'error'>): boolean => !!p.error;
+
+/**
  * missing  = no readable map: the product cannot be drawn.
  * map-only = the map draws, nothing is measured yet.
  * measured = the map and at least one reading.

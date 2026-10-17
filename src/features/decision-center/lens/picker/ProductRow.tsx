@@ -14,7 +14,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { Press } from '../../blueprint/ui/Press';
 import type { ReadinessLevel } from '../../blueprint/source';
 import { openLensSheet } from '../lensSheetStore';
-import { readinessLevel } from '../readiness';
+import { readinessLevel, storeUnreadable } from '../readiness';
 import { Checklist } from './Checklist';
 import { LevelIcon } from './LevelIcon';
 
@@ -41,10 +41,12 @@ export function levelWords(L: LensCopy, level: ReadinessLevel): { label: string;
 export function ProductRow({ p }: { p: LensScanProduct }) {
   const { t, tx } = useTranslation();
   const L = t.decisionCenter.lens;
+  const unread = storeUnreadable(p);
   const level = readinessLevel(p);
-  const words = levelWords(L, level);
+  // a store that did not open is not "map only": it says so, in the dashed (cannot be read) shape
+  const words = unread ? { label: L.level_unreadable, tip: L.level_tip_unreadable } : levelWords(L, level);
   return (
-    <li className="pj-row" data-testid={`blueprint-product-${p.projectId}`} data-level={level}>
+    <li className="pj-row" data-testid={`blueprint-product-${p.projectId}`} data-level={unread ? 'unreadable' : level}>
       <div className="pj-top">
         <div className="pj-id">
           <b>{p.name}</b>
@@ -52,7 +54,7 @@ export function ProductRow({ p }: { p: LensScanProduct }) {
         </div>
         <Tooltip content={words.tip}>
           <span className="pj-lv" tabIndex={0}>
-            <LevelIcon level={level} />
+            <LevelIcon level={unread ? 'missing' : level} />
             {words.label}
           </span>
         </Tooltip>

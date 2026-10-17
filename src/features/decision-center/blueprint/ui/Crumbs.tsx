@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useSheet } from '../controller/SheetContext';
-import { counts, healthOf } from '../model/aggregates';
+import { figures, waitingOf } from '../model/counts';
 import { placeOf } from '../model/scope';
 import { useViewLevel } from '../state/viewStore';
 import { CrumbSum } from './header/CrumbSum';
@@ -25,8 +25,8 @@ export function Crumbs() {
   const L = s.plan.L;
   const wing = lv.wing ? L.WING[lv.wing] : undefined, room = lv.room ? L.ROOM[lv.room] : undefined, bay = lv.bay ? L.BAY[lv.bay] : undefined;
   const feats = useMemo(() => placeOf(L, s.scope)?.feats ?? s.plan.S.features, [L, s.scope, s.plan]);
-  const c = counts(feats);
-  const d = { n: c.n, live: c.live + c.flagged, build: c.build, paper: c.paper, dep: c.dep, bad: healthOf(feats, null).bad, asks: s.queue.filter((p) => p.status === 'proposed').length };
+  const { n: fn, live, build, paper, dep, bad } = figures(feats);
+  const d = { n: fn, live, build, paper, dep, bad, asks: waitingOf(s.queue) };
 
   const chain: { full: string; short: string }[] = [{ full: s.data.product.name, short: s.data.product.name }];
   if (n >= 1 && wing) chain.push({ full: `${wing.def.letter} · ${wing.def.name}`, short: wing.def.letter });

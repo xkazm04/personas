@@ -1,0 +1,10 @@
+/* The figures' own additions (lot B): the off-plan note under the product strip, the key line's clickable ? and the
+   not-measured / not-stated marks. Tokens only (theme/bp-tokens.css); the sheet's Press (.bp-press) resets the button. */
+.bp-offplan-row { padding: 6px 16px; border-bottom: 1px solid var(--bp-ink-3); background: color-mix(in srgb, var(--bp-amber) 8%, transparent); }
+.bp-offplan-row .bp-offplan { display: inline-flex; align-items: center; min-height: 26px; font: 500 var(--bp-fs-12) var(--bp-font-mono); letter-spacing: var(--bp-ls-2); text-transform: uppercase; color: var(--bp-amber-2); text-decoration: underline; text-underline-offset: 3px; }
+.bp-offplan-row .bp-offplan:hover { color: var(--bp-ink-hi); }
+.bp-ft .bp-ft-help { display: inline-flex; align-items: center; gap: 5px; font: inherit; letter-spacing: inherit; text-transform: inherit; color: var(--bp-ink-2); }
+.bp-ft .bp-ft-help:hover { color: var(--bp-ink-hi); }
+.bp-ft .bp-ft-help .bp-kbd { border-color: var(--bp-ink-2); }
+/* a lens nobody has measured reads as absent, not as a clean lens */
+.bp-fly.wide .wb-kn .c.nm { font-style: italic; color: var(--bp-ink-2); }

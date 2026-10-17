@@ -6,6 +6,8 @@
 import { useMemo, useState } from 'react';
 import { useSheet } from '../../../controller/SheetContext';
 import { stageWord } from '../../../controller/useBlueprintText';
+import { figures, waitingOf } from '../../../model/counts';
+import { placeLine } from '../../format';
 import type { Feature } from '../../../standard/load';
 import { StageSwatch } from '../../legend/Specimens';
 import { sheetNumber } from '../../header/ProjLine';
@@ -28,7 +30,7 @@ export function PlanPanel() {
     const out: { id: string; head: string; fs: Feature[] }[] = [];
     for (const w of s.plan.L.wings) for (const r of w.rooms) {
       const fs = mode === 'all' ? r.feats : r.feats.filter((f) => (lens ? f.trouble.some((t) => t.lens === lens) : f.trouble.length));
-      if (fs.length) out.push({ id: r.id, head: w.def.name + ' · ' + r.d.name, fs: mode === 'all' ? fs : fs.slice().sort((a, b) => rank(a) - rank(b)) });
+      if (fs.length) out.push({ id: r.id, head: placeLine(w.def.name, r.d.name), fs: mode === 'all' ? fs : fs.slice().sort((a, b) => rank(a) - rank(b)) });
     }
     return out;
   }, [s.plan, mode, lens]);
@@ -36,6 +38,8 @@ export function PlanPanel() {
   const cur = sel && ids.includes(sel) ? sel : null;
   const onKey = useWalk(ids, cur, setSel, listRef);
   const n = ids.length - 1, sheet = sheetNumber(L ? L.short : null);
+  // the header's own figures (counts.ts): bad is "in trouble", watch is its own figure, never folded in
+  const fg = useMemo(() => figures(s.plan.S.features, lens), [s.plan, lens]);
 
   const list = (
     <>
@@ -48,7 +52,7 @@ export function PlanPanel() {
       {groups.length ? groups.map((g) => (
         <Group key={g.id} head={g.head} n={g.fs.length} label={g.head}>
           {g.fs.map((f) => {
-            const waiting = s.work.byFeature.get(f.id)?.filter((p) => p.status === 'proposed').length ?? 0;
+            const waiting = waitingOf(s.work.byFeature.get(f.id) ?? []);
             return (
               <Row key={f.id} id={f.id} on={cur === f.id} onPick={() => setSel(f.id)} cls={'ft h-' + f.health}>
                 <span className="sy"><StageSwatch st={f.stage} w={22} h={14} /></span>
@@ -65,9 +69,16 @@ export function PlanPanel() {
   const strip = (
     <>
       <div className="wb-count"><b>{sheet}</b><span>{L ? L.name : B.general_arrangement}</span></div>
-      <div className="wb-count"><b>{n}</b><span>{mode === 'all' ? B.plan_s_features : L ? tx(B.plan_s_trouble_lens, { lens: L.name }) : B.plan_s_trouble}</span></div>
+      {mode === 'all'
+        ? <div className="wb-count"><b>{n}</b><span>{B.plan_s_features}</span></div>
+        : (
+          <>
+            <div className="wb-count"><b>{fg.bad}</b><span>{L ? tx(B.plan_s_trouble_lens, { lens: L.name }) : B.plan_s_trouble}</span></div>
+            <div className="wb-count"><b>{fg.watch}</b><span>{B.plan_s_watch}</span></div>
+          </>
+        )}
       <div className="wb-filter" role="group" aria-label={B.plan_list}>
-        <Press on={mode === 'trouble'} onClick={() => setMode('trouble')}>{B.plan_in_trouble}</Press>
+        <Press on={mode === 'trouble'} onClick={() => setMode('trouble')}>{B.plan_bad_watch}</Press>
         <Press on={mode === 'all'} onClick={() => setMode('all')}>{B.plan_all}</Press>
       </div>
     </>

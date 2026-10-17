@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from 'react';
 import '../../styles/page-switch.css';
 import { useSheet } from '../../controller/SheetContext';
+import { openFindings } from '../../model/counts';
 import { Press } from '../Press';
 
 /** The sheet number the title line prints: G-001 for the General arrangement, the lens's short code for a lens sheet. */
@@ -15,7 +16,7 @@ export function sheetNumber(short: string | null): string {
 function PageSwitch() {
   const s = useSheet();
   const { B } = s.text;
-  const open = s.data.scan.proposals.reduce((n, p) => n + (p.status === 'proposed' ? 1 : 0), 0);
+  const open = openFindings(s.work);
   return (
     <span className="pgsw" role="group" aria-label={B.lg_page_switch} data-testid="blueprint-page-switch">
       <Press on={s.ui.page === 'plan'} onClick={() => s.dispatch({ type: 'page', page: 'plan' })}>{B.drawing_set}</Press>

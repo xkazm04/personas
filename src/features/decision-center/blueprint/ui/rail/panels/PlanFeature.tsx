@@ -5,7 +5,9 @@
 // work on the feature (waiting, approved), and the open goes to the L4 sheet, where the work is decided.
 import { useSheet } from '../../../controller/SheetContext';
 import { stageWord, verdictWord } from '../../../controller/useBlueprintText';
+import { approvedOf, waitingOf } from '../../../model/counts';
 import type { Feature } from '../../../standard/load';
+import { placeLine } from '../../format';
 import { StageSwatch } from '../../legend/Specimens';
 import { LensGlyphIcon } from '../../LensGlyphIcon';
 import { Press } from '../../Press';
@@ -16,14 +18,14 @@ export function PlanFeature({ f }: { f: Feature }) {
   const { B, tx } = s.text;
   const T = s.plan.L.TILE[f.id];
   const work = s.work.byFeature.get(f.id) ?? [];
-  const waiting = work.filter((p) => p.status === 'proposed').length, approved = work.filter((p) => p.status === 'approved').length;
+  const waiting = waitingOf(work), approved = approvedOf(work);
   const why = new Map(f.trouble.map((t) => [t.lens, t.why]));
   const tone = f.health === 'bad' ? ' t-red' : f.health === 'watch' ? ' t-amber' : '';
   const open = () => { s.dispatch({ type: 'flyout', id: null }); s.nav.openSheet(f.id); };
   const show = () => { s.dispatch({ type: 'flyout', id: null }); s.nav.flyToFeature(f.id); };
   return (
     <>
-      <div className="wb-kick">{f.code && <span>{f.code}</span>}<span>{T ? T.wing.def.name + ' · ' + T.room.d.name : f.domain}</span>{T && <span>{T.bay.cap.name}</span>}</div>
+      <div className="wb-kick">{f.code && <span>{f.code}</span>}<span>{T ? placeLine(T.wing.def.name, T.room.d.name) : f.domain}</span>{T && <span>{T.bay.cap.name}</span>}</div>
       <h3 className="wb-title wb-glyph"><StageSwatch st={f.stage} w={30} h={19} />{f.name}</h3>
       {f.summary && <p className="wb-lede">{f.summary}</p>}
       <div className="wb-figs">

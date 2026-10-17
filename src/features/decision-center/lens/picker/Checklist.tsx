@@ -8,6 +8,8 @@ import type { LensScanProduct } from '@/api/lensScan';
 import { useTranslation } from '@/i18n/useTranslation';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 
+import { storeUnreadable } from '../readiness';
+
 const MARK_OK = '✓';
 const MARK_NO = '–';
 
@@ -17,6 +19,8 @@ export function Checklist({ p }: { p: LensScanProduct }) {
   const { t, tx, language } = useTranslation();
   const L = t.decisionCenter.lens;
   const n = (v: number) => v.toLocaleString(language);
+  // an unopened store left zeros behind: they are not readings, so every figure out of it reads "not read"
+  const unread = storeUnreadable(p), notRead = L.check_not_read;
   const rows: CheckRow[] = [
     {
       key: 'map',
@@ -26,14 +30,14 @@ export function Checklist({ p }: { p: LensScanProduct }) {
     },
     { key: 'store', label: L.check_store, ok: !p.error, value: p.error ? undefined : tx(L.store_version, { version: p.storeVersion }) },
     { key: 'events', label: L.check_events, ok: p.hasEvents },
-    { key: 'features', label: L.check_features, ok: p.features > 0, value: n(p.features) },
-    { key: 'lenses', label: L.check_lenses, ok: p.lenses > 0, value: n(p.lenses) },
-    { key: 'facets', label: L.check_facets, ok: p.measuredFacets > 0, value: n(p.measuredFacets) },
+    { key: 'features', label: L.check_features, ok: !unread && p.features > 0, value: unread ? notRead : n(p.features) },
+    { key: 'lenses', label: L.check_lenses, ok: !unread && p.lenses > 0, value: unread ? notRead : n(p.lenses) },
+    { key: 'facets', label: L.check_facets, ok: !unread && p.measuredFacets > 0, value: unread ? notRead : n(p.measuredFacets) },
     {
       key: 'last',
       label: L.check_last_scan,
-      ok: !!p.lastRunAt,
-      value: formatRelativeTime(p.lastRunAt, MARK_NO, { language, dateFallbackDays: 14 }),
+      ok: !unread && !!p.lastRunAt,
+      value: unread ? notRead : formatRelativeTime(p.lastRunAt, MARK_NO, { language, dateFallbackDays: 14 }),
     },
   ];
   return (

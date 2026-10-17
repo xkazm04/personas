@@ -7,6 +7,7 @@ import type { Feature } from '../../standard/load';
 import type { RoomNode, WingNode } from '../../model/layout';
 import { lensContent } from '../../engine/lens';
 import { countsAt } from '../../engine/travel';
+import { figures } from '../../model/counts';
 import type { FlagBox } from '../../engine/types';
 import { formatPercent } from '@/lib/utils/formatters';
 
@@ -49,7 +50,7 @@ export function TileBody({ s, f, flag }: { s: Sheet; f: Feature; flag: FlagBox |
 export function PlaceBody({ s, o }: { s: Sheet; o: RoomNode | WingNode }) {
   const { B, tx } = s.text, e = s.engine, now = !e || e.isNow, W = s.words;
   const c = countsAt(o.feats, (f) => (e ? e.stageOf(f) : f.stage)), tot = Math.max(1, c.n);
-  const bad = now ? o.feats.filter((f) => f.health === 'bad').length : 0;
+  const bad = now ? figures(o.feats).bad : 0;
   const room = o.kind === 'room';
   const kick = room ? tx(B.hov_room_kicker, { letter: o.wing.def.letter, wing: o.wing.def.name }) : tx(B.hov_wing_kicker, { letter: o.def.letter });
   const parts = [W.featuresN(c.n), W.live(c.live + c.flagged), W.building(c.build), W.onPaper(c.paper)];
