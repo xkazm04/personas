@@ -94,6 +94,7 @@ export type ConnectorReadiness =
   | 'linked_untested' // credential linked, not yet tested
   | 'healthy'         // credential linked, healthcheck passed
   | 'unverifiable'    // credential linked, but the connector has no live probe
+  | 'unreachable'     // credential linked, the probe could not reach the service
   | 'unhealthy';      // credential linked, healthcheck failed
 
 export function deriveReadiness(status: ConnectorStatus): ConnectorReadiness {
@@ -104,7 +105,16 @@ export function deriveReadiness(status: ConnectorStatus): ConnectorReadiness {
   // separated from `healthy` purely so the UI stops claiming a green check
   // nothing earned.
   if (status.result.state === 'unverifiable') return 'unverifiable';
+  // `unreachable` (connect / DNS / timeout) is "could not check now", not a
+  // verdict about the credential. Folding it into `unhealthy` painted every
+  // connector red on an offline laptop and taught the user that red is noise.
+  if (status.result.state === 'unreachable') return 'unreachable';
   return status.result.success ? 'healthy' : 'unhealthy';
+}
+
+/** True when the last probe never reached the service, so it judged nothing. */
+export function isUnreachable(result: ConnectorTestResult | null | undefined): boolean {
+  return result?.state === 'unreachable';
 }
 
 /** True if the connector has a linked credential (minimum for execution). */
@@ -167,6 +177,7 @@ export const STATUS_CONFIG = {
   ready: { color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20', labelKey: 'status_ready' },
   untested: { color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20', labelKey: 'status_untested' },
   unverifiable: { color: 'text-foreground', bg: 'bg-secondary/40 border-primary/15', labelKey: 'status_unverifiable' },
+  unreachable: { color: 'text-status-warning', bg: 'bg-status-warning/10 border-status-warning/20', labelKey: 'status_unreachable' },
   failed: { color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20', labelKey: 'status_failed' },
   missing: { color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20', labelKey: 'status_missing' },
   testing: { color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20', labelKey: 'status_testing' },
@@ -177,5 +188,6 @@ export function getStatusKey(status: ConnectorStatus): keyof typeof STATUS_CONFI
   if (!status.credentialId) return 'missing';
   if (!status.result) return 'untested';
   if (status.result.state === 'unverifiable') return 'unverifiable';
+  if (status.result.state === 'unreachable') return 'unreachable';
   return status.result.success ? 'ready' : 'failed';
 }

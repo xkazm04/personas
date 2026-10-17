@@ -413,6 +413,15 @@ replaced (the restored baseline is what makes this possible) and reports
 transitions in its completion notification — recovered / newly failing / failing
 — instead of the old "tested N connectors".
 
+A probe that never reached the service (`state: "unreachable"` - offline, DNS,
+timeout) is **unreachable**, not failed: an amber "Couldn't reach" badge with a
+Wi-Fi-off icon, a result panel that says it is not a verdict on the credential,
+and its own "N unreachable" filter pill. It never counts toward the failed pill
+or the red readiness warning, Test all reports it as "N couldn't be reached"
+rather than as a regression, and an unreachable baseline is not diffed against.
+The connector stays execution-ready (`isExecutionReady`), because nothing judged
+the credential.
+
 Below the verification panel, the design recap's connector cards are also
 actionable: their status line resolves through `templates.design` in all 14
 locales, and clicking it opens inline credential provisioning (the affordance

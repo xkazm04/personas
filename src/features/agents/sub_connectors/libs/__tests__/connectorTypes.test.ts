@@ -5,7 +5,9 @@ import {
   credentialMatchesConnector,
   deriveReadiness,
   getStatusKey,
+  isExecutionReady,
   isStaleResult,
+  isUnreachable,
   matchesHealthFilter,
   restoreHealthcheck,
 } from '../connectorTypes';
@@ -45,6 +47,31 @@ describe('unverifiable is never treated as verified', () => {
   it('an explicit probe failure is still unhealthy', () => {
     expect(deriveReadiness(status({ result: result({ success: false, state: 'failed' }) }))).toBe('unhealthy');
     expect(getStatusKey(status({ result: result({ success: false, state: 'failed' }) }))).toBe('failed');
+  });
+});
+
+// `unreachable` (connect / DNS / timeout) arrives with success === false, so a
+// success-keyed fallthrough painted every connector red on an offline laptop.
+// It is "could not check now", never a verdict about the credential.
+describe('unreachable is never treated as failed', () => {
+  const offline = () => result({ success: false, state: 'unreachable', message: 'connect timeout' });
+
+  it('deriveReadiness and getStatusKey give it its own state', () => {
+    expect(deriveReadiness(status({ result: offline() }))).toBe('unreachable');
+    expect(getStatusKey(status({ result: offline() }))).toBe('unreachable');
+    expect(isUnreachable(offline())).toBe(true);
+    expect(isUnreachable(result({ success: false, state: 'failed' }))).toBe(false);
+    expect(isUnreachable(null)).toBe(false);
+  });
+
+  it('the failed filter excludes it and the unreachable filter selects it', () => {
+    const s = status({ result: offline() });
+    expect(matchesHealthFilter(s, 'unhealthy')).toBe(false);
+    expect(matchesHealthFilter(s, 'unreachable')).toBe(true);
+  });
+
+  it('a linked-but-unreachable connector stays execution-ready', () => {
+    expect(isExecutionReady(status({ result: offline() }))).toBe(true);
   });
 });
 

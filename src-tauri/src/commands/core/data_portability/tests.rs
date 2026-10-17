@@ -1930,28 +1930,22 @@ mod tests {
     /// write markdown into without touching the developer's own brain.
     ///
     /// The guard restores the previous value on drop AND serialises every
-    /// Athena test through one mutex: `PERSONAS_HOME` is process-global, and
-    /// two tests running in parallel would each see the other's brain.
+    /// Athena test through the crate-wide `PERSONAS_HOME` lock held by
+    /// [`TestHome`]: the variable is process-global, and any other brain test
+    /// pointing it elsewhere (this module used to keep a private mutex the
+    /// `companion::brain` tests never took) would make an "empty" brain read
+    /// back someone else's `identity.md`.
     struct BrainHome {
         dir: std::path::PathBuf,
-        prev: Option<String>,
-        _lock: std::sync::MutexGuard<'static, ()>,
+        _home: crate::companion::brain::test_home::TestHome,
     }
-
-    static BRAIN_HOME_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
     impl BrainHome {
         fn new() -> Self {
-            let lock = BRAIN_HOME_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-            let dir = std::env::temp_dir().join(format!("personas_brain_{}", uuid::Uuid::new_v4()));
+            let home = crate::companion::brain::test_home::TestHome::new("portability");
+            let dir = home.path().to_path_buf();
             std::fs::create_dir_all(dir.join("companion-brain")).unwrap();
-            let prev = std::env::var("PERSONAS_HOME").ok();
-            std::env::set_var("PERSONAS_HOME", &dir);
-            Self {
-                dir,
-                prev,
-                _lock: lock,
-            }
+            Self { dir, _home: home }
         }
 
         fn root(&self) -> std::path::PathBuf {
@@ -1962,18 +1956,6 @@ mod tests {
             let p = self.root().join(rel);
             std::fs::create_dir_all(p.parent().unwrap()).unwrap();
             std::fs::write(p, body).unwrap();
-        }
-    }
-
-    impl Drop for BrainHome {
-        fn drop(&mut self) {
-            match self.prev.take() {
-                Some(v) => std::env::set_var("PERSONAS_HOME", v),
-                None => std::env::remove_var("PERSONAS_HOME"),
-            }
-            // Best-effort, as `companion::brain::test_home::TestHome` does: each
-            // test used to leave a `personas_brain_*` home in the temp dir.
-            let _ = std::fs::remove_dir_all(&self.dir);
         }
     }
 

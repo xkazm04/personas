@@ -4389,6 +4389,10 @@ export type Translations = {
       test_diff_failing: string;
       status_unverifiable: string;
       st_unverifiable: string;
+      status_unreachable: string;
+      st_unreachable: string;
+      test_diff_unreachable: string;
+      unreachable_hint: string;
       st_filter_toggle: string;
       st_filter_clear: string;
       st_filter_empty: string;
