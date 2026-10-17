@@ -554,6 +554,49 @@ def declared_domains(root: pathlib.Path | None = None) -> set[str] | None:
     return names or None
 
 
+def _json_by_mtime(path: pathlib.Path, _cache: dict = {}) -> dict | None:
+    """Parse a JSON file once per on-disk version: the plan loop asks per candidate."""
+    try:
+        mtime = path.stat().st_mtime_ns
+    except OSError:
+        return None
+    hit = _cache.get(str(path))
+    if hit is None or hit[0] != mtime:
+        try:
+            hit = _cache[str(path)] = (mtime, json.loads(path.read_text(encoding="utf-8")))
+        except (OSError, ValueError):
+            return None
+    return hit[1]
+
+
+def conform_has_no_work(slug: str, domain: str, root: pathlib.Path) -> bool:
+    """True when `/conform --subject <slug>` would provably find nothing to judge.
+
+    The projection ranks by consumer-deviation counts, and a fresh `deviation`
+    verdict does not lower that score, so a subject judged an hour ago comes back
+    at the top of the next projection. Measured 2026-10-16: pool 2's last 15
+    claims in a row declined "already judged 2026-10-16 against current subject
+    digest" (sql-console, motion, guided-tours, plan-entitlements ...), and
+    `packaging` - zero pairs in this repo's map - kept being planned.
+
+    No work means: the map lists no pair for the subject, or every pair carries a
+    verdict whose `evaluatedAgainst` equals the subject's digest in the registry's
+    index NOW (not the map's cached copy, which lags a registry sync). Any unknown
+    or stale pair is work. Unreadable inputs mean UNKNOWN, and filter nothing.
+    """
+    rmap = _json_by_mtime(PERSONAS_ROOT / ".ai" / "registry-map.json")
+    index = _json_by_mtime(root / "knowledge" / domain / "index.json")
+    if rmap is None or index is None:
+        return False
+    current = (index.get("subjects", {}).get(slug) or {}).get("digest")
+    if not current:
+        return False
+    pairs = [s for c in rmap.get("contexts", []) for s in c.get("subjects", [])
+             if s.get("subject") == slug and s.get("bundle", domain) == domain]
+    return all(p.get("state") not in (None, "unknown") and p.get("evaluatedAgainst") == current
+               for p in pairs)
+
+
 def derive_plan_argument(row, root: pathlib.Path) -> tuple[str, str | None] | None:
     """(argument, cwd override) for an engine whose item cannot carry its own, else None.
 
@@ -573,6 +616,8 @@ def derive_plan_argument(row, root: pathlib.Path) -> tuple[str, str | None] | No
         # `knowledge.domains` omits recruiting and `scope.does_not` excludes it.
         declared = declared_domains()
         if declared is not None and row["domain"] not in declared:
+            return None
+        if conform_has_no_work(slug, row["domain"], root):
             return None
         return f"--subject {slug}", str(PERSONAS_ROOT)
     index = root / "knowledge" / row["domain"] / "index.json"

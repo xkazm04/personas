@@ -65,6 +65,8 @@ bundles this repo consumes, so `loop.py` skips any item whose domain is not in
 `.ai/manifest.yaml` `knowledge.domains` (an unreadable or absent declaration filters nothing).
 Measured 2026-10-05: `recruiting/candidate-consent-and-retention` idled for exactly this reason.
 
+`conform` items are also skipped when there is nothing left to judge (`conform_has_no_work`): the map lists no pair for the subject, or every pair already holds a verdict whose `evaluatedAgainst` equals the subject's digest in the registry's index right now. A fresh `deviation` does not lower a subject's projection score, so without this check a re-projection put subjects judged an hour earlier straight back on top. Measured 2026-10-16: pool 2's last 15 claims all declined "already judged against current subject digest", and `packaging`, which has no pairs here, kept being planned. The skip leaves the item planned and never settles it.
+
 There is **no bare worker form**: every pass goes through the ladder, because a run that
 picked its own subject would be a person using her credentials rather than her loop.
 
