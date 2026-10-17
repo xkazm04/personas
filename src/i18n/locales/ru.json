@@ -27914,7 +27914,15 @@
       "started_running": "выполняется",
       "started_sessions": "сессий {count}",
       "started_silent": "нет сессии",
-      "started_waiting": "ожидает"
+      "started_waiting": "ожидает",
+      "change_proposed": "Новое предложение: {title}",
+      "change_readings": "Новые замеры ({count}): {feature} · {lens}",
+      "change_run_ended": "Запуск {status}: {what}",
+      "change_run_started": "Запуск начат: {what}",
+      "change_status": "{status}: {title}",
+      "changes_chip": "изменено: {count}",
+      "changes_chip_label": "Изменено с прошлого взгляда: {count}, открыть список",
+      "changes_head": "Изменено с прошлого взгляда"
     },
     "build": {
       "body_approved_one": "Одобренных элементов, которые еще не собраны: 1.",

@@ -27914,7 +27914,15 @@
       "started_running": "berjalan",
       "started_sessions": "sesi {count}",
       "started_silent": "tanpa sesi",
-      "started_waiting": "menunggu"
+      "started_waiting": "menunggu",
+      "change_proposed": "Usulan baru: {title}",
+      "change_readings": "Pembacaan baru ({count}): {feature} · {lens}",
+      "change_run_ended": "Proses {status}: {what}",
+      "change_run_started": "Proses dimulai: {what}",
+      "change_status": "{status}: {title}",
+      "changes_chip": "{count} berubah",
+      "changes_chip_label": "{count} berubah sejak terakhir dilihat, buka daftar",
+      "changes_head": "Berubah sejak terakhir dilihat"
     },
     "build": {
       "body_approved_one": "1 item yang disetujui belum dibangun.",

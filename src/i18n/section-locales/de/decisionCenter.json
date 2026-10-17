@@ -952,7 +952,15 @@
     "started_running": "läuft",
     "started_sessions": "Sitzungen {count}",
     "started_silent": "keine Sitzung",
-    "started_waiting": "wartet"
+    "started_waiting": "wartet",
+    "change_proposed": "Neuer Vorschlag: {title}",
+    "change_readings": "Neue Messwerte ({count}): {feature} · {lens}",
+    "change_run_ended": "Lauf {status}: {what}",
+    "change_run_started": "Lauf gestartet: {what}",
+    "change_status": "{status}: {title}",
+    "changes_chip": "{count} geändert",
+    "changes_chip_label": "{count} seit deinem letzten Blick geändert, Liste öffnen",
+    "changes_head": "Geändert seit deinem letzten Blick"
   },
   "build": {
     "body_approved_one": "1 freigegebenes Element ist noch nicht gebaut.",

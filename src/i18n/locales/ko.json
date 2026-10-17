@@ -27914,7 +27914,15 @@
       "started_running": "실행 중",
       "started_sessions": "세션 {count}",
       "started_silent": "세션 없음",
-      "started_waiting": "대기 중"
+      "started_waiting": "대기 중",
+      "change_proposed": "새 제안: {title}",
+      "change_readings": "새 측정값 ({count}): {feature} · {lens}",
+      "change_run_ended": "실행 {status}: {what}",
+      "change_run_started": "실행 시작: {what}",
+      "change_status": "{status}: {title}",
+      "changes_chip": "{count}개 변경",
+      "changes_chip_label": "마지막으로 본 뒤 {count}개 변경, 목록 열기",
+      "changes_head": "마지막으로 본 뒤 변경됨"
     },
     "build": {
       "body_approved_one": "승인된 항목 1개가 아직 빌드되지 않았습니다.",

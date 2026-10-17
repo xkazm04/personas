@@ -41,6 +41,8 @@ interface Deps {
   reload: () => Promise<boolean>;
   /** Words the status line says; resolved by the caller from translations. */
   say: Say;
+  /** Called with the proposal ids a write is about to send, so the changes it causes are not announced as news. */
+  sent?: (ids: readonly string[]) => void;
 }
 
 /** What the status line may say after a move; each is one translated sentence. */
@@ -55,7 +57,7 @@ export interface Say {
 
 const errText = (e: unknown): string => (e instanceof Error ? e.message : String(e));
 
-export function useWrites({ actions, work, ui, dispatch, reload, say }: Deps): Writes {
+export function useWrites({ actions, work, ui, dispatch, reload, say, sent }: Deps): Writes {
   const lock = useRef(false);
   const run = useCallback(async (fn: () => Promise<void>, move?: string) => {
     if (lock.current) return;
@@ -67,6 +69,7 @@ export function useWrites({ actions, work, ui, dispatch, reload, say }: Deps): W
     await run(async () => {
       if (!actable(decision, p.status)) { dispatch({ type: 'say', text: say.nothingToMove(decision) }); return; }
       try {
+        sent?.([p.id]);
         const result = await actions.decide([p.id], decision, note);
         dispatch({ type: 'print', line: { kind: 'decide', decision, ids: [p.id], note, result } });
         dispatch({ type: 'say', text: say.sent(decision, result.decided.length, result.skipped.length) });
@@ -76,7 +79,7 @@ export function useWrites({ actions, work, ui, dispatch, reload, say }: Deps): W
       }
       await reload();
     });
-  }, [actions, dispatch, reload, run, say]);
+  }, [actions, dispatch, reload, run, say, sent]);
 
   const approve = useCallback(async (p: WorkItem | null) => {
     if (!p) { dispatch({ type: 'say', text: say.pickFirst() }); return; }
@@ -112,6 +115,7 @@ export function useWrites({ actions, work, ui, dispatch, reload, say }: Deps): W
       const rows = ids.map((id) => work.byId.get(id)).filter((p): p is WorkItem => !!p && actable('build', p.status));
       const byLens = new Map<string, string[]>();
       for (const p of rows) byLens.set(p.lens, [...(byLens.get(p.lens) ?? []), p.id]);
+      sent?.(rows.map((p) => p.id));
       // one job per lens; never --approve-proposed: only the approved ids go
       for (const [lens, list] of byLens) {
         try {
@@ -125,12 +129,13 @@ export function useWrites({ actions, work, ui, dispatch, reload, say }: Deps): W
       if (rows.length) dispatch({ type: 'say', text: say.sent('build', rows.length, ids.length - rows.length) });
       await reload();
     });
-  }, [ui.armed, work, actions, dispatch, reload, run, say]);
+  }, [ui.armed, work, actions, dispatch, reload, run, say, sent]);
 
   const triage = useCallback(async (p: WorkItem, move: TriageDecisionInput, note?: string) => {
     if (ui.overlay?.kind === 'reason') dispatch({ type: 'overlay', overlay: null });
     await run(async () => {
       try {
+        sent?.([p.id]);
         const result = await actions.triage([p.id], move, note);
         dispatch({ type: 'print', line: { kind: 'triage', decision: move, ids: [p.id], note, result } });
         dispatch({ type: 'say', text: say.sent(move, result.triaged.length, result.skipped.length) });
@@ -140,7 +145,7 @@ export function useWrites({ actions, work, ui, dispatch, reload, say }: Deps): W
       }
       await reload();
     }, move);
-  }, [ui.overlay, actions, dispatch, reload, run, say]);
+  }, [ui.overlay, actions, dispatch, reload, run, say, sent]);
 
   const askTriage = useCallback((p: WorkItem | null, move: TriageDecisionInput) => {
     if (!p) { dispatch({ type: 'say', text: say.pickFirst() }); return; }
@@ -157,6 +162,7 @@ export function useWrites({ actions, work, ui, dispatch, reload, say }: Deps): W
     if (!ids.length) { dispatch({ type: 'say', text: say.pickFirst() }); return; }
     await run(async () => {
       try {
+        sent?.(ids);
         const result = await actions.decide(ids, decision, note);
         dispatch({ type: 'print', line: { kind: 'decide', decision, ids, note, result } });
         dispatch({ type: 'say', text: say.sent(decision, result.decided.length, result.skipped.length) });
@@ -167,13 +173,14 @@ export function useWrites({ actions, work, ui, dispatch, reload, say }: Deps): W
       dispatch({ type: 'selectClear' });
       await reload();
     }, decision);
-  }, [ui.overlay, actions, dispatch, reload, run, say]);
+  }, [ui.overlay, actions, dispatch, reload, run, say, sent]);
 
   const triageMany = useCallback(async (ids: string[], move: TriageDecisionInput, note?: string) => {
     if (ui.overlay?.kind === 'reason') dispatch({ type: 'overlay', overlay: null });
     if (!ids.length) { dispatch({ type: 'say', text: say.pickFirst() }); return; }
     await run(async () => {
       try {
+        sent?.(ids);
         const result = await actions.triage(ids, move, note);
         dispatch({ type: 'print', line: { kind: 'triage', decision: move, ids, note, result } });
         dispatch({ type: 'say', text: say.sent(move, result.triaged.length, result.skipped.length) });
@@ -184,7 +191,7 @@ export function useWrites({ actions, work, ui, dispatch, reload, say }: Deps): W
       dispatch({ type: 'selectClear' });
       await reload();
     }, move);
-  }, [ui.overlay, actions, dispatch, reload, run, say]);
+  }, [ui.overlay, actions, dispatch, reload, run, say, sent]);
 
   const askMany = useCallback((ids: string[], move: 'decline' | TriageDecisionInput) => {
     if (!ids.length) { dispatch({ type: 'say', text: say.pickFirst() }); return; }

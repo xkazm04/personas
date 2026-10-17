@@ -27914,7 +27914,15 @@
       "started_running": "قيد التشغيل",
       "started_sessions": "الجلسات {count}",
       "started_silent": "لا جلسة",
-      "started_waiting": "ينتظر"
+      "started_waiting": "ينتظر",
+      "change_proposed": "مقترح جديد: {title}",
+      "change_readings": "قراءات جديدة ({count}): {feature} · {lens}",
+      "change_run_ended": "التشغيل {status}: {what}",
+      "change_run_started": "بدأ التشغيل: {what}",
+      "change_status": "{status}: {title}",
+      "changes_chip": "{count} تغيّر",
+      "changes_chip_label": "{count} تغيّر منذ آخر نظرة، افتح القائمة",
+      "changes_head": "ما تغيّر منذ آخر نظرة"
     },
     "build": {
       "body_approved_one": "عنصر واحد معتمد لم يُبنَ بعد.",

@@ -18,6 +18,7 @@ import { PlanText, watchFonts } from './text';
 import { buildWalls, drawBuildings, drawGrid, featRect, type Walls } from './plan';
 import { drawLabels } from './labels';
 import { drawFocus, drawOverlays, drawPins, drawTargets } from './pins';
+import { Flashes, drawChanged } from './changed';
 import { stageOfAt } from './travel';
 import { drawFlags, flagAt, layoutFlags } from './flags';
 import { tileAt, roomAt } from './hit';
@@ -60,6 +61,8 @@ export class Engine {
   dirty = true;
   mixS: Mix = { top: null, p: () => 1, x: () => 0 };
   readonly hooks: Hooks;
+  /** The one-shot marks of features that just changed; the frame loop runs for them only while they decay. */
+  readonly flashes = new Flashes();
   private cache = new StaticCache();
   private ver = 0;
   private RES = 1;
@@ -106,6 +109,8 @@ export class Engine {
   setWords(w: EngineWords): void { this.words = w; this.bump(); }
   setWork(w: Work): void { this.work = w; this.setPicked(this.picked); this.bump(); }
   setLens(id: string): void { this.lens = id; this.syncLens(); this.bump(); }
+  /** Mark these features as changed: a short highlight that fades and then lets the canvas go idle. */
+  flash(fids: Iterable<string>): void { this.flashes.add(fids); this.dirty = true; }
   setFocus(f: Focus | null): void { this.focus = f; this.dirty = true; }
   setAt(d: string | null): void { if (d !== this.at) { this.at = d; this.bump(); } }
   setViewDays(n: number): void { if (n !== this.viewDays) { this.viewDays = n; this.bump(); } }
@@ -176,6 +181,7 @@ export class Engine {
     if (c.step(now) || c.moved) { this.dirty = true; c.moved = false; }
     if (c.x !== s.x || c.y !== s.y || c.k !== s.k) { s.x = c.x; s.y = c.y; s.k = c.k; this.lastCamMove = now; this.dirty = true; }
     if ((this.focus || this.pickedF.size) && !c.reduced()) this.dirty = true;
+    if (this.flashes.step(now)) this.dirty = true;
     if (this.settlePending && now - this.lastCamMove > SETTLE_MS) this.dirty = true;
     if (!this.dirty) return;
     this.dirty = false;
@@ -196,6 +202,7 @@ export class Engine {
     this.cache.draw(ctx, cam, undefined, this.RES);
     const v = this.view;
     drawTargets(this, ctx, v, lod);
+    drawChanged(this, ctx, v, lod, now);
     drawOverlays(this, ctx, v, lod, now);
     if (this.isNow) drawPins(this, ctx, v, lod, now);
     drawFocus(this, ctx, v, lod, now);

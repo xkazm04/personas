@@ -952,7 +952,15 @@
     "started_running": "चल रहा है",
     "started_sessions": "सत्र {count}",
     "started_silent": "कोई सत्र नहीं",
-    "started_waiting": "प्रतीक्षा में"
+    "started_waiting": "प्रतीक्षा में",
+    "change_proposed": "नया प्रस्ताव: {title}",
+    "change_readings": "नई रीडिंग ({count}): {feature} · {lens}",
+    "change_run_ended": "रन {status}: {what}",
+    "change_run_started": "रन शुरू: {what}",
+    "change_status": "{status}: {title}",
+    "changes_chip": "{count} बदले",
+    "changes_chip_label": "पिछली बार देखने के बाद {count} बदले, सूची खोलें",
+    "changes_head": "पिछली बार देखने के बाद बदला"
   },
   "build": {
     "body_approved_one": "1 स्वीकृत आइटम अभी बनाया नहीं गया है।",

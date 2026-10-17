@@ -27914,7 +27914,15 @@
       "started_running": "en cours",
       "started_sessions": "sessions {count}",
       "started_silent": "aucune session",
-      "started_waiting": "en attente"
+      "started_waiting": "en attente",
+      "change_proposed": "Nouvelle proposition : {title}",
+      "change_readings": "Nouvelles mesures ({count}) : {feature} · {lens}",
+      "change_run_ended": "Exécution {status} : {what}",
+      "change_run_started": "Exécution lancée : {what}",
+      "change_status": "{status} : {title}",
+      "changes_chip": "{count} modifiés",
+      "changes_chip_label": "{count} modifiés depuis votre dernier coup d’œil, ouvrir la liste",
+      "changes_head": "Modifié depuis votre dernier coup d’œil"
     },
     "build": {
       "body_approved_one": "1 élément approuvé n'est pas encore construit.",

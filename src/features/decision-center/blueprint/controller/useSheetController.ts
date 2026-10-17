@@ -12,6 +12,7 @@ import { useBlueprintText, useEngineWords } from './useBlueprintText';
 import { useEngineHooks } from './useEngineHooks';
 import { startLines } from '../ui/rail/panels/agentsModel';
 import { useStartedBuilds } from '../live/useStartedBuilds';
+import { useChanges } from './useChanges';
 import { useLiveRefresh } from './useLiveRefresh';
 import { useNavigation } from './useNavigation';
 import { useSheetData } from './useSheetData';
@@ -62,7 +63,8 @@ export function useSheetController({ data: initial, actions, onClose, initialFea
   const fast = started.unsettled || data.scan.runs.some((r) => r.status === 'running');
   useLiveRefresh({ reload, readAt, fast });
   const live = useMemo(() => ({ building: started.building, started: started.byLabel }), [started.building, started.byLabel]);
-  const writes = useWrites({ actions, work, ui, dispatch, reload, say });
+  const changes = useChanges(data.scan, engine);
+  const writes = useWrites({ actions, work, ui, dispatch, reload, say, sent: changes.sent });
   const hooks = useEngineHooks({ engine, plan, work, lens: ui.lens, nav, dispatch, tip });
 
   useSheetKeys({ plan, ui, dispatch, levelNow: () => (engine ? engine.cam.level().n : 0), nav, writes, current, onClose, sayEnterHint: () => dispatch({ type: 'say', text: B.say_enter_hint }) });
@@ -79,8 +81,8 @@ export function useSheetController({ data: initial, actions, onClose, initialFea
   }, [engine, initialFeature, plan, nav]);
 
   const sheet = useMemo<Sheet>(
-    () => ({ data, actions, plan, work, ui, dispatch, engine, view, text, words, scope, queue, queueAll, current, nav, writes, live, onClose }),
-    [data, actions, plan, work, ui, engine, view, text, words, scope, queue, queueAll, current, nav, writes, live, onClose],
+    () => ({ data, actions, plan, work, ui, dispatch, engine, view, text, words, scope, queue, queueAll, current, nav, writes, live, changes, onClose }),
+    [data, actions, plan, work, ui, engine, view, text, words, scope, queue, queueAll, current, nav, writes, live, changes, onClose],
   );
   return { sheet, words, hooks, tip, setEngine };
 }

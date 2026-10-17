@@ -93,3 +93,11 @@
 .bp-older summary { color: var(--bp-term-dim); cursor: pointer; margin: 8px 0 6px; font: 500 var(--bp-fs-12) var(--bp-font-mono); letter-spacing: var(--bp-ls-3); text-transform: uppercase; }
 
 /* ---------- the hover card (bp #hov) */
+
+/* a row whose proposal just changed in the store: lit once, then it settles (the sheet drops the class after the same
+   2.6 s the plan's mark lasts; under reduced motion the animation is off and the mark simply holds for that time) */
+.bp-list .bp-it.is-changed { background: color-mix(in srgb, var(--bp-accent) 16%, transparent); box-shadow: inset 0 0 0 2px var(--bp-accent); animation: bp-it-changed 2600ms ease-out both; }
+@keyframes bp-it-changed {
+  from { background: color-mix(in srgb, var(--bp-accent) 30%, transparent); box-shadow: inset 0 0 0 2px var(--bp-accent); }
+  to { background: transparent; box-shadow: inset 0 0 0 2px transparent; }
+}

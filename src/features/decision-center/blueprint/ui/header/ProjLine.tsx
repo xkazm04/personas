@@ -3,6 +3,7 @@ import '../../styles/page-switch.css';
 import { useSheet } from '../../controller/SheetContext';
 import { openFindings } from '../../model/counts';
 import { Press } from '../Press';
+import { ChangesChip } from './ChangesChip';
 
 /** The sheet number the title line prints: G-001 for the General arrangement, the lens's short code for a lens sheet. */
 export function sheetNumber(short: string | null): string {
@@ -54,6 +55,7 @@ export function ProjLine() {
   return (
     <div className="bp-l1" ref={ref}>
       <PageSwitch />
+      <ChangesChip />
       <span className="pj-sheet"> {'·'} <b><span className="pj-no">{B.sheet} {no}</span><span className="pj-ttl"> {'·'} {title}</span></b></span>
       <span className="bp-say" role="status" aria-live="polite" key={s.ui.say?.key ?? 0}>{s.ui.say?.text ?? ''}</span>
     </div>

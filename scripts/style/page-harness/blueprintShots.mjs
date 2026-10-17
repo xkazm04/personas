@@ -124,7 +124,31 @@ const STATES = {
   'live-started-queued': async (p) => { await liveStart(p, null); },
   'live-started-running': async (p) => { await liveStart(p, { state: 'running', exitCode: null }); },
   'live-started-failed': async (p) => { await liveStart(p, { state: 'exited', exitCode: 1 }); },
+  // /perfect wave 2, lot D: the store moves under the open sheet (three proposals decided elsewhere, so the sheet did not
+  // send them): the chip, the one-shot mark on the plan and the queue rows; and the chip's list open on its 3 entries
+  'live-changed': async (p) => { await feedChanges(p); },
+  'live-changed-open': async (p) => { await feedChanges(p); await p.click('[data-testid="blueprint-changes-chip"]'); await p.waitForTimeout(200); },
 };
+
+/**
+ * Select the first waiting item (the camera flies to it), decide it and two others straight on the fixture store (not
+ * through the sheet), move the page clock past the live refresh's throttle and let the window regain focus: the sheet
+ * re-reads and finds news.
+ */
+async function feedChanges(p) {
+  await k(p, 'j');
+  await p.evaluate(async () => {
+    const a = window.__BLUEPRINT__.actions, cur = document.querySelector('[data-item][aria-current="true"]')?.getAttribute('data-item');
+    const waiting = a.snapshot().proposals.filter((x) => x.status === 'proposed').map((x) => x.id);
+    const ids = [cur, ...waiting.filter((id) => id !== cur)].filter(Boolean).slice(0, 3);
+    await a.decide(ids.slice(0, 2), 'approve');
+    await a.decide(ids.slice(2), 'decline', 'Superseded');
+  });
+  await p.clock.setFixedTime(new Date(Date.parse(NOW) + 20_000));
+  await p.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await p.waitForSelector('[data-testid="blueprint-changes-chip"]', { timeout: 10_000 });
+  await p.waitForTimeout(150);
+}
 
 /** Approve and build the first item, optionally give its start one fleet session, open the start in the Agents panel. */
 async function liveStart(p, session) {
@@ -149,7 +173,7 @@ const FEATURE = {
   'page-general': 'tax-handling', 'page-lens-good': 'tax-handling', 'page-lens-bad': 'tax-handling',
 };
 /** Frames taken at every size: the levels and the compare panel. */
-const EVERY_SIZE = new Set([...LEVELS, 'state-compare', 'page-general', 'page-lens-good', 'page-lens-bad', 'fly-agents', 'live-started-running', 'fly-plan', 'fly-view', 'tl-open', 'tl-travel', 'tl-travel-open', 'ov-hover', 'ov-decision', 'ov-select', 'lg-triage', 'lg-matrix', 'lg-release']);
+const EVERY_SIZE = new Set([...LEVELS, 'state-compare', 'page-general', 'page-lens-good', 'page-lens-bad', 'fly-agents', 'live-started-running', 'fly-plan', 'fly-view', 'tl-open', 'tl-travel', 'tl-travel-open', 'live-changed', 'live-changed-open', 'ov-hover', 'ov-decision', 'ov-select', 'lg-triage', 'lg-matrix', 'lg-release']);
 
 /** The title block, measured: what is clipped, what the lens sheets cover, whether the sheets leave the block. */
 const TITLE_CHECK = () => {

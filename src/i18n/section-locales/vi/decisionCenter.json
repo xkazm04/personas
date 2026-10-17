@@ -952,7 +952,15 @@
     "started_running": "đang chạy",
     "started_sessions": "phiên {count}",
     "started_silent": "không có phiên",
-    "started_waiting": "đang đợi"
+    "started_waiting": "đang đợi",
+    "change_proposed": "Đề xuất mới: {title}",
+    "change_readings": "Số đo mới ({count}): {feature} · {lens}",
+    "change_run_ended": "Lượt chạy {status}: {what}",
+    "change_run_started": "Lượt chạy bắt đầu: {what}",
+    "change_status": "{status}: {title}",
+    "changes_chip": "{count} thay đổi",
+    "changes_chip_label": "{count} thay đổi từ lần xem trước, mở danh sách",
+    "changes_head": "Thay đổi từ lần xem trước"
   },
   "build": {
     "body_approved_one": "1 mục đã duyệt chưa được xây dựng.",

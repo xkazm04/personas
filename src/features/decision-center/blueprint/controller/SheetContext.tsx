@@ -13,6 +13,7 @@ import type { ViewStore } from '../state/viewStore';
 import type { BlueprintText } from './useBlueprintText';
 import type { Nav } from './useNavigation';
 import type { Writes } from './useWrites';
+import type { ChangesState } from './useChanges';
 
 /** What is in flight right now, read off the fleet (the builds this sheet started). */
 export interface LiveState {
@@ -43,6 +44,8 @@ export interface Sheet {
   nav: Nav;
   writes: Writes;
   live: LiveState;
+  /** What changed since the operator last looked (the header chip, the plan's highlight, the queue rows'). */
+  changes: ChangesState;
   onClose(): void;
 }
 

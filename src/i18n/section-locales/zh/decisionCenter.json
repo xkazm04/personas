@@ -952,7 +952,15 @@
     "started_running": "运行中",
     "started_sessions": "会话 {count}",
     "started_silent": "无会话",
-    "started_waiting": "等待中"
+    "started_waiting": "等待中",
+    "change_proposed": "新提案：{title}",
+    "change_readings": "新读数（{count}）：{feature} · {lens}",
+    "change_run_ended": "运行{status}：{what}",
+    "change_run_started": "运行已开始：{what}",
+    "change_status": "{status}：{title}",
+    "changes_chip": "{count} 项变更",
+    "changes_chip_label": "自上次查看以来 {count} 项变更，打开列表",
+    "changes_head": "自上次查看以来的变更"
   },
   "build": {
     "body_approved_one": "1 个已批准的项目尚未构建。",

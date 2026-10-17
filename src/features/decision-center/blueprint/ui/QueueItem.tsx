@@ -25,10 +25,12 @@ export function QueueItem({ p }: { p: WorkItem }) {
   const tone = STATUS[p.status].tone;
   // a build this sheet started for the item is still in flight on the fleet: the row says so until it settles
   const building = s.live.building.has(p.id);
+  // the row of a proposal that just changed in the store lights once (CSS, a still mark under reduced motion)
+  const changed = s.changes.fresh.has(p.id);
   const urg = p.status === 'proposed' && (p.risk ?? 0) >= HIGH_RISK ? 'high' : tone;
   return (
     <Press
-      tone={`bp-it u-${urg} bp-tone-${tone}${building ? ' is-building' : ''}`}
+      tone={`bp-it u-${urg} bp-tone-${tone}${building ? ' is-building' : ''}${changed ? ' is-changed' : ''}`}
       current={s.ui.itemId === p.id}
       onClick={open}
       onMouseEnter={() => { if (s.engine) { s.engine.hot = p.fid; s.engine.dirty = true; } }}
@@ -36,6 +38,7 @@ export function QueueItem({ p }: { p: WorkItem }) {
       data-item={p.id}
       data-status={p.status}
       data-building={building ? 'true' : undefined}
+      data-changed={changed ? 'true' : undefined}
     >
       <span className="urg" aria-hidden="true" />
       <span className="rk">

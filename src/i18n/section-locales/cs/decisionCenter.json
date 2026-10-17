@@ -952,7 +952,15 @@
     "started_running": "běží",
     "started_sessions": "relace {count}",
     "started_silent": "žádná relace",
-    "started_waiting": "čeká"
+    "started_waiting": "čeká",
+    "change_proposed": "Nový návrh: {title}",
+    "change_readings": "Nová měření ({count}): {feature} · {lens}",
+    "change_run_ended": "Běh {status}: {what}",
+    "change_run_started": "Běh spuštěn: {what}",
+    "change_status": "{status}: {title}",
+    "changes_chip": "změněno {count}",
+    "changes_chip_label": "{count} změn od posledního pohledu, otevřít seznam",
+    "changes_head": "Změněno od posledního pohledu"
   },
   "build": {
     "body_approved_one": "Jedna schválená položka zatím není sestavena.",

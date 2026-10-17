@@ -27914,7 +27914,15 @@
       "started_running": "চলছে",
       "started_sessions": "সেশন {count}",
       "started_silent": "কোনো সেশন নেই",
-      "started_waiting": "অপেক্ষায়"
+      "started_waiting": "অপেক্ষায়",
+      "change_proposed": "নতুন প্রস্তাব: {title}",
+      "change_readings": "নতুন রিডিং ({count}): {feature} · {lens}",
+      "change_run_ended": "রান {status}: {what}",
+      "change_run_started": "রান শুরু: {what}",
+      "change_status": "{status}: {title}",
+      "changes_chip": "{count}টি বদলেছে",
+      "changes_chip_label": "শেষ দেখার পর {count}টি বদলেছে, তালিকা খুলুন",
+      "changes_head": "শেষ দেখার পর যা বদলেছে"
     },
     "build": {
       "body_approved_one": "১টি অনুমোদিত আইটেম এখনও তৈরি হয়নি।",

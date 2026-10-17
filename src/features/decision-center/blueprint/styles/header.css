@@ -79,3 +79,15 @@
    lets the strip scroll the same way); the current crumb ellipsizes last, so the row never clips */
 .bp-l2 .bp-crumb[aria-current] { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 @container bp-plan (max-width: 75rem) { .bp-id { min-width: 340px; } }
+
+/* the "N changed" chip beside the page switch, and the list it opens (portalled into .bp-hd, so the title line's
+   overflow clip cannot cut it) */
+.bp-l1 .bp-chg { display: inline-flex; align-items: center; gap: 6px; height: 18px; margin: -3px 0 -2px 10px; padding: 0 7px; border: 1px solid var(--bp-accent); background: color-mix(in srgb, var(--bp-accent) 14%, transparent); font: 500 var(--bp-fs-12)/1 var(--bp-font-mono); letter-spacing: var(--bp-ls-5); text-transform: uppercase; color: var(--bp-ink-hi); }
+.bp-l1 .bp-chg:hover { background: color-mix(in srgb, var(--bp-accent) 26%, transparent); }
+.bp-l1 .bp-chg:focus-visible { outline: 2px solid var(--bp-accent); outline-offset: 1px; }
+.bp-l1 .bp-chg > i { width: 7px; height: 7px; border-radius: 50%; background: var(--bp-accent); }
+.bp-chglist { position: absolute; width: 380px; max-width: calc(100% - 28px); max-height: min(360px, calc(100vh - 110px)); overflow: auto; background: var(--bp-card-hi); border: 1px solid var(--bp-ink-2); box-shadow: 0 16px 44px var(--bp-shadow); z-index: 45; }
+.bp-chglist .chg-h { padding: 9px 12px 6px; border-bottom: 1px solid var(--bp-ink-4); font: 500 var(--bp-fs-12)/1 var(--bp-font-mono); letter-spacing: var(--bp-ls-5); text-transform: uppercase; color: var(--bp-ink-2); }
+.bp-chglist .chg-it { display: block; width: 100%; min-height: 36px; padding: 8px 12px; border-left: 3px solid transparent; border-bottom: 1px solid var(--bp-ink-4); text-align: left; font: 400 var(--bp-fs-14)/1.35 var(--bp-font-sans); color: var(--bp-ink); }
+.bp-chglist .chg-it:hover, .bp-chglist .chg-it:focus-visible { background: var(--bp-ink-4); border-left-color: var(--bp-accent); outline: none; }
+.bp-chglist .chg-it[data-kind='run'] { border-left-color: var(--bp-ink-3); }

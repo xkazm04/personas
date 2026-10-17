@@ -27914,7 +27914,15 @@
       "started_running": "実行中",
       "started_sessions": "セッション {count}",
       "started_silent": "セッションなし",
-      "started_waiting": "待機中"
+      "started_waiting": "待機中",
+      "change_proposed": "新しい提案: {title}",
+      "change_readings": "新しい計測 ({count}): {feature} · {lens}",
+      "change_run_ended": "実行 {status}: {what}",
+      "change_run_started": "実行開始: {what}",
+      "change_status": "{status}: {title}",
+      "changes_chip": "{count} 件の変更",
+      "changes_chip_label": "前回見てから {count} 件変更、一覧を開く",
+      "changes_head": "前回見てからの変更"
     },
     "build": {
       "body_approved_one": "承認済みの1件がまだビルドされていません。",

@@ -27503,6 +27503,14 @@ export type Translations = {
       console_started_state: string;
       agents_ov_sub: string;
       agents_n_running: string;
+      changes_chip: string;
+      changes_chip_label: string;
+      changes_head: string;
+      change_status: string;
+      change_proposed: string;
+      change_run_ended: string;
+      change_run_started: string;
+      change_readings: string;
       agents_runs: string;
       agents_runs_n: string;
       agents_runs_label: string;
