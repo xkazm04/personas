@@ -28939,6 +28939,32 @@
           "evidence": "src-tauri/src/commands/core/memory_compile.rs:251 The insert loop discards database errors; MemoryCompileResult returns created IDs and their count without failed-item results or a failure count."
         }
       ]
+    },
+    "7159d27d-86c2-43be-a83f-8b50c4c816be/page-load-pipeline": {
+      "context": "settings-network",
+      "subject": "page-load-pipeline",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-17",
+      "evaluatedTs": "2026-10-17T22:50:22.837Z",
+      "worker": "9db249ab-0dc0-4525-b039-4ab65687fe88",
+      "techniques": [
+        {
+          "technique": "layout-stability-by-reservation",
+          "verdict": "deviation",
+          "evidence": "src/features/settings/sub_network/components/NetworkDashboard.tsx:272 The pending branch renders one checking row; the resolved branch renders statistics, an optional peer-ID footer and metrics panels without a matching reserved slot."
+        },
+        {
+          "technique": "navigation-reuse",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/search/useSettingsSearchEntries.tsx:75 Settings navigation changes application state within the current document; the standard assigns this warm-return mechanism to the shell."
+        },
+        {
+          "technique": "script-cost-is-main-thread-time",
+          "verdict": "conformant",
+          "evidence": "src/features/settings/components/SettingsPage.tsx:16 The network settings module is split from sibling settings tabs and requested when mounted; this establishes route splitting, without claiming measured long-task performance."
+        }
+      ]
     }
   }
 }

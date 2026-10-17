@@ -1,0 +1,59 @@
+{
+ "schema": "conform-run/1",
+ "worker": "9db249ab-0dc0-4525-b039-4ab65687fe88",
+ "subject": "page-load-pipeline",
+ "evaluatedAt": "2026-10-17T22:50:22.837400+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [
+  {
+   "context": "settings-network",
+   "subject": "page-load-pipeline",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/settings/sub_network/components/NetworkDashboard.tsx:273 The initial checking row reserves no matching space for the subsequent statistics grid and metrics panels, so resolving the network snapshot changes the height above later settings sections.",
+   "techniques": [
+    {
+     "technique": "layout-stability-by-reservation",
+     "verdict": "deviation",
+     "evidence": "src/features/settings/sub_network/components/NetworkDashboard.tsx:272 The pending branch renders one checking row; the resolved branch renders statistics, an optional peer-ID footer and metrics panels without a matching reserved slot."
+    },
+    {
+     "technique": "navigation-reuse",
+     "verdict": "not-applicable",
+     "evidence": "src/features/settings/search/useSettingsSearchEntries.tsx:75 Settings navigation changes application state within the current document; the standard assigns this warm-return mechanism to the shell."
+    },
+    {
+     "technique": "script-cost-is-main-thread-time",
+     "verdict": "conformant",
+     "evidence": "src/features/settings/components/SettingsPage.tsx:16 The network settings module is split from sibling settings tabs and requested when mounted; this establishes route splitting, without claiming measured long-task performance."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "page-load-pipeline",
+   "context": "shared-components-layout",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-17T22:50:22.837400+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "page-load-pipeline"
+   ],
+   "techniques": [
+    "layout-stability-by-reservation",
+    "navigation-reuse",
+    "script-cost-is-main-thread-time"
+   ],
+   "deviations": 1,
+   "context": "settings-network",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  }
+ ]
+}

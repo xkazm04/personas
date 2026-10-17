@@ -30276,7 +30276,11 @@
           "revision": 3,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/settings/sub_network/components/NetworkDashboard.tsx:273 The initial checking row reserves no matching space for the subsequent statistics grid and metrics panels, so resolving the network snapshot changes the height above later settings sections.",
+          "evaluatedAt": "2026-10-17",
+          "evaluatedAgainst": "sha256-b2:f51109a4fa17ac48",
+          "evaluatedRevision": 3
         },
         {
           "subject": "test-harness",
