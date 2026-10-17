@@ -915,6 +915,12 @@ export type Translations = {
     usage_auto_rotate_on: string;
     usage_auto_rotate_off: string;
     usage_auto_rotate_failed: string;
+    usage_auto_rotate_strategy_aria: string;
+    usage_auto_rotate_strategy_soonest: string;
+    usage_auto_rotate_strategy_coolest: string;
+    usage_auto_rotate_strategy_hint: string;
+    usage_rotation_rank: string;
+    usage_rotation_rank_hint: string;
     usage_last_rotation: string;
     usage_not_stored: string;
     usage_refresh: string;

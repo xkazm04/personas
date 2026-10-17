@@ -16,6 +16,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { extractMessage, toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { ClaudeAutoRotateConfig } from '@/lib/bindings/ClaudeAutoRotateConfig';
+import type { RotateStrategy } from '@/lib/bindings/RotateStrategy';
 import { listCredentials } from '@/api/vault/credentials';
 import type { ClaudeAccountsState } from './useClaudeAccounts';
 import type { ReloginActs } from './usage/reloginActs';
@@ -24,7 +25,7 @@ export interface UsageActions {
   capture: () => Promise<void>;
   switchTo: (id: string) => Promise<void>;
   remove: (id: string) => Promise<void>;
-  saveAutoRotate: (enabled: boolean, thresholdPct: number) => Promise<void>;
+  saveAutoRotate: (enabled: boolean, thresholdPct: number, strategy?: RotateStrategy) => Promise<void>;
   /** Re-login a dead plan and link its browser profiles (see `usage/reloginActs`). */
   relogin: ReloginActs;
 }
@@ -77,10 +78,12 @@ export function useUsageActions(accounts: ClaudeAccountsState): UsageActions {
   );
 
   const saveAutoRotate = useCallback(
-    async (enabled: boolean, thresholdPct: number) => {
+    async (enabled: boolean, thresholdPct: number, strategy?: RotateStrategy) => {
       if (!autoRotate) return;
       try {
-        await accounts.setAutoRotate({ ...autoRotate, enabled, thresholdPct } satisfies ClaudeAutoRotateConfig);
+        await accounts.setAutoRotate({
+          ...autoRotate, enabled, thresholdPct, strategy: strategy ?? autoRotate.strategy,
+        } satisfies ClaudeAutoRotateConfig);
         addToast(enabled ? t.monitor.usage_auto_rotate_on : t.monitor.usage_auto_rotate_off, 'success');
       } catch (err) {
         addToast(tx(t.monitor.usage_auto_rotate_failed, { error: extractMessage(err) }), 'error');

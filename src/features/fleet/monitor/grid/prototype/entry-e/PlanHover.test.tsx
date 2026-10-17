@@ -18,7 +18,7 @@ const win = (over: Partial<WindowModel>): WindowModel => ({
 const plan = (over: Partial<PlanModel> = {}): PlanModel => ({
   id: 'acc-1', name: 'ops@personas.dev', slot: 1, isActive: true, state: 'ok', reason: null,
   windows: [win({}), win({ key: 'seven_day', label: 'long', usedPct: 87, tone: 'warning', windowMinutes: 10_080, resetsAtMs: NOW + 30 * HOUR, remainingMs: 30 * HOUR })],
-  asOfMs: NOW - 180_000, canSwitch: false, canRemove: false, login: null, relogin: null, ...over,
+  asOfMs: NOW - 180_000, canSwitch: false, canRemove: false, login: null, relogin: null, rotationRank: null, ...over,
 });
 
 const claude: ProviderModel = {

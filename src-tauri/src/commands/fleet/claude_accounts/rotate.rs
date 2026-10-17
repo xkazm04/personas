@@ -16,8 +16,15 @@
 //! * **Eligible target.** Not active, not quarantined, with a `five_hour`
 //!   reading, and STRICTLY below the threshold on both windows (an unreported
 //!   `seven_day` counts as 0).
-//! * **Choice.** Lowest `max(five_hour, seven_day)`; ties go to the lowest
-//!   `five_hour`, then to the lowest slot.
+//! * **Choice - by `strategy`.**
+//!   - `soonest_reset` (default): drain the plan whose `seven_day` window
+//!     resets soonest, because its unspent weekly quota is about to be lost.
+//!     A standby with no weekly reset sorts last. Ties go to the lowest
+//!     `max(five_hour, seven_day)`, then the lowest `five_hour`, then the
+//!     lowest slot.
+//!   - `coolest`: lowest `max(five_hour, seven_day)`; ties go to the lowest
+//!     `five_hour`, then to the lowest slot.
+//!     The trigger and eligibility are the same under both.
 //! * **Default threshold 95.** Applies to a new install only; a stored config
 //!   (any value, including the old default 80) is read back untouched.
 //!
@@ -53,6 +60,22 @@ pub struct ClaudeAutoRotateConfig {
     /// Minimum seconds between two automatic switches.
     #[ts(type = "number")]
     pub cooldown_secs: i64,
+    /// Which eligible standby the rotation picks. A config stored before this
+    /// field existed reads back as `soonest_reset`.
+    #[serde(default)]
+    pub strategy: RotateStrategy,
+}
+
+/// How the rotation chooses among eligible standbys.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum RotateStrategy {
+    /// Lowest load: the plan with the most room.
+    Coolest,
+    /// Soonest weekly reset: use up the quota that is about to expire.
+    #[default]
+    SoonestReset,
 }
 
 impl Default for ClaudeAutoRotateConfig {
@@ -61,6 +84,7 @@ impl Default for ClaudeAutoRotateConfig {
             enabled: false,
             threshold_pct: DEFAULT_THRESHOLD_PCT,
             cooldown_secs: 300,
+            strategy: RotateStrategy::default(),
         }
     }
 }
@@ -173,24 +197,68 @@ fn plan<'a>(
             return Err(RotateSkip::Cooldown);
         }
     }
+    standbys(cfg, accounts)
+        .into_iter()
+        .next()
+        .map(|target| (active, target))
+        .ok_or(RotateSkip::NoEligibleTarget)
+}
+
+/// The weekly window's reset, or `None` when the endpoint did not report one.
+fn weekly_reset_ms(view: &ClaudeAccountView) -> Option<i64> {
+    view.usage
+        .iter()
+        .find(|w| w.key == "seven_day")
+        .and_then(|w| w.resets_at_ms)
+}
+
+/// Eligible standbys, best target first under `cfg.strategy`. The one place
+/// the choice is made: `plan` takes the head, the strip's rank badge reads the
+/// whole order, so the two cannot disagree.
+fn standbys<'a>(
+    cfg: &ClaudeAutoRotateConfig,
+    accounts: &'a [ClaudeAccountView],
+) -> Vec<&'a ClaudeAccountView> {
     let load = |a: &ClaudeAccountView| {
         let five = five_hour(a).unwrap_or(0.0);
         (five.max(seven_day(a).unwrap_or(0.0)), five)
     };
-    accounts
+    let mut eligible: Vec<&ClaudeAccountView> = accounts
         .iter()
         .filter(|a| !a.is_active && a.quarantine_reason.is_none())
         // A standby with no five-hour reading is unknown, not cool.
         .filter(|a| five_hour(a).is_some_and(|p| p < cfg.threshold_pct))
         .filter(|a| seven_day(a).unwrap_or(0.0) < cfg.threshold_pct)
-        .min_by(|a, b| {
-            let (la, lb) = (load(a), load(b));
+        .collect();
+    eligible.sort_by(|a, b| {
+        let (la, lb) = (load(a), load(b));
+        let by_load =
             la.0.total_cmp(&lb.0)
                 .then(la.1.total_cmp(&lb.1))
-                .then(a.slot.cmp(&b.slot))
-        })
-        .map(|target| (active, target))
-        .ok_or(RotateSkip::NoEligibleTarget)
+                .then(a.slot.cmp(&b.slot));
+        match cfg.strategy {
+            RotateStrategy::Coolest => by_load,
+            // `None` (no reported reset) must sort AFTER every real reset.
+            RotateStrategy::SoonestReset => weekly_reset_ms(a)
+                .unwrap_or(i64::MAX)
+                .cmp(&weekly_reset_ms(b).unwrap_or(i64::MAX))
+                .then(by_load),
+        }
+    });
+    eligible
+}
+
+/// Rotation order of each eligible standby (1 = next target), by account id.
+/// Ignores the trigger and the cooldown: it answers "who would be next".
+pub fn rotation_ranks(
+    cfg: &ClaudeAutoRotateConfig,
+    accounts: &[ClaudeAccountView],
+) -> std::collections::HashMap<String, u32> {
+    standbys(cfg, accounts)
+        .into_iter()
+        .zip(1u32..)
+        .map(|(a, rank)| (a.id.clone(), rank))
+        .collect()
 }
 
 /// Pure policy: which account to rotate to, or none. Test-facing wrapper of
@@ -330,6 +398,7 @@ mod tests {
             last_switched_at_ms: None,
             login: None,
             relogin: None,
+            rotation_rank: None,
         }
     }
 
@@ -339,6 +408,7 @@ mod tests {
             enabled: true,
             threshold_pct: 80.0,
             cooldown_secs: 300,
+            strategy: RotateStrategy::Coolest,
         };
         let accts = vec![
             view("a", true, 85.0, 10.0, false),
@@ -358,6 +428,7 @@ mod tests {
             enabled: true,
             threshold_pct: 80.0,
             cooldown_secs: 300,
+            strategy: RotateStrategy::Coolest,
         };
         let accts = vec![
             view("a", true, 79.9, 0.0, false),
@@ -420,6 +491,7 @@ mod tests {
             enabled: true,
             threshold_pct: 95.0,
             cooldown_secs: 300,
+            strategy: RotateStrategy::Coolest,
         }
     }
 
@@ -580,6 +652,7 @@ mod tests {
             enabled: true,
             threshold_pct: 80.0,
             cooldown_secs: 300,
+            strategy: RotateStrategy::Coolest,
         };
         write_config(&pool, &stored).expect("write");
         let raw_before = settings::get(&pool, SETTING_CONFIG).unwrap().unwrap();
@@ -589,5 +662,83 @@ mod tests {
         let raw_after = settings::get(&pool, SETTING_CONFIG).unwrap().unwrap();
         assert_eq!(raw_before, raw_after, "reading never rewrites it");
         assert!(!ClaudeAutoRotateConfig::default().enabled, "opt-in stays");
+    }
+
+    fn with_reset(mut v: ClaudeAccountView, seven_reset: Option<i64>) -> ClaudeAccountView {
+        for w in v.usage.iter_mut().filter(|w| w.key == "seven_day") {
+            w.resets_at_ms = seven_reset;
+        }
+        v
+    }
+
+    fn soonest() -> ClaudeAutoRotateConfig {
+        ClaudeAutoRotateConfig {
+            strategy: RotateStrategy::SoonestReset,
+            ..cfg95()
+        }
+    }
+
+    #[test]
+    fn soonest_reset_drains_the_plan_whose_week_ends_first_even_if_busier() {
+        let accts = vec![
+            view("a", true, 96.0, 10.0, false),
+            with_reset(view("fresh", false, 1.0, 1.0, false), Some(9_000)),
+            with_reset(view("busy", false, 60.0, 70.0, false), Some(2_000)),
+        ];
+        let (_, to) = plan(&soonest(), &accts, None, 0, true).expect("rotates");
+        assert_eq!(to.id, "busy");
+        let (_, to) = plan(&cfg95(), &accts, None, 0, true).expect("rotates");
+        assert_eq!(to.id, "fresh", "coolest still prefers the least used");
+    }
+
+    #[test]
+    fn soonest_reset_sorts_an_unreported_reset_last_and_breaks_ties_by_load() {
+        let accts = vec![
+            view("a", true, 96.0, 10.0, false),
+            view("none", false, 1.0, 1.0, false),
+            with_reset(view("late", false, 5.0, 5.0, false), Some(8_000)),
+            with_reset(view("hot", false, 50.0, 50.0, false), Some(3_000)),
+            with_reset(view("cool", false, 10.0, 10.0, false), Some(3_000)),
+        ];
+        let order: Vec<_> = standbys(&soonest(), &accts)
+            .iter()
+            .map(|a| a.id.clone())
+            .collect();
+        assert_eq!(order, ["cool", "hot", "late", "none"]);
+    }
+
+    #[test]
+    fn soonest_reset_never_picks_an_ineligible_plan() {
+        let accts = vec![
+            view("a", true, 96.0, 10.0, false),
+            with_reset(view("spent", false, 10.0, 96.0, false), Some(1_000)),
+            with_reset(view("dead", false, 1.0, 1.0, true), Some(1_000)),
+            with_reset(view("ok", false, 30.0, 30.0, false), Some(9_000)),
+        ];
+        let (_, to) = plan(&soonest(), &accts, None, 0, true).expect("rotates");
+        assert_eq!(to.id, "ok");
+    }
+
+    #[test]
+    fn ranks_follow_the_same_order_the_target_comes_from() {
+        let accts = vec![
+            view("a", true, 10.0, 10.0, false),
+            with_reset(view("x", false, 5.0, 5.0, false), Some(5_000)),
+            with_reset(view("y", false, 5.0, 5.0, false), Some(1_000)),
+        ];
+        let ranks = rotation_ranks(&soonest(), &accts);
+        assert_eq!(ranks.get("y"), Some(&1));
+        assert_eq!(ranks.get("x"), Some(&2));
+        assert_eq!(ranks.get("a"), None, "the live plan has no rank");
+    }
+
+    #[test]
+    fn a_config_stored_without_a_strategy_reads_as_soonest_reset() {
+        let old = r#"{"enabled":true,"thresholdPct":80.0,"cooldownSecs":300}"#;
+        let cfg: ClaudeAutoRotateConfig = serde_json::from_str(old).expect("parses");
+        assert_eq!(cfg.strategy, RotateStrategy::SoonestReset);
+        assert_eq!(cfg.threshold_pct, 80.0);
+        let json = serde_json::to_string(&RotateStrategy::SoonestReset).unwrap();
+        assert_eq!(json, "\"soonest_reset\"");
     }
 }

@@ -1131,6 +1131,7 @@ export type { ReviewMessage } from "./ReviewMessage";
 export type { RevitalizeRunRecord } from "./RevitalizeRunRecord";
 export type { RiskMatrixEntry } from "./RiskMatrixEntry";
 export type { RootCauseSuggestion } from "./RootCauseSuggestion";
+export type { RotateStrategy } from "./RotateStrategy";
 export type { RotationEntryStatus } from "./RotationEntryStatus";
 export type { RotationHistoryEntry } from "./RotationHistoryEntry";
 export type { RotationPolicy } from "./RotationPolicy";

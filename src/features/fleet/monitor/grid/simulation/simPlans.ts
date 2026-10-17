@@ -62,6 +62,7 @@ function account(view: Partial<ClaudeAccountView> & Pick<ClaudeAccountView, 'id'
     lastSwitchedAtMs: null,
     login: null,
     relogin: null,
+    rotationRank: null,
     ...view,
   };
 }
@@ -158,7 +159,7 @@ export function buildSimAccountsSnapshot(now = Date.now()): ClaudeAccountsSnapsh
     livePresent: true,
     accounts,
     profiles: buildSimProfiles(now),
-    autoRotate: { enabled: true, thresholdPct: 80, cooldownSecs: 900 },
+    autoRotate: { enabled: true, thresholdPct: 80, cooldownSecs: 900, strategy: 'soonest_reset' },
     lastRotation: {
       atMs: now - 37 * 60_000,
       fromEmail: 'fleet.two@simulated.test',
