@@ -28788,6 +28788,62 @@
           "evidence": "src/features/templates/sub_n8n/hooks/useN8nWizardTransformHandlers.ts:17 transformLockRef blocks a second wizard click; it is not a class-level marker an executor uses to copy stateful transforms per worker."
         }
       ]
+    },
+    "835ed922-2ebd-425b-a542-dbe5996e1e78/machine-paced-delivery": {
+      "context": "persona-build-matrix",
+      "subject": "machine-paced-delivery",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-17",
+      "evaluatedTs": "2026-10-17T02:51:22.129Z",
+      "techniques": [
+        {
+          "technique": "agent-readable-build-outcomes",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/useLifecycle.ts:185 The report covers persona tool checks rather than software compilation or CI failures."
+        },
+        {
+          "technique": "human-gate-capacity",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/useBuild.ts:59 Pending answers belong to persona construction questions, not a merge-review queue."
+        },
+        {
+          "technique": "mutating-local-gates",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/useLifecycle.ts:234 Refinement sends feedback into a persona build session rather than invoking a working-tree fixer."
+        },
+        {
+          "technique": "pre-authorship-verification",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/BuildSimulatePanel.tsx:137 Simulation previews a persona capability rather than verifying a pending repository commit."
+        },
+        {
+          "technique": "proposal-not-push",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/useLifecycle.ts:420 Promotion updates a persona record; it does not land source changes through a branch or merge."
+        },
+        {
+          "technique": "scoped-delivery-access-for-agents",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/UnifiedBuildEntry.tsx:611 This configuration path persists notification channels rather than issuing delivery-system grants."
+        },
+        {
+          "technique": "stake-before-merit",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/BuildTemplateSuggestion.tsx:72 Template matching assists persona selection; it does not admit contributions to a review queue."
+        },
+        {
+          "technique": "verification-throughput-as-constraint",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/useBuild.ts:73 The progress measure counts resolved persona dimensions rather than software verification wait or runner utilization."
+        }
+      ],
+      "withdrawn": {
+        "worker": "098f0899-ebe8-408d-98d3-98cda5402ab4",
+        "state": "not-applicable",
+        "at": "2026-10-17T02:51:35.079200+00:00",
+        "reason": "reviewer (sonnet): The anchor at UnifiedBuildEntry.tsx:581 only shows createPersona, so it is incidental and does not show that machine-paced delivery is absent. The code I opened in useLifecycle.ts:193-210 has an automated test-then-promote gate (the backend promote gate in oneshot.rs is cited in a comment there), wh"
+      }
     }
   }
 }
