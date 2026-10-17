@@ -198,7 +198,7 @@ named in the queue column with a link to the ledger. A missing value shows as mi
 posing as a before, "risk not stated", "not measured", and a project whose store did not open says so in
 the project list. A rail panel narrows the plan when there is room beside it and lies over it when there
 is not; the lens strip shows how many sheets it cut off; the queue footer lists L, T, Space and a clickable
-`?` for all keys.
+`?` for all keys. Each re-read is compared with the last: a header chip **N changed** lists what moved since you looked (decisions, new proposals, runs that ended, new readings) and takes you to it, and the changed tiles and queue rows light once and fade. Changes you made from the sheet, and ones you already saw, are not announced.
 
 **Stewards plate.** In the supply column the Autopilot plate became the
 Stewards plate: the attention-loop switch on top (unchanged, same tour anchors
