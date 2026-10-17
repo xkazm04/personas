@@ -19316,7 +19316,11 @@
           "revision": 2,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_n8n/hooks/useN8nWizard.ts:14 Those five identifiers are absent under src/features/templates/sub_n8n; the hook composes an import wizard whose transform step starts a background workflow-import job, not a chain of keyed sample callables.",
+          "evaluatedAt": "2026-10-17",
+          "evaluatedAgainst": "sha256-b2:0b71cd6d2d0ff2a0",
+          "evaluatedRevision": 2
         },
         {
           "subject": "prompt-assembly",
@@ -28415,7 +28419,11 @@
           "revision": 2,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/twin/sub_training/topicCoverage.ts:21 The same five identifiers are absent under src/features/plugins/twin, including sub_training and sub_profiles; a training pair is saved as a communication, which is an interview record rather than aligned sample fields.",
+          "evaluatedAt": "2026-10-17",
+          "evaluatedAgainst": "sha256-b2:0b71cd6d2d0ff2a0",
+          "evaluatedRevision": 2
         },
         {
           "subject": "docs-content-model",
@@ -30917,7 +30925,11 @@
           "revision": 2,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/shared/components/forms/FormField.tsx:10 Searches of src/features/shared/components/forms for MapTransform, allow_missing_keys, Randomizable, mapping_depth, and thread_unsafe returned no hits; this module renders availability feedback under a text input, so there is no keyed sample-transform library here.",
+          "evaluatedAt": "2026-10-17",
+          "evaluatedAgainst": "sha256-b2:0b71cd6d2d0ff2a0",
+          "evaluatedRevision": 2
         },
         {
           "subject": "status-vocabulary",

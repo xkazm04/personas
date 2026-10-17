@@ -28669,6 +28669,125 @@
           "evidence": "src-tauri/src/commands/recipes/recipe_parameter_coverage.rs:11 The figure is how many input_schema fields become editable parameters, not a scan-view coverage weight."
         }
       ]
+    },
+    "3c749d5b-3169-4ea8-8faa-98558f9b5df5/keyed-sample-transforms": {
+      "context": "shared-components-forms",
+      "subject": "keyed-sample-transforms",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-17",
+      "evaluatedTs": "2026-10-17T02:36:46.082Z",
+      "worker": "ebf399cd-e2c5-476a-9436-dd510807d2e2",
+      "techniques": [
+        {
+          "technique": "array-and-keyed-dual-forms",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/forms/DesignInput.tsx:49 The control writes one instruction string from a textarea; there is no single-value callable plus a keyed dictionary wrapper."
+        },
+        {
+          "technique": "multi-sample-fan-out",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/forms/TableSelector.tsx:39 The list is database table names the user toggles; nothing emits samples for a chain to map at a declared depth."
+        },
+        {
+          "technique": "pass-through-of-unlisted-keys",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/forms/KeyValueEditor.tsx:18 This editor round-trips a flat JSON object the user is typing; it is not a stage in an open sample-dictionary chain."
+        },
+        {
+          "technique": "single-draw-per-sample",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/forms/ColorPicker.tsx:25 The palette fallback is a fixed hex constant; this file draws no shared geometry across an input and a label."
+        },
+        {
+          "technique": "thread-unsafe-marking",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/forms/Slider.tsx:28 The control is a range input in the UI thread; no transform is marked or copied per worker."
+        }
+      ],
+      "registryProposal": "The golden path already excludes typed records and pipeline DAGs, but it never names the lookalikes that collide with its words: a form control, an interview loop called training, and a wizard step called transform. A non-example line for those three would make the precondition testable."
+    },
+    "3a377c10-3b0f-4674-87f9-aae9cb267c99/keyed-sample-transforms": {
+      "context": "plugins-twin-training",
+      "subject": "keyed-sample-transforms",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-17",
+      "evaluatedTs": "2026-10-17T02:36:46.082Z",
+      "worker": "ebf399cd-e2c5-476a-9436-dd510807d2e2",
+      "techniques": [
+        {
+          "technique": "array-and-keyed-dual-forms",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/twin/sub_training/topicCoverage.ts:81 One serializer writes a tagged Q&A object or a bare pairs array; there is no value-level operation with a keyed twin."
+        },
+        {
+          "technique": "missing-key-policy",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/twin/sub_training/topicCoverage.ts:87 Missing key_facts_json means the coverage scorer treats the row as untagged; it is not a transform refusing a sample that lacks a named key."
+        },
+        {
+          "technique": "multi-sample-fan-out",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/twin/sub_training/useTrainingSession.ts:150 The list is at most five interview questions sliced from model text; no chain maps later transforms over samples at a declared depth."
+        },
+        {
+          "technique": "pass-through-of-unlisted-keys",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/twin/sub_training/topicCoverage.ts:72 Preservation here keeps a legacy Q&A array inside key_facts_json; the payload is that closed record, not an open sample dictionary."
+        },
+        {
+          "technique": "single-draw-per-sample",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/twin/sub_training/useTrainingSession.ts:135 Questions come from one generateBio prompt; sub_training and sub_profiles contain no random augmentation of aligned fields."
+        },
+        {
+          "technique": "thread-unsafe-marking",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/twin/sub_training/useTrainingMomentum.ts:32 Momentum is a React fetch of training communications; no stateful transform is shared across workers."
+        }
+      ]
+    },
+    "2418ddaf-0e6e-446f-968f-28a4bf6e7120/keyed-sample-transforms": {
+      "context": "n8n-wizard-orchestration",
+      "subject": "keyed-sample-transforms",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-17",
+      "evaluatedTs": "2026-10-17T02:36:46.082Z",
+      "worker": "ebf399cd-e2c5-476a-9436-dd510807d2e2",
+      "techniques": [
+        {
+          "technique": "array-and-keyed-dual-forms",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_n8n/hooks/useN8nWizardTransformHandlers.ts:37 The handler stringifies one AgentIR record into a single background IPC call; it does not ship a value callable and a keyed wrapper."
+        },
+        {
+          "technique": "missing-key-policy",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_n8n/hooks/useN8nWizardTransformHandlers.ts:48 An empty answer map is an optional wizard argument sent as null; there is no key-list iterator that raises or skips per transform."
+        },
+        {
+          "technique": "multi-sample-fan-out",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_n8n/hooks/useN8nImportReducer.ts:28 transform is one UI step in a fixed wizard sequence; the reducer declares no mapping depth and maps no sample list."
+        },
+        {
+          "technique": "pass-through-of-unlisted-keys",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_n8n/hooks/n8nTypes.ts:87 normalizeDraftFromUnknown projects unknown JSON onto the typed N8nPersonaDraft fields; the technique excludes pipelines whose type already carries the fields."
+        },
+        {
+          "technique": "single-draw-per-sample",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_n8n/hooks/useN8nWizardTransformHandlers.ts:22 The only draw in the handler is a run id for the CLI job, not frozen geometry applied to every key of a sample."
+        },
+        {
+          "technique": "thread-unsafe-marking",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_n8n/hooks/useN8nWizardTransformHandlers.ts:17 transformLockRef blocks a second wizard click; it is not a class-level marker an executor uses to copy stateful transforms per worker."
+        }
+      ]
     }
   }
 }
