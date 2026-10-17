@@ -28305,6 +28305,38 @@
         "at": "2026-10-17T01:19:27.061082+00:00",
         "reason": "reviewer (sonnet): The code claim is true (the polling-limit branch at src-tauri/src/cloud/runner.rs:222 returns without calling cancel_execution), but runner.rs is in the app crate's cloud module. It is not among the core context's files (src-tauri/core/src/*), and core is a lower crate that can't call it, so I could"
       }
+    },
+    "969f50a2-b70d-41e3-b573-284a75a67425/translation-pipeline-topology": {
+      "context": "prompt-assembly-engine",
+      "subject": "translation-pipeline-topology",
+      "bundle": "localization",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-17",
+      "evaluatedTs": "2026-10-17T01:37:57.168Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "7c949da1-f359-4ea0-8e42-d82371f6c899",
+        "state": "not-applicable",
+        "at": "2026-10-17T01:38:11.326645+00:00",
+        "reason": "reviewer (sonnet): The anchor assemble.rs:96 is only the doc comment of the assembler function, so it does not show that a localization pipeline is absent. The context's own README.md describes a LANGUAGE RULE block, which makes the locale/i18n search terms too narrow."
+      }
+    },
+    "7826a48f-5883-4f26-8476-c3c515bda745/translation-pipeline-topology": {
+      "context": "lib-personas",
+      "subject": "translation-pipeline-topology",
+      "bundle": "localization",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-17",
+      "evaluatedTs": "2026-10-17T01:37:57.168Z",
+      "worker": "7c949da1-f359-4ea0-8e42-d82371f6c899",
+      "techniques": [
+        {
+          "technique": "language-registry-single-source",
+          "verdict": "deviation",
+          "evidence": "src/lib/personas/templates/templateOverlays.ts:263 The loader explicitly retains a handwritten language enumeration alongside LOCALE_CODES; the parity test detects missing patterns but does not satisfy the one-entry onboarding rule."
+        }
+      ],
+      "registryProposal": "Clarify canonical fallback unit boundaries for structured template catalogs whose translations are partial field overlays."
     }
   }
 }

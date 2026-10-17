@@ -17971,8 +17971,12 @@
           "revision": 12,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "deviation",
+          "priorNotApplicable": 4,
+          "evidence": "src/lib/personas/templates/templateOverlays.ts:275 Overlay discovery manually enumerates language-specific glob patterns, so adding a manifest language also requires editing this loader despite the standard's single-registry requirement.",
+          "evaluatedAt": "2026-10-17",
+          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
+          "evaluatedRevision": 12
         }
       ],
       "governance": "governed"
@@ -29037,8 +29041,8 @@
           "revision": 12,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "priorNotApplicable": 4,
+          "state": "unknown"
         },
         {
           "subject": "voice-io",
