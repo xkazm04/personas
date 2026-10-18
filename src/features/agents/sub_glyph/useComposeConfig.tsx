@@ -9,21 +9,15 @@
  *
  *  Returns:
  *   • items    — one ComposeConfigItem per configurable dimension, each with a
- *                live active/summary read and an onClick that toggles or opens
- *                the right picker. Map over these to render chips/nodes/rows.
+ *                live active/summary read, an onClick that toggles or opens
+ *                the right picker, and the shared quick-setup controller.
+ *                A dimension's label, icon and colour come from `DIM_META` /
+ *                `useGlyphDimText`, not from here.
  *   • modals   — the wired picker modals; drop once into the surface.
- *   • composeCellStates — synthetic cell map so a shared sigil lights the
- *                petals the user has already set.
  *   • launch   — intent augmented with memory/review preferences, then fired.
- *   • anyActive / quickConfig passthrough.
  */
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
-import {
-  Calendar, ListTodo, Plug, MessageSquare, UserCheck, Brain, Activity,
-  type LucideIcon,
-} from "lucide-react";
-import type { GlyphDimension, GlyphRow, GlyphPresence } from "@/features/shared/glyph";
-import { GLYPH_DIMENSIONS } from "@/features/shared/glyph";
+import type { GlyphDimension } from "@/features/shared/glyph";
 import type {
   Frequency, QuickConfigState, EventSubscription,
 } from "@/features/agents/shared/quickConfig/quickConfigTypes";
@@ -31,7 +25,6 @@ import {
   describeTriggerConfig, describeSelectedConnectors,
 } from "@/features/agents/shared/quickConfig/quickConfigTypes";
 import { useHealthyConnectors } from "@/features/agents/shared/quickConfig/useHealthyConnectors";
-import type { CellBuildStatus } from "@/lib/types/buildTypes";
 import type { ChannelSpecV2 } from "@/lib/bindings/ChannelSpecV2";
 import { ComposerEventPickerModal } from "./commandPanel/composer/ComposerEventPickerModal";
 import { ComposerConnectorsPickerModal } from "./commandPanel/composer/ComposerConnectorsPickerModal";
@@ -43,9 +36,6 @@ import { BUILT_IN_INBOX } from "./commandPanel/messagingChannelDefaults";
 export interface ComposeConfigItem {
   /** The glyph dimension this maps to (drives color/petal). */
   dim: GlyphDimension;
-  label: string;
-  icon: LucideIcon;
-  color: string;
   /** "toggle" flips a boolean; "picker" opens a modal; "input" shows the prompt. */
   kind: "toggle" | "picker" | "input";
   /** True when the user has set a non-default value for this dimension. */
@@ -151,18 +141,6 @@ export function useComposeConfig({
     });
   }, [frequency, days, monthDay, time, selectedConnectors, connectorTables, selectedEvents, selectedChannels, onQuickConfigChange]);
 
-  // Synthetic cell map — light the petals the user has already configured.
-  const composeCellStates = useMemo(() => {
-    const next: Record<string, CellBuildStatus> = {};
-    if (memoryEnabled) next["memory"] = "resolved";
-    if (reviewEnabled) next["human-review"] = "resolved";
-    if (selectedConnectors.length > 0) next["connectors"] = "resolved";
-    if (selectedEvents.length > 0) { next["events"] = "resolved"; next["triggers"] = "resolved"; }
-    if (frequency) next["triggers"] = "resolved";
-    if (showInput && intentText.trim()) next["use-cases"] = "resolved";
-    return next;
-  }, [memoryEnabled, reviewEnabled, selectedConnectors, selectedEvents, frequency, showInput, intentText]);
-
   const triggerSummary = useCallback((): string[] => {
     if (!frequency) return [];
     return describeTriggerConfig({
@@ -234,43 +212,43 @@ export function useComposeConfig({
 
   const items: ComposeConfigItem[] = useMemo(() => { const base: ComposeConfigItem[] = [
     {
-      dim: "task", label: "What", icon: ListTodo, color: "#a78bfa", kind: "input",
+      dim: "task", kind: "input",
       active: showInput && intentText.trim().length > 0,
       summary: intentText.trim() ? [intentText.trim()] : [],
       onClick: () => setShowInput((v) => !v),
     },
     {
-      dim: "trigger", label: "When", icon: Calendar, color: "#fbbf24", kind: "picker",
+      dim: "trigger", kind: "picker",
       active: frequency != null,
       summary: triggerSummary(),
       onClick: () => setScheduleModalOpen(true),
     },
     {
-      dim: "connector", label: "Apps", icon: Plug, color: "#22d3ee", kind: "picker",
+      dim: "connector", kind: "picker",
       active: selectedConnectors.length > 0,
       summary: connectorSummary(),
       onClick: () => setConnectorsModalOpen(true),
     },
     {
-      dim: "event", label: "Events", icon: Activity, color: "#2dd4bf", kind: "picker",
+      dim: "event", kind: "picker",
       active: selectedEvents.length > 0,
       summary: selectedEvents.map((e) => `${e.description} (from ${e.personaName})`),
       onClick: () => setEventsModalOpen(true),
     },
     {
-      dim: "memory", label: "Memory", icon: Brain, color: "#c084fc", kind: "toggle",
+      dim: "memory", kind: "toggle",
       active: memoryEnabled,
       summary: memoryEnabled ? ["Remembers preferences between runs"] : [],
       onClick: () => setMemoryEnabled((v) => !v),
     },
     {
-      dim: "review", label: "Review", icon: UserCheck, color: "#fb7185", kind: "toggle",
+      dim: "review", kind: "toggle",
       active: reviewEnabled,
       summary: reviewEnabled ? ["Waits for your approval before publishing"] : [],
       onClick: () => setReviewEnabled((v) => !v),
     },
     {
-      dim: "message", label: "Messages", icon: MessageSquare, color: "#60a5fa", kind: "picker",
+      dim: "message", kind: "picker",
       active: selectedChannels.some((c) => c.type !== "built-in"),
       summary: selectedChannels
         .filter((c) => c.type !== "built-in")
@@ -279,28 +257,6 @@ export function useComposeConfig({
     },
   ]; return base.map((it) => ({ ...it, quick })); }, [showInput, intentText, frequency, triggerSummary, selectedConnectors, connectorSummary,
       selectedEvents, memoryEnabled, reviewEnabled, selectedChannels, quick]);
-
-  const anyActive = useMemo(
-    () => items.some((i) => i.active),
-    [items],
-  );
-
-  // Synthetic "forming persona" row — drives a decorative InteractiveSigil so
-  // the user sees their agent's dimensional shape fill in as they configure.
-  // A configured dimension reads as `linked`; everything else `none`.
-  const formingRow: GlyphRow = useMemo(() => {
-    const activeDims = new Set<GlyphDimension>(items.filter((i) => i.active).map((i) => i.dim));
-    const presence = {} as Record<GlyphDimension, GlyphPresence>;
-    for (const d of GLYPH_DIMENSIONS) presence[d] = activeDims.has(d) ? "linked" : "none";
-    return {
-      id: "forming",
-      title: "New agent",
-      enabled: true,
-      triggers: [], connectors: [], steps: [], events: [],
-      presence,
-      shared: false,
-    };
-  }, [items]);
 
   // Augment the intent with memory/review preferences right before launch —
   // the build prompt's heuristics open/skip those gates from the keywords, so
@@ -363,13 +319,7 @@ export function useComposeConfig({
 
   return {
     items,
-    quick,
     modals,
-    composeCellStates,
-    formingRow,
     launch,
-    anyActive,
-    showInput,
-    setShowInput,
   };
 }

@@ -39,28 +39,30 @@ function setup(initialNotificationChannels?: ChannelSpecV2[]) {
   );
 }
 
-const channelTypes = (r: { current: ReturnType<typeof useComposeConfig> }) =>
-  r.current.quick.config.notificationChannels.map((c) => c.type);
+type Result = { current: ReturnType<typeof useComposeConfig> };
+/** Every item carries the same quick-setup controller. */
+const quick = (r: Result) => r.current.items[0]!.quick!;
+const channelTypes = (r: Result) => quick(r).config.notificationChannels.map((c) => c.type);
 
 describe("useComposeConfig reset", () => {
   it("clears a picked channel when the session changes, like every other pick", () => {
     const { result, rerender } = setup();
     act(() => {
-      result.current.quick.toggleChannel(SLACK);
-      result.current.quick.toggleConnector("gmail");
+      quick(result).toggleChannel(SLACK);
+      quick(result).toggleConnector("gmail");
     });
     expect(channelTypes(result)).toEqual(["built-in", "slack"]);
 
     rerender({ resetKey: "session-1" });
 
-    expect(result.current.quick.config.selectedConnectors).toEqual([]);
+    expect(quick(result).config.selectedConnectors).toEqual([]);
     expect(channelTypes(result)).toEqual(["built-in"]);
   });
 
   it("resets channels back to the caller's initial channels, inbox pinned", () => {
     const { result, rerender } = setup([SLACK]);
     expect(channelTypes(result)).toEqual(["built-in", "slack"]);
-    act(() => result.current.quick.toggleChannel(SLACK));
+    act(() => quick(result).toggleChannel(SLACK));
     expect(channelTypes(result)).toEqual(["built-in"]);
 
     rerender({ resetKey: "session-1" });
