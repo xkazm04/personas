@@ -18,10 +18,6 @@ const EMPTY_STATE: ToolRunState = {
   error: null,
 };
 
-// 120s ceiling on IPC. Without this, a hung Tauri call leaves
-// isRunning=true forever and the UI looks stuck.
-const TOOL_RUN_TIMEOUT_MS = 120_000;
-
 export function useToolRunner(personaId: string | undefined) {
   const [states, setStates] = useState<Record<string, ToolRunState>>({});
 
@@ -90,22 +86,13 @@ export function useToolRunner(personaId: string | undefined) {
         [toolId]: { personaId: runPersonaId, isRunning: true, result: null, error: null },
       }));
 
-      // The timer is cleared in `finally`: without that, every run that
-      // finished in under 120s left a live timer (and its closure) behind for
-      // the rest of the window, one per click.
-      let timer: ReturnType<typeof setTimeout> | undefined;
-      const timeout = new Promise<never>((_, reject) => {
-        timer = setTimeout(
-          () => reject(new Error(`Tool run timed out after ${TOOL_RUN_TIMEOUT_MS / 1000}s`)),
-          TOOL_RUN_TIMEOUT_MS,
-        );
-      });
-
+      // No local watchdog: the backend bounds the run at 120 s and answers a
+      // timeout with a structured, retryable result, and `invokeToolDirect`
+      // carries an IPC ceiling above that (TOOL_DIRECT_IPC_TIMEOUT_MS) as the
+      // hung-call guard. A 120 s race here fired at the same instant as the
+      // backend's own timeout and replaced its typed result with bare text.
       try {
-        const result = await Promise.race([
-          invokeToolDirect(toolId, runPersonaId, inputJson),
-          timeout,
-        ]);
+        const result = await invokeToolDirect(toolId, runPersonaId, inputJson);
         setStates((prev) => {
           // Drop the result if the user has since switched personas — this
           // entry no longer belongs to the visible tool runner panel.
@@ -128,7 +115,6 @@ export function useToolRunner(personaId: string | undefined) {
           };
         });
       } finally {
-        clearTimeout(timer);
         // Only release the dedupe slot if we're still on the same persona
         // (otherwise the persona-switch effect already cleared the set).
         if (runPersonaId === personaIdRef.current) {
