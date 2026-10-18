@@ -17,6 +17,7 @@ import {
 } from '@/features/plugins/dev-tools/sub_overview/adapters';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
+import { mapWithConcurrency } from '@/lib/concurrency';
 import { silentCatch } from '@/lib/silentCatch';
 
 import type { FleetNode, IslandState } from './types';
@@ -65,21 +66,6 @@ export function computeAttention(fleet: readonly FleetNode[]): boolean {
  *  Observability tab's MONITORING_ADAPTERS — only Sentry today). */
 const SENTRY = 'sentry';
 
-/** Bound the number of concurrent Sentry stat fetches. */
-async function boundedForEach<T>(items: readonly T[], limit: number, fn: (item: T) => Promise<void>): Promise<void> {
-  let cursor = 0;
-  const width = Math.max(1, Math.min(limit, items.length));
-  await Promise.all(
-    Array.from({ length: width }, async () => {
-      for (;;) {
-        const i = cursor++;
-        if (i >= items.length) return;
-        await fn(items[i]!);
-      }
-    }),
-  );
-}
-
 /**
  * Fetch live monitoring stats for every project with a bound, supported
  * monitoring credential (bounded concurrency). Reuses the Observability tab's
@@ -100,7 +86,8 @@ export async function loadMonitoringSummaries(
   });
 
   const out = new Map<string, MonitoringSummary>();
-  await boundedForEach(targets, 4, async (p) => {
+  // Bounded through the one shared limiter (its NaN-limit guard included).
+  await mapWithConcurrency(targets, 4, async (p) => {
     const credId = p.monitoring_credential_id;
     if (!credId) return;
     const [orgSlug, projectSlug] = splitSentrySlug(p.monitoring_project_slug);
