@@ -368,8 +368,10 @@ fn lane_sentence(lane: &str) -> &'static str {
             "her standing lane, which she runs when the operator's queue and her own plan are \
              both empty, because she never idles"
         }
-        // Not reachable through `tick` - `e52`'s CHECK allows three lanes and
-        // the sleep pass dispatches nothing - but a brief that silently
+        // Not reachable through `tick` - the `curator_dispatch.lane` CHECK
+        // allows exactly the four lanes above (`e52` created it with three,
+        // `e53_curator_method` added `method`) and the sleep pass dispatches
+        // nothing - but a brief that silently
         // dropped its lane line would be worse than one that says it does not
         // know which lane it came from.
         _ => "a lane this app could not name",
