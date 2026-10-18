@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
 import { listExecutionsSummary } from '@/api/agents/executions';
 import { toastCatch } from '@/lib/silentCatch';
@@ -21,7 +21,14 @@ export function useExecutionPaging(personaId: string, firstPage: ExecutionListIt
   // because the offset is a server-side skip and a row we already hold still
   // occupied a slot in that window.
   const [extraServerRows, setExtraServerRows] = useState(0);
-  useEffect(() => { setExtraRows([]); setReachedEnd(false); setExtraServerRows(0); }, [personaId]);
+  // The persona a resolving page must still belong to. The reset below clears
+  // the tail on a switch, but a page already in flight would otherwise land
+  // afterwards and list the old persona's runs under the new one.
+  const personaRef = useRef(personaId);
+  useEffect(() => {
+    personaRef.current = personaId;
+    setExtraRows([]); setReachedEnd(false); setExtraServerRows(0);
+  }, [personaId]);
 
   // The store's first page as the SERVER returned it. NOT `firstPage.length`:
   // `upsertFinishedExecution` prepends locally finished runs into that array,
@@ -49,6 +56,7 @@ export function useExecutionPaging(personaId: string, firstPage: ExecutionListIt
     setLoadingMore(true);
     try {
       const page = await listExecutionsSummary(personaId, EXECUTION_PAGE_SIZE, serverOffset);
+      if (personaRef.current !== personaId) return;
       setExtraServerRows((prev) => prev + page.length);
       if (page.length < EXECUTION_PAGE_SIZE) setReachedEnd(true);
       if (page.length > 0) setExtraRows((prev) => [...prev, ...page]);
