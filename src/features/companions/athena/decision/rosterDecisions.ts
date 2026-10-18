@@ -205,9 +205,12 @@ function reviewDecision(item: DecisionItem, decide: RosterDecide): PendingDecisi
     {
       key: 'open',
       label: c.decision_open,
+      // Reading is not deciding, exactly as for an incident: the review stays
+      // pending, so without the hold the next pump re-asked it at once.
       run: () => {
         useSystemStore.getState().setSidebarSection('overview');
         useOverviewStore.getState().setOverviewTab('manual-review');
+        deferDecision(item.id);
       },
     },
   ];
