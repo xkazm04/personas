@@ -7,7 +7,7 @@
  * rejected import forever) with its own ErrorBoundary, so a failed chunk fetch
  * costs one page rather than the whole section.
  *
- * `athena:*` is deliberately ONE branch: Athena's five pages live inside
+ * Athena's five pages deliberately share ONE branch: they live inside
  * `AthenaPage`, which reads the tab half of the page id itself, so switching
  * between her tabs never re-mounts her surface.
  */
@@ -41,11 +41,19 @@ function Route({ name, children }: { name: string; children: React.ReactNode }) 
   );
 }
 
+/**
+ * Exhaustive over `COMPANIONS_PAGES`: a page added to the vocabulary without a
+ * branch here fails `tsc` at the `never` below, instead of silently opening
+ * the landing page.
+ */
 function renderPage(page: CompanionsPageId) {
-  if (page.startsWith('athena:')) {
-    return <Route name="Athena"><AthenaPage /></Route>;
-  }
   switch (page) {
+    case 'athena:create-athena':
+    case 'athena:setup':
+    case 'athena:memory':
+    case 'athena:voice':
+    case 'athena:decisions':
+      return <Route name="Athena"><AthenaPage /></Route>;
     case 'overseer:reviews':
       return <Route name="Overseer"><DirectorCoachingTab /></Route>;
     case 'overseer:setup':
@@ -58,8 +66,15 @@ function renderPage(page: CompanionsPageId) {
       return <Route name="Process"><ProcessPage /></Route>;
     case 'curator:setup':
       return <Route name="Curator Setup"><CuratorSetupPage /></Route>;
-    default:
+    case 'landing':
       return <Route name="Companions"><LandingPage /></Route>;
+    default: {
+      // Unreachable while the switch is exhaustive; rehydrate already maps an
+      // unknown persisted page to `landing`.
+      const unknownPage: never = page;
+      void unknownPage;
+      return <Route name="Companions"><LandingPage /></Route>;
+    }
   }
 }
 
