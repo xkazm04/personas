@@ -133,6 +133,12 @@ interface LabCrudActions<TRun> {
   deleteRun: (runId: string) => Promise<void>;
   /** Wrap any start API call with lifecycle management. */
   wrapStart: <T extends unknown[]>(fn: (...args: T) => Promise<TRun>, ...args: T) => Promise<string | null>;
+  /** The persona whose run this mode is tracking (for the sidebar orbit dot), or null. */
+  owner: () => string | null;
+  /** Record the persona a recovered run belongs to. */
+  adoptOwner: (personaId: string) => void;
+  /** Forget and answer the tracked persona: the run ended. */
+  releaseOwner: () => string | null;
 }
 
 const TERMINAL_STATUSES: Set<LabRunStatus> = new Set(["completed", "failed", "cancelled"]);
@@ -159,7 +165,19 @@ function createLabCrud<TRun extends { id: string; status: LabRunStatus }, TResul
   // persona's slower response resolve after the second's, showing another
   // persona's run history.
   const fetchRunsLatestWins = createLatestWins();
+  // The persona this mode's run belongs to. Each mode runs one at a time (its
+  // own lifecycle), so one slot per mode is the whole truth - and it is the
+  // persona to drop from `labRunningPersonaIds` when the run ends, which is
+  // NOT the selected persona once the operator has navigated away.
+  let ownerPersonaId: string | null = null;
   return {
+    owner: () => ownerPersonaId,
+    adoptOwner: (personaId) => { ownerPersonaId = personaId; },
+    releaseOwner: () => {
+      const id = ownerPersonaId;
+      ownerPersonaId = null;
+      return id;
+    },
     fetchRuns: async (personaId) => {
       const token = fetchRunsLatestWins.next();
       try {
@@ -249,6 +267,7 @@ function createLabCrud<TRun extends { id: string; status: LabRunStatus }, TResul
       // persona with an active lab run.
       const personaId = typeof args[0] === 'string' ? (args[0] as string) : null;
       lc.markStarted(set);
+      ownerPersonaId = personaId;
       if (personaId) {
         set((state) => {
           const next = Array.from(new Set([...(state as unknown as { labRunningPersonaIds?: string[] }).labRunningPersonaIds ?? [], personaId]));
@@ -260,6 +279,7 @@ function createLabCrud<TRun extends { id: string; status: LabRunStatus }, TResul
         return run.id;
       } catch (err) {
         lc.markFailed(set);
+        if (ownerPersonaId === personaId) ownerPersonaId = null;
         if (personaId) {
           set((state) => {
             const ids = (state as unknown as { labRunningPersonaIds?: string[] }).labRunningPersonaIds ?? [];
@@ -438,11 +458,21 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
       else if (mode === 'eval') evalLifecycle.markFinished(set);
       labLifecycle.markFinished(set);
       const personaId = get().selectedPersona?.id;
-      // Drop this persona from the running set — the lab run ended.
-      if (personaId) {
-        set((state) => ({
-          labRunningPersonaIds: state.labRunningPersonaIds.filter((id) => id !== personaId),
-        }));
+      // Drop the persona that OWNS the ended run from the running set. Using
+      // the selected persona instead left the owner's orbit dot lit forever
+      // whenever the operator had navigated to another persona meanwhile.
+      // Falls back to the selected persona only when no owner was tracked.
+      const crudByMode: Partial<Record<LabMode, Pick<LabCrudActions<unknown>, 'owner' | 'releaseOwner'>>> = {
+        arena, ab, matrix, eval: eval_,
+      };
+      const ended = (mode ? crudByMode[mode]?.releaseOwner() : null) ?? personaId ?? null;
+      if (ended) {
+        const stillRunning = Object.values(crudByMode).some((c) => c?.owner() === ended);
+        if (!stillRunning) {
+          set((state) => ({
+            labRunningPersonaIds: state.labRunningPersonaIds.filter((id) => id !== ended),
+          }));
+        }
       }
       if (!personaId) return;
       const fetchByMode: Record<string, () => Promise<void>> = {
@@ -664,6 +694,17 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
           }
           // Set mode-specific running state — restore each mode's own flag +
           // progress so a refresh mid-run doesn't fold ab/matrix/eval onto one.
+          // The recovered run belongs to `personaId`: track it so the orbit
+          // dot lights after a refresh and clears when the run ends.
+          const owned = mode === "arena" ? arena : mode === "ab" ? ab : mode === "matrix" ? matrix : mode === "eval" ? eval_ : null;
+          if (owned) {
+            owned.adoptOwner(personaId);
+            set((state) => ({
+              labRunningPersonaIds: state.labRunningPersonaIds.includes(personaId)
+                ? state.labRunningPersonaIds
+                : [...state.labRunningPersonaIds, personaId],
+            }));
+          }
           if (mode === "arena") {
             arenaLifecycle.markStarted(set);
             set({ arenaProgress: mapped });
