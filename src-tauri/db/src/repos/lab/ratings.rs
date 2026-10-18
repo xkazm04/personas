@@ -71,17 +71,6 @@ pub fn get_ratings_for_run(pool: &DbPool, run_id: &str) -> Result<Vec<LabUserRat
     })
 }
 
-pub fn delete_ratings_for_run(pool: &DbPool, run_id: &str) -> Result<bool, AppError> {
-    timed_query!("lab_ratings", "lab_ratings::delete_ratings_for_run", {
-        let conn = pool.get()?;
-        let count = conn.execute(
-            "DELETE FROM lab_user_ratings WHERE run_id = ?1",
-            params![run_id],
-        )?;
-        Ok(count > 0)
-    })
-}
-
 // -- Version × Model rating rollup ------------------------------
 
 /// Weighted composite (0-100) over whichever sub-scores are present, renormalising

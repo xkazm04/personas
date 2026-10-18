@@ -156,22 +156,6 @@ pub fn get_policy_for_persona(
     )
 }
 
-pub fn list_enabled_policies(pool: &DbPool) -> Result<Vec<EvolutionPolicy>, AppError> {
-    timed_query!(
-        "lab_evolution_cycles",
-        "lab_evolution_cycles::list_enabled_policies",
-        {
-            let conn = pool.get()?;
-            let mut stmt = conn.prepare(
-                "SELECT * FROM evolution_policies WHERE enabled = 1 ORDER BY updated_at",
-            )?;
-            let rows = stmt.query_map([], row_to_policy)?;
-            rows.collect::<Result<Vec<_>, _>>()
-                .map_err(AppError::Database)
-        }
-    )
-}
-
 pub fn delete_policy(pool: &DbPool, persona_id: &str) -> Result<bool, AppError> {
     timed_query!(
         "lab_evolution_cycles",
