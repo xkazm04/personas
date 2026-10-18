@@ -29447,6 +29447,47 @@
           "evidence": "src/features/vault/sub_catalog/components/schemas/ExtraFieldRenderers.tsx:26 Textarea contents are stored directly as field values, with no file-fragment splicing or relative config-node addressing."
         }
       ]
+    },
+    "876c0b4e-6472-4544-a21b-56e7529fb6b3/document-text-extraction": {
+      "context": "vault-shared-vector",
+      "subject": "document-text-extraction",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-18",
+      "evaluatedTs": "2026-10-18T23:22:44.194Z",
+      "worker": "63b0fda6-ab50-4325-a0d1-bae462f6594d",
+      "techniques": [
+        {
+          "technique": "unreadable-region-refusal",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/shared/vector/tabs/DocumentsTab.tsx:172 Reduces unreadable pages to a bare count in a warning rather than presenting the page range locus to the user."
+        },
+        {
+          "technique": "extraction-yield-bands",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/shared/vector/search/SearchResultCard.tsx:19 Collapses extraction quality into a boolean threshold over a confidence float rather than using discrete action-routing yield bands."
+        },
+        {
+          "technique": "band-calibration-by-construction",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/shared/vector/partialConfidence.ts:13 Threshold separating partial from full extraction is hardcoded without constructed defect fixtures or precision-recall curve validation."
+        },
+        {
+          "technique": "screen-then-confirm-detection",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/shared/vector/extract/EntityTable.tsx:104 Surfaces stage-one extraction confidence suspicion directly to the user as a warning badge without optical confirmation."
+        },
+        {
+          "technique": "recognition-boundary-and-escalation",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/shared/vector/tabs/DocumentsTab.tsx:168 Surfaces unreadable pages passively with no escalation path to optical character recognition."
+        },
+        {
+          "technique": "structural-amplification-caps",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/shared/vector/ingest/IngestTextModal.tsx:24 Permits unbounded text submission without a maximum payload cap or structural amplification guard."
+        }
+      ]
     }
   }
 }

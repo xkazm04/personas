@@ -40791,7 +40791,11 @@
           "revision": 2,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/vault/shared/vector/tabs/DocumentsTab.tsx:172 The document listing surfaces unreadable pages as a bare cardinality instead of preserving and showing the specific page locus or ranges, and leaks a stage-one emptiness heuristic as a user-facing warning without optical recognition confirmation or escalation.",
+          "evaluatedAt": "2026-10-18",
+          "evaluatedAgainst": "sha256-b2:ee97c74f3f5e0c28",
+          "evaluatedRevision": 2
         },
         {
           "subject": "docs-sync",
