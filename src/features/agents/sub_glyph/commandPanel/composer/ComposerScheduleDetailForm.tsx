@@ -1,3 +1,4 @@
+import { useId } from "react";
 import type { Rhythm } from "./ComposerScheduleRhythmCard";
 import { DebtText } from '@/i18n/DebtText';
 
@@ -31,11 +32,13 @@ interface ComposerScheduleDetailFormProps {
 export function ComposerScheduleDetailForm({
   rhythm, time, onTimeChange, days, onToggleDay, monthDay, onMonthDayChange,
 }: ComposerScheduleDetailFormProps) {
+  const timeId = useId();
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-center gap-3">
-        <label className="typo-label text-foreground/90 w-20">Time</label>
+        <label htmlFor={timeId} className="typo-label text-foreground/90 w-20">Time</label>
         <input
+          id={timeId}
           type="time"
           value={time}
           onChange={(e) => onTimeChange(e.target.value)}
@@ -54,6 +57,7 @@ export function ComposerScheduleDetailForm({
                 <button
                   key={d.id}
                   type="button"
+                  aria-pressed={active}
                   onClick={() => onToggleDay(d.id)}
                   className={`px-3 py-2 rounded-interactive typo-body transition-colors ${
                     active
@@ -79,6 +83,7 @@ export function ComposerScheduleDetailForm({
                 <button
                   key={n}
                   type="button"
+                  aria-pressed={active}
                   onClick={() => onMonthDayChange(n)}
                   className={`h-10 rounded-interactive typo-body transition-colors tabular-nums ${
                     active

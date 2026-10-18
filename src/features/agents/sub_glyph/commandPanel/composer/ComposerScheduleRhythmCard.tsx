@@ -15,6 +15,7 @@ export function ComposerScheduleRhythmCard({
   return (
     <button
       type="button"
+      aria-pressed={active}
       onClick={onSelect}
       className={`group relative flex flex-col items-start gap-2 p-4 rounded-card border transition-all text-left ${
         active
