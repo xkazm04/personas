@@ -1,9 +1,8 @@
 /**
  * Athena's master switch, for the surfaces that must DISAPPEAR when she is off.
  *
- * Reads the status store directly rather than `useCompanionsStatus`: Athena has
- * no prerequisite, so she never needs Curator's registry override, and the app
- * shell must not pull that chain into its bundle to learn one boolean.
+ * Reads the status store directly rather than `useCompanionsStatus`: the app
+ * shell needs one boolean, not the category view with its lookup and refresh.
  *
  * **`enabled` is optimistic while the answer is unknown**, and that is the
  * deliberate choice: the setting defaults to ON, so assuming OFF would make

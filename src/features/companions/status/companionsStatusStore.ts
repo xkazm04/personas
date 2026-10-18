@@ -18,10 +18,11 @@
  *
  * ## Why this is its own file
  *
- * It imports the companions API and nothing else. `useCompanionsStatus` adds
- * Curator's registry override, which reaches into the Dev Tools registry-link
- * store and its API chain; the app-shell footer and the overlay gate need only
- * Athena's switch, and must not drag that chain into their bundle to get it.
+ * It imports the companions API and nothing else, so the app-shell footer and
+ * the overlay gate can read Athena's switch from the slot (`useAthenaEnabled`)
+ * without the view hook. (`useCompanionsStatus` once patched Curator's
+ * eligibility from the Dev Tools registry-link store; migration e48 moved
+ * that decision into Rust and the patch is gone.)
  */
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 
