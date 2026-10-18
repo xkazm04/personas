@@ -233,12 +233,19 @@ export const reviewMemoriesWithCli = (
   instructions?: string,
   autoApply?: boolean,
 ) =>
-  invoke<MemoryReviewResult>("review_memories_with_cli", {
-    personaId: personaId,
-    threshold: threshold,
-    instructions: instructions,
-    autoApply: autoApply,
-  });
+  invoke<MemoryReviewResult>(
+    "review_memories_with_cli",
+    {
+      personaId: personaId,
+      threshold: threshold,
+      instructions: instructions,
+      autoApply: autoApply,
+    },
+    // The backend gives the review CLI 3 minutes and then, in auto-apply mode,
+    // deletes the low-scored memories. At the 90 s default the wrapper rejected
+    // while that delete was still coming, and a retry ran a second review.
+    { timeoutMs: 240_000 },
+  );
 
 /**
  * Run a memory REFLECTION pass (Memory Engine v2): the LLM consolidates
