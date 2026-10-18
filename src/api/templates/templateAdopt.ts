@@ -52,16 +52,21 @@ export interface AdoptionAdjustResult {
  * by contract: on any internal failure it RESOLVES with `adjusted: false` and
  * the base IR intact rather than rejecting.
  *
- * The 660s timeout sits above the backend's own 600s LLM margin so the
- * frontend never gives up before the backend resolves. Do not lower it here —
- * the whole point is that the wrapper owns the correct bound, so no call site
- * has to remember it.
+ * The backend hands the CLI runner `timeout_secs = 600`, but that is a SILENCE
+ * lease, not a wall clock: a pass that keeps producing lines may run up to
+ * `600 * LEASE_CEILING_FACTOR` (3) = 1800s before the runner stops it
+ * (`n8n_transform/cli_runner.rs`). The old 660s bound rejected such a pass
+ * while the backend went on to rewrite `agent_ir`, so the caller saw a failure
+ * the contract says cannot happen. 1860s sits above the hard ceiling. Do not
+ * lower it here — the wrapper owns the correct bound, so no call site has to
+ * remember it; `__tests__/adjustAdoptionDraftTimeout.test.ts` pins it to the
+ * Rust source.
  */
 export const adjustAdoptionDraft = (sessionId: string) =>
   invoke<AdoptionAdjustResult>(
     "adjust_adoption_draft",
     { sessionId },
-    { timeoutMs: 660_000 },
+    { timeoutMs: 1_860_000 },
   );
 
 // ============================================================================

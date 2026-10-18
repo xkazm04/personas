@@ -1225,7 +1225,8 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
             });
           })
           .catch(silentCatch("ChronologyAdoptionView:adjustStatusUpdate"));
-        // The wrapper owns the long (660s) timeout — see adjustAdoptionDraft.
+        // The wrapper owns the long timeout (above the CLI runner's hard
+        // ceiling) — see adjustAdoptionDraft.
         await adjustAdoptionDraft(sessionId);
       } catch (err) {
         // Non-fatal: backend keeps the deterministic base IR on failure.
