@@ -15,7 +15,6 @@ import type {
 import type { Persona } from "@/lib/bindings/Persona";
 import type { PersonaHealingIssue } from "@/lib/bindings/PersonaHealingIssue";
 import type { PersonaHealthSignal } from "@/stores/slices/overview/personaHealthSlice";
-import { silentCatch } from "@/lib/silentCatch";
 import { getActiveTranslations, interpolate } from "@/i18n/useTranslation";
 
 // -- Slice interface --------------------------------------------------
@@ -251,7 +250,6 @@ export const createHealthCheckSlice: StateCreator<AgentStore, [], [], HealthChec
       set({ healthDigest: digest, healthDigestRunning: false, lastDigestAt: digest.generatedAt });
       return digest;
     } catch (err) {
-      silentCatch('healthCheckSlice:runFullHealthDigest')(err);
       reportError(err, "Failed to run health digest", set, { stateUpdates: { healthDigestRunning: false } });
       return null;
     }
