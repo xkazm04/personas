@@ -13289,7 +13289,11 @@
           "revision": 2,
           "changedAt": "2026-08-31",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:77 The grid manages Claude conversations and their terminal views; searches for runs-on, self-hosted and autoscaling returned no matches in its context directory, supporting absence of CI runner management here.",
+          "evaluatedAt": "2026-10-18",
+          "evaluatedAgainst": "sha256-b2:9f9c2122f589ed3d",
+          "evaluatedRevision": 2
         },
         {
           "subject": "table",
@@ -27154,7 +27158,11 @@
           "revision": 2,
           "changedAt": "2026-08-31",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/fleet/__tests__/FleetBroadcastModal.test.tsx:101 These tests exercise agent-session interfaces and terminal input; searches for runs-on, self-hosted and autoscaling returned no matches in the context directories, supporting absence of CI runner infrastructure here.",
+          "evaluatedAt": "2026-10-18",
+          "evaluatedAgainst": "sha256-b2:9f9c2122f589ed3d",
+          "evaluatedRevision": 2
         },
         {
           "subject": "agent-runtime-assembly",

@@ -29001,6 +29001,88 @@
           "evidence": "src/features/teams/sub_factory/passport/improve/goldenStandard.ts:131 Combines dimensions across both automation and production readiness into a single weighted golden percentage headline score."
         }
       ]
+    },
+    "d7525012-ab19-4b29-99bb-0d4b6b9e084b/runner-fleet": {
+      "context": "plugins-fleet-tests",
+      "subject": "runner-fleet",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-18",
+      "evaluatedTs": "2026-10-18T21:25:02.809Z",
+      "worker": "70dd185b-5b3a-4214-b76c-71f441ac842d",
+      "techniques": [
+        {
+          "technique": "capability-typed-queues",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/fleet/__tests__/SkillLibraryDrawer.test.tsx:60 The tested dispatch applies a slash command to an agent session, rather than matching delivery jobs to runner capabilities."
+        },
+        {
+          "technique": "ephemeral-versus-warm-runners",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/fleet/__tests__/fleetSessionScope.test.ts:46 Wake behavior concerns session tile continuity, rather than provisioning clean or persistent CI machines."
+        },
+        {
+          "technique": "fleet-isolation-boundaries",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/fleet/sub_skills/__tests__/SkillInstallModal.test.tsx:49 The repository selection installs a skill into a project; it does not grant access to execution pools or production environments."
+        },
+        {
+          "technique": "queue-depth-elasticity",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/fleet/__tests__/FleetStatusDots.test.tsx:15 The tested state mapping presents session status and does not size a delivery runner fleet."
+        },
+        {
+          "technique": "shared-cache-integrity",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/fleet/sub_grid/__tests__/FleetTokenSummaryBar.test.tsx:35 Cache metrics represent LLM input tokens, rather than restored build dependencies or artifacts."
+        },
+        {
+          "technique": "shared-resource-serialization",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/fleet/__tests__/fleetSessionScope.test.ts:22 Ordering fixes visual tile positions; it does not serialize deployments, migrations or publishes."
+        }
+      ]
+    },
+    "67c91bb4-f3ee-4aa0-91ca-e7097ac6b394/runner-fleet": {
+      "context": "fleet-session-grid",
+      "subject": "runner-fleet",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-18",
+      "evaluatedTs": "2026-10-18T21:25:02.809Z",
+      "worker": "70dd185b-5b3a-4214-b76c-71f441ac842d",
+      "techniques": [
+        {
+          "technique": "capability-typed-queues",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/fleet/useFleetOverlayActions.ts:84 The action starts an agent session in a project directory, rather than requesting a delivery runner capability."
+        },
+        {
+          "technique": "ephemeral-versus-warm-runners",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/fleet/FleetSessionCard.tsx:121 Hibernation controls a conversation process, rather than persistence between CI jobs on a runner."
+        },
+        {
+          "technique": "fleet-isolation-boundaries",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:166 The selected project supplies the session's working location; this interface does not administer repository-to-runner or runner-to-production grants."
+        },
+        {
+          "technique": "queue-depth-elasticity",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/fleet/FleetSummaryPills.tsx:30 Counts determine visible session-status filters, rather than a runner scaling policy."
+        },
+        {
+          "technique": "shared-cache-integrity",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/fleet/FleetOverlayTile.tsx:114 The insights surface consumes conversation transcript information, rather than shared build artifacts."
+        },
+        {
+          "technique": "shared-resource-serialization",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/fleet/fleetSessionScope.ts:24 This ordering stabilizes rendered session positions; it provides no delivery-resource exclusion because that responsibility is outside this context."
+        }
+      ]
     }
   }
 }
