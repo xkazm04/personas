@@ -4,7 +4,8 @@ import { HelpCircle, Send, X } from "lucide-react";
 import { DIM_META } from "@/features/shared/glyph";
 import type { BuildQuestion } from "@/lib/types/buildTypes";
 import { VaultConnectorPicker } from "@/features/vault/components/VaultConnectorPicker";
-import { CELL_KEY_TO_DIM, DIM_LABEL } from "./glyphLayoutHelpers";
+import { useGlyphDimText } from "@/features/shared/glyph/persona-sigil";
+import { CELL_KEY_TO_DIM } from "./glyphLayoutHelpers";
 import { useTranslation } from "@/i18n/useTranslation";
 
 
@@ -25,6 +26,7 @@ interface GlyphAnswerCardProps {
  *  dimension is resolved before the next pending one auto-focuses. */
 export function GlyphAnswerCard({ question, onAnswer, onClose, variant = "sigil" }: GlyphAnswerCardProps) {
   const { t } = useTranslation();
+  const dimText = useGlyphDimText();
   const [text, setText] = useState("");
   const dim = CELL_KEY_TO_DIM[question.cellKey];
   const color = dim ? DIM_META[dim].color : "#60a5fa";
@@ -74,13 +76,13 @@ export function GlyphAnswerCard({ question, onAnswer, onClose, variant = "sigil"
           <HelpCircle className="w-4 h-4 text-foreground" />
         </span>
         <span className="typo-label text-foreground flex-1">
-          {dim ? DIM_LABEL[dim] : question.cellKey.replace(/-/g, " ")}
+          {dim ? dimText.label[dim] : question.cellKey.replace(/-/g, " ")}
         </span>
         <button
           type="button"
           onClick={onClose}
           className="text-foreground hover:text-foreground/80"
-          aria-label="Close"
+          aria-label={t.common.close}
         >
           <X className="w-4 h-4" />
         </button>
@@ -132,7 +134,7 @@ export function GlyphAnswerCard({ question, onAnswer, onClose, variant = "sigil"
               }}
             >
               <Send className="w-3.5 h-3.5" />
-              Send
+              {t.common.send}
             </button>
           </div>
         </>

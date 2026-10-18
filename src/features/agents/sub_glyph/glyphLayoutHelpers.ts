@@ -7,17 +7,6 @@ import { CELL_KEY_TO_DIM, DIM_TO_CELL_KEY } from "@/features/shared/glyph/person
 
 export { CELL_KEY_TO_DIM, DIM_TO_CELL_KEY };
 
-export const DIM_LABEL: Record<GlyphDimension, string> = {
-  trigger: "When",
-  task: "What",
-  connector: "Apps",
-  message: "Messages",
-  review: "Review",
-  memory: "Memory",
-  event: "Events",
-  error: "Errors",
-};
-
 export function derivePetalState(
   dim: GlyphDimension,
   cellStates: Record<string, CellBuildStatus>,
