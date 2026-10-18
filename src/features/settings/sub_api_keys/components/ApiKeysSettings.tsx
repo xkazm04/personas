@@ -46,7 +46,15 @@ import { CreatedKeyDialog } from './CreatedKeyDialog';
 import { ApiKeyAuditDrawer } from './ApiKeyAuditDrawer';
 import { ConnectedAppsSection } from './ConnectedAppsSection';
 import { GigPersonaPolicySection } from './GigPersonaPolicySection';
-import { expiryInfo, isStaleKey, keyState, liveCount } from '../libs/keyLifecycle';
+import {
+  disconnectIds,
+  expiryInfo,
+  isStaleKey,
+  keyState,
+  liveCount,
+  runRetire,
+  type PairingGroup,
+} from '../libs/keyLifecycle';
 
 const HIDDEN_KEY_NAMES = new Set(['system']);
 
@@ -148,11 +156,16 @@ export default function ApiKeysSettings() {
   const unrevokedCount = visibleKeys.filter((k) => keyState(k) !== 'revoked').length;
   const liveKeys = liveCount(visibleKeys);
 
+  // Disconnect revokes every pairing of the origin, not only the newest: an
+  // older live pairing would otherwise keep the app authenticated and its
+  // origin on the CORS allowlist. Sequential (runRetire), since each revoke
+  // re-derives that allowlist.
   const handleDisconnect = useCallback(
-    async (id: string) => {
-      setActioning(id);
+    async (group: PairingGroup) => {
+      setActioning(group.current?.id ?? null);
       try {
-        await revokePairing(id);
+        const out = await runRetire(disconnectIds(group), revokePairing);
+        if (out.failed.length > 0) setError(out.failed.map((f) => f.message).join('; '));
         await load();
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));

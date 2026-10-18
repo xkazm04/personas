@@ -112,6 +112,17 @@ export function retirePlan(keys: readonly ExternalApiKey[], now: number = Date.n
   return groupPairings(keys, now).flatMap((g) => g.retirable);
 }
 
+/**
+ * Every key Disconnect must revoke for one paired origin: all of its
+ * non-revoked pairings, not only `current`. Re-pairing never retires the older
+ * pairings, and the CORS allowlist keeps an origin while ANY active key names
+ * it (`list_paired_origins`), so revoking only the newest one leaves the app
+ * connected through the next-newest live key.
+ */
+export function disconnectIds(group: PairingGroup): string[] {
+  return group.keys.map((k) => k.id);
+}
+
 export interface RetireOutcome {
   retired: string[];
   failed: { id: string; message: string }[];
