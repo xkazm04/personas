@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Bot } from 'lucide-react';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { resolveAgentIconSrc } from '@/lib/icons/agentIconCatalog';
@@ -47,32 +48,27 @@ export function PersonaAvatar({
   const resolved = resolvePersonaIcon(icon);
   // Hook must run unconditionally; passes null for non-custom icons.
   const customSrc = useCustomIconSrc(resolved.kind === 'custom' ? resolved.assetId : null);
+  // A broken source (dead URL, missing asset) falls through to the fallback
+  // instead of painting the broken-image frame - the same rule as PersonaIcon.
+  // Keyed on the src, so a prop change to another icon re-attempts.
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const imgSrc =
+    resolved.kind === 'builtin' ? resolveAgentIconSrc(resolved.value, isDark)
+    : resolved.kind === 'custom' ? customSrc
+    : resolved.kind === 'url' ? resolved.url
+    : null;
 
-  if (resolved.kind === 'builtin') {
+  if (imgSrc && imgSrc !== failedSrc) {
     return (
       <img
-        src={resolveAgentIconSrc(resolved.value, isDark)}
+        src={imgSrc}
         alt=""
         className={`${cfg.img} ${className}`}
         loading="lazy"
-      />
-    );
-  }
-
-  if (resolved.kind === 'custom' && customSrc) {
-    return (
-      <img src={customSrc} alt="" className={`${cfg.img} ${className}`} loading="lazy" />
-    );
-  }
-
-  if (resolved.kind === 'url') {
-    return (
-      <img
-        src={resolved.url}
-        alt=""
-        className={`${cfg.img} ${className}`}
-        referrerPolicy="no-referrer"
-        crossOrigin="anonymous"
+        onError={() => setFailedSrc(imgSrc)}
+        {...(resolved.kind === 'url'
+          ? { referrerPolicy: 'no-referrer' as const, crossOrigin: 'anonymous' as const }
+          : {})}
       />
     );
   }
@@ -97,8 +93,8 @@ export function PersonaAvatar({
     <div
       className={`${cfg.fallback} flex items-center justify-center ${className}`}
       style={{
-        backgroundColor: `${resolvedColor}20`,
-        border: `1px solid ${resolvedColor}40`,
+        backgroundColor: colorWithAlpha(resolvedColor, 0.125),
+        border: `1px solid ${colorWithAlpha(resolvedColor, 0.25)}`,
         color: resolvedColor,
       }}
     >
