@@ -1,0 +1,22 @@
+{
+ "schema": "conform-run/1",
+ "worker": "3467f9f0-d2d4-4501-b5a5-fe9389875bb2",
+ "subject": "analytics-store-design",
+ "evaluatedAt": "2026-10-18T22:01:02.209147+00:00",
+ "provider": "agy",
+ "model": "gemini-3.8-flash-high",
+ "pairs": [],
+ "declined": [
+  {
+   "subject": "analytics-store-design",
+   "context": "lib-analytics",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "analytics-store-design",
+   "context": "overview-health",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": []
+}
