@@ -11,7 +11,7 @@
  * Animates between steps with AnimatePresence (slide + fade). ⌘+Enter
  * applies; Esc closes (handled by ComposerPickerShell).
  */
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Clock, Calendar, CalendarDays, CalendarRange, ChevronLeft } from "lucide-react";
 import type { Frequency } from "@/features/agents/shared/quickConfig/quickConfigTypes";
@@ -19,6 +19,7 @@ import { DIM_META } from "@/features/shared/glyph/dimMeta";
 import { ComposerPickerShell } from "./ComposerPickerShell";
 import { ComposerScheduleRhythmCard, type Rhythm } from "./ComposerScheduleRhythmCard";
 import { ComposerScheduleDetailForm } from "./ComposerScheduleDetailForm";
+import { useOnOpen } from "./useOnOpen";
 import { useTranslation } from "@/i18n/useTranslation";
 import { DebtText, debtText } from '@/i18n/DebtText';
 
@@ -58,14 +59,13 @@ export function ComposerSchedulePickerModal({
   const [draftTime, setDraftTime] = useState(time);
   const [step, setStep] = useState<"rhythm" | "detail">(frequency ? "detail" : "rhythm");
 
-  useEffect(() => {
-    if (!open) return;
+  useOnOpen(open, () => {
     setDraftRhythm(frequency ?? "once");
     setDraftDays(days);
     setDraftMonthDay(monthDay);
     setDraftTime(time);
     setStep(frequency ? "detail" : "rhythm");
-  }, [open, frequency, days, monthDay, time]);
+  });
 
   const toggleDraftDay = (d: string) =>
     setDraftDays((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]));

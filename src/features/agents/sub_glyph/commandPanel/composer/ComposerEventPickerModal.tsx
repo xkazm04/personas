@@ -17,6 +17,7 @@ import { useAgentStore } from "@/stores/agentStore";
 import type { EventSubscription } from "@/features/agents/shared/quickConfig/quickConfigTypes";
 import { DIM_META } from "@/features/shared/glyph/dimMeta";
 import { ComposerPickerShell } from "./ComposerPickerShell";
+import { useOnOpen } from "./useOnOpen";
 import { ComposerEventPersonaList, type PersonaSummary } from "./ComposerEventPersonaList";
 import { ComposerEventTemplateList, EVENT_TEMPLATES } from "./ComposerEventTemplateList";
 import { DebtText, debtText } from '@/i18n/DebtText';
@@ -47,15 +48,20 @@ export function ComposerEventPickerModal({
   const [freeTextByTrigger, setFreeTextByTrigger] = useState<Record<string, string>>({});
   const searchRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (!open) return;
+  useOnOpen(open, () => {
     setDraft(selected);
     setQuery("");
     setActivePersonaId(list[0]?.id ?? null);
     setFreeTextByTrigger({});
     const focusTimer = setTimeout(() => searchRef.current?.focus(), 80);
     return () => clearTimeout(focusTimer);
-  }, [open, selected, list]);
+  });
+
+  // The persona list can arrive after the picker opened; land on its first
+  // entry then, without touching the draft.
+  useEffect(() => {
+    if (open && activePersonaId === null && list[0]) setActivePersonaId(list[0].id);
+  }, [open, activePersonaId, list]);
 
   const filteredPersonas = useMemo(() => {
     const q = query.trim().toLowerCase();

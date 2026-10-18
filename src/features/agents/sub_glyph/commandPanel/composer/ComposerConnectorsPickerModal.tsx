@@ -12,7 +12,7 @@
  *
  * Uses healthy connectors from vault so only actually-usable choices appear.
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Plug, Package, Database } from "lucide-react";
 import { useHealthyConnectors } from "@/features/agents/shared/quickConfig/useHealthyConnectors";
 import { DIM_META } from "@/features/shared/glyph/dimMeta";
@@ -20,6 +20,7 @@ import { ComposerPickerShell } from "./ComposerPickerShell";
 import { ComposerConnectorCard } from "./ComposerConnectorCard";
 import { ComposerConnectorsSearchBar } from "./ComposerConnectorsSearchBar";
 import { ConnectorTableScopeRow } from "./ConnectorTableScopeRow";
+import { useOnOpen } from "./useOnOpen";
 import { useTranslation } from "@/i18n/useTranslation";
 import { DebtText, debtText } from '@/i18n/DebtText';
 
@@ -47,8 +48,7 @@ export function ComposerConnectorsPickerModal({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (!open) return;
+  useOnOpen(open, () => {
     setDraft(selected);
     setDraftTables(tables ?? {});
     setQuery("");
@@ -56,7 +56,7 @@ export function ComposerConnectorsPickerModal({
     setFiltersOpen(false);
     const focusTimer = setTimeout(() => inputRef.current?.focus(), 80);
     return () => clearTimeout(focusTimer);
-  }, [open, selected, tables]);
+  });
 
   const categories = useMemo(() => {
     const counts = new Map<string, number>();

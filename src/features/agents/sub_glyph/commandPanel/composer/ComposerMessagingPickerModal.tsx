@@ -16,7 +16,7 @@
  * `to` for email. Empty config falls back to the credential's
  * scoped_resources at delivery time (Slice 1's `merged_channel_config`).
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { MessageSquare, Inbox, Plug, Check, AlertCircle, X } from "lucide-react";
 import {
   useHealthyConnectors,
@@ -29,6 +29,7 @@ import { useTranslation } from "@/i18n/useTranslation";
 import { DIM_META } from "@/features/shared/glyph/dimMeta";
 import { ComposerPickerShell } from "./ComposerPickerShell";
 import { ComposerBrandIcon } from "./ComposerBrandIcon";
+import { useOnOpen } from "./useOnOpen";
 import { DebtText } from '@/i18n/DebtText';
 import {
   BUILT_IN_INBOX,
@@ -130,15 +131,14 @@ export function ComposerMessagingPickerModal({
   const [draft, setDraft] = useState<ChannelSpecV2[]>(selected);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (!open) return;
+  useOnOpen(open, () => {
     const hasBuiltIn = selected.some((s) => s.type === "built-in");
     // pinBuiltIn: force the inbox into the draft. Otherwise honour `selected`
     // as-is so the user can reach an empty (no-message) selection.
     setDraft(pinBuiltIn && !hasBuiltIn ? [BUILT_IN_INBOX, ...selected] : selected);
     const focusTimer = setTimeout(() => inputRef.current?.focus(), 80);
     return () => clearTimeout(focusTimer);
-  }, [open, selected, pinBuiltIn]);
+  });
 
   const builtInSelected = draft.some((s) => s.type === "built-in");
   const toggleBuiltIn = () =>
