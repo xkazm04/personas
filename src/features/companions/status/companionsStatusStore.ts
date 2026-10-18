@@ -43,6 +43,13 @@ export interface CompanionsStatusSlot {
 let slot: CompanionsStatusSlot = { companions: null, loading: true, error: null };
 const listeners = new Set<() => void>();
 let inFlight: Promise<void> | null = null;
+/**
+ * Bumped by every `status-changed` event. A read that left before an event
+ * resolves with an OLDER answer than the event carried (the write happened
+ * between the read and its reply), so it settles `loading` and leaves the
+ * rows alone.
+ */
+let eventGeneration = 0;
 
 /** ONE Tauri listener for the whole app, however many surfaces are mounted. */
 const onCompanionsStatusChanged = createSingletonListener<CompanionsStatusDto>(
@@ -71,9 +78,13 @@ export function readCompanionsStatus(): Promise<void> {
   if (inFlight) return inFlight;
   slot = { ...slot, loading: true };
   notify();
+  const startedAt = eventGeneration;
   inFlight = companionsStatus()
     .then((dto: CompanionsStatusDto) => {
-      slot = { companions: dto.companions, loading: false, error: null };
+      slot =
+        startedAt === eventGeneration
+          ? { companions: dto.companions, loading: false, error: null }
+          : { ...slot, loading: false };
     })
     .catch((e: unknown) => {
       slot = { companions: slot.companions, loading: false, error: extractMessage(e) };
@@ -97,6 +108,7 @@ export function readCompanionsStatus(): Promise<void> {
 export function useCompanionsStatusSlot(): CompanionsStatusSlot {
   onCompanionsStatusChanged(
     useCallback((payload: CompanionsStatusDto) => {
+      eventGeneration += 1;
       slot = { companions: payload.companions, loading: false, error: null };
       notify();
     }, []),
@@ -118,5 +130,6 @@ export function __resetCompanionsStatusForTests(): void {
   slot = { companions: null, loading: true, error: null };
   listeners.clear();
   inFlight = null;
+  eventGeneration = 0;
   onCompanionsStatusChanged.__resetForTests();
 }
