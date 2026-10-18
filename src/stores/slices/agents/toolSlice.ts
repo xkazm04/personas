@@ -1,7 +1,6 @@
 import type { StateCreator } from "zustand";
 import type { AgentStore } from "../../storeTypes";
 import { reportError } from "../../storeTypes";
-import { silentCatch } from "@/lib/silentCatch";
 import { createLogger } from "@/lib/log";
 
 const logger = createLogger("tool");
@@ -11,7 +10,7 @@ import type {
   ToolUsageOverTime,
   PersonaUsageSummary,
 } from "@/lib/types/types";
-import { assignTool, bulkAssignTools, bulkUnassignTools, getToolUsageByPersona, getToolUsageOverTime, getToolUsageSummary, listToolDefinitions, unassignTool } from "@/api/agents/tools";
+import { getToolUsageByPersona, getToolUsageOverTime, getToolUsageSummary, listToolDefinitions } from "@/api/agents/tools";
 
 const TOOL_DEFS_TTL_MS = 60_000; // 60 seconds
 
@@ -28,12 +27,6 @@ export interface ToolSlice {
   fetchToolDefinitions: () => Promise<void>;
   /** Returns cached tool definitions if fresh (<60s), otherwise fetches. */
   getToolDefinitions: () => Promise<PersonaToolDefinition[]>;
-  /** Marks the tool definitions cache as stale so the next read re-fetches. */
-  invalidateToolDefCache: () => void;
-  assignTool: (personaId: string, toolId: string) => Promise<void>;
-  removeTool: (personaId: string, toolId: string) => Promise<void>;
-  bulkAssignTools: (personaId: string, toolIds: string[]) => Promise<void>;
-  bulkRemoveTools: (personaId: string, toolIds: string[]) => Promise<void>;
   fetchToolUsage: (days?: number, personaId?: string) => Promise<void>;
 }
 
@@ -61,52 +54,6 @@ export const createToolSlice: StateCreator<AgentStore, [], [], ToolSlice> = (set
     }
     await get().fetchToolDefinitions();
     return get().toolDefinitions;
-  },
-
-  invalidateToolDefCache: () => {
-    set({ _toolDefsCachedAt: 0 });
-  },
-
-  assignTool: async (personaId, toolId) => {
-    try {
-      await assignTool(personaId, toolId);
-      get().invalidateToolDefCache();
-      get().fetchDetail(personaId).catch(silentCatch("toolSlice:assignTool"));
-    } catch (err) {
-      reportError(err, "Failed to assign tool", set);
-    }
-  },
-
-  removeTool: async (personaId, toolId) => {
-    try {
-      await unassignTool(personaId, toolId);
-      get().invalidateToolDefCache();
-      get().fetchDetail(personaId).catch(silentCatch("toolSlice:removeTool"));
-    } catch (err) {
-      reportError(err, "Failed to remove tool", set);
-    }
-  },
-
-  bulkAssignTools: async (personaId, toolIds) => {
-    try {
-      await bulkAssignTools(personaId, toolIds);
-    } catch (err) {
-      reportError(err, "Failed to assign tools", set);
-    } finally {
-      get().invalidateToolDefCache();
-      get().fetchDetail(personaId).catch(silentCatch("toolSlice:bulkAssignTools"));
-    }
-  },
-
-  bulkRemoveTools: async (personaId, toolIds) => {
-    try {
-      await bulkUnassignTools(personaId, toolIds);
-    } catch (err) {
-      reportError(err, "Failed to remove tools", set);
-    } finally {
-      get().invalidateToolDefCache();
-      get().fetchDetail(personaId).catch(silentCatch("toolSlice:bulkRemoveTools"));
-    }
   },
 
   fetchToolUsage: async (days = 30, personaId?: string) => {
