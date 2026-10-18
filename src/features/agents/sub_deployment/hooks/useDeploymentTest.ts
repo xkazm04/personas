@@ -1,5 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { executePersona } from '@/api/agents/executions';
+import { getActiveTranslations } from '@/i18n/useTranslation';
+import { awaitExecutionResult } from './awaitExecutionResult';
 
 export interface TestResult {
   status: 'pass' | 'fail';
@@ -25,6 +27,7 @@ const RESULT_DISPLAY_MS = 15_000;
 export function useDeploymentTest() {
   const [tests, setTests] = useState<Record<string, TestState>>({});
   const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const unmountedRef = useRef(false);
 
   // Walk all pending dismiss timers and clear them on unmount so stale
   // setTests calls don't fire on an unmounted hook (memory retention of
@@ -32,7 +35,9 @@ export function useDeploymentTest() {
   // the timer still holds the closure until it fires).
   useEffect(() => {
     const timerMap = timers.current;
+    unmountedRef.current = false;
     return () => {
+      unmountedRef.current = true;
       for (const id of Object.keys(timerMap)) {
         clearTimeout(timerMap[id]);
         delete timerMap[id];
@@ -55,15 +60,27 @@ export function useDeploymentTest() {
     }));
 
     try {
-      const exec = await executePersona(personaId, undefined, prompt || DEFAULT_TEST_PROMPT);
-      const passed = exec.status === 'completed';
+      const started = await executePersona(personaId, undefined, prompt || DEFAULT_TEST_PROMPT);
+      // The returned row is the run as it was queued, not its outcome - wait
+      // for it to land before calling it a pass or a fail.
+      const exec = await awaitExecutionResult(started, personaId, { isCancelled: () => unmountedRef.current });
+      if (unmountedRef.current) return;
 
-      const result: TestResult = {
-        status: passed ? 'pass' : 'fail',
-        durationMs: exec.duration_ms,
-        costUsd: exec.cost_usd,
-        error: exec.error_message ?? undefined,
-      };
+      const result: TestResult = exec
+        ? {
+            status: exec.status === 'completed' ? 'pass' : 'fail',
+            durationMs: exec.duration_ms,
+            costUsd: exec.cost_usd,
+            error: exec.error_message ?? undefined,
+          }
+        : {
+            // Still going when the wait budget ran out: not a pass, and its
+            // cost is not recorded yet - null, never 0.
+            status: 'fail',
+            durationMs: null,
+            costUsd: null,
+            error: getActiveTranslations().errors.stream_timeout,
+          };
 
       setTests((prev) => ({
         ...prev,

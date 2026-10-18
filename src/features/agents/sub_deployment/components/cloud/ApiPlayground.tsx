@@ -1,9 +1,10 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { Send, Copy, Check, ChevronDown, ChevronRight, Terminal, Code2, Loader2 } from 'lucide-react';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { executePersona } from '@/api/agents/executions';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Numeric } from '@/features/shared/components/display/Numeric';
+import { awaitExecutionResult } from '../../hooks/awaitExecutionResult';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -65,12 +66,17 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
   const { copied: copiedSnippet, copy: copySnippetText } = useCopyToClipboard();
   const [showSnippets, setShowSnippets] = useState(false);
   const abortRef = useRef(false);
+  // The wait below can outlive the card (collapse, tab switch, undeploy);
+  // an unmounted playground stops polling and writes nothing.
+  useEffect(() => {
+    abortRef.current = false;
+    return () => { abortRef.current = true; };
+  }, []);
 
   const handleSend = useCallback(async () => {
     if (sending) return;
     setSending(true);
     setResponse(null);
-    abortRef.current = false;
 
     let inputData: string;
     try {
@@ -82,17 +88,29 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
     }
 
     try {
-      const exec = await executePersona(personaId, undefined, inputData);
+      const started = await executePersona(personaId, undefined, inputData);
+      // `execute_persona` hands back the queued row; the output, duration and
+      // cost exist only once the run lands.
+      const exec = await awaitExecutionResult(started, personaId, { isCancelled: () => abortRef.current });
       if (abortRef.current) return;
 
-      setResponse({
-        status: exec.status === 'completed' ? 'success' : 'error',
-        data: exec.output_data,
-        error: exec.error_message,
-        durationMs: exec.duration_ms,
-        costUsd: exec.cost_usd,
-        model: exec.model_used,
-      });
+      setResponse(exec
+        ? {
+            status: exec.status === 'completed' ? 'success' : 'error',
+            data: exec.output_data,
+            error: exec.error_message,
+            durationMs: exec.duration_ms,
+            costUsd: exec.cost_usd,
+            model: exec.model_used,
+          }
+        : {
+            status: 'error',
+            data: null,
+            error: t.errors.stream_timeout,
+            durationMs: null,
+            costUsd: null,
+            model: null,
+          });
     } catch (err) {
       if (abortRef.current) return;
       setResponse({
@@ -107,7 +125,7 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
     } finally {
       setSending(false);
     }
-  }, [body, personaId, sending]);
+  }, [body, personaId, sending, t]);
 
   const snippet = snippetLang === 'curl'
     ? buildCurlSnippet(endpointUrl, body)
