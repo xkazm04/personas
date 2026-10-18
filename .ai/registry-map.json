@@ -5045,7 +5045,11 @@
           "revision": 6,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/api/pipeline/teams.ts:142 These files expose persona-team orchestration through Tauri IPC rather than CI delivery configuration, and searches found no pull_request, runs-on, or buildkite constructs in this context.",
+          "evaluatedAt": "2026-10-18",
+          "evaluatedAgainst": "sha256-b2:d02dba0bfbaf98f9",
+          "evaluatedRevision": 6
         }
       ],
       "governance": "governed"
