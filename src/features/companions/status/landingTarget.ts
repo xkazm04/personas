@@ -5,7 +5,7 @@
  * with the onboarding experience; everyone else opens the Setup page of that
  * companion, because Setup is where a blocker is explained and resolved.
  */
-import type { CompanionId, CompanionStatusDto, CompanionsPage } from "../types";
+import type { CompanionStatusDto, CompanionsPage } from "../types";
 import { landingStateOf } from "./landingState";
 
 export function landingTarget(status: CompanionStatusDto): CompanionsPage {
@@ -16,17 +16,5 @@ export function landingTarget(status: CompanionStatusDto): CompanionsPage {
       return "overseer:setup";
     case "curator":
       return "curator:setup";
-  }
-}
-
-/** The page a companion's group header points at when its status is unknown. */
-export function defaultPageFor(id: CompanionId): CompanionsPage {
-  switch (id) {
-    case "athena":
-      return "athena:setup";
-    case "overseer":
-      return "overseer:reviews";
-    case "curator":
-      return "curator:council";
   }
 }
