@@ -25,8 +25,9 @@
 //! `system`, `summary`. The parser doesn't enumerate these — anything
 //! that isn't `user`/`assistant` with extractable text is dropped.
 
+use std::collections::VecDeque;
 use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, Seek, SeekFrom};
 use std::path::Path;
 
 use serde_json::Value;
@@ -63,7 +64,7 @@ pub fn read_recent_turns(path: &Path, max_turns: usize) -> Vec<TranscriptTurn> {
         return Vec::new();
     }
 
-    let file = match File::open(path) {
+    let mut file = match File::open(path) {
         Ok(f) => f,
         Err(e) => {
             tracing::debug!(
@@ -75,26 +76,63 @@ pub fn read_recent_turns(path: &Path, max_turns: usize) -> Vec<TranscriptTurn> {
         }
     };
 
-    let reader = BufReader::new(file);
-    let mut turns: Vec<TranscriptTurn> = Vec::new();
-    for line in reader.lines().map_while(Result::ok) {
+    // Read from the END. A live Claude Code transcript reaches hundreds of
+    // MB (tool results ride in it) and this runs on every CLI-aware persona
+    // execution, so parsing the whole file to keep its last eight turns was
+    // the cost of the feature. Start with a tail window and widen it only
+    // when the window holds fewer than `max_turns` turns.
+    let len = file.metadata().map(|m| m.len()).unwrap_or(0);
+    let mut window = TAIL_WINDOW_START_BYTES;
+    loop {
+        let start = len.saturating_sub(window);
+        let turns = read_turns_from(&mut file, start, max_turns);
+        if turns.len() >= max_turns || start == 0 {
+            return turns;
+        }
+        window = window.saturating_mul(4);
+    }
+}
+
+/// First tail window `read_recent_turns` parses; each retry quadruples it.
+const TAIL_WINDOW_START_BYTES: u64 = 256 * 1024;
+
+/// The last `max_turns` turns found between byte `start` and end of file,
+/// oldest first. When `start` is not 0 the first (partial) line is skipped:
+/// it is either a fragment or older than everything after it, and the caller
+/// widens the window when that matters.
+fn read_turns_from(file: &mut File, start: u64, max_turns: usize) -> Vec<TranscriptTurn> {
+    if file.seek(SeekFrom::Start(start)).is_err() {
+        return Vec::new();
+    }
+    let mut reader = BufReader::new(file);
+    let mut buf: Vec<u8> = Vec::new();
+    if start > 0 && reader.read_until(b'\n', &mut buf).is_err() {
+        return Vec::new();
+    }
+    let mut turns: VecDeque<TranscriptTurn> = VecDeque::with_capacity(max_turns + 1);
+    loop {
+        buf.clear();
+        match reader.read_until(b'\n', &mut buf) {
+            Ok(0) | Err(_) => break,
+            Ok(_) => {}
+        }
+        // A line that is not UTF-8 (a half-written multi-byte char at the
+        // end of a file the CLI is still appending to) is skipped, not the
+        // end of the read: `lines().map_while(Result::ok)` stopped there.
+        let Ok(line) = std::str::from_utf8(&buf) else {
+            continue;
+        };
         if line.trim().is_empty() {
             continue;
         }
-        if let Some(turn) = parse_turn(&line) {
-            turns.push(turn);
+        if let Some(turn) = parse_turn(line) {
+            turns.push_back(turn);
+            if turns.len() > max_turns {
+                turns.pop_front();
+            }
         }
     }
-
-    // Tail to last `max_turns`. The file is read fully because
-    // JSONL doesn't permit reverse seeking efficiently, but the
-    // memory cost is bounded — we only retain extracted text, and
-    // we bound each turn's text via parse_turn's truncation.
-    if turns.len() > max_turns {
-        let drop = turns.len() - max_turns;
-        turns.drain(0..drop);
-    }
-    turns
+    turns.into()
 }
 
 /// Parse a single JSONL line into a TranscriptTurn, or None if the
@@ -206,6 +244,89 @@ mod tests {
         let mut f = File::create(&p).expect("create scratch jsonl");
         f.write_all(content.as_bytes()).expect("write");
         ScratchFile(p)
+    }
+
+    /// The pre-2026-10-18 reader: parse every line, keep the tail. Kept as the
+    /// oracle the tail-window reader must agree with.
+    fn full_scan(path: &std::path::Path, max_turns: usize) -> Vec<TranscriptTurn> {
+        let text = std::fs::read(path).expect("read transcript");
+        let mut turns: Vec<TranscriptTurn> = String::from_utf8_lossy(&text)
+            .lines()
+            .filter_map(parse_turn)
+            .collect();
+        let drop = turns.len().saturating_sub(max_turns);
+        turns.drain(0..drop);
+        turns
+    }
+
+    fn big_transcript(turns: usize, filler_bytes: usize) -> String {
+        let filler = "x".repeat(filler_bytes);
+        let mut out = String::new();
+        for i in 0..turns {
+            out.push_str(&format!(
+                "{{\"type\":\"user\",\"message\":{{\"role\":\"user\",\"content\":\"question {i}\"}}}}\n"
+            ));
+            // A tool_result line the reader must skip; this is what makes
+            // real transcripts large.
+            out.push_str(&format!(
+                "{{\"type\":\"tool_result\",\"content\":\"{filler}\"}}\n"
+            ));
+            out.push_str(&format!(
+                "{{\"type\":\"assistant\",\"message\":{{\"role\":\"assistant\",\"content\":[{{\"type\":\"text\",\"text\":\"answer {i}\"}}]}}}}\n"
+            ));
+        }
+        out
+    }
+
+    #[test]
+    fn tail_window_agrees_with_a_full_scan_across_window_sizes() {
+        // filler 0 -> everything fits the first window; 200 KB -> each turn
+        // pair straddles windows; 1 MB -> the window must widen several times.
+        for filler in [0usize, 200 * 1024, 1024 * 1024] {
+            let p = scratch_file(&big_transcript(12, filler));
+            for max in [1usize, 3, 8, 30] {
+                assert_eq!(
+                    read_recent_turns(&p, max),
+                    full_scan(&p, max),
+                    "filler={filler} max={max}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn a_half_written_last_line_does_not_hide_the_turns_before_it() {
+        // The CLI is appending to an ACTIVE session; the newest line can end
+        // mid-character. Every complete turn before it must still be read.
+        let mut bytes = big_transcript(3, 0).into_bytes();
+        bytes.extend_from_slice(b"{\"type\":\"user\",\"message\":{\"content\":\"caf\xC3");
+        let p = scratch_file("");
+        std::fs::write(&p, &bytes).expect("write");
+        let turns = read_recent_turns(&p, 8);
+        assert_eq!(turns.len(), 6);
+        assert_eq!(turns[5].text, "answer 2");
+    }
+
+    /// Timing probe against a real transcript:
+    /// `PERSONAS_BENCH_TRANSCRIPT=<path> ... -- --ignored --nocapture tail_read_timing`
+    #[test]
+    #[ignore]
+    fn tail_read_timing() {
+        let Ok(path) = std::env::var("PERSONAS_BENCH_TRANSCRIPT") else {
+            return;
+        };
+        let p = std::path::Path::new(&path);
+        let t0 = std::time::Instant::now();
+        let old = full_scan(p, 8);
+        let full = t0.elapsed();
+        let t1 = std::time::Instant::now();
+        let new = read_recent_turns(p, 8);
+        let tail = t1.elapsed();
+        assert_eq!(new, old);
+        println!(
+            "full_scan={full:?} tail_window={tail:?} turns={}",
+            new.len()
+        );
     }
 
     #[test]

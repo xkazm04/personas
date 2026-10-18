@@ -65,14 +65,34 @@ mod integration_tests {
     use std::sync::atomic::{AtomicU64, Ordering};
     use std::time::SystemTime;
 
-    fn scratch_home() -> PathBuf {
+    /// A scratch home that deletes itself when the test ends, like
+    /// `discovery.rs`'s `ScratchHome` and `transcript.rs`'s `ScratchFile`.
+    /// Returning a bare path left one `personas_cli_e2e_test_*` tree in the
+    /// system temp dir per test per run (16 found on 2026-10-18).
+    struct ScratchHome(PathBuf);
+
+    impl std::ops::Deref for ScratchHome {
+        type Target = std::path::Path;
+        fn deref(&self) -> &std::path::Path {
+            &self.0
+        }
+    }
+
+    impl Drop for ScratchHome {
+        fn drop(&mut self) {
+            // Best-effort: a panic in Drop would hide the failing assertion.
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    fn scratch_home() -> ScratchHome {
         static COUNTER: AtomicU64 = AtomicU64::new(0);
         let id = COUNTER.fetch_add(1, Ordering::Relaxed);
         let pid = std::process::id();
         let mut p = std::env::temp_dir();
         p.push(format!("personas_cli_e2e_test_{pid}_{id}"));
         std::fs::create_dir_all(&p).expect("create scratch home");
-        p
+        ScratchHome(p)
     }
 
     fn write_session(home: &std::path::Path, project: &str, name: &str, content: &str) -> PathBuf {
