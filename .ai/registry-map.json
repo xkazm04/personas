@@ -2950,7 +2950,11 @@
           "revision": 3,
           "changedAt": "2026-09-26",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_deployment/components/cloud/CloudReconcileBanner.tsx:98 The reconcile surface directly undeploys a running endpoint without confirmation naming the affected deployment.",
+          "evaluatedAt": "2026-10-18",
+          "evaluatedAgainst": "sha256-b2:9acef61dd04439ca",
+          "evaluatedRevision": 3
         },
         {
           "subject": "plan-entitlements",
@@ -27325,7 +27329,11 @@
           "revision": 3,
           "changedAt": "2026-09-26",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/gitlab/components/GitLabPipelineViewer.tsx:74 The trigger button immediately starts a remote pipeline without a confirmation that echoes its ref and inputs.",
+          "evaluatedAt": "2026-10-18",
+          "evaluatedAgainst": "sha256-b2:9acef61dd04439ca",
+          "evaluatedRevision": 3
         },
         {
           "subject": "prompt-assembly",

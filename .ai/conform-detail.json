@@ -29186,6 +29186,88 @@
           "evidence": "src/api/pipeline/teamDeliberations.ts:106 This approval starts a persona-team assignment, not an approved revision of an outside repository contribution."
         }
       ]
+    },
+    "e0a448bc-24d4-4663-ba31-27d4ce378a14/cicd-monitoring": {
+      "context": "agents-deployment",
+      "subject": "cicd-monitoring",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-18",
+      "evaluatedTs": "2026-10-18T22:32:12.202Z",
+      "worker": "eabe1fed-4628-456c-96ee-bd598479a4cd",
+      "techniques": [
+        {
+          "technique": "deployment-history",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_deployment/components/DeploymentHealthSparkline.tsx:121 The success-rate sparkline omits its seven-day window from the rendered label and tooltip; useDeploymentHealth requests that window explicitly."
+        },
+        {
+          "technique": "failure-drill-down",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_deployment/components/cloud/CloudExecutionRow.tsx:127 Failed-row expansion fetches output automatically, but the viewer renders returned lines without a declared tail bound, truncation marker, or source-log link."
+        },
+        {
+          "technique": "liveness-scoped-polling",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_deployment/components/cloud/CloudHistoryPanel.tsx:178 History and statistics use the fixed 15-second cloudHistory cadence regardless of execution liveness; visibility suspension exists, but active, idle, and settling tiers are absent."
+        },
+        {
+          "technique": "provider-capability-honesty",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_deployment/components/cloud/cloudSchedulesHelpers.tsx:80 A missing provider health status enters the same Healthy badge branch as an explicitly healthy status, fabricating health instead of showing unknown."
+        },
+        {
+          "technique": "remote-action-consent",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_deployment/components/cloud/CloudReconcileBanner.tsx:98 AsyncButton provides an in-flight guard, but this running-endpoint removal has no confirmation step."
+        },
+        {
+          "technique": "transition-detection-and-notify",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_deployment/components/cloud/CloudHistoryPanel.tsx:84 Successful polls replace execution snapshots without comparing previous statuses or emitting transition notifications; cloudSlice lifecycle events instead originate from local action handlers."
+        }
+      ]
+    },
+    "2b61b648-d166-4255-b7b7-5d32ffdd6751/cicd-monitoring": {
+      "context": "plugins-gitlab",
+      "subject": "cicd-monitoring",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-18",
+      "evaluatedTs": "2026-10-18T22:32:12.202Z",
+      "worker": "eabe1fed-4628-456c-96ee-bd598479a4cd",
+      "techniques": [
+        {
+          "technique": "deployment-history",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/gitlab/components/DeploymentHistoryTab.tsx:144 The Current badge follows the first history row by list position rather than a latest-successful-per-target derivation, including when history contains multiple personas."
+        },
+        {
+          "technique": "failure-drill-down",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/gitlab/components/JobRow.tsx:30 The viewer silently paints only the last 200 lines without a truncation marker; the backend also returns its bounded tail as a bare string without truncation metadata."
+        },
+        {
+          "technique": "liveness-scoped-polling",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/gitlab/components/GitLabPipelineViewer.tsx:52 Only the selected running or pending pipeline earns polling; other progressing states, parked states, and idle collection reconciliation are omitted."
+        },
+        {
+          "technique": "provider-capability-honesty",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/gitlab/components/PipelineRow.tsx:28 Provider status strings render directly; unmapped values receive generic fallback styling instead of an explicit canonical unknown status."
+        },
+        {
+          "technique": "remote-action-consent",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/gitlab/components/GitLabPipelineViewer.tsx:74 The trigger action has in-flight disabling but no confirmation echoing the ref or parameters before execution."
+        },
+        {
+          "technique": "transition-detection-and-notify",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/gitlab/hooks/usePipelineNotifications.ts:115 Although first observations are silent, notification detection permits only active-to-terminal changes, excluding direct failed-to-success recovery events and entry into parked states."
+        }
+      ]
     }
   }
 }
