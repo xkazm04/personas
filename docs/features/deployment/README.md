@@ -1,6 +1,6 @@
 # Deployment
 
-Deployment is the operational view over personas that have been pushed to a remote runtime — currently Personas Cloud and (via the [GitLab plugin](../gitlab.md)) GitLab CI/CD agents. The `src/features/deployment/` feature owns the dashboard, the cloud-specific panels, and the unified table that mixes deployment targets.
+Deployment is the operational view over personas that have been pushed to a remote runtime — currently Personas Cloud and (via the [GitLab plugin](../gitlab.md)) GitLab CI/CD agents. The `src/features/agents/sub_deployment/` feature owns the dashboard, the cloud-specific panels, and the unified table that mixes deployment targets.
 
 > Cloud is the canonical remote runtime; GitLab agents surface here for at-a-glance visibility, but their authoritative panel lives in the GitLab plugin.
 
@@ -27,15 +27,15 @@ Both pages are wired in `src/features/personas/PersonasPage.tsx`.
 
 | Component | Behavior |
 | --- | --- |
-| `CloudDeployPanel.tsx` | Deploy a persona to cloud with a budget preset, see deployments list, deploy/pause/resume/remove actions. Remove (undeploy) and trigger delete open a confirm that names the target first; pause/resume stay one click |
-| `CloudDeploymentsPanel.tsx` | The deployments list view (also embedded in CloudDeployPanel) |
-| `DeploymentCard.tsx` | Per-deployment card — status, base URL, budget, run, sync |
+| `CloudDeployPanel.tsx` | The cloud tab shell: connection state, the orphan reconcile banner, and the Connection / Status / OAuth / Deployments / Schedules / History tabs that host the panels below. Remove (undeploy) and trigger delete open a confirm that names the target first; pause/resume stay one click |
+| `CloudDeploymentsPanel.tsx` | Deploy a persona with a monthly budget preset, then the deployments list with pause/resume/remove and the smoke test |
+| `DeploymentCard.tsx` | Per-deployment card — status, endpoint URL (copy / open), budget gauge, invocation stats, smoke test result, API playground |
 | `CloudConnectionForm.tsx` | Connect to a cloud control-plane URL with API key, run diagnostics |
 | `CloudOAuthPanel.tsx` | OAuth-based connect / refresh / disconnect (alternative to API key) |
 | `CloudStatusPanel.tsx` | High-level cloud status — connected / not, worker counts, base URL |
-| `CloudHistoryPanel.tsx` | Per-deployment execution history with `CloudExecutionRow.tsx` and `CloudHistoryHelpers.tsx` |
+| `CloudHistoryPanel.tsx` | Cloud execution history across deployed personas, filterable by persona, status and 7/30/90-day window, with stats cards, daily chart, top-error drill-down and per-row output (`CloudExecutionRow.tsx`, `CloudHistoryHelpers.tsx`) |
 | `CloudSchedulesPanel.tsx` | Schedule list for cloud-deployed personas (`cloudSchedulesHelpers.tsx`, `CreateTriggerForm.tsx`, `TriggerListItem.tsx`) |
-| `ApiPlayground.tsx` | Inline API tester against the deployed persona's endpoints |
+| `ApiPlayground.tsx` | Inline request tester. Its Send runs the persona **locally** (`executePersona`, then waits for the run to land) and labels the result as a local run; only its curl / fetch snippets target the deployed endpoint |
 | `DailyBreakdownChart.tsx` | Daily executions / cost chart |
 | `StatCard.tsx` | KPI card primitive |
 | `cloudDeploymentHelpers.ts` | `BUDGET_PRESETS` and other cloud-specific helpers |
@@ -81,7 +81,7 @@ Bindings (`src/lib/bindings/Cloud*`) keep the TS shapes in sync with the Rust ty
 
 ## Health monitoring
 
-`hooks/useCloudHealthMonitor.ts` polls `cloudStatus` on a cadence and surfaces connectivity transitions; `useDeploymentHealth.ts` aggregates per-deployment health for the dashboard health sparkline; `useDeploymentTest.ts` powers the manual-test action on a deployment row.
+`hooks/useCloudHealthMonitor.ts` polls `cloudGetConfig` every 30 s while connected (a config read, not the heavier `cloudStatus` the Status tab polls), and on a failed poll starts a bounded reconnect loop (`cloudReconnectFromKeyring`, backoff 5 s → 60 s, stops on auth errors or after `CLOUD_MAX_RECONNECT_ATTEMPTS`); `useDeploymentHealth.ts` aggregates per-deployment health for the dashboard health sparkline; `useDeploymentTest.ts` powers the smoke-test action on a deployment row - like the playground it runs the persona locally, not against the deployed endpoint, and waits for the run to land before reporting pass / fail.
 
 ## Known gaps
 
