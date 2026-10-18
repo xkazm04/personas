@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
+import { isInFlightExecutionStatus } from '../../libs/executionStatus';
 
 /**
  * The cell vocabulary shared by BOTH execution ledgers — the persona run list
@@ -30,7 +31,7 @@ const EM_DASH = '—';
 
 /** Per-status left accent for `UnifiedTable`'s `rowAccent`. */
 export function executionRowAccent(status: string): string {
-  if (status === 'running' || status === 'pending') return 'border-l-blue-400';
+  if (isInFlightExecutionStatus(status)) return 'border-l-blue-400';
   if (status === 'completed') return 'border-l-emerald-400';
   if (status === 'failed') return 'border-l-red-400';
   return 'border-l-amber-400';

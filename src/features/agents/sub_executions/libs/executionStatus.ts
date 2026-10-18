@@ -33,3 +33,20 @@ export function isFailedExecutionStatus(status: string): boolean {
 export function isSuccessExecutionStatus(status: string): boolean {
   return status === 'completed';
 }
+
+/**
+ * A run still in flight: `queued` or `running`, the two non-terminal statuses
+ * the `persona_executions` CHECK constraint allows. Call sites used to test
+ * `running || pending` - `pending` is not a status that table can hold, and
+ * `queued`, which it can, fell through to the terminal branch.
+ */
+export function isInFlightExecutionStatus(status: string): boolean {
+  return status === 'queued' || status === 'running';
+}
+
+/** The ledger's status filter: `running` means in flight, `all` means all. */
+export function matchesStatusFilter(status: string, filter: string): boolean {
+  if (filter === 'all') return true;
+  if (filter === 'running') return isInFlightExecutionStatus(status);
+  return status === filter;
+}

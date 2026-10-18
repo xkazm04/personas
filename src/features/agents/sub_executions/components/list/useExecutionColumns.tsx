@@ -14,7 +14,9 @@ import { OriginBadge, originLabel } from './OriginBadge';
 import { OriginFilterDropdown } from './OriginFilterDropdown';
 import { ExecutionValueBadges } from './ExecutionValueBadges';
 
-export const STATUS_FILTERS = ['all', 'running', 'completed', 'failed', 'cancelled'] as const;
+// `running` means in flight (queued + running). `incomplete` is the status the
+// zombie sweep writes for an abandoned run - the class most worth re-running.
+export const STATUS_FILTERS = ['all', 'running', 'completed', 'failed', 'incomplete', 'cancelled'] as const;
 export type StatusFilter = (typeof STATUS_FILTERS)[number];
 
 const CHIP = 'inline-flex items-center gap-1 px-1.5 py-0.5 typo-code rounded-card border';
