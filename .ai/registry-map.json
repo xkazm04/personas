@@ -3570,7 +3570,11 @@
           "revision": 6,
           "changedAt": "2026-09-17",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_executions/components/list/ComparisonDiff.tsx:41 The comparison diffs only the first 500 log lines per execution without stating that scope, so later differences are invisible.",
+          "evaluatedAt": "2026-10-18",
+          "evaluatedAgainst": "sha256-b2:2834875c395bfaad",
+          "evaluatedRevision": 6
         },
         {
           "subject": "agent-chaining",
@@ -12364,7 +12368,11 @@
           "revision": 6,
           "changedAt": "2026-09-17",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_executions/detail/views/ExecutionLogViewer.tsx:74 The log viewer fetches and copies only the first 500 lines without identifying that paging limit or providing access to subsequent lines.",
+          "evaluatedAt": "2026-10-18",
+          "evaluatedAgainst": "sha256-b2:2834875c395bfaad",
+          "evaluatedRevision": 6
         },
         {
           "subject": "agent-chaining",

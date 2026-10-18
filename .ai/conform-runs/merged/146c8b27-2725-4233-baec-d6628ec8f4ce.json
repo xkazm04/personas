@@ -1,0 +1,105 @@
+{
+ "schema": "conform-run/1",
+ "worker": "146c8b27-2725-4233-baec-d6628ec8f4ce",
+ "subject": "tracing",
+ "evaluatedAt": "2026-10-18T21:45:12.706126+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [
+  {
+   "context": "execution-detail-inspector",
+   "subject": "tracing",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/agents/sub_executions/detail/views/ExecutionLogViewer.tsx:74 The log viewer fetches and copies only the first 500 lines without identifying that paging limit or providing access to subsequent lines.",
+   "techniques": [
+    {
+     "technique": "raw-record-viewers",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/sub_executions/detail/views/ExecutionLogViewer.tsx:74 LOG_PAGE_SIZE is 500; display and copy use this first page without a paging-limit notice or a next-page/full-record action."
+    },
+    {
+     "technique": "span-model",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/sub_executions/detail/inspector/useTraceData.ts:29 The viewer requires an adapter between backend TraceSpan and UnifiedSpan; its mapping also omits the backend span's input_tokens and output_tokens."
+    },
+    {
+     "technique": "synthetic-and-estimated-traces",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/sub_executions/detail/inspector/CostBreakdownBar.tsx:53 Input/output costs are apportioned using pricing-table shares without estimate labels on those values; the displayed warning applies only to unrecognized models."
+    },
+    {
+     "technique": "waterfall-rendering",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/sub_executions/detail/inspector/WaterfallBar.tsx:28 Short bars are enlarged to a minimum width without a visual clamping marker, so their displayed width overstates duration."
+    }
+   ]
+  },
+  {
+   "context": "agents-executions-components",
+   "subject": "tracing",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/agents/sub_executions/components/list/ComparisonDiff.tsx:41 The comparison diffs only the first 500 log lines per execution without stating that scope, so later differences are invisible.",
+   "techniques": [
+    {
+     "technique": "raw-record-viewers",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/sub_executions/components/list/ComparisonDiff.tsx:41 Both logs are restricted to their first 500 lines; the rendered difference count has no first-page qualifier or access to later pages."
+    },
+    {
+     "technique": "span-model",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/sub_executions/trace/SyntheticTrace.ts:48 makeSpan assigns null parentage to every synthetic stage, producing multiple roots rather than one run root with parent-linked stages."
+    },
+    {
+     "technique": "synthetic-and-estimated-traces",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/sub_executions/trace/SyntheticTrace.ts:56 Synthetic spans carry no estimate flag, reconstruction tier, or rule version; trace-level flags and a separate StageBar boolean do not preserve provenance on each span."
+    },
+    {
+     "technique": "waterfall-rendering",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/sub_executions/trace/SubSpanBar.tsx:25 A tool step without a duration becomes zero milliseconds and renders as an ordinary minimum-width bar without an unfinished-edge treatment."
+    }
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-18T21:45:12.706126+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "tracing"
+   ],
+   "techniques": [
+    "raw-record-viewers",
+    "span-model",
+    "synthetic-and-estimated-traces",
+    "waterfall-rendering"
+   ],
+   "deviations": 1,
+   "context": "execution-detail-inspector",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-18T21:45:12.706126+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "tracing"
+   ],
+   "techniques": [
+    "raw-record-viewers",
+    "span-model",
+    "synthetic-and-estimated-traces",
+    "waterfall-rendering"
+   ],
+   "deviations": 1,
+   "context": "agents-executions-components",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  }
+ ]
+}

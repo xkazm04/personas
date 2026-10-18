@@ -29083,6 +29083,68 @@
           "evidence": "src/features/plugins/fleet/fleetSessionScope.ts:24 This ordering stabilizes rendered session positions; it provides no delivery-resource exclusion because that responsibility is outside this context."
         }
       ]
+    },
+    "208f50de-5d3b-4345-9fed-1c106a7a36e9/tracing": {
+      "context": "execution-detail-inspector",
+      "subject": "tracing",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-18",
+      "evaluatedTs": "2026-10-18T21:45:12.706Z",
+      "worker": "146c8b27-2725-4233-baec-d6628ec8f4ce",
+      "techniques": [
+        {
+          "technique": "raw-record-viewers",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/detail/views/ExecutionLogViewer.tsx:74 LOG_PAGE_SIZE is 500; display and copy use this first page without a paging-limit notice or a next-page/full-record action."
+        },
+        {
+          "technique": "span-model",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/detail/inspector/useTraceData.ts:29 The viewer requires an adapter between backend TraceSpan and UnifiedSpan; its mapping also omits the backend span's input_tokens and output_tokens."
+        },
+        {
+          "technique": "synthetic-and-estimated-traces",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/detail/inspector/CostBreakdownBar.tsx:53 Input/output costs are apportioned using pricing-table shares without estimate labels on those values; the displayed warning applies only to unrecognized models."
+        },
+        {
+          "technique": "waterfall-rendering",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/detail/inspector/WaterfallBar.tsx:28 Short bars are enlarged to a minimum width without a visual clamping marker, so their displayed width overstates duration."
+        }
+      ]
+    },
+    "03960450-6979-4412-9de3-35c897fe56d2/tracing": {
+      "context": "agents-executions-components",
+      "subject": "tracing",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-18",
+      "evaluatedTs": "2026-10-18T21:45:12.706Z",
+      "worker": "146c8b27-2725-4233-baec-d6628ec8f4ce",
+      "techniques": [
+        {
+          "technique": "raw-record-viewers",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/components/list/ComparisonDiff.tsx:41 Both logs are restricted to their first 500 lines; the rendered difference count has no first-page qualifier or access to later pages."
+        },
+        {
+          "technique": "span-model",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/trace/SyntheticTrace.ts:48 makeSpan assigns null parentage to every synthetic stage, producing multiple roots rather than one run root with parent-linked stages."
+        },
+        {
+          "technique": "synthetic-and-estimated-traces",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/trace/SyntheticTrace.ts:56 Synthetic spans carry no estimate flag, reconstruction tier, or rule version; trace-level flags and a separate StageBar boolean do not preserve provenance on each span."
+        },
+        {
+          "technique": "waterfall-rendering",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/trace/SubSpanBar.tsx:25 A tool step without a duration becomes zero milliseconds and renders as an ordinary minimum-width bar without an unfinished-edge treatment."
+        }
+      ]
     }
   }
 }
