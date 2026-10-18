@@ -18,7 +18,11 @@ export interface SiteEditDraft {
   /** Raw text of the budget field. */
   budget: string;
   credentialId: string | null;
-  /** tool name -> forced to ask first. Only tools the scan found are listed. */
+  /**
+   * tool name -> forced to ask first. Lists the tools the scan found PLUS every
+   * stored override: a running or failed scan has no report and a re-scan may
+   * drop a tool, and an override hidden from the editor could never be cleared.
+   */
   gated: Readonly<Record<string, boolean>>;
 }
 
@@ -30,6 +34,7 @@ export type SiteWrite =
 export function draftFromSite(site: BrowserSite): SiteEditDraft {
   const gated: Record<string, boolean> = {};
   for (const tool of site.scan_report?.page_tools ?? []) gated[tool.name] = site.overrides[tool.name] === 'gated';
+  for (const tool of Object.keys(site.overrides)) gated[tool] = site.overrides[tool] === 'gated';
   return { label: site.label, budget: String(site.budget), credentialId: site.credential_id, gated };
 }
 

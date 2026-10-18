@@ -41,6 +41,23 @@ describe('draftFromSite', () => {
   it('has no tools when the site was never scanned', () => {
     expect(draftFromSite(site({ scan_report: null })).gated).toEqual({});
   });
+
+  // The ledger's WritesChip counts every stored override; a scan that is
+  // running (Rust nulls `scan_report` while it runs), failed, or no longer
+  // lists the tool must not hide an override the operator can then never clear.
+  it('lists a stored override even when the current scan does not report that tool', () => {
+    const unscanned = site({ scan_report: null, overrides: { submit_form: 'gated' } });
+    expect(draftFromSite(unscanned).gated).toEqual({ submit_form: true });
+    const dropped = site({ overrides: { old_tool: 'gated' } });
+    expect(draftFromSite(dropped).gated).toEqual({ delete_item: false, search: false, old_tool: true });
+  });
+
+  it('can clear an override whose tool the scan no longer reports', () => {
+    const s = site({ scan_report: null, overrides: { submit_form: 'gated' } });
+    expect(planSiteWrites(s, { ...draftFromSite(s), gated: { submit_form: false } })).toEqual([
+      { kind: 'override', tool: 'submit_form', gated: false },
+    ]);
+  });
 });
 
 describe('parseBudget', () => {
