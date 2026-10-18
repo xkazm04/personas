@@ -59,8 +59,6 @@ export const registerClaudeDesktopMcp = () =>
   invoke<string>("register_claude_desktop_mcp");
 export const unregisterClaudeDesktopMcp = () =>
   invoke<string>("unregister_claude_desktop_mcp");
-export const checkClaudeDesktopMcp = () =>
-  invoke<boolean>("check_claude_desktop_mcp");
 
 // ============================================================================
 // Crash Logs
@@ -97,9 +95,6 @@ export const getFrontendCrashes = (limit?: number) =>
 
 export const clearFrontendCrashes = () =>
   invoke<void>("clear_frontend_crashes");
-
-export const getFrontendCrashCount = (hours?: number) =>
-  invoke<number>("get_frontend_crash_count", { hours: hours ?? null });
 
 // ============================================================================
 // DB Performance

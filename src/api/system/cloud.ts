@@ -73,9 +73,6 @@ export const cloudOAuthDisconnect = () =>
 export const cloudDeployPersona = (personaId: string, maxMonthlyBudgetUsd?: number) =>
   invoke<CloudDeployment>("cloud_deploy_persona", { personaId, maxMonthlyBudgetUsd: maxMonthlyBudgetUsd });
 
-export const cloudSyncPersona = (personaId: string) =>
-  invoke<void>("cloud_sync_persona", { personaId });
-
 export const cloudListDeployments = () =>
   invoke<CloudDeployment[]>("cloud_list_deployments");
 
@@ -179,20 +176,11 @@ export interface CreateSmeeRelayInput {
   targetPersonaId?: string | null;
 }
 
-export interface UpdateSmeeRelayInput {
-  label?: string;
-  eventFilter?: string | null;
-  targetPersonaId?: string | null;
-}
-
 export const smeeRelayList = () =>
   invoke<SmeeRelay[]>("smee_relay_list");
 
 export const smeeRelayCreate = (input: CreateSmeeRelayInput) =>
   invoke<SmeeRelay>("smee_relay_create", { input });
-
-export const smeeRelayUpdate = (id: string, input: UpdateSmeeRelayInput) =>
-  invoke<SmeeRelay>("smee_relay_update", { id, input });
 
 export const smeeRelaySetStatus = (id: string, status: 'active' | 'paused') =>
   invoke<SmeeRelay>("smee_relay_set_status", { id, status });

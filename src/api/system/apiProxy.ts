@@ -24,11 +24,6 @@ export const executeApiRequest = (
     body: body || null,
   });
 
-// -- API Proxy Metrics --------------------------------------------------
-
-export const getApiProxyMetrics = () =>
-  invoke<ApiProxyCredentialMetrics[]>('get_api_proxy_metrics', {});
-
 // -- API Definition -----------------------------------------------------
 
 export const parseApiDefinition = (rawSpec: string) =>

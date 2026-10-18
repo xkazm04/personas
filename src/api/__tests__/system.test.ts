@@ -11,7 +11,6 @@ import {
   reportFrontendCrash,
   getFrontendCrashes,
   clearFrontendCrashes,
-  getFrontendCrashCount,
   startSetupInstall,
   cancelSetupInstall,
   sendAppNotification,
@@ -73,11 +72,6 @@ describe("api/system/system", () => {
   it("clearFrontendCrashes resolves", async () => {
     mockInvoke("clear_frontend_crashes", undefined);
     await expect(clearFrontendCrashes()).resolves.toBeUndefined();
-  });
-
-  it("getFrontendCrashCount returns number", async () => {
-    mockInvoke("get_frontend_crash_count", 3);
-    expect(await getFrontendCrashCount(24)).toBe(3);
   });
 
   it("startSetupInstall returns result", async () => {
