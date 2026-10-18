@@ -241,3 +241,18 @@ describe('DecisionsPanel', () => {
     });
   });
 });
+
+describe('DecisionsPanel filter fetch cost', () => {
+  it('reads once for a typed query, not once per keystroke', async () => {
+    companionListDesignDecisions.mockResolvedValue([]);
+    render(<DecisionsPanel />);
+    await waitFor(() => expect(companionListDesignDecisions).toHaveBeenCalledWith(null, 200));
+    const input = screen.getByTestId('companion-decisions-filter');
+    for (const value of ['o', 'on', 'onb', 'onbo', 'onboard']) {
+      fireEvent.change(input, { target: { value } });
+    }
+    await waitFor(() => expect(companionListDesignDecisions).toHaveBeenCalledWith('onboard', 200));
+    // The mount read plus ONE read for the settled query.
+    expect(companionListDesignDecisions).toHaveBeenCalledTimes(2);
+  });
+});

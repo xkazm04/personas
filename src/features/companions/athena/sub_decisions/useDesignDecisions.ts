@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useDebounce } from '@/hooks/utility/timing/useDebounce';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import {
@@ -7,6 +8,9 @@ import {
   type CompanionDesignDecision,
 } from '@/api/companion';
 import { useAthenaStore } from '../athenaStore';
+
+/** How long the filter must sit still before it is read. */
+const FILTER_SETTLE_MS = 250;
 
 export interface DecisionGroup {
   key: string;
@@ -35,6 +39,10 @@ export function useDesignDecisions() {
   const [rows, setRows] = useState<CompanionDesignDecision[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  // The read follows the SETTLED query, not each keystroke: every change was
+  // one IPC read of up to 200 rows, so typing "onboard" cost seven reads.
+  const settledFilter = useDebounce(filter, FILTER_SETTLE_MS);
+
   const scopedIntent = showAllOverride ? null : initialScopedIntentRef.current;
   const showScopeBanner =
     !!scopedIntent && filter.trim() === scopedIntent.trim();
@@ -45,7 +53,7 @@ export function useDesignDecisions() {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    const trimmed = filter.trim();
+    const trimmed = settledFilter.trim();
     const probe = trimmed.length > 0 ? trimmed : null;
     companionListDesignDecisions(probe, 200)
       .then((items) => {
@@ -62,7 +70,7 @@ export function useDesignDecisions() {
     return () => {
       cancelled = true;
     };
-  }, [filter]);
+  }, [settledFilter]);
 
   // Group by persona_context; decisions without one land in "Unscoped".
   const grouped = useMemo<DecisionGroup[]>(() => {
