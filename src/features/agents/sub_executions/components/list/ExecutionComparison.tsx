@@ -35,6 +35,7 @@ export function ExecutionComparison({ left, right, onClose }: ExecutionCompariso
         <button
           type="button"
           onClick={onClose}
+          aria-label={t.common.close}
           className="p-1 text-foreground hover:text-muted-foreground/80 transition-colors"
         >
           <X className="w-4 h-4" />

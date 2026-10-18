@@ -65,6 +65,7 @@ export function ActiveChainsBadge() {
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
         className="flex items-center gap-2 w-full px-3 py-1.5 text-left"
       >
         <Waypoints className="w-3.5 h-3.5 text-primary/80" />

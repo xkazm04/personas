@@ -185,6 +185,7 @@ export function CircuitBreakerIndicator() {
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
         className="flex items-center gap-2 w-full px-3 py-2 text-left"
       >
         {status.globalPaused ? (
@@ -317,6 +318,7 @@ export function CircuitBreakerIndicator() {
                 <button
                   type="button"
                   onClick={() => setShowHistory((v) => !v)}
+                  aria-expanded={showHistory}
                   className="flex items-center gap-1.5 typo-caption text-foreground hover:text-foreground"
                 >
                   <History className="w-3 h-3" />
