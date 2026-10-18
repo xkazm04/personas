@@ -165,6 +165,18 @@ pub fn get_all_active_progress(
     })
 }
 
+/// Every lab table whose rows are a run with a status machine driven by an
+/// in-process task: each carries `status`, `error` and `completed_at`.
+const REAPED_RUN_TABLES: [&str; 7] = [
+    "lab_arena_runs",
+    "lab_ab_runs",
+    "lab_matrix_runs",
+    "lab_eval_runs",
+    "lab_consensus_runs",
+    "genome_breeding_runs",
+    "evolution_cycles",
+];
+
 /// Fail any lab run left non-terminal by an unclean shutdown.
 ///
 /// The lab run tables are driven by tokio tasks that die with the
@@ -183,19 +195,18 @@ pub fn get_all_active_progress(
 /// button stayed wedged. `genome_breeding_runs` is keyed by `project_id` and
 /// carries no `progress_json`, so it is reaped here but cannot join the
 /// persona-scoped `get_all_active_progress` UNION above.
+///
+/// `evolution_cycles` joined the list on 2026-10-18 for the same reason: a
+/// cycle is driven by a spawned task (`engine::evolution::run_evolution_cycle`)
+/// and opens at `breeding`, so a restart mid-cycle left it at
+/// `breeding`/`evaluating`/`promoting` forever. The list is pinned against the
+/// schema by `reaped_tables_are_every_run_table_in_the_schema`, not by hand.
 pub fn recover_interrupted_lab_runs(pool: &DbPool) -> Result<usize, AppError> {
     timed_query!("lab_runs", "lab_runs::recover_interrupted_lab_runs", {
         let conn = pool.get()?;
         let now = chrono::Utc::now().to_rfc3339();
         let mut total = 0usize;
-        for table in [
-            "lab_arena_runs",
-            "lab_ab_runs",
-            "lab_matrix_runs",
-            "lab_eval_runs",
-            "lab_consensus_runs",
-            "genome_breeding_runs",
-        ] {
+        for table in REAPED_RUN_TABLES {
             let sql = format!(
                 "UPDATE {table}
                     SET status = 'failed',
@@ -400,5 +411,94 @@ mod consensus_and_genome_reaper_tests {
             active.is_empty(),
             "a reaped consensus run must not re-hydrate as active: {active:?}",
         );
+    }
+}
+
+#[cfg(test)]
+mod reaper_coverage_tests {
+    use super::*;
+    use std::collections::BTreeSet;
+
+    /// The reaper's table list is derived from nothing, so it is pinned here
+    /// against the schema: every lab-area table (`lab_*`, `genome_*`,
+    /// `evolution_*`) that carries a run status machine - `status`, `error`
+    /// and `completed_at` together - must be reaped, and nothing else may be.
+    /// `evolution_cycles` was the table this found missing.
+    #[test]
+    fn reaped_tables_are_every_run_table_in_the_schema() {
+        let pool = crate::init_test_db().expect("test db");
+        let Ok(conn) = pool.get() else {
+            panic!("pool checkout")
+        };
+        let mut stmt = conn
+            .prepare(
+                "SELECT m.name FROM sqlite_master m
+                  WHERE m.type = 'table'
+                    AND (substr(m.name, 1, 4) = 'lab_'
+                         OR substr(m.name, 1, 7) = 'genome_'
+                         OR substr(m.name, 1, 10) = 'evolution_')
+                    AND (SELECT COUNT(*) FROM pragma_table_info(m.name) c
+                          WHERE c.name IN ('status', 'error', 'completed_at')) = 3",
+            )
+            .expect("prepare");
+        let in_schema: BTreeSet<String> = stmt
+            .query_map([], |r| r.get::<_, String>("name"))
+            .expect("query")
+            .collect::<Result<_, _>>()
+            .expect("rows");
+        let reaped: BTreeSet<String> = REAPED_RUN_TABLES.iter().map(|t| t.to_string()).collect();
+        assert!(
+            !in_schema.is_empty(),
+            "the schema walk found no run table at all"
+        );
+        assert_eq!(
+            in_schema, reaped,
+            "a run table the boot reaper does not know about survives a restart non-terminal"
+        );
+    }
+
+    /// A cycle killed mid-`breeding` by a restart is failed with the restart
+    /// reason; a completed one is untouched.
+    #[test]
+    fn a_killed_evolution_cycle_is_reaped() {
+        let pool = crate::init_test_db().expect("test db");
+        let Ok(conn) = pool.get() else {
+            panic!("pool checkout")
+        };
+        conn.execute_batch("PRAGMA foreign_keys = OFF;")
+            .expect("fk off");
+        let now = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "INSERT INTO evolution_cycles (id, policy_id, persona_id, status, started_at)
+             VALUES ('orphan-cycle', 'pol-1', 'p1', 'evaluating', ?1),
+                    ('done-cycle', 'pol-1', 'p1', 'completed', ?1)",
+            params![now],
+        )
+        .expect("seed cycles");
+        drop(conn);
+
+        assert_eq!(recover_interrupted_lab_runs(&pool).expect("reap"), 1);
+
+        let Ok(conn) = pool.get() else {
+            panic!("pool checkout")
+        };
+        let (status, error, completed_at): (String, Option<String>, Option<String>) = conn
+            .query_row(
+                "SELECT status, error, completed_at FROM evolution_cycles WHERE id = 'orphan-cycle'",
+                [],
+                |r| Ok((r.get("status")?, r.get("error")?, r.get("completed_at")?)),
+            )
+            .expect("read orphan");
+        assert_eq!(status, "failed");
+        assert_eq!(error.as_deref(), Some("Interrupted by app restart"));
+        assert!(completed_at.is_some(), "a reaped cycle is stamped terminal");
+        let done: String = conn
+            .query_row(
+                "SELECT status FROM evolution_cycles WHERE id = 'done-cycle'",
+                [],
+                |r| r.get("status"),
+            )
+            .expect("read done");
+        assert_eq!(done, "completed");
     }
 }
