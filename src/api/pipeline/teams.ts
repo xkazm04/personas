@@ -5,7 +5,6 @@ import type { CreateTeamInput } from "@/lib/bindings/CreateTeamInput";
 import type { UpdateTeamInput } from "@/lib/bindings/UpdateTeamInput";
 import type { PersonaTeamMember } from "@/lib/bindings/PersonaTeamMember";
 import type { PersonaTeamConnection } from "@/lib/bindings/PersonaTeamConnection";
-import type { PipelineAnalytics } from "@/lib/bindings/PipelineAnalytics";
 import type { TopologyBlueprint } from "@/lib/bindings/TopologyBlueprint";
 import type { TeamCounts } from "@/lib/bindings/TeamCounts";
 
@@ -18,9 +17,6 @@ export const listTeams = () =>
 
 export const getTeamCounts = () =>
   invoke<TeamCounts[]>("get_team_counts");
-
-export const getTeam = (id: string) =>
-  invoke<PersonaTeam>("get_team", { id });
 
 export const createTeam = (input: CreateTeamInput) =>
   invoke<PersonaTeam>("create_team", { input });
@@ -89,21 +85,6 @@ export const addTeamMember = (
     config,
   });
 
-export const updateTeamMember = (
-  id: string,
-  role?: string,
-  positionX?: number,
-  positionY?: number,
-  config?: string,
-) =>
-  invoke<void>("update_team_member", {
-    id,
-    role,
-    positionX,
-    positionY,
-    config,
-  });
-
 export const removeTeamMember = (id: string) =>
   invoke<boolean>("remove_team_member", { id });
 
@@ -138,28 +119,8 @@ export const deleteTeamConnection = (id: string) =>
 import type { PipelineRun } from "@/lib/bindings/PipelineRun";
 export type { PipelineRun } from "@/lib/bindings/PipelineRun";
 
-export const executeTeam = (teamId: string, inputData?: string) =>
-  invoke<string>("execute_team", { teamId, inputData });
-
 export const listPipelineRuns = (teamId: string) =>
   invoke<PipelineRun[]>("list_pipeline_runs", { teamId });
-
-export const getPipelineRun = (id: string) =>
-  invoke<PipelineRun>("get_pipeline_run", { id });
-
-export const cancelPipeline = (runId: string) =>
-  invoke<boolean>("cancel_pipeline", { runId });
-
-export const approvePipelineNode = (runId: string, memberId: string) =>
-  invoke<boolean>("approve_pipeline_node", { runId, memberId });
-
-export const rejectPipelineNode = (runId: string) =>
-  invoke<boolean>("reject_pipeline_node", { runId });
-
-// -- Pipeline Analytics & Optimizer --------------------------------------
-
-export const getPipelineAnalytics = (teamId: string) =>
-  invoke<PipelineAnalytics>("get_pipeline_analytics", { teamId });
 
 // -- Canvas Assistant -- Topology Suggestions -----------------------------
 

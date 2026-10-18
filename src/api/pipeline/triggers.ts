@@ -96,18 +96,6 @@ export const linkPersonaToEvent = (
 export const unlinkPersonaFromEvent = (triggerId: string) =>
   invoke<boolean>("unlink_persona_from_event", { triggerId });
 
-/** Update a single handler's text. Creates the eventHandlers map if needed. */
-export const updatePersonaEventHandler = (
-  personaId: string,
-  eventType: string,
-  handlerText: string,
-) =>
-  invoke<boolean>("update_persona_event_handler", {
-    personaId,
-    eventType,
-    handlerText,
-  });
-
 // ============================================================================
 // Trigger / event cleanup (Fix 1 + Fix 4a)
 // Self-healing sweep for dead trigger audit rows + missing auto-listeners.
@@ -262,9 +250,6 @@ export const dryRunTrigger = (id: string) =>
 
 export const listCronAgents = () =>
   invoke<CronAgent[]>("list_cron_agents");
-
-export const seedMockCronAgent = () =>
-  invoke<CronAgent>("seed_mock_cron_agent", {});
 
 export const listRecentScheduleRuns = (hours?: number) =>
   invoke<RecentScheduleRun[]>("list_recent_schedule_runs", { hours });

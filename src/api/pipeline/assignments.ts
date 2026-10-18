@@ -1,6 +1,5 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
-import type { CompanionAssignTeamResult } from "@/lib/bindings/CompanionAssignTeamResult";
 import type { CreateTeamAssignmentInput } from "@/lib/bindings/CreateTeamAssignmentInput";
 import type { CreateTeamAssignmentTemplateInput } from "@/lib/bindings/CreateTeamAssignmentTemplateInput";
 import type { DecomposedStep } from "@/lib/bindings/DecomposedStep";
@@ -80,22 +79,6 @@ export const listTeamAssignmentsForGoal = (goalId: string) =>
  *  composer wraps them into editable rows before the user submits. */
 export const decomposeTeamAssignmentGoal = (teamId: string, goal: string) =>
   invoke<DecomposedStep[]>("decompose_team_assignment_goal", { teamId, goal });
-
-/** Phase C1: Athena's "have the X team handle Y" entry point. End-to-end:
- *  decomposes the goal, creates an llm_eval assignment with source='athena',
- *  opens a dispatched companion Operation, and starts the orchestrator.
- *  Returns both ids so the chat layer can attach the assignment cards to
- *  the right operation in episodic memory. */
-export const companionAssignTeam = (
-  teamId: string,
-  goal: string,
-  title?: string,
-) =>
-  invoke<CompanionAssignTeamResult>("companion_assign_team", {
-    teamId,
-    goal,
-    title: title ?? null,
-  });
 
 // ============================================================================
 // Templates (Phase C4)
