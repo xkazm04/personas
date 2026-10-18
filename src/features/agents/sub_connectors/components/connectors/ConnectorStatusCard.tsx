@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, CheckCircle2, AlertCircle, XCircle, Activity, Loader2, ChevronDown, Plus, ArrowLeftRight, ShieldQuestion } from 'lucide-react';
+import { Link, CheckCircle2, AlertCircle, XCircle, Activity, Loader2, ChevronDown, Plus, ArrowLeftRight, ShieldQuestion, WifiOff } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
 import type { ConnectorStatus } from '../../libs/connectorTypes';
@@ -28,6 +28,8 @@ const STATUS_ICON = {
   ready: CheckCircle2,
   // Deliberately NOT a check: nothing verified this credential.
   unverifiable: ShieldQuestion,
+  // The probe never reached the service: no verdict, so neither a check nor a cross.
+  unreachable: WifiOff,
   failed: XCircle,
   missing: AlertCircle,
   untested: AlertCircle,
@@ -60,7 +62,7 @@ export function ConnectorStatusCard({
               <span className="inline-flex transition-transform duration-300 ease-in-out">
                 {(() => { const Icon = STATUS_ICON[statusKey]; return <Icon className={`w-2.5 h-2.5 ${statusKey === 'testing' ? 'animate-spin' : ''}`} />; })()}
               </span>
-              <span>{t.agents.connectors[config.labelKey]}</span>
+              <span>{statusKey === 'unreachable' ? t.vault.credential_list.health_unreachable : t.agents.connectors[config.labelKey]}</span>
             </span>
           </div>
           {status.credentialName && <p className="typo-body text-foreground mt-0.5">{tx(t.agents.connectors.st_credential, { name: status.credentialName })}</p>}

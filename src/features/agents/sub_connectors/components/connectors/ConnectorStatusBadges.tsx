@@ -1,9 +1,10 @@
-import { Star, ArrowLeftRight, AlertCircle, X, CheckCircle2, XCircle, Clock, ShieldQuestion } from 'lucide-react';
+import { Star, ArrowLeftRight, AlertCircle, X, CheckCircle2, XCircle, Clock, ShieldQuestion, WifiOff } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { translateHealthcheckMessage } from '@/features/vault/sub_catalog/components/design/CredentialDesignHelpers';
 import type { CredentialMetadata } from '@/lib/types/types';
 import type { ConnectorStatus, ConnectorTestResult } from '../../libs/connectorTypes';
 import { isStaleResult, STATUS_CONFIG, credentialMatchesConnector } from '../../libs/connectorTypes';
+import { resolveProbeOutcome } from '@/lib/credentials/healthState';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 
 interface LinkPickerProps {
@@ -143,6 +144,10 @@ export function StatusResult({ status, onClearLinkError, onRetest }: StatusResul
   // UI from making. The badge above already distinguishes it; the panel does
   // now too.
   const unverifiable = status.result?.state === 'unverifiable';
+  // `unreachable` arrives with success === false, so it used to fall into the
+  // red failure branch below. The probe never reached the service: neutral
+  // panel, the vault's wording, the raw obstacle as detail.
+  const unreachable = status.result !== null && resolveProbeOutcome(status.result) === 'unreachable';
 
   return (
     <>
@@ -163,7 +168,20 @@ export function StatusResult({ status, onClearLinkError, onRetest }: StatusResul
         )}
       </>
 
-      {status.result && !status.testing && (
+      {status.result && !status.testing && unreachable && (
+        <div data-testid="connector-result-unreachable" className={`mt-2.5 px-3 py-2 rounded-modal typo-body border ${STATUS_CONFIG.unreachable.bg} ${STATUS_CONFIG.unreachable.color}`}>
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5">
+              <WifiOff className="w-3 h-3 flex-shrink-0" />
+              <span>{t.vault.shared.health_unreachable}</span>
+            </div>
+            {status.result.message && <p className="typo-body pl-4.5 break-all">{status.result.message}</p>}
+            <LastCheckedNote result={status.result} onRetest={onRetest} />
+          </div>
+        </div>
+      )}
+
+      {status.result && !status.testing && !unreachable && (
         <div className={`mt-2.5 px-3 py-2 rounded-modal typo-body ${
           unverifiable ? `${STATUS_CONFIG.unverifiable.bg} border ${STATUS_CONFIG.unverifiable.color}`
             : status.result.success ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'

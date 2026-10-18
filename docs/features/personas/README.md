@@ -413,6 +413,12 @@ replaced (the restored baseline is what makes this possible) and reports
 transitions in its completion notification — recovered / newly failing / failing
 — instead of the old "tested N connectors".
 
+A probe that could not reach the service (`unreachable`: offline, DNS, timeout)
+is not a verdict on the credential. The row shows a neutral **Unreachable**
+badge and a "could not reach the service" panel, never a red failure; it counts
+as neither failed nor healthy, and Test all leaves it out of the diff on both
+sides (`summarizeTestAll` in `connectorTypes.ts`).
+
 Below the verification panel, the design recap's connector cards are also
 actionable: their status line resolves through `templates.design` in all 14
 locales, and clicking it opens inline credential provisioning (the affordance

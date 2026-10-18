@@ -9,7 +9,7 @@ import { mutateCredentialLink } from '@/hooks/design/core/useDesignContextMutato
 import { useTranslation } from '@/i18n/useTranslation';
 import { connectorCategoryTags } from "@/lib/credentials/builtinConnectors";
 import type { ConnectorStatus, ConnectorReadiness, ConnectorTestResult } from './connectorTypes';
-import { deriveReadiness, restoreHealthcheck, isStaleResult } from './connectorTypes';
+import { deriveReadiness, restoreHealthcheck, isStaleResult, summarizeTestAll } from './connectorTypes';
 
 export function useConnectorStatuses() {
   const { t, tx } = useTranslation();
@@ -176,7 +176,7 @@ export function useConnectorStatuses() {
     // CHANGED. Restored healthchecks make this baseline free — before they were
     // persisted there was nothing to diff against, so the notification could
     // only ever say "tested N connectors", which tells the user nothing.
-    const baseline = new Map(testable.map((s) => [s.name, s.result?.success ?? null]));
+    const baseline = new Map(testable.map((s) => [s.name, s.result]));
     try {
       const outcomes = await Promise.all(
         testable.map(async (status) => ({
@@ -185,20 +185,9 @@ export function useConnectorStatuses() {
         })),
       );
 
-      let recovered = 0;
-      let regressed = 0;
-      let failing = 0;
-      for (const { name, result } of outcomes) {
-        if (!result) continue;
-        const before = baseline.get(name) ?? null;
-        if (result.success) {
-          if (before === false) recovered++;
-        } else if (before === true) {
-          regressed++;
-        } else {
-          failing++;
-        }
-      }
+      // Verdicts only: an unreachable probe (success === false, but no verdict)
+      // used to count as "newly failing" against a passing baseline.
+      const { recovered, regressed, failing } = summarizeTestAll(outcomes, baseline);
 
       const persona = selectedPersona?.name ?? t.agents.connectors.test_persona_fallback;
       const parts: string[] = [];

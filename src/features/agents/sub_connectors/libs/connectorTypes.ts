@@ -1,4 +1,5 @@
 import { connectorCategoryTags } from '@/lib/credentials/builtinConnectors';
+import { resolveProbeOutcome } from '@/lib/credentials/healthState';
 import type { CredentialMetadata } from '@/lib/types/types';
 
 /**
@@ -99,12 +100,23 @@ export type ConnectorReadiness =
 export function deriveReadiness(status: ConnectorStatus): ConnectorReadiness {
   if (!status.credentialId) return 'unlinked';
   if (!status.result) return 'linked_untested';
-  // `unverifiable` is NOT a failure: `credential_is_usable` only demotes an
-  // explicit probe failure, so these still count as execution-ready. It is
-  // separated from `healthy` purely so the UI stops claiming a green check
-  // nothing earned.
-  if (status.result.state === 'unverifiable') return 'unverifiable';
-  return status.result.success ? 'healthy' : 'unhealthy';
+  // The probe's typed outcome, resolved by the shared rule the vault uses
+  // (`resolveProbeOutcome`), not by the `success` boolean.
+  switch (resolveProbeOutcome(status.result)) {
+    // `unverifiable` is NOT a failure: `credential_is_usable` only demotes an
+    // explicit probe failure, so these still count as execution-ready. It is
+    // separated from `healthy` purely so the UI stops claiming a green check
+    // nothing earned.
+    case 'unverifiable': return 'unverifiable';
+    // `unreachable` (connect / DNS / timeout) arrives with success === false
+    // but is no verdict on the credential (`HealthProbeState::is_verdict`):
+    // the service was never asked. Reading the boolean painted an offline
+    // laptop's good keys as failing; it files beside "untested", as the vault
+    // list's health filter does.
+    case 'unreachable': return 'linked_untested';
+    case 'verified': return 'healthy';
+    case 'failed': return 'unhealthy';
+  }
 }
 
 /** True if the connector has a linked credential (minimum for execution). */
@@ -125,6 +137,52 @@ export function matchesHealthFilter(status: ConnectorStatus, filter: ConnectorHe
   if (!filter) return true;
   if (filter === 'stale') return isStaleResult(status.result);
   return deriveReadiness(status) === filter;
+}
+
+/**
+ * A probe result read as a verdict: `pass` / `fail`, or null when there is no
+ * verdict to compare (no result, or the probe never reached the service).
+ */
+function probeVerdict(result: ConnectorTestResult | null | undefined): 'pass' | 'fail' | null {
+  if (!result) return null;
+  const outcome = resolveProbeOutcome(result);
+  if (outcome === 'unreachable') return null;
+  return outcome === 'failed' ? 'fail' : 'pass';
+}
+
+export interface TestAllSummary {
+  /** Failed before, passes now. */
+  recovered: number;
+  /** Passed before, fails now. */
+  regressed: number;
+  /** Fails now, and did not pass before (failed or never checked). */
+  failing: number;
+}
+
+/**
+ * Diff a Test-all batch against the results it replaced. Only verdicts count
+ * on either side: an `unreachable` probe is neither a regression nor a
+ * failure, and an `unreachable` baseline is not a failure a pass "recovers"
+ * from. A null outcome (the test was already in flight) counts nowhere.
+ */
+export function summarizeTestAll(
+  outcomes: readonly { name: string; result: ConnectorTestResult | null }[],
+  baseline: ReadonlyMap<string, ConnectorTestResult | null>,
+): TestAllSummary {
+  const summary: TestAllSummary = { recovered: 0, regressed: 0, failing: 0 };
+  for (const { name, result } of outcomes) {
+    const now = probeVerdict(result);
+    if (now === null) continue;
+    const before = probeVerdict(baseline.get(name));
+    if (now === 'pass') {
+      if (before === 'fail') summary.recovered++;
+    } else if (before === 'pass') {
+      summary.regressed++;
+    } else {
+      summary.failing++;
+    }
+  }
+  return summary;
 }
 
 /** True when the connector is stored but nothing could actually verify it. */
@@ -167,6 +225,11 @@ export const STATUS_CONFIG = {
   ready: { color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20', labelKey: 'status_ready' },
   untested: { color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20', labelKey: 'status_untested' },
   unverifiable: { color: 'text-foreground', bg: 'bg-secondary/40 border-primary/15', labelKey: 'status_unverifiable' },
+  // Neutral like `unverifiable`, never red: the probe reached no verdict. Its
+  // badge reads the vault's own word for it (`t.vault.credential_list
+  // .health_unreachable`, in ConnectorStatusCard); `labelKey` only keeps the
+  // map's shape and is not rendered for this key.
+  unreachable: { color: 'text-foreground', bg: 'bg-secondary/40 border-primary/15', labelKey: 'status_untested' },
   failed: { color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20', labelKey: 'status_failed' },
   missing: { color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20', labelKey: 'status_missing' },
   testing: { color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20', labelKey: 'status_testing' },
@@ -176,6 +239,10 @@ export function getStatusKey(status: ConnectorStatus): keyof typeof STATUS_CONFI
   if (status.testing) return 'testing';
   if (!status.credentialId) return 'missing';
   if (!status.result) return 'untested';
-  if (status.result.state === 'unverifiable') return 'unverifiable';
-  return status.result.success ? 'ready' : 'failed';
+  switch (resolveProbeOutcome(status.result)) {
+    case 'unverifiable': return 'unverifiable';
+    case 'unreachable': return 'unreachable';
+    case 'verified': return 'ready';
+    case 'failed': return 'failed';
+  }
 }
