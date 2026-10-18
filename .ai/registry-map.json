@@ -34134,11 +34134,14 @@
           "bundle": "software-engineering",
           "source": "conform",
           "confidence": "strong",
-          "state": "unknown",
-          "evidence": "added by /conform: the matcher scored this at zero; the context is the App Readiness Passport improve engine (goldenStandard.ts rubric per archetype), which the repo calls passport/golden where the subject says readiness fingerprint/assessor",
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/improve/goldenStandard.ts:131 The passport improvement engine computes a single blended percentage across both automation and production readiness dimensions, creating a headline score that conceals the separate questions the two independent axes are meant to answer.",
           "digest": "sha256-b2:c63a7575b1e57d96",
           "revision": 3,
-          "changedAt": "2026-10-01"
+          "changedAt": "2026-10-01",
+          "evaluatedAt": "2026-10-18",
+          "evaluatedAgainst": "sha256-b2:c63a7575b1e57d96",
+          "evaluatedRevision": 3
         }
       ],
       "governance": "governed"

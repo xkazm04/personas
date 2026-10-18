@@ -28965,6 +28965,42 @@
           "evidence": "src/features/settings/components/SettingsPage.tsx:16 The network settings module is split from sibling settings tabs and requested when mounted; this establishes route splitting, without claiming measured long-task performance."
         }
       ]
+    },
+    "7e214a7d-44c6-4e6c-8b54-b30f4483ce12/readiness-passports": {
+      "context": "teams-factory-passport-improve",
+      "subject": "readiness-passports",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-18",
+      "evaluatedTs": "2026-10-18T21:05:42.595Z",
+      "worker": "fdef2b3a-1d9e-4aae-bdf1-ecb8c04c2e3b",
+      "techniques": [
+        {
+          "technique": "blocker-rollups",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/improve/improvePlan.ts:93 The improve plan flattens individual project gaps into an array instead of inverting into blocker rollups keyed by stable identifier and sorted by projects unlocked."
+        },
+        {
+          "technique": "declined-by-choice",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/improve/StandardsScan.tsx:94 Findings only offer automated remediation without an allow-listed decision-memory overlay to record accepted trade-offs with reason, author, and date."
+        },
+        {
+          "technique": "fingerprint-provenance",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/improve/provenance.ts:8 Provenance is limited to explanatory text for individual dimensions rather than stamping the passport with an immutable commit SHA and ladder versions."
+        },
+        {
+          "technique": "named-vs-capability-metadata",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_factory/passport/improve/deployActions.ts:27 Concrete tooling and language names are retained for prompt grounding while all gating and applicability checks remain capability-shaped."
+        },
+        {
+          "technique": "two-axis-readiness",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/improve/goldenStandard.ts:131 Combines dimensions across both automation and production readiness into a single weighted golden percentage headline score."
+        }
+      ]
     }
   }
 }
