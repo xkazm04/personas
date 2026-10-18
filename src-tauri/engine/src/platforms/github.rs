@@ -30,7 +30,9 @@ fn validate_repo_segment(field: &str, value: &str) -> Result<(), AppError> {
 
 /// GitHub API client for repository and workflow management.
 pub struct GitHubClient {
-    token: String,
+    /// `Bearer <token>`, validated once in `from_fields` and marked
+    /// sensitive so it never prints in a header dump.
+    auth: reqwest::header::HeaderValue,
     http: reqwest::Client,
 }
 
@@ -74,7 +76,19 @@ impl GitHubClient {
                     "GitHub credential missing 'personal_access_token' field".into(),
                 )
             })?
-            .clone();
+            .trim();
+        // Validated HERE so a bad paste is a Validation error at construction.
+        // `headers()` used to `.parse().unwrap()` it on every request, so a
+        // PAT carrying a newline or control character panicked the first API
+        // call. The message never echoes the token.
+        let mut auth =
+            reqwest::header::HeaderValue::from_str(&format!("Bearer {token}")).map_err(|_| {
+                AppError::Validation(
+                    "GitHub personal_access_token contains characters an HTTP header cannot carry"
+                        .into(),
+                )
+            })?;
+        auth.set_sensitive(true);
 
         // `SHARED_HTTP` (30 s, no default headers) — identical to the
         // module-scoped client this replaced. Every host in this file is the
@@ -86,18 +100,22 @@ impl GitHubClient {
         // per-user state.
         let http = personas_core::http_clients::SHARED_HTTP.clone();
 
-        Ok(Self { token, http })
+        Ok(Self { auth, http })
     }
 
     fn headers(&self) -> reqwest::header::HeaderMap {
         let mut h = reqwest::header::HeaderMap::new();
+        use reqwest::header::HeaderValue;
+        h.insert("Authorization", self.auth.clone());
         h.insert(
-            "Authorization",
-            format!("Bearer {}", self.token).parse().unwrap(),
+            "Accept",
+            HeaderValue::from_static("application/vnd.github+json"),
         );
-        h.insert("Accept", "application/vnd.github+json".parse().unwrap());
-        h.insert("User-Agent", "personas-desktop".parse().unwrap());
-        h.insert("X-GitHub-Api-Version", "2022-11-28".parse().unwrap());
+        h.insert("User-Agent", HeaderValue::from_static("personas-desktop"));
+        h.insert(
+            "X-GitHub-Api-Version",
+            HeaderValue::from_static("2022-11-28"),
+        );
         h
     }
 
@@ -238,4 +256,35 @@ pub fn build_client_from_credential(
         tracing::warn!(credential_id, error = %e, "Failed to write audit log for credential decrypt");
     }
     GitHubClient::from_fields(&fields)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn fields(token: &str) -> HashMap<String, String> {
+        HashMap::from([("personal_access_token".to_string(), token.to_string())])
+    }
+
+    // A PAT pasted with its trailing newline used to pass `from_fields` and
+    // then panic inside `headers()` on the first API call
+    // (`format!("Bearer {}", token).parse().unwrap()`), killing the task.
+    #[test]
+    fn pasted_token_with_trailing_newline_builds_headers() {
+        let client = GitHubClient::from_fields(&fields("ghp_abc123\n")).expect("trimmed token");
+        let h = client.headers();
+        assert_eq!(h.get("Authorization").unwrap(), "Bearer ghp_abc123");
+        assert!(h.get("Authorization").unwrap().is_sensitive());
+    }
+
+    #[test]
+    fn token_with_an_inner_control_char_is_a_validation_error_not_a_panic() {
+        match GitHubClient::from_fields(&fields("ghp_ab\nc123")) {
+            Err(AppError::Validation(msg)) => {
+                assert!(!msg.contains("ghp_ab"), "no token echo: {msg}")
+            }
+            Err(other) => panic!("expected Validation, got {other:?}"),
+            Ok(_) => panic!("expected Validation, got a client"),
+        }
+    }
 }
