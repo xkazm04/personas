@@ -85,7 +85,7 @@ export const discardDeadLetterEvent = (id: string) =>
 /**
  * Read the dead-letter knobs the UI needs to mirror (currently just
  * `maxManualRetries`). Source of truth lives in
- * `src-tauri/src/db/repos/communication/events.rs::MAX_MANUAL_RETRIES`.
+ * `src-tauri/db/src/repos/communication/events.rs::MAX_MANUAL_RETRIES`.
  * The DLQ tab fetches this on mount so the "Retry" / "exhausted" labels
  * always agree with the Rust cap, even after a backend bump.
  */

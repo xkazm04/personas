@@ -4,7 +4,7 @@ import type { UpdateTrustedPeerInput as UpdateTrustedPeerInputBinding } from "@/
 
 // ============================================================================
 // Enums (re-exported from ts-rs bindings — see
-// `src-tauri/src/db/models/identity.rs::TrustLevel` for the full state
+// `src-tauri/core/src/models/identity.rs::TrustLevel` for the full state
 // machine and the discovered_peers.trust_status mapping table.)
 // ============================================================================
 
@@ -61,7 +61,7 @@ export const importTrustedPeer = (identityCard: string, notes?: string) =>
  * The most consequential field is `trust_level`. The `Manual → Verified`
  * transition is the contract that distinguishes "I imported a card"
  * from "I confirmed this peer holds the matching private key" — see
- * the state machine in `src-tauri/src/db/models/identity.rs::TrustLevel`.
+ * the state machine in `src-tauri/core/src/models/identity.rs::TrustLevel`.
  * Until an automatic signed-challenge flow ships, this is the only path
  * for a user to mark a peer as `Verified`.
  *
