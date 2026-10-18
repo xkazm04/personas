@@ -74,7 +74,7 @@ export function ConnectorStatusCard({
               title={t.agents.connectors.ct_swap_alt_tooltip}><ArrowLeftRight className="w-3 h-3" /></button>
           )}
           {status.credentialId ? (
-            <Tooltip content={status.testing ? 'Test already in progress' : ''} placement="top" delay={200}>
+            <Tooltip content={status.testing ? t.agents.connectors.status_testing : ''} placement="top" delay={200}>
               <Button variant="secondary" size="sm" loading={status.testing} disabled={status.testing}
                 icon={<Activity className="w-3 h-3" />} onClick={() => onTest(status.name, status.credentialId!)}>
                 {t.agents.connectors.st_test}
