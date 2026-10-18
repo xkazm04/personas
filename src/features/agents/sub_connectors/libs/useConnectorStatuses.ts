@@ -60,12 +60,28 @@ export function useConnectorStatuses() {
     return map;
   }, [credentials]);
 
+  // Which persona the current rows were built for. The hook stays mounted
+  // across a persona switch (the Connectors sub-tab is not keyed by persona),
+  // so rows carried over by connector NAME handed persona B persona A's
+  // credential, name and result for every connector the two share.
+  const builtForPersonaRef = useRef<string | null>(null);
+  const personaId = selectedPersona?.id ?? null;
+
   // Build connector statuses
   useEffect(() => {
+    const samePersona = builtForPersonaRef.current === personaId;
+    builtForPersonaRef.current = personaId;
     if (requiredCredTypes.length === 0) { setStatuses([]); return; }
     setStatuses((prev) => {
       const prevByName = new Map<string, ConnectorStatus>();
-      for (const p of prev) prevByName.set(p.name, p);
+      if (samePersona) {
+        for (const p of prev) {
+          // A row whose credential left the vault is not carried either: it
+          // kept naming (and testing) a credential that no longer exists.
+          if (p.credentialId && !credentialsByIdMap.has(p.credentialId)) continue;
+          prevByName.set(p.name, p);
+        }
+      }
 
       return requiredCredTypes.map((credType) => {
         const matchedCred = credentialsByServiceType.get(credType) ?? null;
@@ -95,7 +111,7 @@ export function useConnectorStatuses() {
         };
       });
     });
-  }, [requiredCredTypes, credentials, credentialLinks, credentialsByServiceType, credentialsByIdMap]);
+  }, [personaId, requiredCredTypes, credentials, credentialLinks, credentialsByServiceType, credentialsByIdMap]);
 
   useEffect(() => { void fetchCredentials().catch(toastCatch("useConnectorStatuses:initialFetchCredentials", "Failed to load credentials. Connector statuses may be incomplete.")); }, [fetchCredentials]);
 
