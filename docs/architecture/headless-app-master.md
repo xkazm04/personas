@@ -510,3 +510,15 @@ own gate, independent of the app's mandate.
 6. Check the merged SHAs against `dev_tasks` and the ideas' outcomes.
 7. Asks raised headless are not in Approvals (no door); answered ones are in `asks.jsonl`.
 8. Then decide whether the in-app master takes over (`/master <p> run`) or this one continues.
+
+## The standup arm list (`/athena --standup`)
+
+`/athena --standup` interviews the operator, resolves a direction per named project and writes a night plan
+(`~/.personas/standup/<date>/PLAN.json`). Arming it runs `AM standup arm --file PLAN.json`, which records
+`.claude/master/_standup/active.json` (`{version, date, planPath, armed:[slug], status}`). While `status` is `armed`
+only the listed projects are **woken**: `status` reports `armed`/`due` per project, `context` is not requested for
+the others, and `promote` leaves their queued runs queued (`not armed (standup)`). Everything that is accounting
+and never a wake is untouched (`listSlugs`: caps, path overlap, `await`, `settle`, `watch`, the gate record), so a
+builder that was running when the list changed is still awaited and settled. No `active.json`, or `status: ended`
+(`AM standup end`), restores the old behaviour exactly: every managed project wakes. Code: `lib/standup.mjs`,
+test `test/standup.test.mjs`.

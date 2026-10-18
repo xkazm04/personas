@@ -15,6 +15,7 @@ import {
 } from './contract.mjs';
 import { charactersOf, councilJournal, councilEvents, featureState } from './council.mjs';
 import { loadBrief, loadWakes, saveWake, openAsks, loadAsks, loadChannel, listRuns, loadOutbox } from './store.mjs';
+import { isArmed } from './standup.mjs';
 import {
   openDb, resolveProject, masterPersona, chartersFor, projectSnapshot, pendingReviews,
   operatorChannelSince, repoDocs, milestonesOf, planProgress, briefCharters, useCasesOf, councilRunsOf, councilDecisionsOf,
@@ -457,7 +458,7 @@ export function gatherContext(ref) {
         })),
       };
     }
-    input.due = isDue(wakes, nowMs);
+    input.due = isArmed(project.slug) && isDue(wakes, nowMs);
   } finally { d.close(); }
   return input;
 }

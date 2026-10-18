@@ -20,6 +20,7 @@
 //   limit    set|clear|show [--reason <text>] [--resets <iso>]
 //   onboard  --project p --brief <brief.json> [--force]
 //   heartbeat [--project p] [--state running|idle|ended]   (no --project: every managed project)
+//   standup  show | arm --file <plan.json> | end   (while armed, only the plan's projects are woken)
 //
 // After decide, dispatch, watch, settle, await, release, promote and queue succeed (and after an await refusal: its
 // wait may have moved the run to exited), the CLI tells the app the project's
@@ -51,6 +52,7 @@ export const COMMANDS = {
   limit:    ['./lib/limits.mjs', 'cmdLimit'],       // WP2
   onboard:  ['./lib/onboard.mjs', 'cmdOnboard'],    // WP1
   heartbeat: ['./lib/heartbeat.mjs', 'cmdHeartbeat'], // the state door
+  standup:  ['./lib/standup.mjs', 'cmdStandup'],    // the arm list of an /athena --standup plan
 };
 
 /** Subcommands whose success changes what the app should show for a project. */
