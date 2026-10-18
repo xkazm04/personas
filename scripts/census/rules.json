@@ -316,8 +316,8 @@
         }
       ],
       "baseline": {
-        "files": 46,
-        "matches": 46
+        "files": 44,
+        "matches": 44
       },
       "floor": 4000
     },
@@ -441,8 +441,8 @@
         }
       ],
       "baseline": {
-        "files": 35,
-        "matches": 52
+        "files": 34,
+        "matches": 50
       },
       "floor": 4000
     },
@@ -988,8 +988,8 @@
         "description": "an IPC call whose type argument is an inline object literal rather than an imported generated binding. PROXY FOR the stack-free condition \"a consumer declares the wire contract at the call site, so the contract has no name, no single home, and no tool can compare it to what the producer actually sends\". Precision is 100% by construction: ts-rs only ever emits NAMED types, so an object-literal type argument cannot be a generated one. Measured consequence in this repo, by resolving each site's command-name string literal to the Rust fn's return type: 52 sites across 12 files, of which 32 call a command returning serde_json::Value (no binding CAN exist - the fix is on the backend), 7 shadow a command whose return type ALREADY has a generated binding (src/api/companion.ts:730 hand-writes nine fields over the existing src/lib/bindings/SensorySourceState.ts, and 5 sites in src/test/automation/bridge.ts hand-narrow Persona/PersonaDetail/TwinProfile), 8 call a command returning a named Rust struct that never derives ts_rs::TS (MemoryIngestResult, DocRotScanSummary, CliCaptureResult, ...), and 5 call a command that exists in no .rs file at all. The span is under 40 characters and never crosses a statement, so the runner's comment-skip rewind cannot swallow a neighbouring match; measured commentMatchesSkipped = 0. PRECONDITION (must be re-derived per repo): this repo funnels every IPC call through invokeWithTimeout/safeInvoke and generates named types with ts-rs. A repo whose transport is bare fetch(), whose generated types are reached through one indexed schema object such as components[\"schemas\"][\"Foo\"], or which validates responses with a zod parse instead of a type argument, has this condition wearing different markup and scores zero here. LEGAL FIX: import the generated binding - import type { Foo } from \"@/lib/bindings/Foo\" - and if no binding exists, THAT is the finding: give the Rust command a named success type carrying #[derive(TS)] #[ts(export)] rather than typing the hole on the consumer side."
       },
       "baseline": {
-        "files": 11,
-        "matches": 44
+        "files": 10,
+        "matches": 41
       },
       "floor": 4000
     },
@@ -1499,8 +1499,8 @@
         }
       ],
       "baseline": {
-        "files": 35,
-        "matches": 35
+        "files": 34,
+        "matches": 34
       },
       "floor": 4000
     },
@@ -2122,8 +2122,8 @@
         "$comment": "Recall is deliberately partial: it cannot see a toggle whose button lives in a child component while the state lives in the parent, nor a non-button disclosure. Both are stated in the golden path rather than papered over."
       },
       "baseline": {
-        "files": 40,
-        "matches": 42
+        "files": 37,
+        "matches": 38
       },
       "floor": 2000
     },
@@ -5056,8 +5056,8 @@
         "description": "A full-viewport dimming layer painted directly on the `fixed inset-0` element — the hand-rolled modal backdrop. BaseModal never emits this shape (its container carries no paint; the scrim is a separate `absolute inset-0` child), so a match is an overlay built outside the modal host: no stack depth, no Escape arbitration, no focus trap, no focus restore. Second branch (2026-10-11): the same overlay with its paint moved one element down - a literal `fixed inset-0` container whose first child is a literal `<div className=\"absolute inset-0 ...\">` scrim. BaseModal composes both classes from variables on motion.div elements, so it matches neither branch."
       },
       "baseline": {
-        "files": 9,
-        "matches": 10
+        "files": 8,
+        "matches": 9
       },
       "floor": 1800
     },
@@ -5272,6 +5272,10 @@
         {
           "path": "src/features/companions/athena/sub_create/engine/useCreateAthenaInstall.ts",
           "reason": "same tension as IngestProgressBar: the Create Athena install step attaches to companion://kokoro-install / pocket-install through useTauriEvent (the one sanctioned hook, unbuffered) in the same tick startInstall() spawns the download; no TTS install-progress snapshot command exists to replay from, and the gap window is the download's own startup. The raw listen()-before-download form it replaced was gated by unmanaged-tauri-subscription. Remove this exclude when a buffered event hook or a progress snapshot getter lands"
+        },
+        {
+          "path": "src/features/agents/sub_executions/components/CircuitBreakerIndicator.tsx",
+          "reason": "compliant snapshot-plus-stream, not a gap: the indicator reads the getCircuitBreakerStatus snapshot on mount, re-polls it every 10 s while visible, and the transition subscription only triggers a snapshot re-read, so an event dropped before listen() resolves costs at most one poll interval. It moved from two raw listen() calls (unmanaged-tauri-subscription, which fell by this file) to useTauriEvent in f78525212d"
         }
       ],
       "baseline": {
