@@ -1,4 +1,5 @@
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
+import type { TeamSlackBridgeInfo } from '@/lib/bindings/TeamSlackBridgeInfo';
 import { silentCatch } from '@/lib/silentCatch';
 
 /**
@@ -13,27 +14,14 @@ import { silentCatch } from '@/lib/silentCatch';
  * will actually act on.
  */
 
-/**
- * One resolved bridge. Mirrors the Rust `TeamSlackBridgeInfo` (camelCase on the
- * wire). Declared locally rather than imported from `@/lib/bindings/` because
- * the ts-rs binding is emitted by `cargo test export_bindings`, which the
- * backend side of this feature owns; swap this for
- * `@/lib/bindings/TeamSlackBridgeInfo` once that file is committed.
- */
-export interface TeamSlackBridgeSummary {
-  teamId: string;
-  personaId: string;
-  slackChannelId: string;
-  credentialId: string;
-  pollInbound: boolean;
-  outboundMessages: boolean;
-  outboundDirectives: boolean;
-  outboundSteps: boolean;
-}
+// One resolved bridge is the ts-rs binding `TeamSlackBridgeInfo`. A local
+// `TeamSlackBridgeSummary` copy stood here "until that file is committed"; it
+// is, and nothing imported the copy's name.
+export type { TeamSlackBridgeInfo };
 
 /** Every configured bridge across every enabled persona. */
 export const listTeamSlackBridges = () =>
-  invoke<TeamSlackBridgeSummary[]>('list_team_slack_bridges');
+  invoke<TeamSlackBridgeInfo[]>('list_team_slack_bridges');
 
 /**
  * Same, but never throws. Bridges are decoration on surfaces whose primary job
@@ -41,7 +29,7 @@ export const listTeamSlackBridges = () =>
  * not expose the command yet, or an IPC hiccup, must degrade to "no bridges"
  * rather than blank the surface.
  */
-export async function listTeamSlackBridgesSafe(): Promise<TeamSlackBridgeSummary[]> {
+export async function listTeamSlackBridgesSafe(): Promise<TeamSlackBridgeInfo[]> {
   try {
     return await listTeamSlackBridges();
   } catch (err) {
