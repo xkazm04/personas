@@ -18,6 +18,7 @@ import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleT
 import Button from '@/features/shared/components/buttons/Button';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { useTranslation } from '@/i18n/useTranslation';
+import { extractMessage } from '@/lib/silentCatch';
 import {
   getGigPersonaPolicy,
   setGigPersonaPolicy,
@@ -90,7 +91,7 @@ export function GigPersonaPolicySection() {
         if (live) setDraft(toDraft(p));
       } catch (e) {
         // Shown in the section's error row, like the key list's load error.
-        if (live) setError(e instanceof Error ? e.message : String(e));
+        if (live) setError(extractMessage(e));
       }
     };
     void load();
@@ -113,7 +114,7 @@ export function GigPersonaPolicySection() {
       setDraft(toDraft(stored));
       setSaved(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(extractMessage(e));
     } finally {
       setSaving(false);
     }

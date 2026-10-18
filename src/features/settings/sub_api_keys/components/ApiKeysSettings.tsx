@@ -36,6 +36,7 @@ import {
 import { revokePairing } from '@/api/auth/pairing';
 import { formatRelativeTime, formatTimestamp } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
+import { extractMessage } from '@/lib/silentCatch';
 import { RecentChangeChip } from '@/features/settings/shared/RecentChangeChip';
 import { useConfirmClick } from '@/features/settings/shared/useConfirmClick';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
@@ -97,7 +98,7 @@ export default function ApiKeysSettings() {
       setKeys(filtered);
       keysCache = filtered;
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(extractMessage(e));
     } finally {
       setLoading(false);
     }
@@ -124,7 +125,7 @@ export default function ApiKeysSettings() {
         await revokeExternalApiKey(id);
         await load();
       } catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
+        setError(extractMessage(e));
       } finally {
         setActioning(null);
       }
@@ -139,7 +140,7 @@ export default function ApiKeysSettings() {
         await deleteExternalApiKey(id);
         await load();
       } catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
+        setError(extractMessage(e));
       } finally {
         setActioning(null);
       }
@@ -168,7 +169,7 @@ export default function ApiKeysSettings() {
         if (out.failed.length > 0) setError(out.failed.map((f) => f.message).join('; '));
         await load();
       } catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
+        setError(extractMessage(e));
       } finally {
         setActioning(null);
       }

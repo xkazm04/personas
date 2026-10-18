@@ -12,7 +12,7 @@ import { createModuleCache } from '@/hooks/utility/data/useModuleSubscription';
 import { formatRelativeTime, formatTimestamp } from '@/lib/utils/formatters';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 
 interface ApiKeyAuditDrawerProps {
   keyId: string;
@@ -60,7 +60,7 @@ export function ApiKeyAuditDrawer({ keyId, keyName, onClose }: ApiKeyAuditDrawer
       })
       .catch((e) => {
         silentCatch('ApiKeyAuditDrawer:listApiKeyAudit')(e);
-        if (alive) setError(e instanceof Error ? e.message : String(e));
+        if (alive) setError(extractMessage(e));
       });
     return () => {
       alive = false;

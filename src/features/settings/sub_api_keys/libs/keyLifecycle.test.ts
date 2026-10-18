@@ -198,6 +198,12 @@ describe('case 6: runRetire keeps going past a failure', () => {
     const out = await runRetire(['x'], () => Promise.reject('nope'));
     expect(out).toEqual({ retired: [], failed: [{ id: 'x', message: 'nope' }] });
   });
+  it('a serialized AppError rejection yields its text, not "[object Object]"', async () => {
+    // invokeWithTimeout rejects with the backend's serialized AppError object.
+    const appError = { error: 'Not found: external api key', kind: 'not_found', category: 'user' };
+    const out = await runRetire(['y'], () => Promise.reject(appError));
+    expect(out.failed).toEqual([{ id: 'y', message: 'Not found: external api key' }]);
+  });
 });
 
 describe('case 7: Disconnect cuts the origin off, not just its newest pairing', () => {

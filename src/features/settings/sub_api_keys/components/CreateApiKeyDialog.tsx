@@ -12,6 +12,7 @@
 import { useCallback, useState } from 'react';
 import { X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { extractMessage } from '@/lib/silentCatch';
 import { AsyncButton } from '@/features/shared/components/buttons';
 import { ExecutePersonaPicker } from './ExecutePersonaPicker';
 
@@ -94,7 +95,7 @@ export function CreateApiKeyDialog({ onSubmit, onClose }: CreateApiKeyDialogProp
     try {
       await onSubmit(trimmedName, scopes, expiresInDays ?? undefined);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(extractMessage(e));
       setSubmitting(false);
     }
   }, [name, selectedScopes, allowExecute, executeIds, totalScopeCount, expiresInDays, onSubmit, s]);

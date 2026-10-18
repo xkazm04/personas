@@ -4,6 +4,7 @@
  * Moved out of ApiKeysSettings.tsx unchanged so they can be pinned by tests.
  */
 import type { ExternalApiKey } from '@/api/auth/externalApiKeys';
+import { extractMessage } from '@/lib/silentCatch';
 
 // A key is considered "stale" (probably forgotten) when it's older than the
 // grace window AND either never used or unused for the inactivity window.
@@ -143,7 +144,7 @@ export async function runRetire(
       await revokeFn(id);
       out.retired.push(id);
     } catch (e) {
-      out.failed.push({ id, message: e instanceof Error ? e.message : String(e) });
+      out.failed.push({ id, message: extractMessage(e) });
     }
   }
   return out;
