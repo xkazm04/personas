@@ -19,45 +19,39 @@ spine, tool-test orchestration, IPC/DB glue). Each cluster now lives in its
 own file; `mod.rs` is the slim public API + glue layer.
 
 ```
-engine/build_session/
+engine/build_session/          (app_lib: src-tauri/src/engine/build_session/)
 ├── mod.rs            Public API + BuildSessionManager + SessionHandle.
-│                     Re-exports `run_tool_tests`. Also resolves the
-│                     orchestration variant from the `orchestration` argument
-│                     or `PERSONAS_BUILD_ORCHESTRATION`. 412 lines.
-├── gates.rs          Per-capability gate state machine + intent heuristics +
-│                     synthesised clarifying questions. 1,870 lines.
+│                     Re-exports `run_tool_tests`, and re-exports each moved
+│                     child below by name. Also resolves the orchestration
+│                     variant from the `orchestration` argument or
+│                     `PERSONAS_BUILD_ORCHESTRATION`. 599 lines.
 ├── session_prompt.rs `build_session_prompt` — the v3-framework system prompt
 │                     the LLM is given. Includes the language preamble, the
 │                     Rule 5 per-locale name examples, and `MODEL_TIER_RULE`
 │                     (rule 28's tier guide), which the fan-out shares.
-│                     830 lines. (Named to disambiguate from the
+│                     837 lines. (Named to disambiguate from the
 │                     runtime-execution `engine::prompt`.)
 ├── templates.rs      Keyword similarity matching against scripts/templates/
 │                     for the "Reference Templates" prompt section, with a
-│                     CWD-independent catalog resolver. 398 lines.
+│                     CWD-independent catalog resolver. 479 lines.
 ├── runner.rs         `run_session` async loop — the spine that spawns the
 │                     CLI, drains stream-json, applies gates, mirrors events,
 │                     persists checkpoints. Branches to `fanout` when the
-│                     session's orchestration is `multiagent`. 2,367 lines.
-├── parser.rs         stream-json → typed `BuildEvent` parser + legacy mirror
-│                     helpers + clarifying_question event constructor.
-│                     1,232 lines.
+│                     session's orchestration is `multiagent`. 2,631 lines.
 ├── tool_tests.rs     LLM-driven pre-promote test runner (`run_tool_tests`,
 │                     `classify_test_entry` + `ToolTestTally` — the promote
 │                     decision table — `extract_test_plan`,
-│                     `generate_test_summary`). 1,631 lines.
+│                     `generate_test_summary`). 4,189 lines.
 ├── oneshot.rs        Autonomous `DraftReady → Promoted` orchestrator, and
 │                     `evaluate_promote_gate`: the single predicate that
 │                     arms a persona. 1,344 lines.
 ├── fix_pass.rs       Single-turn LLM fix pass: on a failed autonomous test
-│                     phase, asks a fresh CLI for a corrected agent_ir. 689
+│                     phase, asks a fresh CLI for a corrected agent_ir. 698
 │                     lines.
-├── reference.rs      Reference attachment for clarifying questions: fetches a
-│                     user-supplied file or URL and injects it into the answer
-│                     the LLM sees on its next turn. 463 lines.
-├── kp_surface.rs     DB glue around `personas_engine::kp_tool_surface` — the
-│                     kp-hire tool-surface policy applied to a built persona.
-│                     177 lines.
+├── restart.rs        Boot-time recovery: decides which in-flight sessions a
+│                     dead process left behind may be RESUMED and restarts
+│                     their runners (the data half is
+│                     `build_session_repo::recover_orphans`). 174 lines.
 ├── fanout.rs         DARK: per-capability parallel resolution. Wired, but
 │                     reachable only via `PERSONAS_BUILD_ORCHESTRATION=`
 │                     `multiagent`; every production caller passes `None`, and
@@ -67,11 +61,38 @@ engine/build_session/
 │                     lines.
 ├── events.rs         Tauri-channel + DB-update glue: `dual_emit`,
 │                     `emit_session_status`, `emit_error`, `cleanup_session`,
-│                     `update_phase{,_with_error}`. 564 lines.
+│                     `update_phase{,_with_error}`. 571 lines.
 └── README.md         You are here.
+
+personas_engine::build_session (src-tauri/engine/src/build_session/)
+  Moved out of app_lib on 2026-10-07 (9708af6d23) because they depend only
+  on personas-core and personas-db. Paths below are in that crate; the
+  names are unchanged and reached through app_lib's re-exports.
+├── mod.rs            The five `pub mod` lines. 13 lines.
+├── gates.rs          Per-capability gate state machine + intent heuristics +
+│                     synthesised clarifying questions. 1,911 lines.
+├── parser.rs         stream-json → typed `BuildEvent` parser + legacy mirror
+│                     helpers + clarifying_question event constructor.
+│                     1,235 lines.
+├── provisional.rs    Mid-turn release of finished JSON objects from the
+│                     partial-message stream (behavior_core and friends
+│                     surface while the model is still typing). 1,027 lines.
+├── reference.rs      Reference attachment for clarifying questions: fetches a
+│                     user-supplied file or URL and injects it into the answer
+│                     the LLM sees on its next turn. 463 lines.
+└── kp_surface.rs     DB glue around `personas_engine::kp_tool_surface` — the
+                      kp-hire tool-surface policy applied to a built persona.
+                      239 lines.
 ```
 
-Total: **13,771 lines** across 14 files.
+Total: **18,204 lines** across 17 `.rs` files in two crates (11 in app_lib,
+6 in personas-engine), plus this README.
+
+> **Re-measured with `wc -l` on 2026-10-18.** The 2026-09-02 map below this
+> note listed `gates.rs`, `parser.rs`, `reference.rs` and `kp_surface.rs` under
+> app_lib's folder six weeks after they moved to the engine crate, never named
+> `provisional.rs` or `restart.rs`, and totalled 13,771 lines over 14 files.
+> The 2026-09-02 note that follows is kept as history.
 
 > **Line counts and the file list re-measured with `wc -l` on 2026-09-02, and
 > five of the six previous figures were wrong by more than 2×.** The block above
@@ -92,24 +113,15 @@ Total: **13,771 lines** across 14 files.
 - **`BuildSessionManager`** (public) — owns the in-memory session map and the
   `start_session` / `submit_answer` / `cancel_session` lifecycle. This is the
   only struct other modules construct directly (see `lib.rs::AppState`).
-- **`run_session`** — the long-lived tokio task that spawns the Claude CLI,
-  pipes the system prompt, drains stream-json events, applies the gate state
-  machine, mirrors v3 events to legacy cell-update for the existing UI, and
-  persists per-event checkpoints into SQLite. ~780 lines; the spine of the
-  module. Suggested next refactor target: `runner.rs`.
-- **`parse_build_line` + `parse_json_object`** — JSON-event parser that turns
-  CLI stream-json lines into typed `BuildEvent` variants. Includes legacy
-  shape mirroring (v3 cap-resolution → legacy cell-update). Suggested next
-  refactor target: `parser.rs`.
-- **`run_tool_tests` / `build_test_prompt` / `extract_test_plan` /
-  `generate_test_summary`** — LLM-driven test runner used right before
-  promote. Suggested next refactor target: `tool_tests.rs`.
-- **`build_clarifying_question_events`** — shared helper that turns a
-  question object into both the v3 typed event AND the legacy `Question`
-  mirror. Used by parser and by [`gates::synthesize_gate_question`].
-- **Event helpers** (`dual_emit`, `emit_session_status`, `emit_error`,
-  `cleanup_session`, `update_phase`, `update_phase_with_error`) —
-  Tauri-channel + DB-update glue. Suggested next refactor target: `events.rs`.
+- **Re-exports** — `run_tool_tests` (`pub`, from `tool_tests`),
+  `recover_after_restart` (from `restart`), the kp-surface helpers, and the
+  five moved children (`gates`, `kp_surface`, `parser`, `provisional`,
+  `reference`) as `pub use personas_engine::build_session::<name>`, so
+  `super::gates::…` keeps resolving from every sibling.
+- The run loop is `runner.rs::run_session`, the parser is the engine crate's
+  `parser.rs`, the test runner is `tool_tests.rs` and the event glue is
+  `events.rs`; the "suggested next refactor target" notes this section used
+  to carry have all been done.
 
 ### `gates.rs`
 
@@ -214,8 +226,8 @@ Boundary calls are kept to the minimum needed; everything else is private.
 
 | Submodule | exports `pub(super)` | calls into siblings |
 |---|---|---|
-| `gates` | `CapabilityGates`, `Gate`, `PendingGate`, `GATED_CAPABILITY_FIELDS`, `is_gated_field`, `legacy_cell_to_v3_field`, `gate_seed_for_intent`, `init_gates_from_enumeration`, `ensure_capability_in_coverage`, `find_first_unopen_gate`, `synthesize_gate_question` | `parser::build_clarifying_question_events` |
-| `parser` | `parse_build_line`, `parse_json_object`, `build_clarifying_question_events`, `map_capability_field_to_legacy_dimension`, `map_persona_field_to_legacy_dimension` | (none) |
+| `gates` (engine crate, `pub`) | `CapabilityGates`, `Gate`, `PendingGate`, `GATED_CAPABILITY_FIELDS`, `is_gated_field`, `legacy_cell_to_v3_field`, `gate_seed_for_intent_with_context`, `init_gates_from_enumeration_with_context`, `ensure_capability_in_coverage_with_context`, `find_first_unopen_gate`, `synthesize_gate_question` | `parser::build_clarifying_question_events` |
+| `parser` (engine crate, `pub`) | `parse_build_line`, `parse_json_object`, `build_clarifying_question_events`, `map_capability_field_to_legacy_dimension`, `map_persona_field_to_legacy_dimension` | (none) |
 | `session_prompt` | `build_session_prompt` | (none) |
 | `templates` | `build_template_context` | (none) |
 | `runner` | `run_session` | `gates`, `parser`, `events`, `engine::cli_process`, `engine::types`, `crate::notifications`, `super::SessionHandle` |
