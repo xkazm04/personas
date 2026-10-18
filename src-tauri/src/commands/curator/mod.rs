@@ -80,17 +80,10 @@ use personas_core::models::{
 use crate::commands::fleet::queue::DispatchOrigin;
 use crate::commands::fleet::types::{state_to_token, FleetSessionState};
 
-/// Run a blocking read/write off the IPC worker. The curator lane touches
-/// rusqlite AND the filesystem, so a sync command here would block it.
-async fn blocking<T, F>(what: &'static str, f: F) -> Result<T, AppError>
-where
-    T: Send + 'static,
-    F: FnOnce() -> Result<T, AppError> + Send + 'static,
-{
-    tokio::task::spawn_blocking(f)
-        .await
-        .map_err(|e| AppError::Internal(format!("{what}: task failed: {e}")))?
-}
+// Run a blocking read/write off the IPC worker. The curator lane touches
+// rusqlite AND the filesystem, so a sync command here would block it. The
+// repo's one shared helper (`commands/blocking.rs`), not a private copy of it.
+use crate::commands::blocking::run_blocking as blocking;
 
 /// The registry checkout Curator works in, or the typed refusal that names the
 /// missing prerequisite.
