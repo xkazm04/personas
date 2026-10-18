@@ -109,7 +109,7 @@ export function PersonaSelector({
                   className="flex-1 bg-transparent typo-body text-foreground placeholder:text-foreground outline-none"
                 />
                 {search && (
-                  <button type="button" onClick={() => setSearch('')} className="text-foreground hover:text-foreground">
+                  <button type="button" onClick={() => setSearch('')} aria-label={t.common.clear} className="text-foreground hover:text-foreground">
                     <X className="w-3 h-3" />
                   </button>
                 )}
