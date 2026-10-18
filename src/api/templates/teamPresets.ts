@@ -35,9 +35,6 @@ function currentLanguage(): string | null {
 export const listTeamPresets = () =>
   invoke<TeamPreset[]>("list_team_presets", { language: currentLanguage() });
 
-export const getTeamPreset = (id: string) =>
-  invoke<TeamPreset>("get_team_preset", { id, language: currentLanguage() });
-
 /**
  * Aggregate every member template's `payload.adoption_questions[]` for
  * the combined preset questionnaire. Returns one row per preset member
