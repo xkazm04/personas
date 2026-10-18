@@ -242,8 +242,8 @@
         "description": "a rusqlite query_map row iterator reduced by filter_map(|r| r.ok()) / filter_map(Result::ok) / .flatten() — the row and the evidence both disappear and the caller still gets Ok. Anchored to query_map because all three are generic Rust idioms; unanchored, .flatten() alone matches hundreds of Option chains. PROXY FOR the stack-free condition \"a row-set read discards a per-row mapping failure without recording it\" — an adopting repo must re-derive its own proxy (see the golden path §9). PRECONDITION: this repo reduces row iterators with iterator adapters within ~700 chars of the query_map( call and does not wrap them in helpers. 8/8 sampled matches were true positives; 4 of the 148 sit in #[cfg(test)] modules and are carried in the baseline rather than excluded, because excluding them means excluding three whole production files. The two legal policies are `collect::<Result<Vec<_>,_>>()` (propagate) and `collect_rows(rows, \"table::op\")` (skip AND log)."
       },
       "baseline": {
-        "files": 71,
-        "matches": 144
+        "files": 70,
+        "matches": 143
       },
       "floor": 900
     },
@@ -519,8 +519,8 @@
         }
       ],
       "baseline": {
-        "files": 32,
-        "matches": 38
+        "files": 31,
+        "matches": 37
       },
       "floor": 4000
     },
@@ -1157,8 +1157,8 @@
         "description": "a pub repository fn returning Result<(), AppError> that reaches an UPDATE or DELETE whose entire WHERE clause is `id = ?N` - a primary-key-targeted, exactly-one-row write - without ever binding the usize that .execute() returns and without any existence probe. PROXY FOR the stack-free condition: a write addressed at one identified row completes without reporting whether that row existed, so 'nothing happened' and 'it worked' are the same value. rusqlite's execute() returns the affected-row count; on a PK-targeted statement 0 means exactly one thing - no such row - and the unit return type physically cannot carry it. Measured 2026-08-14 at HEAD: 82 matches across 35 of 116 files, every match a distinct (file, fn) pair, median matched span 377 chars and max 2355 against a 4000 bound, zero matches inside a #[cfg(test)] module. 22 matches were opened and read during the pattern's refinement: the final pattern's set contains 20 verified true positives and the 2 verified false positives found on the way are excluded BY CONSTRUCTION rather than by an allowlist - a scope-keyed bulk DELETE (dev_workspaces.rs:1067 sync_harvest_scopes, WHERE project_id = ?1, where 0 rows is normal) is excluded by requiring the bare column `id`, and a function that probes existence first (rotation.rs:257 mark_rotated calls get_policy_by_id) is excluded by the `\\w*by_id\\s*\\(` guard. The other guards do the same work: a fn that already binds the count, maps QueryReturnedNoRows, constructs AppError::NotFound, or calls .optional() has made the no-op observable and does not match; INSERT/ON CONFLICT are excluded because an upsert can never affect zero rows. Live consequences in this tree: persona_triggers::set_enabled (triggers.rs:1856) flips a trigger that may not exist and the UI renders the new state; deliberation::finalize (deliberation.rs:306) finalizes a vanished deliberation; dev_goals::reorder_goals (dev_tools.rs:861) reorders stale ids one blind UPDATE at a time. PRECONDITION (must be re-derived per repo): this repo executes SQL through rusqlite's `.execute(sql, params)` inside functions declared `pub fn`, returns a unit-typed Result on writes, and spells its primary key `id`. A repo whose driver returns a result object the caller must destructure (better-sqlite3's {changes}), whose ORM raises on a zero-row update, or which returns the updated row via RETURNING has the SAME condition wearing different markup and this pattern scores zero against it. LEGAL FIX, in order: (1) bind the count and turn 0 into AppError::NotFound - resources/notification_subscriptions.rs:215 is the shape to copy, six lines; (2) return the refreshed entity instead of unit, which makes the absent row a NotFound from the re-read - resources/notification_subscriptions.rs:135 update is that shape; (3) reach for crud_delete! (macros.rs:196), which returns Ok(rows > 0) and cannot be written blind. Do NOT silence a match by widening the WHERE clause or by dropping the id predicate - that trades this condition for a worse one."
       },
       "baseline": {
-        "files": 36,
-        "matches": 73
+        "files": 35,
+        "matches": 72
       },
       "floor": 100
     },
@@ -1426,8 +1426,8 @@
         "description": "the native `title` attribute on a lowercase DOM element. PROXY FOR the stack-free condition: explanatory text is attached to a control through a channel the user agent alone renders, so it appears only on mouse hover - it is never reachable by keyboard, never appears on a touch device, cannot be dismissed, is not reliably announced by assistive technology, and is not routed through the application's own translation layer. PRECONDITION (must be re-derived per repo): this repo renders to a DOM where `title` has that user-agent behaviour AND owns a shared Tooltip primitive that is the alternative; a repo with no primitive would find this rule fires on 100% of its tooltip sites and should read that as the finding, not baseline it. Measured precision 1109/1109 (zero false positives) and recall 99.7% against a JSX-parser ground truth of 1112 on the 2026-08-14 corpus; the 3 misses are opening tags whose attribute region exceeds 1200 characters before `title=`. `iframe` is deliberately absent from the tag list: `title` on an iframe is a REQUIRED accessible name (WCAG 4.1.2), not a tooltip, so including it would gate a correct construct."
       },
       "baseline": {
-        "files": 392,
-        "matches": 724
+        "files": 391,
+        "matches": 720
       },
       "floor": 2000
     },
@@ -5534,7 +5534,7 @@
       "exclude": [],
       "baseline": {
         "files": 62,
-        "matches": 279
+        "matches": 278
       },
       "floor": 100
     },
@@ -5662,8 +5662,8 @@
         }
       ],
       "baseline": {
-        "files": 168,
-        "matches": 467
+        "files": 167,
+        "matches": 464
       },
       "floor": 5000
     },
@@ -5752,8 +5752,8 @@
         }
       ],
       "baseline": {
-        "files": 276,
-        "matches": 577
+        "files": 275,
+        "matches": 576
       },
       "floor": 5000
     },
@@ -5829,8 +5829,8 @@
         }
       ],
       "baseline": {
-        "files": 949,
-        "matches": 2123
+        "files": 946,
+        "matches": 2117
       },
       "floor": 2200
     },
