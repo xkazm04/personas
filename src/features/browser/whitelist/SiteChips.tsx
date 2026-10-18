@@ -1,9 +1,9 @@
 /**
- * The four chips every Whitelist layout renders for a row — tier, scan state,
- * writes policy, credential. They live here so the ledger, the cards and the
- * master-detail list say the same thing in the same colours; a variant that
- * invented its own vocabulary would make the switcher a comparison of three
- * different products instead of three layouts.
+ * The chips the whitelist ledger renders for a row — pattern, tier, scan
+ * state, writes policy, credential — kept apart from `WhitelistLedger.tsx` so
+ * the row vocabulary (one word and one colour per state) has one definition.
+ * The cards and master-detail layouts that once shared it were retired by
+ * spark server-control (2026-10-05); the ledger is the only consumer.
  */
 import { KeyRound, ShieldAlert } from 'lucide-react';
 
