@@ -40742,7 +40742,11 @@
           "revision": 2,
           "changedAt": "2026-09-16",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/engine/kb_extract.rs:292 Searches for graph and relation found no context hits; tracing its extraction command showed independent UUID-keyed SQL rows rather than a graph with relations and cross-passage entity merging.",
+          "evaluatedAt": "2026-10-18",
+          "evaluatedAgainst": "sha256-b2:bd7032bc2fb05c3b",
+          "evaluatedRevision": 2
         },
         {
           "subject": "agent-memory",

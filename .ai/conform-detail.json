@@ -29565,6 +29565,37 @@
         "at": "2026-10-18T23:44:11.538131+00:00",
         "reason": "reviewer (sonnet): The context's draft-answer path (useTrainingSession.ts:176 calling simulateAnswer, backed by twin.rs:1882 where a knowledge-base block is retrieved and `kb_grounded` is recorded) is retrieval-grounded answer generation, so grounded-answer scoring can apply, and the cited topicCoverage.ts:158 line on"
       }
+    },
+    "876c0b4e-6472-4544-a21b-56e7529fb6b3/llm-extracted-entity-graph": {
+      "context": "vault-shared-vector",
+      "subject": "llm-extracted-entity-graph",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-18",
+      "evaluatedTs": "2026-10-18T23:57:28.917Z",
+      "worker": "318bce08-51e3-4e83-ad95-7fc33b067fb9",
+      "techniques": [
+        {
+          "technique": "accumulate-then-threshold-merge",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/shared/vector/DESIGN.md:70 The implementation inserts independent rows for each run; it does not accumulate descriptions on shared graph nodes."
+        },
+        {
+          "technique": "recall-passes-with-a-declared-cap",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/kb_extract.rs:153 This is single-pass document-to-row extraction outside the subject's graph-building precondition; schema inference is not a recall pass."
+        },
+        {
+          "technique": "recoverable-fan-out-write",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/kb_extract.rs:155 Extracted rows go to SQLite through store_entities; this path does not fan graph nodes out to an entity vector index."
+        },
+        {
+          "technique": "surface-form-identity-and-its-risk",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/kb_extract.rs:309 Each extracted row receives a fresh UUID; the model's entityKey is a label, not a normalized key joining mentions into one node."
+        }
+      ]
     }
   }
 }
