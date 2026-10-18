@@ -238,3 +238,29 @@ describe('sceneStore — invalidateScans keyed guards', () => {
     expect(useSceneStore.getState().scans.get('p')!.map((r) => r.id)).toEqual(['recovered']);
   });
 });
+
+describe('sceneStore — a failed reload over held data is stale, not failed', () => {
+  // Every load sets `loading` before its await, so the status a failure sees is
+  // always `loading`; reading it there made `stale` unreachable and a failed
+  // background refresh flipped every island's Ideas cell to unknown while the
+  // real rows were still in the store.
+  it('scans: loaded once, then a fresh reload rejects -> stale, rows kept', async () => {
+    listScansMock.mockReset();
+    listScansMock.mockResolvedValueOnce([scan('held', 'p', '2026-07-01T00:00:00Z')]);
+    await useSceneStore.getState().loadScans({ fresh: true });
+    expect(useSceneStore.getState().scansStatus).toBe('loaded');
+
+    listScansMock.mockRejectedValueOnce(new Error('ipc down'));
+    await useSceneStore.getState().loadScans({ fresh: true });
+
+    expect(useSceneStore.getState().scansStatus).toBe('stale');
+    expect(useSceneStore.getState().scans.get('p')!.map((r) => r.id)).toEqual(['held']);
+  });
+
+  it('scans: a family that never answered still goes failed', async () => {
+    listScansMock.mockReset();
+    listScansMock.mockRejectedValueOnce(new Error('ipc down'));
+    await useSceneStore.getState().loadScans({ fresh: true });
+    expect(useSceneStore.getState().scansStatus).toBe('failed');
+  });
+});

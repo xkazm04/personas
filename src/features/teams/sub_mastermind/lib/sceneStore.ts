@@ -82,6 +82,15 @@ export function groupScansByProject(rows: DevScan[]): Map<string, DevScan[]> {
 export const failStatus = (prev: FamilyStatus): FamilyStatus =>
   prev === 'loaded' || prev === 'stale' ? 'stale' : 'failed';
 
+/** Families that have answered at least once. A failed reload asks THIS, not
+ *  the status: every load sets `loading` before its await, so the status a
+ *  failure reads is always `loading`, failStatus('loading') is `failed`, and
+ *  `stale` was unreachable - a failed background refresh over held rows
+ *  flipped the family to failed (scans -> every Ideas cell unknown). */
+const everLoaded = new Set<SceneFamily>();
+const failedReload = (family: SceneFamily): FamilyStatus =>
+  failStatus(everLoaded.has(family) ? 'loaded' : 'idle');
+
 interface SceneStore {
   meta: CrossProjectMetadataMap | null;
   metaStatus: FamilyStatus;
@@ -194,6 +203,7 @@ const stillFresh = (family: keyof typeof loadedAt, key: string) =>
 /** Test hook: forget every family's freshness stamp. */
 export function __resetSceneFreshnessForTests(): void {
   for (const f of Object.keys(loadedAt) as Array<keyof typeof loadedAt>) loadedAt[f] = { at: 0, key: '' };
+  everLoaded.clear();
 }
 
 /** One latest-wins slot PER PROJECT for scoped scan invalidations — keyed
@@ -223,11 +233,12 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
       const meta = await getCrossProjectMetadata();
       if (!guards.relations.isCurrent(token)) return;
       set({ meta, metaStatus: 'loaded' });
+      everLoaded.add('relations');
       loadedAt.relations = { at: Date.now(), key: '*' };
     } catch (err) {
       silentCatch('mastermind sceneStore.loadMeta')(err);
       if (!guards.relations.isCurrent(token)) return;
-      set((s) => ({ metaStatus: failStatus(s.metaStatus) }));
+      set({ metaStatus: failedReload('relations') });
     }
   })),
 
@@ -250,11 +261,12 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
       }
       if (!guards.scans.isCurrent(token)) return;
       set({ scans: grouped, scansStatus: 'loaded' });
+      everLoaded.add('scans');
       loadedAt.scans = { at: Date.now(), key: idsKey(ids) };
     } catch (err) {
       silentCatch('mastermind sceneStore.loadScans')(err);
       if (!guards.scans.isCurrent(token)) return;
-      set((s) => ({ scansStatus: failStatus(s.scansStatus) }));
+      set({ scansStatus: failedReload('scans') });
     }
   }, opts?.fresh ? 'replace' : 'join')),
 
@@ -294,10 +306,11 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
       const map = await loadMonitoringSummaries(projects, credentials);
       if (!guards.sentry.isCurrent(token)) return;
       set({ sentry: map, sentryStatus: 'loaded' });
+      everLoaded.add('sentry');
     } catch (err) {
       silentCatch('mastermind sceneStore.loadSentry')(err);
       if (!guards.sentry.isCurrent(token)) return;
-      set((s) => ({ sentryStatus: failStatus(s.sentryStatus) }));
+      set({ sentryStatus: failedReload('sentry') });
     }
   },
 
@@ -313,6 +326,7 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
           const rows = await listGoals(id);
           if (!guards.goals.isCurrent(token)) return;
           m.set(id, rows);
+          everLoaded.add('goals');
           set((s) => {
             const next = new Map(s.goals);
             next.set(id, rows);
@@ -322,11 +336,12 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
       }
       if (!guards.goals.isCurrent(token)) return;
       if (!ids?.length) set({ goals: m, goalsStatus: 'loaded' });
+      everLoaded.add('goals');
       loadedAt.goals = { at: Date.now(), key: idsKey(ids) };
     } catch (err) {
       silentCatch('mastermind sceneStore.loadGoals')(err);
       if (!guards.goals.isCurrent(token)) return;
-      set((s) => ({ goalsStatus: failStatus(s.goalsStatus) }));
+      set({ goalsStatus: failedReload('goals') });
     }
   }, opts?.fresh ? 'replace' : 'join')),
 
@@ -344,10 +359,11 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
       }
       if (!guards.runners.isCurrent(token)) return;
       set({ runners: m, runnersStatus: 'loaded' });
+      everLoaded.add('runners');
     } catch (err) {
       silentCatch('mastermind sceneStore.loadRunners')(err);
       if (!guards.runners.isCurrent(token)) return;
-      set((s) => ({ runnersStatus: failStatus(s.runnersStatus) }));
+      set({ runnersStatus: failedReload('runners') });
     }
   }, opts?.fresh ? 'replace' : 'join'),
 
@@ -364,10 +380,11 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
       const map = await loadLlmSpendMap(projects, credentials);
       if (!guards.llmSpend.isCurrent(token)) return;
       set({ llmSpend: map, llmSpendStatus: 'loaded' });
+      everLoaded.add('llmSpend');
     } catch (err) {
       silentCatch('mastermind sceneStore.loadLlmSpend')(err);
       if (!guards.llmSpend.isCurrent(token)) return;
-      set((s) => ({ llmSpendStatus: failStatus(s.llmSpendStatus) }));
+      set({ llmSpendStatus: failedReload('llmSpend') });
     }
   },
 
