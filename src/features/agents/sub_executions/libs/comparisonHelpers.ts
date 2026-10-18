@@ -1,13 +1,14 @@
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { formatCost } from '@/lib/utils/formatters';
 import type { ToolCallStep } from '@/lib/bindings/ToolCallStep';
+import { parseToolSteps } from '@/hooks/execution/useReplayTimeline';
 
 export type { ToolCallStep };
 
-export function parseToolSteps(raw: ToolCallStep[] | null): ToolCallStep[] {
-  if (!raw) return [];
-  return Array.isArray(raw) ? raw : [];
-}
+// Re-exported, not re-implemented: this was a byte-identical copy of the
+// replay hook's `parseToolSteps` (the one under test), as `trace/stageColors.ts`
+// had been before it switched to the same re-export.
+export { parseToolSteps };
 
 export function pctChange(a: number, b: number): number {
   if (a === 0) return b === 0 ? 0 : 100;
