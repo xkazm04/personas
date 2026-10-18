@@ -27,6 +27,8 @@ import type { DevScan } from '@/lib/bindings/DevScan';
 import { silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 
+import { usePopoverDismiss } from './ListPopover';
+
 const WIDTH = 360;
 /** Scope chips are a pick-list, not a catalog. Bound the IPC and the wrap. */
 const CONTEXT_CHIP_CAP = 24;
@@ -128,13 +130,9 @@ export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, o
     setPos({ top, left });
   }, [anchor, contexts.length]);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    const onDown = (e: MouseEvent) => { if (panelRef.current && !panelRef.current.contains(e.target as Node)) onClose(); };
-    window.addEventListener('keydown', onKey);
-    const id = window.setTimeout(() => document.addEventListener('mousedown', onDown), 0);
-    return () => { window.removeEventListener('keydown', onKey); window.clearTimeout(id); document.removeEventListener('mousedown', onDown); };
-  }, [onClose]);
+  // The canvas popovers' one dismissal contract (ListPopover) - this was a
+  // verbatim copy of it.
+  usePopoverDismiss(panelRef, onClose);
 
   /** A deliberate pick also ENDS the replay window: a late `scans` arrival must
    *  never overwrite a selection the operator already made. */
