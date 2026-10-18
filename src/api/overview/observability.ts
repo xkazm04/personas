@@ -1,5 +1,6 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 import { silentCatch } from "@/lib/silentCatch";
+import { localUtcOffsetMinutes } from "./localUtcOffset";
 
 import type { AlertRule } from "@/lib/bindings/AlertRule";
 import type { AlertMetric } from "@/lib/bindings/AlertMetric";
@@ -77,14 +78,14 @@ export const getPromptVersionsBulk = (personaIds: string[], limit?: number) =>
 
 export const getAllMonthlySpend = () =>
   invoke<import('@/lib/bindings/MonthlySpendResult').MonthlySpendResult>("get_all_monthly_spend", {
-    utcOffsetMinutes: -new Date().getTimezoneOffset(),
+    utcOffsetMinutes: localUtcOffsetMinutes(),
   });
 
 const overviewBundleCache = new Map<string, { expiresAt: number; promise: Promise<OverviewBundle> }>();
 const OVERVIEW_BUNDLE_CACHE_MS = 1000;
 
 export const getOverviewBundle = (days?: number, personaId?: string) => {
-  const utcOffsetMinutes = -new Date().getTimezoneOffset();
+  const utcOffsetMinutes = localUtcOffsetMinutes();
   const key = `${days ?? 30}|${personaId ?? ""}|${utcOffsetMinutes}`;
   const now = Date.now();
   const cached = overviewBundleCache.get(key);
@@ -132,10 +133,9 @@ export const getExecutionHeatmap = (days?: number, personaId?: string) =>
   invoke<ExecutionHeatmapData>("get_execution_heatmap", {
     days: days,
     personaId: personaId,
-    // Local-minus-UTC minutes (UTC+2 → +120). getTimezoneOffset() is the
-    // inverse sign. Lets the server bucket executions by the user's LOCAL day
-    // so the heatmap matches the locally-rendered grid (no wrong-day cells).
-    tzOffsetMinutes: -new Date().getTimezoneOffset(),
+    // Lets the server bucket executions by the user's LOCAL day so the
+    // heatmap matches the locally-rendered grid (no wrong-day cells).
+    tzOffsetMinutes: localUtcOffsetMinutes(),
   });
 
 // ============================================================================

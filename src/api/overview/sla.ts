@@ -1,4 +1,5 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
+import { localUtcOffsetMinutes } from "./localUtcOffset";
 import type { SlaDashboardData } from "@/lib/bindings/SlaDashboardData";
 
 export type { SlaDashboardData } from "@/lib/bindings/SlaDashboardData";
@@ -10,10 +11,6 @@ export type { SlaDailyPoint } from "@/lib/bindings/SlaDailyPoint";
 // ============================================================================
 // Commands
 // ============================================================================
-
-/** The caller's UTC offset in minutes east of UTC (`-getTimezoneOffset()`),
- *  so the backend buckets the trend and the window by the user's local day. */
-const localUtcOffsetMinutes = () => -new Date().getTimezoneOffset();
 
 export const getSlaDashboard = (days?: number, utcOffsetMinutes?: number) =>
   invoke<SlaDashboardData>("get_sla_dashboard", {

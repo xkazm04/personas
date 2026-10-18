@@ -1,4 +1,5 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
+import { localUtcOffsetMinutes } from "./localUtcOffset";
 
 import type { HealthBundle } from "@/lib/bindings/HealthBundle";
 export type { HealthBundle } from "@/lib/bindings/HealthBundle";
@@ -19,5 +20,5 @@ export const getHealthBundle = (healingWindowDays?: number, healingLimit?: numbe
   invoke<HealthBundle>("get_health_bundle", {
     healingWindowDays,
     healingLimit,
-    utcOffsetMinutes: -new Date().getTimezoneOffset(),
+    utcOffsetMinutes: localUtcOffsetMinutes(),
   });
