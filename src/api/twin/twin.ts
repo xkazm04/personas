@@ -56,15 +56,6 @@ export const listProfiles = () =>
 export const getProfile = (id: string) =>
   invoke<TwinProfile>("twin_get_profile", { id });
 
-/**
- * Resolve the active twin. With `personaId`, returns the persona's
- * pinned twin (from `design_context.twin_id`) if set and still exists;
- * otherwise falls back to the globally-active twin. Without
- * `personaId`, returns the globally-active twin.
- */
-export const getActiveProfile = (personaId?: string) =>
-  invoke<TwinProfile | null>("twin_get_active_profile", { personaId });
-
 export const createProfile = (
   name: string,
   bio?: string,
@@ -115,9 +106,6 @@ export const setActiveProfile = (id: string) =>
 
 export const listTones = (twinId: string) =>
   invoke<TwinTone[]>("twin_list_tones", { twinId });
-
-export const getTone = (twinId: string, channel: TwinChannelKind) =>
-  invoke<TwinTone>("twin_get_tone", { twinId, channel });
 
 export const upsertTone = (
   twinId: string,
@@ -436,14 +424,6 @@ export const studioCancel = (batchId: string) =>
 // ============================================================================
 // Wiki commands (Direction 4 — currently surfaced via the Knowledge tab)
 // ============================================================================
-
-/**
- * Scrape a URL and queue extracted facts as pending memories. Returns a
- * short summary string the caller can show to the user before the memory
- * indexing pass runs.
- */
-export const ingestUrl = (url: string, twinId?: string) =>
-  invoke<string>("twin_ingest_url", { url, twinId });
 
 export interface TwinIngestDocsSummary {
   filesIngested: number;

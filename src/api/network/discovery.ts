@@ -124,6 +124,3 @@ export const getNetworkStatus = () =>
 
 export const getNetworkSnapshot = () =>
   invoke<NetworkSnapshot>("get_network_snapshot");
-
-export const getMessagingMetrics = () =>
-  invoke<MessagingMetrics>("get_messaging_metrics");
