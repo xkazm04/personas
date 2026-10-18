@@ -76,9 +76,6 @@ export const getEventSkippedStats = (sinceDays?: number) =>
 export const listDeadLetterEvents = (limit?: number) =>
   invoke<PersonaEvent[]>("list_dead_letter_events", { limit });
 
-export const countDeadLetterEvents = () =>
-  invoke<number>("count_dead_letter_events");
-
 export const retryDeadLetterEvent = (id: string) =>
   invoke<PersonaEvent>("retry_dead_letter_event", { id });
 
