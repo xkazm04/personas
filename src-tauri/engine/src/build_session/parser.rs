@@ -1209,27 +1209,3 @@ fn capabilities_to_legacy_use_cases(enu: &serde_json::Value) -> serde_json::Valu
         "use_cases": legacy_use_cases
     })
 }
-
-/// Try to extract agent IR (the final JSON result) from accumulated output.
-#[allow(dead_code)]
-fn parse_agent_ir(output: &str) -> Option<String> {
-    // Walk backwards through lines looking for the last complete JSON object
-    for line in output.lines().rev() {
-        let trimmed = line.trim();
-        if trimmed.starts_with('{') && trimmed.ends_with('}') {
-            if let Ok(val) = serde_json::from_str::<serde_json::Value>(trimmed) {
-                // Check if it looks like an agent IR (has typical fields)
-                if let Some(obj) = val.as_object() {
-                    if obj.contains_key("name")
-                        || obj.contains_key("system_prompt")
-                        || obj.contains_key("use_cases")
-                        || obj.contains_key("result")
-                    {
-                        return Some(trimmed.to_string());
-                    }
-                }
-            }
-        }
-    }
-    None
-}

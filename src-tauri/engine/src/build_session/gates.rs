@@ -553,28 +553,11 @@ const FUZZY_CONNECTOR_ALIASES: &[&str] = &[
     "built in drive",
 ];
 
-fn intent_implies_connectors_with_registry(
-    intent_lower: &str,
-    registry_keywords: &[String],
-) -> Gate {
-    for kw in FUZZY_CONNECTOR_ALIASES {
-        if intent_lower.contains(kw) {
-            return Gate::Open;
-        }
-    }
-    for kw in registry_keywords {
-        if !kw.is_empty() && intent_lower.contains(kw.as_str()) {
-            return Gate::Open;
-        }
-    }
-    Gate::Closed
-}
-
 /// 2026-05-05 — connectors gate with vault-ambiguity guard.
 ///
 /// Returns `Closed` when the intent names a service that has 2+
-/// credentials in the vault, even if `intent_implies_connectors_with_registry`
-/// would otherwise auto-open it. This forces the existing
+/// credentials in the vault, even when a keyword match would otherwise
+/// auto-open it. This forces the existing
 /// connector_category picker to fire so the user can choose between
 /// (e.g.) their 4 GitHub PATs.
 ///
@@ -659,28 +642,11 @@ fn canonical_service_type_for_alias(alias: &str) -> Option<&'static str> {
     }
 }
 
-/// Same as `gate_seed_for_intent` but consults the connector registry list
-/// (typically from `engine::api_proxy::cached_connector_keywords`) so any
-/// connector added via the catalog UI participates in keyword matching
-/// without a code edit.
-#[allow(dead_code)] // pending: build session still uses the static-keyword variant
-pub fn gate_seed_for_intent_with_registry(
-    intent: &str,
-    registry_keywords: &[String],
-) -> CapabilityGates {
-    let intent_lower = intent.to_lowercase();
-    CapabilityGates {
-        trigger: intent_implies_trigger(&intent_lower),
-        connectors: intent_implies_connectors_with_registry(&intent_lower, registry_keywords),
-        review_policy: intent_implies_review(&intent_lower),
-        memory_policy: intent_implies_memory(&intent_lower),
-        sample_output: intent_implies_sample_output(&intent_lower),
-    }
-}
-
 /// 2026-05-05 — gate seed with vault-ambiguity awareness.
 ///
-/// Same as `gate_seed_for_intent_with_registry` but additionally takes
+/// Seeds every gate from the intent, consulting the connector registry list
+/// (typically `engine::api_proxy::cached_connector_keywords`, so a connector
+/// added via the catalog UI participates without a code edit) and
 /// `ambiguous_services` (service_types with 2+ credentials in the vault).
 /// When the intent names an ambiguous service, the connectors gate
 /// stays Closed so the existing connector_category picker fires and
