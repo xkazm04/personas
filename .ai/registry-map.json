@@ -3907,7 +3907,11 @@
           "revision": 2,
           "changedAt": "2026-09-30",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/quick-answer/triage/triageDispatch.ts:149 Context searches found none of the listed scoring terms, and repository searches identified no connected answer-support scorer; this context routes human approvals and configuration answers rather than measuring answer groundedness.",
+          "evaluatedAt": "2026-10-18",
+          "evaluatedAgainst": "sha256-b2:9de247df0b7199eb",
+          "evaluatedRevision": 2
         },
         {
           "subject": "eval-harness",

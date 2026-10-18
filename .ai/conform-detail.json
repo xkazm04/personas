@@ -29488,6 +29488,83 @@
           "evidence": "src/features/vault/shared/vector/ingest/IngestTextModal.tsx:24 Permits unbounded text submission without a maximum payload cap or structural amplification guard."
         }
       ]
+    },
+    "8cfb82ac-ebd6-4826-921d-d1399dba7a60/grounded-answer-scoring": {
+      "context": "agents-quick-answer",
+      "subject": "grounded-answer-scoring",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-18",
+      "evaluatedTs": "2026-10-18T23:43:47.049Z",
+      "worker": "8fa44819-fdc0-4f7e-a9a6-f35b1bbce6e9",
+      "techniques": [
+        {
+          "technique": "bidirectional-claim-matching",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/quick-answer/QuickAnswerQuestionGroup.tsx:43 Collected user answers are submitted to a build session; this path has no reference-answer correctness comparison."
+        },
+        {
+          "technique": "decompose-then-verify",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/quick-answer/QuickAnswerReviewCard.tsx:27 The review card forwards the human's status and notes, without producing an answer-support score."
+        },
+        {
+          "technique": "per-source-attribution",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/quick-answer/triage/triageAdapters.ts:648 Evidence is review context carried for presentation, not retrieved passages used to diagnose incorrect answer claims."
+        },
+        {
+          "technique": "question-blind-relevance",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/quick-answer/QuickAnswerQuestionGroup.tsx:34 This counts filled user inputs; it does not judge whether generated answers address questions."
+        },
+        {
+          "technique": "the-decomposer-is-inside-the-instrument",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/quick-answer/triage/triageQueue.ts:177 The denominator measures queue progress over items, with no claim decomposer or claim-level scoring instrument."
+        }
+      ]
+    },
+    "3a377c10-3b0f-4674-87f9-aae9cb267c99/grounded-answer-scoring": {
+      "context": "plugins-twin-training",
+      "subject": "grounded-answer-scoring",
+      "bundle": "llm-observability",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-18",
+      "evaluatedTs": "2026-10-18T23:43:47.049Z",
+      "techniques": [
+        {
+          "technique": "bidirectional-claim-matching",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/twin/sub_training/TrainingStudio.tsx:193 The studio persists approved interview examples; it does not compare a candidate answer with a written reference answer."
+        },
+        {
+          "technique": "decompose-then-verify",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/twin/sub_training/useTrainingSession.ts:176 This generates answer prose for human review; the traced backend returns prose without an answer-support scoring operation."
+        },
+        {
+          "technique": "per-source-attribution",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/infrastructure/twin.rs:1882 The connected batch backend records whether retrieved context was supplied, not correctness or retrieval-versus-reading fault attribution."
+        },
+        {
+          "technique": "question-blind-relevance",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/twin/sub_training/topicCoverage.ts:126 Keyword matching counts topic coverage; it does not score an answer's relevance to its interview question."
+        },
+        {
+          "technique": "the-decomposer-is-inside-the-instrument",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/twin/sub_training/TrainingStudio.tsx:313 Answer tiers derive from word counts, so no model decomposer controls a factuality-score denominator."
+        }
+      ],
+      "withdrawn": {
+        "worker": "8fa44819-fdc0-4f7e-a9a6-f35b1bbce6e9",
+        "state": "not-applicable",
+        "at": "2026-10-18T23:44:11.538131+00:00",
+        "reason": "reviewer (sonnet): The context's draft-answer path (useTrainingSession.ts:176 calling simulateAnswer, backed by twin.rs:1882 where a knowledge-base block is retrieved and `kb_grounded` is recorded) is retrieval-grounded answer generation, so grounded-answer scoring can apply, and the cited topicCoverage.ts:158 line on"
+      }
     }
   }
 }
