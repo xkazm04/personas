@@ -63,10 +63,12 @@ pub fn get_ratings_for_run(pool: &DbPool, run_id: &str) -> Result<Vec<LabUserRat
         let conn = pool.get()?;
         let mut stmt = conn
             .prepare("SELECT * FROM lab_user_ratings WHERE run_id = ?1 ORDER BY created_at DESC")?;
+        // A row that cannot be decoded is an error the caller hears, not a
+        // rating that silently was never given (census `silent-row-skip`).
         let ratings = stmt
             .query_map(params![run_id], row_to_rating)?
-            .filter_map(|r| r.ok())
-            .collect();
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?;
         Ok(ratings)
     })
 }
@@ -530,5 +532,35 @@ mod rating_scale_tests {
                 "rating {bad} must be a Validation error, got {err:?}"
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod row_decode_tests {
+    use super::*;
+
+    /// A rating row whose `feedback` is not text (a BLOB a foreign writer or
+    /// a corrupted page can leave) used to vanish from the run's ratings while
+    /// the call returned `Ok` - the run read as never rated. It must surface.
+    #[test]
+    fn an_undecodable_rating_row_is_an_error_not_a_missing_rating() {
+        let pool = crate::init_test_db().expect("test db");
+        let Ok(conn) = pool.get() else {
+            panic!("pool checkout")
+        };
+        conn.execute(
+            "INSERT INTO lab_user_ratings (id, run_id, scenario_name, rating, feedback)
+             VALUES ('good', 'run-1', 'sc-a', 4, 'fine'),
+                    ('bad', 'run-1', 'sc-b', 2, X'FF00')",
+            [],
+        )
+        .expect("seed ratings");
+        drop(conn);
+
+        let read = get_ratings_for_run(&pool, "run-1");
+        assert!(
+            read.is_err(),
+            "one undecodable row must fail the read, got {read:?}"
+        );
     }
 }
