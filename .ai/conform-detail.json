@@ -29370,6 +29370,83 @@
         "at": "2026-10-18T22:53:29.033499+00:00",
         "reason": "reviewer (sonnet): Both contexts import generated bindings (`@/lib/bindings/DevTask`, `DevIdea`, `DevProject`, `AutoRunStatus`, `PersonaDesignReview`), which are generated-code artifacts. The cited anchors only show runtime fetching or caching, so they are incidental and don't show that no generated-artifact precondit"
       }
+    },
+    "f197653d-267c-4a91-bffc-b3be17434877/declarative-object-graph-configs": {
+      "context": "trigger-config",
+      "subject": "declarative-object-graph-configs",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-18",
+      "evaluatedTs": "2026-10-18T23:10:19.934Z",
+      "worker": "61ba69d4-4b70-4b7d-bd75-7051c2316c0c",
+      "techniques": [
+        {
+          "technique": "directive-key-namespace",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:46 Dedicated branches know each trigger's shape; there is no generic constructor receiving mixed arguments and loader directives."
+        },
+        {
+          "technique": "escape-hatch-expressions",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:50 Cron is stored as scheduling syntax, not evaluated host-language code for wiring config nodes."
+        },
+        {
+          "technique": "merge-vs-override-marking",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/configs/FileWatcherConfig.tsx:52 Adding a path edits the current form's array; it does not compose config-file layers."
+        },
+        {
+          "technique": "reference-resolution-with-cycle-detection",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:86 The selected credential-event identifier is stored as data, not resolved into a config-defined instance."
+        },
+        {
+          "technique": "sigil-grammar-over-schema",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:80 The endpoint remains a literal URL; the format does not interpret prefixes as object references."
+        },
+        {
+          "technique": "textual-macro-prepass",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:97 Paths configure filesystem watching; they do not splice configuration fragments or address relative config nodes."
+        }
+      ]
+    },
+    "6229df3d-d54e-47bb-8091-abb479003c18/declarative-object-graph-configs": {
+      "context": "vault-catalog-schemas",
+      "subject": "declarative-object-graph-configs",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-18",
+      "evaluatedTs": "2026-10-18T23:10:19.934Z",
+      "worker": "61ba69d4-4b70-4b7d-bd75-7051c2316c0c",
+      "techniques": [
+        {
+          "technique": "directive-key-namespace",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/schemas/ExtraFieldRenderers.tsx:15 Known schema kinds select dedicated renderers; schema keys are not generic constructor arguments mixed with loader directives."
+        },
+        {
+          "technique": "escape-hatch-expressions",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/schemas/schemaConfigs.tsx:106 Computed healthcheck settings come from application-authored callbacks, not code expressions evaluated from configuration text."
+        },
+        {
+          "technique": "merge-vs-override-marking",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:54 This initializes form state from defaults and supplied values; it does not implement composition between object-graph config files."
+        },
+        {
+          "technique": "reference-resolution-with-cycle-detection",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:80 Subtype selection looks up an existing schema entry without recursively constructing referenced nodes."
+        },
+        {
+          "technique": "textual-macro-prepass",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/schemas/ExtraFieldRenderers.tsx:26 Textarea contents are stored directly as field values, with no file-fragment splicing or relative config-node addressing."
+        }
+      ]
     }
   }
 }

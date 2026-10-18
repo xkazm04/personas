@@ -37624,7 +37624,11 @@
           "revision": 1,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:122 Fixed trigger branches produce a settings dictionary, and searches for sigil, instantiate, and _requires_ found no matches in the context directories or evidence of an object-graph loader.",
+          "evaluatedAt": "2026-10-18",
+          "evaluatedAgainst": "sha256-b2:248352af1a4c3488",
+          "evaluatedRevision": 1
         },
         {
           "subject": "convergence-loop-and-requeue",
@@ -39084,7 +39088,11 @@
           "revision": 1,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:140 The form serializes connector field definitions as schema data, and searches for sigil, instantiate, and _requires_ found no matches in the context directories or evidence of a named live-object graph loader.",
+          "evaluatedAt": "2026-10-18",
+          "evaluatedAgainst": "sha256-b2:248352af1a4c3488",
+          "evaluatedRevision": 1
         },
         {
           "subject": "form",
