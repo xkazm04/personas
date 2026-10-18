@@ -201,8 +201,10 @@ export function computeLineDiffOffThread(
       (right ?? '').split('\n').filter((line) => line.trim()),
     );
     lruSet(lineCache, key, result, () => lineCacheEvictions++);
-    queueMicrotask(() => onChunk(result));
-    return { cancel: () => undefined, promise: Promise.resolve(result) };
+    // Same cancel contract as the cached path above: a cancelled job delivers nothing.
+    let cancelled = false;
+    queueMicrotask(() => { if (!cancelled) onChunk(result); });
+    return { cancel: () => { cancelled = true; }, promise: Promise.resolve(result) };
   }
 
   const id = nextRequestId++;
