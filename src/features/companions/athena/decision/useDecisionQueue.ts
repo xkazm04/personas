@@ -102,6 +102,9 @@ function messageAttentionToDecision(message: ProactiveMessage): PendingDecision 
       useAthenaStore.getState().removeProactive(message.id);
     } catch (err) {
       silentCatch('companion/decision:message-engage')(err);
+      // Propagate, as the credential engage does: a swallowed failure clears
+      // the bubble as resolved while the nudge stays pending.
+      throw err;
     }
   };
 
@@ -140,6 +143,7 @@ function messageAttentionToDecision(message: ProactiveMessage): PendingDecision 
           useAthenaStore.getState().removeProactive(message.id);
         } catch (err) {
           silentCatch('companion/decision:message-dismiss')(err);
+          throw err;
         }
       },
     },
@@ -213,6 +217,7 @@ function credentialReauthToDecision(message: ProactiveMessage): PendingDecision 
           useAthenaStore.getState().removeProactive(message.id);
         } catch (err) {
           silentCatch('companion/decision:credential-dismiss')(err);
+          throw err;
         }
       },
     },
