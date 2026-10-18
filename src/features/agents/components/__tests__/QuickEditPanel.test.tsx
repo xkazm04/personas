@@ -90,3 +90,28 @@ describe('QuickEditPanel model field', () => {
     expect(onSave).toHaveBeenCalledWith('p-1', { description: 'New blurb' });
   });
 });
+
+describe('QuickEditPanel untouched save', () => {
+  it('writes nothing when the stored description only differs by surrounding whitespace', () => {
+    // LLM-built personas often store a trailing newline. Opening quick edit and
+    // pressing Save without touching anything compared the TRIMMED draft with
+    // the UNTRIMMED original and wrote a description update.
+    const onSave = vi.fn();
+    const onCancel = vi.fn();
+    render(
+      <QuickEditPanel
+        persona={persona({ description: 'Reports the weather\n' })}
+        onSave={onSave}
+        onCancel={onCancel}
+      />,
+    );
+    fireEvent.click(screen.getByText('Save'));
+    expect(onSave).not.toHaveBeenCalled();
+    expect(onCancel).toHaveBeenCalled();
+  });
+
+  it('names the description field for assistive tech', () => {
+    render(<QuickEditPanel persona={persona()} onSave={vi.fn()} onCancel={vi.fn()} />);
+    expect(screen.getByLabelText('Description')).toBe(screen.getByRole('textbox'));
+  });
+});

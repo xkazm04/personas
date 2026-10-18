@@ -62,8 +62,9 @@ export function QuickEditPanel({ persona, onSave, onCancel }: QuickEditPanelProp
 
   const handleSave = useCallback(() => {
     const updates: { description?: string; model?: string } = {};
-    const origDesc = persona.description ?? '';
-    const origModel = parseModelName(persona.model_profile);
+    // Compare trimmed to trimmed: a stored trailing newline is not an edit.
+    const origDesc = (persona.description ?? '').trim();
+    const origModel = parseModelName(persona.model_profile).trim();
 
     if (description.trim() !== origDesc) updates.description = description.trim();
     if (model.trim() !== origModel) updates.model = model.trim();
@@ -98,10 +99,14 @@ export function QuickEditPanel({ persona, onSave, onCancel }: QuickEditPanelProp
 
       {/* Description */}
       <div className="space-y-1">
-        <label className="text-[11px] font-medium uppercase tracking-wider text-foreground">
+        <label
+          htmlFor={`quick-edit-description-${persona.id}`}
+          className="text-[11px] font-medium uppercase tracking-wider text-foreground"
+        >
           {t.common.description_label}
         </label>
         <textarea
+          id={`quick-edit-description-${persona.id}`}
           ref={descRef}
           value={description}
           onChange={e => setDescription(e.target.value)}
