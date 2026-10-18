@@ -18,17 +18,6 @@ import type { PersonaHealthSignal } from "@/stores/slices/overview/personaHealth
 import { silentCatch } from "@/lib/silentCatch";
 import { getActiveTranslations, interpolate } from "@/i18n/useTranslation";
 
-// -- Staleness threshold ----------------------------------------------
-
-/** Data older than 15 minutes is considered stale */
-export const DIGEST_STALENESS_MS = 15 * 60 * 1000;
-
-/** Check whether a ISO timestamp is older than the staleness threshold */
-export function isTimestampStale(iso: string | null, thresholdMs = DIGEST_STALENESS_MS): boolean {
-  if (!iso) return true;
-  return Date.now() - new Date(iso).getTime() > thresholdMs;
-}
-
 // -- Slice interface --------------------------------------------------
 
 export interface HealthCheckSlice {

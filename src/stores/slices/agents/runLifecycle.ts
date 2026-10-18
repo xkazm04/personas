@@ -19,20 +19,6 @@ const logger = createLogger("run-lifecycle");
 
 const RUN_MAX_DURATION_MS = 30 * 60 * 1000;
 
-export interface RunProgress {
-  runId?: string;
-  phase: string;
-  scenariosCount?: number;
-  current?: number;
-  total?: number;
-  modelId?: string;
-  scenarioName?: string;
-  status?: string;
-  scores?: { tool_accuracy?: number; output_quality?: number; protocol_compliance?: number };
-  summary?: Record<string, unknown>;
-  error?: string;
-}
-
 /**
  * Create a run lifecycle manager.
  *
