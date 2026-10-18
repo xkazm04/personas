@@ -14,7 +14,7 @@ import { formatDuration, formatCost, classifyExecutionStatus, matchesErrorCluste
 import { formatNumeric } from '@/lib/utils/formatters';
 import { StatCard } from './StatCard';
 import { DailyBreakdownChart } from './DailyBreakdownChart';
-import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { createLatestWins } from '@/stores/util/latestWins';
@@ -144,9 +144,10 @@ export function CloudHistoryPanel() {
       evictCache();
       setOutputMap((prev) => ({ ...prev, [execId]: { lines, loading: false } }));
     } catch (e) {
+      silentCatch('features/deployment/components/cloud/CloudHistoryPanel:output')(e);
       setOutputMap((prev) => ({
         ...prev,
-        [execId]: { lines: [], loading: false, error: e instanceof Error ? e.message : t.deployment.history.fetch_output_failed },
+        [execId]: { lines: [], loading: false, error: extractMessage(e) || t.deployment.history.fetch_output_failed },
       }));
     } finally {
       fetchingRef.current.delete(execId);

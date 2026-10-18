@@ -63,6 +63,13 @@ describe('useDeploymentTest', () => {
     expect(r.durationMs).toBeNull();
   });
 
+  it('reads an IPC rejection that is a plain AppError object, never "[object Object]"', async () => {
+    executePersona.mockRejectedValue({ kind: 'Internal', message: 'orchestrator down' });
+    const { result } = renderHook(() => useDeploymentTest());
+    await run(result);
+    expect(result.current.tests['dep-1']!.result!.error).toBe('orchestrator down');
+  });
+
   it('dismisses a result on demand', async () => {
     executePersona.mockResolvedValue({ ...queued, status: 'completed', duration_ms: 1, cost_usd: 0 });
     const { result } = renderHook(() => useDeploymentTest());

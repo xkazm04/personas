@@ -31,4 +31,13 @@ describe('ApiPlayground result provenance', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Snippets' }));
     expect(screen.getByText('Code snippets call the deployed endpoint. Playground results come from a local run.')).toBeTruthy();
   });
+
+  it('shows the message of a plain-object IPC rejection, never "[object Object]"', async () => {
+    executePersona.mockRejectedValueOnce({ kind: 'Internal', message: 'persona has no model' });
+    render(<ApiPlayground slug="demo" personaId="persona-1" endpointUrl="https://cloud.example/api/deployed/demo" />);
+    fireEvent.click(screen.getByRole('button', { name: 'API Playground' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Send Request' }));
+    expect(await screen.findByText('persona has no model')).toBeTruthy();
+    expect(screen.queryByText('[object Object]')).toBeNull();
+  });
 });

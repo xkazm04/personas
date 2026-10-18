@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { executePersona } from '@/api/agents/executions';
 import { getActiveTranslations } from '@/i18n/useTranslation';
 import { awaitExecutionResult } from './awaitExecutionResult';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 
 export interface TestResult {
   status: 'pass' | 'fail';
@@ -96,6 +97,9 @@ export function useDeploymentTest() {
         });
       }, RESULT_DISPLAY_MS);
     } catch (err) {
+      // An IPC rejection is usually a plain AppError object, not an Error:
+      // `String(err)` painted it as "[object Object]" and no door saw it.
+      silentCatch('features/agents/sub_deployment/useDeploymentTest:run')(err);
       setTests((prev) => ({
         ...prev,
         [deploymentId]: {
@@ -106,7 +110,7 @@ export function useDeploymentTest() {
             // The run never happened, so its cost was never recorded - null,
             // per the TestResult contract, not 0 ("free").
             costUsd: null,
-            error: err instanceof Error ? err.message : String(err),
+            error: extractMessage(err),
           },
         },
       }));

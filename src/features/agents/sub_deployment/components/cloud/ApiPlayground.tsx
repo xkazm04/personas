@@ -5,6 +5,7 @@ import { executePersona } from '@/api/agents/executions';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { awaitExecutionResult } from '../../hooks/awaitExecutionResult';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -112,11 +113,12 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
             model: null,
           });
     } catch (err) {
+      silentCatch('features/agents/sub_deployment/ApiPlayground:send')(err);
       if (abortRef.current) return;
       setResponse({
         status: 'error',
         data: null,
-        error: err instanceof Error ? err.message : String(err),
+        error: extractMessage(err),
         durationMs: null,
         // Never recorded (the call threw), not free - see PlaygroundResponse.
         costUsd: null,
