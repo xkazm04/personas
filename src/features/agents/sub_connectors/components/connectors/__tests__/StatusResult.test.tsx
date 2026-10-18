@@ -26,3 +26,11 @@ describe('StatusResult - unreachable probe', () => {
     expect(container.querySelector('.text-red-400')).not.toBeNull();
   });
 });
+
+describe('StatusResult - link error', () => {
+  it('the icon-only dismiss control has an accessible name', () => {
+    const s: ConnectorStatus = { ...status({ success: true, state: 'verified', message: '' }), result: null, linkError: 'Link failed: gone' };
+    const { getByRole } = render(<StatusResult status={s} onClearLinkError={() => {}} />);
+    expect(getByRole('button', { name: 'Dismiss' })).toBeTruthy();
+  });
+});

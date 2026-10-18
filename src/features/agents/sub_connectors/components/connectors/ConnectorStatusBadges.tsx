@@ -159,7 +159,7 @@ export function StatusResult({ status, onClearLinkError, onRetest }: StatusResul
               <AlertCircle className="w-3 h-3 flex-shrink-0 mt-0.5" />
               <span className="flex-1">{status.linkError}</span>
               {onClearLinkError && (
-                <button type="button" onClick={() => onClearLinkError(status.name)} className="p-0.5 rounded hover:bg-amber-500/15 transition-colors flex-shrink-0">
+                <button type="button" aria-label={t.common.dismiss} onClick={() => onClearLinkError(status.name)} className="p-0.5 rounded hover:bg-amber-500/15 transition-colors flex-shrink-0">
                   <X className="w-3 h-3" />
                 </button>
               )}
