@@ -10,7 +10,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  ASK_KINDS, COUNCIL, GLOBAL_CAP, MAX_ASKS, MAX_DISPATCH, MEM, PER_PROJECT_CAP, PLAN, REVIEW_CHARTERS, UX, WAKE_MAX, WAKE_MIN,
+  ASK_KINDS, COUNCIL, GLOBAL_CAP, MAX_ASKS, MAX_DISPATCH, MEM, PARALLEL_CHARTERS, PER_PROJECT_CAP, PLAN, REVIEW_CHARTERS, UX, WAKE_MAX, WAKE_MIN,
   LIVE_RUN_STATES, contextDir, briefPath, mintId, nowIso, shortId,
 } from './contract.mjs';
 import { charactersOf, councilJournal, councilEvents, featureState } from './council.mjs';
@@ -153,6 +153,7 @@ export function renderAt(input, C) {
   L.push(`- ASK WHEN BLOCKED: ask when only the operator can take the decision that moves the project; ask only about: ${clip(askForText(brief.askFor), 300)}. Never ask what you can decide, never repeat an open ask. At most ${MAX_ASKS}; \`kind\` one of ${ASK_KINDS.join(', ')}; 2-4 options, each a label plus the action you take if chosen.`);
   L.push('- ANSWER THE OPERATOR: what the operator said is an instruction to reflect in this plan and to answer in `say`; an answered ask naming an action is yours to carry out THIS wake.');
   L.push('- EVERY charter appears exactly once, in `dispatch` or `defer`. A deferral with a reason is a decision; silence is not.');
+  L.push(`- TWO DELIVERIES: ${PARALLEL_CHARTERS.join(', ')} may run twice at once (twice in \`dispatch\`, or beside its own live run) when the paths are disjoint. Prefer a second independent delivery over a scan or doc run for the second slot, and fold a delivery's own ADR or doc update into its brief.`);
 
   // ALREADY WITH THE OPERATOR (always rendered: zero open asks is a fact to be told in words)
   head('ALREADY WITH THE OPERATOR (do not ask these again)');
@@ -297,7 +298,7 @@ export function renderAt(input, C) {
   L.push(`{"wakeId":"${wakeId}","dispatch":[{"charterSlug":"<slug>","reason":"<why this one now>","brief":"<the builder's whole task>","ideaIds":["<accepted idea id>"],"model":"sonnet|opus","paths":["<repo-relative path prefix or glob it will touch>"]}],"defer":[{"charterSlug":"<slug>","reason":"<why it waits>"}],"asks":[{"kind":"<kind>","question":"<the decision you need>","context":"<why the loop needs it>","options":[{"label":"<a choice>","action":"<what you do if chosen>"}]}],"ideaVerdicts":[{"ideaId":"<pending idea id>","status":"accepted|rejected","reason":"<why>"}],"say":"<message to the operator>|null","note":"<coverage note for your next wake>","nextWakeMinutes":<${WAKE_MIN}-${WAKE_MAX}>${planShape}}`);
   if (plan.wake) L.push('`plan` is REQUIRED this wake (PLAN WAKE); on any other wake leave it out.');
   if (input.council) L.push('A dispatch of council-lite-review or council-review REQUIRES "featureSlug":"<a feature slug from COUNCIL>" (and needs no paths); a rework delivery may carry the same featureSlug.');
-  L.push(`Every key is always present ([] when empty, say null when silent). wakeId is exactly "${wakeId}"; every charter slug exactly once across dispatch and defer, no other slug; dispatch at most ${MAX_DISPATCH}, and with two each carries non-empty disjoint paths and no idea in both; model optional${repos.length ? `; repo optional (self, ${repos.map((r) => r.key).join(', ')})` : ''}; asks at most ${MAX_ASKS}, 2-4 options each, kind one of ${ASK_KINDS.join(', ')}; nextWakeMinutes an integer; every ideaId copied from this document.`);
+  L.push(`Every key is always present ([] when empty, say null when silent). wakeId is exactly "${wakeId}"; every charter slug exactly once across dispatch and defer (${PARALLEL_CHARTERS.join(", ")} may instead be dispatched twice on disjoint paths), no other slug; dispatch at most ${MAX_DISPATCH}, and with two each carries non-empty disjoint paths and no idea in both; model optional${repos.length ? `; repo optional (self, ${repos.map((r) => r.key).join(', ')})` : ''}; asks at most ${MAX_ASKS}, 2-4 options each, kind one of ${ASK_KINDS.join(', ')}; nextWakeMinutes an integer; every ideaId copied from this document.`);
   L.push(`Charter slugs: ${charters.map((c) => c.slug).join(', ') || '(none)'}`);
   return L.join('\n') + '\n';
 }

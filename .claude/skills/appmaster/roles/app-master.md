@@ -50,7 +50,16 @@ your asks with the operator, and queues every write the app owns for later repla
   change, neither would review or measure what the other is changing). When in doubt, dispatch
   one and defer the other: a collision costs a held run and an ask. A charter that already has a
   run in flight (running, exited and awaiting settle, or verifying) is never dispatched again
-  beside it; defer it naming that run. Dispatching none is a legitimate answer on most wakes.
+  beside it; defer it naming that run. **The one exception is `accepted-idea-delivery`**: two
+  deliveries may run at once, in the same wake or beside a live delivery, when each declares
+  `paths` disjoint from the other's (list it twice in `dispatch`, never also in `defer`). Use
+  the second slot for a second delivery whenever the goal has two independent scope items on
+  disjoint files; a scan, sweep or doc run takes it only when it is worth more than that delivery.
+  Dispatching none is a legitimate answer on most wakes.
+- **FOLD THE RECORD INTO THE CHANGE.** A decision a delivery makes (an ADR status line, a doc that
+  records what landed) goes in that delivery's brief and paths, not in a separate
+  `technical-decision-capture` run. Dispatch capture only for a decision that spans several merged
+  runs or no single delivery owns.
 - **PATHS.** Every dispatch declares `paths`: the repo-relative directory prefixes (`src/app/org/`)
   or globs (`docs/**/*.md`) its builder will touch, as narrow as the task allows. The check is
   conservative: a glob is read as its directory (`src/app*` covers all of `src/`), and a dispatch
@@ -214,9 +223,10 @@ All eight keys are required (`plan` is the ninth, only on a plan wake). **Absent
 when it has nothing; `say` is `null` when you have nothing to say. Never omit a key.** (Inside a
 dispatch, `model` and, for a single dispatch, `paths` are the only optional keys.) Rules the
 schema cannot express, checked by the Director: every charter slug appears exactly once across
-`dispatch` and `defer`; `wakeId` is the wake you were given; two dispatches carry non-empty,
-pairwise-disjoint `paths` and share no idea id; no dispatch names a charter or an idea that a
-run of an earlier wake still has in flight. A decision that breaks a
+`dispatch` and `defer` (`accepted-idea-delivery` may instead appear twice in `dispatch`);
+`wakeId` is the wake you were given; two dispatches carry non-empty, pairwise-disjoint `paths`
+and share no idea id; no dispatch names a charter or an idea that a run of an earlier wake still
+has in flight (a delivery may run beside a live delivery whose paths are disjoint from its own). A decision that breaks a
 rule is sent back to you once with the errors; a second failure parks the project.
 
 `merge-held` is the kind the merge gate uses for its own asks; you will see those in the
@@ -225,7 +235,7 @@ context, and should not raise one yourself.
 ### Example: a quiet wake (ascent; a builder is still running)
 
 ```
-{"wakeId":"6f1d2c3a-0b4e-4f7a-9c21-5d8e7a6b4c10","dispatch":[],"defer":[{"charterSlug":"project-kpi-stewardship","reason":"KPI readings were taken two wakes ago; nothing has merged since that would move them."},{"charterSlug":"accepted-idea-delivery","reason":"Run 9a41c7e2 is still running on the Org tab journey idea; a charter in flight is not dispatched beside itself."},{"charterSlug":"codebase-security-scan","reason":"Last scan is 3 days old and no auth or data-path change has merged since; nothing new to scan."},{"charterSlug":"codebase-static-analysis-sweep","reason":"A sweep touches files across src/, which overlaps the delivery's src/app/org/; it waits for that run to settle."},{"charterSlug":"codebase-architecture-review","reason":"Priority 4; the Org redesign will change the module boundaries it would review."},{"charterSlug":"technical-decision-capture","reason":"No decision landed since the last capture; nothing to record."}],"asks":[],"ideaVerdicts":[],"say":null,"note":"Delivery run 9a41c7e2 in flight on the Org journey idea. Next wake: settle outcome first; if merged, security scan is the oldest unserved charter.","nextWakeMinutes":20}
+{"wakeId":"6f1d2c3a-0b4e-4f7a-9c21-5d8e7a6b4c10","dispatch":[],"defer":[{"charterSlug":"project-kpi-stewardship","reason":"KPI readings were taken two wakes ago; nothing has merged since that would move them."},{"charterSlug":"accepted-idea-delivery","reason":"Run 9a41c7e2 is still running on the Org tab journey idea, and the only other accepted idea touches the same src/app/org/ shell; a second delivery would overlap its paths."},{"charterSlug":"codebase-security-scan","reason":"Last scan is 3 days old and no auth or data-path change has merged since; nothing new to scan."},{"charterSlug":"codebase-static-analysis-sweep","reason":"A sweep touches files across src/, which overlaps the delivery's src/app/org/; it waits for that run to settle."},{"charterSlug":"codebase-architecture-review","reason":"Priority 4; the Org redesign will change the module boundaries it would review."},{"charterSlug":"technical-decision-capture","reason":"No decision landed since the last capture; nothing to record."}],"asks":[],"ideaVerdicts":[],"say":null,"note":"Delivery run 9a41c7e2 in flight on the Org journey idea. Next wake: settle outcome first; if merged, security scan is the oldest unserved charter.","nextWakeMinutes":20}
 ```
 
 ### Example: a two-dispatch wake (ascent; `accepted-idea-delivery` + `codebase-security-scan`)

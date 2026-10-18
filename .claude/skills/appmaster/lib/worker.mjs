@@ -481,7 +481,15 @@ export function watchRun(run) {
 /** (args) => Array<{runId,runId8,slug,charter,state,pidAlive,streamAgeMin,quiet,timedOut,result?}> */
 export function cmdWatch({ flags = {} } = {}) {
   const slugs = flags.project && flags.project !== true ? [String(flags.project)] : listSlugs();
-  return slugs.flatMap((s) => listRuns(s, { states: LIVE_RUN_STATES })).map(watchRun);
+  // A running or exited run that no live await holds lost its watcher (the low-memory reaper kills
+  // background shells, 2026-10-18 cost a kp night of 5.4 h): `awaitCommand` is what the Director
+  // starts again at once, without an ask (operator, 2026-10-18).
+  return slugs.flatMap((s) => listRuns(s, { states: LIVE_RUN_STATES })).map(watchRun).map((row) => {
+    const run = findRun(row.runId);
+    if (!run || !['running', 'exited'].includes(run.state)) return row;
+    const awaited = Boolean(awaitHolder(run));
+    return { ...row, awaited, ...(awaited ? {} : { awaitCommand: awaitCommandFor(run) }) };
+  });
 }
 
 // ---------------------------------------------------------------- release

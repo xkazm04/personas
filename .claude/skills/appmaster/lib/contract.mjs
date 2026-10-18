@@ -146,6 +146,13 @@ export const WAKE_MIN = 10;           // nextWakeMinutes bounds a master may cho
 export const WAKE_MAX = 240;
 export const MAX_ASKS = 3;            // asks one decision may raise
 export const MAX_DISPATCH = 2;        // dispatches one decision may make (== PER_PROJECT_CAP); 2 needs disjoint `paths`
+/**
+ * Charters that may run beside themselves: up to MAX_DISPATCH runs of one, each on declared,
+ * disjoint paths. Every other charter keeps one run at a time. Delivery joined on 2026-10-18 after
+ * a kp session measured one delivery builder working the whole scope serially while the second slot
+ * went to scans and docs (operator: "Two deliveries in parallel").
+ */
+export const PARALLEL_CHARTERS = ['accepted-idea-delivery'];
 export const SLEEP_MIN_SEC = 60;      // the Director's ScheduleWakeup clamp
 export const SLEEP_MAX_SEC = 3600;
 /**

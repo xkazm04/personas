@@ -452,8 +452,35 @@ test('(xvii) a test that fails only in the full run and passes alone is cleared 
   assert.equal(branchExists(root, run.branch), false);
 });
 
+// a flake that also fails its alone re-run gets one whole-gate retry before a hold
+const twiceScript = path.join(tmp, 'flaky-twice-gate.cjs').replace(/\\/g, '/');
+fs.writeFileSync(twiceScript, [
+  "const fs = require('fs');",
+  "if (fs.existsSync('flaky-twice.txt')) {",
+  "  const n = fs.existsSync('flaky-count.txt') ? Number(fs.readFileSync('flaky-count.txt', 'utf8')) : 0;",
+  "  fs.writeFileSync('flaky-count.txt', String(n + 1));",
+  "  if (n < 2) { console.log(' FAIL  src/flaky.test.ts > fails twice under load  4ms'); process.exit(1); }",
+  '}',
+  'process.exit(0);',
+].join('\n'));
+
+test('(xvii-b) a flake that fails its alone re-run too passes on one whole-gate retry, and is recorded', () => {
+  const { root, run, wt } = scenario('flaky-twice', { gates: { typecheck: 'exit 0', lint: 'exit 0', test: `node ${twiceScript}` } });
+  commitIn(wt, 'flaky-twice.txt', 'x\n');
+  const out = settle(run);
+  assert.equal(out.state, 'merged', out.heldReason);
+  const t = out.verdict.gates.test;
+  assert.equal(t.inherited, true);
+  assert.equal(t.rerun.ok, false);
+  assert.deepEqual(t.retried, { ok: true, exit: 0 });
+  assert.deepEqual(t.flaky, ['src/flaky.test.ts']);
+  assert.equal(branchExists(root, run.branch), false);
+});
+
 test('(xviii) narrowCommand and testFilesIn', async () => {
   const G = await import('../lib/gate.mjs');
+  // a chained gate narrows its FIRST command only (kp: the kpi runner rides after &&)
+  assert.equal(G.narrowCommand('npm run test:unit && node scripts/run-unit-tests.mjs "scripts/kpi/**/*.test.mjs"', ['app/x.test.ts']), 'npm run test:unit -- app/x.test.ts');
   assert.equal(G.narrowCommand('npm run test:unit -- app/a/**/*.test.ts app/b/*.test.ts', ['x/y.test.ts']), 'npm run test:unit -- x/y.test.ts');
   assert.equal(G.narrowCommand('npm run test', ['a.test.tsx', 'b.test.ts']), 'npm run test -- a.test.tsx b.test.ts');
   assert.deepEqual(G.testFilesIn(['FAIL src/__tests__/a.test.tsx > suite > case', 'x/y.test.ts', 'no file here']).sort(), ['src/__tests__/a.test.tsx', 'x/y.test.ts']);

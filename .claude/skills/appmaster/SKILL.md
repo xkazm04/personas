@@ -64,7 +64,9 @@ loop's ceiling under the fleet cap. Detail: `docs/architecture/headless-app-mast
   `GLOBAL_CAP` in all, and one decision may dispatch `MAX_DISPATCH`, but two only on disjoint
   declared `paths` (`lib/paths.mjs`, conservative: a glob counts as its whole directory, and no
   paths means the whole repo). `decide` refuses two dispatches without disjoint paths, one that
-  names a charter or idea an earlier wake's started (or queued) run still carries, or an unknown `model`;
+  names a charter or idea an earlier wake's started (or queued) run still carries (except a
+  `PARALLEL_CHARTERS` charter, `accepted-idea-delivery`, which may run twice at once on disjoint
+  paths: operator, 2026-10-18), or an unknown `model`;
   `dispatch` refuses `paths overlap` against any live run targeting the same repo root, in ANY
   project (a never-started `planned` run excepted). Each dispatch may set `model` (`sonnet` / `opus` or the full ids in
   `MODELS`); it overrides the charter default, but a model the brief pins wins (a warning in
@@ -85,7 +87,10 @@ loop's ceiling under the fleet cap. Detail: `docs/architecture/headless-app-mast
   `test` as "no related tests"; more than `FOCUS_MAX_FILES` code files runs the full suite, and
   so does a branch that touches a dependency or config file (`package.json`, a lockfile,
   `tsconfig*.json`, a vitest/vite/next/jest config: `WIDE_FILE` in `lib/gate.mjs`), since no
-  import graph shows what a dependency bump breaks. `run.json` records `verdict.testFocus` and each test result's `focus`. The FULL gate is
+  import graph shows what a dependency bump breaks. A test failure only the branch shows is
+  re-run alone (the first command of a ` && ` chain, narrowed to the failing files), and if it is
+  still red while the base is green, the whole test gate runs ONCE more before anything is held;
+  a pass on either is recorded as `flaky` in the verdict (operator, 2026-10-18). `run.json` records `verdict.testFocus` and each test result's `focus`. The FULL gate is
   `AM verify --project p [--repo key]`: every suite on a throwaway checkout of the base tip with a
   45-minute limit (`FULL_GATE_TIMEOUT_MS`), before any push or release; a red run raises one
   `verify-red` ask (always the operator's). Accepted risk, the operator's: a change can break an
@@ -286,10 +291,12 @@ are used here, in this session, and never inside a master subagent.
      only if the operator wants it watched further. No kill without the operator's word.
 7. **Watch (fallback).** `AM watch` on every wake, for what no await covers: a run dispatched
    before this session, an await that was lost with a restarted session, or a builder flagged
-   `quiet` / `timedOut` (reported, never acted on; see `release`). For an `exited` run with no
-   await running, start `AM await --run <runId>` in the background rather than `settle`
-   (same result, and it holds the run's lock); `settle` by hand only for `--retry` of a held
-   run. A settle ends `merged`, `held` (with an ask), `failed` (no commits), `released` (the
+   `quiet` / `timedOut` (reported, never acted on; see `release`). Every `running` or `exited`
+   row carries `awaited`; a row with `awaited: false` carries its `awaitCommand`: **start it in
+   the background at once, without asking the operator** (operator, 2026-10-18: a kp night lost
+   5.4 h waiting for his word after the low-memory reaper killed the watchers). The same when an
+   await's own notification says it was killed rather than settled: run `AM watch` and restart
+   what it names. `settle` by hand only for `--retry` of a held run. A settle ends `merged`, `held` (with an ask), `failed` (no commits), `released` (the
    builder hit the usage limit) or, for a council review, `reviewed`. A `limitHit` row means the
    mark is now set: stop after this wake.
    Then `AM promote` once per wake, and after any `release` or `queue drop` (a slot freed

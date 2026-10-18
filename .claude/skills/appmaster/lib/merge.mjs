@@ -201,6 +201,15 @@ export function evaluateGates(run, gates, { timeoutMs = GATE_TIMEOUT_MS, focus =
         r.rerun = { files, ok: again.ok, exit: again.exit };
         if (again.ok) { r.flaky = files; r.inherited = true; }
       }
+      // Still red, the base green: the whole test gate runs ONCE more before anything is held. The
+      // operator answered "Retry the gate" to every such hold on 2026-10-17/18 and each retry passed;
+      // the ask cost hours, not judgment (operator, 2026-10-18). A pass is recorded as flaky, so the
+      // digest names it; a second red holds as before.
+      if (!r.inherited && g === 'test' && r.base?.ok === true) {
+        const full = runGates(run.worktree, { [g]: mine.gates[g] }, { timeoutMs, only: [g], env })[g];
+        r.retried = { ok: full.ok, exit: full.exit, ...(full.timedOut ? { timedOut: true } : {}) };
+        if (full.ok) { r.flaky = files.length ? files : ['(whole test gate)']; r.inherited = true; }
+      }
     }
   }
   const effects = worktreeDirty(run.worktree);

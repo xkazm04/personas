@@ -245,7 +245,10 @@ more builder. Two builders of one project are safe only if they do not collide, 
   other, case-insensitively, and an empty list is the whole repo.
 - **At decide.** Two dispatches need non-empty, pairwise-disjoint `paths` and no shared idea;
   a dispatch may not name a charter or an idea that a started run of an earlier wake still
-  carries (one builder per charter, as when the cap was one). `model` must be one of
+  carries (one builder per charter, as when the cap was one). The exception is
+  `PARALLEL_CHARTERS` (`accepted-idea-delivery`): it may be dispatched twice in one wake, or
+  beside its own live run, when the paths are provably disjoint (operator, 2026-10-18, after a kp
+  session measured feature work running one builder at a time). `model` must be one of
   `BUILDER_MODEL_CHOICES`. Any violation is `invalid decision` with the errors.
 - **At dispatch.** The run's paths must not overlap any live run of the project: running,
   exited, verifying, and planned once it has a worktree (a crash after the spawn may have left
