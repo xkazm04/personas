@@ -17,7 +17,7 @@
  *   • launch   — intent augmented with memory/review preferences, then fired.
  *   • anyActive / quickConfig passthrough.
  */
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   Calendar, ListTodo, Plug, MessageSquare, UserCheck, Brain, Activity,
   type LucideIcon,
@@ -84,6 +84,12 @@ interface UseComposeConfigArgs {
   coreAugmentation?: string;
 }
 
+/** The channels a fresh composer starts with: the caller's, inbox pinned first. */
+function initialChannels(initial: ChannelSpecV2[] | undefined): ChannelSpecV2[] {
+  if (!initial || initial.length === 0) return [BUILT_IN_INBOX];
+  return initial.some((s) => s.type === "built-in") ? initial : [BUILT_IN_INBOX, ...initial];
+}
+
 export function useComposeConfig({
   intentText, onIntentChange, onLaunch, onQuickConfigChange,
   initialNotificationChannels, resetKey, coreAugmentation = "",
@@ -106,13 +112,13 @@ export function useComposeConfig({
   const [connectorsModalOpen, setConnectorsModalOpen] = useState(false);
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [messagingModalOpen, setMessagingModalOpen] = useState(false);
-  const [selectedChannels, setSelectedChannels] = useState<ChannelSpecV2[]>(() => {
-    if (!initialNotificationChannels || initialNotificationChannels.length === 0) {
-      return [BUILT_IN_INBOX];
-    }
-    const hasBuiltIn = initialNotificationChannels.some((s) => s.type === "built-in");
-    return hasBuiltIn ? initialNotificationChannels : [BUILT_IN_INBOX, ...initialNotificationChannels];
-  });
+  const [selectedChannels, setSelectedChannels] = useState<ChannelSpecV2[]>(() =>
+    initialChannels(initialNotificationChannels),
+  );
+  // The reset below re-derives from the CURRENT initial channels without
+  // making them a reset trigger: only a session change resets the composer.
+  const initialChannelsRef = useRef(initialNotificationChannels);
+  initialChannelsRef.current = initialNotificationChannels;
 
   const healthyConnectors = useHealthyConnectors();
 
@@ -131,6 +137,7 @@ export function useComposeConfig({
     setConnectorsModalOpen(false);
     setScheduleModalOpen(false);
     setMessagingModalOpen(false);
+    setSelectedChannels(initialChannels(initialChannelsRef.current));
   }, [resetKey]);
 
   // Flow local quick-config up so the launch path's serializeQuickConfig
