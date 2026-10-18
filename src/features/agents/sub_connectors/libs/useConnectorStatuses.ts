@@ -240,6 +240,9 @@ export function useConnectorStatuses() {
       // and reported success, and the link was gone on the next mount.
       const outcome = await mutateCredentialLink(selectedPersona.id, connectorName, credentialId);
       if (!outcome.applied) {
+        // The queue resolves rather than throws, so this is the only place the
+        // lost write can be counted; the row's linkError reaches no telemetry.
+        silentCatch('useConnectorStatuses:linkCredential')(new Error(outcome.reason));
         // Revert optimistic update -- the link was never persisted
         setStatuses((prev) =>
           prev.map((s) =>

@@ -18,7 +18,13 @@ vi.mock('@/api/system/system', () => ({ sendAppNotification: vi.fn().mockResolve
 vi.mock('@/hooks/design/core/useDesignContextMutator', () => ({
   mutateCredentialLink: vi.fn().mockResolvedValue({ applied: true }),
 }));
+const reported = vi.fn();
+vi.mock('@/lib/silentCatch', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/silentCatch')>()),
+  silentCatch: (context: string) => (err: unknown) => reported(context, err),
+}));
 
+import { mutateCredentialLink } from '@/hooks/design/core/useDesignContextMutator';
 import { useConnectorStatuses } from '../useConnectorStatuses';
 
 function cred(id: string, name: string): CredentialMetadata {
@@ -84,5 +90,20 @@ describe('useConnectorStatuses row identity', () => {
     });
     expect(result.current.statuses[0]?.credentialId).toBe('cred-a');
     expect(healthcheckCredential).not.toHaveBeenCalled();
+  });
+});
+
+describe('useConnectorStatuses link failure', () => {
+  it('a link write the queue reports as not applied reaches telemetry, not only the row', async () => {
+    reported.mockReset();
+    vi.mocked(mutateCredentialLink).mockResolvedValueOnce({ applied: false, reason: 'persona gone' });
+    const { result } = renderHook(() => useConnectorStatuses());
+
+    let ok: boolean | undefined;
+    await act(async () => { ok = await result.current.handleLinkCredential('github', 'cred-b', 'Personal GitHub'); });
+
+    expect(ok).toBe(false);
+    expect(result.current.statuses[0]?.linkError).toContain('persona gone');
+    expect(reported).toHaveBeenCalledWith('useConnectorStatuses:linkCredential', expect.objectContaining({ message: 'persona gone' }));
   });
 });
