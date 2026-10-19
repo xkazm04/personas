@@ -93,6 +93,12 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
       const msg = await addReviewMessage(review.id, 'user', text);
       setMessages((prev) => [...prev, msg]);
       setInput('');
+    } catch (err) {
+      // This was try/finally with no catch: a failed write was an unhandled
+      // rejection (Enter calls handleSend un-awaited) and the reviewer saw the
+      // button re-enable with no sign the reply never reached the thread. The
+      // draft stays in the box so it can be sent again.
+      toastCatch('ReviewDetailPanel:addReviewMessage')(err);
     } finally { setIsSending(false); }
   }, [input, isSending, review.id]);
 
@@ -102,7 +108,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
   );
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void handleSend(); }
     // Number keys 1-9 select suggested actions when input is empty
     if (!input.trim() && e.key >= '1' && e.key <= '9') {
       const idx = parseInt(e.key) - 1;
