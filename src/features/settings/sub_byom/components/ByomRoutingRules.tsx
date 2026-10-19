@@ -19,7 +19,7 @@ interface ByomRoutingRulesProps {
 }
 
 export function ByomRoutingRules({ rules, warnings, onAdd, onUpdate, onRemove }: ByomRoutingRulesProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const s = t.settings.byom;
   return (
     <div className="space-y-4">
@@ -74,7 +74,13 @@ export function ByomRoutingRules({ rules, warnings, onAdd, onUpdate, onRemove }:
                       />
                     </div>
                     <div className="flex items-center gap-2">
-                      <button type="button" onClick={() => onUpdate(idx, { enabled: !rule.enabled })} className="typo-body">
+                      <button
+                        type="button"
+                        onClick={() => onUpdate(idx, { enabled: !rule.enabled })}
+                        aria-pressed={rule.enabled}
+                        aria-label={tx(rule.enabled ? t.common.disable_item : t.common.enable_item, { name: rule.name || s.rule_name_placeholder })}
+                        className="typo-body"
+                      >
                         {rule.enabled
                           ? <ToggleRight className="w-5 h-5 text-emerald-400" />
                           : <ToggleLeft className="w-5 h-5 text-foreground" />
@@ -83,6 +89,7 @@ export function ByomRoutingRules({ rules, warnings, onAdd, onUpdate, onRemove }:
                       <button
                         type="button"
                         onClick={() => onRemove(idx)}
+                        aria-label={`${t.common.delete}: ${rule.name || s.rule_name_placeholder}`}
                         className="text-foreground hover:text-red-400 transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
