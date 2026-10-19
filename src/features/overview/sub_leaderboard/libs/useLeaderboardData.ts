@@ -7,11 +7,6 @@ import { computeLeaderboard, type LeaderboardEntry } from './leaderboardScoring'
  *  `dimensionValues` is aligned to `LeaderboardEntry.dimensions` order. */
 export interface FleetBenchmark {
   dimensionValues: number[]; // [success, health, speed, cost, activity], 0-100
-  successRate: number;
-  avgLatencyMs: number;
-  dailyBurnRate: number;
-  totalExecutions: number;
-  recentExecutions: number;
 }
 
 function computeFleetBenchmark(entries: LeaderboardEntry[]): FleetBenchmark | null {
@@ -21,15 +16,7 @@ function computeFleetBenchmark(entries: LeaderboardEntry[]): FleetBenchmark | nu
   const dimensionValues = Array.from({ length: dimCount }, (_, i) =>
     Math.round(entries.reduce((sum, e) => sum + (e.dimensions[i]?.value ?? 0), 0) / n),
   );
-  const avg = (pick: (e: LeaderboardEntry) => number) => entries.reduce((sum, e) => sum + pick(e), 0) / n;
-  return {
-    dimensionValues,
-    successRate: avg((e) => e.successRate),
-    avgLatencyMs: avg((e) => e.avgLatencyMs),
-    dailyBurnRate: avg((e) => e.dailyBurnRate),
-    totalExecutions: avg((e) => e.totalExecutions),
-    recentExecutions: avg((e) => e.recentExecutions),
-  };
+  return { dimensionValues };
 }
 
 export function useLeaderboardData() {

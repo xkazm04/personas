@@ -22,14 +22,10 @@ export type DimensionKey = 'success' | 'health' | 'speed' | 'cost' | 'activity';
 
 export interface ScoreDimension {
   key: DimensionKey;
-  label: string;
   value: number;   // 0-100 normalized
-  weight: number;  // 0-1 (sums to 1)
-  raw: string;     // human-readable raw value (e.g. "94.2%", "$0.03")
 }
 
 export type Medal = 'gold' | 'silver' | 'bronze' | null;
-export type PerformanceTier = 'elite' | 'strong' | 'average' | 'developing';
 
 export interface LeaderboardEntry {
   personaId: string;
@@ -40,17 +36,11 @@ export interface LeaderboardEntry {
   rank: number;
   compositeScore: number; // 0-100
   medal: Medal;
-  tier: PerformanceTier;
 
   dimensions: ScoreDimension[];
-  trend: 'improving' | 'stable' | 'degrading';
 
-  // Raw stats for display
-  totalExecutions: number;
-  recentExecutions: number;
+  /** Composite tiebreaker in `computeLeaderboard`'s sort. */
   successRate: number;
-  avgLatencyMs: number;
-  dailyBurnRate: number;
 }
 
 // ── Weights ────────────────────────────────────────────────────────────
@@ -92,13 +82,6 @@ function assignMedal(rank: number): Medal {
   if (rank === 2) return 'silver';
   if (rank === 3) return 'bronze';
   return null;
-}
-
-function assignTier(score: number): PerformanceTier {
-  if (score >= 80) return 'elite';
-  if (score >= 60) return 'strong';
-  if (score >= 40) return 'average';
-  return 'developing';
 }
 
 // ── Main computation ───────────────────────────────────────────────────
@@ -147,16 +130,12 @@ export function computeLeaderboard(signals: PersonaHealthSignal[]): LeaderboardE
       parts.reduce((sum, [v, w]) => sum + v * w, 0) / totalWeight,
     );
 
-    const costPerExec = signal.totalExecutions > 0
-      ? signal.dailyBurnRate / Math.max(1, signal.recentExecutions / 7)
-      : 0;
-
     const dimensions: ScoreDimension[] = [
-      { key: 'success', label: 'Success', value: successScore, weight: WEIGHTS.success, raw: `${signal.successRate.toFixed(1)}%` },
-      { key: 'health', label: 'Health', value: healthScore, weight: WEIGHTS.health, raw: `${signal.heartbeatScore}/100` },
-      { key: 'speed', label: 'Speed', value: speedScore, weight: WEIGHTS.speed, raw: signal.avgLatencyMs > 0 ? `${(signal.avgLatencyMs / 1000).toFixed(1)}s` : '—' },
-      { key: 'cost', label: 'Cost', value: costScore, weight: WEIGHTS.cost, raw: costPerExec > 0 ? `$${costPerExec.toFixed(3)}` : '—' },
-      { key: 'activity', label: 'Activity', value: activityScore, weight: WEIGHTS.activity, raw: `${signal.recentExecutions} / 7d` },
+      { key: 'success', value: successScore },
+      { key: 'health', value: healthScore },
+      { key: 'speed', value: speedScore },
+      { key: 'cost', value: costScore },
+      { key: 'activity', value: activityScore },
     ];
 
     return {
@@ -167,14 +146,8 @@ export function computeLeaderboard(signals: PersonaHealthSignal[]): LeaderboardE
       rank: 0, // filled after sorting
       compositeScore: composite,
       medal: null, // filled after sorting
-      tier: assignTier(composite),
       dimensions,
-      trend: signal.failureTrend,
-      totalExecutions: signal.totalExecutions,
-      recentExecutions: signal.recentExecutions,
       successRate: signal.successRate,
-      avgLatencyMs: signal.avgLatencyMs,
-      dailyBurnRate: signal.dailyBurnRate,
     };
   });
 
