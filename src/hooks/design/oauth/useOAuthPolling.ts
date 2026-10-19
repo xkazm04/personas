@@ -19,7 +19,7 @@ export interface OAuthStartResult {
 }
 
 import type { OAuthSessionStatus } from '@/lib/bindings/OAuthSessionStatus';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 
 
 /** Minimum shape a poll result must satisfy. */
@@ -202,7 +202,10 @@ export function useOAuthPolling<
 
     // Abort any existing poll from a previous session and invalidate its generation
     abortRef.current?.abort();
-    generationRef.current += 1;
+    const startGen = ++generationRef.current;
+    // reset() (or a newer session) bumps the generation; a start call that
+    // settles after that must not open a consent page or touch state.
+    const superseded = () => startGen !== generationRef.current;
 
     setIsAuthorizing(true);
     setCompletedAt(null);
@@ -221,6 +224,7 @@ export function useOAuthPolling<
 
     withTimeout
       .then(async (oauthStart) => {
+        if (superseded()) return;
         clearStartTimeout();
         const safeAuthUrl = sanitizeExternalUrl(oauthStart.authUrl);
         if (!safeAuthUrl) {
@@ -244,6 +248,7 @@ export function useOAuthPolling<
           throw new Error(interpolate(getActiveTranslations().errors.oauth_popup_blocked, { provider: currentLabel() }));
         }
 
+        if (superseded()) return;
         setMessage({
           success: false,
           message: interpolate(getActiveTranslations().errors.oauth_consent_opened, { provider: currentLabel() }),
@@ -252,6 +257,7 @@ export function useOAuthPolling<
       })
       .catch((err) => {
         silentCatch("hooks/design/oauth/useOAuthPolling:catch3")(err);
+        if (superseded()) return;
         clearStartTimeout();
         setSessionId(null);
         setIsAuthorizing(false);
@@ -291,17 +297,8 @@ export function useOAuthPolling<
   return { getValues, valuesVersion, isAuthorizing, completedAt, message, startConsent, reset };
 }
 
-/** Pull a human-readable message out of a Tauri IPC rejection.
- *  Tauri's `AppError` serialises to `{ error: string, kind?: string }` —
- *  the bare `instanceof Error` / `typeof string` checks miss this shape
- *  and the user gets "unknown error" instead of the actionable message. */
+/** A Tauri IPC rejection is the `{ error, kind }` AppError envelope, which
+ *  `extractMessage` reads; an empty one falls back to the catalog's copy. */
 function extractErrorDetail(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  if (typeof err === 'string') return err;
-  if (err && typeof err === 'object') {
-    const obj = err as Record<string, unknown>;
-    if (typeof obj.error === 'string' && obj.error.length > 0) return obj.error;
-    if (typeof obj.message === 'string' && obj.message.length > 0) return obj.message;
-  }
-  return getActiveTranslations().errors.oauth_unknown_error;
+  return extractMessage(err) || getActiveTranslations().errors.oauth_unknown_error;
 }
