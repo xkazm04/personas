@@ -63,7 +63,7 @@ export default function SidebarLevel1({
   const isDark = useIsDarkTheme();
   const tier = useTier();
   const labelOf = useSidebarLabels();
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   // Theme-synced L1 active: light uses stronger styling, dark uses subtler
   const l1ActiveClass = isDark
     ? 'bg-primary/10 border border-primary/20'
@@ -90,7 +90,9 @@ export default function SidebarLevel1({
           id: 'pending-reviews',
           priority: 1,
           active: pendingReviewCount > 0,
-          label: `${pendingReviewCount} pending review${pendingReviewCount !== 1 ? 's' : ''}`,
+          // Same catalog strings the sidebar's live region announces, so the
+          // tooltip and the announcement agree in every locale.
+          label: tx(pendingReviewCount === 1 ? t.sidebar.pending_reviews_sr : t.sidebar.pending_reviews_sr_other, { count: pendingReviewCount }),
           variant: 'count',
           color: 'bg-amber-500 shadow-amber-500/30',
           count: pendingReviewCount,
@@ -99,7 +101,7 @@ export default function SidebarLevel1({
           id: 'unread-messages',
           priority: 1,
           active: unreadReportCount > 0,
-          label: `${unreadReportCount} unread message${unreadReportCount !== 1 ? 's' : ''}`,
+          label: tx(unreadReportCount === 1 ? t.sidebar.unread_reports_sr : t.sidebar.unread_reports_sr_other, { count: unreadReportCount }),
           variant: 'count',
           color: 'bg-blue-500 shadow-blue-500/30',
           count: unreadReportCount,
@@ -184,7 +186,7 @@ export default function SidebarLevel1({
     setContextScanComplete, studioJobActive,
     obsidianRevitalizeRunning, obsidianRevitalizeJustCompleted,
     clearObsidianRevitalizeCompletion,
-    whatsNewUpdate, dismissWhatsNew, t,
+    whatsNewUpdate, dismissWhatsNew, t, tx,
   ]);
 
   // Per-persona activity dots for Agents — one per task (draft / exec / lab).

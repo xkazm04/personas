@@ -39,6 +39,14 @@ describe('command palette + sidebar copy is translated', () => {
     expect(src).toContain('t.sidebar.navigation_drawer');
   });
 
+  it('labels the rail count badges through the catalog', () => {
+    const src = read('src/features/shared/chrome/sidebar/SidebarLevel1.tsx');
+    expect(src).not.toContain('pending review${');
+    expect(src).not.toContain('unread message${');
+    expect(src).toContain('t.sidebar.pending_reviews_sr_other');
+    expect(src).toContain('t.sidebar.unread_reports_sr_other');
+  });
+
   it('has every new key in all 14 locales', () => {
     for (const code of LOCALES) {
       const json = JSON.parse(read(`src/i18n/locales/${code}.json`)) as {
