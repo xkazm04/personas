@@ -5,10 +5,3 @@ export {
   getSectionSummary,
   diffStrings,
 } from './labPrimitives';
-export {
-  getChartTheme,
-  useChartTheme,
-  seriesColor,
-  seriesFillColor,
-  type ChartTheme,
-} from './chartTheme';
