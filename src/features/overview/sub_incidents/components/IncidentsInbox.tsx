@@ -204,7 +204,7 @@ export default function IncidentsInbox() {
             filters={filters}
             onApplyFilters={(next) => { setFilters(next); setShowAutonomous(false); }}
             autonomous={{
-              count: autonomous.incidents.length,
+              count: autonomous.failed && autonomous.incidents.length === 0 ? null : autonomous.incidents.length,
               active: showAutonomous,
               onToggle: () => setShowAutonomous((v) => !v),
             }}
@@ -215,6 +215,8 @@ export default function IncidentsInbox() {
           <AutonomousLogPanel
             incidents={autonomous.incidents}
             loading={autonomous.loading}
+            failed={autonomous.failed}
+            onRetry={() => void autonomous.refresh()}
             onOpenIncident={openDetail}
             onBack={() => setShowAutonomous(false)}
           />
