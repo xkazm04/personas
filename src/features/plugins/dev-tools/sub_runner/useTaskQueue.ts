@@ -56,6 +56,23 @@ export interface UseTaskQueueResult {
   contextWarnings: Record<string, string[]>;
 }
 
+/**
+ * Which body the queue paints. The one rule that matters: a failed page read
+ * is never spelled as an empty queue. `error` had no reader, so a failed
+ * `tasksPage` rendered "No tasks queued" with its create-a-batch CTA.
+ * Loaded rows win over both, so a failed refresh never hides them.
+ */
+export function resolveQueueBody(state: {
+  loading: boolean;
+  error: string | null;
+  rowCount: number;
+}): 'list' | 'loading' | 'error' | 'empty' {
+  if (state.rowCount > 0) return 'list';
+  if (state.loading) return 'loading';
+  if (state.error) return 'error';
+  return 'empty';
+}
+
 function normalizeStatus(status: string): TaskStatus {
   return (TASK_STATUSES as readonly string[]).includes(status) ? (status as TaskStatus) : 'queued';
 }

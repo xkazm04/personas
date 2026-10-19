@@ -4,6 +4,7 @@ import { ContentBox, ContentBody } from '@/features/shared/components/layout/Con
 import { DevToolsPageHeader } from '../DevToolsPageHeader';
 import { Button } from '@/features/shared/components/buttons';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -19,7 +20,7 @@ import { TaskModal, type TaskDraft } from './TaskModal';
 import { AutoRunBanner } from './AutoRunBanner';
 import { RunDeskControls } from './RunDeskControls';
 import {
-  useTaskQueue, normalizeStatus, TASK_STATUSES,
+  useTaskQueue, normalizeStatus, resolveQueueBody, TASK_STATUSES,
   type TaskStatus, type TaskStatusFilter,
 } from './useTaskQueue';
 import type { DevTask } from '@/lib/bindings/DevTask';
@@ -155,6 +156,7 @@ export default function RunDeskPage() {
   const overallProgress = total > 0 ? (settled / total) * 100 : 0;
 
   const filters: TaskStatusFilter[] = useMemo(() => ['all', ...TASK_STATUSES], []);
+  const queueBody = resolveQueueBody({ loading: queue.loading, error: queue.error, rowCount: tasks.length });
 
   return (
     <ContentBox>
@@ -247,11 +249,13 @@ export default function RunDeskPage() {
               {tx(dr.task_queue_count, { count: total })}
             </h3>
 
-            {queue.loading ? (
+            {queueBody === 'loading' ? (
               <div className="flex justify-center py-16">
                 <LoadingSpinner size="sm" />
               </div>
-            ) : tasks.length === 0 ? (
+            ) : queueBody === 'error' ? (
+              <InlineErrorBanner message={queue.error ?? t.common.unknown_error} onRetry={reload} />
+            ) : queueBody === 'empty' ? (
               <div className="border border-dashed border-primary/10 rounded-modal">
                 <EmptyState
                   icon={Play}
