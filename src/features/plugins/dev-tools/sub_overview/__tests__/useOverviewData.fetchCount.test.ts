@@ -117,3 +117,56 @@ describe('useOverviewData fetch count', () => {
     expect(result.current.activeRepoCredId).toBe('gh2');
   });
 });
+
+describe('useOverviewData project switch', () => {
+  function deferred<T>() {
+    let resolve!: (v: T) => void;
+    const promise = new Promise<T>((r) => { resolve = r; });
+    return { promise, resolve };
+  }
+  const stats = (openIssues: number) => ({
+    openIssues, openPullRequests: 0, commitsLastWeek: 1, defaultBranch: 'main', lastPushAt: null,
+  });
+
+  it("a slow response for the previous project never lands on the new one", async () => {
+    const p1 = deferred<ReturnType<typeof stats>>();
+    fetchGitHubStats.mockImplementation((_cred: string, _owner: string, repo: string) =>
+      repo === 'one' ? p1.promise : Promise.resolve(stats(2)));
+    state = {
+      ...state,
+      activeProjectId: 'p1',
+      projects: [
+        { ...project(), id: 'p1', github_url: 'https://github.com/acme/one' },
+        { ...project(), id: 'p2', github_url: 'https://github.com/acme/two' },
+      ],
+    };
+    const { result } = renderHook(() => useOverviewData());
+    await settle();
+
+    act(() => setState({ activeProjectId: 'p2' }));
+    await waitFor(() => expect(result.current.repoStats?.openIssues).toBe(2));
+
+    await act(async () => { p1.resolve(stats(111)); await Promise.resolve(); });
+    await settle();
+    expect(result.current.repoStats?.openIssues).toBe(2);
+  });
+
+  it("a project with no repo link does not show the previous project's numbers", async () => {
+    state = {
+      ...state,
+      activeProjectId: 'p1',
+      projects: [
+        { ...project(), id: 'p1' },
+        { ...project(), id: 'p3', github_url: null, monitoring_credential_id: null, monitoring_project_slug: null },
+      ],
+    };
+    const { result } = renderHook(() => useOverviewData());
+    await waitFor(() => expect(result.current.repoStats).not.toBeNull());
+    await waitFor(() => expect(result.current.monitorStats).not.toBeNull());
+
+    act(() => setState({ activeProjectId: 'p3' }));
+    await settle();
+    expect(result.current.repoStats).toBeNull();
+    expect(result.current.monitorStats).toBeNull();
+  });
+});

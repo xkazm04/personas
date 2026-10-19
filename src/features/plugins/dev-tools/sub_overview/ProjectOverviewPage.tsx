@@ -514,10 +514,11 @@ export default function ProjectOverviewPage() {
                   <SentryProjectPicker
                     credentials={sentryCreds}
                     projectId={activeProject.id}
-                    onLinked={() => {
-                      refresh();
-                      setTimeout(() => loadMonitorStats(), 500);
-                    }}
+                    // No delayed loadMonitorStats(): that closure predates the
+                    // link (no credential id), so 500 ms later it re-marked the
+                    // freshly linked project 'unmapped'. The refetched project's
+                    // new monitoring fields re-run the load by themselves.
+                    onLinked={() => refresh()}
                   />
                 )}
                 {monitorState === 'error' && (
