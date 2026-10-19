@@ -16,7 +16,7 @@
  * title is not its template's name: 0 of 100 linked recipes matched) and
  * every template whose seed row was written in a language other than English.
  */
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 import { listDesignReviewsPaginated } from '@/api/overview/reviews';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
@@ -25,6 +25,7 @@ import { useI18nStore } from '@/stores/i18nStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 
 /** Wide enough that a name shared by several templates still contains the
  *  exact id we are after; the match itself is always by id, never by name. */
@@ -59,6 +60,9 @@ export function useExploreAdoption() {
   const addToast = useToastStore((s) => s.addToast);
   const [review, setReview] = useState<PersonaDesignReview | null>(null);
   const [resolvingId, setResolvingId] = useState<string | null>(null);
+  // Only the latest pick may open the wizard or toast: a slower lookup for an
+  // earlier row used to land last and replace the row the user picked after it.
+  const latest = useRef(createLatestWins()).current;
 
   const openAdopt = useCallback(
     async (templateId: string | null, name: string) => {
@@ -66,24 +70,27 @@ export function useExploreAdoption() {
         addToast(tx(t.explore.adopt_no_template, { name }), 'warning');
         return;
       }
+      const token = latest.next();
       setResolvingId(templateId);
       try {
         let match: PersonaDesignReview | null = null;
         for (const search of await seedNamesFor(templateId, name)) {
           const page = await listDesignReviewsPaginated({ search, perPage: LOOKUP_PAGE });
+          if (!latest.isCurrent(token)) return;
           match = page.items.find((r) => r.test_case_id === templateId) ?? null;
           if (match) break;
         }
+        if (!latest.isCurrent(token)) return;
         if (match) setReview(match);
         else addToast(tx(t.explore.adopt_not_found, { name }), 'warning');
       } catch (err) {
         silentCatch('useExploreAdoption:listDesignReviewsPaginated')(err);
-        addToast(tx(t.explore.adopt_failed, { name }), 'error');
+        if (latest.isCurrent(token)) addToast(tx(t.explore.adopt_failed, { name }), 'error');
       } finally {
-        setResolvingId(null);
+        if (latest.isCurrent(token)) setResolvingId(null);
       }
     },
-    [addToast, t, tx],
+    [addToast, t, tx, latest],
   );
 
   return {

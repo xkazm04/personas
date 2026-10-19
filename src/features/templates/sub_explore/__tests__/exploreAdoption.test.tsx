@@ -28,9 +28,13 @@ vi.mock('@/stores/i18nStore', () => ({
   useI18nStore: { getState: () => ({ language: language.current }) },
 }));
 vi.mock('@/lib/personas/templates/templateCatalog', () => ({
-  getTemplateCatalog: async () => [{ id: 'email-digest', name: 'Email Morning Digest' }],
+  getTemplateCatalog: async () => [
+    { id: 'email-digest', name: 'Email Morning Digest' },
+    { id: 'invoice-reader', name: 'Invoice Reader' },
+  ],
   getLocalizedTemplateCatalog: async (lang: string) => [
     { id: 'email-digest', name: lang === 'cs' ? 'Ranní souhrn e-mailů' : 'Email Morning Digest' },
+    { id: 'invoice-reader', name: 'Invoice Reader' },
   ],
 }));
 
@@ -71,6 +75,7 @@ vi.mock('../level2/DomainLevel2', () => ({
   }) => (
     <div>
       <button type="button" data-testid="pick-template" onClick={() => onSelect?.({ id: 'email-digest', name: 'Email Morning Digest' })}>t</button>
+      <button type="button" data-testid="pick-template-2" onClick={() => onSelect?.({ id: 'invoice-reader', name: 'Invoice Reader' })}>t2</button>
       <button type="button" data-testid="pick-recipe-linked" onClick={() => onSelectRecipe?.({ sourceTemplateId: 'email-digest', name: 'Digest at 8am' })}>r1</button>
       <button type="button" data-testid="pick-recipe-orphan" onClick={() => onSelectRecipe?.({ sourceTemplateId: null, name: 'Orphan recipe' })}>r2</button>
     </div>
@@ -116,6 +121,27 @@ describe('Explore pick opens adoption', () => {
 
     await waitFor(() => expect(screen.getByTestId('adopt-wizard')).toBeTruthy());
     expect(screen.getByTestId('adopt-wizard').getAttribute('data-review')).toBe('review-1');
+    expect(addToast).not.toHaveBeenCalled();
+  });
+
+  it('opens the row picked last even when an earlier lookup lands after it', async () => {
+    const calls: Array<{ search: string; resolve: (v: unknown) => void }> = [];
+    listDesignReviewsPaginated.mockImplementation(
+      ({ search }: { search: string }) => new Promise((resolve) => { calls.push({ search, resolve }); }),
+    );
+    await openDomain();
+    fireEvent.click(screen.getByTestId('pick-template'));
+    await waitFor(() => expect(calls).toHaveLength(1));
+    fireEvent.click(screen.getByTestId('pick-template-2'));
+    await waitFor(() => expect(calls).toHaveLength(2));
+
+    const invoice = review({ id: 'review-2', test_case_id: 'invoice-reader', test_case_name: 'Invoice Reader' });
+    calls[1]!.resolve({ items: [invoice], total: 1 });
+    await waitFor(() => expect(screen.getByTestId('adopt-wizard').getAttribute('data-review')).toBe('review-2'));
+
+    calls[0]!.resolve({ items: [review()], total: 1 });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(screen.getByTestId('adopt-wizard').getAttribute('data-review')).toBe('review-2');
     expect(addToast).not.toHaveBeenCalled();
   });
 
