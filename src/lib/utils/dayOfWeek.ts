@@ -33,7 +33,7 @@ export const DAY_NAME_TO_NUM: Readonly<Record<string, number>> = {
   mon: 1, monday: 1,
   tue: 2, tuesday: 2,
   wed: 3, wednesday: 3,
-  thu: 4, thursday: 4,
+  thu: 4, thur: 4, thurs: 4, thursday: 4,
   fri: 5, friday: 5,
   sat: 6, saturday: 6,
 };
@@ -61,7 +61,7 @@ export function findDayOfWeekInText(input: string): string | null {
 
   let best: { index: number; length: number; num: number } | null = null;
   for (const [name, num] of Object.entries(DAY_NAME_TO_NUM)) {
-    const match = new RegExp(`\\b${name}s?\\b`).exec(lower);
+    const match = firstDayMention(lower, name);
     if (!match) continue;
     if (
       !best ||
@@ -72,4 +72,26 @@ export function findDayOfWeekInText(input: string): string | null {
     }
   }
   return best ? String(best.num) : null;
+}
+
+/**
+ * Abbreviations that are also ordinary English words. The NL trigger parser
+ * hands {@link findDayOfWeekInText} the whole sentence, so "... at 7am before I
+ * go in the sun" used to resolve to Sunday and save a daily request as a weekly
+ * schedule. These count as a day only where a day can stand: at the start of
+ * the text, after a scheduling word (on / every / each / next / this / and /
+ * or), or after a list separator.
+ */
+const AMBIGUOUS_DAY_WORDS: ReadonlySet<string> = new Set(['sun', 'sat']);
+const DAY_CONTEXT_BEFORE = /(?:^|\b(?:on|every|each|next|this|and|or)|[,&/-])\s*$/;
+
+/** First occurrence of `name` (optionally plural) that reads as a day. */
+function firstDayMention(lower: string, name: string): { index: number } | null {
+  const re = new RegExp(`\\b${name}s?\\b`, 'g');
+  for (let m = re.exec(lower); m; m = re.exec(lower)) {
+    if (!AMBIGUOUS_DAY_WORDS.has(name) || DAY_CONTEXT_BEFORE.test(lower.slice(0, m.index))) {
+      return { index: m.index };
+    }
+  }
+  return null;
 }
