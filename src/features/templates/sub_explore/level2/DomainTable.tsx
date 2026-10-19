@@ -108,7 +108,15 @@ export function DomainTable({ templates, recipes, loading, accent, onSelect, onS
           <tbody>
             {rows.map((r) => (
               <tr key={`${r.kind}-${r.id}`} onClick={() => clickRow(r)}
-                className="border-b border-primary/5 last:border-0 hover:bg-secondary/20 cursor-pointer">
+                // The row is the only door into adoption: keyboard users reach it too.
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter' && e.key !== ' ') return;
+                  e.preventDefault();
+                  clickRow(r);
+                }}
+                data-testid={`explore-row-${r.kind}-${r.id}`}
+                className="border-b border-primary/5 last:border-0 hover:bg-secondary/20 focus-visible:outline-none focus-visible:bg-secondary/30 cursor-pointer">
                 <td className="px-3 py-2 typo-body template-name-themed">{r.name}</td>
                 <td className="px-3 py-2">
                   <span className="inline-flex items-center gap-1 typo-caption text-foreground opacity-70">
