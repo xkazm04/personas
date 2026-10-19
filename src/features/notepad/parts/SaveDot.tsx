@@ -16,7 +16,10 @@ export function SaveDot({ state }: { state: NoteSaveState }) {
   const { t } = useTranslation();
   if (state === 'clean') return null;
   return (
+    // `role="img"`: an aria-label on a role-less span is not exposed, so the
+    // dot said nothing to a screen reader.
     <span
+      role="img"
       className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${SAVE_DOT[state]}`}
       data-testid={`notepad-save-${state}`}
       aria-label={
