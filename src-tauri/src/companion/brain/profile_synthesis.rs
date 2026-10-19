@@ -381,12 +381,7 @@ fn insert_identity_approval(
 }
 
 fn short_id() -> String {
-    uuid::Uuid::new_v4()
-        .simple()
-        .to_string()
-        .chars()
-        .take(12)
-        .collect()
+    crate::companion::util::short_id(12)
 }
 
 #[cfg(test)]
