@@ -137,8 +137,11 @@ describe('getTriggerTypeLabel — one vocabulary, one language', () => {
   // the add-trigger menu (`getTriggerTypeOptions`) and English ones in the status
   // summary. Both must now read the same `triggers.type_*` keys.
   it('reads the supplied catalog, not the English fallback copy', () => {
+    // No `...en` spread: since English joined the lazy section path (257dc68706)
+    // `en` is a shim that throws on any section whose chunk is not loaded, and a
+    // spread reads every one of them ("en.director was read before its chunk
+    // loaded"), so this test failed before reaching its assertion.
     const translated = {
-      ...en,
       triggers: Object.fromEntries(
         TRIGGER_KINDS.map((kind) => [`type_${kind}`, `xx-${kind}`]),
       ),
