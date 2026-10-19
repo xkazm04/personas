@@ -71,13 +71,18 @@ export function classifyEmbeddedAnomaly(metadata: string | null): EmbeddedAnomal
  * Returns the latest evaluation log for UI consumption.
  */
 export function useRemediationEvaluator() {
-  const credentials = useVaultStore((s) => s.credentials);
   const [lastEvaluation, setLastEvaluation] = useState<EvaluationResult[]>([]);
   const [evaluating, setEvaluating] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const mountedRef = useRef(true);
 
+  // Reads the store at call time instead of closing over a subscribed
+  // `credentials` array. With the array in the deps, every store write that
+  // produced a new array (fetch, metadata patch, rename, tag edit) re-created
+  // `evaluate`, tore the timer effect down and re-armed its 15 s start timer:
+  // the ladder ran 15 s after each write instead of every 30 min.
   const evaluate = useCallback(async () => {
+    const credentials = useVaultStore.getState().credentials;
     if (credentials.length < MIN_CREDENTIALS) return;
     setEvaluating(true);
 
@@ -146,7 +151,7 @@ export function useRemediationEvaluator() {
       setLastEvaluation(results);
       setEvaluating(false);
     }
-  }, [credentials]);
+  }, []);
 
   // Start periodic evaluation
   useEffect(() => {
