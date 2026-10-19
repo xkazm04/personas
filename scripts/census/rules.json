@@ -103,8 +103,8 @@
         }
       ],
       "baseline": {
-        "files": 121,
-        "matches": 167
+        "files": 118,
+        "matches": 163
       },
       "floor": 2500
     },
@@ -242,8 +242,8 @@
         "description": "a rusqlite query_map row iterator reduced by filter_map(|r| r.ok()) / filter_map(Result::ok) / .flatten() — the row and the evidence both disappear and the caller still gets Ok. Anchored to query_map because all three are generic Rust idioms; unanchored, .flatten() alone matches hundreds of Option chains. PROXY FOR the stack-free condition \"a row-set read discards a per-row mapping failure without recording it\" — an adopting repo must re-derive its own proxy (see the golden path §9). PRECONDITION: this repo reduces row iterators with iterator adapters within ~700 chars of the query_map( call and does not wrap them in helpers. 8/8 sampled matches were true positives; 4 of the 148 sit in #[cfg(test)] modules and are carried in the baseline rather than excluded, because excluding them means excluding three whole production files. The two legal policies are `collect::<Result<Vec<_>,_>>()` (propagate) and `collect_rows(rows, \"table::op\")` (skip AND log)."
       },
       "baseline": {
-        "files": 70,
-        "matches": 143
+        "files": 65,
+        "matches": 131
       },
       "floor": 900
     },
@@ -441,8 +441,8 @@
         }
       ],
       "baseline": {
-        "files": 34,
-        "matches": 50
+        "files": 33,
+        "matches": 49
       },
       "floor": 4000
     },
@@ -519,8 +519,8 @@
         }
       ],
       "baseline": {
-        "files": 31,
-        "matches": 37
+        "files": 30,
+        "matches": 36
       },
       "floor": 4000
     },
@@ -1857,7 +1857,7 @@
       ],
       "baseline": {
         "files": 73,
-        "matches": 106
+        "matches": 104
       },
       "floor": 4000
     },
@@ -3997,6 +3997,14 @@
         {
           "path": "src/features/teams/sub_teamWorkspace/teamStudio/modelOptions.ts",
           "reason": "the mirror is TETHERED, not comment-kept: the team studio picker's concrete model ids are gated by teamStudio/__tests__/modelOptionsParity.test.ts, which reads HAIKU_CURRENT / SONNET_CURRENT / OPUS_CURRENT out of src-tauri/core/src/model_ids.rs at run time and fails when an option's id differs (the webhookPatternParity precedent). Extracted from TeamWorkspacePane.tsx so the exclusion covers the four-line list, not a component"
+        },
+        {
+          "path": "src/api/agents/automations.ts",
+          "reason": "TETHERED mirror (repo law): AUTOMATION_MAX_ATTEMPTS / _MIN_ATTEMPT_MS / _MAX_BACKOFF_MS size the trigger/test IPC wait from the backend run budget (engine/src/automation_runner.rs invoke_automation); src/api/agents/__tests__/automationRunTimeoutParity.test.ts reads those Rust figures at run time, so the two cannot drift (scan-sweep 2026-10-19, ecc37bc973)"
+        },
+        {
+          "path": "src/api/agents/__tests__/automationRunTimeoutParity.test.ts",
+          "reason": "the parity test that tethers the automations.ts mirror: its comment names the Rust source it reads, it does not declare a second copy of the rule"
         }
       ],
       "baseline": {
@@ -4332,8 +4340,8 @@
         }
       ],
       "baseline": {
-        "files": 6,
-        "matches": 9
+        "files": 5,
+        "matches": 6
       },
       "floor": 900
     },
@@ -5514,8 +5522,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 98,
-        "matches": 801
+        "files": 95,
+        "matches": 774
       },
       "floor": 100
     },
@@ -5538,7 +5546,7 @@
       "exclude": [],
       "baseline": {
         "files": 62,
-        "matches": 278
+        "matches": 277
       },
       "floor": 100
     },
