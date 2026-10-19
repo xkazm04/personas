@@ -1,7 +1,7 @@
 import { reportFrontendCrash } from "@/api/system/system";
 import { sanitizeErrorMessage } from "@/lib/utils/sanitizers/maskSensitive";
 import { createLogger } from "@/lib/log";
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 
 
@@ -90,7 +90,11 @@ export function persistCrash(
   error: unknown,
   componentStack?: string,
 ): void {
-  const rawMessage = error instanceof Error ? error.message : String(error);
+  // `extractMessage`, not `String(error)`: the `unhandledrejection` caller in
+  // main.tsx passes whatever a promise rejected with, and an un-awaited IPC call
+  // rejects with a serialized AppError object, which `String()` turns into
+  // "[object Object]" -- the whole crash message, on the log the user reads.
+  const rawMessage = error instanceof Error ? error.message : extractMessage(error);
   const rawStack = error instanceof Error ? error.stack?.slice(0, 2000) : undefined;
   const rawCompStack = componentStack?.slice(0, 1000);
 

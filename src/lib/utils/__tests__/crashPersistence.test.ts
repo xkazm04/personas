@@ -69,4 +69,18 @@ describe('crash persistence survives its own storage', () => {
     expect(() => readCrashLogs()).not.toThrow();
     expect(readCrashLogs()).toEqual([]);
   });
+
+  // `unhandledrejection` hands persistCrash whatever the promise rejected with,
+  // and an un-awaited IPC call rejects with a serialized AppError OBJECT, never
+  // an Error. `String(error)` stored "[object Object]" as the crash message --
+  // on the crash log the user and the backend both read.
+  it('keeps the message of an IPC AppError rejection', () => {
+    persistCrash('unhandledrejection', { error: 'Persona abc was not found', kind: 'not_found' });
+
+    const stored = JSON.parse(localStorage.getItem(CRASH_STORAGE_KEY) ?? '[]') as Array<{
+      message: string;
+    }>;
+    expect(stored[0]!.message).toBe('Persona abc was not found');
+    expect(stored[0]!.message).not.toContain('[object Object]');
+  });
 });
