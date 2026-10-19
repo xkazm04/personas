@@ -43,7 +43,9 @@ export function ActivityFilters({
       <div className="flex gap-1">
         {FILTER_TABS.map((tab) => {
           const isActive = filter === tab.id;
-          const label = tab.id === 'attention' ? t.agents.life.activity_filter_attention : tab.label;
+          // Six of these labels were English literals while their translated
+          // catalog (`agents.activity_filters`, all 14 locales) had no reader.
+          const label = tab.labelKey ? t.agents.activity_filters[tab.labelKey] : t.agents.life.activity_filter_attention;
           return (
             <button
               type="button"
