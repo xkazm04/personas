@@ -20340,7 +20340,11 @@
           "revision": 1,
           "changedAt": "2026-09-07",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/core/src/models/llm_spend.rs:18 These models record operational usage and provider spend; searches found no billing, graduated, pricing_model, or grouping_key matches in the context directory, so seller-side pricing requirements do not apply.",
+          "evaluatedAt": "2026-10-19",
+          "evaluatedAgainst": "sha256-b2:19da164d50059c7d",
+          "evaluatedRevision": 1
         },
         {
           "subject": "llm-call-telemetry-model",
@@ -23072,7 +23076,11 @@
           "revision": 1,
           "changedAt": "2026-09-07",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/overview/sub_usage/libs/pivotToolUsage.ts:35 The module aggregates invocation counts and renders metrics; searches found no billing, graduated, pricing_model, or grouping_key matches in its directory, so it does not implement seller-side usage pricing.",
+          "evaluatedAt": "2026-10-19",
+          "evaluatedAgainst": "sha256-b2:19da164d50059c7d",
+          "evaluatedRevision": 1
         },
         {
           "subject": "metrics-rollups",

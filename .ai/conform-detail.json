@@ -30093,6 +30093,68 @@
         "at": "2026-10-19T08:19:54.388509+00:00",
         "reason": "reviewer (sonnet): The ucPicker.tsx:73, ucCardHeader.tsx:71 and ucRouteToggle.tsx:33 anchors are confirmed, but the technique anchor commandCenterParts.tsx:24 sits in the chronology directory, which is not among this context's files, so the verdict rests partly on another context's code."
       }
+    },
+    "a7ece012-8300-4780-b286-b9cea81801fc/usage-pricing-models": {
+      "context": "observability-audit-models",
+      "subject": "usage-pricing-models",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-19",
+      "evaluatedTs": "2026-10-19T08:45:02.248Z",
+      "worker": "51ab9be7-9ac1-4066-9252-9a8872e37cdf",
+      "techniques": [
+        {
+          "technique": "advance-billing-refuses-retroactive-models",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/llm_spend.rs:31 The record describes a completed call's telemetry; no usage-charge billing timing or retroactive pricing model was found."
+        },
+        {
+          "technique": "exact-money-with-one-rounding-boundary",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/llm_spend.rs:30 This holds provider-reported spend, which the standard excludes as payer-side cost metering; it is not a seller's priced line."
+        },
+        {
+          "technique": "grouping-key-reruns-the-ladder",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/llm_spend.rs:70 Grouping is cost attribution for dashboard rollups, an explicit exclusion in this technique."
+        },
+        {
+          "technique": "inferred-tier-boundary-convention",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/llm_spend.rs:21 These tiers classify call sources rather than numeric price ranges; no pricing ladder was found."
+        }
+      ]
+    },
+    "7901fd6c-0346-430b-aefe-fc4cd623b167/usage-pricing-models": {
+      "context": "overview-usage-charts",
+      "subject": "usage-pricing-models",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-19",
+      "evaluatedTs": "2026-10-19T08:45:02.248Z",
+      "worker": "51ab9be7-9ac1-4066-9252-9a8872e37cdf",
+      "techniques": [
+        {
+          "technique": "advance-billing-refuses-retroactive-models",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:41 Period comparison copies historical values into chart series; it does not choose charge timing or collect money."
+        },
+        {
+          "technique": "exact-money-with-one-rounding-boundary",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_usage/components/ChartTooltip.tsx:18 This formats a tooltip string rather than calculating or persisting a charge, so display precision is not a billing rounding boundary."
+        },
+        {
+          "technique": "grouping-key-reruns-the-ladder",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_usage/libs/pivotToolUsage.ts:35 The tool dimension sums measured invocations for reporting; it does not reset a charge's tiers, allowances, or fees."
+        },
+        {
+          "technique": "inferred-tier-boundary-convention",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_usage/components/MetricChart.tsx:29 The reusable primitive accepts a chart renderer; inspection and searches found no tiered charge or numeric pricing ranges."
+        }
+      ]
     }
   }
 }
