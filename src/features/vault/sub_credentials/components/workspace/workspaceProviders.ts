@@ -79,8 +79,6 @@ export const GOOGLE_WORKSPACE: WorkspaceProvider = {
   ],
 };
 
-export const WORKSPACE_PROVIDERS: WorkspaceProvider[] = [GOOGLE_WORKSPACE];
-
 /** Collect all unique scopes for a set of services. */
 export function aggregateScopes(services: WorkspaceService[]): string[] {
   const set = new Set<string>();
