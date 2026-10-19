@@ -125,23 +125,13 @@ fn record_suppressed_duration(table: &str, duration_ms: u64) {
     }
 }
 
-#[allow(dead_code)]
 struct RingBuffer {
     samples: Vec<QuerySample>,
     head: usize,
     len: usize,
 }
 
-#[allow(dead_code)]
 impl RingBuffer {
-    const fn new() -> Self {
-        Self {
-            samples: Vec::new(),
-            head: 0,
-            len: 0,
-        }
-    }
-
     fn push(&mut self, sample: QuerySample) {
         if self.samples.len() < RING_CAPACITY {
             self.samples.push(sample);

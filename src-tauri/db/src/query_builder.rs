@@ -63,7 +63,6 @@ fn validate_order_direction(dir: &str) -> Result<&'static str, AppError> {
 /// All user-supplied values go through parameter binding (`?N` placeholders),
 /// preventing SQL injection. Column names are **not** parameterised — callers
 /// must validate them (e.g. via allowlist) before passing them in.
-#[allow(dead_code)]
 pub struct QueryBuilder {
     conditions: Vec<String>,
     sets: Vec<String>,
@@ -78,7 +77,6 @@ pub struct QueryBuilder {
     offset_idx: Option<usize>,
 }
 
-#[allow(dead_code)]
 impl QueryBuilder {
     pub fn new() -> Self {
         Self {
@@ -119,14 +117,6 @@ impl QueryBuilder {
         let idx = self.next_idx();
         self.conditions.push(format!("{col} <= ?{idx}"));
         self.params.push(Box::new(val));
-        self
-    }
-
-    /// `column LIKE ?N`
-    pub fn where_like(&mut self, col: &str, pattern: impl ToSql + 'static) -> &mut Self {
-        let idx = self.next_idx();
-        self.conditions.push(format!("{col} LIKE ?{idx}"));
-        self.params.push(Box::new(pattern));
         self
     }
 
@@ -324,13 +314,6 @@ impl QueryBuilder {
         format!("?{idx}")
     }
 
-    /// Add a boxed parameter value and return its `?N` placeholder string.
-    pub fn push_param_boxed(&mut self, val: Box<dyn ToSql>) -> String {
-        let idx = self.next_idx();
-        self.params.push(val);
-        format!("?{idx}")
-    }
-
     // ── Build final SQL fragments ──────────────────────────────────────
 
     /// Returns `"WHERE cond1 AND cond2 ..."` or `""` if no conditions.
@@ -413,11 +396,6 @@ impl QueryBuilder {
     /// Borrow the parameters as `&[&dyn ToSql]` for passing to rusqlite.
     pub fn params_ref(&self) -> Vec<&dyn ToSql> {
         self.params.iter().map(|p| p.as_ref()).collect()
-    }
-
-    /// Consume the builder and return the raw parameter vector.
-    pub fn into_params(self) -> Vec<Box<dyn ToSql>> {
-        self.params
     }
 
     /// Number of bound parameters.
