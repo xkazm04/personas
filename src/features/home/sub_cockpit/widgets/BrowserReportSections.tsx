@@ -4,6 +4,7 @@ import { Hint, ListRow, Rows, Section, type Tone } from '@/features/shared/compo
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 
+import { reviewTone } from './decisionMarks';
 import { Cell, WidgetTable, nameCell, type TableColumn } from './widgetTable';
 
 export interface ReportStep {
@@ -28,7 +29,6 @@ interface DefectRow extends ReportDefect {
 }
 
 const RESULT_TONE: Record<string, Tone> = { pass: 'success', fail: 'error', warn: 'warning' };
-const SEVERITY_TONE: Record<string, Tone> = { critical: 'error', high: 'error', medium: 'warning', low: 'neutral' };
 
 /** A meta line that may truncate: its full text in the kit Hint, never cut silently. */
 function Clipped({ text }: { text: string }) {
@@ -115,7 +115,7 @@ export function BrowserReportSections({ steps, defects, consoleErrors, securityN
             columns={defectColumns}
             rows={defectRows}
             getRowKey={(d) => d.key}
-            rowTone={(d) => SEVERITY_TONE[d.severity ?? 'low'] ?? 'neutral'}
+            rowTone={(d) => reviewTone(d.severity ?? 'low')}
             emptyTitle={c.browser_report_empty}
             label={c.browser_report_defects}
             testId="companion-browser-report-defects"
