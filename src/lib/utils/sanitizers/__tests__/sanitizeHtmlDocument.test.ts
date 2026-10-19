@@ -98,6 +98,27 @@ describe('sanitizeDocumentCss', () => {
     expect(sanitizeDocumentCss('a{background:url("data:image/png;base64,AA")}')).toContain('data:image/png');
     expect(sanitizeDocumentCss('a{background:url(https://x/y.png) no-repeat}')).toBe('a{background:none no-repeat}');
   });
+
+  // Each of these loaded a remote resource past the old regexes: a CSS escape
+  // spells `url(` / `@import` for the tokenizer, `image-set()` takes a bare
+  // string, and an unterminated `url(` is closed at end of input.
+  const BS = String.fromCharCode(92);
+  it.each([
+    ['hex-escaped url(', `a{background:${BS}75 rl(https://evil.com/a.png)}`],
+    ['char-escaped url(', `a{background:u${BS}rl(https://evil.com/a.png)}`],
+    ['hex-escaped @import', `@${BS}69mport "https://evil.com/x.css";`],
+    ['image-set string', 'a{background-image:image-set("https://evil.com/a.png" 1x)}'],
+    ['-webkit-image-set string', "a{background-image:-webkit-image-set('https://evil.com/a.png' 1x)}"],
+    ['unterminated url(', 'a{background:url(https://evil.com/a.png'],
+  ])('drops a remote reference smuggled as %s', (_label, css) => {
+    expect(sanitizeDocumentCss(css)).not.toContain('evil.com');
+  });
+
+  it('leaves escapes that are not name characters alone', () => {
+    const css = `q::before{content:"${BS}201C"}`;
+    expect(sanitizeDocumentCss(css)).toBe(css);
+    expect(sanitizeDocumentCss('a{background-image:image-set("data:image/png;base64,AA" 1x)}')).toContain('data:image/png');
+  });
 });
 
 describe('resolveDocumentMedia', () => {

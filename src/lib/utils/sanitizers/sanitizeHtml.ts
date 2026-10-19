@@ -124,13 +124,46 @@ export function classifyDocumentUrl(raw: string): DocumentUrlKind {
   return 'local';
 }
 
+/** A CSS URL reference survives only when it is inline or app-local. */
+function keepCssUrl(url: string): boolean {
+  return classifyDocumentUrl(url) === 'keep' && !url.trim().startsWith('#');
+}
+
+/**
+ * CSS escapes spell names for the browser's tokenizer but not for a regex:
+ * `\75 rl(` IS `url(` and `@\69mport` IS `@import`. An escape that stands for
+ * an ASCII name character means exactly that character, in an identifier and
+ * in a string alike, so decoding those changes nothing the browser sees and
+ * puts the real names in front of the passes below. Every other escape
+ * (`\201C`, `\"`, `\\`) is left as written.
+ */
+function decodeNameEscapes(css: string): string {
+  return css.replace(
+    /\\([0-9a-fA-F]{1,6})[ \t\n\r\f]?|\\([^\n\r\f0-9a-fA-F])/g,
+    (whole: string, hex: string | undefined, ch: string | undefined) => {
+      let c = ch ?? '';
+      if (hex) {
+        const code = parseInt(hex, 16);
+        if (code <= 0 || code > 0x10ffff) return whole;
+        c = String.fromCodePoint(code);
+      }
+      return /^[A-Za-z0-9_-]$/.test(c) ? c : whole;
+    },
+  );
+}
+
 /** Remove every remote or unresolvable reference from a CSS text: `@import`
- *  goes whole, a `url()` that is not inline/app-local becomes `none`. */
+ *  goes whole, a `url()` that is not inline/app-local becomes `none` (an
+ *  unterminated one too: the tokenizer closes it at end of input), and so
+ *  does a bare string inside `image-set()`, which loads without `url()`. */
 export function sanitizeDocumentCss(css: string): string {
-  return css
+  return decodeNameEscapes(css)
     .replace(/@import\b[^;]*;?/gi, '')
-    .replace(/url\(\s*(['"]?)(.*?)\1\s*\)/gi, (whole: string, _q: string, url: string) =>
-      classifyDocumentUrl(url) === 'keep' && !url.trim().startsWith('#') ? whole : 'none',
+    .replace(/url\(\s*(['"]?)(.*?)\1\s*(?:\)|$)/gi, (whole: string, _q: string, url: string) =>
+      keepCssUrl(url) ? whole : 'none',
+    )
+    .replace(/(image-set\()([^;{}]*)/gi, (_whole: string, open: string, args: string) =>
+      open + args.replace(/(['"])(.*?)\1/g, (str: string, _q: string, url: string) => (keepCssUrl(url) ? str : '""')),
     );
 }
 
