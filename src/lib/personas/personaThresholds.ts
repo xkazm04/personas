@@ -1,47 +1,20 @@
 /**
- * Centralised health, completeness, and trust thresholds for persona scoring.
+ * Persona health and trust thresholds the frontend reads.
  *
- * Both the Rust backend (`src-tauri/db/src/repos/core/personas.rs`) and all
- * frontend components should reference these constants so that colour coding,
- * status labels, and scoring logic stay in sync.  When changing a value here,
- * update the matching Rust constants.
- */
-
-// ---------------------------------------------------------------------------
-// Completeness ring  (CompletenessRing.tsx)
-// ---------------------------------------------------------------------------
-
-/** ≥ this % → green ring.  Indicates a well-configured persona. */
-export const COMPLETENESS_GREEN_MIN = 80;
-
-/** ≥ this % (and < GREEN) → amber ring.  Persona is usable but incomplete. */
-export const COMPLETENESS_AMBER_MIN = 40;
-
-/** Below AMBER → grey ring.  Persona needs significant setup work. */
-// (implicit: any value < COMPLETENESS_AMBER_MIN)
-
-/**
- * Ring colours as semantic tokens, not literals.
+ * The trust SCORE is computed in Rust (`compute_trust_score` in
+ * `src-tauri/db/src/repos/core/personas.rs`); only its display tiers live here.
+ * The one value that mirrors a Rust constant, `HEALTH_FAILING_MIN`, is
+ * tethered by `__tests__/personaThresholds.parity.test.ts`, which reads the
+ * Rust source and fails when the two disagree.
  *
- * These were the raw hex values `#34d399` / `#fbbf24` / `#94a3b8` — which are
- * exactly `--status-success-raw` / `--status-warning-raw` / `--status-neutral-raw`
- * in `globals.css`, so the ring was a hand-copied third instance of a colour the
- * theme layer already owns. As literals they could not respond to
- * `[data-theme^="light"]` or to the brightness compensation, both of which
- * redefine the `--status-*` tokens; as `var()` references they do.
+ * History (2026-10-19): this module also carried `COMPLETENESS_*` /
+ * `completenessColor` (for a `CompletenessRing.tsx` that no longer exists) and
+ * a transcription of the trust formula (`TRUST_WEIGHTS`,
+ * `HEALING_PENALTY_PER_FAILURE`, `VOLUME_FULL_CREDIT_RUNS`,
+ * `TRUST_SAMPLE_SIZE`). All eight had zero readers anywhere in `src/` and
+ * nothing checked them against Rust (scoring-and-thresholds.md D11), so they
+ * were removed rather than kept as an unread second copy of the formula.
  */
-export const COMPLETENESS_COLORS = {
-  green: 'var(--status-success)',
-  amber: 'var(--status-warning)',
-  grey: 'var(--status-neutral)',
-} as const;
-
-/** Return the ring colour for a completeness percentage. */
-export function completenessColor(percent: number): string {
-  if (percent >= COMPLETENESS_GREEN_MIN) return COMPLETENESS_COLORS.green;
-  if (percent >= COMPLETENESS_AMBER_MIN) return COMPLETENESS_COLORS.amber;
-  return COMPLETENESS_COLORS.grey;
-}
 
 // ---------------------------------------------------------------------------
 // Health status  (computed in Rust, displayed in PersonaHealthIndicator, etc.)
@@ -58,30 +31,8 @@ export function completenessColor(percent: number): string {
 export const HEALTH_FAILING_MIN = 0.6;
 
 // ---------------------------------------------------------------------------
-// Trust score tiers  (computed in Rust, displayed in PersonaOverviewPage)
+// Trust score tiers  (score computed in Rust, displayed in PersonaOverviewBadges)
 // ---------------------------------------------------------------------------
-
-/**
- * Trust score is a 0–100 composite:
- *   success_rate × 50  +  cost_discipline × 20  +  healing × 15  +  volume × 15
- *
- * See `compute_trust_score` in `src-tauri/db/src/repos/core/personas.rs`.
- */
-export const TRUST_WEIGHTS = {
-  successRate: 50,
-  costDiscipline: 20,
-  healing: 15,
-  volume: 15,
-} as const;
-
-/** Healing penalty per consecutive failure (0.2 × count, capped at 1.0 total). */
-export const HEALING_PENALTY_PER_FAILURE = 0.2;
-
-/** Volume bonus reaches 1.0 at this many executions. */
-export const VOLUME_FULL_CREDIT_RUNS = 20;
-
-/** Number of recent terminal executions considered for trust scoring. */
-export const TRUST_SAMPLE_SIZE = 50;
 
 export interface TrustTier {
   readonly min: number;
@@ -120,13 +71,3 @@ export function getTrustTier(score: number): TrustTier {
   }
   return TRUST_TIERS[0]!;
 }
-
-// History (2026-08-27): the header used to point at `src-tauri/src/db/...` and
-// a `PERSONA_THRESHOLDS` block — neither has existed since `db` was extracted
-// into its own crate, so a reader following the pointer found nothing and had
-// no way to check the agreement the header is the only enforcement of. The
-// mirror itself is still hand-kept (census: comment-kept-cross-language-mirror).
-// The Rust constants are `TRUST_W_SUCCESS` / `TRUST_W_COST` / `TRUST_W_HEALING` /
-// `TRUST_W_VOLUME`, `HEALING_PENALTY_PER_FAILURE`, `VOLUME_FULL_CREDIT_RUNS` and
-// `HEALTH_FAILING_RATIO` (near the top of that file) — verified equal to the
-// values above on 2026-08-27.
