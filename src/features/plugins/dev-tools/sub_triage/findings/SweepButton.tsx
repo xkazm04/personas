@@ -35,6 +35,7 @@ import { usePassportForProject } from './usePassportForProject';
 
 import { runFindingSweep } from './sweep';
 import { recordSweep } from './lastSweep';
+import { describeSweep, sweepTone } from './healthIngest';
 import { collectProjectKpiAttention, planForProject } from './sweepInputs';
 
 const SWEEP_TILE = 'border-primary/10 bg-primary/5 hover:bg-primary/10';
@@ -83,25 +84,10 @@ export function SweepButton({
       // that matters most on a first sweep.
       recordSweep(project.id, res.skippedSensors);
 
-      const parts = [`${res.created} raised`];
-      if (res.duplicates > 0) parts.push(`${res.duplicates} already known`);
-      if (res.dropped > 0) parts.push(`${res.dropped} over the cap`);
-
-      // Verdicts. `unchanged` / `regressed` are surfaced as loudly as `cleared` —
-      // the whole point of the phase is that "merged" is not "fixed".
-      const v = res.verified;
-      const verdicts: string[] = [];
-      if (v.cleared) verdicts.push(`${v.cleared} cleared`);
-      if (v.moved) verdicts.push(`${v.moved} moved`);
-      if (v.unchanged) verdicts.push(`${v.unchanged} unchanged`);
-      if (v.regressed) verdicts.push(`${v.regressed} REGRESSED`);
-      if (verdicts.length > 0) parts.push(`verified: ${verdicts.join(', ')}`);
-
-      if (res.skippedSensors.length > 0) parts.push(`skipped: ${res.skippedSensors.join(', ')}`);
-
-      // A regression is bad news and must not wear a success colour.
-      const tone = v.regressed > 0 ? 'error' : res.created > 0 || verdicts.length > 0 ? 'success' : 'warning';
-      addToast(`Sweep — ${parts.join(' · ')}`, tone);
+      // The same summary and colour the scheduled ingest reports. This button
+      // used to keep its own copy, which dropped write errors and unverifiable
+      // findings and painted an unchanged-only verdict as success.
+      addToast(`Sweep — ${describeSweep(res)}`, sweepTone(res));
       onSwept();
     } catch (e) {
       toastCatch('features/plugins/dev-tools/sub_triage/findings/sweep')(e);
