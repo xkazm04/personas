@@ -9,22 +9,12 @@ import { getProcessLabel } from '@/lib/notifications/notifyProcessComplete';
 import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 import { useConnectorAttention } from '@/features/vault/sub_credentials/components/card/attention/useConnectorAttention';
 import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { ConnectorAttentionSection } from './ConnectorAttentionSection';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function formatTimestamp(ts: number): string {
-  const diff = Date.now() - ts;
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  return days === 1 ? 'yesterday' : `${days}d ago`;
-}
 
 function statusLabel(status: string): string {
   switch (status) {
@@ -193,7 +183,7 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
           type="button"
           onClick={(e) => { e.stopPropagation(); dismiss(notification.id); }}
           className="p-1 rounded-card opacity-0 group-hover:opacity-100 hover:bg-primary/10 text-foreground hover:text-foreground/70 transition-all"
-          aria-label="Dismiss"
+          aria-label={t.common.dismiss}
         >
           <X className="w-3 h-3" />
         </button>
@@ -210,7 +200,10 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
       {/* Timestamp — pinned to the bottom-right corner so it never competes
           with the title for width. */}
       <span className="pointer-events-none absolute bottom-1.5 right-3 typo-caption text-muted-foreground tabular-nums">
-        {formatTimestamp(notification.timestamp)}
+        {/* Locale-aware and live (shared ticker): the hand-rolled ladder it
+            replaced printed English ("5m ago", "yesterday") in every locale and
+            froze at whatever the tray last rendered. */}
+        <RelativeTime timestamp={notification.timestamp} showTooltip={false} />
       </span>
     </div>
   );
@@ -318,7 +311,7 @@ function NotificationItem({ notification }: { notification: PipelineNotification
           type="button"
           onClick={(e) => { e.stopPropagation(); dismiss(notification.id); }}
           className="p-1 rounded-card opacity-0 group-hover:opacity-100 hover:bg-primary/10 text-foreground hover:text-foreground/70 transition-all"
-          aria-label="Dismiss"
+          aria-label={t.common.dismiss}
         >
           <X className="w-3 h-3" />
         </button>
@@ -335,7 +328,10 @@ function NotificationItem({ notification }: { notification: PipelineNotification
       {/* Timestamp — pinned to the bottom-right corner so it never competes
           with the title for width. */}
       <span className="pointer-events-none absolute bottom-1.5 right-3 typo-caption text-muted-foreground tabular-nums">
-        {formatTimestamp(notification.timestamp)}
+        {/* Locale-aware and live (shared ticker): the hand-rolled ladder it
+            replaced printed English ("5m ago", "yesterday") in every locale and
+            froze at whatever the tray last rendered. */}
+        <RelativeTime timestamp={notification.timestamp} showTooltip={false} />
       </span>
     </div>
   );
