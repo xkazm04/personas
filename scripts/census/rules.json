@@ -66,8 +66,8 @@
         }
       ],
       "baseline": {
-        "files": 63,
-        "matches": 157
+        "files": 62,
+        "matches": 156
       },
       "floor": 4000
     },
@@ -519,8 +519,8 @@
         }
       ],
       "baseline": {
-        "files": 23,
-        "matches": 29
+        "files": 21,
+        "matches": 27
       },
       "floor": 4000
     },
@@ -634,8 +634,8 @@
         }
       ],
       "baseline": {
-        "files": 55,
-        "matches": 85
+        "files": 54,
+        "matches": 84
       },
       "floor": 4000
     },
@@ -685,8 +685,8 @@
         }
       ],
       "baseline": {
-        "files": 36,
-        "matches": 60
+        "files": 35,
+        "matches": 59
       },
       "floor": 4000
     },
@@ -1499,8 +1499,8 @@
         }
       ],
       "baseline": {
-        "files": 30,
-        "matches": 30
+        "files": 29,
+        "matches": 29
       },
       "floor": 4000
     },
@@ -1856,8 +1856,8 @@
         }
       ],
       "baseline": {
-        "files": 68,
-        "matches": 99
+        "files": 66,
+        "matches": 97
       },
       "floor": 4000
     },
@@ -4005,6 +4005,10 @@
         {
           "path": "src/api/agents/__tests__/automationRunTimeoutParity.test.ts",
           "reason": "the parity test that tethers the automations.ts mirror: its comment names the Rust source it reads, it does not declare a second copy of the rule"
+        },
+        {
+          "path": "src/features/plugins/gitlab/components/pipelineHelpers.tsx",
+          "reason": "TETHERED mirror (repo law): slugifyPersonaName mirrors slugify_persona_name in src-tauri/src/commands/infrastructure/gitlab.rs; src/features/plugins/gitlab/components/__tests__/pipelineForAgent.test.ts reads the Rust source at run time and checks the pinned names, so the two cannot drift (scan-sweep 2026-10-19, 7e2fde4cd0)"
         }
       ],
       "baseline": {
