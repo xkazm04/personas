@@ -105,4 +105,17 @@ describe('usePassportData — stale-build guard', () => {
     expect(recordSnapshotMock).toHaveBeenCalledTimes(1);
   });
 
+  it('renders an IPC AppError rejection as its message, not [object Object]', async () => {
+    // invokeWithTimeout rejects with a serialized AppError OBJECT, never an Error.
+    listProjectsMock.mockReturnValue(Promise.resolve([]) as never);
+    generateCrossProjectMetadataMock.mockReturnValue(
+      Promise.reject({ error: 'scan failed: repo unreadable', kind: 'Internal' }) as never,
+    );
+    const { result } = renderHook(() => usePassportData());
+    act(() => {
+      result.current.rescan();
+    });
+    await waitFor(() => expect(result.current.error).not.toBeNull());
+    expect(result.current.error).toBe('scan failed: repo unreadable');
+  });
 });

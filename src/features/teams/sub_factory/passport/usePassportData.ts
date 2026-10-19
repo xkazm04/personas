@@ -10,7 +10,7 @@ import { listProjects, getCrossProjectMetadata, generateCrossProjectMetadata, li
 import { listCredentials } from '@/api/vault/credentials';
 import { mapWithConcurrency } from '@/lib/concurrency';
 import { codeProjectsOnly } from '@/lib/devProjectKind';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 import { createLatestWins } from '@/stores/util/latestWins';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import { derivePassportFromMetadata, derivePassportSkeleton } from './passportDerive';
@@ -410,7 +410,7 @@ export function usePassportData(): PassportData {
     if (cachedSnapshot?.measured && Date.now() - cachedSnapshot.at < CACHE_FRESH_MS) return;
     build(false).catch((e) => {
       silentCatch('usePassportData:initialBuild')(e);
-      if (!cancelled) setState((s) => ({ ...s, loading: false, error: e instanceof Error ? e.message : String(e) }));
+      if (!cancelled) setState((s) => ({ ...s, loading: false, error: extractMessage(e) }));
     });
     return () => { cancelled = true; };
   }, [build]);
@@ -459,7 +459,7 @@ export function usePassportData(): PassportData {
   const rescan = useCallback(() => {
     setRescanning(true);
     build(true)
-      .catch((e) => { silentCatch('usePassportData:rescan')(e); setState((s) => ({ ...s, error: e instanceof Error ? e.message : String(e) })); })
+      .catch((e) => { silentCatch('usePassportData:rescan')(e); setState((s) => ({ ...s, error: extractMessage(e) })); })
       .finally(() => setRescanning(false));
   }, [build]);
 
@@ -468,12 +468,12 @@ export function usePassportData(): PassportData {
   const rescanProject = useCallback((projectId: string) => {
     setRescanningProject(projectId);
     return build(true, projectId)
-      .catch((e) => { silentCatch('usePassportData:rescanProject')(e); setState((s) => ({ ...s, error: e instanceof Error ? e.message : String(e) })); })
+      .catch((e) => { silentCatch('usePassportData:rescanProject')(e); setState((s) => ({ ...s, error: extractMessage(e) })); })
       .finally(() => setRescanningProject(null));
   }, [build]);
 
   const reload = useCallback(() => {
-    build(false).catch((e) => { silentCatch('usePassportData:reload')(e); setState((s) => ({ ...s, error: e instanceof Error ? e.message : String(e) })); });
+    build(false).catch((e) => { silentCatch('usePassportData:reload')(e); setState((s) => ({ ...s, error: extractMessage(e) })); });
   }, [build]);
 
   // Refresh the Wall when a Factory-initiated deploy/scan finishes while the user
@@ -493,7 +493,7 @@ export function usePassportData(): PassportData {
       timer = setTimeout(() => {
         build(kind === 'scan').catch((err) => {
           silentCatch('usePassportData:onFactoryProcessComplete')(err);
-          setState((s) => ({ ...s, error: err instanceof Error ? err.message : String(err) }));
+          setState((s) => ({ ...s, error: extractMessage(err) }));
         });
       }, 1200);
     };
