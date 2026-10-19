@@ -3,16 +3,12 @@ use personas_core::types::{ExecutionMetrics, ProtocolMessage, StreamLineType, To
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+// Display fields are cut to a character count with `...` appended, by the
+// crate's one implementation of that cut.
+use crate::str_utils::truncate_owned as truncate_field;
+
 const MAX_TOOL_INPUT_DISPLAY: usize = 500;
 const MAX_TOOL_RESULT_DISPLAY: usize = 200;
-
-/// Truncate a string to `max_len` characters, appending "..." if truncated.
-fn truncate_field(text: &str, max_len: usize) -> String {
-    match text.char_indices().nth(max_len) {
-        Some((byte_offset, _)) => format!("{}...", &text[..byte_offset]),
-        None => text.to_string(),
-    }
-}
 
 /// The display preview of a tool input: its JSON text cut to `max_chars`
 /// characters, exactly as `truncate_field(&serde_json::to_string(value), ..)`
