@@ -4,11 +4,9 @@ import { Info, KeyRound } from 'lucide-react';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import { Collapse } from '@/features/shared/components/display/Collapse';
 import { useTranslation } from '@/i18n/useTranslation';
-import { CATEGORY_META, FALLBACK_CATEGORY } from '../QuestionnaireFormGridConfig';
 import { QuestionCard } from '../QuestionnaireFormGridParts';
 import type { DynamicOptionState } from '../useDynamicQuestionOptions';
 import { QuestionnaireBlockedCredentialCta } from './QuestionnaireBlockedCredentialCta';
-import { QuestionnaireKeyboardHint } from './QuestionnaireKeyboardHint';
 import { resolveBlockedCredentialCategory } from './questionnaireHelpers';
 import { QuestionnaireStackedOptions } from './QuestionnaireStackedOptions';
 import type { QuestionnaireNormalizedOption } from './types';
@@ -22,29 +20,24 @@ interface QuestionnaireHeroQuestionProps {
   isStackable: boolean;
   isBlocked: boolean;
   isAutoDetected: boolean;
-  activeIdx: number;
-  totalCount: number;
-  isAtEnd: boolean;
-  canSubmit: boolean;
   onAnswerUpdated: (questionId: string, answer: string) => void;
   onAddCredential?: (vaultCategory: string) => void;
   filteredOptions?: string[];
   dynamicState?: DynamicOptionState;
   onRetryDynamic?: (questionId: string) => void;
   useCaseTitleById?: Record<string, string>;
-  /** Glyph adoption variant — hide the category crumb header and the
-   *  keyboard navigation hints (the surrounding sigil card already conveys
-   *  position + the dim, and the hints are noise inside the overlay). */
-  compact?: boolean;
 }
 
 /**
- * Centre pane — the hero question card. Renders a category crumb, big
- * question title, optional collapsible context tip, and a type-appropriate
+ * The hero question card inside AdoptionAnswerCard (its one caller). Renders
+ * the question title, an optional collapsible context tip, and a type-appropriate
  * input widget below with generous breathing room. Stackable question types
  * (boolean, fixed-option select) get a one-per-row card layout with number
  * keyboard hints; rich types (dynamic_source, text, textarea, pickers) fall
  * through to the existing QuestionCard surface wrapped in a matching card.
+ *
+ * Position, category and the prev/next controls belong to the surrounding
+ * sigil card, which is why this card draws no crumb or keyboard legend.
  */
 export function QuestionnaireHeroQuestion({
   question,
@@ -53,19 +46,14 @@ export function QuestionnaireHeroQuestion({
   isStackable,
   isBlocked,
   isAutoDetected,
-  activeIdx,
-  totalCount,
-  isAtEnd,
-  canSubmit,
   onAnswerUpdated,
   onAddCredential,
   filteredOptions,
   dynamicState,
   onRetryDynamic,
   useCaseTitleById,
-  compact = false,
 }: QuestionnaireHeroQuestionProps) {
-  const { t, tx } = useTranslation();
+  const { t } = useTranslation();
   const [tipOpen, setTipOpen] = useState(false);
 
   // Collapse the context tip when the user navigates to another question.
@@ -73,8 +61,6 @@ export function QuestionnaireHeroQuestion({
     setTipOpen(false);
   }, [question.id]);
 
-  const meta = CATEGORY_META[question.category ?? ''] ?? FALLBACK_CATEGORY;
-  const { Icon } = meta;
   const hasTip = !!question.context && !isBlocked;
   // Resolved rather than read straight off `vault_category`: a blocked
   // dynamic-source question never carries that field, so gating on it left the
@@ -93,22 +79,6 @@ export function QuestionnaireHeroQuestion({
         exit={{ opacity: 0, y: -6 }}
         transition={{ duration: 0.14, ease: 'easeOut' }}
       >
-        {/* Category crumb — hidden in the compact (glyph) variant where the
-            sigil card header already shows the dimension + position. */}
-        {!compact && (
-        <div className="flex items-center gap-2 mb-6 typo-body uppercase tracking-[0.18em]">
-          <Icon className={`w-4 h-4 ${meta.color}`} />
-          <span className={`font-semibold ${meta.color}`}>{meta.label}</span>
-          <span className="text-foreground">·</span>
-          <span className="text-foreground tabular-nums">
-            {tx(t.templates.adopt_modal.question_number_of, {
-              current: activeIdx + 1,
-              total: totalCount,
-            })}
-          </span>
-        </div>
-        )}
-
         {/* Title + badges */}
         <div className="flex items-start gap-3 mb-2">
           <h3 className="flex-1 typo-body-lg text-foreground">
@@ -153,26 +123,11 @@ export function QuestionnaireHeroQuestion({
             onAddCredential={onAddCredential}
           />
         ) : isStackable ? (
-          <>
-            <QuestionnaireStackedOptions
-              options={options}
-              value={answer}
-              onChange={(v) => onAnswerUpdated(question.id, v)}
-            />
-            {!compact && options.length > 1 && (
-              <div className="hide-on-touch mt-4 typo-caption text-foreground flex items-center gap-2">
-                <span>Press</span>
-                <kbd className="px-1.5 py-0.5 rounded border border-border bg-foreground/[0.04] font-mono text-xs">
-                  1
-                </kbd>
-                <span>–</span>
-                <kbd className="px-1.5 py-0.5 rounded border border-border bg-foreground/[0.04] font-mono text-xs">
-                  {Math.min(options.length, 9)}
-                </kbd>
-                <span><DebtText k="auto_to_pick_3354914b" /></span>
-              </div>
-            )}
-          </>
+          <QuestionnaireStackedOptions
+            options={options}
+            value={answer}
+            onChange={(v) => onAnswerUpdated(question.id, v)}
+          />
         ) : (
           <div className="rounded-card bg-background/60 border border-border backdrop-blur-sm p-4">
             <QuestionCard
@@ -198,7 +153,6 @@ export function QuestionnaireHeroQuestion({
           </div>
         )}
 
-        {!compact && <QuestionnaireKeyboardHint isAtEnd={isAtEnd} canSubmit={canSubmit} />}
       </motion.div>
     </AnimatePresence>
   );
