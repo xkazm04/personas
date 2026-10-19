@@ -34,7 +34,11 @@ export function UuidLabel({ value, label }: UuidLabelProps) {
         <button
           type="button"
           onClick={handleCopy}
-          className="opacity-0 group-hover/uuid:opacity-100 p-0.5 rounded hover:bg-secondary/60 transition-opacity text-foreground hover:text-foreground"
+          // Icon-only: the Tooltip only describes while visible, so the name
+          // lives here. focus-visible reveals it for a keyboard user who tabbed
+          // onto a control that was otherwise invisible until pointer hover.
+          aria-label={t.shared.copy_full_id}
+          className="opacity-0 group-hover/uuid:opacity-100 focus-visible:opacity-100 p-0.5 rounded hover:bg-secondary/60 transition-opacity text-foreground hover:text-foreground"
         >
           {copied ? (
             <Check className="w-3 h-3 text-emerald-400" />
