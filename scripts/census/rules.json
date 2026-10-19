@@ -1929,7 +1929,13 @@
         "files": 138,
         "matches": 276
       },
-      "floor": 400
+      "floor": 400,
+      "exclude": [
+        {
+          "path": "src-tauri/src/commands/infrastructure/lens_scan/tooling.rs",
+          "reason": "a FALSE POSITIVE of this rule's bridging span, not a deliberate exception. The one match (clean_note) is `.filter(|n| !n.is_empty()) else { return Ok(None); }`: an empty note is ACCEPTED as no note, never refused. The 160-character span then bridges past that early return into the next, unrelated guard (`note.starts_with(\"--\")` -> AppError::Validation), the bridging behaviour the rule's own description records (browser_test.rs:92 is the same shape). The file's one real emptiness refusal, validate_ids, was routed through personas_core::validation::require_at_least_one / require_max_count in the same change, so this exclusion hides no open-coded refusal. Exclusions are file-scoped: if a real one is added here, delete this entry rather than keeping the door"
+        }
+      ]
     },
     {
       "id": "unraced-loop-wait",
@@ -3512,6 +3518,10 @@
         {
           "path": "src-tauri/src/commands/fleet/claude_accounts/relogin/cli.rs",
           "reason": "a FALSE POSITIVE of this rule's own anchor, not a deliberate exception. The anchor matches a spawn in statement position because that means \"its JoinHandle is created and destroyed in the same statement\" - the rule's stated premise. Here the spawn is the TAIL EXPRESSION of a `.map(|mut r| ...)` closure (cli.rs:119-124), so its handle is the closure's value: it is returned and stored as `LoginProcess.drain`, never dropped at the spawn. The `[;{}]` lookbehind sees the closure's opening brace and cannot see the bind two lines up. The body is `tokio::io::copy` into `tokio::io::sink()`, whose only job is to stop a chatty child blocking on a full stdout pipe, and the handle is aborted on drop with the LoginProcess. If the anchor ever learns to see a returned handle, delete this exclusion rather than keeping the door"
+        },
+        {
+          "path": "src-tauri/src/local_http/fleet_door.rs",
+          "reason": "a FALSE POSITIVE of this rule's own anchor, not a deliberate exception. The match (enqueue, the cwd check) is a `tokio::task::spawn_blocking(move || ..)` in statement position, but its JoinHandle is not destroyed in that statement: it is awaited in the same expression chain (`.await.map_err(|e| DoorError::internal(format!(\"cwd check task: {e}\")))???`). A panic in the closure therefore surfaces to the HTTP caller as an internal error carrying JoinError's 'task N panicked' text, and the handler does not continue; the condition the rule names (finished, crashed and cancelled collapsing into nothing) is absent. The `[;{}]` lookbehind sees the `;` ending `let cwd = ..` and cannot see the trailing `.await`. It is the only match in the file; if the anchor ever learns to see an awaited handle, or a real detached spawn is added here, delete this entry rather than keeping the door"
         }
       ]
     },
