@@ -17,6 +17,7 @@ import { useCallback, useState } from 'react';
 
 import { spawnSession } from '@/api/fleet/fleet';
 import { shipMilestoneIngest, type ShipMilestoneIngestSummary } from '@/api/devTools/milestones';
+import Button from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
@@ -25,10 +26,15 @@ import { skillCommand } from '@/features/teams/sub_factory/passport/improve/skil
 import { PLAN_BORDER, PLAN_INK, PLAN_WASH } from './planInk';
 
 /** The ingest result, reported inline. Proposals are shown as PROPOSALS — the
- *  door refuses to apply them, and this panel does not offer to either. */
-export function ShipRunSummary({ summary, onDismiss }: {
+ *  door refuses to apply them, and this panel does not offer to either. Its one
+ *  action opens the composer, where the operator adds them himself, and it is
+ *  labelled as that: it used to read "Dismiss" while switching the pane into the
+ *  composer. */
+export function ShipRunSummary({ summary, onCompose }: {
   summary: ShipMilestoneIngestSummary;
-  onDismiss: () => void;
+  /** Absent when the scope can no longer be composed (a shipped milestone is
+   *  a record), and then the panel offers no action at all. */
+  onCompose?: () => void;
 }) {
   const { t, tx } = useTranslation();
   return (
@@ -75,13 +81,11 @@ export function ShipRunSummary({ summary, onDismiss }: {
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={onDismiss}
-        className="mt-2 typo-caption text-foreground transition-colors hover:opacity-70 focus-ring rounded-interactive"
-      >
-        {t.common.dismiss}
-      </button>
+      {onCompose && (
+        <Button variant="secondary" size="sm" className="mt-2" onClick={onCompose} data-testid="ship-run-summary-compose">
+          {t.ship.compose_scope}
+        </Button>
+      )}
     </div>
   );
 }

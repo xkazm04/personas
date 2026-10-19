@@ -54,3 +54,41 @@ describe('NotePlanRuns load failure', () => {
     expect(screen.queryByTestId('note-run-r1')).toBeNull();
   });
 });
+
+/** A `/ship-milestone` run whose report proposes one addition. */
+function shipRun(id: string, noteId: string): DevNoteRun {
+  return {
+    ...run(id, noteId),
+    kind: 'ship_milestone',
+    summaryJson: JSON.stringify({
+      itemsUpdated: 1,
+      ratingsSet: 0,
+      descriptionsSet: 0,
+      itemsReported: 1,
+      summary: null,
+      proposedAdditions: [{ itemKind: 'use_case', name: 'Export', rationale: null }],
+      questionsAsked: [],
+    }),
+  };
+}
+
+describe('NotePlanRuns ship summary action', () => {
+  it('names the action it takes: it opens the composer, it does not dismiss', async () => {
+    listNoteRuns.mockResolvedValueOnce([shipRun('r1', 'n1')]);
+    const onCompose = vi.fn();
+    render(<NotePlanRuns noteId="n1" onCompose={onCompose} />);
+
+    await screen.findByTestId('ship-run-summary');
+    expect(screen.queryByRole('button', { name: 'Dismiss' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Compose scope' }));
+    expect(onCompose).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers no action when the scope cannot be composed', async () => {
+    listNoteRuns.mockResolvedValueOnce([shipRun('r1', 'n1')]);
+    render(<NotePlanRuns noteId="n1" />);
+
+    await screen.findByTestId('ship-run-summary');
+    expect(screen.queryByTestId('ship-run-summary-compose')).toBeNull();
+  });
+});
