@@ -26,7 +26,7 @@ import {
 } from '@/api/obsidianBrain';
 import SavedConfigsSidebar from '../SavedConfigsSidebar';
 import { useSavedVaultConfigs } from '../useSavedVaultConfigs';
-import { extractMessage, silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch, toastCatch } from '@/lib/silentCatch';
 import { DebtText } from '@/i18n/DebtText';
 
 
@@ -97,15 +97,22 @@ export default function SetupPanel() {
       setMirrorConfig(next); // optimistic
       try {
         await obsidianMirrorSetConfig(next);
-        // Enabling the execution-knowledge mirror backfills existing rows once,
-        // so the vault isn't empty until each persona happens to run again.
-        if (key === 'executionKnowledge' && next.executionKnowledge) {
-          const count = await obsidianMirrorBackfillExecutionKnowledge();
-          addToast(tx(t.plugins.obsidian_brain.mirror_backfill_done, { count }), 'success');
-        }
       } catch (e) {
         setMirrorConfig(mirrorConfig); // revert on failure
         addToast(tx(t.plugins.obsidian_brain.mirror_save_failed, { error: extractMessage(e) }), 'error');
+        return;
+      }
+      // Enabling the execution-knowledge mirror backfills existing rows once,
+      // so the vault isn't empty until each persona happens to run again. The
+      // setting is already saved: a failed backfill must not flip the switch
+      // back while the backend keeps the mirror on.
+      if (key === 'executionKnowledge' && next.executionKnowledge) {
+        try {
+          const count = await obsidianMirrorBackfillExecutionKnowledge();
+          addToast(tx(t.plugins.obsidian_brain.mirror_backfill_done, { count }), 'success');
+        } catch (e) {
+          toastCatch('SetupPanel:mirrorBackfill')(e);
+        }
       }
     },
     [mirrorConfig, addToast, t, tx],
