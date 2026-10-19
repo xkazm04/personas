@@ -7,7 +7,7 @@
  * the WHOLE parse anyway, so an unticked node still reached the build.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import type { AgentIR } from '@/lib/types/designTypes';
 
 const parsedResult = {
@@ -45,6 +45,7 @@ vi.mock('../../hooks/useN8nWizard', () => ({
 import N8nImportTab from '../N8nImportTab';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
+import { useOverviewStore } from '@/stores/overviewStore';
 
 const setWorkflowImport = vi.fn();
 
@@ -85,5 +86,19 @@ describe('N8nImportTab build handoff', () => {
     expect(sent.suggested_tools).toEqual(['http_request', 'slack_post']);
     expect(sent.suggested_triggers.map((tr) => tr.trigger_type)).toEqual(['schedule']);
     expect(sent.suggested_connectors?.map((c) => c.name)).toEqual(['gmail']);
+  });
+
+  // The handoff registered an `n8n_build` activity row that no code path ever
+  // ends (zero `processEnded('n8n_build')` in src/), so it sat "running" until
+  // the 25-minute stale reaper filed it as FAILED - on every handoff. The real
+  // build registers its own `agent_build` row when it starts.
+  it('leaves no activity row that nothing will ever end', async () => {
+    useOverviewStore.setState({ activeProcesses: {} } as never);
+    render(<N8nImportTab />);
+    fireEvent.click(screen.getByRole('button', { name: /build persona/i }));
+    await import('@/stores/overviewStore');
+    await waitFor(() => expect(setWorkflowImport).toHaveBeenCalled());
+    await new Promise((r) => setTimeout(r, 100));
+    expect(Object.keys(useOverviewStore.getState().activeProcesses)).toEqual([]);
   });
 });

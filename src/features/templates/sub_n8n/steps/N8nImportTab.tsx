@@ -11,7 +11,6 @@ import { N8nSessionList } from './N8nSessionList';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { useTranslation } from '@/i18n/useTranslation';
-import { silentCatch } from '@/lib/silentCatch';
 import { applySelectionsToResult } from '../reducers/sessionReducer';
 
 
@@ -52,8 +51,6 @@ export default function N8nImportTab() {
   const setIsCreatingPersona = useSystemStore((s) => s.setIsCreatingPersona);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
 
-  const setN8nTransformActive = useSystemStore((s) => s.setN8nTransformActive);
-
   /** Send the parsed workflow to the PersonaMatrix for building. */
   const handleProcessWithMatrix = useCallback(() => {
     if (!state.parsedResult || !state.rawWorkflowJson) return;
@@ -68,25 +65,14 @@ export default function N8nImportTab() {
       platform: state.platform || 'unknown',
     });
 
-    // Register process activity so the activity drawer tracks this build
-    try {
-      void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
-        useOverviewStore.getState().processStarted(
-          'n8n_build',
-          undefined,
-          `Build Persona: ${state.workflowName || 'Imported Workflow'}`,
-          { section: 'personas' },
-        );
-      });
-    } catch (err) { silentCatch("features/templates/sub_n8n/steps/N8nImportTab:catch1")(err); }
-
-    // Show progress dot on design-reviews sidebar
-    setN8nTransformActive(true);
+    // No activity row here: nothing is running yet. The build registers its
+    // own `agent_build` row when the user starts it in the matrix; a row
+    // started here had no path that ever ended it.
 
     // Navigate to personas page in creation mode — the matrix will pick up the workflow
     setSidebarSection('personas');
     setIsCreatingPersona(true);
-  }, [state, setWorkflowImport, setSidebarSection, setIsCreatingPersona, setN8nTransformActive]);
+  }, [state, setWorkflowImport, setSidebarSection, setIsCreatingPersona]);
 
   return (
     <div className="flex flex-col h-full">
