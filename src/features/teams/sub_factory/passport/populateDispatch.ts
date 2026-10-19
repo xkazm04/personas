@@ -172,7 +172,7 @@ export function buildPopulateBrief(
     `- project_id: ${proj.id}`,
     `- Root: ${proj.root_path}`,
     proj.github_url ? `- Repo: ${proj.github_url}` : '- Repo: no remote recorded',
-    proj.tech_stack ? `- Stack: ${proj.tech_stack}` : '',
+    proj.tech_stack ? `- Stack: ${proj.tech_stack}` : null,
     '',
     '## Bridge',
     '',
@@ -207,7 +207,10 @@ export function buildPopulateBrief(
     'service types are enough to name a binding; the operator completes it on',
     'the passport wall.',
   ]
-    .filter((line) => line !== '')
+    // Drop only the ABSENT optional lines. Filtering '' here also stripped every
+    // separator, so each paragraph ran on as a lazy continuation of the list
+    // item above it (the SKIP rule read as part of the KPIs bullet).
+    .filter((line): line is string => line !== null)
     .join('\n')
     .replace(/\n{3,}/g, '\n\n');
 }
