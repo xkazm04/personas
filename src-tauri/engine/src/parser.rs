@@ -1154,6 +1154,28 @@ struct MessageUsage {
     cache_creation: u64,
 }
 
+/// The fields of an `assistant` line [`StreamUsageTally::observe_line`] reads.
+/// Every other key, `message.content` above all, is skipped unbuilt.
+#[derive(Deserialize)]
+struct UsageProbe {
+    #[serde(rename = "type", default)]
+    kind: Option<serde_json::Value>,
+    #[serde(default)]
+    parent_tool_use_id: Option<serde_json::Value>,
+    #[serde(default)]
+    message: Option<UsageProbeMessage>,
+}
+
+#[derive(Deserialize)]
+struct UsageProbeMessage {
+    #[serde(default)]
+    id: Option<serde_json::Value>,
+    #[serde(default)]
+    model: Option<serde_json::Value>,
+    #[serde(default)]
+    usage: Option<serde_json::Value>,
+}
+
 /// Running record of what a CLI stream spent BEFORE its `result` line.
 ///
 /// Cost and tokens used to come only from the final `result` line, which a
@@ -1180,27 +1202,39 @@ impl StreamUsageTally {
         if !trimmed.starts_with('{') || !trimmed.contains("\"assistant\"") {
             return;
         }
-        let Ok(value) = serde_json::from_str::<serde_json::Value>(trimmed) else {
+        // Typed, so `message.content` (the model's whole reply, a Write's whole
+        // file body) is skipped by the deserializer instead of being built
+        // into a `Value` tree a second time: `parse_stream_line` has already
+        // parsed this same line once. Measured 2026-10-19, release, 57 KB
+        // `Write` line: 49-51 us as a `Value`, 28-30 us typed; 151 B line
+        // 1.5 us -> 0.48 us. The small fields stay `Value` so a field of an
+        // unexpected type reads as absent, exactly as `as_str`/`as_u64` did.
+        let Ok(line) = serde_json::from_str::<UsageProbe>(trimmed) else {
             return;
         };
-        if value.get("type").and_then(|t| t.as_str()) != Some("assistant") {
+        if line.kind.as_ref().and_then(|t| t.as_str()) != Some("assistant") {
             return;
         }
-        let Some(message) = value.get("message") else {
+        let Some(message) = line.message else {
             return;
         };
-        let Some(id) = message.get("id").and_then(|i| i.as_str()) else {
+        let Some(id) = message.id.as_ref().and_then(|i| i.as_str()) else {
             return;
         };
-        if subagent_parent_id(&value).is_none() {
+        let is_subagent = line
+            .parent_tool_use_id
+            .as_ref()
+            .and_then(|v| v.as_str())
+            .is_some_and(|s| !s.is_empty());
+        if !is_subagent {
             self.root_turns.insert(id.to_string());
         }
-        if let Some(m) = message.get("model").and_then(|m| m.as_str()) {
+        if let Some(m) = message.model.as_ref().and_then(|m| m.as_str()) {
             if !m.is_empty() && m != "<synthetic>" {
                 self.model = Some(m.to_string());
             }
         }
-        if let Some(usage) = message.get("usage") {
+        if let Some(usage) = message.usage.as_ref() {
             let n = |k: &str| {
                 usage
                     .get(k)
@@ -2890,5 +2924,119 @@ mod bounded_preview_tests {
         assert_eq!(input_preview.chars().count(), MAX_TOOL_INPUT_DISPLAY + 3);
         assert!(input_preview.contains("zzzz"), "{input_preview:.80}");
         assert_eq!(file_path.as_deref(), Some("/big.rs"));
+    }
+}
+
+#[cfg(test)]
+mod usage_probe_tests {
+    use super::*;
+
+    /// `observe_line` as it read every line before the typed probe: a whole
+    /// `Value` tree. Kept as the oracle the probe must agree with.
+    fn observe_as_value(t: &mut StreamUsageTally, line: &str) {
+        let trimmed = line.trim();
+        if !trimmed.starts_with('{') || !trimmed.contains("\"assistant\"") {
+            return;
+        }
+        let Ok(value) = serde_json::from_str::<serde_json::Value>(trimmed) else {
+            return;
+        };
+        if value.get("type").and_then(|t| t.as_str()) != Some("assistant") {
+            return;
+        }
+        let Some(message) = value.get("message") else {
+            return;
+        };
+        let Some(id) = message.get("id").and_then(|i| i.as_str()) else {
+            return;
+        };
+        if subagent_parent_id(&value).is_none() {
+            t.root_turns.insert(id.to_string());
+        }
+        if let Some(m) = message.get("model").and_then(|m| m.as_str()) {
+            if !m.is_empty() && m != "<synthetic>" {
+                t.model = Some(m.to_string());
+            }
+        }
+        if let Some(usage) = message.get("usage") {
+            let n = |k: &str| {
+                usage
+                    .get(k)
+                    .and_then(serde_json::Value::as_u64)
+                    .unwrap_or(0)
+            };
+            t.by_message.insert(
+                id.to_string(),
+                MessageUsage {
+                    input: n("input_tokens"),
+                    output: n("output_tokens"),
+                    cache_read: n("cache_read_input_tokens"),
+                    cache_creation: n("cache_creation_input_tokens"),
+                },
+            );
+        }
+    }
+
+    fn odd_lines() -> Vec<String> {
+        let big = "q\"\\n".repeat(20_000);
+        vec![
+            // a root turn whose content is a whole file body
+            serde_json::json!({"type":"assistant","parent_tool_use_id":null,"message":{
+                "id":"m1","model":"claude-x","content":[{"type":"tool_use","id":"t",
+                "name":"Write","input":{"file_path":"/a","content":big}}],
+                "usage":{"input_tokens":3,"output_tokens":4,"cache_read_input_tokens":5,
+                "cache_creation_input_tokens":6}}})
+            .to_string(),
+            // a subagent turn: counted for usage, not as a root turn
+            r#"{"type":"assistant","parent_tool_use_id":"toolu_1","message":{"id":"s1","model":"claude-y","content":[],"usage":{"input_tokens":1}}}"#.into(),
+            // empty parent id means root
+            r#"{"type":"assistant","parent_tool_use_id":"","message":{"id":"r2","usage":{"output_tokens":2}}}"#.into(),
+            // fields of unexpected types read as absent
+            r#"{"type":"assistant","parent_tool_use_id":7,"message":{"id":"w1","model":5,"usage":{"input_tokens":-1,"output_tokens":2.5,"cache_read_input_tokens":"9"}}}"#.into(),
+            r#"{"type":"assistant","message":{"id":"w2","model":"<synthetic>","usage":"none"}}"#.into(),
+            r#"{"type":"assistant","message":{"id":"w3","model":""}}"#.into(),
+            // rejected shapes
+            r#"{"type":"assistant","message":{"id":9,"usage":{"input_tokens":1}}}"#.into(),
+            r#"{"type":"assistant","message":"assistant"}"#.into(),
+            r#"{"type":"assistant","message":null}"#.into(),
+            r#"{"type":"assistant"}"#.into(),
+            r#"{"type":["assistant"],"message":{"id":"x"}}"#.into(),
+            r#"{"type":"user","message":{"id":"assistant","usage":{"input_tokens":1}}}"#.into(),
+            r#"{"type":"assistant","message":{"id":"t1","usage":{"input_tokens":1}"#.into(),
+            "not json \"assistant\"".into(),
+            String::new(),
+        ]
+    }
+
+    #[test]
+    fn the_typed_probe_tallies_exactly_what_the_value_walk_did() {
+        let captured = include_str!("../tests/fixtures/stream_assistant_lines.jsonl");
+        let lines: Vec<String> = captured
+            .lines()
+            .filter(|l| !l.trim_start().starts_with('#'))
+            .map(str::to_string)
+            .chain(odd_lines())
+            .collect();
+        let mut probe = StreamUsageTally::default();
+        let mut oracle = StreamUsageTally::default();
+        for line in &lines {
+            probe.observe_line(line);
+            observe_as_value(&mut oracle, line);
+            assert_eq!(probe.by_message, oracle.by_message, "after {line:.120}");
+            assert_eq!(probe.root_turns, oracle.root_turns, "after {line:.120}");
+            assert_eq!(probe.model, oracle.model, "after {line:.120}");
+        }
+        assert!(probe.by_message.len() >= 5, "the corpus exercised nothing");
+        assert!(probe.by_message.contains_key("s1"));
+        assert!(!probe.root_turns.contains("s1"));
+        assert_eq!(
+            probe.by_message["w1"],
+            MessageUsage {
+                input: 0,
+                output: 0,
+                cache_read: 0,
+                cache_creation: 0
+            }
+        );
     }
 }
