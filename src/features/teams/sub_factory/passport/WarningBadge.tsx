@@ -3,9 +3,11 @@
 // KPIs. Click → an anchored popover (portalled, so the matrix's overflow-x-auto
 // never clips it) listing each off-track signal; clicking one deep-links into that
 // KPI's console. Mirrors QuickEditPopover's positioning, minus the edit footer.
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertTriangle, ArrowUpRight } from 'lucide-react';
+
+import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 
 export interface WarningItem {
   groupId: string;
@@ -30,12 +32,15 @@ export function WarningBadge({
 }) {
   const [open, setOpen] = useState(false);
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const close = useCallback(() => setOpen(false), []);
 
   if (items.length === 0) return null;
 
   return (
     <>
       <button
+        ref={triggerRef}
         type="button"
         onClick={(e) => {
           e.stopPropagation();
@@ -53,7 +58,8 @@ export function WarningBadge({
         anchor={anchor}
         projectName={projectName}
         items={items}
-        onClose={() => setOpen(false)}
+        triggerRef={triggerRef}
+        onClose={close}
         onJump={(g, k) => { setOpen(false); onJump?.(g, k); }}
       />
     </>
@@ -61,12 +67,16 @@ export function WarningBadge({
 }
 
 function WarningPopover({
-  open, anchor, projectName, items, onClose, onJump,
+  open, anchor, projectName, items, triggerRef, onClose, onJump,
 }: {
   open: boolean;
   anchor: DOMRect | null;
   projectName: string;
   items: WarningItem[];
+  /** The badge that toggles this panel. The panel is portalled, so the badge
+   *  is not inside it; without guarding both, a press on the open badge closed
+   *  the panel on mousedown and its click reopened it. */
+  triggerRef: RefObject<HTMLButtonElement | null>;
   onClose: () => void;
   onJump: (groupId: string, kpiId: string) => void;
 }) {
@@ -84,20 +94,7 @@ function WarningPopover({
     setPos({ top, left });
   }, [open, anchor]);
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    const onDown = (e: MouseEvent) => {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    const id = window.setTimeout(() => document.addEventListener('mousedown', onDown), 0);
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      window.clearTimeout(id);
-      document.removeEventListener('mousedown', onDown);
-    };
-  }, [open, onClose]);
+  useClickOutside([triggerRef, panelRef], open, onClose);
 
   if (!open || !anchor) return null;
 

@@ -2,10 +2,11 @@
 // atoms both variants (Grid + Wall) compose. Keeping the seal / pips / gap mark
 // identical across variants is deliberate: the cell LAYOUT diverges per variant
 // metaphor, but a "readiness seal" should read the same wherever it appears.
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertTriangle, Bot, CheckCircle2, ShieldCheck, Layers, Plug, Check, Minus, Info, type LucideIcon } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { scoreTint, AUTOMATION_LABEL, PROD_BAND_LABEL, type AutomationLevel, type ProdBand } from './passportModel';
 import { INK, anchorTip } from './passportInk';
 
@@ -125,21 +126,6 @@ export function BoolMark({ on, label }: { on: boolean; label?: string }) {
   );
 }
 
-/**
- * The meaningful-gap marker. Per the passport spec, `null` (no error tracking,
- * no metrics) is a FIRST-CLASS answer, not missing data — so it stays visible
- * (a slate dot + label), never a blank cell. Quieter than a present value, but
- * still scannable: spotting "which apps have no error tracking?" is the point.
- */
-export function GapMark({ label = 'Absent' }: { label?: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 typo-caption text-slate-400/80">
-      <span className="w-1.5 h-1.5 rounded-full bg-slate-500/40 flex-shrink-0" aria-hidden />
-      {label}
-    </span>
-  );
-}
-
 const INFO_TIP_WIDTH = 252;
 
 /**
@@ -150,23 +136,19 @@ const INFO_TIP_WIDTH = 252;
  */
 export function RowInfoLabel({ label, info }: { label: string; info: string }) {
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!anchor) return;
-    const close = () => setAnchor(null);
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
-    const onDown = (e: MouseEvent) => { if (panelRef.current && !panelRef.current.contains(e.target as Node)) close(); };
-    window.addEventListener('keydown', onKey);
-    const id = window.setTimeout(() => document.addEventListener('mousedown', onDown), 0);
-    return () => { window.removeEventListener('keydown', onKey); window.clearTimeout(id); document.removeEventListener('mousedown', onDown); };
-  }, [anchor]);
+  // The panel is portalled, so the trigger is not inside it: guard BOTH, or a
+  // press on the open label closes on mousedown and its click reopens it.
+  const close = useCallback(() => setAnchor(null), []);
+  useClickOutside([triggerRef, panelRef], Boolean(anchor), close);
 
   const pos = anchor ? anchorTip(anchor, INFO_TIP_WIDTH, 96) : null;
 
   return (
     <>
       <button
+        ref={triggerRef}
         type="button"
         onClick={(e) => {
           // Read the rect NOW — e.currentTarget is detached by the time a
