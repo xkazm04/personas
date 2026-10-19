@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { X, Play, RotateCcw } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { TerminalBody } from '@/features/shared/components/terminal/TerminalBody';
 import { DimensionRadial } from '../../shared/DimensionRadial';
 import { ThinkingLoader } from '../../shared/ThinkingLoader';
@@ -114,9 +115,9 @@ export function TemplatePreviewModal({
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <DimensionRadial designResult={designResult} size={36} />
-            <button type="button" onClick={onClose} className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors">
-              <X className="w-5 h-5 text-foreground" />
-            </button>
+            <Button onClick={onClose} variant="ghost" size="icon-sm" aria-label={t.common.close}>
+              <X className="w-5 h-5 text-foreground" aria-hidden="true" />
+            </Button>
           </div>
         </div>
 

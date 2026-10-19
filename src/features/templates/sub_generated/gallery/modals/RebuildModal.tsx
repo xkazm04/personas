@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { RefreshCw, X, CheckCircle2, XCircle, Square } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Button } from '@/features/shared/components/buttons';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { RebuildPhase } from '@/hooks/design/core/useBackgroundRebuild';
@@ -89,9 +90,9 @@ export function RebuildModal({
               </p>
             </div>
           </div>
-          <button type="button" onClick={onClose} className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors">
-            <X className="w-4 h-4 text-foreground" />
-          </button>
+          <Button onClick={onClose} variant="ghost" size="icon-sm" aria-label={t.common.close}>
+            <X className="w-4 h-4 text-foreground" aria-hidden="true" />
+          </Button>
         </div>
 
         {/* Content */}

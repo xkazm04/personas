@@ -192,8 +192,8 @@ export function TemplateDetailModal({
                 )}
               </div>
             </div>
-            <Button onClick={onClose} variant="ghost" size="icon-sm" className="flex-shrink-0 hover:bg-white/5">
-              <X className="w-5 h-5 text-foreground hover:text-muted-foreground" />
+            <Button onClick={onClose} variant="ghost" size="icon-sm" aria-label={t.common.close} className="flex-shrink-0 hover:bg-white/5">
+              <X className="w-5 h-5 text-foreground hover:text-muted-foreground" aria-hidden="true" />
             </Button>
           </div>
         </div>
