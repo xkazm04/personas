@@ -6,7 +6,7 @@ import { listen } from "@tauri-apps/api/event";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { useAutoInstaller, MAX_INSTALL_OUTPUT_LINES } from "../useAutoInstaller";
 import { EventName } from "@/lib/eventRegistry";
-import { resetInvokeMocks } from "@/test/tauriMock";
+import { mockedTauriInvoke, resetInvokeMocks } from "@/test/tauriMock";
 
 // Set IPC token so invokeWithTimeout doesn't enter the token-wait loop.
 (globalThis as Record<string, unknown>).__IPC_TOKEN = "test-token";
@@ -205,6 +205,18 @@ describe("useAutoInstaller", () => {
     });
     // One line, not one per surviving handler.
     expect(result.current.nodeState.outputLines).toEqual(["solo"]);
+  });
+
+  it("a rejected start keeps the backend's AppError message", async () => {
+    captureListeners();
+    // invokeWithTimeout rejects with the AppError OBJECT, not an Error, so the
+    // old `instanceof Error` ladder replaced every refusal with one English
+    // literal and InstallButton's translated fallback never got a say.
+    mockedTauriInvoke.mockRejectedValue({ error: "Another install is already running", kind: "Validation" });
+    const { result } = renderHook(() => useAutoInstaller());
+    await act(async () => { await result.current.install("node"); });
+    expect(result.current.nodeState.phase).toBe("failed");
+    expect(result.current.nodeState.error).toBe("Another install is already running");
   });
 
   it("unsubscribes on unmount", async () => {

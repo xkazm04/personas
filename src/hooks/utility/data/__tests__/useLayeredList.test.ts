@@ -154,3 +154,29 @@ describe('useLayeredList', () => {
     await waitFor(() => expect(result.current.rows).toEqual([7]));
   });
 });
+
+describe('useLayeredList -- IPC rejections', () => {
+  // invokeWithTimeout rejects with a serialized AppError OBJECT, never an Error,
+  // so `e instanceof Error ? e.message : String(e)` rendered "[object Object]"
+  // in the Manual Review queue's load-failed banner.
+  const ipcError = { error: 'database is locked', kind: 'Database' };
+
+  it('surfaces the message of a first-page AppError object', async () => {
+    const fetchPage = vi.fn().mockRejectedValue(ipcError);
+    const { result } = renderHook(() => useLayeredList<number>({ filterKey: 'all', fetchPage }));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.error).toBe('database is locked');
+  });
+
+  it('surfaces the message of a next-page AppError object', async () => {
+    const fetchPage = vi
+      .fn()
+      .mockResolvedValueOnce(page([1, 2], true))
+      .mockRejectedValueOnce(ipcError);
+    const { result } = renderHook(() => useLayeredList<number>({ filterKey: 'all', fetchPage }));
+    await waitFor(() => expect(result.current.rows).toEqual([1, 2]));
+    act(() => result.current.loadMore());
+    await waitFor(() => expect(result.current.loadingMore).toBe(false));
+    expect(result.current.error).toBe('database is locked');
+  });
+});

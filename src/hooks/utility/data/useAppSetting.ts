@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { deleteAppSetting, setAppSetting } from '@/api/system/settings';
 import { getAppSettingCoalesced } from '@/hooks/utility/data/useSettings';
 import { createLogger } from '@/lib/log';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 
 const logger = createLogger('app-setting');
 
@@ -141,7 +141,9 @@ export function useAppSetting(
         setSaved(false);
       }, 2000);
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
+      // extractMessage, not `instanceof Error`: the IPC layer rejects with an
+      // AppError object, which String() rendered as "[object Object]".
+      const message = extractMessage(err);
       // Key + error class only — see errorClass() above. The message still
       // reaches `error` state, where it is rendered back to the operator who
       // typed the value; it must not reach the log sinks.

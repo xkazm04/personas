@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createLogger } from '@/lib/log';
+import { extractMessage } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 
 const logger = createLogger('layered-list');
 
@@ -29,7 +31,7 @@ const logger = createLogger('layered-list');
  * a dashboard landing only pays L1 for the surface in view; flip it true
  * when the tab activates.
  *
- * Stale-response safety: an internal epoch counter is bumped on every
+ * Stale-response safety: a latest-wins token is minted on every
  * filter change / reload, and every resolution checks it — late responses
  * from a superseded filter are dropped (Tauri `invoke` has no abort, so
  * this is the cancellation mechanism).
@@ -106,14 +108,15 @@ export function useLayeredList<Row, Counts = unknown>(
   const fetchCountsRef = useRef(fetchCounts);
   fetchCountsRef.current = fetchCounts;
 
-  // Epoch guards against stale responses after a filter change / reload.
-  const epochRef = useRef(0);
+  // Latest-wins token guards against stale responses after a filter change /
+  // reload. One per hook instance, held in a ref so it survives re-renders.
+  const latestWins = useRef(createLatestWins()).current;
   const cursorRef = useRef<string | null>(null);
   const hasMoreRef = useRef(false);
   const inFlightRef = useRef(false);
 
   const runFirstLoad = useCallback(() => {
-    const epoch = ++epochRef.current;
+    const epoch = latestWins.next();
     cursorRef.current = null;
     hasMoreRef.current = false;
     inFlightRef.current = true;
@@ -129,10 +132,10 @@ export function useLayeredList<Row, Counts = unknown>(
     const countsFn = fetchCountsRef.current;
     if (countsFn) {
       countsFn().then(
-        (c) => { if (epoch === epochRef.current) setCounts(c); },
+        (c) => { if (latestWins.isCurrent(epoch)) setCounts(c); },
         (e) => {
-          if (epoch === epochRef.current) {
-            logger.warn('L0 counts fetch failed', { err: e instanceof Error ? e.message : String(e) });
+          if (latestWins.isCurrent(epoch)) {
+            logger.warn('L0 counts fetch failed', { err: extractMessage(e) });
           }
         },
       );
@@ -141,7 +144,7 @@ export function useLayeredList<Row, Counts = unknown>(
     // L1 — first viewport page.
     fetchPageRef.current(null).then(
       (page) => {
-        if (epoch !== epochRef.current) return;
+        if (!latestWins.isCurrent(epoch)) return;
         setRows(page.rows);
         cursorRef.current = page.nextCursor;
         hasMoreRef.current = canContinue(page);
@@ -150,24 +153,25 @@ export function useLayeredList<Row, Counts = unknown>(
         inFlightRef.current = false;
       },
       (e) => {
-        if (epoch !== epochRef.current) return;
-        setError(e instanceof Error ? e.message : String(e));
+        if (!latestWins.isCurrent(epoch)) return;
+        setError(extractMessage(e));
         setRows([]);
         setHasMore(false);
         setLoading(false);
         inFlightRef.current = false;
       },
     );
-  }, []);
+    // latestWins is a ref-held constant: listing it never re-creates this.
+  }, [latestWins]);
 
   const loadMore = useCallback(() => {
     if (inFlightRef.current || !hasMoreRef.current) return;
-    const epoch = epochRef.current;
+    const epoch = latestWins.current();
     inFlightRef.current = true;
     setLoadingMore(true);
     fetchPageRef.current(cursorRef.current).then(
       (page) => {
-        if (epoch !== epochRef.current) return;
+        if (!latestWins.isCurrent(epoch)) return;
         setRows((prev) => [...prev, ...page.rows]);
         cursorRef.current = page.nextCursor;
         hasMoreRef.current = canContinue(page);
@@ -176,13 +180,13 @@ export function useLayeredList<Row, Counts = unknown>(
         inFlightRef.current = false;
       },
       (e) => {
-        if (epoch !== epochRef.current) return;
-        setError(e instanceof Error ? e.message : String(e));
+        if (!latestWins.isCurrent(epoch)) return;
+        setError(extractMessage(e));
         setLoadingMore(false);
         inFlightRef.current = false;
       },
     );
-  }, []);
+  }, [latestWins]);
 
   const reload = useCallback(() => {
     if (enabled) runFirstLoad();

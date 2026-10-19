@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { getAppSettingsBulk } from '@/api/system/settings';
 import { createLogger } from '@/lib/log';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 
 const logger = createLogger('use-settings');
 
@@ -77,7 +77,7 @@ function flushBatch() {
         logger.error('Bulk settings read failed', {
           keyCount: chunk.length,
           batchKeyCount: keys.length,
-          err: err instanceof Error ? err.message : String(err),
+          err: extractMessage(err),
         });
         // Only this chunk's waiters fail — a sibling chunk that succeeded
         // still resolves, so one bad key set cannot blank every panel.
@@ -191,7 +191,7 @@ export function useSettings(keys: readonly string[]): UseSettingsResult {
         .catch((err) => {
           silentCatch('hooks/utility/data/useSettings:fetchAllBulk')(err);
           if (cancelled) return;
-          const message = err instanceof Error ? err.message : String(err);
+          const message = extractMessage(err);
           logger.error('useSettings bulk read failed', {
             keyCount: stableKeys.length,
             err: message,
