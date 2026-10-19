@@ -62,6 +62,36 @@ function normalizeStatus(status: string): TaskStatus {
 
 const TERMINAL: readonly string[] = ['completed', 'failed', 'cancelled'];
 
+/** Settle delay before asking whether the batch drained (a sibling task's
+ *  `running` transition can trail its predecessor's terminal one). */
+const DRAIN_CHECK_DELAY_MS = 500;
+
+/**
+ * End the Run Desk's `task_runner` activity once NO task is running anywhere,
+ * asked of the backend rather than of the loaded window.
+ *
+ * It used to read `store.tasks`, which is the FILTERED 40-row window: with the
+ * desk filtered to `failed`, running tasks are simply not in it, so the dock
+ * reported the batch done while it ran. And it was only consulted after a
+ * `completed` task, so a batch whose last task failed or was cancelled left the
+ * activity `running` until the stale-process reaper took it 25 minutes later.
+ * The activity ends with the status of the transition that drained it.
+ */
+export async function endTaskRunnerIfDrained(
+  lastStatus: 'completed' | 'failed' | 'cancelled',
+  runningCount: () => Promise<number>,
+  processEnded: (domain: string, action: 'completed' | 'failed' | 'cancelled') => void,
+): Promise<boolean> {
+  const running = await runningCount();
+  if (running > 0) return false;
+  processEnded('task_runner', lastStatus);
+  return true;
+}
+
+function runningTaskCount(): Promise<number> {
+  return devApi.tasksPage(undefined, ['running'], 1).then((page) => page.counts.running ?? 0);
+}
+
 /**
  * Layered-list data source for the Run Desk queue.
  *
@@ -168,6 +198,16 @@ export function useTaskQueue({ projectId, statusFilter, enabled = true }: UseTas
       countsTimer = window.setTimeout(() => refreshCountsRef.current(), COUNTS_REFRESH_DEBOUNCE_MS);
     };
 
+    let drainTimer: number | undefined;
+    const scheduleDrainCheck = (lastStatus: 'completed' | 'failed' | 'cancelled') => {
+      if (drainTimer !== undefined) window.clearTimeout(drainTimer);
+      drainTimer = window.setTimeout(() => {
+        endTaskRunnerIfDrained(lastStatus, runningTaskCount, (d, a) =>
+          useOverviewStore.getState().processEnded(d, a),
+        ).catch(silentCatch('features/plugins/dev-tools/sub_runner/useTaskQueue:drain'));
+      }, DRAIN_CHECK_DELAY_MS);
+    };
+
     const applyPatch = (id: string, partial: Partial<DevTask>) => {
       const prev = patchesRef.current.get(id);
       patchesRef.current.set(id, prev ? { ...prev, ...partial } : partial);
@@ -199,6 +239,7 @@ export function useTaskQueue({ projectId, statusFilter, enabled = true }: UseTas
         // A concrete status filter means this transition can move the row out
         // of (or into) the window — only then do we pay for a refetch.
         if (statusFilterRef.current !== 'all') reloadRef.current();
+        if (status === 'failed' || status === 'cancelled') scheduleDrainCheck(status);
       },
     );
 
@@ -217,10 +258,7 @@ export function useTaskQueue({ projectId, statusFilter, enabled = true }: UseTas
         });
         scheduleCountsRefresh();
         if (statusFilterRef.current !== 'all') reloadRef.current();
-        window.setTimeout(() => {
-          const stillRunning = useSystemStore.getState().tasks.some((t) => t.status === 'running');
-          if (!stillRunning) useOverviewStore.getState().processEnded('task_runner', 'completed');
-        }, 500);
+        scheduleDrainCheck('completed');
       },
     );
 
@@ -233,6 +271,7 @@ export function useTaskQueue({ projectId, statusFilter, enabled = true }: UseTas
 
     return () => {
       if (countsTimer !== undefined) window.clearTimeout(countsTimer);
+      if (drainTimer !== undefined) window.clearTimeout(drainTimer);
       outputUn.then((fn) => fn()).catch(silentCatch('useTaskQueue:unlisten-output'));
       statusUn.then((fn) => fn()).catch(silentCatch('useTaskQueue:unlisten-status'));
       completeUn.then((fn) => fn()).catch(silentCatch('useTaskQueue:unlisten-complete'));
