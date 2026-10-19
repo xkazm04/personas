@@ -11,15 +11,21 @@ import type { WebBuildPhase } from '@/lib/bindings/WebBuildPhase';
 // Web-build runtime IPC (Athena web-dev companion, P0/P1). Project rows reuse
 // the Dev Tools registry; dev servers live in the Rust `webbuild` module.
 
-/** Scaffold + register a blank Next/TS/Tailwind project. Slow — Bun install. */
+/** Scaffold + register a blank Next/TS/Tailwind project. Slow — Bun install.
+ *  The backend bounds the bun call at SCAFFOLD_TIMEOUT (600 s, webbuild/project.rs)
+ *  and then still writes next.config.ts and inserts the project row, so this
+ *  waits 30 s longer: giving up at the same 600 s reported a failure for a
+ *  project that was then created, and the retry was refused as "already exists". */
 export const webbuildScaffold = (name: string) =>
-  invokeWithTimeout<DevProject>('webbuild_scaffold', { name }, undefined, 600_000);
+  invokeWithTimeout<DevProject>('webbuild_scaffold', { name }, undefined, 630_000);
 
 /** The sketch lane: a fast first reading of a vision (pages, regions, draft
  *  goals, the owner-only questions), run in parallel with the scaffold. A
- *  one-shot micro call; usually seconds, bounded at two minutes. */
+ *  one-shot micro call; usually seconds. The backend leg is bounded at 180 s
+ *  plus a 5 s kill grace (`cli_text_inner`), so this waits 200 s: at 120 s the
+ *  sheet marked the sketch failed and the late answer was thrown away. */
 export const webbuildSketch = (vision: string) =>
-  invokeWithTimeout<SiteSketch>('webbuild_sketch', { vision }, undefined, 120_000);
+  invokeWithTimeout<SiteSketch>('webbuild_sketch', { vision }, undefined, 200_000);
 
 /** A new project's name, checked the way the scaffold will: its folder, whether
  *  that folder is taken, and a free variant. */
