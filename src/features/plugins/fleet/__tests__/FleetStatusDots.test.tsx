@@ -3,11 +3,17 @@
  * indicator used in the compact session rows. Pure presentation, no
  * store or invoke surface.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 
 import { FleetStatusDots, deriveAxes } from '../FleetStatusDots';
+import { preloadSectionsAsync } from '@/i18n/useTranslation';
+
+// `plugins` is a code-split i18n section: it reaches the runtime through an
+// async chunk, so a render before it lands reads every label as undefined and
+// a copy assertion races the import. Await it once, before any render.
+beforeAll(() => preloadSectionsAsync('en', ['plugins']));
 
 (globalThis as Record<string, unknown>).__IPC_TOKEN = 'test-token';
 
@@ -47,7 +53,9 @@ describe('FleetStatusDots', () => {
     render(<FleetStatusDots state="awaiting_input" reason="Notification: permission" />);
     const wrapper = screen.getByTestId('fleet-dots-awaiting_input');
     const consoleDot = wrapper.querySelector(':scope > span');
-    expect(consoleDot?.getAttribute('title') ?? '').toContain('Notification: permission');
+    // Exact, not toContain: an unloaded label rendered "undefined — Notification: permission"
+    // and a substring match on the reason alone passed it.
+    expect(consoleDot?.getAttribute('title')).toBe('Process alive — Notification: permission');
   });
 
   it('falls back to the state label when no reason given', () => {
