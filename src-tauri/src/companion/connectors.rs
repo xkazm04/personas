@@ -13,7 +13,7 @@
 //! careful sandboxing of which credential payloads are passed through.
 
 use chrono::Utc;
-use rusqlite::{params, OptionalExtension};
+use rusqlite::params;
 use serde::Serialize;
 
 use crate::db::UserDbPool;
@@ -367,22 +367,6 @@ pub fn replace_all(pool: &UserDbPool, names: &[String]) -> Result<(), AppError> 
     }
     tx.commit()?;
     Ok(())
-}
-
-/// Lightweight existence check for the prompt builder — returns true
-/// iff at least one enabled connector is pinned. Used to skip
-/// rendering the prompt section entirely on empty state.
-#[allow(dead_code)]
-pub fn has_any_enabled(pool: &UserDbPool) -> Result<bool, AppError> {
-    let conn = pool.get()?;
-    let row: Option<i64> = conn
-        .query_row(
-            "SELECT 1 FROM companion_active_connector WHERE enabled = 1 LIMIT 1",
-            params![],
-            |r| r.get::<_, i64>(0),
-        )
-        .optional()?;
-    Ok(row.is_some())
 }
 
 #[cfg(test)]
