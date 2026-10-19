@@ -1,5 +1,6 @@
 import type { AnomalyScore, Remediation, RotationStatus } from '@/api/vault/rotation';
 import type { HealthResult } from '@/features/vault/shared/hooks/health/useCredentialHealth';
+import { resolveProbeOutcome } from '@/lib/credentials/healthState';
 
 // -- Score tiers ------------------------------------------------------
 
@@ -42,10 +43,17 @@ function healthcheckScore(result: HealthResult | null): number {
   // (the list correctly shows a neutral badge). Neutral 50 keeps the dot and
   // the list telling the same story. Legacy results without `state` fall back
   // to the boolean.
-  if (result.state === 'unverifiable') return 50;
-  if (result.state === 'verified') return 100;
-  if (result.state === 'failed') return 0;
-  return result.success ? 100 : 0;
+  //
+  // `unreachable` (the probe never reached the service: offline, DNS, IPC
+  // timeout) is the same absence of a verdict. It used to fall through to the
+  // boolean, which is `false` for it, and score 0 -- the composite called an
+  // offline laptop's good key critical. The shared resolver owns the mapping.
+  switch (resolveProbeOutcome(result)) {
+    case 'verified': return 100;
+    case 'failed': return 0;
+    case 'unverifiable':
+    case 'unreachable': return 50;
+  }
 }
 
 function anomalySubScore(anomaly: AnomalyScore | null): number {
@@ -101,7 +109,9 @@ export function computeHealthScore(
           ? 'Never tested'
           : healthResult.state === 'unverifiable'
             ? 'No live probe exists for this connector'
-            : healthResult.success
+            : healthResult.state === 'unreachable'
+              ? 'Probe could not reach the service'
+              : healthResult.success
               ? 'Healthy'
               : 'Healthcheck failing',
     },
@@ -179,12 +189,4 @@ export function getTierStyle(tier: HealthTier): TierStyle {
     case 'unknown':
       return { dotColor: 'bg-muted-foreground/40', badgeBg: 'bg-secondary/40', badgeBorder: 'border-primary/10', badgeText: 'text-foreground', label: 'Untested' };
   }
-}
-
-/**
- * Numeric sort comparator: lower score = worse health = sorts first.
- * Useful for sorting credential lists by composite health.
- */
-export function healthScoreComparator(a: CompositeHealthScore, b: CompositeHealthScore): number {
-  return a.score - b.score;
 }
