@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { executeApiRequest, type ApiEndpoint, type ApiProxyResponse } from '@/api/system/apiProxy';
 import { applyPathSeeds, isFullyResolved, seedPathParams, type ScopedResources } from './scopeParamSeed';
+import { RUN_LOG_MARK } from './tabs/apiExplorerHelpers';
 
 // -- Types -------------------------------------------------------------
 
@@ -171,7 +172,7 @@ export function useApiTestRunner(): UseApiTestRunnerReturn {
         if (existing) next.set(key, { ...existing, verdict: 'running' });
         return next;
       });
-      addLog(requestPath === ep.path ? `-> ${method} ${ep.path}` : `-> ${method} ${requestPath} (scope)`);
+      addLog(requestPath === ep.path ? `${RUN_LOG_MARK.send} ${method} ${ep.path}` : `${RUN_LOG_MARK.send} ${method} ${requestPath} (scope)`);
 
       try {
         const res: ApiProxyResponse = await executeApiRequest(
@@ -198,7 +199,7 @@ export function useApiTestRunner(): UseApiTestRunnerReturn {
           return next;
         });
 
-        const icon = verdict === 'passed' ? '[v]' : '[x]';
+        const icon = verdict === 'passed' ? RUN_LOG_MARK.pass : RUN_LOG_MARK.fail;
         addLog(`  ${icon} ${res.status} ${res.status_text} (${res.duration_ms}ms)`);
       } catch (err) {
         failed++;
@@ -211,7 +212,7 @@ export function useApiTestRunner(): UseApiTestRunnerReturn {
           return next;
         });
 
-        addLog(`  [x] ERROR: ${errorMsg}`);
+        addLog(`  ${RUN_LOG_MARK.fail} ERROR: ${errorMsg}`);
       }
 
       setProgress({ current, total, passed, failed, skipped: skippedCount, startedAt });
