@@ -316,8 +316,8 @@
         }
       ],
       "baseline": {
-        "files": 39,
-        "matches": 39
+        "files": 36,
+        "matches": 36
       },
       "floor": 4000
     },
@@ -593,8 +593,8 @@
         }
       ],
       "baseline": {
-        "files": 245,
-        "matches": 538
+        "files": 244,
+        "matches": 536
       },
       "floor": 4000
     },
@@ -1426,8 +1426,8 @@
         "description": "the native `title` attribute on a lowercase DOM element. PROXY FOR the stack-free condition: explanatory text is attached to a control through a channel the user agent alone renders, so it appears only on mouse hover - it is never reachable by keyboard, never appears on a touch device, cannot be dismissed, is not reliably announced by assistive technology, and is not routed through the application's own translation layer. PRECONDITION (must be re-derived per repo): this repo renders to a DOM where `title` has that user-agent behaviour AND owns a shared Tooltip primitive that is the alternative; a repo with no primitive would find this rule fires on 100% of its tooltip sites and should read that as the finding, not baseline it. Measured precision 1109/1109 (zero false positives) and recall 99.7% against a JSX-parser ground truth of 1112 on the 2026-08-14 corpus; the 3 misses are opening tags whose attribute region exceeds 1200 characters before `title=`. `iframe` is deliberately absent from the tag list: `title` on an iframe is a REQUIRED accessible name (WCAG 4.1.2), not a tooltip, so including it would gate a correct construct."
       },
       "baseline": {
-        "files": 375,
-        "matches": 687
+        "files": 374,
+        "matches": 685
       },
       "floor": 2000
     },
@@ -1499,8 +1499,8 @@
         }
       ],
       "baseline": {
-        "files": 29,
-        "matches": 29
+        "files": 26,
+        "matches": 26
       },
       "floor": 4000
     },
@@ -1856,8 +1856,8 @@
         }
       ],
       "baseline": {
-        "files": 63,
-        "matches": 94
+        "files": 62,
+        "matches": 90
       },
       "floor": 4000
     },
@@ -5168,8 +5168,8 @@
         "description": "A control's busy state rendered as <LoadingSpinner/> in the consequent of a ternary whose alternate is another element — almost always an icon. feedback/LoadingSpinner renders null (it emits only an sr-only role=status when passed a label), so the icon vanishes and nothing takes its place while the action is in flight. Use buttons/AsyncButton (returns-a-promise onClick) or buttons/Button loading={flag}, whose spinners are real (Button.tsx:230,237; AsyncButton.tsx:85). Doctrine: inline-busy-state.md."
       },
       "baseline": {
-        "files": 32,
-        "matches": 44
+        "files": 31,
+        "matches": 43
       },
       "floor": 4000
     },
@@ -5772,8 +5772,8 @@
         }
       ],
       "baseline": {
-        "files": 271,
-        "matches": 566
+        "files": 269,
+        "matches": 561
       },
       "floor": 5000
     },
@@ -5850,7 +5850,7 @@
       ],
       "baseline": {
         "files": 933,
-        "matches": 2082
+        "matches": 2081
       },
       "floor": 2200
     },
