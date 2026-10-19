@@ -10,6 +10,7 @@ import { useScaledFontSize } from '@/stores/themeStore';
 import { fmtCost, fmtDate } from '../libs/executionMetricsHelpers';
 import { ChartTooltipContent } from './MetricsCards';
 import { useAthenaUsage } from '../libs/useAthenaUsage';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 
 // Stable tooltip element — Recharts compares by reference identity.
 const TOOLTIP_CONTENT = <ChartTooltipContent />;
@@ -53,7 +54,7 @@ function useActionLabel() {
 
 export const AthenaUsageSection = memo(function AthenaUsageSection({ fleetCost }: AthenaUsageSectionProps) {
   const { t, tx, language } = useTranslation();
-  const { data, loading } = useAthenaUsage();
+  const { data, loading, error, reload } = useAthenaUsage();
   const sf = useScaledFontSize();
   const actionLabel = useActionLabel();
   const a = t.overview.athena;
@@ -94,6 +95,9 @@ export const AthenaUsageSection = memo(function AthenaUsageSection({ fleetCost }
             />
           ))}
         </div>
+      ) : error && !loading ? (
+        // A failed read is not "Athena did nothing": say it failed.
+        <InlineErrorBanner compact message={t.overview.observability.error_recovery.panel_failed} onRetry={reload} />
       ) : !hasActivity ? (
         <div className="rounded-modal border border-primary/10 bg-secondary/20 px-4 py-6 text-center">
           <Bot className="w-5 h-5 text-foreground mx-auto mb-1.5" />

@@ -9,7 +9,8 @@ import { silentCatch } from '@/lib/silentCatch';
  * Tab-local fetch of the headless LLM spend rollup (`llm_spend_dashboard`),
  * keyed off the same Overview day-range filter the Activity tab uses. Mirrors
  * {@link useAthenaUsage}: not a store slice (Activity-tab-scoped, no cross-surface
- * consumers), and errors degrade to an empty state rather than a toast.
+ * consumers), and a failed read is reported as `error` (the section renders it
+ * as a failure with a retry, never as "no activity") rather than as a toast.
  */
 export function useLlmSpend() {
   const { effectiveDays } = useOverviewFilterValues();

@@ -11,8 +11,9 @@ import { silentCatch } from '@/lib/silentCatch';
  *
  * Deliberately NOT a store slice — this is Activity-tab-scoped data with no
  * cross-surface consumers (mirrors `useAnnotationData` in sub_observability).
- * Errors degrade to an empty state rather than a toast: Athena usage is a
- * secondary lane, never a reason to break the fleet dashboard.
+ * Errors are reported as `error`, never as a toast: Athena usage is a
+ * secondary lane, never a reason to break the fleet dashboard. The section
+ * renders it as a failure with a retry, not as "Athena did nothing".
  */
 export function useAthenaUsage() {
   const { effectiveDays } = useOverviewFilterValues();

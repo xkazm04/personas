@@ -6,6 +6,7 @@ import { KpiTile } from '@/features/overview/components/shared/KpiTile';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { getErrorCategoryBreakdown } from '@/api/overview/observability';
 import { silentCatch } from '@/lib/silentCatch';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { SUMMARY_GRID } from '@/features/overview/libs/dashboardGrid';
 import type { ErrorCategoryBreakdown } from '@/lib/bindings/ErrorCategoryBreakdown';
 
@@ -43,22 +44,31 @@ export function ErrorCategorySection({ days }: Props) {
   const { t, language } = useTranslation();
   const [data, setData] = useState<ErrorCategoryBreakdown | null>(null);
   const [loaded, setLoaded] = useState(false);
+  // A failed read must not fall through to the "nothing to show" branch,
+  // which renders nothing and so reads as a clean window.
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let active = true;
     setLoaded(false);
     getErrorCategoryBreakdown(days)
       .then((d) => {
-        if (active) setData(d);
+        if (!active) return;
+        setData(d);
+        setFailed(false);
       })
-      .catch(silentCatch('ErrorCategorySection:getErrorCategoryBreakdown'))
+      .catch((err) => {
+        silentCatch('ErrorCategorySection:getErrorCategoryBreakdown')(err);
+        if (active) setFailed(true);
+      })
       .finally(() => {
         if (active) setLoaded(true);
       });
     return () => {
       active = false;
     };
-  }, [days]);
+  }, [days, attempt]);
 
   if (!loaded) {
     return (
@@ -75,6 +85,21 @@ export function ErrorCategorySection({ days }: Props) {
             />
           ))}
         </div>
+      </div>
+    );
+  }
+
+  if (failed) {
+    return (
+      <div className="space-y-2">
+        <h4 className="typo-heading text-red-400/80 flex items-center gap-1.5">
+          <AlertTriangle className="w-3 h-3" /> {t.overview.activity.error_category_section_title}
+        </h4>
+        <InlineErrorBanner
+          compact
+          message={t.overview.observability.error_recovery.panel_failed}
+          onRetry={() => setAttempt((n) => n + 1)}
+        />
       </div>
     );
   }

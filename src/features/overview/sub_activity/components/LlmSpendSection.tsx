@@ -10,6 +10,7 @@ import { useScaledFontSize } from '@/stores/themeStore';
 import { fmtCost, fmtDate } from '../libs/executionMetricsHelpers';
 import { ChartTooltipContent } from './MetricsCards';
 import { useLlmSpend } from '../libs/useLlmSpend';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import type { LlmSpendGroup } from '@/lib/bindings/LlmSpendGroup';
 
 // Stable tooltip element — Recharts compares by reference identity.
@@ -29,7 +30,7 @@ function humanize(key: string): string {
  */
 export const LlmSpendSection = memo(function LlmSpendSection() {
   const { t, language } = useTranslation();
-  const { data, loading } = useLlmSpend();
+  const { data, loading, error, reload } = useLlmSpend();
   const sf = useScaledFontSize();
   const s = t.overview.llm_spend;
 
@@ -97,6 +98,9 @@ export const LlmSpendSection = memo(function LlmSpendSection() {
             />
           ))}
         </div>
+      ) : error && !loading ? (
+        // A failed read is not "no headless calls": say it failed.
+        <InlineErrorBanner compact message={t.overview.observability.error_recovery.panel_failed} onRetry={reload} />
       ) : !hasActivity ? (
         <div className="rounded-modal border border-primary/10 bg-secondary/20 px-4 py-6 text-center">
           <Layers className="w-5 h-5 text-foreground mx-auto mb-1.5" />
