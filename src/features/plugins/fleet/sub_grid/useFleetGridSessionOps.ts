@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { toastCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
-import { spawnSession, spawnHeadlessSession, writeInput, hibernateSession, wakeSession } from '@/api/fleet/fleet';
+import { spawnSession, spawnHeadlessSession, writeInput, hibernateSession } from '@/api/fleet/fleet';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { useTranslation } from '@/i18n/useTranslation';
 import { replyToSession } from '../replyToSession';
@@ -37,8 +37,9 @@ export function useFleetGridSessionOps(
     }
   }, [sessions, addToast, t, tx]);
 
-  // Hibernate: free the process, keep the row resumable. Wake: respawn
-  // `claude --resume` and focus the new session (F3).
+  // Hibernate: free the process, keep the row resumable. Wake is NOT here: it
+  // is useFleetOverlayActions.selectSession, the one door with the in-flight
+  // guard (a second copy without it let the pane's Wake button double-resume).
   const handleHibernate = useCallback(async (id: string) => {
     try {
       await hibernateSession(id);
@@ -46,13 +47,6 @@ export function useFleetGridSessionOps(
       toastCatch('FleetGridPage:hibernate', 'Failed to hibernate session')(e);
     }
   }, []);
-  const handleWake = useCallback(async (id: string) => {
-    try {
-      setActiveSession(await wakeSession(id));
-    } catch (e) {
-      toastCatch('FleetGridPage:wake', 'Failed to wake session')(e);
-    }
-  }, [setActiveSession]);
 
   // Spawn seeded with a first task: the prompt rides as a positional argv, so
   // the session starts working the moment it boots; `headless` routes to the
@@ -72,5 +66,5 @@ export function useFleetGridSessionOps(
     }
   }, [activeProject, refresh, setActiveSession]);
 
-  return { handleReply, handleCompact, handleHibernate, handleWake, handleSpawnWithTask };
+  return { handleReply, handleCompact, handleHibernate, handleSpawnWithTask };
 }
