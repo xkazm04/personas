@@ -27,6 +27,7 @@ import {
 } from '../libs/incidentTaxonomy';
 import { IncidentDetailBreakdown } from './IncidentDetailBreakdown';
 import { IncidentDiagnosisCard } from './IncidentDiagnosisCard';
+import { ACTIVE_INCIDENT_STATUSES, isActiveIncidentStatus, isClosedIncidentStatus } from '../libs/incidentStatus';
 import type { AuditIncident } from '@/lib/bindings/AuditIncident';
 
 interface IncidentDetailModalProps {
@@ -43,7 +44,7 @@ interface IncidentDetailModalProps {
 type Action = 'start' | 'resolve' | 'dismiss' | 'reopen';
 
 /** Active statuses for the "other open incidents from this agent" sibling list. */
-const SIBLING_STATUSES = ['open', 'acknowledged', 'in_progress'];
+const SIBLING_STATUSES: string[] = [...ACTIVE_INCIDENT_STATUSES];
 const SIBLING_LIMIT = 20;
 
 const RESOLUTION_PRESETS = [
@@ -108,10 +109,10 @@ export function IncidentDetailModal({
   }, [personaId, incident.id]);
 
   const status = incident.status;
-  const isActive = status === 'open' || status === 'acknowledged' || status === 'in_progress';
+  const isActive = isActiveIncidentStatus(status);
   const canStartWork = status === 'open' || status === 'acknowledged';
   const canBackToOpen = status === 'in_progress';
-  const canReopen = status === 'resolved' || status === 'dismissed';
+  const canReopen = isClosedIncidentStatus(status);
 
   const run = async (action: Action, fn: () => Promise<boolean>) => {
     setPending(action);

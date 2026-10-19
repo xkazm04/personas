@@ -40,6 +40,7 @@ import {
   severityUrgencyLabel, sourceTableIcon, sourceTableLabel,
 } from '../../libs/incidentTaxonomy';
 import { useIncidentLedger, type IncidentSortKey } from '../../libs/useIncidentLedger';
+import { isClosedIncidentStatus } from '../../libs/incidentStatus';
 import { LedgerPager } from './LedgerPager';
 import { LEDGER_COLUMNS, isNewSince, type IncidentLedgerViewProps } from './ledgerModel';
 
@@ -55,7 +56,7 @@ const SOURCE_TILE: Record<string, string> = {
  */
 const LEDGER_TABLE_ID = 'overview-incidents-ledger';
 
-const isClosed = (incident: AuditIncident) => incident.status === 'resolved' || incident.status === 'dismissed';
+const isClosed = (incident: AuditIncident) => isClosedIncidentStatus(incident.status);
 
 export function IncidentsLedgerDossier(props: IncidentLedgerViewProps) {
   const { incidents, focusedId, lastSeenAt, onPageRowsChange, footerNote } = props;

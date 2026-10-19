@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import type { AuditIncident } from '@/lib/bindings/AuditIncident';
+import { isActiveIncidentStatus } from './incidentStatus';
 
 interface TriageArgs {
   /** Exactly the rows on screen, in their display order. */
@@ -84,7 +85,7 @@ export function useIncidentKeyboardTriage(args: TriageArgs): void {
           }
           break;
         case 'r':
-          if (curIdx >= 0 && ['open', 'acknowledged', 'in_progress'].includes(list[curIdx]!.status)) {
+          if (curIdx >= 0 && isActiveIncidentStatus(list[curIdx]!.status)) {
             e.preventDefault();
             const inc = list[curIdx]!;
             void cur.resolve(inc.id).then((ok) => {

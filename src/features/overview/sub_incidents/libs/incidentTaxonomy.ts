@@ -2,6 +2,7 @@ import { AlertTriangle, Bell, Database, KeyRound, Stethoscope, ShieldAlert, Unpl
 import { SEVERITY_COLORS } from '@/lib/utils/formatters';
 import type { StatusKey } from '@/lib/design/statusTokens';
 import type { Translations } from '@/i18n/en';
+import { isClosedIncidentStatus } from './incidentStatus';
 
 /**
  * Per-source visual + label mapping for the incidents inbox.
@@ -161,7 +162,7 @@ export const STALE_THRESHOLD_MS = 3 * 24 * 3_600_000;
  * threshold — surfaced so long-waiting work doesn't rot unseen.
  */
 export function isStaleIncident(incident: { status: string; createdAt: string }): boolean {
-  if (incident.status === 'resolved' || incident.status === 'dismissed') return false;
+  if (isClosedIncidentStatus(incident.status)) return false;
   const ts = new Date(incident.createdAt).getTime();
   if (Number.isNaN(ts)) return false;
   return Date.now() - ts >= STALE_THRESHOLD_MS;

@@ -35,6 +35,7 @@ import {
   useReloadOnDeckClose,
 } from '@/features/overview/sub_manual-review/libs/decisionDeckDoors';
 import { openIncidentDoor } from '../libs/incidentDeckDoor';
+import { isActiveIncidentStatus } from '../libs/incidentStatus';
 
 export default function IncidentsInbox() {
   const { t, tx } = useTranslation();
@@ -56,7 +57,7 @@ export default function IncidentsInbox() {
   // asking for something. Already-closed rows are left alone so the count in
   // the dialog is the count of rows that will visibly change.
   const clearableIds = useMemo(
-    () => incidents.filter((i) => i.status !== 'resolved' && i.status !== 'dismissed').map((i) => i.id),
+    () => incidents.filter((i) => isActiveIncidentStatus(i.status)).map((i) => i.id),
     [incidents],
   );
 
