@@ -126,10 +126,14 @@ export default function RunDeskPage() {
   );
 
   const handleCreateTask = useCallback(
-    (data: TaskDraft) => {
-      Promise.resolve(createTask(data))
-        .then(() => reload())
-        .catch(toastCatch('RunDeskPage:createTask'));
+    async (data: TaskDraft) => {
+      try {
+        await createTask(data);
+      } catch (err) {
+        toastCatch('RunDeskPage:createTask')(err);
+        throw err; // the modal keeps the draft open
+      }
+      reload();
     },
     [createTask, reload],
   );

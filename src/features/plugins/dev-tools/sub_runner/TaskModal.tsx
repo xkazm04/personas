@@ -46,7 +46,8 @@ export function TaskModal({
 }: {
   open: boolean;
   onClose: () => void;
-  onCreate: (data: TaskDraft) => void;
+  /** Resolve to close the modal; reject to keep the draft on screen. */
+  onCreate: (data: TaskDraft) => Promise<unknown>;
 }) {
   const { t } = useTranslation();
   const dr = t.plugins.dev_runner;
@@ -54,10 +55,22 @@ export function TaskModal({
   const [description, setDescription] = useState('');
   const [goalId, setGoalId] = useState('');
   const [depth, setDepth] = useState<string>('quick');
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = () => {
-    if (!title.trim()) return;
-    onCreate({ title: title.trim(), description: description.trim(), goalId: goalId.trim() || undefined, depth });
+  // The draft is cleared only once the task exists. Clearing and closing
+  // before the create settled threw away everything typed whenever the
+  // create failed (the page toasts the failure; the modal was already gone).
+  const handleSubmit = async () => {
+    if (!title.trim() || submitting) return;
+    setSubmitting(true);
+    try {
+      await onCreate({ title: title.trim(), description: description.trim(), goalId: goalId.trim() || undefined, depth });
+    } catch {
+      // Reported by the caller; keep the modal open with the draft intact.
+      return;
+    } finally {
+      setSubmitting(false);
+    }
     setTitle('');
     setDescription('');
     setGoalId('');
@@ -155,7 +168,8 @@ export function TaskModal({
             size="sm"
             icon={<Plus className="w-3.5 h-3.5" />}
             disabled={!title.trim()}
-            onClick={handleSubmit}
+            loading={submitting}
+            onClick={() => { void handleSubmit(); }}
           >
             {dr.create_task}
           </Button>
