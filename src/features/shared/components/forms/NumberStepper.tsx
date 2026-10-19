@@ -160,6 +160,20 @@ export function NumberStepper({
   );
   useEffect(() => stopRepeat, [stopRepeat]);
 
+  // Keyboard (Enter/Space) and assistive-tech activation fire a click with
+  // `detail === 0` and no pointer events at all, so the pointer handlers above
+  // never see it. One step + one commit per activation. A pointer press also
+  // ends in a click, but with `detail >= 1`, and it has already stepped.
+  const stepFromClick = useCallback(
+    (e: React.MouseEvent, dir: 1 | -1) => {
+      if (disabled || e.detail !== 0) return;
+      beginInteraction();
+      doStep(dir);
+      fireCommit(valueRef.current);
+    },
+    [disabled, beginInteraction, doStep, fireCommit],
+  );
+
   const commitDraft = useCallback(
     (raw: string) => {
       const trimmed = raw.trim();
@@ -210,6 +224,7 @@ export function NumberStepper({
             startRepeat(-1);
           }
         }}
+        onClick={(e) => stepFromClick(e, -1)}
         onPointerUp={endStep}
         onPointerLeave={endStep}
         onPointerCancel={stopRepeat}
@@ -282,6 +297,7 @@ export function NumberStepper({
             startRepeat(1);
           }
         }}
+        onClick={(e) => stepFromClick(e, 1)}
         onPointerUp={endStep}
         onPointerLeave={endStep}
         onPointerCancel={stopRepeat}
