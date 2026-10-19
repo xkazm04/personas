@@ -11,6 +11,10 @@ vi.mock("@/api/network/discovery", () => ({
   syncPeerManifest: vi.fn(),
 }));
 
+// Every other network API module reaches the backend through this door, so
+// one mock rejects identity / exposure / bundle / enclave calls alike.
+vi.mock("@/lib/tauriInvoke", () => ({ invokeWithTimeout: vi.fn() }));
+
 // The capability probe is exercised in `src/lib/network/__tests__/p2pCapability.test.ts`.
 // Here it is stubbed so these tests stay about the failure counters, and so a
 // mocked-rejecting `getNetworkStatus` cannot be misread as "this build has no p2p".
@@ -21,6 +25,8 @@ vi.mock("@/lib/network/p2pCapability", () => ({
 let p2pSupported = true;
 
 import * as discoveryApi from "@/api/network/discovery";
+import { invokeWithTimeout } from "@/lib/tauriInvoke";
+import { storeBus } from "@/lib/storeBus";
 import { createNetworkSlice, STALE_THRESHOLD } from "./networkSlice";
 import type { SystemStore } from "../../storeTypes";
 
@@ -169,5 +175,58 @@ describe("networkSlice p2p capability gate", () => {
 
     expect(h.get().p2pUnavailable).toBe(false);
     expect(h.get().networkConsecutiveFailures).toBe(1);
+  });
+});
+
+describe("networkSlice rethrowing actions leave the toast to their caller", () => {
+  // Every caller of these actions catches and shows its own translated toast or
+  // inline error. A store toast on top of that is a second toast for the same
+  // failure, carrying the raw backend text.
+  const appError = { error: "backend said no", kind: "internal" };
+  const opts = { skip_conflicts: true, rename_prefix: null };
+  const policy = {} as never;
+  const actions: Array<[string, (s: SystemStore) => Promise<unknown>]> = [
+    ["setDisplayName", (s) => s.setDisplayName("x")],
+    ["exportIdentityCard", (s) => s.exportIdentityCard()],
+    ["importTrustedPeer", (s) => s.importTrustedPeer("card")],
+    ["revokePeerTrust", (s) => s.revokePeerTrust("p")],
+    ["deleteTrustedPeer", (s) => s.deleteTrustedPeer("p")],
+    ["createExposedResource", (s) => s.createExposedResource({} as never)],
+    ["deleteExposedResource", (s) => s.deleteExposedResource("r")],
+    ["exportBundle", (s) => s.exportBundle(["r"], "/tmp/b.persona")],
+    ["exportBundleToClipboard", (s) => s.exportBundleToClipboard(["r"])],
+    ["previewBundleImport", (s) => s.previewBundleImport("/tmp/b.persona")],
+    ["previewBundleFromClipboard", (s) => s.previewBundleFromClipboard("abc")],
+    ["applyBundleImport", (s) => s.applyBundleImport("/tmp/b.persona", opts as never)],
+    ["applyBundleFromClipboard", (s) => s.applyBundleFromClipboard("abc", opts as never)],
+    ["createShareLink", (s) => s.createShareLink(["r"])],
+    ["previewShareLink", (s) => s.previewShareLink("personas://share/x")],
+    ["importFromShareLink", (s) => s.importFromShareLink("personas://share/x", opts as never)],
+    ["sealEnclave", (s) => s.sealEnclave("p", policy, "/tmp/e.enclave")],
+    ["verifyEnclave", (s) => s.verifyEnclave("/tmp/e.enclave")],
+    ["connectToPeer", (s) => s.connectToPeer("p")],
+    ["disconnectPeer", (s) => s.disconnectPeer("p")],
+    ["syncPeerManifest", (s) => s.syncPeerManifest("p")],
+  ];
+
+  beforeEach(() => {
+    p2pSupported = true;
+    vi.mocked(invokeWithTimeout).mockReset().mockRejectedValue(appError);
+    vi.mocked(discoveryApi.connectToPeer).mockReset().mockRejectedValue(appError);
+    vi.mocked(discoveryApi.disconnectPeer).mockReset().mockRejectedValue(appError);
+    vi.mocked(discoveryApi.syncPeerManifest).mockReset().mockRejectedValue(appError);
+  });
+
+  it.each(actions)("%s rejects, records the error, and emits no store toast", async (_name, run) => {
+    const emit = vi.spyOn(storeBus, "emit");
+    const h = makeHarness();
+
+    await expect(run(h.get())).rejects.toBe(appError);
+    await vi.dynamicImportSettled();
+
+    expect(emit.mock.calls.filter(([event]) => event === "toast")).toEqual([]);
+    // The error is still recorded for any inline reader.
+    expect(h.get().error).toBe("backend said no");
+    emit.mockRestore();
   });
 });
