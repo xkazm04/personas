@@ -60,7 +60,7 @@ describe('intentKeywords outside ASCII', () => {
   });
 });
 
-describe('keyword rules mirror templates.rs', () => {
+describe('keyword rules agree with templates.rs', () => {
   const rs = readFileSync(
     resolve(__dirname, '../../../../../../src-tauri/src/commands/companion/templates.rs'),
     'utf8',
