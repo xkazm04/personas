@@ -33,9 +33,11 @@ export function useStationPreview(state: RadioState | null): StationPreview {
 
   const currentId = state?.currentStationId ?? null;
   const status = state?.status ?? 'stopped';
-  const isActive = status === 'playing' || status === 'buffering';
+  // The footer engines mount only while the radio is enabled; with it off a
+  // `playing` the backend still holds is silence, not a preview in progress.
+  const isActive = radioEnabled && (status === 'playing' || status === 'buffering');
   const previewingId = isActive ? currentId : null;
-  const bufferingId = status === 'buffering' ? currentId : null;
+  const bufferingId = radioEnabled && status === 'buffering' ? currentId : null;
 
   const preview = useCallback(
     (stationId: string) => {
