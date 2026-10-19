@@ -123,6 +123,7 @@ export function PeerDetailDrawer({
           <button
             type="button"
             onClick={onClose}
+            aria-label={st.close}
             className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-foreground transition-colors"
           >
             <X className="w-4 h-4" />
