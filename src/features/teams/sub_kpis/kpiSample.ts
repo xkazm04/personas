@@ -6,7 +6,7 @@
 // measurement yields NO point — a gap, never a zero.
 import type { DevKpi } from '@/lib/bindings/DevKpi';
 import type { DevKpiMeasurement } from '@/lib/bindings/DevKpiMeasurement';
-import { kpiTrack } from './kpiMath';
+import { kpiInstantMs, kpiTrack } from './kpiMath';
 
 export interface TimeWindow {
   from: number;
@@ -23,7 +23,7 @@ export interface SamplePoint {
 export const NOT_DIRECTLY_MEASURED = new Set(['simulation', 'ai-compose']);
 
 export function measuredAtMs(m: DevKpiMeasurement): number {
-  return new Date(m.measured_at.replace(' ', 'T')).getTime();
+  return kpiInstantMs(m.measured_at);
 }
 
 /** One window spanning every listed series (ids missing from `trends` are

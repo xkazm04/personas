@@ -112,7 +112,7 @@ describe('buildPanelSeries', () => {
       a: [m({ kpi_id: 'a', value: 50, measured_at: '2026-01-01 00:00:00' })],
       b: [m({ kpi_id: 'b', value: 50, source: 'simulation', measured_at: '2026-01-01 00:00:00' })],
     };
-    const w = { from: new Date('2026-01-01T00:00:00').getTime() - 10, to: new Date('2026-01-01T00:00:00').getTime() + 10 };
+    const w = { from: Date.UTC(2026, 0, 1) - 10, to: Date.UTC(2026, 0, 1) + 10 }; // rows are UTC
     const out = buildPanelSeries(rows, trends, w, 'production');
     expect(out.map((s) => s.kpi.id)).toEqual(['a', 'b']);
     expect(out[0]!.points[0]!.v).toBe(50);

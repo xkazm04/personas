@@ -28,11 +28,11 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 
 import { GoalEditorModal } from '../../projects/development/goals/GoalEditorModal';
 import { GoalStatusBadge } from '../../projects/development/goals/GoalStatusBadge';
-import { kpiTrack } from './kpiMath';
+import { kpiInstantMs, kpiTrack } from './kpiMath';
 import { silentCatch } from '@/lib/silentCatch';
 import { KpiSection } from './KpiDetailSection';
 
-const ts = (s: string) => new Date(s.replace(' ', 'T')).getTime();
+const ts = kpiInstantMs;
 const round = (v: number) => Math.round(v * 100) / 100;
 
 type Verdict = 'improved' | 'regressed' | 'flat' | 'pending';
