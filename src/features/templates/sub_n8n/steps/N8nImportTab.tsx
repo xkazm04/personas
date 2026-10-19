@@ -12,6 +12,7 @@ import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { applySelectionsToResult } from '../reducers/sessionReducer';
 
 
 // -- Slide animation variants --
@@ -57,10 +58,12 @@ export default function N8nImportTab() {
   const handleProcessWithMatrix = useCallback(() => {
     if (!state.parsedResult || !state.rawWorkflowJson) return;
 
-    // Store workflow data in the matrix build slice
+    // Store workflow data in the matrix build slice. Only the subset the user
+    // left ticked on the analyze step travels: the build reads the parse as
+    // its structural baseline.
     setWorkflowImport({
       workflowJson: state.rawWorkflowJson,
-      parserResultJson: JSON.stringify(state.parsedResult),
+      parserResultJson: JSON.stringify(applySelectionsToResult(state.parsedResult, state)),
       name: state.workflowName || 'Imported Workflow',
       platform: state.platform || 'unknown',
     });
@@ -83,7 +86,7 @@ export default function N8nImportTab() {
     // Navigate to personas page in creation mode — the matrix will pick up the workflow
     setSidebarSection('personas');
     setIsCreatingPersona(true);
-  }, [state.parsedResult, state.rawWorkflowJson, state.workflowName, state.platform, setWorkflowImport, setSidebarSection, setIsCreatingPersona, setN8nTransformActive]);
+  }, [state, setWorkflowImport, setSidebarSection, setIsCreatingPersona, setN8nTransformActive]);
 
   return (
     <div className="flex flex-col h-full">

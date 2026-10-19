@@ -63,6 +63,26 @@ export function initSelectionsFromResult(result: AgentIR): {
   };
 }
 
+/**
+ * The parse narrowed to what the user left ticked on the analyze step. The
+ * checkboxes, the "N selected for import" summary and the ledger's
+ * "deselected" line all promise that an unticked tool, trigger or connector
+ * stays behind; the handoff to the build must carry only the confirmed subset.
+ */
+export function applySelectionsToResult(
+  result: AgentIR,
+  selection: Pick<SessionState, 'selectedToolIndices' | 'selectedTriggerIndices' | 'selectedConnectorNames'>,
+): AgentIR {
+  return {
+    ...result,
+    suggested_tools: result.suggested_tools.filter((_, i) => selection.selectedToolIndices.has(i)),
+    suggested_triggers: result.suggested_triggers.filter((_, i) => selection.selectedTriggerIndices.has(i)),
+    ...(result.suggested_connectors
+      ? { suggested_connectors: result.suggested_connectors.filter((c) => selection.selectedConnectorNames.has(c.name)) }
+      : {}),
+  };
+}
+
 // -- Reducer --
 
 export function sessionReducer(
