@@ -382,3 +382,36 @@ describe("useDrive folder listing is latest-wins", () => {
     expect(result.current.loading).toBe(false);
   });
 });
+
+describe("useDrive selection follows the visible list", () => {
+  it("selectRange spans the rows between the two clicks in the SORTED order", async () => {
+    defaultIpcMocks([
+      fileEntry("a.txt", { size: 1 }),
+      fileEntry("b.txt", { size: 3 }),
+      fileEntry("c.txt", { size: 2 }),
+      fileEntry("d.txt", { size: 4 }),
+    ]);
+    const { result } = renderHook(() => useDrive());
+    await waitFor(() => expect(result.current.entries.length).toBe(4));
+
+    act(() => result.current.setSort("size", "desc"));
+    // Visible: d(4) b(3) c(2) a(1). Click d, shift-click c -> d, b, c.
+    act(() => result.current.selectOnly("d.txt"));
+    act(() => result.current.selectRange("c.txt"));
+    expect(Array.from(result.current.selection).sort()).toEqual([
+      "b.txt",
+      "c.txt",
+      "d.txt",
+    ]);
+  });
+
+  it("selectAll under a search filter selects only the matching rows", async () => {
+    defaultIpcMocks([fileEntry("report.txt"), fileEntry("photo.png")]);
+    const { result } = renderHook(() => useDrive());
+    await waitFor(() => expect(result.current.entries.length).toBe(2));
+
+    act(() => result.current.setSearchQuery("report"));
+    act(() => result.current.selectAll());
+    expect(Array.from(result.current.selection)).toEqual(["report.txt"]);
+  });
+});
