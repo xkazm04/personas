@@ -14,16 +14,20 @@ type PresetTone = 'success' | 'warning' | 'error';
 interface Preset { label: string; range: [number, number]; tone: PresetTone; icon: LucideIcon }
 
 // A band is a status: a quick or safe band is good news, a heavy or risky one is bad news.
-const PRESETS: Record<'effort' | 'risk', Preset[]> = {
+// Bands partition the stored 1-5 scale (`personas_core::models::IDEA_SCALE_MAX`).
+// They were drawn on the old ten-point scale, so Heavy and Risky (7-10) matched
+// no row at all and Moderate (4-6) caught the heaviest ones. The cut points are
+// the ones the rule suggestions mine on: quick is <= 2, heavy and risky are >= 4.
+export const LEVEL_PRESETS: Record<'effort' | 'risk', Preset[]> = {
   effort: [
-    { label: 'Quick Wins', range: [1, 3], tone: 'success', icon: Zap },
-    { label: 'Moderate', range: [4, 6], tone: 'warning', icon: Gauge },
-    { label: 'Heavy', range: [7, 10], tone: 'error', icon: ShieldAlert },
+    { label: 'Quick Wins', range: [1, 2], tone: 'success', icon: Zap },
+    { label: 'Moderate', range: [3, 3], tone: 'warning', icon: Gauge },
+    { label: 'Heavy', range: [4, 5], tone: 'error', icon: ShieldAlert },
   ],
   risk: [
-    { label: 'Safe', range: [1, 3], tone: 'success', icon: ShieldCheck },
-    { label: 'Moderate', range: [4, 6], tone: 'warning', icon: Shield },
-    { label: 'Risky', range: [7, 10], tone: 'error', icon: ShieldAlert },
+    { label: 'Safe', range: [1, 2], tone: 'success', icon: ShieldCheck },
+    { label: 'Moderate', range: [3, 3], tone: 'warning', icon: Shield },
+    { label: 'Risky', range: [4, 5], tone: 'error', icon: ShieldAlert },
   ],
 };
 
@@ -33,6 +37,8 @@ const ACTIVE: Record<PresetTone, string> = {
   error: 'bg-status-error/20 text-status-error border-status-error/30',
 };
 const INACTIVE = 'bg-secondary/30 text-foreground border-border/20';
+// The "no filter" band. Wider than the scale on purpose: it must equal the
+// host's FULL_LEVEL_RANGE (backlogModel) or Clear would never hide.
 const ALL_RANGE: [number, number] = [1, 10];
 
 function rangesEqual(a: [number, number], b: [number, number]) {
@@ -82,8 +88,8 @@ function PresetGroup({ heading, presets, range, onChange }: {
 export function EffortRiskFilter({ effortRange, riskRange, onEffortChange, onRiskChange }: EffortRiskFilterProps) {
   return (
     <div className="space-y-3">
-      <PresetGroup heading="Effort" presets={PRESETS.effort} range={effortRange} onChange={onEffortChange} />
-      <PresetGroup heading="Risk" presets={PRESETS.risk} range={riskRange} onChange={onRiskChange} />
+      <PresetGroup heading="Effort" presets={LEVEL_PRESETS.effort} range={effortRange} onChange={onEffortChange} />
+      <PresetGroup heading="Risk" presets={LEVEL_PRESETS.risk} range={riskRange} onChange={onRiskChange} />
     </div>
   );
 }
