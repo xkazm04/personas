@@ -34,3 +34,26 @@ export function resolveInPool<T>(
     }
   });
 }
+
+/**
+ * Split a batch's misses into the two facts the reviewer needs told apart.
+ *
+ * `failed` writes did not land and the row is still pending — say so. A lost
+ * compare-and-swap (`isConflict`, normally `isDecisionConflict`) is the
+ * opposite: the row IS decided, just not by this reviewer (Athena's Night
+ * Shift resolves approvals unattended). Counting it as "still pending" told
+ * the reviewer something false about rows that had already left the queue.
+ */
+export function summarizeBulkOutcome(
+  outcomes: readonly BulkOutcome[],
+  isConflict: (reason: unknown) => boolean,
+): { failed: number; decidedElsewhere: number } {
+  let failed = 0;
+  let decidedElsewhere = 0;
+  for (const o of outcomes) {
+    if (o.status !== 'failed') continue;
+    if (isConflict(o.reason)) decidedElsewhere += 1;
+    else failed += 1;
+  }
+  return { failed, decidedElsewhere };
+}

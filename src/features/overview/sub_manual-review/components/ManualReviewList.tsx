@@ -15,7 +15,7 @@ import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
 import type { ManualReviewItem } from '@/lib/types/types';
 import { seedMockManualReview, gcStaleManualReviews, deleteAllManualReviews } from '@/api/overview/reviews';
-import { resolveReviewRow } from '@/lib/decisions/rowWrites';
+import { isDecisionConflict, resolveReviewRow } from '@/lib/decisions/rowWrites';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { toastCatch } from '@/lib/silentCatch';
 import { FILTER_LABELS, resolveReviewQueueView, type FilterStatus, type SourceFilter } from '../libs/reviewHelpers';
@@ -36,7 +36,7 @@ import { useBacklogQueue } from './backlog/useBacklogQueue';
 import { ReviewFilterTrailing } from './ReviewFilterTrailing';
 import { PendingDecisionList } from './PendingDecisionList';
 import { useReloadOnDeckClose } from '../libs/decisionDeckDoors';
-import { resolveInPool } from '../libs/bulkResolve';
+import { resolveInPool, summarizeBulkOutcome } from '../libs/bulkResolve';
 
 /**
  * Shape a raw `PersonaManualReview` row (as returned by the layered
@@ -227,12 +227,20 @@ export default function ManualReviewList() {
       // Refresh L0 counts + L1 page so the acted-on row leaves the list.
       reloadQueue();
     } catch (err) {
-      toastCatch('manualReview:resolve')(err);
+      // A lost compare-and-swap is not a failed write: the review IS decided,
+      // by somebody else (Athena resolves approvals unattended). It used to
+      // toast as a generic failure, which reads as "try again" on a row that
+      // can no longer be decided; the Backlog already says "decided elsewhere".
+      if (isDecisionConflict(err)) {
+        useToastStore.getState().addToast(t.overview.dc_decided_elsewhere, 'warning');
+      } else {
+        toastCatch('manualReview:resolve')(err);
+      }
       // Re-read regardless: a conflict means somebody else's verdict is the
       // truth, and the list must show it rather than the row we tried to write.
       reloadQueue();
     } finally { setIsProcessing(false); }
-  }, [activeReview, allReviews, isProcessing, filteredReviews, reloadQueue]);
+  }, [activeReview, allReviews, isProcessing, filteredReviews, reloadQueue, t]);
 
   // ---- Pending → the Decision Deck ----------------------------------------
   //
@@ -255,9 +263,13 @@ export default function ManualReviewList() {
       // Athena resolving approvals unattended overnight, losing a
       // compare-and-swap on part of a batch is routine, not exotic. Count them
       // and say so.
-      const failed = results.filter((r) => r.status === 'failed').length;
+      // A lost compare-and-swap is "decided elsewhere", not "still pending".
+      const { failed, decidedElsewhere } = summarizeBulkOutcome(results, isDecisionConflict);
       if (failed > 0) {
         useToastStore.getState().addToast(tx(t.overview.review.bulk_partial_failure, { count: failed }), 'warning', 4000);
+      }
+      if (decidedElsewhere > 0) {
+        useToastStore.getState().addToast(t.overview.dc_decided_elsewhere, 'warning', 4000);
       }
       setSelectedIds(new Set());
       setConfirmAction(null);
