@@ -33,8 +33,3 @@ export function presetBackgroundImage(id: string): string | null {
 export function presetGradient(color: string): string {
   return `linear-gradient(135deg, ${colorWithAlpha(color, 0.32)} 0%, ${colorWithAlpha(color, 0.08)} 52%, transparent 100%)`;
 }
-
-/** Legibility scrim laid over an illustration so overlaid text stays readable. */
-export function presetScrim(): string {
-  return 'linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.45) 42%, rgba(0,0,0,0.12) 100%)';
-}

@@ -20,59 +20,33 @@ export const TEAM_COLORS: Record<string, string> = {
 interface TeamColorPickerProps {
   value: string;
   onChange: (hex: string) => void;
-  /**
-   * 'md' (default) shows the color name as a caption below each swatch.
-   * 'sm' is a compact grid with the name surfaced
-   * only via title/aria-pressed — used by TeamWorkspacePane's identity panel.
-   */
-  size?: 'md' | 'sm';
 }
 
-/** Shared color-swatch grid for team identity editing (create + workspace pane). */
-export function TeamColorPicker({ value, onChange, size = 'md' }: TeamColorPickerProps) {
-  const swatchSize = size === 'md' ? 'w-9 h-9' : 'w-7 h-7';
-  const checkSize = size === 'md' ? 'w-4 h-4' : 'w-3.5 h-3.5';
-  const gap = size === 'md' ? 'gap-2' : 'gap-1.5';
-
+/**
+ * Compact color-swatch grid for team identity editing (TeamWorkspacePane's
+ * identity panel). The labelled 'md' variant went with its only consumer,
+ * the retired `CreateTeamForm`.
+ */
+export function TeamColorPicker({ value, onChange }: TeamColorPickerProps) {
   return (
-    <div className={`flex ${gap} flex-wrap`}>
+    <div className="flex gap-1.5 flex-wrap">
       {Object.entries(TEAM_COLORS).map(([hex, name]) => {
         const isSelected = value === hex;
-        const swatch = (
-          <span
-            className={`${swatchSize} rounded-card transition-all flex items-center justify-center ${isSelected ? 'scale-110' : 'hover:scale-105'}`}
-            style={{ backgroundColor: hex }}
-          >
-            {isSelected && (
-              <Check className={`${checkSize} text-foreground drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]`} />
-            )}
-          </span>
-        );
-
-        if (size === 'sm') {
-          return (
-            <button
-              key={hex}
-              type="button"
-              onClick={() => onChange(hex)}
-              title={name}
-              aria-pressed={isSelected}
-            >
-              {swatch}
-            </button>
-          );
-        }
-
         return (
           <button
             key={hex}
             type="button"
             onClick={() => onChange(hex)}
-            className="flex flex-col items-center gap-1 group"
+            title={name}
+            aria-pressed={isSelected}
           >
-            {swatch}
-            <span className={`text-[10px] leading-tight ${isSelected ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
-              {name}
+            <span
+              className={`w-7 h-7 rounded-card transition-all flex items-center justify-center ${isSelected ? 'scale-110' : 'hover:scale-105'}`}
+              style={{ backgroundColor: hex }}
+            >
+              {isSelected && (
+                <Check className="w-3.5 h-3.5 text-foreground drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]" />
+              )}
             </span>
           </button>
         );

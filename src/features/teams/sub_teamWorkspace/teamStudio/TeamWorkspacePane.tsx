@@ -206,7 +206,7 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
         </label>
         <div>
           <span className="typo-label text-foreground/85 mb-1.5 block">{t.pipeline.color}</span>
-          <TeamColorPicker value={color} onChange={setColor} size="sm" />
+          <TeamColorPicker value={color} onChange={setColor} />
         </div>
         <p className="typo-caption text-foreground">{ts.identity_hint}</p>
       </div>
