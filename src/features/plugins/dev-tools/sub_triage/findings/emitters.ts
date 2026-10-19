@@ -5,6 +5,12 @@
 // verification probe re-run exactly one emitter against fresh inputs and compare
 // the result to the `evidence` we recorded here.
 //
+// The top-N caps (SENTRY_TOP_N, DOC_ROT_TOP_N, ...) bound how many NEW findings a
+// sweep raises; they are not the signal. Each capped emitter takes a `limit` so
+// the sweep can also read the uncapped set: verification must judge a standing
+// finding against every signal still over threshold, or one that merely fell
+// out of the top N would read as cleared.
+//
 // Contract for every emitter:
 //   • `dedupKey` is stable and self-describing — the same underlying signal must
 //     produce the same key forever, or dedup (and Phase-3 re-measurement) breaks.
@@ -194,11 +200,12 @@ export function emitLlmCostFindings(
 export function emitSentryFindings(
   issues: SentryIssue[],
   contextIdForCulprit: (culprit: string | null) => string | undefined,
+  limit = SENTRY_TOP_N,
 ): FindingDraft[] {
   return issues
     .filter((i) => i.count > SENTRY_COUNT_THRESHOLD)
     .sort((a, b) => b.count - a.count)
-    .slice(0, SENTRY_TOP_N)
+    .slice(0, limit)
     .map((i) => ({
       origin: 'sentry_spike' as const,
       title: `Fix ${i.title}`,
@@ -243,11 +250,14 @@ export interface DormantSkill {
 /** Oldest-unused first, capped — a skill cleanup should be a deliberate pass,
  *  not sweep spam. The dedup key matches the adoption plan's scheme, so a skill
  *  that wakes up (or gets removed) clears via the normal probe path. */
-export function emitSkillDormantFindings(skills: DormantSkill[]): FindingDraft[] {
+export function emitSkillDormantFindings(
+  skills: DormantSkill[],
+  limit = SKILL_DORMANT_TOP_N,
+): FindingDraft[] {
   return skills
     .filter((s) => s.dormant)
     .sort((a, b) => a.first_seen_at.localeCompare(b.first_seen_at))
-    .slice(0, SKILL_DORMANT_TOP_N)
+    .slice(0, limit)
     .map((s) => ({
       origin: 'skill_dormant' as const,
       title: `Dormant skill: “${s.name}”`,
@@ -295,7 +305,7 @@ export interface RottingDoc {
  *  Brainiac's `was_dirty` signal), then oldest staleness. The description IS
  *  the Dev-runner refresh prompt seed: it carries the exact changed sources so
  *  the accepted task updates what changed instead of rewriting the doc. */
-export function emitDocRotFindings(docs: RottingDoc[]): FindingDraft[] {
+export function emitDocRotFindings(docs: RottingDoc[], limit = DOC_ROT_TOP_N): FindingDraft[] {
   return docs
     .filter((d) => d.dirty_since !== null)
     .sort((a, b) =>
@@ -303,7 +313,7 @@ export function emitDocRotFindings(docs: RottingDoc[]): FindingDraft[] {
         ? b.dirty_reads_30d - a.dirty_reads_30d
         : (a.dirty_since ?? '').localeCompare(b.dirty_since ?? ''),
     )
-    .slice(0, DOC_ROT_TOP_N)
+    .slice(0, limit)
     .map((d) => ({
       origin: 'doc_rot' as const,
       title: `Refresh stale doc: ${d.doc_path}`,
@@ -333,7 +343,7 @@ export function emitDocRotFindings(docs: RottingDoc[]): FindingDraft[] {
  *  nothing, so it is never "stale" — it used to be indistinguishable from a
  *  healthy doc, and it is the likeliest of all to be wrong. Ranked by how many
  *  references are gone, then by consumption. */
-export function emitDocBrokenRefFindings(docs: RottingDoc[]): FindingDraft[] {
+export function emitDocBrokenRefFindings(docs: RottingDoc[], limit = DOC_ROT_TOP_N): FindingDraft[] {
   return docs
     .filter((d) => (d.broken_refs?.length ?? 0) > 0)
     .sort((a, b) =>
@@ -341,7 +351,7 @@ export function emitDocBrokenRefFindings(docs: RottingDoc[]): FindingDraft[] {
         ? (b.broken_refs?.length ?? 0) - (a.broken_refs?.length ?? 0)
         : b.reads_30d - a.reads_30d,
     )
-    .slice(0, DOC_ROT_TOP_N)
+    .slice(0, limit)
     .map((d) => {
       const refs = d.broken_refs ?? [];
       return {
@@ -391,11 +401,14 @@ export interface DisputedMemory {
  *  human decision in Overview → Memories (reverify / deprecate / dismiss);
  *  the description says exactly that. Clears via the normal probe path once
  *  the claims are answered. */
-export function emitMemoryDisputedFindings(memories: DisputedMemory[]): FindingDraft[] {
+export function emitMemoryDisputedFindings(
+  memories: DisputedMemory[],
+  limit = MEMORY_DISPUTED_TOP_N,
+): FindingDraft[] {
   return memories
     .filter((m) => m.open_claims > 0)
     .sort((a, b) => b.open_claims - a.open_claims)
-    .slice(0, MEMORY_DISPUTED_TOP_N)
+    .slice(0, limit)
     .map((m) => ({
       origin: 'memory_disputed' as const,
       title: `Resolve disputed memory: “${m.memory_title}”`,
