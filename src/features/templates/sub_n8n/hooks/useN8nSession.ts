@@ -110,6 +110,59 @@ export function useN8nSession(
   const latestStateRef = useRef(state);
   latestStateRef.current = state;
 
+  // -- Flush pending writes on unmount --
+  //
+  // DECLARED BEFORE the two sync effects on purpose. React runs a component's
+  // effect cleanups in declaration order, and each sync effect's own cleanup
+  // clears its timer and nulls the ref. While this effect sat below them, it
+  // always found both refs already null on unmount, so the flush never ran and
+  // an edit made inside the debounce window (600 ms DB / 300 ms localStorage)
+  // was dropped whenever the wizard unmounted. Pinned by
+  // __tests__/useN8nSession.test.ts.
+
+  useEffect(() => {
+    return () => {
+      const current = latestStateRef.current;
+
+      if (dbTimerRef.current) {
+        clearTimeout(dbTimerRef.current);
+        dbTimerRef.current = null;
+        if (current.sessionId) {
+          const currentSlice = deriveDbSlice(current);
+          void updateN8nSession(current.sessionId, {
+            step: currentSlice.step,
+            status: currentSlice.status,
+            parserResult: currentSlice.parserResult,
+            draftJson: currentSlice.draftJson,
+            questionsJson: currentSlice.questionsJson,
+            userAnswers: currentSlice.userAnswers,
+            transformId: currentSlice.transformId,
+            error: currentSlice.error,
+          }).catch(silentCatch("useN8nSession:flushDbSync"));
+        }
+      }
+
+      if (lsTimerRef.current) {
+        clearTimeout(lsTimerRef.current);
+        lsTimerRef.current = null;
+        if (current.transforming && current.backgroundTransformId && current.rawWorkflowJson && current.parsedResult) {
+          try {
+            const context: PersistedTransformContext = {
+              transformId: current.backgroundTransformId,
+              workflowName: current.workflowName || 'Imported Workflow',
+              rawWorkflowJson: current.rawWorkflowJson,
+              parsedResult: current.parsedResult,
+              savedAt: Date.now(),
+            };
+            window.localStorage.setItem(N8N_TRANSFORM_CONTEXT_KEY, JSON.stringify(context));
+          } catch (err) {
+            silentCatch("useN8nSession:unmountFlushLsSync")(err);
+          }
+        }
+      }
+    };
+  }, []);
+
   // -- Auto-sync to SQLite (debounced) --
 
   useEffect(() => {
@@ -194,51 +247,6 @@ export function useN8nSession(
     state.rawWorkflowJson,
     state.parsedResult,
   ]);
-
-  // -- Cleanup timers on unmount --
-
-  useEffect(() => {
-    return () => {
-      const current = latestStateRef.current;
-
-      if (dbTimerRef.current) {
-        clearTimeout(dbTimerRef.current);
-        dbTimerRef.current = null;
-        if (current.sessionId) {
-          const currentSlice = deriveDbSlice(current);
-          void updateN8nSession(current.sessionId, {
-            step: currentSlice.step,
-            status: currentSlice.status,
-            parserResult: currentSlice.parserResult,
-            draftJson: currentSlice.draftJson,
-            questionsJson: currentSlice.questionsJson,
-            userAnswers: currentSlice.userAnswers,
-            transformId: currentSlice.transformId,
-            error: currentSlice.error,
-          }).catch(silentCatch("useN8nSession:flushDbSync"));
-        }
-      }
-
-      if (lsTimerRef.current) {
-        clearTimeout(lsTimerRef.current);
-        lsTimerRef.current = null;
-        if (current.transforming && current.backgroundTransformId && current.rawWorkflowJson && current.parsedResult) {
-          try {
-            const context: PersistedTransformContext = {
-              transformId: current.backgroundTransformId,
-              workflowName: current.workflowName || 'Imported Workflow',
-              rawWorkflowJson: current.rawWorkflowJson,
-              parsedResult: current.parsedResult,
-              savedAt: Date.now(),
-            };
-            window.localStorage.setItem(N8N_TRANSFORM_CONTEXT_KEY, JSON.stringify(context));
-          } catch (err) {
-            silentCatch("useN8nSession:unmountFlushLsSync")(err);
-          }
-        }
-      }
-    };
-  }, []);
 
   // -- Manual operations --
 
