@@ -7,7 +7,6 @@ import {
   Compass,
   CalendarDays,
   Users,
-  Loader2,
   ExternalLink,
 } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
@@ -180,10 +179,9 @@ export default function GraphPanel() {
   }, [query, searches]);
 
   const appendJournal = useCallback(async () => {
-    if (!journalBody.trim()) {
-      addToast('Write something to capture first', 'error');
-      return;
-    }
+    // The button is disabled while the body is empty; this only guards a
+    // programmatic call.
+    if (!journalBody.trim()) return;
     setJournalSaving(true);
     try {
       const result = await obsidianGraphAppendDailyNote(journalBody, {
@@ -205,10 +203,9 @@ export default function GraphPanel() {
   }, [journalBody, journalSection, addToast, loadStats]);
 
   const writeMeeting = useCallback(async () => {
-    if (!meetingTitle.trim() || !meetingBody.trim()) {
-      addToast('Meeting title and body are required', 'error');
-      return;
-    }
+    // The button is disabled until both are filled; this only guards a
+    // programmatic call.
+    if (!meetingTitle.trim() || !meetingBody.trim()) return;
     setMeetingSaving(true);
     try {
       const attendees = meetingAttendees
@@ -434,7 +431,7 @@ export default function GraphPanel() {
                 disabled={journalSaving || !journalBody.trim()}
                 className="ml-auto flex items-center gap-2 px-5 py-2 rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 focus-ring"
               >
-                {journalSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CalendarDays className="w-4 h-4" />}
+                {journalSaving ? <LoadingSpinner size="sm" /> : <CalendarDays className="w-4 h-4" />}
                 {t.plugins.obsidian_brain.append_to_today}
               </button>
             </div>
@@ -481,7 +478,7 @@ export default function GraphPanel() {
               disabled={meetingSaving || !meetingTitle.trim() || !meetingBody.trim()}
               className="flex items-center gap-2 px-5 py-2 rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 focus-ring"
             >
-              {meetingSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Users className="w-4 h-4" />}
+              {meetingSaving ? <LoadingSpinner size="sm" /> : <Users className="w-4 h-4" />}
               {t.plugins.obsidian_brain.save_meeting_note}
             </button>
           </div>
