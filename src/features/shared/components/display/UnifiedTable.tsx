@@ -377,7 +377,7 @@ function ColumnHeader<T>({
   resizeHandle?: ReactNode;
   density?: 'comfortable' | 'compact';
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [showFilter, setShowFilter] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
@@ -420,6 +420,11 @@ function ColumnHeader<T>({
           onClick={() => onSort(col.key)}
           className={`p-0.5 rounded transition-colors ${isSorted ? 'text-primary' : 'text-foreground hover:text-muted-foreground/60'}`}
           title={t.shared.sort_by.replace('{label}', col.label)}
+          // The name carries the sort state, as SortableHeader's does: the
+          // arrow glyph alone tells a screen reader nothing.
+          aria-label={isSorted
+            ? tx(sortDir === 'asc' ? t.shared.sort_active_asc : t.shared.sort_active_desc, { label: col.label })
+            : tx(t.shared.sort_by, { label: col.label })}
         >
           {isSorted ? (
             sortDir === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />
@@ -435,6 +440,8 @@ function ColumnHeader<T>({
           <button
             type="button"
             onClick={() => { setShowFilter(!showFilter); setShowSearch(false); }}
+            aria-haspopup="true"
+            aria-expanded={showFilter}
             className={`p-0.5 rounded transition-colors ${isFiltered ? 'text-primary' : 'text-foreground hover:text-muted-foreground/60'}`}
             title={t.shared.filter_label.replace('{label}', col.label)}
           >
@@ -475,6 +482,7 @@ function ColumnHeader<T>({
               <button
                 type="button"
                 onClick={() => { col.onSearchChange!(''); setShowSearch(false); }}
+                aria-label={t.common.clear}
                 className="p-0.5 text-foreground/90 hover:text-foreground"
               >
                 <X className="w-3 h-3" />
