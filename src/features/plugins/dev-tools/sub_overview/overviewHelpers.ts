@@ -163,9 +163,10 @@ export function computeVitalTones(
     unresolved: !monitorStats || monitorStats.unresolvedIssues === null ? 'neutral'
       : monitorStats.unresolvedIssues === 0 ? 'success'
         : monitorStats.unresolvedIssues > 5 ? 'error' : 'warning',
-    events24: !monitorStats ? 'neutral'
+    events24: !monitorStats || monitorStats.eventsLast24h === null ? 'neutral'
       : monitorStats.eventsLast24h === 0 ? 'success'
         : monitorStats.eventsLast24h > 100 ? 'error' : 'warning',
-    events7: !monitorStats ? 'neutral' : monitorStats.eventsLastWeek === 0 ? 'success' : 'info',
+    events7: !monitorStats || monitorStats.eventsLastWeek === null ? 'neutral'
+      : monitorStats.eventsLastWeek === 0 ? 'success' : 'info',
   };
 }

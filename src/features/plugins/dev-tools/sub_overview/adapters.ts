@@ -38,8 +38,10 @@ export interface MonitoringStats {
    * on every attempt) — render as "—", not "0", so a project with real
    * unresolved errors doesn't read as healthy. */
   unresolvedIssues: number | null;
-  eventsLast24h: number;
-  eventsLastWeek: number;
+  /** `null` when the stats request failed or answered something other than a
+   * bucket list: an unread window is not a quiet one. */
+  eventsLast24h: number | null;
+  eventsLastWeek: number | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -347,24 +349,26 @@ export async function fetchSentryStats(
   const day = now - 86400;
   const week = now - 7 * 86400;
 
-  let eventsLast24h = 0;
-  let eventsLastWeek = 0;
+  let eventsLast24h: number | null = null;
+  let eventsLastWeek: number | null = null;
 
   try {
+    // Hourly buckets. Per-day buckets are aligned to UTC midnight, so the
+    // ">= now - 24h" filter kept only TODAY's bucket and "24h" read as
+    // "since UTC midnight" (15 hours of events at 15:00 UTC).
     const statsRes = await executeApiRequest(
       credentialId,
       'GET',
-      `/api/0/projects/${orgSlug}/${projectSlug}/stats/?stat=received&since=${week}&until=${now}&resolution=1d`,
+      `/api/0/projects/${orgSlug}/${projectSlug}/stats/?stat=received&since=${week}&until=${now}&resolution=1h`,
       headers,
     );
-    const statsData = JSON.parse(statsRes.body);
+    const statsData: unknown = statsRes.status < 400 ? JSON.parse(statsRes.body) : null;
     if (Array.isArray(statsData)) {
-      eventsLastWeek = statsData.reduce((sum: number, [, count]: [number, number]) => sum + count, 0);
-      // Last bucket is last 24h
-      if (statsData.length > 0) {
-        const lastBuckets = statsData.filter(([ts]: [number, number]) => ts >= day);
-        eventsLast24h = lastBuckets.reduce((sum: number, [, count]: [number, number]) => sum + count, 0);
-      }
+      const buckets = statsData as [number, number][];
+      eventsLastWeek = buckets.reduce((sum, [, count]) => sum + count, 0);
+      eventsLast24h = buckets
+        .filter(([ts]) => ts >= day)
+        .reduce((sum, [, count]) => sum + count, 0);
     }
   } catch (err) { silentCatch("features/plugins/dev-tools/sub_overview/adapters:catch1")(err); }
 

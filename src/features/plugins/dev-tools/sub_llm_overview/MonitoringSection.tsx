@@ -165,8 +165,8 @@ export default function MonitoringSection() {
         ) : stats ? (
           <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
             <StatCard label={po.unresolved_issues} value={stats.unresolvedIssues ?? '—'} icon={Bug} tone={stats.unresolvedIssues === null ? 'warning' : stats.unresolvedIssues === 0 ? 'success' : stats.unresolvedIssues > 5 ? 'danger' : 'warning'} />
-            <StatCard label={po.events_24h} value={stats.eventsLast24h} icon={Activity} tone={stats.eventsLast24h === 0 ? 'success' : stats.eventsLast24h > 100 ? 'danger' : 'warning'} />
-            <StatCard label={po.events_7d} value={stats.eventsLastWeek} icon={BarChart3} tone="info" />
+            <StatCard label={po.events_24h} value={stats.eventsLast24h ?? '—'} icon={Activity} tone={stats.eventsLast24h === null ? 'neutral' : stats.eventsLast24h === 0 ? 'success' : stats.eventsLast24h > 100 ? 'danger' : 'warning'} />
+            <StatCard label={po.events_7d} value={stats.eventsLastWeek ?? '—'} icon={BarChart3} tone={stats.eventsLastWeek === null ? 'neutral' : 'info'} />
           </div>
         ) : null}
       </div>
