@@ -37,6 +37,7 @@ import { listen } from '@tauri-apps/api/event';
 import SavedConfigsSidebar from '../SavedConfigsSidebar';
 import { openNoteInObsidian } from '../openInObsidian';
 import { extractMessage, silentCatch, toastCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 
 /**
  * The Orphans tile reads `stats.orphanCount` (every unlinked note in the vault)
@@ -84,7 +85,13 @@ export default function GraphPanel() {
   const [meetingBody, setMeetingBody] = useState('');
   const [meetingSaving, setMeetingSaving] = useState(false);
 
+  // Graph reads are async and unordered (watcher refreshes, writes, a vault
+  // switch): an older read must not land over a newer one or another vault.
+  const statsLoads = useRef(createLatestWins()).current;
+  const searches = useRef(createLatestWins()).current;
+
   const loadStats = useCallback(async () => {
+    const token = statsLoads.next();
     setStatsLoading(true);
     try {
       const [s, o, m] = await Promise.all([
@@ -92,21 +99,24 @@ export default function GraphPanel() {
         obsidianGraphListOrphans(orphanLimitRef.current),
         obsidianGraphListMocs(8, 10),
       ]);
+      if (!statsLoads.isCurrent(token)) return;
       setStats(s);
       setOrphans(o);
       setMocs(m);
     } catch (e) {
-      toastCatch('GraphPanel:loadStats')(e);
+      if (statsLoads.isCurrent(token)) toastCatch('GraphPanel:loadStats')(e);
     } finally {
-      setStatsLoading(false);
+      if (statsLoads.isCurrent(token)) setStatsLoading(false);
     }
-  }, []);
+  }, [statsLoads]);
 
   /** Widen the sample to the whole orphan set (up to the backend's cap). */
   const expandOrphans = useCallback(async () => {
     setOrphansExpanding(true);
+    const generation = statsLoads.current();
     try {
       const all = await obsidianGraphListOrphans(ORPHAN_MAX);
+      if (statsLoads.current() !== generation) return;
       orphanLimitRef.current = ORPHAN_MAX;
       setOrphans(all);
     } catch (e) {
@@ -114,10 +124,17 @@ export default function GraphPanel() {
     } finally {
       setOrphansExpanding(false);
     }
-  }, [addToast, t, tx]);
+  }, [addToast, statsLoads, t, tx]);
 
   useEffect(() => {
     if (!connected) return;
+    // A new vault (or a reconnect) starts from its own data: search hits and
+    // a widened orphan list name paths of the previous vault, and opening one
+    // would deep-link the NEW vault's name to the OLD vault's path.
+    searches.next();
+    setSearchHits([]);
+    setSearching(false);
+    orphanLimitRef.current = ORPHAN_SAMPLE;
     loadStats();
     void obsidianGraphStartWatcher().catch(silentCatch('GraphPanel:startWatcher'));
     let unlisten: (() => void) | null = null;
@@ -143,23 +160,24 @@ export default function GraphPanel() {
       // watcher without stopping the previous one.
       void obsidianGraphStopWatcher().catch(silentCatch('GraphPanel:stopWatcher'));
     };
-  }, [connected, activeVaultPath, loadStats]);
+  }, [connected, activeVaultPath, loadStats, searches]);
 
   const runSearch = useCallback(async () => {
     if (!query.trim()) {
       setSearchHits([]);
       return;
     }
+    const token = searches.next();
     setSearching(true);
     try {
       const hits = await obsidianGraphSearch(query.trim(), 25);
-      setSearchHits(hits);
+      if (searches.isCurrent(token)) setSearchHits(hits);
     } catch (e) {
-      toastCatch('GraphPanel:search')(e);
+      if (searches.isCurrent(token)) toastCatch('GraphPanel:search')(e);
     } finally {
-      setSearching(false);
+      if (searches.isCurrent(token)) setSearching(false);
     }
-  }, [query]);
+  }, [query, searches]);
 
   const appendJournal = useCallback(async () => {
     if (!journalBody.trim()) {
