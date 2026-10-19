@@ -60,10 +60,14 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
     execution.cost_usd,
   );
 
-  // Keyboard shortcuts. currentMs is read through a ref so the listener doesn't
-  // re-bind on every animation frame during playback.
+  // Keyboard shortcuts. currentMs AND the actions are read through refs so the
+  // listener binds once: `actions` is a fresh object on every render (and its
+  // step/skip callbacks change with every playback flush), so depending on it
+  // re-bound the window listener ~12 times a second while playing.
   const currentMsRef = useRef(state.currentMs);
   currentMsRef.current = state.currentMs;
+  const actionsRef = useRef(actions);
+  actionsRef.current = actions;
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -76,6 +80,7 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
         (target instanceof HTMLElement && target.isContentEditable) ||
         (target instanceof HTMLElement && target.getAttribute('role') === 'slider')
       ) return;
+      const actions = actionsRef.current;
       switch (e.key) {
         case ' ':
           e.preventDefault();
@@ -101,7 +106,7 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [actions]);
+  }, []);
 
   const handleFork = useCallback(() => {
     if (state.forkPoint == null) return;
