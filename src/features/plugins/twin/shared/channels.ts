@@ -85,10 +85,6 @@ export function getDeploymentChannelMeta(id: string): ChannelMeta {
   return DEPLOYMENT_CHANNELS.find((c) => c.id === id) ?? { id, label: id, palette: 'violet', serviceType: id };
 }
 
-export function getToneChannelMeta(id: string): ChannelMeta {
-  return TONE_CHANNELS.find((c) => c.id === id) ?? { id, label: id, palette: 'violet' };
-}
-
 /** Look up the palette visuals; falls back to a foreground-tinted set for
  *  unknown channel kinds (defensive against backend adding a kind the
  *  frontend doesn't know about yet). */
