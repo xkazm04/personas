@@ -29,7 +29,9 @@ export function useCredentialForaging() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [imported, setImported] = useState<Map<string, { id: string; name: string }>>(new Map());
   const [importingIds, setImportingIds] = useState<Set<string>>(new Set());
-  const [error, setError] = useState<string | null>(null);
+  // The raw rejection is kept and read into text only when returned, so the
+  // panel's resolveErrorTranslated sees the backend's own message.
+  const [failure, setFailure] = useState<unknown>(null);
   const [partialImportError, setPartialImportError] = useState(false);
   const scanningRef = useRef(false);
   const importingRef = useRef(false);
@@ -38,7 +40,7 @@ export function useCredentialForaging() {
     if (scanningRef.current) return;
     scanningRef.current = true;
     setPhase("scanning");
-    setError(null);
+    setFailure(null);
     setPartialImportError(false);
     setScanResult(null);
     setSelected(new Set());
@@ -53,7 +55,7 @@ export function useCredentialForaging() {
       setSelected(new Set());
       setPhase("results");
     } catch (err) {
-      setError(extractMessage(err));
+      setFailure(err);
       setPhase("error");
     } finally {
       scanningRef.current = false;
@@ -141,7 +143,7 @@ export function useCredentialForaging() {
     selected,
     imported,
     importingIds,
-    error,
+    error: failure == null ? null : extractMessage(failure),
     partialImportError,
     scan,
     toggleSelect,
