@@ -85,6 +85,35 @@ struct ResourceSpecForEnforce {
     enforce: Option<EnforceRule>,
 }
 
+/// The path the HTTP client will actually request for `path`.
+///
+/// The proxy joins `path` onto the base URL (`api_proxy::build_full_url`,
+/// which strips leading `/`) and the client's WHATWG URL parser then resolves
+/// `.`/`..` segments (also spelled `%2e`) and reads `\` as `/`. Matching the
+/// rules against the RAW text let `/repos/<picked>/../../<other>` pass as the
+/// picked repo while the wire request reached `<other>`. Repeated slashes are
+/// collapsed too, so a server that merges them cannot be reached around a
+/// rule either; that only ever makes the matcher stricter.
+fn effective_request_path(path: &str) -> String {
+    let rel = path.trim_start_matches('/');
+    let Ok(url) = url::Url::parse(&format!("https://scope-check.invalid/{rel}")) else {
+        // Unparseable here is unparseable for the client too: nothing is sent.
+        return path.to_string();
+    };
+    let mut out = String::with_capacity(url.path().len());
+    for ch in url.path().chars() {
+        if ch == '/' && out.ends_with('/') {
+            continue;
+        }
+        out.push(ch);
+    }
+    if let Some(q) = url.query() {
+        out.push('?');
+        out.push_str(q);
+    }
+    out
+}
+
 /// Evaluate a relayed API request against the credential's scope.
 ///
 /// `path` is the path portion fed to the API proxy (everything after the
@@ -123,6 +152,8 @@ pub fn evaluate(
     let specs: Vec<ResourceSpecForEnforce> = serde_json::from_str(specs_json)
         .map_err(|e| AppError::Internal(format!("Malformed connector resources[]: {e}")))?;
 
+    let path = effective_request_path(path);
+    let path = path.as_str();
     for spec in specs {
         let Some(rule) = spec.enforce else { continue };
         let re = match regex::Regex::new(&rule.url_regex) {
@@ -140,9 +171,14 @@ pub fn evaluate(
         let Some(caps) = re.captures(path) else {
             continue;
         };
-        let Some(captured) = caps.get(rule.id_capture).map(|m| m.as_str().to_string()) else {
+        let Some(captured) = caps.get(rule.id_capture).map(|m| m.as_str()) else {
             continue;
         };
+        // The normalised path is percent-encoded (`my project` -> `my%20project`)
+        // while picks hold the display id, so compare the decoded form.
+        let captured = urlencoding::decode(captured)
+            .map(|c| c.into_owned())
+            .unwrap_or_else(|_| captured.to_string());
 
         // Picks for this resource — array of objects each with `id`.
         let allowed_ids: Vec<String> = picks
@@ -307,6 +343,73 @@ mod tests {
             Some(bad),
             Some(SCOPED_TO_PERSONAS),
             "/repos/microsoft/vscode/issues",
+            EnforcementMode::Block,
+        )
+        .unwrap();
+        assert_eq!(r, EnforcementOutcome::Allow);
+    }
+
+    /// The proxy hands the path to the HTTP client, whose URL parser resolves
+    /// dot segments (literal and `%2e`), treats `\` as `/` and accepts a
+    /// leading `//`. Each of these spellings REQUESTS `/repos/microsoft/vscode`
+    /// on the wire, so each must be judged as that path, not as its raw text.
+    #[test]
+    fn path_spellings_that_reach_another_repo_still_block() {
+        let spellings = [
+            "/repos/xkazm04/personas/../../microsoft/vscode/issues",
+            "/repos/xkazm04/personas/%2e%2e/%2E%2E/microsoft/vscode/issues",
+            "//repos/microsoft/vscode/issues",
+            "/repos\\microsoft\\vscode\\issues",
+            "/repos//microsoft/vscode/issues",
+        ];
+        let expected = EnforcementOutcome::Block {
+            resource: "repositories".into(),
+            attempted_id: "microsoft/vscode".into(),
+        };
+        let escaped: Vec<_> = spellings
+            .iter()
+            .filter(|spelled| {
+                evaluate(
+                    Some(GH_RESOURCES),
+                    Some(SCOPED_TO_PERSONAS),
+                    spelled,
+                    EnforcementMode::Block,
+                )
+                .unwrap()
+                    != expected
+            })
+            .collect();
+        assert!(
+            escaped.is_empty(),
+            "{} of {} spellings reach microsoft/vscode unjudged: {escaped:?}",
+            escaped.len(),
+            spellings.len()
+        );
+    }
+
+    /// Normalising must not turn an in-scope request into a violation: dot
+    /// segments inside the picked repo, and an id the URL parser
+    /// percent-encodes (a space) against a pick stored decoded.
+    #[test]
+    fn normalised_in_scope_path_still_allows() {
+        let r = evaluate(
+            Some(GH_RESOURCES),
+            Some(SCOPED_TO_PERSONAS),
+            "/repos/xkazm04/personas/./issues/../pulls?state=open",
+            EnforcementMode::Block,
+        )
+        .unwrap();
+        assert_eq!(r, EnforcementOutcome::Allow);
+
+        let ado = r#"[{
+            "id": "organizations",
+            "enforce": { "url_regex": "^/?([^/?#]+)/_apis/", "id_capture": 1 }
+        }]"#;
+        let picked = r#"{ "organizations": [{ "id": "my org" }] }"#;
+        let r = evaluate(
+            Some(ado),
+            Some(picked),
+            "/my org/_apis/projects",
             EnforcementMode::Block,
         )
         .unwrap();
