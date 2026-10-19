@@ -78,6 +78,8 @@ export function UserRating({ currentRating, currentFeedback, onRate, compact }: 
               key={opt.value}
               onClick={() => handleSelect(opt.value)}
               title={opt.label}
+              aria-label={opt.label}
+              aria-pressed={isActive}
               className={`${btnPad} rounded-card border transition-colors ${
                 isActive
                   ? `${opt.activeBg} ${opt.activeColor}`
