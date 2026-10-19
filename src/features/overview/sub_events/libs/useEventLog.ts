@@ -107,6 +107,11 @@ export function useEventLog() {
   const [serverResults, setServerResults] = useState<PersonaEvent[]>([]);
   const [serverHasMore, setServerHasMore] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  // A rejected server search, held as its raw cause and resolved at render.
+  // It used to be logged only: the results stayed empty (or kept the PREVIOUS
+  // filter's rows) and the table said "no events match" for a query that never
+  // ran.
+  const [searchError, setSearchError] = useState<{ raw: unknown } | null>(null);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchAbortRef = useRef<AbortController | null>(null);
 
@@ -236,6 +241,7 @@ export function useEventLog() {
     if (!hasFilters) {
       setServerResults([]);
       setServerHasMore(false);
+      setSearchError(null);
       return;
     }
 
@@ -246,9 +252,14 @@ export function useEventLog() {
       if (controller.signal.aborted) return;
       setServerResults(result.events);
       setServerHasMore(result.has_more);
+      setSearchError(null);
     } catch (err) {
       if (controller.signal.aborted) return;
       logger.error('Event search failed', { error: err });
+      // Rows from an earlier filter are not an answer to this one.
+      setSearchError({ raw: err });
+      setServerResults([]);
+      setServerHasMore(false);
     } finally {
       if (!controller.signal.aborted) {
         setIsSearching(false);
@@ -265,6 +276,7 @@ export function useEventLog() {
       setServerResults([]);
       setServerHasMore(false);
       setIsSearching(false);
+      setSearchError(null);
       return;
     }
 
@@ -478,7 +490,7 @@ export function useEventLog() {
     sortDirection, toggleSortDirection,
     selectedEvent, setSelectedEvent,
     selectedPersonaId, setSelectedPersonaId: setPersonaId,
-    isFetching, isRefreshing, isSearching,
+    isFetching, isRefreshing, isSearching, searchError, retrySearch: executeSearch,
     filteredEvents,
     handleRefresh, getPersona,
     // Search

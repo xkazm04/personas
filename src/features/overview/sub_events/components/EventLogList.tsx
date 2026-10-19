@@ -16,6 +16,9 @@ import { EventDetailContent } from './EventDetailContent';
 import { EventLogToolbar } from './EventLogToolbar';
 import { useEventLogColumns } from './eventLogColumns';
 import { createLogger } from "@/lib/log";
+import { extractMessage } from '@/lib/silentCatch';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 
 
 const logger = createLogger("event-log");
@@ -38,7 +41,7 @@ export default function EventLogList() {
     statusFilter, setStatusFilter, typeFilter, setTypeFilter,
     selectedEvent, setSelectedEvent,
     selectedPersonaId, setSelectedPersonaId,
-    isFetching, isRefreshing, isSearching,
+    isFetching, isRefreshing, isSearching, searchError, retrySearch,
     filteredEvents,
     handleRefresh, getPersona,
     // Search
@@ -180,6 +183,15 @@ export default function EventLogList() {
               subtitle={t.overview.events.no_events_hint}
               action={{ label: t.overview.dashboard.create_persona, onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus }}
               secondaryAction={{ label: t.overview.dashboard.from_templates, onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen }}
+            />
+          </div>
+        ) : searchError && displayedEvents.length === 0 ? (
+          // A filtered search that never ran is not "no events match": say it
+          // failed, keep the filters, and retry the same query.
+          <div className="p-4">
+            <InlineErrorBanner
+              message={resolveErrorTranslated(t, extractMessage(searchError.raw)).message}
+              onRetry={() => void retrySearch()}
             />
           </div>
         ) : (
