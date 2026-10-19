@@ -48,4 +48,9 @@ describe('SetupPanel knowledge mirror', () => {
     // ...and the switch still shows the saved state.
     expect(toggle.getAttribute('aria-checked')).toBe('true');
   });
+
+  it('names the vault path field for assistive tech', async () => {
+    render(<SetupPanel />);
+    expect(await screen.findByRole('textbox', { name: /Vault path/ })).toBeTruthy();
+  });
 });

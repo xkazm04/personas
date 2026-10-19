@@ -310,6 +310,7 @@ export default function GraphPanel() {
                     if (e.key === 'Enter') runSearch();
                   }}
                   placeholder={t.plugins.obsidian_brain.search_vault_placeholder}
+                  aria-label={t.plugins.obsidian_brain.search_vault_placeholder}
                   className="w-full pl-9 pr-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all"
                 />
               </div>
@@ -423,6 +424,7 @@ export default function GraphPanel() {
                 value={journalSection}
                 onChange={(e) => setJournalSection(e.target.value)}
                 placeholder={t.plugins.obsidian_brain.journal_section_placeholder}
+                aria-label={t.plugins.obsidian_brain.journal_section_placeholder}
                 className="w-48 px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all"
               />
               <button
@@ -439,6 +441,7 @@ export default function GraphPanel() {
               value={journalBody}
               onChange={(e) => setJournalBody(e.target.value)}
               placeholder={t.plugins.obsidian_brain.journal_body_placeholder}
+              aria-label={t.plugins.obsidian_brain.quick_journal}
               rows={4}
               className="w-full px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all resize-none"
             />
@@ -453,6 +456,7 @@ export default function GraphPanel() {
               value={meetingTitle}
               onChange={(e) => setMeetingTitle(e.target.value)}
               placeholder={t.plugins.obsidian_brain.meeting_title_placeholder}
+              aria-label={t.plugins.obsidian_brain.meeting_title_placeholder}
               className="w-full px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all"
             />
             <div className="relative">
@@ -462,6 +466,7 @@ export default function GraphPanel() {
                 value={meetingAttendees}
                 onChange={(e) => setMeetingAttendees(e.target.value)}
                 placeholder={t.plugins.obsidian_brain.meeting_attendees_placeholder}
+                aria-label={t.plugins.obsidian_brain.meeting_attendees_placeholder}
                 className="w-full pl-9 pr-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all"
               />
             </div>
@@ -469,6 +474,7 @@ export default function GraphPanel() {
               value={meetingBody}
               onChange={(e) => setMeetingBody(e.target.value)}
               placeholder={t.plugins.obsidian_brain.meeting_body_placeholder}
+              aria-label={t.plugins.obsidian_brain.meeting_body_placeholder}
               rows={5}
               className="w-full px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all resize-none"
             />

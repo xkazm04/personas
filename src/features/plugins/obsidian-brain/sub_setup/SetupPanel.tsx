@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useId } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Search, FolderOpen, CheckCircle2, XCircle, Save, Brain, Users, Plug, RefreshCw, Network, Sparkles } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
@@ -69,6 +69,7 @@ export default function SetupPanel() {
   const [memoriesFolder, setMemoriesFolder] = useState('memories');
   const [personasFolder, setPersonasFolder] = useState('Personas');
   const [connectorsFolder, setConnectorsFolder] = useState('Connectors');
+  const folderFieldId = useId();
 
   const visibleDetectedVaults = useMemo(
     () => detectedVaults.filter((v) => !savedPaths.has(v.path)),
@@ -278,6 +279,7 @@ export default function SetupPanel() {
               value={vaultPath}
               onChange={(e) => { setVaultPath(e.target.value); setConnectionResult(null); }}
               placeholder={t.plugins.obsidian_brain.vault_path_placeholder}
+              aria-label={t.plugins.obsidian_brain.vault_path_placeholder}
               data-testid="obsidian-vault-path-input"
               className="flex-1 px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all"
             />
@@ -375,10 +377,11 @@ export default function SetupPanel() {
               { label: t.plugins.obsidian_brain.personas_folder, value: personasFolder, onChange: setPersonasFolder },
               { label: t.plugins.obsidian_brain.memories_subfolder, value: memoriesFolder, onChange: setMemoriesFolder },
               { label: t.plugins.obsidian_brain.connectors_folder, value: connectorsFolder, onChange: setConnectorsFolder },
-            ].map((field) => (
+            ].map((field, i) => (
               <div key={field.label} className="space-y-1.5">
-                <label className="typo-label text-foreground/90">{field.label}</label>
+                <label className="typo-label text-foreground/90" htmlFor={`${folderFieldId}-${i}`}>{field.label}</label>
                 <input
+                  id={`${folderFieldId}-${i}`}
                   type="text"
                   value={field.value}
                   onChange={(e) => field.onChange(e.target.value)}
