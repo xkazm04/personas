@@ -201,6 +201,30 @@ describe('the autonomous chain stops', () => {
     // The cause stays in the conversation, not only in a toast that vanishes.
     expect(rt?.messages.at(-1)?.text).toContain('CLI timed out');
   });
+
+  it('a failed turn gives its waiting notes back instead of dropping them', async () => {
+    // The notes ride along inside the failed send, so clearing them at the
+    // start of the turn lost them for good when the send rejected.
+    seedRuntime({ queuedNotes: ['make it blue', 'bigger logo'] });
+    let failTurn!: (e: unknown) => void;
+    webbuildSessionSend.mockImplementationOnce(() => new Promise((_, rej) => { failTurn = rej; }));
+
+    const turn = useStudioStore.getState().sendTurn(ID, 'go');
+    expect(String(webbuildSessionSend.mock.calls[0]?.[1])).toContain('make it blue');
+    // A note typed while the doomed turn is still running.
+    useStudioStore.getState().queueNote(ID, 'and a footer');
+    failTurn({ error: 'CLI timed out', kind: 'internal' });
+    await turn;
+    await vi.advanceTimersByTimeAsync(5000);
+
+    expect(useStudioStore.getState().runtimes[ID]?.queuedNotes).toEqual([
+      'make it blue',
+      'bigger logo',
+      'and a footer',
+    ]);
+    // ...and a failure never pumps them into a fresh paid turn on its own.
+    expect(webbuildSessionSend).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('Stop reads whether it actually stopped anything', () => {
