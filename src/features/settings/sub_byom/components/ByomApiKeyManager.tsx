@@ -539,10 +539,8 @@ function KeyEntryRow({
                 e.stopPropagation();
                 copy('value', entry.savedValue);
               }}
-              aria-label={copiedKey === 'value' ? 'Copied' : 'Copy value'}
+              aria-label={copiedKey === 'value' ? t.common.copied : t.common.copy}
               className="p-1.5 rounded-input text-foreground hover:text-foreground transition-all"
-              // eslint-disable-next-line custom/no-hardcoded-jsx-text
-              title="Copy value"
             >
               {copiedKey === 'value' ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
             </button>

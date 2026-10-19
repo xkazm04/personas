@@ -17,9 +17,11 @@ const qwen = vi.hoisted(() => ({
 }));
 
 vi.mock('@/api/system/qwen', () => qwen);
+const settings = vi.hoisted(() => ({ getAppSettingsBulk: vi.fn() }));
+
 vi.mock('@/api/system/settings', () => ({
   getAppSetting: vi.fn().mockResolvedValue(null),
-  getAppSettingsBulk: vi.fn().mockResolvedValue({}),
+  getAppSettingsBulk: settings.getAppSettingsBulk,
   setAppSetting: vi.fn().mockResolvedValue(undefined),
   deleteAppSetting: vi.fn().mockResolvedValue(undefined),
 }));
@@ -36,6 +38,7 @@ describe('ByomApiKeyManager Qwen key row', () => {
     qwen.getQwenStatus.mockReset().mockResolvedValue({ configured: false });
     qwen.setQwenCredentials.mockReset();
     qwen.clearQwenCredentials.mockReset();
+    settings.getAppSettingsBulk.mockReset().mockResolvedValue({});
   });
 
   it('shows an error badge when the keyring refuses the key', async () => {
@@ -67,5 +70,13 @@ describe('ByomApiKeyManager Qwen key row', () => {
 
     await waitFor(() => expect(row).toHaveTextContent('Stored'));
     expect(row).not.toHaveTextContent('Error');
+  });
+
+  it('labels a stored key copy control through the catalog', async () => {
+    settings.getAppSettingsBulk.mockResolvedValue({ ollama_api_key: 'sk-abcdefghijkl' });
+    render(<ByomApiKeyManager />);
+    // common.copy, the same key the shared CopyButton uses - not a literal.
+    expect(await screen.findByRole('button', { name: 'Copy' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Copy value' })).not.toBeInTheDocument();
   });
 });
