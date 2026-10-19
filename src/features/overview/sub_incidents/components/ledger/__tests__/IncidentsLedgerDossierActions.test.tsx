@@ -24,7 +24,7 @@ function incident(status: string): AuditIncident {
     resolvedAt: null,
     resolutionNote: null,
     continuedAt: null,
-    createdAt: new Date().toISOString(),
+    createdAt: '2026-10-19T12:00:00.000Z',
   };
 }
 

@@ -18,7 +18,7 @@ const INCIDENT: AuditIncident = {
   id: 'inc-1', sourceTable: 'fired_alerts', sourceId: 's1', dedupKey: 'fired_alerts:s1',
   personaId: 'p1', personaName: 'Agent', executionId: null, severity: 'high', kind: 'alert',
   title: 'Latency alert', detail: null, status: 'resolved', acknowledgedAt: null, acknowledgedBy: null,
-  resolvedAt: null, resolutionNote: null, continuedAt: null, createdAt: new Date().toISOString(),
+  resolvedAt: null, resolutionNote: null, continuedAt: null, createdAt: '2026-10-19T12:00:00.000Z',
 };
 
 describe('IncidentDetailModal sibling list', () => {

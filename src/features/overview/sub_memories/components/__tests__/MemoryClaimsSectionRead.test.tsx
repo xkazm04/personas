@@ -9,7 +9,7 @@ vi.mock('@/lib/tauriInvoke', () => ({
     if (cmd !== 'list_memory_claims') return Promise.resolve(null);
     if (failList) return Promise.reject({ error: 'database is locked', kind: 'Database' });
     return Promise.resolve(args?.memoryId === 'mem-a'
-      ? [{ id: 'c1', memory_id: 'mem-a', verdict: 'wrong', note: null, resolution: null, created_at: new Date().toISOString() }]
+      ? [{ id: 'c1', memory_id: 'mem-a', verdict: 'wrong', note: null, resolution: null, created_at: '2026-10-19T12:00:00.000Z' }]
       : new Promise(() => {}));
   }),
 }));
