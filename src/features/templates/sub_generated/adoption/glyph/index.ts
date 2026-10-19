@@ -1,1 +1,0 @@
-export { PersonaChronologyGlyph } from './PersonaChronologyGlyph';
