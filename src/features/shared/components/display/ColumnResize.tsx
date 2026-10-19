@@ -33,6 +33,22 @@ export interface ColumnWidthsApi {
 }
 
 /**
+ * Narrow a persisted widths blob to finite px numbers at or above the minimum.
+ * localStorage is outside the type system: an array, a string or a stray
+ * non-number entry would otherwise reach the grid template as "abcpx" or
+ * "nullpx" and silently collapse the column layout. Bad entries fall back to
+ * the column's default width.
+ */
+function sanitizeWidths(parsed: unknown): Record<string, number> {
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+  const out: Record<string, number> = {};
+  for (const [key, value] of Object.entries(parsed)) {
+    if (typeof value === 'number' && Number.isFinite(value) && value >= MIN_COLUMN_WIDTH) out[key] = value;
+  }
+  return out;
+}
+
+/**
  * Per-table column-width state. `tableId` namespaces the localStorage entry so
  * each table remembers its own layout independently.
  */
@@ -42,7 +58,7 @@ export function useColumnWidths(tableId: string): ColumnWidthsApi {
     try {
       const raw = localStorage.getItem(storageKey);
       const parsed: unknown = raw ? JSON.parse(raw) : null;
-      return parsed && typeof parsed === 'object' ? (parsed as Record<string, number>) : {};
+      return sanitizeWidths(parsed);
     } catch (err) {
       logger.warn('Failed to read persisted column widths', { error: err });
       return {};
