@@ -415,3 +415,23 @@ describe("useDrive selection follows the visible list", () => {
     expect(Array.from(result.current.selection)).toEqual(["report.txt"]);
   });
 });
+
+describe("useDrive listing failure", () => {
+  it("keeps the raw IPC rejection so the view can resolve it", async () => {
+    const { mockedTauriInvoke } = await import("@/test/tauriMock");
+    const appError = { error: "Not found: gone", kind: "not_found" };
+    mockedTauriInvoke.mockImplementation(async (cmd: string) => {
+      if (cmd === "drive_list") throw appError;
+      if (cmd === "drive_list_tree")
+        return { name: "", path: "", children: [], hasMoreChildren: false };
+      if (cmd === "drive_storage_info")
+        return { root: "/managed", usedBytes: 0, entryCount: 0, isDev: false };
+      if (cmd === "drive_recent") return [];
+      return undefined;
+    });
+    const { result } = renderHook(() => useDrive("gone"));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.error).not.toBe("[object Object]");
+    expect(result.current.error).toBeTruthy();
+  });
+});

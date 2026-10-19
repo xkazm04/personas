@@ -3,6 +3,8 @@ import { AlertTriangle, FolderOpen, FolderPlus, RotateCcw, Search, Tag } from "l
 
 import type ScenarioEmptyState from "@/features/shared/components/feedback/ScenarioEmptyState";
 import type { useTranslation } from "@/i18n/useTranslation";
+import { resolveErrorTranslated } from "@/i18n/useTranslatedError";
+import { extractMessage } from "@/lib/silentCatch";
 import type { DriveApi, FinderViewProps } from "../types";
 
 export type FinderEmptyVariant =
@@ -23,7 +25,7 @@ export function finderEmptyVariant(
   pendingCreate: unknown,
 ): FinderEmptyVariant | "ghost" | null {
   if (drive.loading && drive.entries.length === 0) return "ghost";
-  if (drive.error) return "unreadable";
+  if (drive.error != null) return "unreadable";
   if (drive.visibleEntries.length > 0 || pendingCreate) return null;
   return drive.searchQuery.trim().length >= 2 ? "search-empty" : "empty";
 }
@@ -70,7 +72,12 @@ export function finderScenario(variant: FinderEmptyVariant, args: FinderScenario
         iconColor: "text-status-error",
         iconContainerClassName: "bg-status-error/10 border-status-error/20",
         title: f.unreadable_title,
-        subtitle: tx(f.unreadable_body, { error: args.error ?? drive.error ?? "" }),
+        subtitle: tx(f.unreadable_body, {
+          // drive.error is the raw IPC rejection (an AppError object): resolve
+          // it here, at render. It used to be String()-ed in useDrive, so an
+          // unreadable folder said "[object Object]".
+          error: args.error ?? (drive.error != null ? resolveErrorTranslated(t, extractMessage(drive.error)).message : ""),
+        }),
         action: { label: f.retry, icon: RotateCcw, onClick: args.onRetry ?? (() => drive.refresh()) },
       };
     case "search-empty":

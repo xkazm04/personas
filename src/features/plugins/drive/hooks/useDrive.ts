@@ -149,7 +149,9 @@ export interface UseDriveResult {
   // Entries
   entries: DriveEntry[];
   loading: boolean;
-  error: string | null;
+  /** The raw rejection of the last listing (an AppError object over IPC), or
+   *  null. Resolved to copy at render, never stringified here. */
+  error: unknown;
   refresh: () => void;
   tree: DriveTreeNode | null;
   refreshTree: () => void;
@@ -260,7 +262,7 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
     () => driveEntriesCache.get(initialPath) ?? [],
   );
   const [loading, setLoading] = useState(() => !driveEntriesCache.has(initialPath));
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const [tree, setTree] = useState<DriveTreeNode | null>(() => driveTreeCache);
   const [storage, setStorage] = useState<DriveStorageInfo | null>(() => driveStorageCache);
   const [recent, setRecent] = useState<DriveEntry[]>(() => driveRecentCache);
@@ -341,7 +343,7 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
       .catch((e) => {
         silentCatch("useDrive:refresh")(e);
         if (!listingLatest.isCurrent(token)) return;
-        setError(e instanceof Error ? e.message : String(e));
+        setError(e);
         if (!cached) setEntries([]);
       })
       .finally(() => {
