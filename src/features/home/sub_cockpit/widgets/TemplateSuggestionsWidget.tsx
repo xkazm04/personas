@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { useSystemStore } from '@/stores/systemStore';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 import {
   companionMatchTemplates,
   type CompanionTemplateMatch,
@@ -34,7 +34,10 @@ export function TemplateSuggestionsWidget({ config, title, span, actions, footer
 
   const [loading, setLoading] = useState(true);
   const [matches, setMatches] = useState<CompanionTemplateMatch[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ raw: unknown } | null>(null);
+  /** Bumped by Retry to re-run the fetch effect (the RecentDecisions / LinkedDecisions shape). */
+  const [attempt, setAttempt] = useState(0);
+  const retry = useCallback(() => setAttempt((n) => n + 1), []);
 
   useEffect(() => {
     if (!intent) {
@@ -42,6 +45,10 @@ export function TemplateSuggestionsWidget({ config, title, span, actions, footer
       return;
     }
     let cancelled = false;
+    // A new intent (or a retry) starts clean: the last attempt's error must not
+    // sit over the new search, and its ghost shows while the new one runs.
+    setLoading(true);
+    setError(null);
     companionMatchTemplates(intent, limit)
       .then((rows) => {
         if (cancelled) return;
@@ -50,16 +57,17 @@ export function TemplateSuggestionsWidget({ config, title, span, actions, footer
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        // Kept raw here and resolved at render into the product's sentence.
-        const raw = err instanceof Error ? err.message : String(err);
-        setError(raw);
+        // Kept raw here and resolved at render into the product's sentence. IPC rejects
+        // with a serialized AppError OBJECT, so `String(err)` would hand the resolver
+        // "[object Object]" and lose the classification.
+        setError({ raw: err });
         setLoading(false);
         silentCatch('companion_match_templates')(err);
       });
     return () => {
       cancelled = true;
     };
-  }, [intent, limit]);
+  }, [intent, limit, attempt]);
 
   const openTemplates = () => {
     useSystemStore.getState().setSidebarSection('design-reviews');
@@ -73,7 +81,7 @@ export function TemplateSuggestionsWidget({ config, title, span, actions, footer
   };
 
   const searched = !loading && !error && intent !== '';
-  const failure = error ? resolveErrorTranslated(t, error) : null;
+  const failure = error ? resolveErrorTranslated(t, extractMessage(error.raw) || null) : null;
   return (
     <Tile
       span={span}
@@ -85,7 +93,11 @@ export function TemplateSuggestionsWidget({ config, title, span, actions, footer
       state={loading ? 'loading' : searched && matches.length === 0 ? 'empty' : undefined}
       ghostRows={2}
       empty={{ art: 'templates', title: t.athena.template_suggestions_empty }}
-      error={error ? { title: failure?.message, hint: failure?.suggestion } : undefined}
+      error={error ? {
+        title: failure?.message,
+        hint: failure?.suggestion,
+        action: <KitButton onClick={retry}>{t.common.retry}</KitButton>,
+      } : undefined}
       footer={
         matches.length > 0 || footer ? (
           <>
