@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
-  CircleDot, GitBranch, LayoutDashboard, Key, AlertCircle, AlertTriangle,
-  CheckCircle2, RefreshCw, ExternalLink, Shield, Save,
+  CircleDot, GitBranch, LayoutDashboard, Key, AlertCircle,
+  ExternalLink, Shield, Save,
 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -16,7 +16,6 @@ import {
   type SentryProject,
 } from './adapters';
 import { formatErr } from './overviewHelpers';
-import type { ConnectionState } from './useOverviewData';
 import { silentCatch } from '@/lib/silentCatch';
 import { DebtText, debtText } from '@/i18n/DebtText';
 
@@ -58,102 +57,6 @@ export function StatCard({
         <p className="typo-data-lg text-primary truncate">{value}</p>
         <p className="typo-caption text-foreground truncate">{label}</p>
       </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Connection card (shared baseline state surface)
-// ---------------------------------------------------------------------------
-
-export function ConnectionCard({
-  title,
-  state,
-  serviceName,
-  errorMessage,
-  onAction,
-  actionLabel,
-  children,
-}: {
-  title: string;
-  state: ConnectionState;
-  serviceName: string;
-  errorMessage?: string | null;
-  onAction?: () => void;
-  actionLabel?: string;
-  children?: React.ReactNode;
-}) {
-  const { t } = useTranslation();
-  const po = t.project_overview;
-
-  if (state === 'loading') {
-    return (
-      <div className="rounded-card border border-primary/10 bg-card/30 p-6 flex items-center justify-center gap-2">
-        <RefreshCw className="w-4 h-4 animate-spin text-foreground" />
-        <span className="typo-body text-foreground">{po.loading_stats}</span>
-      </div>
-    );
-  }
-
-  if (state === 'empty') {
-    return (
-      <div className="rounded-card border border-primary/10 bg-card/30 p-6 text-center">
-        <Key className="w-8 h-8 text-foreground mx-auto mb-3" />
-        <p className="typo-body text-foreground mb-3">
-          {po.connect_to_see_stats.replace('{{service}}', serviceName).replace('{{category}}', title.toLowerCase())}
-        </p>
-        {onAction && (
-          <Button variant="secondary" size="sm" onClick={onAction}>
-            {actionLabel ?? po.go_to_connections}
-          </Button>
-        )}
-      </div>
-    );
-  }
-
-  if (state === 'unmapped') {
-    return (
-      <div className="rounded-card border border-amber-500/20 bg-amber-500/5 p-5">
-        <div className="flex items-center gap-2 mb-2">
-          <AlertTriangle className="w-4 h-4 text-amber-400" />
-          <span className="typo-body text-foreground">{po.credential_found.replace('{{service}}', serviceName)}</span>
-        </div>
-        {children}
-      </div>
-    );
-  }
-
-  if (state === 'error') {
-    return (
-      <div className="rounded-card border border-red-500/20 bg-red-500/5 p-5">
-        <div className="flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
-          <div className="flex-1 min-w-0">
-            <p className="typo-body text-foreground">{po.failed_to_load}</p>
-            {errorMessage && (
-              <p className="typo-caption text-foreground mt-1 break-words">{errorMessage}</p>
-            )}
-          </div>
-        </div>
-        {onAction && (
-          <div className="mt-3">
-            <Button variant="secondary" size="sm" onClick={onAction}>
-              {po.retry}
-            </Button>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <div className="rounded-card border border-emerald-500/20 bg-emerald-500/5 p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-        <span className="typo-body text-foreground">{serviceName}</span>
-        <span className="typo-caption text-emerald-400 ml-auto">{po.connected}</span>
-      </div>
-      {children}
     </div>
   );
 }
