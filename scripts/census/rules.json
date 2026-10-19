@@ -66,8 +66,8 @@
         }
       ],
       "baseline": {
-        "files": 64,
-        "matches": 159
+        "files": 63,
+        "matches": 157
       },
       "floor": 4000
     },
@@ -1427,7 +1427,7 @@
       },
       "baseline": {
         "files": 390,
-        "matches": 718
+        "matches": 717
       },
       "floor": 2000
     },
@@ -1856,8 +1856,8 @@
         }
       ],
       "baseline": {
-        "files": 73,
-        "matches": 104
+        "files": 72,
+        "matches": 103
       },
       "floor": 4000
     },
@@ -3274,7 +3274,7 @@
       ],
       "baseline": {
         "files": 7,
-        "matches": 21
+        "matches": 20
       },
       "floor": 900
     },
@@ -4751,8 +4751,8 @@
         "description": "a continuous-drag move listener attached straight to document or window. PROXY FOR the stack-free condition: a drag's subscription lifetime is bound to the gesture completing rather than to the element that owns the gesture, so the listener outlives an interrupted drag and the affordance owns no teardown of its own. The compliant expression of the same gesture is element-scoped pointer capture, which the browser tears down on lostpointercapture."
       },
       "baseline": {
-        "files": 7,
-        "matches": 7
+        "files": 6,
+        "matches": 6
       },
       "floor": 4000
     },
@@ -5247,8 +5247,8 @@
         "description": "A string truncation whose ONLY record of the cut is an ellipsis spliced into the payload. The caller gets a String and cannot ask whether anything was removed, so a downstream redactor, parser or size check sees a value that looks whole. Prefer (String, bool) — personas_engine::tool_outcome::cap_output is the shape."
       },
       "baseline": {
-        "files": 37,
-        "matches": 43
+        "files": 36,
+        "matches": 42
       },
       "floor": 900
     },
@@ -5442,7 +5442,7 @@
       },
       "baseline": {
         "files": 14,
-        "matches": 70
+        "matches": 81
       },
       "floor": 900
     },
