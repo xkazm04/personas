@@ -119,16 +119,19 @@ pub fn get_performance(pool: &DbPool, review_id: &str) -> Result<TemplatePerform
         });
 
         // Combined execution stats: count, success count, decided count and avg
-        // cost in one query. The success rate's denominator is the DECIDED runs
-        // (completed or failed), the same definition the SLA rollups use
-        // (`sla.rs` get_persona_reliability). A queued or running run is not an
-        // outcome yet, and counting it as one made every in-flight run read as
-        // a failure on the template's Overview tab.
+        // cost in one query. The success rate's denominator is the DECIDED runs:
+        // every terminal state of ExecutionState::TERMINAL except `cancelled`,
+        // which is the operator's choice rather than an outcome. A queued or
+        // running run is not an outcome yet, and counting it as one made every
+        // in-flight run read as a failure on the template's Overview tab.
+        // `incomplete` (a run whose process died) counts as not-a-success: the
+        // SLA rollups' ('completed','failed') leaves it out, which is the defect
+        // docs/concepts/golden-paths/terminal-state-and-recovery.md measures.
         let (total_executions, success_count, decided_count, avg_cost): (i64, i64, i64, f64) = conn
         .query_row(
             "SELECT COUNT(*) AS total,
                     SUM(CASE WHEN pe.status = 'completed' THEN 1 ELSE 0 END) AS succeeded,
-                    SUM(CASE WHEN pe.status IN ('completed', 'failed') THEN 1 ELSE 0 END) AS decided,
+                    SUM(CASE WHEN pe.status IN ('completed', 'failed', 'incomplete') THEN 1 ELSE 0 END) AS decided,
                     COALESCE(AVG(pe.cost_usd), 0.0) AS avg_cost
              FROM persona_executions pe
              JOIN personas p ON pe.persona_id = p.id
@@ -230,8 +233,8 @@ mod tests {
 
     /// One design review, one persona adopted from it, and executions in the
     /// given statuses. Raw INSERTs on the production schema (init_test_db).
-    fn seed(pool: &DbPool, statuses: &[&str]) -> String {
-        let conn = pool.get().unwrap();
+    fn seed(pool: &DbPool, statuses: &[&str]) -> Result<String, Box<dyn std::error::Error>> {
+        let conn = pool.get()?;
         let now = chrono::Utc::now().to_rfc3339();
         conn.execute(
             "INSERT INTO persona_design_reviews
@@ -254,7 +257,7 @@ mod tests {
             )
             .unwrap();
         }
-        "rev-1".to_string()
+        Ok("rev-1".to_string())
     }
 
     #[test]
@@ -262,7 +265,7 @@ mod tests {
         let pool = init_test_db().unwrap();
         // One success, one failure, and two runs still in flight. The in-flight
         // runs are not outcomes yet: the rate is 1 of 2 decided, not 1 of 4.
-        let review_id = seed(&pool, &["completed", "failed", "running", "queued"]);
+        let review_id = seed(&pool, &["completed", "failed", "running", "queued"]).unwrap();
         let perf = get_performance(&pool, &review_id).unwrap();
         assert!(perf.data_available);
         assert_eq!(perf.total_executions, 4);
@@ -274,18 +277,19 @@ mod tests {
     }
 
     #[test]
-    fn success_rate_matches_the_sla_decided_definition() {
+    fn success_rate_counts_a_lost_run_against_it_but_not_a_cancelled_one() {
         let pool = init_test_db().unwrap();
-        // The SLA rollups (sla.rs) decide a run as completed or failed only;
-        // cancelled and incomplete runs are neither a success nor a failure.
+        // A cancelled run is the operator's choice and decides nothing; an
+        // incomplete run (its process died) is a run that did not succeed.
         let review_id = seed(
             &pool,
             &["completed", "completed", "cancelled", "incomplete"],
-        );
+        )
+        .unwrap();
         let perf = get_performance(&pool, &review_id).unwrap();
         assert!(
-            (perf.success_rate - 1.0).abs() < 1e-9,
-            "expected 1.0 over decided runs, got {}",
+            (perf.success_rate - 2.0 / 3.0).abs() < 1e-9,
+            "expected 2/3 over decided runs, got {}",
             perf.success_rate
         );
     }
@@ -293,7 +297,7 @@ mod tests {
     #[test]
     fn success_rate_is_zero_when_nothing_has_been_decided() {
         let pool = init_test_db().unwrap();
-        let review_id = seed(&pool, &["running"]);
+        let review_id = seed(&pool, &["running"]).unwrap();
         let perf = get_performance(&pool, &review_id).unwrap();
         assert_eq!(perf.success_rate, 0.0);
     }
