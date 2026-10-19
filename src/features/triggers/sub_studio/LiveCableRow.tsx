@@ -18,7 +18,7 @@ import type { useStudioComposer } from './useStudioComposer';
 import { SourceChip } from './studioChips';
 import { conditionLabel } from './libs/studioLabels';
 import type { CableVitals } from './libs/cableVitals';
-import { resolveIcon, type EventRow, type Connection } from './routing/layouts/routingHelpers';
+import { resolveIcon, type EventRow, type Connection, type SourceClass } from './routing/layouts/routingHelpers';
 
 export interface LiveCable { row: EventRow; connection: Connection | null }
 
@@ -54,7 +54,7 @@ export function LiveCableRow({ cb, t, st, personas, dim, vitals, toggling, onRen
     >
       {/* 1 - source */}
       <div className={`min-w-0 ${paused ? 'opacity-60' : ''}`}>
-        <LiveSourceEnd row={row} connection={connection} personas={personas} completesLabel={st.persona_completes} />
+        <LiveSourceEnd row={row} connection={connection} personas={personas} completesLabel={st.persona_completes} t={t} />
       </div>
 
       {/* 2 - the cable: wire, event (or chain condition) chip, wire, arrow */}
@@ -147,7 +147,7 @@ function CablePulse({ vitals, st }: { vitals: CableVitals; st: StudioStrings }) 
   );
 }
 
-function LiveSourceEnd({ row, connection, personas, completesLabel }: { row: EventRow; connection: Connection | null; personas: Persona[]; completesLabel: string }) {
+function LiveSourceEnd({ row, connection, personas, completesLabel, t }: { row: EventRow; connection: Connection | null; personas: Persona[]; completesLabel: string; t: StudioT }) {
   // A route renders its true source (chains share `chain_triggered`, signal
   // routes `trigger_fired`, so the row cannot attribute them). A plain
   // event_listener's real source is whoever emits the event: the row's emitters.
@@ -178,7 +178,20 @@ function LiveSourceEnd({ row, connection, personas, completesLabel }: { row: Eve
   return (
     <span className="flex items-center gap-1.5 min-w-0 text-foreground">
       <Icon className="w-4 h-4 shrink-0" />
-      <span className="typo-body italic line-clamp-2 break-words">{row.sourceClass}</span>
+      <span className="typo-body italic line-clamp-2 break-words">{sourceClassLabel(t, row.sourceClass)}</span>
     </span>
   );
+}
+
+/**
+ * Who emits an event nobody has been seen emitting yet: a catalog event comes
+ * from the app itself. The class is a code token and used to print verbatim
+ * ("common") in every locale.
+ */
+function sourceClassLabel(t: StudioT, sourceClass: SourceClass): string {
+  switch (sourceClass) {
+    case 'common': return t.status_tokens.event_source.system;
+    case 'persona': return t.status_tokens.event_source.persona;
+    default: return t.triggers.event_reason_unknown;
+  }
 }
