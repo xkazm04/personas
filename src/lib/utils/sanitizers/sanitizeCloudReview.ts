@@ -29,8 +29,12 @@ const MAX_NOTES_LENGTH = 2_000;
  * Unicode control characters commonly used in text spoofing attacks.
  */
 const CONTROL_CHAR_RE =
+  // C1 controls, the Arabic letter mark (U+061C), the word joiner and the
+  // bidi ISOLATES (U+2066-2069) were missing: an isolate reorders text exactly
+  // like the overrides this already strips, and `hasUnsafeCodepoints` in
+  // sanitizeUrl.ts has always refused all of them.
   // eslint-disable-next-line no-control-regex
-  /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F\u200B-\u200F\u2028-\u202E\uFEFF\uFFF9-\uFFFB]/g;
+  /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F\u061C\u200B-\u200F\u2028-\u202E\u2060\u2066-\u2069\uFEFF\uFFF9-\uFFFB]/g;
 
 /** Strip dangerous control characters from a string. */
 function stripControlChars(input: string): string {
