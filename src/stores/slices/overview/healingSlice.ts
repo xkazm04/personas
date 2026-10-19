@@ -11,6 +11,7 @@ import type { UnlistenFn } from "@tauri-apps/api/event";
 
 import { reportError } from "../../storeTypes";
 import { log } from "@/lib/log";
+import { extractMessage } from "@/lib/silentCatch";
 
 export interface HealingSlice {
   // State
@@ -118,7 +119,10 @@ export const createHealingSlice: StateCreator<OverviewStore, [], [], HealingSlic
         // contention, transient read error) is not evidence the issue was
         // deleted; leave it in place so the user doesn't lose visibility
         // into a still-live failure.
-        const message = err instanceof Error ? err.message : String(err);
+        // IPC rejects with a serialized AppError OBJECT ({ error, kind }), never
+        // an Error: a String(err) fallback read "[object Object]" and this
+        // matcher never fired, so a deleted issue stayed listed for good.
+        const message = extractMessage(err);
         if (/not found/i.test(message)) {
           set((state) => ({
             healingIssues: state.healingIssues.filter((i) => i.id !== issueId),
