@@ -130,9 +130,20 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
       const pending = activeQueryIdRef.current;
       if (pending) {
         cancelNlQuery(pending).catch(silentCatch('ChatTab:cancelNlQueryUnmount'));
-        // The job is gone, so the bubble it belonged to must not come back
-        // spinning. A restored `generating` message would be a promise nothing
-        // is keeping.
+      }
+      // Same for a generated statement still running: its result would land
+      // in a dead component, so stop it at the engine the way Cancel does.
+      const runningExec = runningExecIdRef.current;
+      if (runningExec) {
+        runningExecIdRef.current = null;
+        void useVaultStore.getState().cancelDbQuery(runningExec);
+      }
+      if (pending || runningExec) {
+        // Neither job survives the unmount, so no bubble may come back
+        // spinning. A restored `generating` or `executing` message is a promise
+        // nothing is keeping -- and an `executing` one could never leave that
+        // state: its Cancel button reads runningExecIdRef, which a remount
+        // starts empty, and its Run button only renders for ready/done.
         const cred = messagesCredRef.current;
         const stored = transcriptCache.get(cred);
         if (stored) {
@@ -141,7 +152,9 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
             stored.map((m) =>
               m.status === 'generating'
                 ? { ...m, content: cancelledLabelRef.current, status: 'failed' as const }
-                : m,
+                : m.status === 'executing'
+                  ? { ...m, error: cancelledLabelRef.current, status: 'done' as const }
+                  : m,
             ),
           );
         }
