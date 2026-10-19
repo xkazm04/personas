@@ -148,21 +148,3 @@ export function recipeToDesignResult(recipe: CredentialRecipe): CredentialDesign
     summary: recipe.summary ?? '',
   };
 }
-
-/** Convert a recipe to the connector context shape used by AutoCred. */
-export function recipeToConnectorContext(recipe: CredentialRecipe) {
-  let fields: CredentialDesignConnector['fields'] = [];
-  try {
-    fields = JSON.parse(recipe.fields_json);
-  } catch (err) { silentCatch("lib/credentials/credentialRecipeRegistry:catch3")(err); }
-
-  return {
-    connectorName: recipe.connector_name,
-    connectorLabel: recipe.connector_label,
-    oauthType: recipe.oauth_type,
-    fields,
-    healthcheckJson: recipe.healthcheck_json,
-    docsUrl: recipe.docs_url,
-    setupInstructions: recipe.setup_instructions,
-  };
-}

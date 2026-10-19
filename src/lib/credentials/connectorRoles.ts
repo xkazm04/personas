@@ -252,13 +252,6 @@ export function getPurposeForConnector(name: string): string | undefined {
   return _connectorPurposeMap.get(name);
 }
 
-/** Get the purpose group definition for a connector */
-export function getPurposeGroupForConnector(name: string): PurposeGroup | undefined {
-  const purpose = _connectorPurposeMap.get(name);
-  if (!purpose) return undefined;
-  return PURPOSE_GROUPS.find((pg) => pg.purpose === purpose);
-}
-
 /** Get the role definition for a connector by name */
 export function getRoleForConnector(name: string): ConnectorRole | undefined {
   return CONNECTOR_ROLES.find((r) => r.members.includes(name));
@@ -269,27 +262,4 @@ export function getAlternatives(name: string): string[] {
   const role = getRoleForConnector(name);
   if (!role) return [];
   return role.members.filter((m) => m !== name);
-}
-
-/** Check if a connector has interchangeable alternatives */
-export function hasAlternatives(name: string): boolean {
-  return getAlternatives(name).length > 0;
-}
-
-/** Architecture component descriptor for the adoption wizard */
-export interface ArchitectureComponent {
-  role: string;
-  /** i18n key inside `connector_roles`. */
-  labelKey: string;
-  /** Pre-resolved English label (kept for backward compatibility). */
-  label: string;
-  members: string[];
-  recommended: string;
-}
-
-/** Build an ArchitectureComponent for a connector, marking it as the recommended choice */
-export function getArchitectureComponent(connectorName: string): ArchitectureComponent | undefined {
-  const role = getRoleForConnector(connectorName);
-  if (!role) return undefined;
-  return { role: role.role, labelKey: role.labelKey, label: role.label, members: role.members, recommended: connectorName };
 }
