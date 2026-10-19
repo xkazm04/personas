@@ -84,13 +84,17 @@ pub fn build(db: &DbPool) -> Result<ObservabilityDigest, AppError> {
         }
     }
 
-    // Execution counts (24h window for completed/failed)
+    // Execution counts (24h window for completed/failed). `created_at` is
+    // RFC3339 (`T` separator) and `datetime('now', ..)` is space-separated, so
+    // the column is normalized before comparing: as raw text every run from
+    // the cutoff's calendar day sorted inside the window, which stretched the
+    // "last 24h" Athena reads to as much as 48h.
     if let Ok(row) = conn.query_row(
         "SELECT
             SUM(CASE WHEN status = 'running' THEN 1 ELSE 0 END),
             SUM(CASE WHEN status = 'queued' THEN 1 ELSE 0 END),
-            SUM(CASE WHEN status = 'completed' AND created_at >= datetime('now','-1 day') THEN 1 ELSE 0 END),
-            SUM(CASE WHEN status = 'failed'    AND created_at >= datetime('now','-1 day') THEN 1 ELSE 0 END)
+            SUM(CASE WHEN status = 'completed' AND datetime(created_at) >= datetime('now','-1 day') THEN 1 ELSE 0 END),
+            SUM(CASE WHEN status IN ('failed', 'incomplete') AND datetime(created_at) >= datetime('now','-1 day') THEN 1 ELSE 0 END)
          FROM persona_executions",
         [],
         |r| {
@@ -108,12 +112,15 @@ pub fn build(db: &DbPool) -> Result<ObservabilityDigest, AppError> {
         digest.executions_failed_24h = row.3;
     }
 
-    // Most recent 5 failures
+    // Most recent 5 failures. `incomplete` is the terminal state the zombie
+    // sweep writes for a run whose process died ("Execution stalled: ..."): it
+    // is not a success, so it is counted and listed with the failures rather
+    // than vanishing from both lines.
     if let Ok(mut stmt) = conn.prepare(
         "SELECT p.name, COALESCE(e.error_message, 'unknown'), e.created_at
          FROM persona_executions e
          JOIN personas p ON p.id = e.persona_id
-         WHERE e.status = 'failed'
+         WHERE e.status IN ('failed', 'incomplete')
          ORDER BY e.created_at DESC
          LIMIT 5",
     ) {
