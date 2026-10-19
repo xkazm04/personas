@@ -100,7 +100,10 @@ export const createAutomationSlice: StateCreator<VaultStore, [], [], AutomationS
 
   triggerAutomation: async (id, inputData) => {
     try {
-      const run = await api.triggerAutomation(id, inputData);
+      // The automation's own timeout and retry count size the IPC wait (see
+      // automationRunBudgetMs): the backend awaits every attempt inline.
+      const automation = get().automations.find((a) => a.id === id);
+      const run = await api.triggerAutomation(id, inputData, null, automation);
       // Refresh automation to get updated last_triggered_at
       const personaId = get().automations.find((a) => a.id === id)?.personaId;
       if (personaId) get().fetchAutomations(personaId);
@@ -113,7 +116,8 @@ export const createAutomationSlice: StateCreator<VaultStore, [], [], AutomationS
 
   testAutomation: async (id) => {
     try {
-      return await api.testAutomationWebhook(id);
+      const automation = get().automations.find((a) => a.id === id);
+      return await api.testAutomationWebhook(id, automation);
     } catch (err) {
       reportError(err, "Automation test failed", set);
       return null;
