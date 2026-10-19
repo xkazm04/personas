@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { listCredentials } from "@/api/vault/credentials";
 import type { PersonaCredential } from "@/lib/bindings/PersonaCredential";
-import { silentCatch } from "@/lib/silentCatch";
+import { extractMessage, silentCatch } from "@/lib/silentCatch";
 
 /**
  * Detects whether a Google Gemini credential is connected in the vault and
@@ -60,4 +60,15 @@ export function isOcrEligible(mime: string | null, ext: string | null): boolean 
   if (mime === "application/pdf") return true;
   const e = (ext ?? "").toLowerCase();
   return ["png", "jpg", "jpeg", "gif", "webp", "bmp", "tiff", "tif", "pdf"].includes(e);
+}
+
+/**
+ * True when an OCR rejection is the user's own cancel (closing the drawer
+ * mid-run signals `cancel_ocr_operation`, and the backend answers with
+ * `AppError::Internal("OCR cancelled")`). The IPC layer rejects with the
+ * serialized AppError OBJECT, not an Error, so a `String(err)` check read
+ * "[object Object]" and every cancel surfaced as a failure toast.
+ */
+export function isOcrCancellation(err: unknown): boolean {
+  return extractMessage(err).includes("OCR cancelled");
 }

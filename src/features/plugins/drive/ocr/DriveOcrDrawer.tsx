@@ -19,12 +19,12 @@ import {
   type OcrDriveResult,
 } from "@/api/drive";
 import { useTranslation } from "@/i18n/useTranslation";
-import { silentCatch, toastCatch } from "@/lib/silentCatch";
+import { extractMessage, silentCatch, toastCatch } from "@/lib/silentCatch";
 import { useToastStore } from "@/stores/toastStore";
 import { useAnnounce } from "@/features/shared/components/feedback/AriaLiveProvider";
 import { BaseModal } from "@/features/shared/components/modals";
 
-import type { useOcr } from "./useOcr";
+import { isOcrCancellation, type useOcr } from "./useOcr";
 
 const TITLE_ID = "drive-ocr-drawer-title";
 
@@ -107,10 +107,9 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
       // is the only completion signal a screen-reader user gets.
       announce(t.plugins.drive.ocr_done, "polite");
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
       // Cancellation is a user-initiated outcome, not an error to surface.
-      if (!msg.includes("OCR cancelled")) {
-        announce(msg, "assertive");
+      if (!isOcrCancellation(e)) {
+        announce(extractMessage(e), "assertive");
         toastCatch("drive:ocr")(e);
       }
       setPhase("input");
