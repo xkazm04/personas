@@ -888,7 +888,12 @@ export function questionGroupToTriage(
       { id: 'questions', label: copy.questionsFact, value: String(questions.length) },
     ],
     source: { label: session.personaName, color: session.personaColor },
-    createdAt: new Date(0).toISOString(),
+    // A question group carries no raise time, so the card states none: '' is
+    // the deck's "unknown" (RelativeTime renders its fallback, PeekRow hides
+    // the stamp). The epoch used to stand in, and the ledger rail then read
+    // "waiting since 56 years ago". Ordering is unchanged: '' still sorts
+    // ahead of every real RFC3339 stamp, exactly where the epoch did.
+    createdAt: '',
     weight: QUESTION_WEIGHT,
     branches: anyDeferred
       ? [
