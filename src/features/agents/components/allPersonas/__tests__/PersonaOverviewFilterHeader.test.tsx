@@ -36,6 +36,17 @@ describe('PersonaOverviewFilterHeader', () => {
     expect(screen.queryByRole('menu')).toBeNull();
   });
 
+  it('closes on an outside press but not on a press inside the portalled panel or trigger', () => {
+    render(<PersonaOverviewFilterHeader label="Status" value="all" options={options} onChange={() => {}} />);
+    const trigger = screen.getByRole('button', { name: /status/i });
+    fireEvent.click(trigger);
+    fireEvent.mouseDown(screen.getByRole('menu'));
+    fireEvent.mouseDown(trigger);
+    expect(screen.getByRole('menu')).toBeTruthy();
+    fireEvent.mouseDown(document.body);
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
   it('closes on Escape', () => {
     render(<PersonaOverviewFilterHeader label="Status" value="all" options={options} onChange={() => {}} />);
     fireEvent.click(screen.getByRole('button', { name: /status/i }));

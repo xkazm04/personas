@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Archive, ArchiveRestore, Copy, Layers, Trash2 } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from '@/i18n/useTranslation';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { usePipelineStore } from '@/stores/pipelineStore';
+import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 
 interface PersonaOverviewBatchBarProps {
@@ -60,24 +61,9 @@ export function PersonaOverviewBatchBar({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [menuOpen, teams.length, fetchTeams]);
 
-  // Close menu on outside click + Escape.
-  useEffect(() => {
-    if (!menuOpen) return;
-    const onDocClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
-    };
-    const onEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setMenuOpen(false);
-    };
-    document.addEventListener('mousedown', onDocClick);
-    document.addEventListener('keydown', onEsc);
-    return () => {
-      document.removeEventListener('mousedown', onDocClick);
-      document.removeEventListener('keydown', onEsc);
-    };
-  }, [menuOpen]);
+  // Close menu on outside click + Escape - the shared dismissal contract.
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
+  useClickOutside(menuRef, menuOpen, closeMenu);
 
   const sortedGroups = useMemo(
     () => [...teams].sort((a, b) => a.name.localeCompare(b.name)),

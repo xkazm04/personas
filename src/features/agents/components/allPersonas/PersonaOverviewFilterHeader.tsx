@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, type CSSProperties, type ReactNode } from 'react';
+import { useState, useRef, useEffect, useCallback, type CSSProperties, type ReactNode } from 'react';
+import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { createPortal } from 'react-dom';
 import { ChevronDown, Filter } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -50,17 +51,13 @@ export function PersonaOverviewFilterHeader({
   const isFiltered = value !== unfilteredValue;
   const activeLabel = options.find((o) => o.value === value)?.label;
 
+  // Outside press + Escape: the shared dismissal contract. The panel is
+  // portalled away from its trigger, so both refs count as inside.
+  const close = useCallback(() => setOpen(false), []);
+  useClickOutside([popRef, btnRef], open, close);
+
   useEffect(() => {
     if (!open) return;
-    const handler = (e: MouseEvent) => {
-      const t = e.target as Node;
-      if (popRef.current?.contains(t)) return;
-      if (btnRef.current?.contains(t)) return;
-      setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
     // The dropdown is position:fixed, anchored once on open — any scroll or
     // resize would leave it floating detached from its trigger, so close it.
     // Scrolling the option list itself (overflow-y-auto) must not close.
@@ -68,13 +65,9 @@ export function PersonaOverviewFilterHeader({
       if (e && popRef.current?.contains(e.target as Node)) return;
       setOpen(false);
     };
-    document.addEventListener('mousedown', handler);
-    document.addEventListener('keydown', onKey);
     window.addEventListener('scroll', onReanchor, true);
     window.addEventListener('resize', onReanchor);
     return () => {
-      document.removeEventListener('mousedown', handler);
-      document.removeEventListener('keydown', onKey);
       window.removeEventListener('scroll', onReanchor, true);
       window.removeEventListener('resize', onReanchor);
     };
