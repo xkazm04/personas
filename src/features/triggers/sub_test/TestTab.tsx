@@ -10,7 +10,7 @@ import { PersonaSelector } from '@/features/agents/components/PersonaSelector';
 import { ThemedSelect, type ThemedSelectOption } from '@/features/shared/components/forms/ThemedSelect';
 import { findTemplateByEventType } from '@/features/triggers/lib/eventSourceTemplates';
 import { formatRelativeTime } from '@/lib/utils/formatters';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { TestFireListeners } from './TestFireListeners';
 import { listenersForEventType } from './testFireRouting';
@@ -202,7 +202,10 @@ export function TestTab() {
       // Append the new event so the next prefill refresh sees it as history.
       lastFiredIdRef.current = result.id;
       setRecentEvents(prev => [result, ...prev]);
-    } catch (err) { silentCatch("features/triggers/sub_test/TestTab:catch1")(err); } finally {
+    } catch (err) {
+      // The user pressed Publish: a failure is owed to them, not to the console.
+      toastCatch("features/triggers/sub_test/TestTab:testFire")(err);
+    } finally {
       setIsTesting(false);
     }
   };
