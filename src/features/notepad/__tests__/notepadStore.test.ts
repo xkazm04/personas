@@ -219,11 +219,11 @@ describe('patchNote — the shadow/debounce/clear cycle', () => {
     });
 
     patchNote('n1', { bodyMd: 'abc' });
-    const saving = flush('n1');
-    await vi.advanceTimersByTimeAsync(0);
+    // The debounce starts the save (not flush, which would drain the next one too).
+    await vi.advanceTimersByTimeAsync(SAVE_DEBOUNCE_MS);
     patchNote('n1', { bodyMd: 'abcd' });
     release();
-    await saving;
+    await vi.advanceTimersByTimeAsync(0);
 
     // The row that came back is 'abc'; the editor must still read 'abcd'.
     expect(getNote('n1')?.bodyMd).toBe('abcd');
@@ -232,6 +232,32 @@ describe('patchNote — the shadow/debounce/clear cycle', () => {
 
     await vi.advanceTimersByTimeAsync(SAVE_DEBOUNCE_MS);
     await flush('n1');
+    expect(updates.at(-1)?.patch.bodyMd).toBe('abcd');
+    expect(saveStateOf('n1')).toBe('clean');
+  });
+
+  it('flush() does not return before an edit typed during an in-flight save lands', async () => {
+    rows = [note({ id: 'n1' })];
+    await load();
+    let release!: () => void;
+    const held = new Promise<void>((r) => {
+      release = r;
+    });
+    const fake = mocked.getMockImplementation()!;
+    mocked.mockImplementation(async (cmd: string, args?: unknown) => {
+      if (cmd === 'notepad_update_note' && updates.length === 0) await held;
+      return fake(cmd, args as never);
+    });
+
+    patchNote('n1', { bodyMd: 'abc' });
+    const first = flush('n1');
+    await vi.advanceTimersByTimeAsync(0);
+    patchNote('n1', { bodyMd: 'abcd' });
+    // What closing the pad does: flush, then act on the note.
+    const second = flush('n1');
+    release();
+    await Promise.all([first, second]);
+
     expect(updates.at(-1)?.patch.bodyMd).toBe('abcd');
     expect(saveStateOf('n1')).toBe('clean');
   });

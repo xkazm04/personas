@@ -412,15 +412,24 @@ export async function flush(id?: string): Promise<void> {
   // Bounded: a flush of every pending note must not open one IPC call per
   // note at once (bounded-parallel-fan-out); four is plenty for a ten-note pad.
   await mapWithConcurrency(ids, 4, async (noteId) => {
+    // DRAIN, not one pass. An edit typed while a save was in flight leaves a
+    // timer behind it: `runSave` hands back the running save, and the newer
+    // text is only rescheduled once that one lands. Returning there let a
+    // close, an archive or a status move run ahead of the operator's last
+    // keystrokes. Ends when nothing is pending, or when a save fails (a failed
+    // save schedules nothing).
+    for (;;) {
       const timer = timers.get(noteId);
       if (timer) {
         clearTimeout(timer);
         timers.delete(noteId);
         await runSave(noteId);
-        return;
+        continue;
       }
       const running = inFlight.get(noteId);
-      if (running) await running;
+      if (!running) return;
+      await running;
+    }
   });
 }
 
