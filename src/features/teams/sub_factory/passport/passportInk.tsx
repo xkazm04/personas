@@ -26,13 +26,6 @@ export function scoreInk(score: number): string {
   return INK.red;
 }
 
-/** Ordinal position (0..1 in its scale) → ink. */
-export function posInk(pos: number): string {
-  if (pos >= 0.65) return INK.emerald;
-  if (pos >= 0.35) return INK.amber;
-  return INK.red;
-}
-
 /** How a cell reads in the Focus vocabulary — drives ink and the recede rule
  *  (good/info rows fade so deficiencies stand alone). */
 export type InkKind = 'good' | 'warn' | 'bad' | 'setup' | 'info';
@@ -68,10 +61,6 @@ export function inkKindOf(v: CellValue): InkKind {
       return v.state === 'known' ? 'info' : 'setup';
   }
 }
-
-export const INK_KIND_HEX: Record<InkKind, string> = {
-  good: INK.emerald, warn: INK.amber, bad: INK.red, setup: INK.blue, info: 'rgba(148,163,184,.85)',
-};
 
 /** Segmented level bar — one segment per climbable step above the floor,
  *  filled to the level reached. 3-of-5 lit reads instantly, without reading. */
