@@ -303,8 +303,18 @@ export function DataGrid<T>({
                 {/* Geometry and treatment mirror the per-row select cell so the
                     header box reads as the same control, not a clipped one. */}
                 <div
+                  role="checkbox"
+                  aria-checked={!!selectAll}
+                  aria-label={t.shared.table_select_all}
+                  tabIndex={0}
                   onClick={onSelectAll}
-                  className={`w-4 h-4 shrink-0 rounded border transition-all flex items-center justify-center cursor-pointer ${
+                  onKeyDown={(e) => {
+                    if (e.key === ' ' || e.key === 'Enter') {
+                      e.preventDefault();
+                      onSelectAll();
+                    }
+                  }}
+                  className={`focus-ring w-4 h-4 shrink-0 rounded border transition-all flex items-center justify-center cursor-pointer ${
                     selectAll
                       ? 'bg-primary/80 border-primary/60'
                       : 'border-primary/25 hover:border-primary/50'
