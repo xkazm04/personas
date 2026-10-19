@@ -1,5 +1,7 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { pipelineForAgent } from '../pipelineHelpers';
+import { pipelineForAgent, slugifyPersonaName } from '../pipelineHelpers';
 
 /**
  * Sweep #384 — every Duo agent row rendered `pipelines[0]`, the project's latest
@@ -40,5 +42,37 @@ describe('pipelineForAgent', () => {
 
   it('never matches on an empty agent name', () => {
     expect(pipelineForAgent([pipe('persona/deploy-bot/production')], '   ')).toBeNull();
+  });
+});
+
+/**
+ * The chip finds an agent's pipeline by the `persona/<slug>/...` ref the
+ * backend writes; these cases compare the TS slug with Rust's `slugify_persona_name`.
+ * Tethered: the expectations are read from the Rust unit test that pins the
+ * backend slug, so a change on either side fails here.
+ */
+describe('slugifyPersonaName against the backend slug', () => {
+  const rust = readFileSync(
+    resolve(process.cwd(), 'src-tauri/src/commands/infrastructure/gitlab.rs'),
+    'utf8',
+  )
+    .split('\n')
+    .filter((l) => !l.trim().startsWith('//'))
+    .join('\n');
+  const cases = [...rust.matchAll(/slugify_persona_name\(\s*"([^"]*)"\s*\)\s*,\s*"([^"]*)"/g)].map(
+    (m) => [m[1]!, m[2]!] as const,
+  );
+
+  it('found the Rust pins it mirrors', () => {
+    expect(cases.length).toBeGreaterThanOrEqual(4);
+  });
+
+  it.each(cases)('slug(%j) === %j', (name, slug) => {
+    expect(slugifyPersonaName(name)).toBe(slug);
+  });
+
+  it('gives a punctuated agent its own pipeline chip', () => {
+    const rows = [pipe('persona/my-bot/production', 'success')];
+    expect(pipelineForAgent(rows, 'My Bot!')?.status).toBe('success');
   });
 });
