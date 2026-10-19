@@ -64,6 +64,38 @@ function compileGuidance(entries: ExecutionKnowledge[]): string {
   return lines.length > 1 ? lines.join('\n') : '';
 }
 
+/** The input_data key the guidance travels under. */
+const KNOWLEDGE_GUIDANCE_KEY = 'knowledge_guidance';
+
+/**
+ * Put the guidance INSIDE the input_data JSON object, or return null when the
+ * input is not an object it can be added to.
+ *
+ * `inputData` is a JSON string that `execute_persona` parses: with a use case
+ * it rejects anything that is not a JSON object ("input_data is not valid
+ * JSON"), without one it wraps unparseable text as `{ user_input }`. This
+ * middleware used to append the guidance as raw text after the JSON, so every
+ * use-case run of a persona with learned knowledge failed before it started,
+ * and every other run lost its structured input into one string. A
+ * non-underscore key keeps the guidance in the `## Input Data` dump the model
+ * reads (underscore keys are internal metadata the assembler skips).
+ */
+function withGuidance(inputData: string | null, guidance: string): string | null {
+  if (!inputData || inputData.trim().length === 0) {
+    return JSON.stringify({ [KNOWLEDGE_GUIDANCE_KEY]: guidance });
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(inputData);
+  } catch {
+    // intentional: not JSON -- leave the caller's input exactly as it was
+    return null;
+  }
+  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+  // Invariant: the guard above leaves only a plain JSON object.
+  return JSON.stringify({ ...(parsed as Record<string, unknown>), [KNOWLEDGE_GUIDANCE_KEY]: guidance });
+}
+
 /** The validate-stage middleware that enriches payload with knowledge. */
 const knowledgeInjectionMiddleware: PipelineMiddleware<'validate'> = async (
   _stage,
@@ -75,16 +107,8 @@ const knowledgeInjectionMiddleware: PipelineMiddleware<'validate'> = async (
 
     if (entries.length > 0) {
       const guidance = compileGuidance(entries);
-      if (guidance) {
-        // Attach guidance as metadata -- the execution hook can access this
-        // to prepend to the prompt or include in the input data.
-        return {
-          ...payload,
-          inputData: payload.inputData
-            ? `${payload.inputData}\n\n${guidance}`
-            : guidance,
-        };
-      }
+      const inputData = guidance ? withGuidance(payload.inputData, guidance) : null;
+      if (inputData) return { ...payload, inputData };
     }
   } catch (err) {
     logger.warn('Knowledge injection failed, continuing without', { personaId: payload.personaId, error: extractMessage(err) });
