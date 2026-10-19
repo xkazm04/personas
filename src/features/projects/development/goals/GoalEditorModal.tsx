@@ -97,7 +97,9 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal, onSaved,
       if (isEdit && editGoal) {
         await updateGoal(editGoal.id, {
           title: title.trim(),
-          description: description.trim() || undefined,
+          // An emptied field clears the stored text; `undefined` would leave it
+          // untouched, so a description could never be removed.
+          description: description.trim() || (editGoal.description ? '' : undefined),
           status,
           targetDate: targetIso,
           kpiId: kpiLink,
