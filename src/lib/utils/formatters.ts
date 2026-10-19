@@ -22,6 +22,7 @@ import type { LucideIcon } from 'lucide-react';
 const activeLanguage = (): string => useI18nStore.getState().language;
 import { CheckCircle2, XCircle, AlertTriangle, Pause, Clock, Loader2, HelpCircle } from 'lucide-react';
 import { getActiveTranslations } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 
 /**
  * SQLite `datetime('now')` returns "YYYY-MM-DD HH:MM:SS" — UTC, but with NO
@@ -405,13 +406,6 @@ export const SEVERITY_COLORS: Record<string, BadgeColors> = {
   critical: { bg: 'bg-status-error/10',   text: 'text-status-error',   border: 'border-status-error/20' },
 };
 
-export const HEALING_CATEGORY_COLORS: Record<string, BadgeColors> = {
-  prompt: { bg: 'bg-violet-500/10', text: 'text-violet-400', border: 'border-violet-500/20' },
-  tool: { bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/20' },
-  config: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' },
-  external: { bg: 'bg-gray-500/10', text: 'text-gray-600', border: 'border-gray-500/20' },
-};
-
 export interface CategoryColors extends BadgeColors {
   label: string;
   accent: string;
@@ -474,17 +468,6 @@ export function formatInterval(seconds: number): string {
   if (hours > 0) parts.push(`${hours} hour${hours !== 1 ? 's' : ''}`);
   if (minutes > 0) parts.push(`${minutes} minute${minutes !== 1 ? 's' : ''}`);
   return parts.join(' ');
-}
-
-/** Format remaining seconds into a compact countdown like "4m 32s" or "1h 23m" */
-export function formatCountdown(seconds: number): string {
-  if (seconds <= 0) return '0s';
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = seconds % 60;
-  if (h > 0) return m > 0 ? `${h}h ${m}m` : `${h}h`;
-  if (m > 0) return s > 0 ? `${m}m ${s}s` : `${m}m`;
-  return `${s}s`;
 }
 
 /**
@@ -661,40 +644,6 @@ export function formatNumeric(
     default:
       return formatCount(value, { language, precision });
   }
-}
-
-// -- Simple mode helpers ------------------------------------------------
-
-import type { SimpleStatus } from './designTokens';
-import type { Translations } from '@/i18n/en';
-import { tokenLabel } from '@/i18n/tokenMaps';
-
-
-
-/** Map a granular status string to one of three simple levels. */
-export function toSimpleStatusLevel(status: string): SimpleStatus {
-  const s = status.toLowerCase();
-  if (['completed', 'success', 'healthy', 'ready', 'approved', 'active', 'running', 'processed'].includes(s)) {
-    return 'good';
-  }
-  if (['failed', 'error', 'critical', 'rejected', 'blocked', 'unhealthy'].includes(s)) {
-    return 'problem';
-  }
-  return 'warning';
-}
-
-/**
- * Map a granular status string to one of three simple levels, with its label.
- * Used in simple mode to reduce cognitive load.
- *
- * The label used to come from `SIMPLE_MODE.STATUS[level].label` — literal English
- * in a design-token module, so the mode built for the least technical users was
- * the one that could not be translated. It now resolves through the same
- * `status_tokens` path every other machine token uses.
- */
-export function formatSimpleStatus(t: Translations, status: string): { level: SimpleStatus; label: string } {
-  const level = toSimpleStatusLevel(status);
-  return { level, label: tokenLabel(t, 'simple', level) };
 }
 
 /**

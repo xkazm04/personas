@@ -256,22 +256,6 @@ const CATEGORY_I18N_KEYS = {
   { label: keyof Translations['triggers']; desc: keyof Translations['triggers'] }
 >;
 
-/**
- * Map trigger category ID to the fully-qualified i18n key for label/description.
- *
- * DERIVED from `CATEGORY_I18N_KEYS` rather than written out again. It used to be
- * a second hand-maintained copy of the same mapping, and `getTriggerCategories`
- * below kept a THIRD one locally -- so the exported table could drift from the
- * keys the UI actually reads with nothing to notice.
- */
-export const TRIGGER_CATEGORY_I18N: Record<string, { label: string; desc: string }> =
-  Object.fromEntries(
-    Object.entries(CATEGORY_I18N_KEYS).map(([id, keys]) => [
-      id,
-      { label: `triggers.${keys.label}`, desc: `triggers.${keys.desc}` },
-    ]),
-  );
-
 /** Resolve trigger type options with translated labels. Defaults to English. */
 export function getTriggerTypeOptions(t: Translations = en): TriggerTypeOption[] {
   return TRIGGER_TYPE_OPTIONS.map((opt) => {

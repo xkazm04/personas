@@ -9,7 +9,6 @@ import {
   getTriggerTypeOptions,
   getRateLimitWindowOptions,
   getTriggerTemplates,
-  TRIGGER_CATEGORY_I18N,
   TRIGGER_CATEGORIES,
   TRIGGER_TEMPLATES,
   TRIGGER_KINDS,
@@ -90,27 +89,12 @@ describe('trigger category taxonomy', () => {
 });
 
 describe('trigger i18n key tables', () => {
-  // Regression guard: the exported dotted-key table and the keys
-  // `getTriggerCategories` actually reads used to be two hand-written copies of
-  // the same mapping. The exported table is now derived, so they cannot drift.
-  it('exports one dotted key per rendered category', () => {
-    expect(Object.keys(TRIGGER_CATEGORY_I18N).sort()).toEqual(
-      TRIGGER_CATEGORIES.map((c) => c.id).sort(),
-    );
-    for (const entry of Object.values(TRIGGER_CATEGORY_I18N)) {
-      expect(entry.label.startsWith('triggers.')).toBe(true);
-      expect(entry.desc.startsWith('triggers.')).toBe(true);
-    }
-  });
-
   // Cross-table parity: every key these tables name must exist in the English
   // catalog, or the UI silently renders the English fallback copy forever.
   it('names only keys that exist in the triggers section', () => {
     const triggers = en.triggers as unknown as Record<string, unknown>;
-    for (const entry of Object.values(TRIGGER_CATEGORY_I18N)) {
-      expect(triggers[entry.label.replace('triggers.', '')]).toBeTypeOf('string');
-      expect(triggers[entry.desc.replace('triggers.', '')]).toBeTypeOf('string');
-    }
+    // Category keys are not listed here: CATEGORY_I18N_KEYS is typed
+    // `keyof Translations['triggers']`, so a missing one fails to compile.
     for (const kind of TRIGGER_KINDS) {
       expect(triggers[`type_${kind}`]).toBeTypeOf('string');
       expect(triggers[`desc_${kind}`]).toBeTypeOf('string');
