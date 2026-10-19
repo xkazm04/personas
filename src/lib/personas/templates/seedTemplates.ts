@@ -102,11 +102,12 @@ function templateToReviewInput(template: TemplateCatalogEntry, runId: string): S
 /**
  * The language the seed rows should be written in.
  *
- * The gallery reads the catalog through `useLocalizedTemplateCatalog`, so
- * seeding from the canonical English catalog produced a split-language UI:
- * translated cards in the gallery and English `test_case_name` / `instruction`
- * in the Generated tab, from the same templates. Both sides now resolve the
- * same overlay for the same language.
+ * Seed rows resolve the per-language overlay for the active UI language, so
+ * the Generated tab's `test_case_name` / `instruction` follow the user's
+ * language. (This comment used to say the gallery read the catalog through
+ * `useLocalizedTemplateCatalog`; that hook had no caller and was deleted on
+ * 2026-10-19. The Explore gallery reads the canonical English catalog via
+ * `getTemplateCatalog`.)
  */
 function activeSeedLanguage(): LocaleCode {
   return useI18nStore.getState().language;
