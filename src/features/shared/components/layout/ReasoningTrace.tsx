@@ -16,6 +16,21 @@ export default function ReasoningTrace({ entries, isLive, startTime }: Reasoning
   const scrollRef = useRef<HTMLDivElement>(null);
   const userScrolledUp = useRef(false);
   const [filter, setFilter] = useState<TraceFilter>('all');
+  // Row identity follows the ENTRY, not its position. The list is filtered by
+  // the toolbar chips and the hook keeps a sliding 500-entry window, so an
+  // index key handed one row's expanded state to whichever entry slid into
+  // its slot. Entries carry no id, but each is a stable object for its whole
+  // life in the window, so a WeakMap gives it one.
+  const rowKeys = useRef(new WeakMap<ReasoningEntry, number>());
+  const nextRowKey = useRef(0);
+  const keyOf = (entry: ReasoningEntry): number => {
+    let key = rowKeys.current.get(entry);
+    if (key === undefined) {
+      key = nextRowKey.current++;
+      rowKeys.current.set(entry, key);
+    }
+    return key;
+  };
 
   const baseTime = startTime ?? (entries.length > 0 ? entries[0]!.ts : Date.now());
 
@@ -69,8 +84,8 @@ export default function ReasoningTrace({ entries, isLive, startTime }: Reasoning
         onScroll={handleScroll}
         className="max-h-[300px] overflow-y-auto px-3 py-1 space-y-0.5"
       >
-        {visible.map((entry, i) => (
-          <div key={i} data-entry-type={entry.type}>
+        {visible.map((entry) => (
+          <div key={keyOf(entry)} data-entry-type={entry.type}>
             <EntryRenderer entry={entry} baseTime={baseTime} />
           </div>
         ))}

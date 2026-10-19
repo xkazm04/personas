@@ -69,3 +69,37 @@ describe('ReasoningTrace', () => {
     expect(screen.queryByText('Jump to error')).toBeNull();
   });
 });
+
+describe('ReasoningTrace row identity', () => {
+  const LONG = 'x'.repeat(200);
+  const longText = (n: number): ReasoningEntry => ({ type: 'text', content: `${n} ${LONG}`, ts: BASE + n * 1000 });
+
+  it('does not hand an expanded row to the entry that takes its slot under a filter', () => {
+    const entries: ReasoningEntry[] = [
+      longText(0),
+      { type: 'tool_call', toolName: 'Read', inputPreview: `in ${LONG}`, ts: BASE + 2000 },
+    ];
+    render(<ReasoningTrace entries={entries} isLive={false} startTime={BASE} />);
+    const [textToggle] = screen.getAllByRole('button', { name: 'Show more' });
+    fireEvent.click(textToggle!);
+    expect(screen.getAllByRole('button', { expanded: true })).toHaveLength(1);
+
+    fireEvent.click(screen.getByText('Tools'));
+    // The tool row now sits at index 0, where the expanded text row was.
+    expect(screen.queryAllByRole('button', { expanded: true })).toHaveLength(0);
+  });
+
+  it('keeps an expanded row with its entry when the window slides', () => {
+    const a = longText(0);
+    const b = longText(1);
+    const c = longText(2);
+    const { rerender } = render(<ReasoningTrace entries={[a, b, c]} isLive={false} startTime={BASE} />);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Show more' })[1]!);
+
+    // The hook's 500-entry cap drops the oldest entry: every survivor moves up one slot.
+    rerender(<ReasoningTrace entries={[b, c, longText(3)]} isLive={false} startTime={BASE} />);
+    const expanded = screen.getAllByRole('button', { expanded: true });
+    expect(expanded).toHaveLength(1);
+    expect(expanded[0]!.textContent).toContain('1 xxx');
+  });
+});
