@@ -1483,18 +1483,6 @@ fn decode_file_path(tool_name: &str, input: &serde_json::Value) -> Option<String
         .map(String::from)
 }
 
-/// Extract a file change from a tool input serialized as JSON.
-///
-/// Only correct for a COMPLETE serialization. The stream pipeline no longer
-/// calls this with `input_preview`: it reads `AssistantToolUse::file_path`,
-/// decoded by the parser from the full value.
-pub fn extract_file_change(tool_name: &str, input_json: &str) -> Option<FileChange> {
-    let change_type = file_change_type(tool_name)?;
-    let value: serde_json::Value = serde_json::from_str(input_json).ok()?;
-    let path = decode_file_path(tool_name, &value)?;
-    Some(FileChange { path, change_type })
-}
-
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -1503,47 +1491,42 @@ pub fn extract_file_change(tool_name: &str, input_json: &str) -> Option<FileChan
 mod file_change_tests {
     use super::*;
 
+    fn decode(tool_name: &str, input: &str) -> Option<String> {
+        decode_file_path(tool_name, &serde_json::from_str(input).unwrap())
+    }
+
     #[test]
-    fn test_extract_edit() {
-        let result = extract_file_change(
-            "Edit",
-            r#"{"file_path":"/src/main.rs","old_string":"foo","new_string":"bar"}"#,
+    fn test_decode_edit() {
+        let input = r#"{"file_path":"/src/main.rs","old_string":"foo","new_string":"bar"}"#;
+        assert_eq!(decode("Edit", input).as_deref(), Some("/src/main.rs"));
+        assert_eq!(file_change_type("Edit"), Some(FileChangeType::Edit));
+    }
+
+    #[test]
+    fn test_decode_write() {
+        let input = r#"{"file_path":"/new.txt","content":"hello"}"#;
+        assert_eq!(decode("Write", input).as_deref(), Some("/new.txt"));
+        assert_eq!(file_change_type("Write"), Some(FileChangeType::Write));
+    }
+
+    #[test]
+    fn test_decode_read_with_path_key() {
+        assert_eq!(
+            decode("Read", r#"{"path":"/readme.md"}"#).as_deref(),
+            Some("/readme.md")
         );
-        assert!(result.is_some());
-        let fc = result.unwrap();
-        assert_eq!(fc.path, "/src/main.rs");
-        assert_eq!(fc.change_type, FileChangeType::Edit);
+        assert_eq!(file_change_type("Read"), Some(FileChangeType::Read));
     }
 
     #[test]
-    fn test_extract_write() {
-        let result = extract_file_change("Write", r#"{"file_path":"/new.txt","content":"hello"}"#);
-        assert!(result.is_some());
-        let fc = result.unwrap();
-        assert_eq!(fc.path, "/new.txt");
-        assert_eq!(fc.change_type, FileChangeType::Write);
+    fn test_decode_unknown_tool() {
+        assert!(decode("Bash", r#"{"command":"ls","path":"/x"}"#).is_none());
     }
 
     #[test]
-    fn test_extract_read_with_path_key() {
-        let result = extract_file_change("Read", r#"{"path":"/readme.md"}"#);
-        assert!(result.is_some());
-        assert_eq!(result.unwrap().change_type, FileChangeType::Read);
-    }
-
-    #[test]
-    fn test_extract_unknown_tool() {
-        assert!(extract_file_change("Bash", r#"{"command":"ls"}"#).is_none());
-    }
-
-    #[test]
-    fn test_extract_invalid_json() {
-        assert!(extract_file_change("Edit", "not json").is_none());
-    }
-
-    #[test]
-    fn test_extract_no_path() {
-        assert!(extract_file_change("Edit", r#"{"old":"a","new":"b"}"#).is_none());
+    fn test_decode_no_or_empty_path() {
+        assert!(decode("Edit", r#"{"old":"a","new":"b"}"#).is_none());
+        assert!(decode("Edit", r#"{"file_path":""}"#).is_none());
     }
 }
 
