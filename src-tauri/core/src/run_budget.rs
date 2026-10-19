@@ -48,8 +48,10 @@ pub const DEFAULT_LAB_CEILING_USD: f64 = 3.0;
 pub const DEFAULT_PIPELINE_CEILING_USD: f64 = 5.0;
 
 /// Resolve a ceiling from an env override, falling back to `default`. A value of
-/// `0` (or negative) means "unlimited" — the ledger still tracks spend. Env is
-/// also the cheap test seam for forcing the exceed path.
+/// `0` means "unlimited" — the ledger still tracks spend. A negative,
+/// unparsable or `NaN` value is ignored and the default cap applies, so a typo
+/// never silently lifts the ceiling. Env is also the cheap test seam for
+/// forcing the exceed path.
 fn env_ceiling(var: &str, default: f64) -> f64 {
     std::env::var(var)
         .ok()
