@@ -81,4 +81,14 @@ describe('FleetHarvestPanel', () => {
     await userEvent.click(screen.getByTestId('fleet-harvest-run-b'));
     expect(screen.queryByText(/Session of A/)).not.toBeInTheDocument();
   });
+
+  it('names its icon-only close button', async () => {
+    vi.mocked(fleetApi.runReport).mockResolvedValue(report('a', 'Session of A'));
+    const onClose = vi.fn();
+    render(<FleetHarvestPanel open onClose={onClose} />);
+    await screen.findByText(/Session of A/);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(onClose).toHaveBeenCalled();
+  });
 });

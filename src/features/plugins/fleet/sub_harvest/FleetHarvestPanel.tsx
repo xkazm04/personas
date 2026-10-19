@@ -84,7 +84,13 @@ export function FleetHarvestPanel({ open, onClose }: Props) {
               copiedLabel={t.plugins.fleet.harvest_copied}
             />
           )}
-          <Button variant="ghost" size="sm" icon={<X className="h-3.5 h-3.5" />} onClick={onClose} />
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<X className="h-3.5 w-3.5" />}
+            onClick={onClose}
+            aria-label={t.common.close}
+          />
         </div>
 
         {runs.length > 1 && (
