@@ -59,6 +59,13 @@ const sectionCache = new Map<Language, Partial<Record<TranslationSection, unknow
 const bundleCache = new Map<Language, Translations>();
 const loadingPromises = new Map<string, Promise<void>>();
 const sectionLoaderIndex = new Map<string, SectionLoader>();
+/**
+ * Sections a read has resolved to something incomplete: the shape fallback,
+ * English standing in for a locale chunk, or a locale chunk with no English
+ * base under it yet. `loadSection` broadcasts a landing only for these; a
+ * re-render re-reads and re-records the section if it is still incomplete.
+ */
+const degradedSections = new Set<TranslationSection>();
 
 for (const [path, loader] of Object.entries(sectionLoaders)) {
   const parsed = sectionFromPath(path);
@@ -128,7 +135,16 @@ function loadSection(lang: Language, section: TranslationSection): Promise<void>
       cacheSection(lang, section, mod.default);
       mergedSectionCache.delete(`${lang}:${section}`);
       bundleVersion++;
-      listeners.forEach((fn) => fn());
+      // Re-render translated components only when a read actually got a
+      // fallback for this section. Broadcasting every landing re-rendered
+      // EVERY useTranslation() consumer once per chunk, and the idle
+      // background load below lands ~40 English chunks nobody has read yet
+      // right after first paint. Pseudo mode rebuilds from all of English,
+      // so it keeps the unconditional broadcast.
+      const someoneSawFallback = degradedSections.delete(section);
+      if (someoneSawFallback || (import.meta.env.DEV && isPseudoActive())) {
+        listeners.forEach((fn) => fn());
+      }
     })
     .catch(silentCatch(`i18n:loadSection:${lang}.${section}`))
     .finally(() => {
@@ -360,9 +376,16 @@ function shapeFor(section: TranslationSection): Record<string, unknown> {
 
 function getResolvedSection(lang: Language, section: TranslationSection): unknown {
   const english = getEnglishSection(section);
-  if (lang === 'en') return english ?? shapeFor(section);
+  if (lang === 'en') {
+    if (english === undefined) {
+      degradedSections.add(section);
+      return shapeFor(section);
+    }
+    return english;
+  }
 
   const localized = getCachedSection(lang, section);
+  if (localized === undefined || english === undefined) degradedSections.add(section);
   if (localized === undefined) return english ?? shapeFor(section);
   if (english === undefined) return localized;
 
