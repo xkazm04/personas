@@ -110,6 +110,15 @@ pub fn parse_result_line(ctx: &SpendCtx, line: &str) -> Option<LlmSpendInsert> {
     })
 }
 
+/// The daily-brake read behind [`source_today`], shared with the test that
+/// asserts which index SQLite picks for it.
+const SOURCE_TODAY_SQL: &str =
+    "SELECT COALESCE(SUM(cost_usd), 0.0) AS cost_usd, COUNT(*) AS rows_today
+       FROM dev_llm_spend
+      WHERE source = ?1
+        AND created_at >= date('now')
+        AND created_at < date('now', '+1 day')";
+
 /// Total USD cost + row count for a single `source` **today**, on the
 /// database's own clock.
 ///
@@ -117,8 +126,12 @@ pub fn parse_result_line(ctx: &SpendCtx, line: &str) -> Option<LlmSpendInsert> {
 /// caller is a DAILY cap: a budget that resets at midnight and a figure that
 /// covers the last twenty-four hours disagree for most of the day, and the one
 /// that would be wrong is the one on the screen beside the word "today".
-/// `date(created_at) = date('now')` is the shape `attention_ledger` already
-/// uses for the same question.
+/// "Today" is the half-open range `[date('now'), date('now', '+1 day'))`
+/// over `created_at`, not `date(created_at) = date('now')`: wrapping the column
+/// in a function hid it from `idx_dev_llm_spend_source (source, created_at)`,
+/// so SQLite seeked on `source` alone and then read every row that source had
+/// ever written. Every writer stores `created_at` as `datetime('now')`
+/// (`YYYY-MM-DD HH:MM:SS`, UTC), which sorts as text against a bare date.
 pub fn source_today(pool: &DbPool, source: &str) -> Result<(f64, i64), AppError> {
     // `timed_query!` where the rest of this module has none: the daily brake is
     // read on every runtime poll, and an aggregate with no index behind it is
@@ -131,13 +144,9 @@ pub fn source_today(pool: &DbPool, source: &str) -> Result<(f64, i64), AppError>
         // `positional-row-get` declares as its false-positive surface - so
         // naming them costs a word and keeps the file off a list it does not
         // belong on.
-        let row = conn.query_row(
-            "SELECT COALESCE(SUM(cost_usd), 0.0) AS cost_usd, COUNT(*) AS rows_today
-               FROM dev_llm_spend
-              WHERE source = ?1 AND date(created_at) = date('now')",
-            params![source],
-            |r| Ok((r.get("cost_usd")?, r.get("rows_today")?)),
-        )?;
+        let row = conn.query_row(SOURCE_TODAY_SQL, params![source], |r| {
+            Ok((r.get("cost_usd")?, r.get("rows_today")?))
+        })?;
         Ok(row)
     })
 }
@@ -391,6 +400,37 @@ mod headroom_tests {
             SpendHeadroom::classify(10.0, f64::INFINITY, WARN).band,
             SpendBand::Unlimited
         );
+    }
+
+    /// The daily brake is read on every runtime poll, so it must seek the
+    /// `(source, created_at)` index on BOTH columns. Asserted on the plan
+    /// SQLite actually chose, plus the rows it counts: today's row in, a
+    /// yesterday row and another source out.
+    #[test]
+    fn source_today_seeks_the_index_on_source_and_created_at() -> Result<(), AppError> {
+        let pool = crate::init_test_db()?;
+        let conn = pool.get()?;
+        let plan: Vec<String> = conn
+            .prepare(&format!("EXPLAIN QUERY PLAN {SOURCE_TODAY_SQL}"))?
+            .query_map(["curator"], |r| r.get::<_, String>("detail"))?
+            .collect::<Result<_, _>>()?;
+        assert!(
+            plan.iter()
+                .any(|d| d.contains("idx_dev_llm_spend_source") && d.contains("created_at>")),
+            "expected a (source, created_at) range seek, got {plan:?}"
+        );
+
+        conn.execute_batch(
+            "INSERT INTO dev_llm_spend (id, source, trigger_kind, cost_usd, created_at)
+             VALUES ('t1', 'curator', 'tick', 2.0, datetime('now')),
+                    ('y1', 'curator', 'tick', 5.0, datetime('now', '-1 day')),
+                    ('o1', 'other',   'tick', 7.0, datetime('now'));",
+        )?;
+        drop(conn);
+        let (cost, rows) = source_today(&pool, "curator")?;
+        assert_eq!(rows, 1);
+        assert!((cost - 2.0).abs() < 1e-9, "cost = {cost}");
+        Ok(())
     }
 
     /// End to end against a real ledger: rows recorded for one source roll up
