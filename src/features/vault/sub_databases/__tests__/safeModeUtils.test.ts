@@ -137,6 +137,21 @@ describe('isMutationQuery — comment handling parity with the backend', () => {
     expect(isMutationQuery('WITH c AS (SELECT 1) /*! DELETE FROM t */ SELECT 1')).toBe(true);
   });
 
+  it('scans a LEADING executable comment too, as the backend does', () => {
+    // The leading-comment loop that finds the first keyword dropped these, and
+    // the body scan ran on what was left: `VALUES (1)` / `SELECT * FROM u` were
+    // granted read-only status while the backend's body_has_mutation, which
+    // scans the full text, rejected them. MySQL runs the `/*! */` body.
+    expect(isMutationQuery('/*!INSERT INTO t*/ VALUES (1)')).toBe(true);
+    expect(isMutationQuery('/*! INSERT INTO t */ SELECT * FROM u')).toBe(true);
+    // A MySQL-only `--x` line ahead of the statement hides a batch the backend
+    // counts (has_multiple_statements reads the whole payload).
+    expect(isMutationQuery('--x ;\nSELECT 1')).toBe(true);
+    // An ordinary leading comment is still inert.
+    expect(isMutationQuery('/* delete later */ SELECT 1')).toBe(false);
+    expect(isMutationQuery('-- drop me later\nSELECT 1')).toBe(false);
+  });
+
   it('fails closed when a block comment or literal never closes', () => {
     // An unreadable tail is danger the scan cannot see; this branch only ever
     // runs in order to GRANT read-only status, so unknown resolves to "no".
