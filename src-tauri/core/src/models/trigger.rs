@@ -5,7 +5,6 @@ use chrono_tz::Tz;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::lifecycle::TriggerStatus;
 use crate::models::serde_util::double_option;
 
 // ============================================================================
@@ -263,16 +262,6 @@ impl ActiveWindow {
     /// when `timezone` is `None` or contains an unrecognised IANA name.
     fn resolve_tz(&self) -> Option<Tz> {
         self.timezone.as_deref().and_then(|s| s.parse::<Tz>().ok())
-    }
-
-    /// Return the IANA timezone name that will actually be used at evaluation
-    /// time. Useful for displaying in the UI so users know which timezone is
-    /// in effect.
-    pub fn resolved_timezone_name(&self) -> String {
-        match self.resolve_tz() {
-            Some(tz) => tz.name().to_string(),
-            None => iana_time_zone::get_timezone().unwrap_or_else(|_| "Local".to_string()),
-        }
     }
 
     /// Check whether the given UTC time falls within this active window.
@@ -657,16 +646,6 @@ impl PersonaTrigger {
             s.as_deref().map(str::trim).filter(|s| !s.is_empty())
         }
         non_blank(&self.responsibility_id).or_else(|| non_blank(&self.use_case_id))
-    }
-
-    /// Return the typed lifecycle status parsed from the `status` column.
-    ///
-    /// Falls back to the legacy `enabled` boolean bridge when the column
-    /// contains an unrecognised value (shouldn't happen after migration).
-    pub fn typed_status(&self) -> TriggerStatus {
-        self.status
-            .parse::<TriggerStatus>()
-            .unwrap_or_else(|_| TriggerStatus::from_enabled(self.enabled))
     }
 
     /// Decrypt the config JSON, transparently handling both encrypted and

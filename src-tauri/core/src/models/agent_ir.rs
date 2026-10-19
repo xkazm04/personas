@@ -217,11 +217,6 @@ impl AgentIrTool {
         }
     }
 
-    /// Whether this is a full object definition (not a plain string).
-    pub fn is_structured(&self) -> bool {
-        matches!(self, AgentIrTool::Structured(_))
-    }
-
     /// Get the structured data, if present.
     pub fn data(&self) -> Option<&AgentIrToolData> {
         match self {

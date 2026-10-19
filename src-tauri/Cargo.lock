@@ -5257,7 +5257,6 @@ dependencies = [
  "chrono-tz",
  "hex",
  "hkdf",
- "iana-time-zone",
  "keyring",
  "libc",
  "r2d2",

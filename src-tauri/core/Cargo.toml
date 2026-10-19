@@ -71,7 +71,6 @@ zeroize = { workspace = true }
 # url_safety implements `reqwest::dns::Resolve` for the SSRF-safe client.
 reqwest = { workspace = true }
 tokio = { workspace = true }
-iana-time-zone = { workspace = true }  # models::trigger, local-tz default
 whoami = { workspace = true }  # crypto, machine-bound key derivation
 ammonia = { workspace = true }  # validation, HTML sanitization
 tempfile = { workspace = true }  # validation, atomic file writes
