@@ -11,7 +11,7 @@ import type { SavedView } from '@/lib/bindings/SavedView';
 import type { EventFilterInput } from '@/lib/bindings/EventFilterInput';
 import type { PersonaEvent } from '@/lib/types/types';
 import { createLogger } from '@/lib/log';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 const logger = createLogger('event-log');
 
@@ -424,8 +424,10 @@ export function useEventLog() {
     setSortDirection((d) => (d === 'desc' ? 'asc' : 'desc'));
   };
 
-  // Saved view operations
-  const saveCurrentView = async (name: string) => {
+  // Saved view operations. A failed save or delete used to reach only the log:
+  // the toolbar then closed the name field as if the view existed and the
+  // typed name was lost. Both now toast, and save says whether it landed.
+  const saveCurrentView = async (name: string): Promise<boolean> => {
     const config: Record<string, string> = {};
     if (statusFilter !== 'all') config.status = statusFilter;
     if (typeFilter !== 'all') config.eventType = typeFilter;
@@ -446,8 +448,10 @@ export function useEventLog() {
       });
       setSavedViews((prev) => [view, ...prev]);
       setActiveViewId(view.id);
+      return true;
     } catch (err) {
-      logger.error('Failed to save view', { error: err });
+      toastCatch('useEventLog:saveView')(err);
+      return false;
     }
   };
 
@@ -470,7 +474,7 @@ export function useEventLog() {
       setSavedViews((prev) => prev.filter((v) => v.id !== viewId));
       if (activeViewId === viewId) setActiveViewId(null);
     } catch (err) {
-      logger.error('Failed to delete saved view', { error: err });
+      toastCatch('useEventLog:deleteView')(err);
     }
   };
 

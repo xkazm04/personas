@@ -73,10 +73,6 @@ export function setLoadedEnglishSection(section: TranslationSection, value: unkn
   loadedCache.set(section, value);
 }
 
-export function hasLoadedEnglishSection(section: TranslationSection): boolean {
-  return CORE_SECTIONS.has(section) || loadedCache.has(section);
-}
-
 /**
  * Best-effort full English bundle: core sections plus whatever non-core
  * sections have already loaded. Used only by the DEV-only pseudo-locale

@@ -779,19 +779,3 @@ function recordRegistryBreadcrumb(raw: string, category: FriendlyErrorCategory) 
     data: { resolvedCategory: category },
   });
 }
-
-// ---------------------------------------------------------------------------
-// Severity label humaniser (for healing / alert toasts)
-// ---------------------------------------------------------------------------
-
-const SEVERITY_LABELS: Record<string, string> = {
-  critical: 'Needs immediate attention',
-  high: 'Important issue',
-  medium: 'Minor issue',
-  low: 'Informational',
-};
-
-/** Convert a severity code like "critical" to a human-readable label. */
-export function friendlySeverity(severity: string): string {
-  return SEVERITY_LABELS[severity] ?? severity;
-}

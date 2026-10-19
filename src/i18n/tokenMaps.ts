@@ -11,9 +11,12 @@
  *
  * ## Adding a new token
  *   1. Add the token → i18n key mapping in the relevant `*_TOKENS` record.
- *   2. Add the corresponding English string in `src/i18n/en.ts` under the
- *      matching `status_tokens.*` section.
- *   3. Non-English locales fall back to English automatically via deep merge.
+ *   2. Add the corresponding English string in `src/i18n/locales/en.json`
+ *      under the matching `status_tokens.*` section (`en.ts` is only a
+ *      back-compat shim over the generated catalog).
+ *   3. Translate it into every other locale in the same change
+ *      (`npm run check:i18n:strict`); the runtime English deep-merge is a
+ *      safety net, not a shipping state.
  *
  * ## Usage
  *   const { t } = useTranslation();
@@ -43,7 +46,7 @@ export function tokenLabel(t: Translations, category: TokenSection, token: strin
       warnedTokens.add(key);
       console.warn(
         `[i18n] tokenLabel falling back to raw token "${token}" for category "${category}". ` +
-        `Add status_tokens.${category}.${token} to src/i18n/en.ts.`,
+        `Add status_tokens.${category}.${token} to src/i18n/locales/en.json (and every locale).`,
       );
     }
   }
@@ -51,11 +54,10 @@ export function tokenLabel(t: Translations, category: TokenSection, token: strin
 }
 
 /**
- * React hook shorthand — returns a resolver bound to the current language.
+ * Alias of {@link tokenLabel} (there is no `useTokenLabel` hook; pass `t`).
  *
  * @example
- *   const { tToken } = useTokenLabel();
- *   <Badge>{tToken('execution', row.status)}</Badge>
- *   <Badge>{tToken('severity', issue.severity)}</Badge>
+ *   const { t } = useTranslation();
+ *   <Badge>{tToken(t, 'execution', row.status)}</Badge>
  */
 export { tokenLabel as tToken };
