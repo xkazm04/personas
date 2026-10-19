@@ -608,6 +608,64 @@ describe('disposeTerminal', () => {
   });
 });
 
+/**
+ * The backend's subscribe flag is flipped by two async commands that run as
+ * independent tasks, so nothing on the Rust side orders them. A pane that
+ * remounts on the same session sends unsubscribe then subscribe a microtask
+ * apart; if they land the other way round the pane paints its snapshot and
+ * freezes. The manager must not issue the next flip before the last settled.
+ */
+describe('subscription ordering', () => {
+  const settle = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+  it('holds a re-attach subscribe until the detach unsubscribe has settled', async () => {
+    const host = attach('ord-1');
+    await settle();
+    expect(vi.mocked(fleetApi.subscribeTerminal)).toHaveBeenCalledTimes(1);
+
+    let releaseUnsub!: () => void;
+    vi.mocked(fleetApi.unsubscribeTerminal).mockImplementationOnce(
+      () => new Promise<null>((r) => (releaseUnsub = () => r(null))),
+    );
+    detachTerminal('ord-1', host);
+    attachTerminal('ord-1', host);
+    await settle();
+
+    // The unsubscribe is still in flight: a subscribe sent now could be
+    // applied BEFORE it and leave the session unsubscribed under a live pane.
+    expect(vi.mocked(fleetApi.subscribeTerminal)).toHaveBeenCalledTimes(1);
+
+    releaseUnsub();
+    await settle();
+    expect(vi.mocked(fleetApi.subscribeTerminal)).toHaveBeenCalledTimes(2);
+    expect(registryMap().get('ord-1')?.attached).toBe(true);
+
+    detachTerminal('ord-1');
+    host.remove();
+  });
+
+  it('holds a detach unsubscribe until the in-flight subscribe has settled', async () => {
+    let resolveSnapshot!: (s: string) => void;
+    vi.mocked(fleetApi.subscribeTerminal).mockImplementationOnce(
+      () => new Promise<string>((r) => (resolveSnapshot = r)),
+    );
+    const host = attach('ord-2');
+    await settle();
+    vi.mocked(fleetApi.unsubscribeTerminal).mockClear();
+
+    detachTerminal('ord-2', host);
+    await settle();
+    expect(vi.mocked(fleetApi.unsubscribeTerminal)).not.toHaveBeenCalled();
+
+    resolveSnapshot('late');
+    await settle();
+    expect(vi.mocked(fleetApi.unsubscribeTerminal)).toHaveBeenCalledWith('ord-2');
+    // The superseded snapshot is still voided by the generation check.
+    expect(registryMap().get('ord-2')?.term.written).toEqual([]);
+    host.remove();
+  });
+});
+
 describe('accelerated-renderer budget', () => {
   const glLru = () => (globalThis as Record<string, unknown>).__fleetTerminalWebglLru__ as string[];
 

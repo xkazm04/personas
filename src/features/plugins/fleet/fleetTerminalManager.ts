@@ -483,6 +483,42 @@ function unpark(sessionId: string): void {
 }
 
 /**
+ * The last subscribe/unsubscribe issued for each session, so the next one is
+ * sent only after it settles.
+ *
+ * The backend keeps ONE `subscribed` flag per session ring, and the two
+ * commands that flip it are `async` Tauri commands, each spawned as its own
+ * task. Two invokes sent back to back are therefore not ordered by anything:
+ * a pane that remounts on the same session (a layout switch, a modal opening
+ * over the grid, StrictMode's double effect) sends unsubscribe and then
+ * subscribe a microtask apart, and if the backend runs them the other way round
+ * the flag ends `false` while the pane holds a fresh snapshot - it paints the
+ * tail and then never updates, which reads exactly like a hung agent. The
+ * mirror image (a detach's unsubscribe overtaking an in-flight subscribe)
+ * leaves a parked session streaming over IPC with no pane to show it.
+ *
+ * Chaining them per session makes the order the frontend chose the order the
+ * backend applies. A session with nothing in flight pays nothing: the call is
+ * issued synchronously, as before. Module scope (not globalThis): a hot reload
+ * that drops this map only forgets ordering for calls already in flight.
+ */
+const subscriptionTail = new Map<string, Promise<void>>();
+
+function sequencedSubscription<T>(sessionId: string, op: () => Promise<T>): Promise<T> {
+  const prev = subscriptionTail.get(sessionId);
+  const next = prev ? prev.then(op) : op();
+  const settled = next.then(
+    () => undefined,
+    () => undefined,
+  );
+  subscriptionTail.set(sessionId, settled);
+  void settled.then(() => {
+    if (subscriptionTail.get(sessionId) === settled) subscriptionTail.delete(sessionId);
+  });
+  return next;
+}
+
+/**
  * ONE app-wide `fleet-session-output` listener dispatching into the registry
  * map — O(1) per chunk regardless of how many terminals exist. The previous
  * design registered one filtered listener per terminal, so every output chunk
@@ -997,7 +1033,7 @@ function beginHydration(m: ManagedTerminal): number {
  */
 function completeHydration(m: ManagedTerminal, gen: number): void {
   if (gen !== m.hydrationGen || !m.attached) return;
-  subscribeTerminal(m.sessionId)
+  sequencedSubscription(m.sessionId, () => subscribeTerminal(m.sessionId))
     .then((snapshot) => {
       // Superseded by a newer attach/detach — drop this snapshot.
       if (gen !== m.hydrationGen || !m.attached) return;
@@ -1074,7 +1110,9 @@ export function detachTerminal(sessionId: string, owner?: HTMLElement): void {
   // This detach UNSUBSCRIBES, so the snapshot the terminal holds stops tracking
   // the session — the next attach must genuinely re-subscribe and replay.
   m.hydratedOk = false;
-  unsubscribeTerminal(sessionId).catch(silentCatch('fleetTerminal:unsubscribe'));
+  sequencedSubscription(sessionId, () => unsubscribeTerminal(sessionId)).catch(
+    silentCatch('fleetTerminal:unsubscribe'),
+  );
   disposeWebgl(m);
   m.attached = false;
   // Forget the pushed grid so the next attach reconciles size once against
@@ -1124,7 +1162,9 @@ export function disposeTerminal(sessionId: string): void {
   // subscribed names the unsubscribe.
   if (m.attached) {
     m.attached = false;
-    unsubscribeTerminal(sessionId).catch(silentCatch('fleetTerminal:unsubscribe'));
+    sequencedSubscription(sessionId, () => unsubscribeTerminal(sessionId)).catch(
+      silentCatch('fleetTerminal:unsubscribe'),
+    );
   }
   if (m.rafId !== null) cancelAnimationFrame(m.rafId);
   try {
