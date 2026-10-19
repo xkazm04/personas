@@ -33,11 +33,6 @@ export function linkCommitsViaForm(link: DraftLink): boolean {
   return link.source.kind === 'trigger' && FORM_COMMITTABLE_SOURCE_TYPES.has(link.source.triggerType);
 }
 
-/** True when the source is a Marketplace feed (direct-commits to an event_listener). */
-export function isMarketplaceSource(link: DraftLink): boolean {
-  return link.source.kind === 'marketplace';
-}
-
 /** Why a link can't be committed yet — `null` when it's committable. */
 export function commitBlocker(link: DraftLink): CommitBlocker | null {
   if (link.source.kind === 'marketplace') return null; // fully specified — direct commit
