@@ -41,6 +41,7 @@ import {
   type GitLabDeploymentStatus,
 } from "@/api/system/gitlab";
 import { silentCatch } from '@/lib/silentCatch';
+import { createLatestWins } from "../../util/latestWins";
 
 
 export interface GitLabDeploymentMeta {
@@ -133,6 +134,14 @@ export interface GitLabSlice {
   gitlabRollbackFromHistory: (projectId: number, deploymentId: string) => Promise<GitLabDeployResult>;
   fetchUnifiedDeploymentHistory: (limit?: number) => Promise<void>;
 }
+
+// The pipeline viewer polls the active pipeline while the operator clicks
+// between pipelines and job rows; each of those writes used to take whatever
+// resolved last, so a late answer repainted the old pipeline or put job A's
+// log under job B. A select or a clear mints a new view generation; a poll
+// observes it. The job log has its own slot.
+const pipelineViewLatestWins = createLatestWins();
+const jobLogLatestWins = createLatestWins();
 
 const DEPLOY_META_KEY = "gitlab_deployment_meta";
 
@@ -421,24 +430,33 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
   },
 
   gitlabSelectPipeline: async (projectId: number, pipelineId: number) => {
+    const token = pipelineViewLatestWins.next();
+    jobLogLatestWins.next();
     set({ gitlabPipelineLoading: true, gitlabJobLog: null });
     try {
       const [pipeline, jobs] = await Promise.all([
         gitlabGetPipeline(projectId, pipelineId),
         gitlabListPipelineJobs(projectId, pipelineId),
       ]);
+      if (!pipelineViewLatestWins.isCurrent(token)) return;
       set({ gitlabActivePipeline: pipeline, gitlabPipelineJobs: jobs, gitlabPipelineLoading: false, gitlabError: null });
     } catch (err) {
+      if (!pipelineViewLatestWins.isCurrent(token)) return;
       set({ gitlabPipelineLoading: false, gitlabError: translateGitLabError(err) });
     }
   },
 
   gitlabRefreshPipeline: async (projectId: number, pipelineId: number) => {
+    // A poll is an observer, not a new view: it never supersedes a select.
+    const generation = pipelineViewLatestWins.current();
+    const stillShowing = () =>
+      pipelineViewLatestWins.current() === generation && get().gitlabActivePipeline?.id === pipelineId;
     try {
       const [pipeline, jobs] = await Promise.all([
         gitlabGetPipeline(projectId, pipelineId),
         gitlabListPipelineJobs(projectId, pipelineId),
       ]);
+      if (!stillShowing()) return;
       set((state) => ({
         gitlabActivePipeline: pipeline,
         gitlabPipelineJobs: jobs,
@@ -446,26 +464,34 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
         gitlabError: null,
       }));
     } catch (err) {
+      if (!stillShowing()) return;
       set({ gitlabError: translateGitLabError(err) });
     }
   },
 
   gitlabFetchJobLog: async (projectId: number, jobId: number) => {
+    const token = jobLogLatestWins.next();
     set({ gitlabJobLog: null });
     try {
       const log = await gitlabGetJobLog(projectId, jobId);
+      if (!jobLogLatestWins.isCurrent(token)) return;
       set({ gitlabJobLog: log, gitlabError: null });
     } catch (err) {
+      if (!jobLogLatestWins.isCurrent(token)) return;
       set({ gitlabError: translateGitLabError(err) });
     }
   },
 
   gitlabClearPipelineState: () => {
+    pipelineViewLatestWins.next();
+    jobLogLatestWins.next();
     set({
       gitlabPipelines: [],
       gitlabActivePipeline: null,
       gitlabPipelineJobs: [],
       gitlabJobLog: null,
+      // A select dropped by the generation bump above can no longer clear it.
+      gitlabPipelineLoading: false,
     });
   },
 
