@@ -77,3 +77,14 @@ describe('alertSlice writes', () => {
     expect(store.getState().alertRulesError).toBe('Validation error: threshold must be positive');
   });
 });
+
+describe('alertSlice history read', () => {
+  it('a failed history read is recorded, not swallowed', async () => {
+    const { listFiredAlerts } = await import('@/api/overview/observability');
+    vi.mocked(listFiredAlerts).mockRejectedValueOnce(APP_ERROR);
+    const store = makeStore();
+    await store.getState().fetchAlertHistory(true);
+    expect(store.getState().alertHistoryError).toBe('Validation error: threshold must be positive');
+    expect(store.getState().alertHistoryLoading).toBe(false);
+  });
+});

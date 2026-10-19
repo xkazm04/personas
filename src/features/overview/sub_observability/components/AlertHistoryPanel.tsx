@@ -20,8 +20,11 @@ export function AlertHistoryPanel() {
   // (docs/design/overview-loading.md, Definition of done: "Empty state renders
   // only when !isFetching"). `Rows` already owns the calm delayed ghost; the
   // flag was the only missing piece.
-  const { alertHistory, alertHistoryLoading, dismissAlert, clearAlertHistory } = useOverviewStore(useShallow((s) => ({
+  const { alertHistory, alertHistoryLoading, historyFailed, dismissAlert, clearAlertHistory } = useOverviewStore(useShallow((s) => ({
     alertHistory: s.alertHistory, alertHistoryLoading: s.alertHistoryLoading,
+    // A failed read is not "All clear": the success-toned empty state below
+    // asserted that nothing fired when nothing had been read.
+    historyFailed: s.alertHistoryError != null,
     dismissAlert: s.dismissAlert, clearAlertHistory: s.clearAlertHistory,
   })));
   const [all, setAll] = useState(false);
@@ -40,7 +43,9 @@ export function AlertHistoryPanel() {
       <Rows
         count={shown.length}
         loading={alertHistoryLoading && alertHistory.length === 0}
-        empty={{ title: t.overview.emptyState.alerts_title, hint: t.overview.emptyState.alerts_subtitle, tone: 'success' }}
+        empty={historyFailed
+          ? { title: t.overview.observability.error_recovery.panel_failed, tone: 'error' }
+          : { title: t.overview.emptyState.alerts_title, hint: t.overview.emptyState.alerts_subtitle, tone: 'success' }}
         label={t.overview.healing_issues_panel.alert_history_title}
         pager={alertHistory.length > SHOWN && !all ? (
           <>

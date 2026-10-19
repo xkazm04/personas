@@ -35,7 +35,7 @@ describe('ObservabilityCards failed reads', () => {
     await preloadSectionsAsync('en', ['overview', 'director', 'agents', 'triggers']);
   });
   beforeEach(() => {
-    useOverviewStore.setState({ alertRules: [], alertHistory: [], alertRulesLoading: false, alertRulesError: null });
+    useOverviewStore.setState({ alertRules: [], alertHistory: [], alertRulesLoading: false, alertRulesError: null, alertHistoryError: null });
   });
 
   it('a healthy page shows no failure band on any card', () => {
@@ -60,6 +60,12 @@ describe('ObservabilityCards failed reads', () => {
     }
     // The figures a failed read never measured are gone, not drawn as zeros.
     expect(within(card('health')).queryByText('No open issues')).toBeNull();
+  });
+
+  it('a failed alert-history read is not drawn as zero fired', () => {
+    useOverviewStore.setState({ alertHistoryError: 'boom', alertRules: [{ id: 'r1' } as never] });
+    render(<Harness {...healthy} />);
+    expect(failedBand('alerts')).not.toBeNull();
   });
 
   it('a failed re-read keeps rows already on screen (law 1)', () => {

@@ -172,6 +172,9 @@ export interface AlertSlice {
   alertRulesLoading: boolean;
   alertHistoryLoading: boolean;
   alertRulesError: string | null;
+  /** Non-null when the last history read failed. Read by AlertHistoryPanel and
+   *  the Alerts card, so a failed read is not drawn as "All clear". */
+  alertHistoryError: string | null;
 
   // TTL tracking for filter-independent fetches
   _alertRulesFetchedAt: number;
@@ -234,6 +237,7 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
   alertRulesLoading: false,
   alertHistoryLoading: false,
   alertRulesError: null,
+  alertHistoryError: null,
   _alertRulesFetchedAt: 0,
   _alertHistoryFetchedAt: 0,
   alertFiredCooldowns: {},
@@ -271,9 +275,12 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
     set({ alertHistoryLoading: true });
     try {
       const history = await api.listFiredAlerts(MAX_ALERT_HISTORY);
-      set({ alertHistory: history, alertHistoryLoading: false, _alertHistoryFetchedAt: Date.now() });
-    } catch {
-      set({ alertHistoryLoading: false });
+      set({ alertHistory: history, alertHistoryLoading: false, alertHistoryError: null, _alertHistoryFetchedAt: Date.now() });
+    } catch (err) {
+      // Was an empty `catch {}`: no telemetry and no state, so the panel and
+      // the Alerts card read a failed read as "All clear - no alerts fired".
+      silentCatch("alertSlice:fetchAlertHistory")(err);
+      set({ alertHistoryLoading: false, alertHistoryError: extractMessage(err) });
     }
   },
 

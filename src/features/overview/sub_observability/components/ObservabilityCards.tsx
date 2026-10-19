@@ -150,7 +150,8 @@ const AlertsCard = memo(function AlertsCard(s: Shell) {
     rules: st.alertRules.length,
     active: st.alertHistory.filter((x) => !x.dismissed).length,
     loading: st.alertRulesLoading,
-    failed: st.alertRulesError != null,
+    rulesFailed: st.alertRulesError != null,
+    historyFailed: st.alertHistoryError != null,
   })));
   const x = s.w.o.observability_extra;
   const history = s.w.o.healing_issues_panel.alert_history_title;
@@ -158,7 +159,9 @@ const AlertsCard = memo(function AlertsCard(s: Shell) {
     <CardShell
       id="alerts"
       loading={a.loading && a.rules === 0}
-      failed={a.failed && a.rules === 0}
+      // Either read failing with nothing on screen leaves a figure it never
+      // measured: a failed history read drew "0 fired" under a success mark.
+      failed={(a.rulesFailed && a.rules === 0) || (a.historyFailed && a.active === 0)}
       mark={a.active > 0
         ? { tone: 'error', glyph: 'solid', label: history }
         : { tone: 'success', glyph: 'hollow', label: x.alert_rules_label }}
