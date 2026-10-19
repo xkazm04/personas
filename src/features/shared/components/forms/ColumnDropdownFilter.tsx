@@ -1,6 +1,8 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Filter, X } from 'lucide-react';
 import { TABLE_HEAD_LABEL } from '@/features/shared/components/display/tableTokens';
+import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface Option {
   value: string;
@@ -36,25 +38,22 @@ export function ColumnDropdownFilter({
   allValue = 'all',
   popupClassName = '',
 }: ColumnDropdownFilterProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const isFiltered = value !== allValue && value !== '';
   const selected = options.find((o) => o.value === value);
+  const close = useCallback(() => setOpen(false), []);
 
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
+  // Click-outside AND Escape (claimed, so it does not also step back a layer).
+  useClickOutside(ref, open, close, { claimEscape: true });
 
   return (
     <div ref={ref} className="relative inline-flex items-center gap-1.5">
       <button
         type="button"
         onClick={() => setOpen(!open)}
+        aria-expanded={open}
         className={`flex items-center gap-1.5 ${TABLE_HEAD_LABEL} transition-colors ${isFiltered ? 'text-primary' : 'text-foreground hover:text-foreground'}`}
       >
         <span>{isFiltered ? selected?.label ?? label : label}</span>
@@ -64,9 +63,10 @@ export function ColumnDropdownFilter({
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onChange(allValue); setOpen(false); }}
+          aria-label={t.common.clear}
           className="p-0.5 rounded hover:bg-secondary/50 text-foreground hover:text-foreground"
         >
-          <X className="w-3 h-3" />
+          <X className="w-3 h-3" aria-hidden="true" />
         </button>
       )}
 
@@ -77,6 +77,7 @@ export function ColumnDropdownFilter({
               key={opt.value}
               type="button"
               onClick={() => { onChange(opt.value); setOpen(false); }}
+              aria-pressed={value === opt.value}
               className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${
                 value === opt.value
                   ? 'bg-primary/10 text-foreground'
