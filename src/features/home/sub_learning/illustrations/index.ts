@@ -20,8 +20,10 @@ import obsidianBrain from './assets/obsidian-brain.webp';
  * mask fades it before it reaches the dense step list.
  *
  * Brand direction (leonardo skill): neon, futuristic, glowing, geometric,
- * clean. The `prompt` strings are the exact briefs used, kept for
- * regeneration. Keyed by `TourDef.id` (TOUR_REGISTRY in tourSlice).
+ * clean. The exact briefs used are kept for regeneration in `prompts.json`
+ * beside this file, keyed the same way. They are NOT imported: nothing at
+ * runtime reads a brief, and as a field here they shipped ~3 KB of prompt text
+ * in the Learning chunk. Keyed by `TourDef.id` (TOUR_REGISTRY in tourSlice).
  *
  * **Format: WebP q92, converted from the original PNGs 2026-08-28**
  * (1,149,351 → 488,334 bytes, −57.5%). These carry an enormous quality budget
@@ -32,62 +34,19 @@ import obsidianBrain from './assets/obsidian-brain.webp';
  * these already-tight PNGs. If you regenerate from a prompt, re-encode at q92
  * (`sharp(png).webp({ quality: 92, effort: 6 })`) rather than committing a PNG.
  */
-export interface TourIllustration {
-  /** Imported asset URL (resolved by Vite). */
-  src: string;
-  /** Leonardo generation brief, kept for regeneration. */
-  prompt: string;
-}
-
-export const TOUR_ILLUSTRATIONS: Record<string, TourIllustration> = {
-  'getting-started': {
-    src: gettingStarted,
-    prompt:
-      'A glowing violet compass with a luminous winding pathway unfurling from a start point into the distance, onboarding journey mood, neon geometric futuristic style, soft violet-purple glow, clean thin glowing lines, abundant negative space, very dark navy near-black background, premium ambient product illustration',
-  },
-  'getting-started-simple': {
-    src: gettingStartedSimple,
-    prompt:
-      'A cluster of glowing violet sparkles around a single radiant spark burst, a quick effortless setup magic moment, minimal and airy, neon geometric futuristic style, soft violet-purple glow, clean thin glowing lines, abundant negative space, very dark navy near-black background, premium ambient product illustration',
-  },
-  'execution-observability': {
-    src: executionObservability,
-    prompt:
-      'A glowing blue heartbeat pulse waveform sweeping across a faint dashboard grid with small luminous data points and a subtle bar chart, live monitoring and observability mood, neon geometric futuristic style, soft sky-blue glow, clean thin glowing lines, abundant negative space, very dark navy near-black background, premium ambient product illustration',
-  },
-  'orchestration-events': {
-    src: orchestrationEvents,
-    prompt:
-      'Glowing teal concentric broadcast waves radiating outward from a central node, connected event dots scattered around it joined by thin arcs, signal and event-bus propagation mood, neon geometric futuristic style, soft teal-cyan glow, clean thin glowing lines, abundant negative space, very dark navy near-black background, premium ambient product illustration',
-  },
-  'plugins-explorer': {
-    src: pluginsExplorer,
-    prompt:
-      'Glowing amber interlocking puzzle pieces and modular blocks plugging into a faint grid, plugin extensibility and modularity mood, neon geometric futuristic style, soft amber-gold glow, clean thin glowing edges, abundant negative space, very dark navy near-black background, premium ambient product illustration',
-  },
-  'schedules-mastery': {
-    src: schedulesMastery,
-    prompt:
-      'A glowing emerald clock face overlaid on a faint calendar grid with orbiting time rings and small luminous tick marks, scheduling and time-mastery mood, neon geometric futuristic style, soft emerald-green glow, clean thin glowing lines, abundant negative space, very dark navy near-black background, premium ambient product illustration',
-  },
-  'templates-recipes': {
-    src: templatesRecipes,
-    prompt:
-      'A glowing indigo laboratory flask beside layered blueprint template sheets and a small stack of recipe step cards, reusable templates and recipes mood, neon geometric futuristic style, soft indigo-blue glow, clean thin glowing lines, abundant negative space, very dark navy near-black background, premium ambient product illustration',
-  },
-  'teams-orchestration': {
-    src: teamsOrchestration,
-    prompt:
-      'A glowing emerald branching network graph of connected agent nodes forming a pipeline, like a git branch diagram of a coordinated team, multi-agent orchestration mood, neon geometric futuristic style, soft spring-green glow, clean thin glowing lines, abundant negative space, very dark navy near-black background, premium ambient product illustration',
-  },
-  'obsidian-brain': {
-    src: obsidianBrain,
-    prompt:
-      'A glowing violet neural network forming the silhouette of a brain from connected luminous nodes and synapse lines, knowledge graph and long-term memory vault mood, neon geometric futuristic style, soft violet-purple glow, clean thin glowing lines, abundant negative space, very dark navy near-black background, premium ambient product illustration',
-  },
+export const TOUR_ILLUSTRATIONS: Record<string, string> = {
+  'getting-started': gettingStarted,
+  'getting-started-simple': gettingStartedSimple,
+  'execution-observability': executionObservability,
+  'orchestration-events': orchestrationEvents,
+  'plugins-explorer': pluginsExplorer,
+  'schedules-mastery': schedulesMastery,
+  'templates-recipes': templatesRecipes,
+  'teams-orchestration': teamsOrchestration,
+  'obsidian-brain': obsidianBrain,
 };
 
 /** Resolve a tour's decorative background asset URL, or `undefined` if none. */
 export function getTourIllustration(tourId: string): string | undefined {
-  return TOUR_ILLUSTRATIONS[tourId]?.src;
+  return TOUR_ILLUSTRATIONS[tourId];
 }
