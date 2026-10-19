@@ -29745,6 +29745,98 @@
         "at": "2026-10-19T00:19:41.417853+00:00",
         "reason": "reviewer (sonnet): The deviation rests on a population rule that I could not check against the standard, and the cited prompt asks for a README with purpose, architecture sketch, install/build/test/run commands and key directories, which is ordinary landing-document content. It also asks for a separate docs/ tree for "
       }
+    },
+    "1db5c86e-3237-4d2a-8e2f-1426d680757c/scale-investment-timing": {
+      "context": "lib-execution",
+      "subject": "scale-investment-timing",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-19",
+      "evaluatedTs": "2026-10-19T00:26:09.219Z",
+      "techniques": [
+        {
+          "technique": "ceiling-as-deadline-not-trigger",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/execution/executionSink.ts:305 Crossing the byte budget activates output truncation, a runtime safeguard without an architecture replacement programme."
+        },
+        {
+          "technique": "execution-model-concurrency-threshold",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/execution/pipeline.ts:744 Middleware callbacks run sequentially through the frontend boundary; this does not select a worker-pool or cooperative service execution model."
+        },
+        {
+          "technique": "migration-reason-audit",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/execution/knowledgeMiddleware.ts:98 This registers a callback in the existing pipeline; no platform migration proposed on growth grounds was found."
+        },
+        {
+          "technique": "next-order-of-magnitude-only",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/execution/pipeline.ts:401 The surrounding implementation bounds retained timing entries to prevent accumulation from unfinished traces; it does not specify a projected workload increment."
+        },
+        {
+          "technique": "size-the-system-to-its-maintainers",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/execution/executionSink.ts:5 The stated design change concerns local state ownership; no growth-sizing or reduced-maintainer scenario appears in the reviewed context."
+        },
+        {
+          "technique": "vertical-headroom-before-distribution",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/execution/middleware/timingMiddleware.ts:50 Timing persistence uses local browser storage; no proposal to distribute this workload for capacity was found."
+        }
+      ],
+      "withdrawn": {
+        "worker": "1abfcf57-82a5-4c50-94f5-31dc6baec657",
+        "state": "not-applicable",
+        "at": "2026-10-19T00:26:28.342786+00:00",
+        "reason": "reviewer (sonnet): Both not-applicable verdicts rest on incidental anchors and on a keyword search that is the wrong test. The lines I opened match their quotes, but none of them shows that a scale-investment decision is absent: executionSink.ts:304 is a byte-budget truncation check, and cloud.ts:74 is a cloud-deploy "
+      }
+    },
+    "b26fe932-b123-4b9e-8d1c-bbbf4e508265/scale-investment-timing": {
+      "context": "api-system",
+      "subject": "scale-investment-timing",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-19",
+      "evaluatedTs": "2026-10-19T00:26:09.219Z",
+      "techniques": [
+        {
+          "technique": "ceiling-as-deadline-not-trigger",
+          "verdict": "not-applicable",
+          "evidence": "src/api/templates/templateAdopt.ts:69 The documented bound accommodates the backend CLI lease duration; it is an invocation timeout, not an architectural capacity deadline."
+        },
+        {
+          "technique": "execution-model-concurrency-threshold",
+          "verdict": "not-applicable",
+          "evidence": "src/api/platforms/platformDefinitions.ts:94 Awaiting IPC is boundary plumbing, which the technique explicitly excludes from execution-model investment."
+        },
+        {
+          "technique": "migration-reason-audit",
+          "verdict": "not-applicable",
+          "evidence": "src/api/system/qwen.ts:19 This configures an optional provider; the associated split-engine documentation describes capability expansion, without proposing a growth-driven platform replacement."
+        },
+        {
+          "technique": "next-order-of-magnitude-only",
+          "verdict": "not-applicable",
+          "evidence": "src/api/recipes/recipes.ts:26 This is a catalog pagination parameter, without a current-load measurement or future system-capacity target."
+        },
+        {
+          "technique": "size-the-system-to-its-maintainers",
+          "verdict": "not-applicable",
+          "evidence": "src/api/templates/teamPresets.ts:26 These teams are persona configuration objects; no operational maintainer count or staffing-driven sizing decision was found."
+        },
+        {
+          "technique": "vertical-headroom-before-distribution",
+          "verdict": "not-applicable",
+          "evidence": "src/api/system/gitlab.ts:54 The wrapper exposes an existing deployment operation without choosing additional machines over vertical capacity."
+        }
+      ],
+      "withdrawn": {
+        "worker": "1abfcf57-82a5-4c50-94f5-31dc6baec657",
+        "state": "not-applicable",
+        "at": "2026-10-19T00:26:28.342786+00:00",
+        "reason": "reviewer (sonnet): Both not-applicable verdicts rest on incidental anchors and on a keyword search that is the wrong test. The lines I opened match their quotes, but none of them shows that a scale-investment decision is absent: executionSink.ts:304 is a byte-budget truncation check, and cloud.ts:74 is a cloud-deploy "
+      }
     }
   }
 }

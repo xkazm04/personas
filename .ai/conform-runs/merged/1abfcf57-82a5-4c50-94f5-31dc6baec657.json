@@ -1,0 +1,61 @@
+{
+  "schema": "conform-run/1",
+  "worker": "1abfcf57-82a5-4c50-94f5-31dc6baec657",
+  "subject": "scale-investment-timing",
+  "evaluatedAt": "2026-10-19T00:26:09.219495+00:00",
+  "provider": "codex",
+  "model": "gpt-6.1-sol",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "scale-investment-timing",
+      "context": "lib-execution",
+      "reason": "withdrawn after review: reviewer (sonnet): Both not-applicable verdicts rest on incidental anchors and on a keyword search that is the wrong test. The lines I opened match their quotes, but none of them shows that a scale-investment decision is absent: executionSink.ts:304 is a byte-budget truncation check, and cloud.ts:74 is a cloud-deploy "
+    },
+    {
+      "subject": "scale-investment-timing",
+      "context": "api-system",
+      "reason": "withdrawn after review: reviewer (sonnet): Both not-applicable verdicts rest on incidental anchors and on a keyword search that is the wrong test. The lines I opened match their quotes, but none of them shows that a scale-investment decision is absent: executionSink.ts:304 is a byte-budget truncation check, and cloud.ts:74 is a cloud-deploy "
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-19T00:26:09.219495+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "scale-investment-timing"
+      ],
+      "techniques": [
+        "ceiling-as-deadline-not-trigger",
+        "execution-model-concurrency-threshold",
+        "migration-reason-audit",
+        "next-order-of-magnitude-only",
+        "size-the-system-to-its-maintainers",
+        "vertical-headroom-before-distribution"
+      ],
+      "deviations": 0,
+      "context": "lib-execution",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    },
+    {
+      "ts": "2026-10-19T00:26:09.219495+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "scale-investment-timing"
+      ],
+      "techniques": [
+        "ceiling-as-deadline-not-trigger",
+        "execution-model-concurrency-threshold",
+        "migration-reason-audit",
+        "next-order-of-magnitude-only",
+        "size-the-system-to-its-maintainers",
+        "vertical-headroom-before-distribution"
+      ],
+      "deviations": 0,
+      "context": "api-system",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    }
+  ]
+}
