@@ -14,6 +14,8 @@ import { executionRowAccent } from '@/features/agents/sub_executions/components/
 import type { GlobalExecutionListItem } from '@/lib/bindings/GlobalExecutionListItem';
 import { useGlobalExecutionFeed, FILTER_ORDER, type FilterStatus } from './useGlobalExecutionFeed';
 import { useGlobalExecutionColumns } from './useGlobalExecutionColumns';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 
 const EXEC_ROW_HEIGHT = 56;
 
@@ -65,7 +67,10 @@ export default function GlobalExecutionList() {
   const context = `status=${feed.filter}|model=${feed.modelFilter}|persona=${feed.selectedPersonaId || 'all'}`;
   // Nothing recorded anywhere (not merely filtered away) → the onboarding
   // empty state. A filtered-empty ledger keeps its header so filters stay reachable.
-  const nothingRecorded = !feed.isFetching && feed.total === 0 && feed.rows.length === 0;
+  // A failed read with nothing on screen is not "nothing recorded": it gets the
+  // failure and a retry, never the create-your-first-agent onboarding state.
+  const readFailed = !feed.isFetching && feed.rows.length === 0 && feed.error != null;
+  const nothingRecorded = !readFailed && !feed.isFetching && feed.total === 0 && feed.rows.length === 0;
 
   return (
     <>
@@ -97,7 +102,14 @@ export default function GlobalExecutionList() {
       )}
 
       <ContentBody flex>
-        {nothingRecorded ? (
+        {readFailed ? (
+          <div className="p-4 md:p-6">
+            <InlineErrorBanner
+              message={resolveErrorTranslated(t, feed.error).message}
+              onRetry={() => { void feed.refresh(); }}
+            />
+          </div>
+        ) : nothingRecorded ? (
           <div className="flex-1 flex items-center justify-center p-4 md:p-6">
             <MotionEmptyState
               motif="activity"

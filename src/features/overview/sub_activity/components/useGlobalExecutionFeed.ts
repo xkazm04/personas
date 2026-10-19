@@ -28,6 +28,7 @@ export function useGlobalExecutionFeed() {
     rows: st.globalExecutions,
     hasMore: st.globalExecutionsHasMore,
     warning: st.globalExecutionsWarning,
+    error: st.globalExecutionsError,
     fetchRows: st.fetchGlobalExecutions,
     counts: st.globalExecutionCounts,
     fetchCounts: st.fetchGlobalExecutionCounts,
@@ -140,7 +141,7 @@ export function useGlobalExecutionFeed() {
   };
 
   return {
-    rows, total: s.counts.total, statusCounts, hasMore: s.hasMore, warning: s.warning,
+    rows, total: s.counts.total, statusCounts, hasMore: s.hasMore, warning: s.warning, error: s.error,
     personas, personaModelById, models,
     filter, setFilter, modelFilter, setModelFilter, selectedPersonaId,
     isFetching, isRefreshing, refresh, loadMore,

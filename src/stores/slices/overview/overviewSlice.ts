@@ -51,6 +51,10 @@ export interface OverviewSlice {
    *  next page is requested at. */
   globalExecutionsOffset: number;
   globalExecutionsWarning: string | null;
+  /** Non-null when the last fetchGlobalExecutions rejected; cleared by the next
+   *  success. The Activity ledger reads it so a failed read with nothing on
+   *  screen is not the "No executions yet" onboarding state. */
+  globalExecutionsError: string | null;
   /** Rows the NEXT request will ask for. With offset paging this is the page
    *  size, not a growing window: "load more" now fetches 50 more rows from
    *  where the list ends instead of re-fetching everything from row 0
@@ -252,6 +256,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
   globalExecutionsHasMore: false,
   globalExecutionsOffset: 0,
   globalExecutionsWarning: null,
+  globalExecutionsError: null,
   globalExecutionsLimit: GLOBAL_PAGE_SIZE,
   globalExecutionCounts: { total: 0, running: 0, completed: 0, failed: 0, cancelled: 0, incomplete: 0 },
   manualReviews: [],
@@ -461,10 +466,12 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
         globalExecutionsHasMore: rawCount >= limit && merged.length < MAX_GLOBAL_LIMIT,
         globalExecutionsOffset: merged.length,
         globalExecutionsWarning: null,
+        globalExecutionsError: null,
       });
     } catch (err) {
       if (seq !== fetchGlobalSeq) return; // superseded by a newer request
-      reportError(err, "Failed to fetch global executions", set);
+      const message = reportError(err, "Failed to fetch global executions", set);
+      set({ globalExecutionsError: message });
     }
   },
 

@@ -129,3 +129,17 @@ describe('overviewSlice — global execution paging', () => {
     expect(listAllExecutions).toHaveBeenLastCalledWith(50, 450, undefined, undefined);
   });
 });
+
+describe('fetchGlobalExecutions failure', () => {
+  it('records the failure, and the next success clears it', async () => {
+    listAllExecutions.mockRejectedValueOnce({ error: 'Database error: database is locked', kind: 'Database' });
+    const store = makeStore();
+    await store.getState().fetchGlobalExecutions(true);
+    expect(store.getState().globalExecutionsError).toBe('Database error: database is locked');
+
+    listAllExecutions.mockResolvedValueOnce(page(0, 3));
+    await store.getState().fetchGlobalExecutions(true);
+    expect(store.getState().globalExecutionsError).toBeNull();
+    expect(store.getState().globalExecutions).toHaveLength(3);
+  });
+});
