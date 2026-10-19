@@ -4,7 +4,8 @@ import { createPortal } from 'react-dom';
 import { Activity, AlertCircle, Flame, Snowflake, TrendingDown, TrendingUp } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { getExecutionHeatmap } from '@/api/overview/observability';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { compactWithTitle } from '@/lib/utils/formatters';
 import type { ExecutionHeatmapData } from '@/lib/bindings/ExecutionHeatmapData';
 import type { HeatmapDay } from '@/lib/bindings/HeatmapDay';
@@ -179,7 +180,10 @@ export function ExecutionHeatmap({
   const reduceMotion = useReducedMotion() ?? false;
   const [data, setData] = useState<ExecutionHeatmapData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // The rejection VALUE, resolved at render: `getExecutionHeatmap` rejects with a
+  // serialized AppError object, which the old `e instanceof Error ? e.message :
+  // String(e)` ladder painted as "[object Object]".
+  const [error, setError] = useState<unknown>(null);
   // Hover carries the cell's viewport rect so the tooltip can anchor to the
   // cell itself rather than reflowing a text line below the grid (which made
   // the whole card jump on every cell hover).
@@ -196,7 +200,7 @@ export function ExecutionHeatmap({
       })
       .catch((e) => {
         if (cancelled) return;
-        setError(e instanceof Error ? e.message : String(e));
+        setError(e ?? new Error('heatmap load failed'));
         silentCatch('ExecutionHeatmap:load')(e);
       })
       .finally(() => {
@@ -233,7 +237,11 @@ export function ExecutionHeatmap({
       <div className="flex items-baseline justify-between gap-3 mb-3">
         <div className="min-w-0">
           <div className="typo-label text-foreground/90 truncate">{title}</div>
-          <div className="typo-caption text-foreground mt-0.5" title={subtitleTitle}>{subtitle}</div>
+          {/* A failed read has no total to report: without this guard the header
+              read "0 executions" (or the previous persona's figure) above the error. */}
+          {error == null && (
+            <div className="typo-caption text-foreground mt-0.5" title={subtitleTitle}>{subtitle}</div>
+          )}
         </div>
         {data?.insights && !isEmpty && !compact && (
           <Legend />
@@ -242,10 +250,10 @@ export function ExecutionHeatmap({
 
       {loading ? (
         <HeatmapSkeleton />
-      ) : error ? (
+      ) : error != null ? (
         <div className="flex items-center gap-2 typo-caption text-red-400/80 py-6">
           <AlertCircle className="w-4 h-4" />
-          <span>{error}</span>
+          <span>{resolveErrorTranslated(t, extractMessage(error)).message}</span>
         </div>
       ) : isEmpty ? (
         <EmptyState variant="heatmap" heading={t.overview.heatmap.no_activity} dominant className="py-8" />
