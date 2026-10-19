@@ -344,6 +344,16 @@ export type { TwinPageDraft } from "@/lib/bindings/TwinPageDraft";
 export type { TwinSteer } from "@/lib/bindings/TwinSteer";
 
 /**
+ * The backend gives the draft's CLI call `TwinCall::legacy`'s 300 s
+ * (`src-tauri/src/engine/twin_setup/llm.rs` LEGACY_TIMEOUT), after a KB
+ * retrieval. At the 90 s default the lane showed "failed" while the model was
+ * still writing, and a Regenerate started a second paid call beside it. The
+ * wrapper waits past the backend so the backend's own timeout is the one the
+ * user reads.
+ */
+const PAGE_DRAFT_TIMEOUT_MS = 330_000;
+
+/**
  * Browser webview — draft a comment AS the twin for the box the user picked
  * in the page. `page` is the picked target minus its ref (the twin writes
  * prose; the frontend acts on the page), `directions` carries the user's
@@ -357,7 +367,11 @@ export const draftForPage = (
   directions?: string,
   steer?: TwinSteer,
 ) =>
-  invoke<TwinPageDraft>("twin_draft_for_page", { twinId, page, directions, steer });
+  invoke<TwinPageDraft>(
+    "twin_draft_for_page",
+    { twinId, page, directions, steer },
+    { timeoutMs: PAGE_DRAFT_TIMEOUT_MS },
+  );
 
 // ============================================================================
 // Style studio (spark twin-presets)
