@@ -14,6 +14,7 @@ import { Database } from 'lucide-react';
 
 import { BaseModal } from '@/features/shared/components/modals';
 import { useTranslation } from '@/i18n/useTranslation';
+import { toastCatch } from '@/lib/silentCatch';
 
 import { ENV_KEYS, ENV_LABEL, type AppPassport } from '../passportModel';
 import { EnvConnectorSlot } from './EnvConnectorSlot';
@@ -68,7 +69,9 @@ export function DatabaseModal({ slug, projectName, passport, onClose }: {
                 candidates={env.credentials}
                 health={env.health}
                 busy={env.saving === bindingKey(DATABASE_DIMENSION, key)}
-                onAssign={(credentialId) => { void env.assign(DATABASE_DIMENSION, key, credentialId); }}
+                // `assign` rethrows a failed write; MonitoringModal already
+                // surfaced it, this site let it escape as an unhandled rejection.
+                onAssign={(credentialId) => { void env.assign(DATABASE_DIMENSION, key, credentialId).catch(toastCatch('database assign')); }}
               />
             );
           })}
