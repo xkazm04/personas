@@ -49,11 +49,20 @@ export const INJECTION_PATTERNS: RegExp[] = [
  * Strip all known prompt-injection structural patterns from text.
  */
 export function stripInjectionPatterns(text: string): string {
+  // Removal rejoins what it cut around, so ONE pass rebuilt the very payloads
+  // it removed: a zero-width char inside a phrase (`ign\u200Bore previous
+  // instructions`) was stripped AFTER the phrase patterns had looked, and a
+  // nested tag (`<sys<system>tem>`) closed back into `<system>`. Repeat the
+  // whole list until nothing changes. No pattern matches the empty string, so
+  // every pass that changes the text shortens it, and the loop terminates.
   let clean = text;
-  for (const pattern of INJECTION_PATTERNS) {
-    clean = clean.replace(pattern, '');
+  for (;;) {
+    const before = clean;
+    for (const pattern of INJECTION_PATTERNS) {
+      clean = clean.replace(pattern, '');
+    }
+    if (clean === before) return clean;
   }
-  return clean;
 }
 
 export interface EscapeForPromptOptions {
