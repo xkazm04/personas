@@ -3,6 +3,7 @@ import { ThemedConnectorIcon } from '@/lib/connectors/connectorMeta';
 import type { ConnectorDefinition, ConnectorAuthMethod } from '@/lib/types/types';
 import { isDesktopBridge } from '@/lib/utils/platform/connectors';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface TemplateFormHeaderProps {
   selectedConnector: ConnectorDefinition;
@@ -24,14 +25,16 @@ export function TemplateFormHeader({
   return (
     <div className="flex items-center gap-3 mb-4">
       {onBack && (
+        <Tooltip content={cf.back_to_catalog}>
         <button
           type="button"
           onClick={onBack}
           className="p-2 -ml-2 rounded-card hover:bg-secondary/50 transition-colors"
-          title={cf.back_to_catalog}
+          aria-label={cf.back_to_catalog}
         >
           <ArrowLeft className="w-4 h-4 text-foreground" />
         </button>
+        </Tooltip>
       )}
       <div
         className="w-10 h-10 rounded-modal flex items-center justify-center border"

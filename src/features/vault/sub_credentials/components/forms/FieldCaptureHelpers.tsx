@@ -4,6 +4,7 @@ import { Copy, ClipboardPaste, Eye, EyeOff, Check } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 
 export type ValidationGlow = 'none' | 'valid' | 'warning';
@@ -130,21 +131,21 @@ export function FieldActionButtons({
           onClick={() => setIsVisible((v) => !v)}
           className="p-0.5 text-foreground hover:text-foreground/80 transition-colors"
           data-testid={testIdBase ? `${testIdBase}-eye-btn` : undefined}
-          aria-label={isVisible ? 'Hide value' : 'Show value'}
+          aria-label={isVisible ? t.vault.schemas.kv_hide_value : t.vault.schemas.kv_show_value}
           aria-pressed={isVisible}
-          title={isVisible ? 'Hide value' : 'Show value'}
         >
           {isVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
         </button>
       )}
       {allowCopy && (
         <div className="relative flex flex-col items-center">
+          <Tooltip content={t.vault.credential_forms.copy_value}>
           <button
             type="button"
             onClick={handleCopy}
             disabled={!value}
             className="p-0.5 text-foreground hover:text-foreground/80 disabled:opacity-30 transition-colors"
-            title={t.vault.credential_forms.copy_value}
+            aria-label={t.vault.credential_forms.copy_value}
             data-testid={testIdBase ? `${testIdBase}-copy-btn` : undefined}
           >
             {copied ? (
@@ -155,6 +156,7 @@ export function FieldActionButtons({
               <Copy className="w-3.5 h-3.5" />
             )}
           </button>
+          </Tooltip>
           {isSecret && copied && (
             <span className="absolute top-full mt-0.5 typo-body text-foreground whitespace-nowrap">
               {t.vault.forms.copied_to_clipboard}
@@ -163,15 +165,17 @@ export function FieldActionButtons({
         </div>
       )}
       {allowPaste && isEditable && (
+        <Tooltip content={t.vault.credential_forms.paste_from_clipboard}>
         <button
           type="button"
           onClick={handlePaste}
           className="p-0.5 text-foreground hover:text-foreground/80 transition-colors"
-          title={t.vault.credential_forms.paste_from_clipboard}
+          aria-label={t.vault.credential_forms.paste_from_clipboard}
           data-testid={testIdBase ? `${testIdBase}-paste-btn` : undefined}
         >
           <ClipboardPaste className="w-3.5 h-3.5" />
         </button>
+        </Tooltip>
       )}
     </div>
   );

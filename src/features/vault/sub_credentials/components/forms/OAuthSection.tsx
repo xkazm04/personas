@@ -57,7 +57,7 @@ export function OAuthSection({
   isAuthorizing = false,
   pollingMessage = null,
 }: OAuthSectionProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const ringPhase = deriveRingPhase(isAuthorizing, pollingMessage, t.errors.oauth_consent_opened);
 
   return (
@@ -65,7 +65,7 @@ export function OAuthSection({
       <div className="border-t border-primary/8" />
       <div>
         <h4 className="typo-heading uppercase text-foreground mb-3">
-          Authentication
+          {t.vault.autopilot.authentication}
         </h4>
 
         {/* Progress ring shown during active OAuth flow */}
@@ -90,7 +90,7 @@ export function OAuthSection({
                 className="flex items-center gap-2 px-4 py-2 border rounded-modal typo-body transition-all bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/25 text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Shield className="w-4 h-4" />
-                {consentLabel || 'Authorize with Google'}
+                {consentLabel || tx(t.vault.forms.authorize_with, { label: 'Google' })}
               </button>
             </Tooltip>
             {consentHint && (

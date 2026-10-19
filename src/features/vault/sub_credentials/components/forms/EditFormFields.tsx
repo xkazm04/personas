@@ -52,23 +52,25 @@ export function EditFormFields({
 }
 
 export function useFieldValidation(fields: CredentialTemplateField[]) {
+  const { t, tx } = useTranslation();
+  const requiredMsg = t.vault.credential_forms.name_required;
+  const invalidUrlMsg = t.vault.auto_cred_extra.invalid_url;
   const validateField = useCallback((field: CredentialTemplateField, value: string): string | null => {
     const trimmed = value.trim();
     if (field.required && !trimmed) {
-      return `${field.label} is required`;
+      return tx(requiredMsg, { label: field.label });
     }
     if (trimmed && field.type === 'url') {
+      // One message for both failures: it already says "starting with http:// or https://".
       try {
         const parsed = new URL(trimmed);
-        if (!['http:', 'https:'].includes(parsed.protocol)) {
-          return `${field.label} must use http or https`;
-        }
+        if (!['http:', 'https:'].includes(parsed.protocol)) return invalidUrlMsg;
       } catch {
-        return `${field.label} must be a valid URL`;
+        return invalidUrlMsg;
       }
     }
     return null;
-  }, []);
+  }, [tx, requiredMsg, invalidUrlMsg]);
 
   const validateAll = useCallback((values: Record<string, string>): Record<string, string> => {
     const newErrors: Record<string, string> = {};
