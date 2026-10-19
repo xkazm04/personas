@@ -70,6 +70,33 @@ pub(super) const DANGEROUS_TAGS: &[&str] = &[
     "ignore",
 ];
 
+/// The sanitiser's patterns, compiled once per process.
+///
+/// `sanitize_runtime_variable` used to compile all ten on every call, and it is
+/// called once per input key per `replace_variables` call - which the assembler
+/// makes once per persona field. Measured 2026-10-20 (debug `cargo test`, a
+/// persona with 7 templated fields and 12 input keys): ~296 ms per assembly,
+/// almost all of it regex compilation.
+static RE_SECTION: std::sync::LazyLock<regex::Regex> =
+    std::sync::LazyLock::new(|| regex::Regex::new(r"(?i)---SECTION:\w+---").expect("static regex"));
+static RE_DANGEROUS_TAGS: std::sync::LazyLock<Vec<regex::Regex>> = std::sync::LazyLock::new(|| {
+    // One regex PER TAG, applied in order, exactly as before: a single
+    // alternation would strip a different set from nested constructions.
+    DANGEROUS_TAGS
+        .iter()
+        .map(|tag| {
+            regex::Regex::new(&format!(r"(?i)</?{}\b[^>]*>", regex::escape(tag)))
+                .expect("static regex")
+        })
+        .collect()
+});
+static RE_HEADING: std::sync::LazyLock<regex::Regex> =
+    std::sync::LazyLock::new(|| regex::Regex::new(r"(?m)^(#{1,6})\s").expect("static regex"));
+static RE_DELIMITER: std::sync::LazyLock<regex::Regex> =
+    std::sync::LazyLock::new(|| regex::Regex::new(r"(?m)^---+$").expect("static regex"));
+static RE_VAR: std::sync::LazyLock<regex::Regex> =
+    std::sync::LazyLock::new(|| regex::Regex::new(r"\{\{(\w+)\}\}").expect("static regex"));
+
 /// Check if a character is an invisible/zero-width Unicode character.
 pub(super) fn is_invisible_runtime_char(c: char) -> bool {
     matches!(
@@ -132,8 +159,7 @@ pub(super) fn sanitize_runtime_variable(value: &str) -> String {
 
     // 4. Strip section delimiters (---SECTION:xxx---)
     let mut clean = clean;
-    let re_section = regex::Regex::new(r"(?i)---SECTION:\w+---").unwrap();
-    clean = re_section.replace_all(&clean, "").to_string();
+    clean = RE_SECTION.replace_all(&clean, "").to_string();
 
     // 5. Strip role override lines (system:, user:, assistant:, etc.)
     clean = clean
@@ -155,16 +181,13 @@ pub(super) fn sanitize_runtime_variable(value: &str) -> String {
         .join("\n");
 
     // 6. Strip dangerous XML/HTML tags
-    for tag in DANGEROUS_TAGS {
-        let open_re =
-            regex::Regex::new(&format!(r"(?i)</?{}\b[^>]*>", regex::escape(tag))).unwrap();
+    for open_re in RE_DANGEROUS_TAGS.iter() {
         clean = open_re.replace_all(&clean, "").to_string();
     }
 
     // 7. Contextual escaping for prompt structure
     // Escape markdown headings that could inject prompt sections
-    let re_heading = regex::Regex::new(r"(?m)^(#{1,6})\s").unwrap();
-    clean = re_heading
+    clean = RE_HEADING
         .replace_all(&clean, |caps: &regex::Captures| {
             let hashes = caps.get(1).unwrap().as_str();
             let escaped = hashes.replace('#', "\u{FF03}"); // fullwidth #
@@ -176,12 +199,10 @@ pub(super) fn sanitize_runtime_variable(value: &str) -> String {
     clean = clean.replace("```", "\\`\\`\\`");
 
     // Escape section-like delimiters (--- on its own line)
-    let re_delimiter = regex::Regex::new(r"(?m)^---+$").unwrap();
-    clean = re_delimiter.replace_all(&clean, "------").to_string();
+    clean = RE_DELIMITER.replace_all(&clean, "------").to_string();
 
     // 8. Neutralize {{...}} patterns to prevent recursive substitution
-    let re_var = regex::Regex::new(r"\{\{(\w+)\}\}").unwrap();
-    clean = re_var.replace_all(&clean, "{ {$1} }").to_string();
+    clean = RE_VAR.replace_all(&clean, "{ {$1} }").to_string();
 
     // 9. Announce the cut. Same shape as the codebase's other honest
     //    truncations (`prompt::advisory`, `runner`'s omitted-memories note).
