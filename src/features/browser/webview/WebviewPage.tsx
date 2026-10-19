@@ -273,6 +273,8 @@ export default function WebviewPage() {
               activeTabId={state.activeTabId}
               onSelect={focusTab}
               onClose={closeTab}
+              error={state.tabsError ? twinLane.messageOf(state.tabsError) : null}
+              onRetry={() => void refreshTabs()}
             />
           </div>
         }
