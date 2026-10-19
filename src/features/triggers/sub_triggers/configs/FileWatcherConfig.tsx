@@ -1,5 +1,6 @@
 import { Plus, X } from 'lucide-react';
 import { TriggerFieldGroup } from './TriggerFieldGroup';
+import { ENGINE_WATCH_EVENTS } from './buildTriggerConfig';
 import { useTranslation } from '@/i18n/useTranslation';
 
 export interface FileWatcherConfigProps {
@@ -55,7 +56,7 @@ export function FileWatcherConfig({
       </TriggerFieldGroup>
       <TriggerFieldGroup label={t.triggers.file_watcher.events_label}>
         <div className="flex flex-wrap gap-1.5">
-          {(['create', 'modify', 'delete', 'rename'] as const).map((evt) => (
+          {ENGINE_WATCH_EVENTS.map((evt) => (
             <button
               key={evt}
               type="button"

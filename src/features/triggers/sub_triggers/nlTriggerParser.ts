@@ -190,7 +190,8 @@ const RULES: ParseRule[] = [
       if (/\b(save|modify|change|edit|update)\b/i.test(lower)) events.push('modify');
       if (/\b(create|new|add|appear)\b/i.test(lower)) events.push('create');
       if (/\b(delete|remove)\b/i.test(lower)) events.push('delete');
-      if (/\b(rename|move)\b/i.test(lower)) events.push('rename');
+      // The engine reports a rename as `modify` (see normalizeWatchEvents).
+      if (/\b(rename|move)\b/i.test(lower) && !events.includes('modify')) events.push('modify');
       if (events.length === 0) events.push('modify');
 
       const path = extractPath(input);

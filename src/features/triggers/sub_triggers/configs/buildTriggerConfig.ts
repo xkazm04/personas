@@ -95,7 +95,7 @@ export function buildTriggerConfig(s: TriggerFormState, t: Translations): BuildR
     const paths = s.watchPaths.filter(p => p.trim());
     if (paths.length === 0) return { ok: false, error: v.watch_path_required };
     config.watch_paths = paths;
-    config.events = s.watchEvents;
+    config.events = normalizeWatchEvents(s.watchEvents);
     config.recursive = s.watchRecursive;
     if (s.globFilter.trim()) config.glob_filter = s.globFilter.trim();
   } else if (s.triggerType === 'clipboard') {
@@ -120,6 +120,26 @@ export function buildTriggerConfig(s: TriggerFormState, t: Translations): BuildR
   }
 
   return { ok: true, config };
+}
+
+/**
+ * The file-watcher event kinds the engine can emit. `file_watcher.rs` maps the
+ * OS event to `create` / `modify` / `delete` and drops everything else, and
+ * the `notify` crate reports a rename as `Modify(Name(..))`, so a rename
+ * arrives as `modify`. A config listing only `rename` therefore matched no
+ * event at all and the trigger stayed silent forever.
+ */
+export const ENGINE_WATCH_EVENTS = ['create', 'modify', 'delete'] as const;
+
+/** Map every requested kind onto one the engine emits: `rename` (and `move`)
+ *  become `modify`, unknown kinds are dropped, duplicates collapse. */
+export function normalizeWatchEvents(events: string[]): string[] {
+  const out: string[] = [];
+  for (const raw of events) {
+    const e = raw === 'rename' || raw === 'move' ? 'modify' : raw;
+    if ((ENGINE_WATCH_EVENTS as readonly string[]).includes(e) && !out.includes(e)) out.push(e);
+  }
+  return out;
 }
 
 /** Generate a 32-byte hex secret for webhook HMAC signing. */
