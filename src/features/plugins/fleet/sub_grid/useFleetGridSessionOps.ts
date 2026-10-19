@@ -44,9 +44,9 @@ export function useFleetGridSessionOps(
     try {
       await hibernateSession(id);
     } catch (e) {
-      toastCatch('FleetGridPage:hibernate', 'Failed to hibernate session')(e);
+      toastCatch('FleetGridPage:hibernate', t.plugins.fleet.hibernate_failed)(e);
     }
-  }, []);
+  }, [t]);
 
   // Spawn seeded with a first task: the prompt rides as a positional argv, so
   // the session starts working the moment it boots; `headless` routes to the
