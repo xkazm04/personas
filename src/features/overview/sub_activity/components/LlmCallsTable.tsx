@@ -50,13 +50,16 @@ import { toastCatch } from '@/lib/silentCatch';
  * on the first frame regardless of `isFetching`; a refetch never hides them.
  */
 
-type TimeWindow = '24h' | '7d' | '30d' | 'all';
+type TimeWindow = '24h' | '7d' | '30d';
 
-const WINDOW_MS: Record<TimeWindow, number> = {
+/** Client-side windows over the loaded rows. There is no "All": the rows come
+ *  from `list_all_executions`, which cuts at ACTIVITY_LIST_WINDOW_DAYS (30) on
+ *  the server, so an "All" tab showed exactly the 30d rows under a label
+ *  claiming the whole history. */
+export const WINDOW_MS: Record<TimeWindow, number> = {
   '24h': 24 * 60 * 60 * 1000,
   '7d': 7 * 24 * 60 * 60 * 1000,
   '30d': 30 * 24 * 60 * 60 * 1000,
-  all: Number.POSITIVE_INFINITY,
 };
 
 const ROW_HEIGHT = 52;
@@ -181,7 +184,7 @@ export default function LlmCallsTable() {
     const windowMs = WINDOW_MS[timeWindow];
     return globalExecutions.filter((e) => {
       if (modelFilter !== 'all' && resolveModel(e) !== modelFilter) return false;
-      if (windowMs !== Number.POSITIVE_INFINITY && now - rowTime(e) > windowMs) return false;
+      if (now - rowTime(e) > windowMs) return false;
       return true;
     });
   }, [globalExecutions, modelFilter, timeWindow, resolveModel]);
@@ -191,9 +194,8 @@ export default function LlmCallsTable() {
       { id: '24h', label: '24h' },
       { id: '7d', label: '7d' },
       { id: '30d', label: '30d' },
-      { id: 'all', label: t.common.all },
     ],
-    [t],
+    [],
   );
 
   // ONE type scale across every value cell - `typo-body text-foreground`,
