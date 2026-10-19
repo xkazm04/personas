@@ -41,6 +41,16 @@ export interface EvalGridData {
   winnerId: string | null;
 }
 
+/**
+ * Result statuses for a sample that never ran to an answer. A lab result row
+ * carries the per-cell VERDICT (`verdict_status` in
+ * `src-tauri/engine/src/test_runner/scoring.rs`: passed | failed |
+ * inconclusive, or `error` when the cell itself failed, `lab.rs`), never the
+ * run status `completed`. Testing `status !== 'completed'` therefore marked
+ * every real sample incomplete and left `scoredCount` at 0.
+ */
+const NEVER_RAN: ReadonlySet<string> = new Set(['error', 'cancelled']);
+
 /** Mean of the scored samples, or null when no sample carried the score. */
 const meanOrNull = (sum: number, n: number): number | null => (n > 0 ? sum / n : null);
 
@@ -119,7 +129,7 @@ export function buildEvalGridData(results: LabEvalResult[]): EvalGridData {
     // Three states, not two: a sample that never completed is an absent
     // measurement, a completed sample with no score is a failure that still
     // spent, and a scored sample is the only one whose cost is comparable.
-    const incomplete = r.status !== 'completed';
+    const incomplete = NEVER_RAN.has(r.status);
     const scored =
       !incomplete &&
       (r.toolAccuracyScore != null ||

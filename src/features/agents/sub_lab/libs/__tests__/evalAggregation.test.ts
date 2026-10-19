@@ -29,7 +29,9 @@ function evalResult(versionId: string, versionNumber: number, o: ResultOverrides
     scenarioName: pick(o, 'scenario', 's1'),
     modelId: pick(o, 'modelId', 'haiku'),
     provider: 'anthropic',
-    status: 'completed',
+    // The per-cell verdict vocabulary the runner writes (passed | failed |
+    // inconclusive | error); 'completed' is a RUN status and never appears here.
+    status: 'passed',
     outputPreview: null,
     toolAccuracyScore: pick(o, 'ta', 80),
     outputQualityScore: pick(o, 'oq', 70),
@@ -161,6 +163,18 @@ describe('buildEvalGridData', () => {
     expect(out.grid['v1']!['haiku']!.avgToolAccuracy).toBe(80); // (60+100)/2
     expect(out.grid['v1']!['haiku']!.count).toBe(2);
   });
+  it('counts a passed or failed verdict as a sample that ran, not as incomplete', () => {
+    const out = buildEvalGridData([
+      evalResult('v1', 1, { ta: 80, cost: 0.2 }),
+      { ...evalResult('v1', 1, { ta: 30, cost: 0.1 }), status: 'failed' },
+      { ...evalResult('v1', 1, { ta: null, oq: null, pc: null, cost: 0.05 }), status: 'inconclusive' },
+    ]);
+    const v1 = out.versionAggs[0]!;
+    expect(v1.incompleteCount).toBe(0);
+    expect(v1.scoredCount).toBe(2);
+    expect(v1.scoredCost).toBeCloseTo(0.3, 5);
+  });
+
   it('renormalises the composite over measured dimensions: a sandbox version is not sunk by its absent tool accuracy', () => {
     const out = buildEvalGridData([
       // Sandbox cells carry no tool accuracy (scoring.rs stores NULL).
