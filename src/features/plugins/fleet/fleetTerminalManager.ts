@@ -1081,9 +1081,11 @@ function completeHydration(m: ManagedTerminal, gen: number): void {
         // Say so IN the terminal. This is the difference between "still
         // starting up" and "this session is gone", and the operator had no way
         // to tell them apart: both painted an empty black box.
+        // Through writeChunk, not `term.write`: a throw here would escape this
+        // rejection handler before the subscribe failure below is reported.
         if (m.attached && deadNotice && !m.deadNoticeShown) {
           m.deadNoticeShown = true;
-          m.term.write(`\r\n\x1b[31m${deadNotice}\x1b[0m\r\n`);
+          writeChunk(m, `\r\n\x1b[31m${deadNotice}\x1b[0m\r\n`);
         }
       }
       silentCatch('fleetTerminal:subscribe')(e);

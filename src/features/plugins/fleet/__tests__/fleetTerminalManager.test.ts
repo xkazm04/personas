@@ -380,6 +380,33 @@ describe('hydration handshake', () => {
     host.remove();
   });
 
+  it('contains an emulator that throws while painting the notice', async () => {
+    // The notice is written from inside the subscribe's rejection handler. A
+    // throw there escaped as an unhandled rejection and skipped the report of
+    // the subscribe failure itself - the one event that says the session died.
+    const escaped: unknown[] = [];
+    const onUnhandled = (reason: unknown) => escaped.push(reason);
+    process.on('unhandledRejection', onUnhandled);
+    try {
+      setFleetTerminalDeadNotice('Session is gone.');
+      vi.mocked(fleetApi.subscribeTerminal).mockRejectedValueOnce(new Error('session not found'));
+      const host = attach('h-throws');
+      const m = registryMap().get('h-throws')!;
+      m.term.write = () => {
+        throw new Error('emulator disposed');
+      };
+      await settle();
+      await settle();
+      expect(escaped).toEqual([]);
+      expect(m.deadNoticeShown).toBe(true);
+      detachTerminal('h-throws');
+      host.remove();
+    } finally {
+      process.off('unhandledRejection', onUnhandled);
+      setFleetTerminalDeadNotice('');
+    }
+  });
+
   it('ignores chunks for a session with no terminal in the registry', () => {
     // The backend only emits for subscribed sessions, but a dispose racing an
     // in-flight chunk must be a no-op rather than a throw inside the ONE shared
