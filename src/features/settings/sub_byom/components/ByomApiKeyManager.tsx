@@ -261,6 +261,10 @@ function QwenKeyRow() {
   const [value, setValue] = useState('');
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
+  // A failed keyring write or clear must say so: without this the row only
+  // logged, so a refused key left the editor open with no signal and the user
+  // could believe Qwen was configured. Same badge the settings-key rows use.
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -277,6 +281,7 @@ function QwenKeyRow() {
     const v = value.trim();
     if (!v) return;
     setBusy(true);
+    setFailed(false);
     try {
       await setQwenCredentials(v);
       setConfigured(true);
@@ -284,6 +289,7 @@ function QwenKeyRow() {
       setValue('');
     } catch (err) {
       logSecretSafeError('save', 'qwen-api-key', err);
+      setFailed(true);
     } finally {
       setBusy(false);
     }
@@ -291,6 +297,7 @@ function QwenKeyRow() {
 
   const remove = useCallback(async () => {
     setBusy(true);
+    setFailed(false);
     try {
       await clearQwenCredentials();
       setConfigured(false);
@@ -298,6 +305,7 @@ function QwenKeyRow() {
       setEditing(false);
     } catch (err) {
       logSecretSafeError('delete', 'qwen-api-key', err);
+      setFailed(true);
     } finally {
       setBusy(false);
     }
@@ -310,6 +318,7 @@ function QwenKeyRow() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="typo-body text-foreground">{s.provider_qwen_label}</span>
+          {failed && <ConnectionBadge state="error" />}
           {configured && (
             <span className="flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-input bg-secondary/40 border border-primary/15 text-foreground">
               <Check className="w-3 h-3" />
