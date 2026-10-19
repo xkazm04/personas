@@ -214,7 +214,10 @@ export function useDataPortability() {
     // Cancel = conflicted items simply not imported; pass 1 already landed.
     setConflictImportFilePath(null);
     setPendingImportPassphrase(undefined);
-    setImportResult((prev) => (prev ? { ...prev, import_conflicts: [], bundle_file_path: null } : prev));
+    // camelCase, the binding's shape: the snake_case keys this once wrote were
+    // extra props tsc never checked, so the conflict panel stayed open.
+    setImportResult((prev): PortabilityImportResult | null =>
+      prev ? { ...prev, importConflicts: [], bundleFilePath: null } : prev);
     setImportStatus('success');
   }, []);
 
@@ -306,6 +309,18 @@ export function useDataPortability() {
     }
   }, [credImportStatus, credImportFilePath, s.no_import_file, s.cred_import_failed, credImportPassphrase]);
 
+  // The credential conflict pass had no way out: credImportFilePath stayed set,
+  // so handleCredImport returned early on every later click until the tab
+  // remounted. Pass 1 imports nothing when it reports conflicts, so cancelling
+  // drops the bundle and its passphrase and leaves the vault as it was.
+  const dismissCredImportConflicts = useCallback(() => {
+    setCredImportFilePath(null);
+    setCredImportResult(null);
+    setCredImportPassphrase('');
+    setShowCredImportInput(false);
+    setCredImportStatus('idle');
+  }, []);
+
   return {
     stats,
     statsStatus,
@@ -334,5 +349,6 @@ export function useDataPortability() {
     handleCredExport,
     handleCredImport,
     handleCredImportWithResolutions,
+    dismissCredImportConflicts,
   };
 }

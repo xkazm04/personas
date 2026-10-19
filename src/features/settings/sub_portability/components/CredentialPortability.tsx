@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { PasswordToggleField } from '@/features/shared/components/forms/PasswordToggleField';
+import { Button } from '@/features/shared/components/buttons';
 import type { CredentialImportResult } from '@/api/system/dataPortability';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -31,6 +32,8 @@ interface CredentialPortabilityProps {
   onCredExport: () => void;
   onCredImport: () => void;
   onCredImportWithResolutions?: (resolutions: Record<string, string>) => void;
+  /** Abandon the conflict pass: without it the panel can never close. */
+  onCredDismissConflicts?: () => void;
 }
 
 export function CredentialPortability({
@@ -48,6 +51,7 @@ export function CredentialPortability({
   onCredExport,
   onCredImport,
   onCredImportWithResolutions,
+  onCredDismissConflicts,
 }: CredentialPortabilityProps) {
   const [resolutions, setResolutions] = useState<Record<string, ConflictAction>>({});
   const { t, tx } = useTranslation();
@@ -66,6 +70,18 @@ export function CredentialPortability({
     onCredImportWithResolutions(resolutions);
     setResolutions({});
   };
+
+  const handleDismissConflicts = () => {
+    setResolutions({});
+    onCredDismissConflicts?.();
+  };
+
+  // A receipt for every finished pass, not only one that created something: a
+  // resolution pass that skipped every conflict created 0 and showed nothing.
+  const hasReceipt = credImportResult != null && !hasConflicts && (
+    credImportResult.created + credImportResult.skipped + credImportResult.replaced > 0
+    || credImportResult.warnings.length > 0
+  );
 
   return (
     <div className="space-y-4">
@@ -195,6 +211,7 @@ export function CredentialPortability({
               </div>
             ))}
           </div>
+          <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={handleApplyResolutions}
@@ -204,11 +221,23 @@ export function CredentialPortability({
             <Upload className="w-4 h-4" />
             {s.import_with_resolutions}
           </button>
+          {onCredDismissConflicts && (
+            <Button
+              variant="ghost"
+              size="sm"
+              data-testid="portability-cred-conflict-cancel"
+              onClick={handleDismissConflicts}
+              disabled={credImportStatus === 'loading'}
+            >
+              {s.cancel}
+            </Button>
+          )}
+          </div>
         </div>
       )}
 
       {/* Import result (no conflicts) */}
-      {credImportResult && !hasConflicts && credImportResult.created > 0 && (
+      {credImportResult && hasReceipt && (
         <div className="rounded-card border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-2">
           <div className="flex items-center gap-2 typo-body text-emerald-400">
             <PackageCheck className="w-4 h-4" />
