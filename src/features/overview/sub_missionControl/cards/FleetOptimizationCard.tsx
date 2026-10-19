@@ -141,6 +141,7 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
+        aria-expanded={expanded}
         className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-primary/[0.04] transition-colors"
       >
         <div className={`w-8 h-8 rounded-card flex items-center justify-center flex-shrink-0 ${config.badge} border`}>
