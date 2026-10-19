@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { silentCatch } from "@/lib/silentCatch";
 
 const TERMINAL_PHASES = ["completed", "failed", "cancelled"];
 
@@ -67,7 +68,14 @@ export function useRunEventListener<T extends RunStatusPayload = RunStatusPayloa
       const registrations = bindings.map(async (binding) => {
         const unlisten = await listen<T>(binding.eventName, (event) => {
           if (binding.filter && !binding.filter(event.payload)) return;
-          binding.onProgress(event.payload);
+          // A throwing progress handler must not swallow the terminal edge:
+          // onTerminal is what clears the run's "running" state (labSlice
+          // finishLabRun), so skipping it leaves the run spinning forever.
+          try {
+            binding.onProgress(event.payload);
+          } catch (err) {
+            silentCatch(`hooks/realtime/useRunEventListener:${binding.eventName}:onProgress`)(err);
+          }
           if (TERMINAL_PHASES.includes(event.payload.phase)) {
             binding.onTerminal(event.payload);
           }
@@ -80,7 +88,15 @@ export function useRunEventListener<T extends RunStatusPayload = RunStatusPayloa
         listeners.push(unlisten);
       });
 
-      await Promise.allSettled(registrations);
+      const settled = await Promise.allSettled(registrations);
+      // A binding whose listen() rejected receives nothing for the rest of
+      // the mount. allSettled kept its siblings alive but dropped the reason
+      // on the floor, so a dead channel looked exactly like an idle one.
+      settled.forEach((r, i) => {
+        if (r.status === "rejected") {
+          silentCatch(`hooks/realtime/useRunEventListener:${bindings[i]!.eventName}:attach`)(r.reason);
+        }
+      });
 
       if (!active) {
         listeners.forEach((fn) => fn());
