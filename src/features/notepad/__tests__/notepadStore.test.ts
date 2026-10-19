@@ -294,6 +294,23 @@ describe('load — shadow reconciliation', () => {
     expect(updates.at(-1)?.patch.bodyMd).toBe('recovered');
   });
 
+  it('restores a crashed edit on a milestone brief too, not only on a draft', async () => {
+    rows = [
+      note({ id: 'n1', status: 'scoped', milestoneId: 'm1', projectId: 'p1', bodyMd: 'brief', updatedAt: '2026-01-01T00:00:00.000Z' }),
+    ];
+    localStorage.setItem(
+      shadowKey('n1'),
+      JSON.stringify({ bodyMd: 'brief, grown', title: 'Note', updatedAt: '2026-01-02T00:00:00.000Z' }),
+    );
+
+    await load();
+    expect(getNote('n1')?.bodyMd).toBe('brief, grown');
+
+    await flush('n1');
+    expect(updates.at(-1)?.patch).toEqual({ id: 'n1', bodyMd: 'brief, grown' });
+    expect(saveStateOf('n1')).toBe('clean');
+  });
+
   it('drops a shadow older than the row', async () => {
     rows = [note({ id: 'n1', bodyMd: 'from db', updatedAt: '2026-01-03T00:00:00.000Z' })];
     localStorage.setItem(

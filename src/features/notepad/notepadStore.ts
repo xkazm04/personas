@@ -43,7 +43,7 @@ import { EventName, typedListen } from '@/lib/eventRegistry';
 import { safeLocalGet, safeLocalRemove, safeLocalSet } from '@/lib/safeLocalStorage';
 import { extractMessage, silentCatch, toastCatch } from '@/lib/silentCatch';
 
-import { noteOccupiesSlot } from './noteStatusMeta';
+import { noteBodyEditable, noteOccupiesSlot } from './noteStatusMeta';
 import { emitGoalBanner, type GoalBannerKind } from './notifications/goalBanner';
 
 export { NOTE_CAP };
@@ -486,12 +486,22 @@ export async function load(): Promise<void> {
 
     for (const row of rows) {
       const shadow = readShadow(row.id);
-      if (shadow && shadow.updatedAt > row.updatedAt && row.status === 'draft') {
-        // Body/title edits are only legal on a draft, so a shadow against a
-        // published note cannot be replayed — it would be refused server-side.
+      // Replayable wherever the server still takes a body: `draft`, and the
+      // milestone brief's `scoped` / `cut` (BODY_EDITABLE in notes.rs). A
+      // draft-only test dropped the unsaved text of every brief that crashed
+      // inside the debounce. A shadow against a published note cannot be
+      // replayed — it would be refused server-side.
+      const replay =
+        shadow && shadow.updatedAt > row.updatedAt && noteBodyEditable(row.status)
+          ? ([
+              ...(shadow.title !== row.title ? (['title'] as const) : []),
+              ...(shadow.bodyMd !== row.bodyMd ? (['bodyMd'] as const) : []),
+            ] satisfies SaveField[])
+          : [];
+      if (shadow && replay.length > 0) {
         nextNotes[row.id] = { ...row, bodyMd: shadow.bodyMd, title: shadow.title };
         recovered.push(row.id);
-        markUnsent(row.id, ['title', 'bodyMd']);
+        markUnsent(row.id, replay);
       } else {
         nextNotes[row.id] = row;
         if (shadow) clearShadow(row.id);
