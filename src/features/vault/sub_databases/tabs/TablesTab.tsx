@@ -3,6 +3,7 @@ import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { useVaultStore } from "@/stores/vaultStore";
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { getSelectAllQuery, isApiFamily } from '../introspectionQueries';
 import { extractErrorMessage } from '../safeModeUtils';
 import { TableContextMenu, type TableContextMenuState } from './TableContextMenu';
@@ -34,13 +35,18 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
   const [keyType, setKeyType] = useState<KeyTypeState>({ status: 'loading' });
   const [contextMenu, setContextMenu] = useState<TableContextMenuState | null>(null);
   const [filter, setFilter] = useState('');
+  // One TYPE lookup per key click, and they resolve in any order: clicking A
+  // then B painted A's type under B's header whenever A's reply landed last.
+  const [keyTypeWins] = useState(createLatestWins);
 
   const fetchKeyType = useCallback(async (key: string) => {
+    const token = keyTypeWins.next();
     try {
       // Quoted so the backend's Redis command tokenizer treats a key
       // containing whitespace as one argument, not several.
       const escapedKey = key.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
       const result = await executeDbQuery(credentialId, `TYPE "${escapedKey}"`);
+      if (!keyTypeWins.isCurrent(token)) return;
       const val = result.rows[0]?.[0];
       setKeyType({ status: 'ok', type: val != null ? String(val) : 'unknown' });
     } catch (err) {
@@ -50,9 +56,10 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
       // which the renderer had no way to tell apart from a real Redis type.
       // The failure is now its own state and carries the real cause.
       silentCatch('features/vault/sub_databases/tabs/TablesTab:fetchKeyType')(err);
+      if (!keyTypeWins.isCurrent(token)) return;
       setKeyType({ status: 'error', message: extractErrorMessage(err) });
     }
-  }, [credentialId, executeDbQuery]);
+  }, [credentialId, executeDbQuery, keyTypeWins]);
 
   const handleSelectTable = useCallback((tableName: string) => {
     setSelectedTable(tableName);
