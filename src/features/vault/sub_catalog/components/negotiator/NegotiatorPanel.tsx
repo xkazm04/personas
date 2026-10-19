@@ -29,7 +29,9 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
   // Own detect result; null while it has not answered. Derived below rather
   // than copied into state, so a prefetch that lands AFTER the panel opened
   // (which cancels the own detect) still clears loading and is still read.
-  const [ownDetections, setOwnDetections] = useState<AuthDetectionInfo[] | null>(null);
+  // 'failed' keeps a refused detect distinct from "no services found"; both
+  // render as no detections, but only one of them is an answer.
+  const [ownDetections, setOwnDetections] = useState<AuthDetectionInfo[] | 'failed' | null>(null);
   useEffect(() => {
     if (hasPrefetched) return;
     let cancelled = false;
@@ -39,11 +41,12 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
       })
       .catch((err) => {
         silentCatch('NegotiatorPanel:detectAuthenticatedServices')(err);
-        if (!cancelled) setOwnDetections([]);
+        if (!cancelled) setOwnDetections('failed');
       });
     return () => { cancelled = true; };
   }, [hasPrefetched]);
-  const authDetections = prefetchedAuthDetections ?? ownDetections ?? NO_DETECTIONS;
+  const authDetections =
+    prefetchedAuthDetections ?? (ownDetections === 'failed' ? null : ownDetections) ?? NO_DETECTIONS;
   const authDetectLoading = !hasPrefetched && ownDetections === null;
 
   const matchingAuth = useMemo(() => {
