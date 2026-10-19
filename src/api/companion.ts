@@ -599,6 +599,22 @@ export async function companionTtsListKokoroVoices(): Promise<KokoroVoiceEntry[]
   return invoke<KokoroVoiceEntry[]>('companion_tts_list_kokoro_voices');
 }
 
+/**
+ * The whisper model download and the three sidecar installers download INLINE
+ * and resolve only when the files are on disk. Each download leg carries its
+ * own 20-minute reqwest `DOWNLOAD_TIMEOUT` (`companion/stt/downloader.rs`,
+ * `stt/installer.rs`, `tts/kokoro_installer.rs`, `tts/pocket_installer.rs`);
+ * Kokoro and Pocket run two legs back to back, then extract. At the 90 s
+ * default the wrapper rejected mid-download, the UI showed "failed" and
+ * re-enabled the button while the backend kept going. The margin covers the
+ * extract step. Pinned by `__tests__/sidecarDownloadTimeoutParity.test.ts`,
+ * which reads the Rust constants.
+ */
+const SIDECAR_DOWNLOAD_LEG_MS = 20 * 60_000;
+const SIDECAR_EXTRACT_MARGIN_MS = 2 * 60_000;
+const ONE_LEG_INSTALL_IPC_TIMEOUT_MS = SIDECAR_DOWNLOAD_LEG_MS + SIDECAR_EXTRACT_MARGIN_MS;
+const TWO_LEG_INSTALL_IPC_TIMEOUT_MS = 2 * SIDECAR_DOWNLOAD_LEG_MS + SIDECAR_EXTRACT_MARGIN_MS;
+
 export async function companionTtsKokoroStatus(): Promise<KokoroStatus> {
   return invoke<KokoroStatus>('companion_tts_kokoro_status');
 }
@@ -609,7 +625,9 @@ export async function companionTtsKokoroStatus(): Promise<KokoroStatus> {
  * `KOKORO_INSTALL_EVENT` — subscribe before calling. Windows-only.
  */
 export async function companionTtsKokoroDownload(): Promise<void> {
-  return invoke<void>('companion_tts_kokoro_download');
+  return invoke<void>('companion_tts_kokoro_download', undefined, {
+    timeoutMs: TWO_LEG_INSTALL_IPC_TIMEOUT_MS,
+  });
 }
 
 // ── Pocket TTS sidecar service (local, voice cloning) ───────────────────
@@ -653,7 +671,9 @@ export const POCKET_INSTALL_EVENT = 'companion://pocket-install';
  * — subscribe before calling. Windows-only.
  */
 export async function companionTtsPocketDownload(): Promise<void> {
-  return invoke<void>('companion_tts_pocket_download');
+  return invoke<void>('companion_tts_pocket_download', undefined, {
+    timeoutMs: TWO_LEG_INSTALL_IPC_TIMEOUT_MS,
+  });
 }
 
 /**
@@ -760,7 +780,9 @@ export async function companionSttListModels(): Promise<WhisperModelListing[]> {
 }
 
 export async function companionSttDownloadModel(modelId: string): Promise<void> {
-  return invoke<void>('companion_stt_download_model', { modelId });
+  return invoke<void>('companion_stt_download_model', { modelId }, {
+    timeoutMs: ONE_LEG_INSTALL_IPC_TIMEOUT_MS,
+  });
 }
 
 export async function companionSttDeleteModel(modelId: string): Promise<void> {
@@ -777,7 +799,9 @@ export const STT_INSTALL_EVENT = 'companion://stt-install';
  * resolvable. Windows-only for now.
  */
 export async function companionSttInstallEngine(): Promise<void> {
-  return invoke<void>('companion_stt_install_engine');
+  return invoke<void>('companion_stt_install_engine', undefined, {
+    timeoutMs: ONE_LEG_INSTALL_IPC_TIMEOUT_MS,
+  });
 }
 
 export async function companionSttEngineStatus(): Promise<SttEngineStatus> {
