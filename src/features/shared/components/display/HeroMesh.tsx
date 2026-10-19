@@ -15,7 +15,10 @@ interface PresetConfig {
   grid?: string;
 }
 
-const PRESETS: Record<string, PresetConfig> = {
+// `satisfies`, not an annotation: annotating as Record<string, ...> widened
+// HeroMeshPreset to `string`, so a misspelt preset compiled and crashed at
+// render on `config.orbs` of undefined.
+const PRESETS = {
   welcome: {
     orbs: [
       { position: 'top-[-20%] left-[10%]', size: 'w-[500px] h-[500px]', gradient: 'radial-gradient(circle, rgba(99,102,241,0.06) 0%, transparent 70%)' },
@@ -36,7 +39,7 @@ const PRESETS: Record<string, PresetConfig> = {
       { position: 'bottom-[-5%] right-[0%]', size: 'w-[25%] h-[25%]', gradient: 'radial-gradient(circle, rgba(6,182,212,0.05) 0%, transparent 70%)' },
     ],
   },
-};
+} satisfies Record<string, PresetConfig>;
 
 export type HeroMeshPreset = keyof typeof PRESETS;
 
@@ -46,7 +49,7 @@ interface HeroMeshProps {
 }
 
 export function HeroMesh({ preset = 'welcome', className }: HeroMeshProps) {
-  const config = PRESETS[preset]!;
+  const config: PresetConfig = PRESETS[preset];
   return (
     <div className={`absolute inset-0 overflow-hidden pointer-events-none ${className ?? ''}`}>
       {config.orbs.map((orb, i) => (
