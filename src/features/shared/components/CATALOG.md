@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**174 reusable components** live under `src/features/shared/components/`.
+**173 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -124,8 +124,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `DropZoneGlow` | rounded-card (8) / rounded-modal (12) so the SVG outline aligns. |
 | `ErrorBanner` | User-facing error display — inline / banner / panel variants with retry + dismiss. |
 | `ErrorBoundary` | Called when the user clicks "Go to dashboard". |
-| `ErrorRecoveryBanner` | _(add a `@catalog` tag)_ |
-| `InlineErrorBanner` | _(add a `@catalog` tag)_ |
+| `InlineErrorBanner` | Inline error/warning/info banner with optional title, retry, dismiss and an actions slot; a thin wrapper over Banner. |
 | `LoadingSpinner` | RENDERS NOTHING. Spinners are disabled app-wide; this survives for import compatibility and emits an sr-only role="status" only when given `label`. Never use it as a visual loading state — for a SURFACE use a calm delayed ghost (docs/design/overview-loading.md), for an ACTION use Button/AsyncButton, which render real spinners by design. |
 | `Reveal` | Reveal — fade (+ subtle slide-up) a block of content in on mount; the canonical "content arrived" reveal for the golden loading pa |
 | `ScenarioEmptyState` | THE empty state: animated EmptyArt illustration (from art, the icon or the variant), a heading-over-body type ramp, actions; sizes |
@@ -273,4 +272,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_174 components, 37 without a `@catalog` description._
+_173 components, 35 without a `@catalog` description._
