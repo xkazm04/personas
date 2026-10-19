@@ -29678,6 +29678,73 @@
           "evidence": "src/features/plugins/dev-tools/sub_skills/analytics/CoveragePipeline.tsx:85 Least-covered findings concern code contexts rather than named people's gaps."
         }
       ]
+    },
+    "14c7d145-2166-454b-aee5-d69d9d527d79/repository-landing-document": {
+      "context": "appearance-settings",
+      "subject": "repository-landing-document",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-19",
+      "evaluatedTs": "2026-10-19T00:19:19.258Z",
+      "worker": "6765a31f-efad-4b0a-8664-7615a8fe7d84",
+      "techniques": [
+        {
+          "technique": "caption-carrying-figures",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_appearance/components/ThemePreview.tsx:82 The preview renders application UI rather than a repository-front-page figure."
+        },
+        {
+          "technique": "evidence-linked-badges",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_appearance/components/AppearanceThemeSwatch.tsx:33 The contrast badge is computed within the application; the standard excludes application-rendered claims."
+        },
+        {
+          "technique": "host-metadata-is-a-second-document",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_appearance/components/AppearanceThemingSection.tsx:15 This context changes application theme state rather than repository-host metadata."
+        },
+        {
+          "technique": "input-channel-distinction",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_appearance/components/AppearanceToggleRow.tsx:19 Input uses an application toggle, outside the landing-document shell-versus-agent distinction."
+        },
+        {
+          "technique": "landing-document-as-router",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_appearance/components/AppearanceSettings.tsx:23 The section catalog composes settings components, not documentation destinations."
+        },
+        {
+          "technique": "multi-surface-degradation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_appearance/components/CustomThemeCreator.tsx:117 Saving applies a theme configuration; this path does not publish a landing document."
+        },
+        {
+          "technique": "style-rule-ships-its-detector",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_appearance/components/ColorRow.tsx:69 This component implements a color picker, with no public-prose house-style artifact found in the context."
+        }
+      ]
+    },
+    "a4174786-a5fb-4145-a1b3-f02826fac64a/repository-landing-document": {
+      "context": "passport-wall-ui",
+      "subject": "repository-landing-document",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-19",
+      "evaluatedTs": "2026-10-19T00:19:19.258Z",
+      "techniques": [
+        {
+          "technique": "landing-document-as-router",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/improve/deployActions.ts:77 The authoring instruction mandates contributor-specific README content instead of routing it into the separately requested docs tree."
+        }
+      ],
+      "withdrawn": {
+        "worker": "6765a31f-efad-4b0a-8664-7615a8fe7d84",
+        "state": "deviation",
+        "at": "2026-10-19T00:19:41.417853+00:00",
+        "reason": "reviewer (sonnet): The deviation rests on a population rule that I could not check against the standard, and the cited prompt asks for a README with purpose, architecture sketch, install/build/test/run commands and key directories, which is ordinary landing-document content. It also asks for a separate docs/ tree for "
+      }
     }
   }
 }

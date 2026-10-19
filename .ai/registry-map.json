@@ -5474,7 +5474,11 @@
           "revision": 3,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/settings/sub_appearance/components/AppearanceSettings.tsx:42 Context and repository searches located landing-document constructs elsewhere but no README, shields.io, or badge.svg references in appearance settings, whose module composes application settings controls.",
+          "evaluatedAt": "2026-10-19",
+          "evaluatedAgainst": "sha256-b2:7f83bf34fe6f34be",
+          "evaluatedRevision": 3
         },
         {
           "subject": "translation-quality-measurement",

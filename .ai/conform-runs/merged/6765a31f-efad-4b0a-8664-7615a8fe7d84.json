@@ -1,0 +1,102 @@
+{
+  "schema": "conform-run/1",
+  "worker": "6765a31f-efad-4b0a-8664-7615a8fe7d84",
+  "subject": "repository-landing-document",
+  "evaluatedAt": "2026-10-19T00:19:19.258202+00:00",
+  "provider": "codex",
+  "model": "gpt-6.1-sol",
+  "pairs": [
+    {
+      "context": "appearance-settings",
+      "subject": "repository-landing-document",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/settings/sub_appearance/components/AppearanceSettings.tsx:42 Context and repository searches located landing-document constructs elsewhere but no README, shields.io, or badge.svg references in appearance settings, whose module composes application settings controls.",
+      "techniques": [
+        {
+          "technique": "caption-carrying-figures",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_appearance/components/ThemePreview.tsx:82 The preview renders application UI rather than a repository-front-page figure."
+        },
+        {
+          "technique": "evidence-linked-badges",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_appearance/components/AppearanceThemeSwatch.tsx:33 The contrast badge is computed within the application; the standard excludes application-rendered claims."
+        },
+        {
+          "technique": "host-metadata-is-a-second-document",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_appearance/components/AppearanceThemingSection.tsx:15 This context changes application theme state rather than repository-host metadata."
+        },
+        {
+          "technique": "input-channel-distinction",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_appearance/components/AppearanceToggleRow.tsx:19 Input uses an application toggle, outside the landing-document shell-versus-agent distinction."
+        },
+        {
+          "technique": "landing-document-as-router",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_appearance/components/AppearanceSettings.tsx:23 The section catalog composes settings components, not documentation destinations."
+        },
+        {
+          "technique": "multi-surface-degradation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_appearance/components/CustomThemeCreator.tsx:117 Saving applies a theme configuration; this path does not publish a landing document."
+        },
+        {
+          "technique": "style-rule-ships-its-detector",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_appearance/components/ColorRow.tsx:69 This component implements a color picker, with no public-prose house-style artifact found in the context."
+        }
+      ],
+      "absenceTerms": [
+        "README",
+        "shields.io",
+        "badge.svg"
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "repository-landing-document",
+      "context": "passport-wall-ui",
+      "reason": "withdrawn after review: reviewer (sonnet): The deviation rests on a population rule that I could not check against the standard, and the cited prompt asks for a README with purpose, architecture sketch, install/build/test/run commands and key directories, which is ordinary landing-document content. It also asks for a separate docs/ tree for "
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-19T00:19:19.258202+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "repository-landing-document"
+      ],
+      "techniques": [
+        "caption-carrying-figures",
+        "evidence-linked-badges",
+        "host-metadata-is-a-second-document",
+        "input-channel-distinction",
+        "landing-document-as-router",
+        "multi-surface-degradation",
+        "style-rule-ships-its-detector"
+      ],
+      "deviations": 0,
+      "context": "appearance-settings",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    },
+    {
+      "ts": "2026-10-19T00:19:19.258202+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "repository-landing-document"
+      ],
+      "techniques": [
+        "landing-document-as-router"
+      ],
+      "deviations": 1,
+      "context": "passport-wall-ui",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    }
+  ]
+}
