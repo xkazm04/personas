@@ -231,7 +231,7 @@ pub async fn worker_tick(pool: &DbPool, app: &AppHandle) -> Result<(), AppError>
     // skipped it. The remaining concern is mid-running cancel which
     // v1 handles only as a "skip the LLM call before spawn" check
     // below.
-    let _ = app.emit(JOB_EVENT, &job);
+    emit_job(app, &job);
 
     // Pre-dispatch cancel check — if the user requested cancel
     // between enqueue and our pop, honor it without burning the LLM
@@ -239,7 +239,7 @@ pub async fn worker_tick(pool: &DbPool, app: &AppHandle) -> Result<(), AppError>
     if cancel_requested(pool, &job.id)? {
         let _ = mark_canceled(pool, &job.id);
         if let Ok(Some(updated)) = get(pool, &job.id) {
-            let _ = app.emit(JOB_EVENT, &updated);
+            emit_job(app, &updated);
         }
         return Ok(());
     }
@@ -261,9 +261,17 @@ pub async fn worker_tick(pool: &DbPool, app: &AppHandle) -> Result<(), AppError>
     }
 
     if let Ok(Some(updated)) = get(pool, &job.id) {
-        let _ = app.emit(JOB_EVENT, &updated);
+        emit_job(app, &updated);
     }
     Ok(())
+}
+
+/// Push a job row to the UI. Logged, never returned: a failed notification
+/// must not fail the job, but a silent discard reads as "delivered" forever.
+fn emit_job(app: &AppHandle, job: &BackgroundJob) {
+    if let Err(e) = app.emit(JOB_EVENT, job) {
+        tracing::warn!(job_id = %job.id, error = %e, "persona-job: status emit failed");
+    }
 }
 
 fn cancel_requested(pool: &DbPool, id: &str) -> Result<bool, AppError> {
