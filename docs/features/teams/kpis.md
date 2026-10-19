@@ -149,32 +149,36 @@ A sibling surface (`src/features/teams/sub_factory/`) explores the KPI cockpit
 as a drill-down — projects → context×KPI matrix → KPI **console** — over the
 same live `dev_kpis` data. Two cockpit moves land here first:
 
-- **Attention-first band** (`AttentionBand`) at the entry: off-track (red) KPIs
-  across *all* projects as chips that deep-link straight into a KPI's console,
-  plus an at-risk count — so the entry answers "what needs me?" before the
-  structural drill-down.
+- **Off-track badge** (`WarningBadge`, on each passport cover): the count of a
+  project's off-track (red) KPIs beside its name; pressing it lists them, and
+  each entry deep-links straight into that KPI's console. It replaced the old
+  cross-project `AttentionBand`, so "what needs me?" is answered per project
+  before the structural drill-down.
 - **Calibration consequence preview** (`KpiConsole`): as the user drags the
   warn/red threshold sliders, a live line reads the calibrated status and says
   what the system does to *this* KPI at those lines right now ("past your red
   line — the system derives a goal to fix this now" / "clear of both lines —
   nothing triggers"), so the lever is legible instead of abstract.
-- **Proposal on-ramp** (`KpiProposalsPanel`, in the project view): "Scan for
-  KPIs" runs the proposal scan and the review queue accepts (with an inline
-  *Adjust* for target/cadence) / rejects each proposed KPI, wired to the live
-  commands — so the cockpit can bootstrap its own KPIs without leaving for the
-  Teams › KPIs queue. Accepting reloads the matrix; the matrix itself now shows
-  only **managed** (active/paused) KPIs, so proposals don't masquerade as live.
+- **Proposal review** (L2 Overview): "Scan for KPIs" (`l2/FactoryScanActions`)
+  runs the proposal scan, and a context's proposed KPIs are accepted or
+  rejected in its detail pane (`l2/FactoryContextDetail`), wired to the live
+  commands, so the cockpit can bootstrap its own KPIs without leaving for the
+  Teams › KPIs queue. The matrix shows only **managed** (active/paused) KPIs,
+  so proposals don't masquerade as live. (The earlier in-matrix
+  `KpiProposalsPanel` was unmounted by the L2 restructure and deleted
+  2026-10-19.)
 
-- **Cover roadmap → Ship (L1 shortcut)** (`CoverRoadmap`, on every passport
-  cover in the wall's Overview grid): a minimized roadmap strip — one pip per
+- **Cover roadmap (L1 shortcut)** (`CoverRoadmap`, on every passport cover in
+  the Wall view's Compare columns): a minimized roadmap strip — one pip per
   `dev_milestones` row (filled = shipped, ringed = the active cut, hollow =
   planned), a `shipped/total` tally, and a line naming the **next milestone**
-  with its target date. Clicking the strip opens that project's L2 directly on
-  the **Ship** tab instead of the default Overview, so the roadmap is one click
-  from the wall. Projects with no milestones show a blue setup invitation
-  ("plan the first cut") and still open Ship. The strip only reads milestone
-  rows; every derivation (progress, exit criteria, footprint) stays in the Ship
-  tab's `useShipData`.
+  with its target date and, when the project's own history supports one, a
+  forecast. Clicking the strip raises the Notepad filtered to that project (a
+  milestone is read through the note that is its brief); until 2026-09-15 it
+  opened a Factory **Ship** tab, which is retired. Projects with no milestones
+  show a blue setup invitation ("No milestones yet. Plan the first cut"). The
+  strip only reads milestone rows; the exit-criteria machinery stays in the
+  plan rail (`features/notepad/plan/useProjectPlan.ts`).
   The tile's old footer digest is gone: the **blockers badge** (warning glyph +
   count, full list in the tooltip; a green check when there are none) was
   promoted onto the cover's identity line next to the project name, so it rides
