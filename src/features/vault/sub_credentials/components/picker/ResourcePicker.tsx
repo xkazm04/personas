@@ -23,7 +23,7 @@ import {
   type ResourceItem,
   type ScopedResources,
 } from '@/api/credentials/scopedResources';
-import { toastCatch } from '@/lib/silentCatch';
+import { extractMessage, toastCatch } from '@/lib/silentCatch';
 import { DebtText } from '@/i18n/DebtText';
 
 
@@ -97,7 +97,9 @@ export function ResourcePicker({
           [spec.id]: { loading: false, items, error: null, fetched: true },
         }));
       } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : String(e);
+        // invokeWithTimeout rejects with the AppError object, never an Error:
+        // String(e) painted "[object Object]" over the provider's reason.
+        const msg = extractMessage(e);
         setState((s) => ({
           ...s,
           [spec.id]: { loading: false, items: [], error: msg, fetched: false },
