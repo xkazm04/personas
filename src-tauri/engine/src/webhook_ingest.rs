@@ -61,6 +61,21 @@ where
     serde_json::Value::Object(map).to_string()
 }
 
+// ---------------------------------------------------------------------------
+// Cloud firing relay watermarks
+// ---------------------------------------------------------------------------
+
+/// Whether a relay tick may prune watermarks of triggers it did not see.
+///
+/// A trigger is "not seen" both when it was deleted and when its
+/// deployment's trigger listing failed (a 10 s per-call timeout is enough).
+/// Pruning on the second loses the watermark, and the next tick republishes
+/// every firing on the page (up to the fetch limit) as new events. Only a
+/// tick whose listing was complete can tell the two apart.
+pub fn watermark_prune_allowed(listing_failures: usize) -> bool {
+    listing_failures == 0
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -101,5 +116,12 @@ mod tests {
         assert_eq!(v["x-github-event"], "push");
         assert_eq!(v["x-github-delivery"], "d-1");
         assert_eq!(v["x-odd"], "<binary>");
+    }
+
+    #[test]
+    fn a_failed_listing_blocks_the_watermark_prune() {
+        assert!(watermark_prune_allowed(0));
+        assert!(!watermark_prune_allowed(1));
+        assert!(!watermark_prune_allowed(7));
     }
 }
