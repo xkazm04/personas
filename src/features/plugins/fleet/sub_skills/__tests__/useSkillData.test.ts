@@ -7,6 +7,7 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 // Mock the skill files API surface used by useSkillData.
 vi.mock('@/api/devTools/devTools', () => ({
   listSkills: vi.fn(),
+  listSkillsGlobal: vi.fn(),
   installSkill: vi.fn(),
 }));
 
@@ -102,6 +103,7 @@ describe('useSkillData — install failure', () => {
     localStorage.clear();
     addToast.mockClear();
     vi.mocked(devApi.listSkills).mockResolvedValue(SKILLS);
+    vi.mocked(devApi.listSkillsGlobal).mockResolvedValue(SKILLS);
   });
 
   it('toasts the translated sentence, never the raw OS error', async () => {
@@ -124,5 +126,22 @@ describe('useSkillData — install failure', () => {
     await act(async () => { await result.current.installSkill('research', 'p2', false); });
     expect(addToast.mock.calls.at(-1)?.slice(0, 2)).toEqual(['Install failed', 'error']);
     expect(addToast.mock.calls.flat().join(' ')).not.toContain('[object Object]');
+  });
+});
+
+describe('useSkillData — source switch', () => {
+  it('keeps the selected source list when the previous source answers late', async () => {
+    localStorage.clear();
+    let resolveProject: (v: typeof SKILLS) => void = () => {};
+    vi.mocked(devApi.listSkills).mockImplementation(() => new Promise((r) => { resolveProject = r; }));
+    vi.mocked(devApi.listSkillsGlobal).mockResolvedValue([SKILLS[2]!]);
+    const { result } = renderHook(() => useSkillData('project'));
+
+    act(() => result.current.setSource('global'));
+    await waitFor(() => expect(result.current.filtered.map((s) => s.name)).toEqual(['friend']));
+
+    await act(async () => { resolveProject(SKILLS); });
+    expect(result.current.filtered.map((s) => s.name)).toEqual(['friend']);
+    expect(result.current.loading).toBe(false);
   });
 });

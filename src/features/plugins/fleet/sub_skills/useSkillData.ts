@@ -6,6 +6,7 @@ import type { SkillEntry, SkillInstallPreview } from '@/api/devTools/devTools';
 import type { SkillInstallResult } from '@/lib/bindings/SkillInstallResult';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 
 /** Which library the browser is showing — the active project's skills, or
  *  the user-global `~/.claude/skills` library. */
@@ -66,19 +67,23 @@ export function useSkillData(initialSource: SkillSource = 'project') {
 
   const isFavorite = useCallback((name: string) => favorites.has(name), [favorites]);
 
+  // The drawer's Global/Project toggle re-fetches; a list for the source the
+  // operator just left must not land after (and over) the one now selected.
+  const [latest] = useState(createLatestWins);
   const fetchSkills = useCallback(async () => {
+    const token = latest.next();
     setLoading(true);
     try {
       const list = source === 'global'
         ? await devApi.listSkillsGlobal()
         : await devApi.listSkills(activeProjectId);
-      setSkills(list);
+      if (latest.isCurrent(token)) setSkills(list);
     } catch {
-      addToast(dt.skills_load_failed_toast, 'error');
+      if (latest.isCurrent(token)) addToast(dt.skills_load_failed_toast, 'error');
     } finally {
-      setLoading(false);
+      if (latest.isCurrent(token)) setLoading(false);
     }
-  }, [addToast, dt, activeProjectId, source]);
+  }, [addToast, dt, activeProjectId, source, latest]);
 
   // Install (copy) a skill into a target project's .claude/skills. The source
   // is the browser's current source (active project or the global library).
