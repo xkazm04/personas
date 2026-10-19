@@ -68,7 +68,12 @@ export function useProjectRegistry(projectId: string | null, refreshTick = 0): R
     if (!projectId) { setF({ ...EMPTY, loading: false }); return; }
     let alive = true;
     setF((prev) => ({ ...prev, loading: true }));
-    void (async () => {
+    // `listContextGroups` has no fallback of its own (and `safeInvoke` rethrows
+    // everything but a missing command), so a rejected read used to reject this
+    // IIFE unhandled and leave `loading` true for good. The wave settles here:
+    // reported, out of loading, keeping whatever the last good read painted
+    // rather than inventing an empty matrix in its place.
+    const load = async () => {
       const [installed, groups, contexts, usageRows, snap] = await Promise.all([
         listSkills(projectId).catch((e) => { silentCatch('projectRegistry listSkills')(e); return [] as SkillEntry[]; }),
         listContextGroups(projectId),
@@ -115,7 +120,11 @@ export function useProjectRegistry(projectId: string | null, refreshTick = 0): R
       }
 
       setF({ loading: false, installed, groups, contexts, coveredByKey, usageBySkill, runningSkills });
-    })();
+    };
+    load().catch((e: unknown) => {
+      silentCatch('projectRegistry load')(e);
+      if (alive) setF((prev) => ({ ...prev, loading: false }));
+    });
     return () => { alive = false; };
   }, [projectId, project?.root_path, refreshTick]);
 
