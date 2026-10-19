@@ -18,13 +18,16 @@ import { KitButton, KitHost, ListRow, Rows, Section, StatStrip, Surface, UnitStr
 import type { AnomalyDrilldownData } from '@/lib/bindings/AnomalyDrilldownData';
 import type { MetricAnomaly } from '@/lib/bindings/MetricAnomaly';
 import { useTranslation } from '@/i18n/useTranslation';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import { extractMessage } from '@/lib/silentCatch';
 import { formatSignedOffset } from '@/lib/utils/formatters';
 
 interface AnomalyDrilldownPanelProps {
   anomaly: MetricAnomaly;
   data: AnomalyDrilldownData | null;
   loading: boolean;
-  error: string | null;
+  /** The fetch's raw failure; resolved to friendly copy here, at render. */
+  error: { raw: unknown } | null;
   onClose: () => void;
 }
 
@@ -99,7 +102,7 @@ export default function AnomalyDrilldownPanel({ anomaly, data, loading, error, o
                 count={data && !loading ? data.correlatedEvents.length : undefined}
                 desc={loading ? x.correlating : undefined}
                 state={loading ? 'loading' : error ? 'empty' : undefined}
-                empty={{ title: error ?? '', tone: 'error' }}
+                empty={{ title: error ? resolveErrorTranslated(t, extractMessage(error.raw)).message : '', tone: 'error' }}
               >
                 <Rows count={events.length} empty={{ title: x.no_correlated }}>
                   {events.map((e, i) => (
