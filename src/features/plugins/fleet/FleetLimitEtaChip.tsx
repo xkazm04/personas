@@ -15,9 +15,10 @@ import { useNowTick } from './relativeAgo';
  * there is honestly nothing to show, so the chip renders nothing.
  */
 
-/** Local wall-clock label for the reset moment ("19:50"). */
-export function formatResetClock(atMs: number): string {
-  return new Date(atMs).toLocaleTimeString(undefined, {
+/** Wall-clock label for the reset moment ("19:50" / "07:50 PM"), in the
+ *  language the operator chose in the app - not the host OS's locale. */
+export function formatResetClock(atMs: number, locale: string): string {
+  return new Date(atMs).toLocaleTimeString(locale, {
     hour: '2-digit',
     minute: '2-digit',
   });
@@ -43,13 +44,13 @@ export function FleetLimitEtaChip({
   compact = false,
   testId = 'fleet-limit-eta',
 }: FleetLimitEtaChipProps) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const now = useNowTick();
   if (limitResetAtMs == null) return null;
   const at = Number(limitResetAtMs);
   if (!Number.isFinite(at) || at <= now) return null;
 
-  const clock = formatResetClock(at);
+  const clock = formatResetClock(at, language);
   const label = interpolate(t.plugins.fleet.limit_eta_resumes, { time: clock });
 
   return (
