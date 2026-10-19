@@ -5,6 +5,7 @@ export interface MergedFieldInputProps {
   id?: string;
   'aria-invalid'?: true;
   'aria-describedby'?: string;
+  'aria-required'?: true;
 }
 
 /**
@@ -33,5 +34,6 @@ export function mergeFieldInputProps(
     ...(fromField?.id ? { id: fromField.id } : {}),
     ...(invalid ? { 'aria-invalid': true as const } : {}),
     ...(describedBy ? { 'aria-describedby': describedBy } : {}),
+    ...(fromField?.['aria-required'] === true ? { 'aria-required': true as const } : {}),
   };
 }
