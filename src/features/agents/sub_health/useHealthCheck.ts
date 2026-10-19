@@ -28,7 +28,7 @@ import { useVaultStore } from "@/stores/vaultStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { getPersonaConfigWarnings } from '@/api/pipeline/triggers';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { DesignContextData } from '@/lib/types/frontendTypes';
 import type { DryRunResult, DryRunIssue, PersonaHealthCheck, HealthScore } from './types';
@@ -406,7 +406,9 @@ export function useHealthCheck(): UseHealthCheckReturn {
       // door threw was a user who noticed the badge never changed.
       silentCatch('useHealthCheck:run')(err);
       if (gen !== genRef.current) return null;
-      const msg = err instanceof Error ? err.message : String(err);
+      // invokeWithTimeout rejects with a serialized AppError object, never an
+      // Error, so `err instanceof Error ? … : String(err)` stored "[object Object]".
+      const msg = extractMessage(err);
       setError(msg);
       setPhase('error');
       return null;
