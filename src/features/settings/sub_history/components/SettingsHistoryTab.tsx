@@ -102,12 +102,15 @@ export default function SettingsHistoryTab() {
     void load();
   }, [load]);
 
+  // Options come from the unfiltered read (cached under '') as well as the
+  // current rows: a filtered list holds one category, so deriving options from
+  // it alone left the dropdown offering only "All" and the active filter.
   const categories = useMemo(() => {
-    if (!entries) return [] as string[];
-    const set = new Set<string>();
-    entries.forEach((e) => set.add(e.category));
+    const set = new Set<string>(categoryFilter ? [categoryFilter] : []);
+    (historyCache.get('') ?? []).forEach((e) => set.add(e.category));
+    (entries ?? []).forEach((e) => set.add(e.category));
     return Array.from(set).sort();
-  }, [entries]);
+  }, [entries, categoryFilter]);
 
   const toggleExpanded = (id: string) => {
     setExpanded((prev) => {

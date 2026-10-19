@@ -69,4 +69,19 @@ describe('SettingsHistoryTab reads', () => {
     await waitFor(() => expect(screen.getByText('generic_message')).toBeInTheDocument());
     expect(document.body.textContent).not.toContain('[object Object]');
   });
+
+  it('keeps every category selectable while a filter is applied', async () => {
+    list.mockImplementation((_limit: number, category?: string) =>
+      Promise.resolve(category ? [entry('v1', category)] : [entry('a1', 'appearance'), entry('v1', 'vault')]),
+    );
+    render(<SettingsHistoryTab />);
+    const select = await screen.findByRole('combobox');
+    await screen.findByText('appearance.key');
+
+    fireEvent.change(select, { target: { value: 'vault' } });
+    await waitFor(() => expect(screen.queryByText('appearance.key')).toBeNull());
+
+    const options = screen.getAllByRole('option').map((o) => (o as HTMLOptionElement).value);
+    expect(options).toEqual(['', 'appearance', 'vault']);
+  });
 });
