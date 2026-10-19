@@ -6,7 +6,7 @@ import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { N8nWizardStep, TransformQuestion, TransformSubPhase, SessionLoadedPayload } from '../hooks/useN8nImportReducer';
 import { STEP_META, WIZARD_STEPS } from '../hooks/useN8nImportReducer';
-import { fallbackStepForData } from '../reducers/navigationReducer';
+import { fallbackStepForData, surfacedStep } from '../reducers/navigationReducer';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { SESSION_STATUS_STYLES } from '../colorTokens';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -193,6 +193,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
       } else {
         targetStep = stepMap[full.step] ?? 'upload';
       }
+      targetStep = surfacedStep(targetStep, { parsedResult });
 
       // Compute transform sub-phase from loaded state
       let subPhase: TransformSubPhase = 'idle';

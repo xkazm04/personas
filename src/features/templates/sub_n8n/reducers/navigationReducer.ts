@@ -50,6 +50,20 @@ export function fallbackStepForData(state: {
   return 'upload';
 }
 
+/**
+ * The steps N8nImportTab still renders a surface for. The transform / edit /
+ * confirm step components were deleted with the n8n subtree cleanup; the
+ * wizard hands off to the matrix build from `analyze`. A resumed session must
+ * land on one of these, or it opens an empty panel with no way forward.
+ */
+export const SURFACED_STEPS: readonly N8nWizardStep[] = ['upload', 'analyze'];
+
+/** Clamp a restore target to a step that has a surface. */
+export function surfacedStep(step: N8nWizardStep, state: { parsedResult: unknown }): N8nWizardStep {
+  if (SURFACED_STEPS.includes(step)) return step === 'analyze' && !state.parsedResult ? 'upload' : step;
+  return state.parsedResult ? 'analyze' : 'upload';
+}
+
 // -- Reducer --
 
 export function navigationReducer(
