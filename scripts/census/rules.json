@@ -103,8 +103,8 @@
         }
       ],
       "baseline": {
-        "files": 118,
-        "matches": 163
+        "files": 117,
+        "matches": 162
       },
       "floor": 2500
     },
@@ -316,8 +316,8 @@
         }
       ],
       "baseline": {
-        "files": 44,
-        "matches": 44
+        "files": 42,
+        "matches": 42
       },
       "floor": 4000
     },
@@ -519,8 +519,8 @@
         }
       ],
       "baseline": {
-        "files": 29,
-        "matches": 35
+        "files": 26,
+        "matches": 32
       },
       "floor": 4000
     },
@@ -593,8 +593,8 @@
         }
       ],
       "baseline": {
-        "files": 253,
-        "matches": 552
+        "files": 249,
+        "matches": 548
       },
       "floor": 4000
     },
@@ -634,8 +634,8 @@
         }
       ],
       "baseline": {
-        "files": 58,
-        "matches": 89
+        "files": 57,
+        "matches": 88
       },
       "floor": 4000
     },
@@ -1313,8 +1313,8 @@
         }
       ],
       "baseline": {
-        "files": 11,
-        "matches": 13
+        "files": 10,
+        "matches": 10
       },
       "floor": 4000
     },
@@ -1499,8 +1499,8 @@
         }
       ],
       "baseline": {
-        "files": 34,
-        "matches": 34
+        "files": 32,
+        "matches": 32
       },
       "floor": 4000
     },
@@ -1856,8 +1856,8 @@
         }
       ],
       "baseline": {
-        "files": 71,
-        "matches": 102
+        "files": 70,
+        "matches": 101
       },
       "floor": 4000
     },
@@ -5399,8 +5399,8 @@
         "description": "A catch handler whose only state write is an empty array, and which sets no error/failure identity anywhere in the handler. The rejection becomes indistinguishable from an empty result."
       },
       "baseline": {
-        "files": 30,
-        "matches": 33
+        "files": 29,
+        "matches": 32
       },
       "floor": 4000
     },
@@ -5765,7 +5765,7 @@
       ],
       "baseline": {
         "files": 274,
-        "matches": 575
+        "matches": 574
       },
       "floor": 5000
     },
@@ -5842,7 +5842,7 @@
       ],
       "baseline": {
         "files": 944,
-        "matches": 2115
+        "matches": 2114
       },
       "floor": 2200
     },
