@@ -354,8 +354,13 @@ export const createDevToolsTriageSlice: StateCreator<SystemStore, [], [], DevToo
   runTriageRules: async (projectId) => {
     try {
       const result = await devApi.runTriageRules(projectId);
-      // Re-fetch triage items to reflect changes
-      await get().fetchTriageIdeas(projectId);
+      // Re-read the list the surface is SHOWING, with the question it asked:
+      // the rules panel sits in the cross-project, status-filtered Backlog,
+      // and a bare fetchTriageIdeas(projectId) swapped that page for one
+      // project's ideas in every status.
+      const last = get().lastTriageQuery;
+      if (last) await get().fetchTriageIdeas(last.projectId, last.query);
+      else await get().fetchTriageIdeas(projectId);
       return result;
     } catch (err) {
       reportError(err, "Failed to run triage rules", set);
