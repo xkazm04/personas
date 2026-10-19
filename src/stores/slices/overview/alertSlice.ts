@@ -7,8 +7,7 @@ import type { AlertMetric } from "@/lib/bindings/AlertMetric";
 import type { AlertSeverity } from "@/lib/bindings/AlertSeverity";
 import type { ObservabilityMetrics } from "@/lib/bindings/ObservabilityMetrics";
 import * as api from "@/api/overview/observability";
-import { useToastStore } from "@/stores/toastStore";
-import { silentCatch, toastCatch } from "@/lib/silentCatch";
+import { extractMessage, silentCatch, toastCatch } from "@/lib/silentCatch";
 import { en } from "@/i18n/en";
 import type { Translations } from "@/i18n/generated/types";
 
@@ -186,7 +185,8 @@ export interface AlertSlice {
   /** Alert IDs that were shown in the UI but failed to persist to the backend. */
   pendingSyncAlertIds: Set<string>;
 
-  // Backend CRUD (pass force=true to bypass TTL guard)
+  // Backend CRUD (pass force=true to bypass TTL guard). A failed write toasts
+  // once and REJECTS, so an awaiting caller can keep its form open.
   fetchAlertRules: (force?: boolean) => Promise<void>;
   fetchAlertHistory: (force?: boolean) => Promise<void>;
   addAlertRule: (rule: Omit<AlertRule, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
@@ -211,6 +211,22 @@ const FIRED_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
 
 /** TTL for filter-independent fetches (alert rules & history). */
 const ALERT_FETCH_TTL_MS = 60_000; // 60 seconds
+
+/**
+ * Report a failed alert write and hand the failure back to the caller.
+ *
+ * The detail is `extractMessage(err)`: IPC rejects with a serialized AppError
+ * OBJECT, never an Error, so the `instanceof Error ? .. : String(err)` ladder
+ * these sites used toasted "Failed to create alert rule: [object Object]".
+ * Rethrowing lets a caller that awaits keep its state: AlertRulesPanel closes
+ * the rule form only when the write landed, so a refused save no longer drops
+ * the operator's draft. Every caller catches with silentCatch, so this stays
+ * the one toast.
+ */
+function failAlertWrite(context: string, frame: string, err: unknown): never {
+  toastCatch(`alertSlice:${context}`, `${frame} ${extractMessage(err)}`)(err);
+  throw err;
+}
 
 export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> = (set, get) => ({
   alertRules: [],
@@ -244,7 +260,7 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
         _alertRulesFetchedAt: Date.now(),
       });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractMessage(err);
       set({ alertRulesLoading: false, alertRulesError: msg });
       toastCatch("alertSlice:fetchAlertRules", `${en.alerts.error_load_rules} ${msg}`)(err);
     }
@@ -274,8 +290,7 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
       });
       set((state) => ({ alertRules: [created, ...state.alertRules] }));
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      useToastStore.getState().addToast(`${en.alerts.error_create_rule} ${msg}`, 'error');
+      failAlertWrite("addAlertRule", en.alerts.error_create_rule, err);
     }
   },
 
@@ -296,8 +311,7 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
         return { alertRules: rules, alertFiredCooldowns: rest };
       });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      useToastStore.getState().addToast(`${en.alerts.error_update_rule} ${msg}`, 'error');
+      failAlertWrite("updateAlertRule", en.alerts.error_update_rule, err);
     }
   },
 
@@ -315,8 +329,7 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
     } catch (err) {
       // Revert optimistic removal
       set({ alertRules: prevRules, alertFiredCooldowns: prevCooldowns });
-      const msg = err instanceof Error ? err.message : String(err);
-      useToastStore.getState().addToast(`${en.alerts.error_delete_rule} ${msg}`, 'error');
+      failAlertWrite("deleteAlertRule", en.alerts.error_delete_rule, err);
     }
   },
 
@@ -342,8 +355,7 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
     } catch (err) {
       // Revert optimistic toggle
       set({ alertRules: prevRules });
-      const msg = err instanceof Error ? err.message : String(err);
-      useToastStore.getState().addToast(`${en.alerts.error_toggle_rule} ${msg}`, 'error');
+      failAlertWrite("toggleAlertRule", en.alerts.error_toggle_rule, err);
     }
   },
 
@@ -354,8 +366,7 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
         alertHistory: state.alertHistory.map(a => a.id === alertId ? { ...a, dismissed: true } : a),
       }));
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      useToastStore.getState().addToast(`${en.alerts.error_dismiss} ${msg}`, 'error');
+      failAlertWrite("dismissAlert", en.alerts.error_dismiss, err);
     }
   },
 
@@ -364,8 +375,7 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
       await api.clearFiredAlerts();
       set({ alertHistory: [], pendingSyncAlertIds: new Set<string>() });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      useToastStore.getState().addToast(`${en.alerts.error_clear_history} ${msg}`, 'error');
+      failAlertWrite("clearAlertHistory", en.alerts.error_clear_history, err);
     }
   },
 
@@ -517,7 +527,7 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
       }
     } catch (err) {
       const durationMs = Math.round(performance.now() - startMs);
-      const errorMsg = err instanceof Error ? err.message : String(err);
+      const errorMsg = extractMessage(err);
       set((state) => ({
         alertEvalHealth: {
           lastEvalAt: new Date().toISOString(),
