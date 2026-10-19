@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Cloud, Radio, Unplug, Pause, Play, Trash2 } from 'lucide-react';
+import { Radio, Pause, Play, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { DataGrid, type DataGridColumn } from '@/features/shared/components/display/DataGrid';
@@ -14,6 +14,7 @@ import { EventDetailModal } from './EventDetailModal';
 import { EVENT_STATUS_ORDER, eventStatusLabel, eventStatusLabels } from './eventStatusLabels';
 import { EventTypeChip } from './EventTypeChip';
 import { EventReasonChip } from '../lib/EventReasonView';
+import { resolveEventSource } from '@/features/overview/sub_events/libs/eventSourceRegistry';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { silentCatch } from '@/lib/silentCatch';
@@ -322,11 +323,15 @@ export function LiveStreamTab() {
             </div>
           );
         }
+        // The same registry the Overview events table reads, so one row names
+        // its source the same way on both surfaces (an unknown token shows
+        // itself under a warning glyph rather than a plausible label).
+        const source = resolveEventSource(t, event.source_type);
+        const SourceIcon = source.icon;
         return (
           <span className="typo-body text-foreground truncate flex items-center gap-1">
-            {event.source_type === 'cloud_webhook' && <Cloud className="w-3 h-3 text-blue-400 flex-shrink-0" />}
-            {event.source_type === 'smee_relay' && <Unplug className="w-3 h-3 text-purple-400 flex-shrink-0" />}
-            {event.source_type}
+            <SourceIcon className={`w-3 h-3 flex-shrink-0 ${source.tone}`} />
+            {source.label}
           </span>
         );
       },
