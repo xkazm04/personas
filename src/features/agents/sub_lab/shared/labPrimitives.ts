@@ -90,8 +90,12 @@ function diffWithStrip(
 
 /** Line-level diff fallback for large prompts. */
 function diffByLines(a: string, b: string): DiffEntry[] {
-  const linesA = a.split('\n');
-  const linesB = b.split('\n');
+  // Each line keeps its own trailing '\n' (the last line has none), so every
+  // entry - including the unchanged prefix/suffix diffWithStrip emits - joins
+  // back into the exact input. Appending '\n' only to the middle glued the
+  // unchanged lines together and added a newline the input never had.
+  const linesA = a.split(/(?<=\n)/);
+  const linesB = b.split(/(?<=\n)/);
 
   return diffWithStrip(linesA, linesB, (midA, midB) => {
     const m = midA.length;
@@ -100,12 +104,12 @@ function diffByLines(a: string, b: string): DiffEntry[] {
     // If even line-level is too large, show all-removed + all-added
     if (m > 0 && n > 0 && m * n > MAX_DP_CELLS) {
       return [
-        ...midA.map((l) => ({ type: 'removed' as const, text: l + '\n' })),
-        ...midB.map((l) => ({ type: 'added' as const, text: l + '\n' })),
+        ...midA.map((l) => ({ type: 'removed' as const, text: l })),
+        ...midB.map((l) => ({ type: 'added' as const, text: l })),
       ];
     }
 
-    return lcsDiff(midA, midB).map((d) => ({ ...d, text: d.text + '\n' }));
+    return lcsDiff(midA, midB);
   });
 }
 
