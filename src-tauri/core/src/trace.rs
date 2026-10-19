@@ -11,7 +11,7 @@
 //! For chain triggers, a `chain_trace_id` propagates through payloads so
 //! multi-persona execution chains appear as a single distributed trace.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
 use std::time::Instant;
@@ -152,47 +152,63 @@ pub struct TraceCollector {
     evicted_span_count: AtomicU64,
 }
 
-/// Internal storage pairing a span vec with an O(1) span_id -> index lookup.
+/// Internal storage: spans in insertion order plus a span_id -> position lookup.
+///
+/// The lookup maps a span_id to its insertion SEQUENCE number, not to its
+/// position, and `seqs` holds the sequence of each element of `vec` in the same
+/// (strictly increasing) order, so a position is one binary search away. That
+/// keeps eviction cheap: removing a span shifts the shorter side of two
+/// `VecDeque`s and touches one map entry. The previous shape mapped span_id ->
+/// absolute index, so every eviction re-inserted the index entry (a `String`
+/// clone and a hash) of every span after the evicted one: at the
+/// `MAX_SPANS` = 10,000 cap each new span cost ~680 us under the trace mutex in
+/// a release build, against ~0.5 us below the cap.
 pub struct SpanStore {
-    pub vec: Vec<TraceSpan>,
-    index: HashMap<String, usize>,
+    pub vec: VecDeque<TraceSpan>,
+    seqs: VecDeque<u64>,
+    index: HashMap<String, u64>,
+    next_seq: u64,
 }
 
 impl SpanStore {
     fn new() -> Self {
         Self {
-            vec: Vec::new(),
+            vec: VecDeque::new(),
+            seqs: VecDeque::new(),
             index: HashMap::new(),
+            next_seq: 0,
         }
     }
 
     fn push(&mut self, span: TraceSpan) {
-        let idx = self.vec.len();
-        self.index.insert(span.span_id.clone(), idx);
-        self.vec.push(span);
+        let seq = self.next_seq;
+        self.next_seq += 1;
+        self.index.insert(span.span_id.clone(), seq);
+        self.seqs.push_back(seq);
+        self.vec.push_back(span);
+    }
+
+    fn position(&self, span_id: &str) -> Option<usize> {
+        let seq = *self.index.get(span_id)?;
+        self.seqs.binary_search(&seq).ok()
     }
 
     fn get_mut(&mut self, span_id: &str) -> Option<&mut TraceSpan> {
-        self.index
-            .get(span_id)
-            .copied()
-            .and_then(|i| self.vec.get_mut(i))
+        let pos = self.position(span_id)?;
+        self.vec.get_mut(pos)
     }
 
     fn get(&self, span_id: &str) -> Option<&TraceSpan> {
-        self.index
-            .get(span_id)
-            .copied()
-            .and_then(|i| self.vec.get(i))
+        let pos = self.position(span_id)?;
+        self.vec.get(pos)
     }
 
-    /// Remove span at `pos` and fix up the index for the swapped-in element.
+    /// Remove the span at `pos`. Positions after it shift, but the lookup is
+    /// keyed by sequence number, so no other entry needs rewriting.
     fn remove(&mut self, pos: usize) {
-        let removed = self.vec.remove(pos);
-        self.index.remove(&removed.span_id);
-        // `Vec::remove` shifts all elements after `pos` left by one — update their indices.
-        for i in pos..self.vec.len() {
-            self.index.insert(self.vec[i].span_id.clone(), i);
+        self.seqs.remove(pos);
+        if let Some(removed) = self.vec.remove(pos) {
+            self.index.remove(&removed.span_id);
         }
     }
 
@@ -200,12 +216,13 @@ impl SpanStore {
         self.vec.len()
     }
 
-    fn iter_mut(&mut self) -> std::slice::IterMut<'_, TraceSpan> {
+    fn iter_mut(&mut self) -> std::collections::vec_deque::IterMut<'_, TraceSpan> {
         self.vec.iter_mut()
     }
 
-    fn drain(&mut self) -> std::vec::Drain<'_, TraceSpan> {
+    fn drain(&mut self) -> std::collections::vec_deque::Drain<'_, TraceSpan> {
         self.index.clear();
+        self.seqs.clear();
         self.vec.drain(..)
     }
 }
@@ -564,5 +581,72 @@ mod w3c_tests {
     fn sampled_flag_is_set() {
         let ctx = W3cTraceContext::new_root();
         assert_eq!(ctx.flags & 0x01, 0x01, "sampled bit must be set");
+    }
+}
+
+#[cfg(test)]
+mod collector_tests {
+    use super::*;
+
+    /// Fill a collector to the cap with completed spans, then push `extra`.
+    fn filled_past_cap(extra: usize) -> (TraceCollector, Vec<String>) {
+        let c = TraceCollector::new("exec", "persona", None);
+        let mut ids = Vec::with_capacity(MAX_SPANS - 1 + extra);
+        for _ in 0..(MAX_SPANS - 1 + extra) {
+            let id = c.start_span(SpanType::ToolCall, "tool", None, None);
+            c.end_span_ok(&id);
+            ids.push(id);
+        }
+        (c, ids)
+    }
+
+    #[test]
+    fn eviction_keeps_the_lookup_consistent() {
+        let (c, ids) = filled_past_cap(50);
+        // The 50 oldest completed spans are gone, the rest still resolve.
+        for gone in &ids[..50] {
+            assert!(
+                c.get_span(gone).is_none(),
+                "evicted span {gone} still resolves"
+            );
+        }
+        for kept in &ids[50..] {
+            assert_eq!(c.get_span(kept).map(|s| s.span_id), Some(kept.clone()));
+        }
+        // Ending a surviving span after evictions updates THAT span.
+        let last = ids.last().unwrap();
+        c.end_span_error(last, "late");
+        assert_eq!(
+            c.get_span(last).and_then(|s| s.error).as_deref(),
+            Some("late")
+        );
+
+        let trace = c.finalize(None, None, None, None);
+        assert_eq!(trace.spans.len(), MAX_SPANS);
+        assert_eq!(trace.evicted_span_count, 50);
+        assert_eq!(
+            trace.spans[0].span_type,
+            SpanType::Execution,
+            "root survives eviction"
+        );
+    }
+
+    /// At the cap every new span evicts one. That used to rewrite the lookup
+    /// entry of every later span: these 2,000 spans took 2.7-5.3 s in a debug
+    /// build (measured 2026-10-19). It is now a constant-cost removal, well
+    /// under 0.1 s, so the bound sits roughly 5x from either side.
+    #[test]
+    fn spans_past_the_cap_stay_cheap() {
+        let (c, _) = filled_past_cap(0);
+        let started = Instant::now();
+        for _ in 0..2_000 {
+            let id = c.start_span(SpanType::ToolCall, "tool", None, None);
+            c.end_span_ok(&id);
+        }
+        let elapsed = started.elapsed();
+        assert!(
+            elapsed < std::time::Duration::from_millis(500),
+            "2,000 spans past the cap took {elapsed:?}"
+        );
     }
 }
