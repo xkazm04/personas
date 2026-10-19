@@ -242,8 +242,11 @@ export default function GuidedTour() {
     if (allCompleted) { setShowCompletion(true); return; }
     advanceTour();
   };
+  // Back goes through the store's step door like Next and a jump do: a raw
+  // setState here skipped persistCurrentTour (a restart resumed on the later
+  // step) and kept the later step's spotlight on a step that has none.
   const handlePrev = () => {
-    if (currentIndex > 0) useTourStore.setState({ tourCurrentStepIndex: currentIndex - 1, tourSubStepIndex: 0 });
+    if (currentIndex > 0) goToTourStep(currentIndex - 1);
   };
   const handleJump = (index: number) => {
     goToTourStep(index);
@@ -404,7 +407,7 @@ export default function GuidedTour() {
                 steps={visibleSteps}
                 currentIndex={currentIndex}
                 completedSteps={completedSteps}
-                onJump={(i) => useTourStore.setState({ tourCurrentStepIndex: i, tourSubStepIndex: 0, tourResumePending: false })}
+                onJump={(i) => { goToTourStep(i); useTourStore.setState({ tourResumePending: false }); }}
               />
             </div>
             {/* Continue at the saved step */}
