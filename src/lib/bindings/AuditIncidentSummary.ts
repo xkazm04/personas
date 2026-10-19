@@ -3,12 +3,12 @@
 /**
  * Aggregated KPIs surfaced by the inbox header tiles.
  */
-export type AuditIncidentSummary = { open: bigint, acknowledged: bigint, resolved: bigint, dismissed: bigint, 
+export type AuditIncidentSummary = { open: number, acknowledged: number, resolved: number, dismissed: number, 
 /**
  * (severity, count) for `status='open'` only.
  */
-openBySeverity: Array<[string, bigint]>, 
+openBySeverity: Array<[string, number]>, 
 /**
  * (source_table, count) for `status='open'` only.
  */
-openBySource: Array<[string, bigint]>, };
+openBySource: Array<[string, number]>, };

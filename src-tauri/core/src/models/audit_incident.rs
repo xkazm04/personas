@@ -165,13 +165,19 @@ pub struct CreateAuditIncidentInput {
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct AuditIncidentSummary {
+    #[ts(type = "number")]
     pub open: i64,
+    #[ts(type = "number")]
     pub acknowledged: i64,
+    #[ts(type = "number")]
     pub resolved: i64,
+    #[ts(type = "number")]
     pub dismissed: i64,
     /// (severity, count) for `status='open'` only.
+    #[ts(type = "Array<[string, number]>")]
     pub open_by_severity: Vec<(String, i64)>,
     /// (source_table, count) for `status='open'` only.
+    #[ts(type = "Array<[string, number]>")]
     pub open_by_source: Vec<(String, i64)>,
 }
 

@@ -4,4 +4,4 @@
  * Per-tool performance aggregation derived from `tool_execution_audit_log`.
  * Used by the Overview tool-performance panel to surface latency + error rate.
  */
-export type ToolPerformanceSummary = { tool_name: string, tool_type: string, total_runs: bigint, error_runs: bigint, avg_duration_ms: number | null, max_duration_ms: bigint | null, };
+export type ToolPerformanceSummary = { tool_name: string, tool_type: string, total_runs: number, error_runs: number, avg_duration_ms: number | null, max_duration_ms: number | null, };
