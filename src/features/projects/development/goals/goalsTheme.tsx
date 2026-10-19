@@ -4,27 +4,9 @@
  * Adapts the platform visual-identity philosophy (depth via low-opacity gradient
  * pools, motion as information, constraint/accent-parameterization) to the
  * desktop's own semantic tokens — no raw hex, no web-only primitives. Every
- * Goals surface (Board · Map · Timeline) composes from these so the look
- * stays cohesive and a tweak is a one-file edit.
+ * Goals surface composes from these so the look stays cohesive and a tweak is
+ * a one-file edit.
  */
-import type { CSSProperties } from 'react';
-import { goalStatusMeta } from './goalStatus';
-
-/**
- * The shared panel treatment: a soft gradient base (depth without a heavy box)
- * + a GPU-compositable hover lift + border brighten. Targeted transition (never
- * `transition-all`); fully neutralized under `prefers-reduced-motion`.
- */
-export const GOAL_PANEL =
-  'rounded-modal border border-primary/10 bg-gradient-to-br from-card/60 to-card/20 ' +
-  'transition-[transform,border-color,box-shadow] duration-200 ' +
-  'hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-elevation-2 ' +
-  'motion-reduce:transform-none motion-reduce:transition-none focus-ring';
-
-/** A status-tinted left edge so a card's state reads pre-attentively. */
-export function goalAccentEdgeStyle(status: string): CSSProperties {
-  return { boxShadow: `inset 3px 0 0 0 ${goalStatusMeta(status).map.fill}` };
-}
 
 /**
  * A near-invisible radial "atmosphere" pool seated behind a surface — the
