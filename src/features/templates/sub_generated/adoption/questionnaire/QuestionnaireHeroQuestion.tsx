@@ -95,6 +95,7 @@ export function QuestionnaireHeroQuestion({
               type="button"
               onClick={() => setTipOpen((v) => !v)}
               aria-expanded={tipOpen}
+              aria-label={tipOpen ? t.templates.adopt_modal.hide_explanation : t.templates.adopt_modal.show_explanation}
               className={`flex-shrink-0 mt-1 p-1.5 rounded-card transition-colors ${
                 tipOpen
                   ? 'bg-primary/15 text-primary'
