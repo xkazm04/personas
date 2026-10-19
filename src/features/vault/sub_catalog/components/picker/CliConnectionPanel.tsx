@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { Terminal, CheckCircle2, AlertCircle, Loader2, Copy, ExternalLink, RefreshCw } from 'lucide-react';
 import {
@@ -9,7 +9,7 @@ import {
   type CliVerifyResult,
   type CliSpecInfo,
 } from '@/api/auth/cliCapture';
-import { toastCatch } from '@/lib/silentCatch';
+import { extractMessage, toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import type { ConnectorDefinition } from '@/lib/types/types';
@@ -21,7 +21,7 @@ type PanelState =
   | { kind: 'verifying' }
   | { kind: 'unauthenticated'; verify: CliVerifyResult }
   | { kind: 'authenticated'; verify: CliVerifyResult }
-  | { kind: 'error'; message: string };
+  | { kind: 'error'; raw: unknown };
 
 interface CliConnectionPanelProps {
   connector: ConnectorDefinition;
@@ -46,10 +46,6 @@ export function CliConnectionPanel({
   const [state, setState] = useState<PanelState>({ kind: 'checking' });
   const [saving, setSaving] = useState(false);
 
-  const toErrorState = useCallback((err: unknown): PanelState => {
-    const { message } = resolveErrorTranslated(t, err instanceof Error ? err.message : String(err));
-    return { kind: 'error', message };
-  }, [t]);
 
   const runInstallCheck = useCallback(async () => {
     setState({ kind: 'checking' });
@@ -61,9 +57,9 @@ export function CliConnectionPanel({
         setState({ kind: 'installed_unverified', status });
       }
     } catch (err) {
-      setState(toErrorState(err));
+      setState({ kind: 'error', raw: err });
     }
-  }, [spec.service_type, toErrorState]);
+  }, [spec.service_type]);
 
   const runVerify = useCallback(async () => {
     setState({ kind: 'verifying' });
@@ -71,16 +67,20 @@ export function CliConnectionPanel({
       const verify = await cliVerifyAuth(spec.service_type);
       setState({ kind: verify.authenticated ? 'authenticated' : 'unauthenticated', verify });
     } catch (err) {
-      setState(toErrorState(err));
+      setState({ kind: 'error', raw: err });
     }
-  }, [spec.service_type, toErrorState]);
+  }, [spec.service_type]);
 
   useEffect(() => {
     void runInstallCheck();
   }, [runInstallCheck]);
 
-  // Default credential name for CLI flow
+  // Default credential name for CLI flow: once per connector. Re-applying it
+  // whenever the field is empty made the field impossible to clear.
+  const defaultedForRef = useRef<string | null>(null);
   useEffect(() => {
+    if (defaultedForRef.current === connector.label) return;
+    defaultedForRef.current = connector.label;
     if (!credentialName || credentialName === connector.label) {
       onCredentialNameChange(`${connector.label} CLI`);
     }
@@ -151,7 +151,7 @@ export function CliConnectionPanel({
         <StateBlock
           icon={<AlertCircle className="w-4 h-4 text-red-400" />}
           title={l.error}
-          description={state.message}
+          description={resolveErrorTranslated(t, extractMessage(state.raw)).message}
           action={<button type="button" onClick={runInstallCheck} className="typo-caption px-2 py-1 rounded border border-primary/15 hover:bg-secondary/40">{l.retry}</button>}
         />
       )}
