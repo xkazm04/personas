@@ -8,13 +8,6 @@ export const KIND_ICONS: Record<GraphNodeKind, typeof Key> = {
   event: Zap,
 };
 
-/** Static KIND_LABELS -- use getKindLabels(t) for translated labels in components. */
-export const KIND_LABELS: Record<GraphNodeKind, string> = {
-  credential: 'Credentials',
-  agent: 'Agents',
-  event: 'Events',
-};
-
 /** Returns translated kind labels from the translation tree. */
 export function getKindLabels(t: Translations): Record<GraphNodeKind, string> {
   const dep = t.vault.dependencies;
@@ -31,12 +24,13 @@ export function getKindLabels(t: Translations): Record<GraphNodeKind, string> {
 // constant directly (the other `SEVERITY_STYLES` in the tree are unrelated
 // file-local ones). They were unreachable English in a `.ts` module, which is
 // the condition `frozen-ui-copy-constant` exists to stop growing, and no
-// translation lookup could ever have reached them.
+// translation lookup could ever have reached them. The `critical` bucket went
+// the same way: no severity function returns it since the workflow branch was
+// folded back into the blast-radius buckets (see SimulationResult.severity).
 export const SEVERITY_STYLES = {
   low: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' },
   medium: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' },
   high: { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/20' },
-  critical: { bg: 'bg-fuchsia-500/10', text: 'text-fuchsia-400', border: 'border-fuchsia-500/20' },
 } as const;
 
 /** Returns severity styles with translated labels. */
@@ -46,6 +40,5 @@ export function getSeverityStyles(t: Translations) {
     low: { ...SEVERITY_STYLES.low, label: dep.severity_low },
     medium: { ...SEVERITY_STYLES.medium, label: dep.severity_medium },
     high: { ...SEVERITY_STYLES.high, label: dep.severity_high },
-    critical: { ...SEVERITY_STYLES.critical, label: dep.severity_critical },
   } as const;
 }
