@@ -344,8 +344,8 @@
         }
       ],
       "baseline": {
-        "files": 18,
-        "matches": 21
+        "files": 17,
+        "matches": 20
       },
       "floor": 2000
     },
@@ -519,8 +519,8 @@
         }
       ],
       "baseline": {
-        "files": 30,
-        "matches": 36
+        "files": 29,
+        "matches": 35
       },
       "floor": 4000
     },
@@ -635,7 +635,7 @@
       ],
       "baseline": {
         "files": 58,
-        "matches": 90
+        "matches": 89
       },
       "floor": 4000
     },
@@ -866,8 +866,8 @@
         }
       ],
       "baseline": {
-        "files": 3,
-        "matches": 7
+        "files": 2,
+        "matches": 5
       },
       "floor": 4000
     },
@@ -1856,8 +1856,8 @@
         }
       ],
       "baseline": {
-        "files": 72,
-        "matches": 103
+        "files": 71,
+        "matches": 102
       },
       "floor": 4000
     },
@@ -2122,8 +2122,8 @@
         "$comment": "Recall is deliberately partial: it cannot see a toggle whose button lives in a child component while the state lives in the parent, nor a non-button disclosure. Both are stated in the golden path rather than papered over."
       },
       "baseline": {
-        "files": 36,
-        "matches": 37
+        "files": 35,
+        "matches": 36
       },
       "floor": 2000
     },
@@ -3020,8 +3020,8 @@
         }
       ],
       "baseline": {
-        "files": 30,
-        "matches": 35
+        "files": 29,
+        "matches": 33
       },
       "floor": 3000
     },
@@ -5725,8 +5725,8 @@
         }
       ],
       "baseline": {
-        "files": 826,
-        "matches": 3890
+        "files": 825,
+        "matches": 3875
       },
       "floor": 5000
     },
@@ -5764,8 +5764,8 @@
         }
       ],
       "baseline": {
-        "files": 275,
-        "matches": 576
+        "files": 274,
+        "matches": 575
       },
       "floor": 5000
     },
@@ -5841,8 +5841,8 @@
         }
       ],
       "baseline": {
-        "files": 945,
-        "matches": 2116
+        "files": 944,
+        "matches": 2115
       },
       "floor": 2200
     },
@@ -5915,8 +5915,8 @@
         }
       ],
       "baseline": {
-        "files": 684,
-        "matches": 1657
+        "files": 683,
+        "matches": 1656
       },
       "floor": 5000
     }
