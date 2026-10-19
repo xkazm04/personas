@@ -202,14 +202,16 @@ export function useConnectorStatuses() {
       );
 
       // Verdicts only: an unreachable probe (success === false, but no verdict)
-      // used to count as "newly failing" against a passing baseline.
-      const { recovered, regressed, failing } = summarizeTestAll(outcomes, baseline);
+      // used to count as "newly failing" against a passing baseline. It is
+      // reported on its own ("N couldn't be reached") instead.
+      const { recovered, regressed, failing, unreachable } = summarizeTestAll(outcomes, baseline);
 
       const persona = selectedPersona?.name ?? t.agents.connectors.test_persona_fallback;
       const parts: string[] = [];
       if (recovered > 0) parts.push(tx(t.agents.connectors.test_diff_recovered, { count: recovered }));
       if (regressed > 0) parts.push(tx(t.agents.connectors.test_diff_regressed, { count: regressed }));
       if (failing > 0) parts.push(tx(t.agents.connectors.test_diff_failing, { count: failing }));
+      if (unreachable > 0) parts.push(tx(t.agents.connectors.test_diff_unreachable, { count: unreachable }));
 
       sendAppNotification(
         t.agents.connectors.test_complete_notification_title,
@@ -264,7 +266,7 @@ export function useConnectorStatuses() {
 
   const readinessCounts = useMemo(() => {
     const counts: Record<ConnectorReadiness, number> = {
-      unlinked: 0, linked_untested: 0, healthy: 0, unverifiable: 0, unhealthy: 0,
+      unlinked: 0, linked_untested: 0, healthy: 0, unverifiable: 0, unreachable: 0, unhealthy: 0,
     };
     for (const s of statuses) counts[deriveReadiness(s)]++;
     return counts;
