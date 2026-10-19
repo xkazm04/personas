@@ -7,6 +7,7 @@ import { parseStandards } from './standards';
 
 export function dimensionReason(rowKey: string, raw: ImproveRaw): string | null {
   const { meta, project } = raw;
+  const ev = raw.evidence;
   const std = parseStandards(project.standards_config);
   const tables = meta.db_tables?.length ?? 0;
   switch (rowKey) {
@@ -21,9 +22,14 @@ export function dimensionReason(rowKey: string, raw: ImproveRaw): string | null 
       ].filter(Boolean);
       return gates.length ? `From the standards policy: ${gates.join(', ')}.` : 'No branching or check policy is set.';
     }
+    // The "no …" lines below are only true when the derive saw no signal. When
+    // it did (passportDerive reads the same evidence), the row already shows
+    // the rung it reached, and the old fixed sentence contradicted it - so say
+    // nothing rather than something false.
     case 'tests':
-      return 'No automated test signal detected. Wire a suite an agent can self-verify against.';
+      return ev?.has_tests ? null : 'No automated test signal detected. Wire a suite an agent can self-verify against.';
     case 'security':
+      if (ev?.has_codeql || ev?.has_dependabot) return null;
       return project.standards_config
         ? 'Standards policy present, but no dependency/code scanning detected.'
         : 'No security policy or scanning detected.';
@@ -38,13 +44,14 @@ export function dimensionReason(rowKey: string, raw: ImproveRaw): string | null 
         ? 'An LLM-observability connector is bound.'
         : 'No LLM-tracking connector bound (Langfuse / Helicone / LangSmith / …).';
     case 'evals':
-      return 'No evaluation harness detected.';
+      return ev?.has_eval ? null : 'No evaluation harness detected.';
     case 'migrations':
+      if (ev?.has_migrations && tables === 0) return null;
       return tables > 0 ? `${tables} tables detected, no versioned migrations.` : 'No database / migrations detected.';
     case 'instructions':
-      return project.team_id ? 'Team policy provides agent guidance.' : 'No CLAUDE.md / agent instructions detected.';
+      if (project.team_id) return 'Team policy provides agent guidance.';
+      return ev?.has_claude_md ? null : 'No CLAUDE.md / agent instructions detected.';
     case 'docs': {
-      const ev = raw.evidence;
       const n = ev?.docs_file_count ?? 0;
       const rot = raw.docRot;
       // "all N tracked docs are current" used to be printed whenever nothing
@@ -67,7 +74,6 @@ export function dimensionReason(rowKey: string, raw: ImproveRaw): string | null 
       return (ev?.has_readme ? 'README only, no docs/ tree detected.' : 'No README or docs/ detected.') + rotBit;
     }
     case 'memory': {
-      const ev = raw.evidence;
       const files = ev?.memory_file_count ?? 0;
       const idx = ev?.memory_index_lines ?? 0;
       const age = ev?.memory_age_days;
@@ -79,7 +85,8 @@ export function dimensionReason(rowKey: string, raw: ImproveRaw): string | null 
       return (ev?.has_repo_memory ? 'In-repo memory artifact detected (MEMORY.md / .claude/memory).' : 'No agent memory detected for this repo.') + healthBit;
     }
     case 'aiflow':
-      return project.pr_credential_id ? 'A PR connector is bound.' :'No automated PR / team pipeline wired.';
+      if (project.pr_credential_id) return 'A PR connector is bound.';
+      return project.team_id ? null : 'No automated PR / team pipeline wired.';
     case 'skills':
       return raw.hasSkills ? 'Reusable skills present in .claude/skills.' : 'No reusable skills installed.';
     case 'selfverify':
