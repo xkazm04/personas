@@ -76,6 +76,22 @@ describe('team synthesis from the gallery', () => {
     expect(screen.getByText('Deploy desk')).toBeTruthy();
   });
 
+  it('shows the backend reason when the IPC rejects with an AppError object', async () => {
+    // invokeWithTimeout rejects with the serialized AppError, never an Error.
+    synthesizeTeamFromTemplates.mockRejectedValue({
+      error: 'Claude produced no output for team synthesis',
+      kind: 'Internal',
+    });
+    render(<TeamSynthesisPanel isOpen onClose={() => {}} />);
+
+    fireEvent.change(screen.getByPlaceholderText(/team_name_placeholder/), { target: { value: 'Deploy desk' } });
+    fireEvent.change(screen.getByPlaceholderText(/describe_placeholder/), { target: { value: 'on-call for deploys' } });
+    fireEvent.click(screen.getByRole('button', { name: SYNTH_LABEL }));
+
+    await waitFor(() => expect(screen.getByText(/Claude produced no output for team synthesis/)).toBeTruthy());
+    expect(screen.queryByText(/\[object Object\]/)).toBeNull();
+  });
+
   it('refuses to synthesize until both fields are given', () => {
     render(<TeamSynthesisPanel isOpen onClose={() => {}} />);
     expect(screen.getByRole('button', { name: SYNTH_LABEL })).toBeDisabled();
