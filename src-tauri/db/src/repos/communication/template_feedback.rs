@@ -117,24 +117,39 @@ pub fn get_performance(pool: &DbPool, review_id: &str) -> Result<TemplatePerform
             (0, 50.0, 50.0)
         });
 
-        // Combined execution stats: count, success count, and avg cost in one query
-        let (total_executions, success_count, avg_cost): (i64, i64, f64) = conn
+        // Combined execution stats: count, success count, decided count and avg
+        // cost in one query. The success rate's denominator is the DECIDED runs
+        // (completed or failed), the same definition the SLA rollups use
+        // (`sla.rs` get_persona_reliability). A queued or running run is not an
+        // outcome yet, and counting it as one made every in-flight run read as
+        // a failure on the template's Overview tab.
+        let (total_executions, success_count, decided_count, avg_cost): (i64, i64, i64, f64) = conn
         .query_row(
-            "SELECT COUNT(*), SUM(CASE WHEN pe.status = 'completed' THEN 1 ELSE 0 END), COALESCE(AVG(pe.cost_usd), 0.0)
+            "SELECT COUNT(*) AS total,
+                    SUM(CASE WHEN pe.status = 'completed' THEN 1 ELSE 0 END) AS succeeded,
+                    SUM(CASE WHEN pe.status IN ('completed', 'failed') THEN 1 ELSE 0 END) AS decided,
+                    COALESCE(AVG(pe.cost_usd), 0.0) AS avg_cost
              FROM persona_executions pe
              JOIN personas p ON pe.persona_id = p.id
              WHERE p.source_review_id = ?1",
             params![review_id],
-            |row| Ok((row.get::<_, i64>(0)?, row.get::<_, Option<i64>>(1)?.unwrap_or(0), row.get::<_, f64>(2)?)),
+            |row| {
+                Ok((
+                    row.get::<_, i64>("total")?,
+                    row.get::<_, Option<i64>>("succeeded")?.unwrap_or(0),
+                    row.get::<_, Option<i64>>("decided")?.unwrap_or(0),
+                    row.get::<_, f64>("avg_cost")?,
+                ))
+            },
         )
         .unwrap_or_else(|e| {
             tracing::warn!(review_id = %review_id, error = %e, "Failed to query execution stats, defaulting");
             data_available = false;
-            (0, 0, 0.0)
+            (0, 0, 0, 0.0)
         });
 
-        let success_rate = if total_executions > 0 {
-            success_count as f64 / total_executions as f64
+        let success_rate = if decided_count > 0 {
+            success_count as f64 / decided_count as f64
         } else {
             0.0
         };
@@ -202,4 +217,80 @@ pub fn get_performance(pool: &DbPool, review_id: &str) -> Result<TemplatePerform
             data_available,
         })
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::init_test_db;
+
+    /// One design review, one persona adopted from it, and executions in the
+    /// given statuses. Raw INSERTs on the production schema (init_test_db).
+    fn seed(pool: &DbPool, statuses: &[&str]) -> String {
+        let conn = pool.get().unwrap();
+        let now = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "INSERT INTO persona_design_reviews
+                 (id, test_case_id, test_case_name, instruction, status, test_run_id, reviewed_at, created_at)
+             VALUES ('rev-1', 'tc', 'Test case', 'do it', 'passed', 'run-1', ?1, ?1)",
+            params![now],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO personas (id, name, system_prompt, source_review_id, created_at, updated_at)
+             VALUES ('p-1', 'Adopted', 'prompt', 'rev-1', ?1, ?1)",
+            params![now],
+        )
+        .unwrap();
+        for (i, status) in statuses.iter().enumerate() {
+            conn.execute(
+                "INSERT INTO persona_executions (id, persona_id, status, created_at)
+                 VALUES (?1, 'p-1', ?2, ?3)",
+                params![format!("ex-{i}"), status, now],
+            )
+            .unwrap();
+        }
+        "rev-1".to_string()
+    }
+
+    #[test]
+    fn success_rate_ignores_runs_that_have_not_finished() {
+        let pool = init_test_db().unwrap();
+        // One success, one failure, and two runs still in flight. The in-flight
+        // runs are not outcomes yet: the rate is 1 of 2 decided, not 1 of 4.
+        let review_id = seed(&pool, &["completed", "failed", "running", "queued"]);
+        let perf = get_performance(&pool, &review_id).unwrap();
+        assert!(perf.data_available);
+        assert_eq!(perf.total_executions, 4);
+        assert!(
+            (perf.success_rate - 0.5).abs() < 1e-9,
+            "expected 0.5 over decided runs, got {}",
+            perf.success_rate
+        );
+    }
+
+    #[test]
+    fn success_rate_matches_the_sla_decided_definition() {
+        let pool = init_test_db().unwrap();
+        // The SLA rollups (sla.rs) decide a run as completed or failed only;
+        // cancelled and incomplete runs are neither a success nor a failure.
+        let review_id = seed(
+            &pool,
+            &["completed", "completed", "cancelled", "incomplete"],
+        );
+        let perf = get_performance(&pool, &review_id).unwrap();
+        assert!(
+            (perf.success_rate - 1.0).abs() < 1e-9,
+            "expected 1.0 over decided runs, got {}",
+            perf.success_rate
+        );
+    }
+
+    #[test]
+    fn success_rate_is_zero_when_nothing_has_been_decided() {
+        let pool = init_test_db().unwrap();
+        let review_id = seed(&pool, &["running"]);
+        let perf = get_performance(&pool, &review_id).unwrap();
+        assert_eq!(perf.success_rate, 0.0);
+    }
 }
