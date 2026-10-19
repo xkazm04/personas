@@ -382,8 +382,11 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
     }
   },
 
+  // The per-deployment actions below write ONLY after the server answers, so a
+  // failure has nothing to undo. They used to restore a snapshot taken when the
+  // action started, which rolled back any sibling action that succeeded in the
+  // meantime (pause A ok + pause B failed showed A active again).
   cloudAdoptOrphan: async (deploymentId: string) => {
-    const prevOrphans = get().cloudOrphanDeployments;
     try {
       await cloudAdoptDeployment(deploymentId);
       set((state) => {
@@ -394,12 +397,11 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
         return { cloudOrphanDeployments: remaining, cloudReconcileDismissed: remaining.length > 0 && state.cloudReconcileDismissed };
       });
     } catch (err) {
-      reportError(err, "Failed to adopt deployment", set, { stateUpdates: { cloudOrphanDeployments: prevOrphans, cloudError: translateCloudError(err) } });
+      reportError(err, "Failed to adopt deployment", set, { stateUpdates: { cloudError: translateCloudError(err) } });
     }
   },
 
   cloudUndeployOrphan: async (deploymentId: string) => {
-    const prevOrphans = get().cloudOrphanDeployments;
     try {
       await cloudUndeploy(deploymentId);
       set((state) => {
@@ -412,7 +414,7 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
       });
       emitDeploymentEvent({ eventType: 'agent_undeployed', target: 'cloud', detail: deploymentId });
     } catch (err) {
-      reportError(err, "Failed to undeploy orphaned deployment", set, { stateUpdates: { cloudOrphanDeployments: prevOrphans, cloudError: translateCloudError(err) } });
+      reportError(err, "Failed to undeploy orphaned deployment", set, { stateUpdates: { cloudError: translateCloudError(err) } });
     }
   },
 
@@ -445,7 +447,6 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
   },
 
   cloudPauseDeploy: async (deploymentId: string) => {
-    const prevDeployments = get().cloudDeployments;
     try {
       const updated = await cloudPauseDeployment(deploymentId);
       set((state) => ({
@@ -455,12 +456,11 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
       }));
       emitDeploymentEvent({ eventType: 'deploy_paused', target: 'cloud', detail: deploymentId });
     } catch (err) {
-      reportError(err, "Failed to pause deployment", set, { stateUpdates: { cloudDeployments: prevDeployments, cloudError: translateCloudError(err) } });
+      reportError(err, "Failed to pause deployment", set, { stateUpdates: { cloudError: translateCloudError(err) } });
     }
   },
 
   cloudResumeDeploy: async (deploymentId: string) => {
-    const prevDeployments = get().cloudDeployments;
     try {
       const updated = await cloudResumeDeployment(deploymentId);
       set((state) => ({
@@ -470,12 +470,11 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
       }));
       emitDeploymentEvent({ eventType: 'deploy_resumed', target: 'cloud', detail: deploymentId });
     } catch (err) {
-      reportError(err, "Failed to resume deployment", set, { stateUpdates: { cloudDeployments: prevDeployments, cloudError: translateCloudError(err) } });
+      reportError(err, "Failed to resume deployment", set, { stateUpdates: { cloudError: translateCloudError(err) } });
     }
   },
 
   cloudRemoveDeploy: async (deploymentId: string) => {
-    const prevDeployments = get().cloudDeployments;
     try {
       await cloudUndeploy(deploymentId);
       set((state) => ({
@@ -483,7 +482,7 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
       }));
       emitDeploymentEvent({ eventType: 'agent_undeployed', target: 'cloud', detail: deploymentId });
     } catch (err) {
-      reportError(err, "Failed to remove deployment", set, { stateUpdates: { cloudDeployments: prevDeployments, cloudError: translateCloudError(err) } });
+      reportError(err, "Failed to remove deployment", set, { stateUpdates: { cloudError: translateCloudError(err) } });
     }
   },
 
