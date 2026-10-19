@@ -26,11 +26,19 @@ const actions = {
 const state = {
   fleetSessions: [] as FleetSession[],
   fleetGridOpen: false,
+  // The page door goes through `arriveAtDevTools` (pluginArrival.ts), which
+  // reads `enabledPlugins` and writes through `getState()` - not through a
+  // selector - so the mock has to carry both or every navigation dies in a
+  // TypeError the click handler swallows.
+  enabledPlugins: new Set<string>(['dev-tools']),
   ...actions,
 };
 
 vi.mock('@/stores/systemStore', () => ({
-  useSystemStore: (selector: (s: typeof state) => unknown) => selector(state),
+  useSystemStore: Object.assign(
+    (selector: (s: typeof state) => unknown) => selector(state),
+    { getState: () => state },
+  ),
 }));
 
 import FleetFooterIcon from '../FleetFooterIcon';
@@ -49,6 +57,7 @@ function mount(sessions: FleetSession[], gridOpen = false) {
 describe('FleetFooterIcon — click contract', () => {
   beforeEach(() => {
     for (const fn of Object.values(actions)) fn.mockReset();
+    state.enabledPlugins = new Set(['dev-tools']);
   });
 
   it('navigates to the Fleet page when nothing is dispatched', async () => {
@@ -58,6 +67,17 @@ describe('FleetFooterIcon — click contract', () => {
     expect(actions.setPluginTab).toHaveBeenCalledWith('dev-tools');
     expect(actions.setDevToolsTab).toHaveBeenCalledWith('fleet');
     expect(actions.fleetSetGridOpen).not.toHaveBeenCalled();
+  });
+
+  it('writes nothing when the operator has switched Dev Tools off', async () => {
+    // The gated door: an empty fleet must not land the operator on a plugin
+    // surface they disabled, and must not half-navigate (section without tab).
+    state.enabledPlugins = new Set();
+    mount([]);
+    await userEvent.click(screen.getByTestId('footer-fleet-toggle'));
+    expect(actions.setSidebarSection).not.toHaveBeenCalled();
+    expect(actions.setPluginTab).not.toHaveBeenCalled();
+    expect(actions.setDevToolsTab).not.toHaveBeenCalled();
   });
 
   it('raises the grid overlay ON THE MONITOR LEDGER when sessions are dispatched', async () => {
