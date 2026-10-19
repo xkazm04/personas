@@ -27,6 +27,10 @@ export interface GoalBannerEvent {
 
 const subs = new Set<(e: GoalBannerEvent) => void>();
 
+/** Monotonic per module: a sweep that lands two notes in one millisecond must
+ *  still raise two cards, and the host keys each card's entrance on `id`. */
+let seq = 0;
+
 export function onGoalBanner(cb: (e: GoalBannerEvent) => void): () => void {
   subs.add(cb);
   return () => {
@@ -37,6 +41,7 @@ export function onGoalBanner(cb: (e: GoalBannerEvent) => void): () => void {
 /** `kind` defaults to `goal` so the original single-moment call site — and any
  *  test written against it — keeps meaning exactly what it meant. */
 export function emitGoalBanner(subtitle: string | null, kind: GoalBannerKind = 'goal'): void {
-  const e: GoalBannerEvent = { id: `goal-banner-${Date.now()}-${kind}`, kind, subtitle };
+  seq += 1;
+  const e: GoalBannerEvent = { id: `goal-banner-${Date.now()}-${seq}-${kind}`, kind, subtitle };
   subs.forEach((fn) => fn(e));
 }
