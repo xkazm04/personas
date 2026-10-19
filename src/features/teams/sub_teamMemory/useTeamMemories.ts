@@ -129,31 +129,37 @@ export function useTeamMemories(teamId: string) {
     }
   }, [teamId, memories.length]);
 
+  /** The re-read after a write that already SUCCEEDED. Its failure is a list
+   *  failure (the pane paints `loadFailed`), never the write's: chaining it
+   *  inside the write's promise recorded one click as both `ok` and `failed`
+   *  and toasted a save error for a memory that was saved. */
+  const refreshAfterWrite = useCallback((context: string) => {
+    refresh().catch(toastCatch(context));
+  }, [refresh]);
+
   const onCreate = useCallback((input: CreateTeamMemoryInput) => {
     createTeamMemory(input)
       .then(() => {
         trackInteraction(IX_CATEGORY, 'create', IX_OK);
         addToast(t.pipeline.memory_created, 'success');
-        return refresh();
-      })
-      .catch((err) => {
+        refreshAfterWrite('teamMemory/useTeamMemories:createRefresh');
+      }, (err) => {
         trackInteraction(IX_CATEGORY, 'create', IX_FAILED);
         toastCatch('teamMemory/useTeamMemories:create')(err);
       });
-  }, [addToast, refresh, t]);
+  }, [addToast, refreshAfterWrite, t]);
 
   const onDelete = useCallback((id: string) => {
     deleteTeamMemory(id)
       .then(() => {
         trackInteraction(IX_CATEGORY, 'delete', IX_OK);
         addToast(t.pipeline.memory_deleted, 'success');
-        return refresh();
-      })
-      .catch((err) => {
+        refreshAfterWrite('teamMemory/useTeamMemories:deleteRefresh');
+      }, (err) => {
         trackInteraction(IX_CATEGORY, 'delete', IX_FAILED);
         toastCatch('teamMemory/useTeamMemories:delete')(err);
       });
-  }, [addToast, refresh, t]);
+  }, [addToast, refreshAfterWrite, t]);
 
   const onImportanceChange = useCallback((id: string, importance: number) => {
     // Optimistic — the dots respond instantly; a failed write rolls back via refresh.
@@ -172,13 +178,12 @@ export function useTeamMemories(teamId: string) {
       .then(() => {
         trackInteraction(IX_CATEGORY, 'edit', IX_OK);
         addToast(t.pipeline.memory_updated, 'success');
-        return refresh();
-      })
-      .catch((err) => {
+        refreshAfterWrite('teamMemory/useTeamMemories:editRefresh');
+      }, (err) => {
         trackInteraction(IX_CATEGORY, 'edit', IX_FAILED);
         toastCatch('teamMemory/useTeamMemories:edit')(err);
       });
-  }, [addToast, refresh, t]);
+  }, [addToast, refreshAfterWrite, t]);
 
   return { memories, total, stats, isFetching, loadFailed, onRetry, onFilter, onFilterByRun, onLoadMore, onCreate, onDelete, onImportanceChange, onEdit };
 }
