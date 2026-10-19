@@ -15,8 +15,7 @@ import type { Variants } from 'framer-motion';
 
 // ── Timing tokens ──────────────────────────────────────────────────────
 
-export const TRANSITION_INSTANT = 0.1;
-export const TRANSITION_FAST    = 0.18;
+const TRANSITION_FAST           = 0.18;
 export const TRANSITION_NORMAL  = 0.24;
 export const TRANSITION_SLOW    = 0.4;
 
@@ -24,7 +23,7 @@ export const TRANSITION_SLOW    = 0.4;
  * Unified ease curve — quartic ease-out. Same shape used across all
  * dashboard transitions to keep the perceived rhythm consistent.
  */
-export const EASE_OUT_QUART: [number, number, number, number] = [0.22, 1, 0.36, 1];
+const EASE_OUT_QUART: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
 // ── Variants ──────────────────────────────────────────────────────────
 
@@ -50,8 +49,3 @@ export const pageTransition: Variants = {
   exit:    { opacity: 0, y: -4, transition: { duration: TRANSITION_FAST,   ease: EASE_OUT_QUART } },
 };
 
-/** Below-the-fold reveal — slightly larger travel than `fadeUp`. */
-export const revealFromBelow: Variants = {
-  hidden:  { opacity: 0, y: 16 },
-  visible: { opacity: 1, y: 0, transition: { duration: TRANSITION_SLOW, ease: EASE_OUT_QUART } },
-};

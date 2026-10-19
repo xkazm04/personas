@@ -80,5 +80,5 @@ Walk the questions top-down. Stop at the first **yes**.
 
 - Building a span-tree renderer out of live bus events. → Use the trace engine in `sub_observability/`.
 - Querying `searchEvents` from the Live Stream tab because "we also want history." → Split into two panels across the two surfaces, or lift the query into `sub_events/libs` and import.
-- Duplicating `SEVERITY_COLORS` / `HEALING_CATEGORY_COLORS`. → Import from `@/lib/utils/formatters` or `@/features/overview/shared/eventVisuals`.
+- Duplicating `SEVERITY_COLORS` / `HEALING_CATEGORY_COLORS`. → Import from `@/lib/utils/formatters`.
 - Adding a feature-scoped `i18n/` under a sub-folder. → All new strings go into `src/i18n/en.ts` per the root CLAUDE.md.
