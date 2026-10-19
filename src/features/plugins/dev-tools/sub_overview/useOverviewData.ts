@@ -100,7 +100,16 @@ export function useOverviewData() {
   const [repoProvider, setRepoProvider] = useState<RepoProvider | null>(null);
   const [repoStats, setRepoStats] = useState<RepoStats | null>(warmForProject ? cachedRepoStats : null);
   const [repoError, setRepoError] = useState<string | null>(null);
-  const [activeRepoCredId, setActiveRepoCredId] = useState<string | null>(null);
+  // Two ids, on purpose. `pinnedRepoCredId` is the operator's pick and is an
+  // input of the load; `activeRepoCredId` is what the last load resolved and
+  // is only displayed. When one state did both, the load's own write
+  // (null -> resolved id) changed its deps and fetched every source twice.
+  const [pinnedRepoCredId, setPinnedRepoCredId] = useState<string | null>(null);
+  const [activeRepoCredId, setResolvedRepoCredId] = useState<string | null>(null);
+  const setActiveRepoCredId = useCallback((id: string | null) => {
+    setPinnedRepoCredId(id);
+    setResolvedRepoCredId(id);
+  }, []);
 
   const [monitorState, setMonitorState] = useState<ConnectionState>(warmForProject && cachedMonitorStats ? 'connected' : 'loading');
   const [monitorStats, setMonitorStats] = useState<MonitoringStats | null>(warmForProject ? cachedMonitorStats : null);
@@ -119,10 +128,18 @@ export function useOverviewData() {
   const repoCreds = credentials.filter((c) => isGitHubCred(c) || isGitLabCred(c));
   const sentryCreds = credentials.filter((c) => c.serviceType === 'sentry');
 
-  const loadRepoStats = useCallback(async () => {
-    if (!activeProject?.github_url || !credLoaded) return;
+  // Primitive inputs, not the `activeProject` object: fetchProjects() hands
+  // back fresh objects, and keying on identity re-ran both loads after every
+  // Refresh on top of the explicit ones.
+  const repoUrl = activeProject?.github_url ?? null;
+  const hasProject = !!activeProject;
+  const monitorCredId = activeProject?.monitoring_credential_id ?? null;
+  const monitorSlug = activeProject?.monitoring_project_slug ?? null;
 
-    const url = activeProject.github_url;
+  const loadRepoStats = useCallback(async () => {
+    if (!repoUrl || !credLoaded) return;
+
+    const url = repoUrl;
     const provider = detectRepoProvider(url);
     setRepoProvider(provider);
     setRepoError(null);
@@ -133,16 +150,16 @@ export function useOverviewData() {
       return;
     }
 
-    const stickyCred = activeRepoCredId ? credentials.find((c) => c.id === activeRepoCredId) : undefined;
+    const stickyCred = pinnedRepoCredId ? credentials.find((c) => c.id === pinnedRepoCredId) : undefined;
     const matchesProvider = (c: PersonaCredential) => provider === 'github' ? isGitHubCred(c) : isGitLabCred(c);
     const cred = (stickyCred && matchesProvider(stickyCred)) ? stickyCred
       : credentials.find(matchesProvider);
     if (!cred) {
       setRepoState('unmapped');
-      setActiveRepoCredId(null);
+      setResolvedRepoCredId(null);
       return;
     }
-    setActiveRepoCredId(cred.id);
+    setResolvedRepoCredId(cred.id);
 
     setRepoState('loading');
     try {
@@ -164,13 +181,13 @@ export function useOverviewData() {
       setRepoState('error');
       setRepoError(`${formatErr(err)} — using credential "${cred.name}" (${cred.serviceType})`);
     }
-  }, [activeProject?.github_url, activeProjectId, credentials, credLoaded, activeRepoCredId]);
+  }, [repoUrl, activeProjectId, credentials, credLoaded, pinnedRepoCredId]);
 
   const loadMonitorStats = useCallback(async () => {
-    if (!activeProject || !credLoaded) return;
+    if (!hasProject || !credLoaded) return;
 
-    const credId = activeProject.monitoring_credential_id;
-    const slug = activeProject.monitoring_project_slug;
+    const credId = monitorCredId;
+    const slug = monitorSlug;
     setMonitorError(null);
 
     if (!credId || !slug) {
@@ -209,17 +226,17 @@ export function useOverviewData() {
       setMonitorState('error');
       setMonitorError(formatErr(err));
     }
-  }, [activeProject, activeProjectId, credentials, credLoaded, sentryCreds.length]);
+  }, [hasProject, monitorCredId, monitorSlug, activeProjectId, credentials, credLoaded, sentryCreds.length]);
 
   useEffect(() => {
-    if (!credLoaded || !activeProject) return;
-    if (activeProject.github_url) {
+    if (!credLoaded || !hasProject) return;
+    if (repoUrl) {
       loadRepoStats();
     } else {
       setRepoState(repoCreds.length > 0 ? 'unmapped' : 'empty');
     }
     loadMonitorStats();
-  }, [credLoaded, activeProject, loadRepoStats, loadMonitorStats, repoCreds.length]);
+  }, [credLoaded, hasProject, repoUrl, loadRepoStats, loadMonitorStats, repoCreds.length]);
 
   const refresh = useCallback(() => {
     fetchProjects();
