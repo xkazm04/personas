@@ -44,9 +44,6 @@ interface PersonaHeroProps {
    *  centerOverlay (if any) is hidden while the wide overlay is open
    *  so they never compete for the same visual space. */
   wideOverlay?: ReactNode;
-  /** Optional content rendered on the right side of the metadata band
-   *  (e.g. persona default model picker). */
-  metadataRightSlot?: ReactNode;
 
   /** When true, the persona-name + capabilities band is omitted. View
    *  mode uses this — the leftSlot summary + the sigil itself carry the
@@ -93,7 +90,6 @@ export function PersonaHero({
   activeDim: activeDimProp,
   centerOverlay,
   wideOverlay,
-  metadataRightSlot,
   hideMetadataBand,
   dimmed,
   showOrbit,
@@ -236,7 +232,6 @@ export function PersonaHero({
             </span>
           </div>
 
-          {metadataRightSlot && <div className="shrink-0">{metadataRightSlot}</div>}
         </div>
 
         {/* Narrow screens — counts stack below the name */}

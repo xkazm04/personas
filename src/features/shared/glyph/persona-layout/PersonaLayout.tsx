@@ -35,21 +35,12 @@ interface PersonaLayoutProps {
    *  takes the full surface. Caller controls the lifecycle. */
   selectedItemId?: string | null;
 
-  /** Currently in-flight toggle target. Drives the power button's disabled
-   *  + spinner state on the matching row. */
-  pendingToggleId?: string | null;
-
   /** Per-row handlers. `onRun` is optional — in adoption / scratch
    *  pre-build modes there's no runnable persona, so the row hides its
    *  run button. */
   onRowOpen: (uc: PersonaCapability) => void;
   onRowToggle: (uc: PersonaCapability) => void;
   onRowRun?: (uc: PersonaCapability) => void;
-
-  /** Optional content rendered on the right side of the hero's metadata
-   *  band (e.g. persona default model picker). Flows into the band, not
-   *  next to the sigil. */
-  heroRightSlot?: ReactNode;
 
   /** Forwarded to PersonaHero.petalStatesOverride. Adoption supplies its
    *  own derivation (pending state for dims with unanswered questions);
@@ -122,12 +113,6 @@ interface PersonaLayoutProps {
    *  adoption / scratch supply their own equivalents (or omit). */
   renderRowPolicySlot?: (uc: PersonaCapability) => ReactNode;
 
-  /** Optional content rendered after the last capability row. View mode
-   *  uses this for the "Add capability" dashed-row affordance; adoption
-   *  / scratch typically leave it unset. Not rendered when items is
-   *  empty (the emptyNode covers that state). */
-  appendRow?: ReactNode;
-
   /** Detail panel rendered when `selectedItemId` is set. View mode passes
    *  UseCaseDetailExpanded; other modes can pass mode-specific drill-downs. */
   detailNode?: ReactNode;
@@ -169,11 +154,9 @@ export function PersonaLayout({
   personaName,
   items,
   selectedItemId,
-  pendingToggleId,
   onRowOpen,
   onRowToggle,
   onRowRun,
-  heroRightSlot,
   heroPetalStatesOverride,
   onHeroPetalClick,
   heroActiveDim,
@@ -189,7 +172,6 @@ export function PersonaLayout({
   sigilSizeScale,
   belowHeroSlot,
   renderRowPolicySlot,
-  appendRow,
   detailNode,
   emptyNode,
 }: PersonaLayoutProps) {
@@ -255,7 +237,6 @@ export function PersonaLayout({
                       activeDim={heroActiveDim}
                       centerOverlay={heroCenterOverlay}
                       wideOverlay={heroWideOverlay}
-                      metadataRightSlot={heroRightSlot}
                       hideMetadataBand={hideMetadataBand}
                       dimmed={sigilDimmed}
                       showOrbit={sigilShowOrbit}
@@ -276,14 +257,13 @@ export function PersonaLayout({
                             <UseCaseRow
                               key={uc.id}
                               uc={uc}
-                              isPendingToggle={pendingToggleId === uc.id}
+                              isPendingToggle={false}
                               onOpen={() => onRowOpen(uc)}
                               onToggle={() => onRowToggle(uc)}
                               onRun={onRowRun ? () => onRowRun(uc) : undefined}
                               policySlot={renderRowPolicySlot?.(uc)}
                             />
                           ))}
-                          {appendRow}
                         </div>
                       </div>
                     )}
