@@ -6,7 +6,8 @@ import { LabResultModal } from '../shared/LabResultModal';
 import { ImprovePromptButton } from '../shared/ImprovePromptButton';
 import { ExportReportButton } from '../shared/ExportReportButton';
 import { ArenaResultsView } from './ArenaResultsView';
-import { compositeScoreFromRow, scoreColor } from '@/lib/eval/evalFramework';
+import { scoreColor } from '@/lib/eval/evalFramework';
+import { computeWinnerScore } from './arenaWinnerScore';
 import type { LabArenaRun } from '@/lib/bindings/LabArenaRun';
 import type { LabArenaResult } from '@/lib/bindings/LabArenaResult';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -33,31 +34,6 @@ function parseSummary(run: LabArenaRun) {
 
 function parseModels(run: LabArenaRun): string[] {
   return run.modelsTested ?? [];
-}
-
-function computeWinnerScore(results: LabArenaResult[] | undefined): { ta: number; oq: number; pc: number; comp: number } | null {
-  if (!results || results.length === 0) return null;
-  // Group by model, find best composite. Each metric is averaged independently
-  // over rows where it was scored — null is "not scored", not "scored zero".
-  interface PerModel { taSum: number; taCount: number; oqSum: number; oqCount: number; pcSum: number; pcCount: number; }
-  const modelScores = new Map<string, PerModel>();
-  for (const r of results) {
-    if (!modelScores.has(r.modelId)) modelScores.set(r.modelId, { taSum: 0, taCount: 0, oqSum: 0, oqCount: 0, pcSum: 0, pcCount: 0 });
-    const m = modelScores.get(r.modelId)!;
-    if (r.toolAccuracyScore != null) { m.taSum += r.toolAccuracyScore; m.taCount++; }
-    if (r.outputQualityScore != null) { m.oqSum += r.outputQualityScore; m.oqCount++; }
-    if (r.protocolCompliance != null) { m.pcSum += r.protocolCompliance; m.pcCount++; }
-  }
-  let best: { ta: number; oq: number; pc: number; comp: number } | null = null;
-  for (const [, m] of modelScores) {
-    const ta = m.taCount > 0 ? Math.round(m.taSum / m.taCount) : null;
-    const oq = m.oqCount > 0 ? Math.round(m.oqSum / m.oqCount) : null;
-    const pc = m.pcCount > 0 ? Math.round(m.pcSum / m.pcCount) : null;
-    const comp = compositeScoreFromRow(ta, oq, pc);
-    if (comp == null) continue;
-    if (!best || comp > best.comp) best = { ta: ta ?? 0, oq: oq ?? 0, pc: pc ?? 0, comp };
-  }
-  return best;
 }
 
 function buildColumns(t: ReturnType<typeof useTranslation>['t'], resultsMap: Record<string, LabArenaResult[]>): LabHistoryColumn<LabArenaRun>[] {
@@ -97,9 +73,9 @@ function buildColumns(t: ReturnType<typeof useTranslation>['t'], resultsMap: Rec
           <div className="flex items-center gap-2.5 typo-caption">
             <span className={`font-bold ${scoreColor(scores.comp)}`}>{scores.comp}</span>
             <span className="text-foreground">|</span>
-            <span className="flex items-center gap-0.5" title={debtText("auto_tool_accuracy_aeba854a")}><Target className="w-2.5 h-2.5 text-foreground" /><span className={scoreColor(scores.ta)}>{scores.ta}</span></span>
-            <span className="flex items-center gap-0.5" title={debtText("auto_output_quality_9ae643ed")}><FileText className="w-2.5 h-2.5 text-foreground" /><span className={scoreColor(scores.oq)}>{scores.oq}</span></span>
-            <span className="flex items-center gap-0.5" title="Protocol"><Shield className="w-2.5 h-2.5 text-foreground" /><span className={scoreColor(scores.pc)}>{scores.pc}</span></span>
+            <span className="flex items-center gap-0.5" title={debtText("auto_tool_accuracy_aeba854a")}><Target className="w-2.5 h-2.5 text-foreground" /><span className={scoreColor(scores.ta)}>{scores.ta ?? '--'}</span></span>
+            <span className="flex items-center gap-0.5" title={debtText("auto_output_quality_9ae643ed")}><FileText className="w-2.5 h-2.5 text-foreground" /><span className={scoreColor(scores.oq)}>{scores.oq ?? '--'}</span></span>
+            <span className="flex items-center gap-0.5" title="Protocol"><Shield className="w-2.5 h-2.5 text-foreground" /><span className={scoreColor(scores.pc)}>{scores.pc ?? '--'}</span></span>
           </div>
         );
       },
