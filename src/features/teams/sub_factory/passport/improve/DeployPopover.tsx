@@ -4,9 +4,10 @@
 // prompt is previewable. Queue (safe, review-then-run) or Deploy now (runs the
 // CLI). Portalled + anchored like the other improve popovers.
 //
-// The BODY lives in `ImproveClassicPanel` — the Database and Monitoring modals
-// carry the same content, and it must not exist twice. This file is now the
-// positioned shell: placement, dismissal, chrome.
+// The BODY lives in `ImproveClassicPanel`; this file is the positioned shell:
+// placement, dismissal, chrome. Neither modal mounts that panel: Monitoring
+// runs the same operations through `useImproveActions` in its console, and
+// Database has no deploy action, ladder or connector spec keyed to its row.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Rocket, X } from 'lucide-react';
