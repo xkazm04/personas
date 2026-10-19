@@ -54,8 +54,11 @@ pub fn list_exposed_resources(pool: &DbPool) -> Result<Vec<ExposedResource>, App
         {
             let conn = pool.get()?;
             let mut stmt = conn.prepare(
+                // datetime() on both sides: `expires_at` arrives over IPC as
+                // RFC3339 text, and a raw TEXT compare against datetime('now')
+                // reads a share that expired earlier the same UTC day as live.
                 "SELECT * FROM exposed_resources
-             WHERE expires_at IS NULL OR expires_at > datetime('now')
+             WHERE expires_at IS NULL OR datetime(expires_at) > datetime('now')
              ORDER BY created_at DESC",
             )?;
             let rows = stmt.query_map([], row_to_exposed_resource)?;
@@ -74,7 +77,7 @@ pub fn cleanup_expired_exposures(pool: &DbPool) -> Result<u64, AppError> {
         {
             let conn = pool.get()?;
             let deleted = conn.execute(
-            "DELETE FROM exposed_resources WHERE expires_at IS NOT NULL AND expires_at <= datetime('now')",
+            "DELETE FROM exposed_resources WHERE expires_at IS NOT NULL AND datetime(expires_at) <= datetime('now')",
             [],
         )?;
             Ok(deleted as u64)
@@ -371,3 +374,67 @@ pub fn batch_upsert_provenance(
 // -- Helpers -------------------------------------------------------------
 
 use rusqlite::OptionalExtension;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::init_test_db;
+    use crate::models::{AccessLevel, ResourceType};
+
+    fn expose(pool: &DbPool, resource_id: &str, expires_at: Option<String>) -> ExposedResource {
+        create_exposed_resource(
+            pool,
+            CreateExposedResourceInput {
+                resource_type: ResourceType::Persona,
+                resource_id: resource_id.into(),
+                display_name: resource_id.into(),
+                description: None,
+                fields_exposed: vec![],
+                access_level: AccessLevel::Read,
+                requires_auth: false,
+                tags: vec![],
+                expires_at,
+            },
+        )
+        .unwrap()
+    }
+
+    /// exposure-expiry-text-compare: `expires_at` arrives over IPC as RFC3339
+    /// text ("YYYY-MM-DDTHH:MM:SS..."), while `datetime('now')` is
+    /// "YYYY-MM-DD HH:MM:SS". Compared as TEXT, 'T' sorts above ' ', so a share
+    /// that expired earlier the same UTC day still read as live until midnight.
+    #[test]
+    fn an_exposure_expired_earlier_today_is_neither_listed_nor_kept() {
+        let pool = init_test_db().unwrap();
+        let now = chrono::Utc::now();
+        let expired = expose(
+            &pool,
+            "p-expired",
+            Some((now - chrono::Duration::seconds(30)).to_rfc3339()),
+        );
+        let live = expose(
+            &pool,
+            "p-live",
+            Some((now + chrono::Duration::hours(1)).to_rfc3339()),
+        );
+        let forever = expose(&pool, "p-forever", None);
+
+        let listed: Vec<String> = list_exposed_resources(&pool)
+            .unwrap()
+            .into_iter()
+            .map(|r| r.id)
+            .collect();
+        assert!(
+            !listed.contains(&expired.id),
+            "expired share must not be listed: {listed:?}"
+        );
+        assert!(
+            listed.contains(&live.id) && listed.contains(&forever.id),
+            "{listed:?}"
+        );
+
+        assert_eq!(cleanup_expired_exposures(&pool).unwrap(), 1);
+        assert!(get_exposed_resource(&pool, &live.id).is_ok());
+        assert!(get_exposed_resource(&pool, &forever.id).is_ok());
+    }
+}
