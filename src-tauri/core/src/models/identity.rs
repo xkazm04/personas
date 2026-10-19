@@ -208,3 +208,28 @@ pub struct UpdateTrustedPeerInput {
     #[serde(default, deserialize_with = "double_option")]
     pub notes: Option<Option<String>>,
 }
+
+#[cfg(test)]
+mod trust_level_tests {
+    use super::TrustLevel;
+    use std::str::FromStr;
+
+    /// `as_str` (the column), `FromStr` (the read) and the serde rename (the
+    /// wire) spell the trust vocabulary three times. A drift on `revoked`
+    /// would let a withdrawn peer read back as trusted. No wildcard arm.
+    #[test]
+    fn trust_level_tokens_agree_with_serde_and_round_trip() {
+        for v in [
+            TrustLevel::Manual,
+            TrustLevel::Verified,
+            TrustLevel::Revoked,
+        ] {
+            match v {
+                TrustLevel::Manual | TrustLevel::Verified | TrustLevel::Revoked => {}
+            }
+            let wire = serde_json::to_value(v).unwrap();
+            assert_eq!(wire.as_str(), Some(v.as_str()), "{v:?}");
+            assert_eq!(TrustLevel::from_str(v.as_str()).ok(), Some(v));
+        }
+    }
+}

@@ -191,3 +191,55 @@ pub struct IncidentFilters {
     /// ISO 8601 lower bound on `created_at`. None means no lower bound.
     pub since: Option<String>,
 }
+
+#[cfg(test)]
+mod incident_vocab_tests {
+    use super::{IncidentSeverity, IncidentStatus};
+
+    fn serde_token<T: serde::Serialize>(v: &T) -> String {
+        serde_json::to_value(v)
+            .ok()
+            .and_then(|j| j.as_str().map(str::to_owned))
+            .unwrap_or_default()
+    }
+
+    /// The comment on `IncidentStatus` records the drift this pins: with
+    /// `rename_all = "lowercase"` the wire said `inprogress` while the column
+    /// and `as_str` said `in_progress`. No wildcard arm, so a new variant must
+    /// be listed here to compile.
+    #[test]
+    fn incident_tokens_agree_with_serde_and_round_trip() {
+        for v in [
+            IncidentStatus::Open,
+            IncidentStatus::Acknowledged,
+            IncidentStatus::InProgress,
+            IncidentStatus::Resolved,
+            IncidentStatus::Dismissed,
+        ] {
+            match v {
+                IncidentStatus::Open
+                | IncidentStatus::Acknowledged
+                | IncidentStatus::InProgress
+                | IncidentStatus::Resolved
+                | IncidentStatus::Dismissed => {}
+            }
+            assert_eq!(serde_token(&v), v.as_str(), "{v:?}");
+            assert_eq!(IncidentStatus::from_str(v.as_str()), Some(v));
+        }
+        for v in [
+            IncidentSeverity::Low,
+            IncidentSeverity::Medium,
+            IncidentSeverity::High,
+            IncidentSeverity::Critical,
+        ] {
+            match v {
+                IncidentSeverity::Low
+                | IncidentSeverity::Medium
+                | IncidentSeverity::High
+                | IncidentSeverity::Critical => {}
+            }
+            assert_eq!(serde_token(&v), v.as_str(), "{v:?}");
+        }
+        assert_eq!(IncidentStatus::from_str("inprogress"), None);
+    }
+}
