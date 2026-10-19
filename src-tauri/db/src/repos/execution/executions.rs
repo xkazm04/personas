@@ -1556,11 +1556,14 @@ pub fn count_environmental_failures_in_window(
 /// re-firing into the same wall every slot (adopted from multica's autopilot
 /// failure monitor, `/research` 2026-09-05).
 ///
-/// Only `completed` and `failed` count. `incomplete` (exit 0, task not
-/// accomplished) is deliberately excluded from both sides — it is a quality
-/// signal, not a crash, and folding it into the failed column would pause
-/// schedules whose persona merely under-delivers. `cancelled` rows are user
-/// actions and say nothing about the trigger.
+/// The window counts DECIDED runs: every state of `ExecutionState::TERMINAL`
+/// except `cancelled`, which is a user action and says nothing about the
+/// trigger. `incomplete` lands in the failed column: it is what the zombie
+/// sweep writes for a run that stalled for 30 minutes, what the boot reaper
+/// writes for a run whose process died, and what a run that exited without a
+/// terminal fact settles to (docs/concepts/golden-paths/terminal-state-and-recovery.md).
+/// Excluding it, as this query did until 2026-10-19, left a schedule whose
+/// every run hangs at (0, 0) forever, so the auto-pause could never see it.
 pub fn trigger_outcomes_in_window(
     pool: &DbPool,
     trigger_id: &str,
@@ -1574,7 +1577,7 @@ pub fn trigger_outcomes_in_window(
             let (completed, failed): (i64, i64) = conn.query_row(
                 "SELECT
                     COALESCE(SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END), 0) AS completed,
-                    COALESCE(SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END), 0) AS failed
+                    COALESCE(SUM(CASE WHEN status IN ('failed', 'incomplete') THEN 1 ELSE 0 END), 0) AS failed
                  FROM persona_executions
                  WHERE trigger_id = ?1
                    AND datetime(created_at) > datetime('now', ?2)",
@@ -2967,9 +2970,10 @@ mod tests {
     /// row (written here by hand-rolled SQL that no longer exists in the tree)
     /// blanked every execution surface at startup.
     ///
-    /// The failure-rate window counts only THIS trigger's terminal outcomes
-    /// inside the window: another trigger's failures, `incomplete` /
-    /// `cancelled` rows, and rows older than the window all stay out.
+    /// The failure-rate window counts only THIS trigger's decided outcomes
+    /// inside the window: `incomplete` (a stalled or dead run) is a failure;
+    /// `cancelled` rows, another trigger's failures, and rows older than the
+    /// window all stay out.
     #[test]
     fn trigger_outcomes_in_window_scopes_by_trigger_status_and_age() -> Result<(), AppError> {
         let pool = init_test_db().unwrap();
@@ -2998,8 +3002,9 @@ mod tests {
         insert("trg-a", "failed", "2099-01-01 00:00:00");
         insert("trg-a", "failed", "2099-01-01 00:00:00");
         insert("trg-a", "failed", "2099-01-01 00:00:00");
-        // Excluded: quality/user signals, another trigger, and an old row.
+        // A stalled / dead run is not a success: counted as failed.
         insert("trg-a", "incomplete", "2099-01-01 00:00:00");
+        // Excluded: a user cancel, another trigger, and an old row.
         insert("trg-a", "cancelled", "2099-01-01 00:00:00");
         insert("trg-b", "failed", "2099-01-01 00:00:00");
         insert("trg-a", "failed", "2000-01-01 00:00:00");
@@ -3009,7 +3014,7 @@ mod tests {
         // the 2000 row is not.
         assert_eq!(
             trigger_outcomes_in_window(&pool, "trg-a", 168).unwrap(),
-            (1, 3)
+            (1, 4)
         );
         assert_eq!(
             trigger_outcomes_in_window(&pool, "trg-b", 168).unwrap(),
