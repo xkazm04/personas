@@ -5,7 +5,6 @@
  * palette change only requires touching one file.
  */
 
-import type { ProtocolType } from './edit/protocolParser';
 import type { SessionStatus } from '@/lib/bindings/SessionStatus';
 import type { WorkflowPlatform } from '@/lib/personas/parsers/workflowDetector';
 
@@ -57,31 +56,6 @@ export const TAG_COLORS: Record<ColorKey, string> = {
 /* ------------------------------------------------------------------ */
 /*  Domain-specific maps                                               */
 /* ------------------------------------------------------------------ */
-
-/** Protocol capability badge styles (split bg/text for flexible composition). */
-export const CAPABILITY_SPLIT_STYLES: Record<ProtocolType, { bg: string; text: string }> = {
-  manual_review: { bg: 'bg-rose-500/10 border-rose-500/15',    text: 'text-rose-400/70' },
-  user_message:  { bg: 'bg-amber-500/10 border-amber-500/15',  text: 'text-amber-400/70' },
-  agent_memory:  { bg: 'bg-cyan-500/10 border-cyan-500/15',    text: 'text-cyan-400/70' },
-  emit_event:    { bg: 'bg-violet-500/10 border-violet-500/15', text: 'text-violet-400/70' },
-};
-
-/** Use case category colors. */
-export const CATEGORY_STYLES: Record<string, { bg: string; text: string }> = {
-  notification:  { bg: 'bg-rose-500/10 border-rose-500/15',    text: 'text-rose-400/70' },
-  'data-sync':   { bg: 'bg-cyan-500/10 border-cyan-500/15',    text: 'text-cyan-400/70' },
-  monitoring:    { bg: 'bg-amber-500/10 border-amber-500/15',  text: 'text-amber-400/70' },
-  automation:    { bg: 'bg-violet-500/10 border-violet-500/15', text: 'text-violet-400/70' },
-  communication: { bg: 'bg-blue-500/10 border-blue-500/15',    text: 'text-blue-400/70' },
-  reporting:     { bg: 'bg-emerald-500/10 border-emerald-500/15', text: 'text-emerald-400/70' },
-};
-
-/** Execution mode badge styles. */
-export const MODE_BADGE: Record<string, { label: string; bg: string; text: string }> = {
-  e2e:            { label: 'E2E',  bg: 'bg-emerald-500/10 border-emerald-500/20', text: 'text-emerald-400/80' },
-  mock:           { label: 'MOCK', bg: 'bg-amber-500/10 border-amber-500/20',     text: 'text-amber-400/80' },
-  non_executable: { label: 'INFO', bg: 'bg-secondary/50 border-primary/15',       text: 'text-foreground' },
-};
 
 /** n8n session status badge styles. */
 export const SESSION_STATUS_STYLES: Record<SessionStatus, { bg: string; text: string; label: string }> = {
