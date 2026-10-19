@@ -21,6 +21,7 @@ import {
 } from "@/api/drive";
 import { createModuleCache } from "@/hooks/utility/data/useModuleSubscription";
 import { silentCatch, toastCatch } from "@/lib/silentCatch";
+import { createLatestWins } from "@/stores/util/latestWins";
 import { kindBucketWeight, visualForEntry } from "../designTokens";
 
 // localStorage key holding the user's preferred view-state (viewMode +
@@ -311,7 +312,15 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
     };
   }, []);
 
+  // Latest-wins for the folder listing. driveList is uncancellable: on a quick
+  // A -> B navigation (or a mutation refresh racing a nav), A's listing could
+  // land after B's and paint A's files under B's breadcrumb, where Delete and
+  // Move act on what the user sees. A superseded response still warms its own
+  // path's cache entry; it just never touches the visible state.
+  const [listingLatest] = useState(createLatestWins);
+
   const refresh = useCallback(() => {
+    const token = listingLatest.next();
     setLoading(true);
     setError(null);
     // Warm nav: this path was already listed this session (or a prior
@@ -325,17 +334,20 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
     }
     driveList(currentPath)
       .then((list) => {
-        setEntries(list);
         pathCacheRef.current.set(currentPath, list);
         driveEntriesCache.set(currentPath, list);
+        if (listingLatest.isCurrent(token)) setEntries(list);
       })
       .catch((e) => {
         silentCatch("useDrive:refresh")(e);
+        if (!listingLatest.isCurrent(token)) return;
         setError(e instanceof Error ? e.message : String(e));
         if (!cached) setEntries([]);
       })
-      .finally(() => setLoading(false));
-  }, [currentPath]);
+      .finally(() => {
+        if (listingLatest.isCurrent(token)) setLoading(false);
+      });
+  }, [currentPath, listingLatest]);
 
   const cachedEntriesFor = useCallback((path: string): DriveEntry[] | null => {
     return pathCacheRef.current.get(path) ?? null;
@@ -412,53 +424,53 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
   // without this a result that resolves AFTER the user cleared/navigated/started
   // a newer search would resurrect stale results (or overwrite the newer ones).
   // Every clear path bumps this so any in-flight search's late result is dropped.
-  const recursiveSearchSeq = useRef(0);
+  const [recursiveSearchSeq] = useState(createLatestWins);
 
   // Recursive search — escalation path when the local folder filter has
   // no hits. Driven by the consumer (DriveFileList CTA), not auto-fired.
   const runRecursiveSearch = useCallback(async () => {
     const q = searchQuery.trim();
     if (q.length < 2) return;
-    const seq = ++recursiveSearchSeq.current;
+    const seq = recursiveSearchSeq.next();
     setRecursiveLoading(true);
     try {
       const results = await driveSearch(q);
-      if (seq !== recursiveSearchSeq.current) return; // superseded or cleared — drop
+      if (!recursiveSearchSeq.isCurrent(seq)) return; // superseded or cleared — drop
       setRecursiveResults(results);
       setRecursiveQuery(q);
     } catch (e) {
-      if (seq !== recursiveSearchSeq.current) return;
+      if (!recursiveSearchSeq.isCurrent(seq)) return;
       toastCatch("drive:search")(e);
     } finally {
-      if (seq === recursiveSearchSeq.current) setRecursiveLoading(false);
+      if (recursiveSearchSeq.isCurrent(seq)) setRecursiveLoading(false);
     }
-  }, [searchQuery]);
+  }, [searchQuery, recursiveSearchSeq]);
 
   const clearRecursiveSearch = useCallback(() => {
-    recursiveSearchSeq.current++; // invalidate any in-flight search
+    recursiveSearchSeq.next(); // invalidate any in-flight search
     setRecursiveResults(null);
     setRecursiveQuery(null);
     setRecursiveLoading(false);
-  }, []);
+  }, [recursiveSearchSeq]);
 
   // Drop recursive results when the user changes path or clears the query —
   // the results are tied to "what was the user searching for at the
   // moment of escalation," and stale results would mislead the next view.
   useEffect(() => {
-    recursiveSearchSeq.current++; // a path change must drop any in-flight result too
+    recursiveSearchSeq.next(); // a path change must drop any in-flight result too
     setRecursiveResults(null);
     setRecursiveQuery(null);
     setRecursiveLoading(false);
-  }, [currentPath]);
+  }, [currentPath, recursiveSearchSeq]);
 
   useEffect(() => {
     if (searchQuery.trim() === "") {
-      recursiveSearchSeq.current++; // clearing the query invalidates an in-flight search
+      recursiveSearchSeq.next(); // clearing the query invalidates an in-flight search
       setRecursiveResults(null);
       setRecursiveQuery(null);
       setRecursiveLoading(false);
     }
-  }, [searchQuery]);
+  }, [searchQuery, recursiveSearchSeq]);
 
   // Navigation
   const navigate = useCallback(

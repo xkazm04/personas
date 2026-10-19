@@ -340,3 +340,45 @@ describe("useDrive history navigation", () => {
     expect(result.current.history.length).toBe(histLen);
   });
 });
+
+describe("useDrive folder listing is latest-wins", () => {
+  it("a slow listing of the folder you left never paints over the one you are in", async () => {
+    const { mockedTauriInvoke } = await import("@/test/tauriMock");
+    let releaseSlow: (v: DriveEntry[]) => void = () => {};
+    mockedTauriInvoke.mockImplementation(async (cmd: string, args?: unknown) => {
+      const relPath = (args as { relPath?: string } | undefined)?.relPath;
+      if (cmd === "drive_list") {
+        if (relPath === "slow") {
+          return new Promise<DriveEntry[]>((resolve) => {
+            releaseSlow = resolve;
+          });
+        }
+        if (relPath === "fast") return [fileEntry("fast/b.txt", { name: "b.txt" })];
+        return [];
+      }
+      if (cmd === "drive_list_tree")
+        return { name: "", path: "", children: [], hasMoreChildren: false };
+      if (cmd === "drive_storage_info")
+        return { root: "/managed", usedBytes: 0, entryCount: 0, isDev: false };
+      if (cmd === "drive_recent") return [];
+      return undefined;
+    });
+
+    const { result } = renderHook(() => useDrive());
+    act(() => result.current.navigate("slow"));
+    act(() => result.current.navigate("fast"));
+    await waitFor(() =>
+      expect(result.current.entries.map((e) => e.name)).toEqual(["b.txt"]),
+    );
+
+    // The abandoned folder's listing lands last.
+    await act(async () => {
+      releaseSlow([fileEntry("slow/a.txt", { name: "a.txt" })]);
+      await Promise.resolve();
+    });
+
+    expect(result.current.currentPath).toBe("fast");
+    expect(result.current.entries.map((e) => e.name)).toEqual(["b.txt"]);
+    expect(result.current.loading).toBe(false);
+  });
+});
