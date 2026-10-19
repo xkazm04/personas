@@ -80,8 +80,22 @@ export type ListenerDelivery = 'targeted' | 'not-targeted' | 'unknown' | 'disabl
 export function deliveryForListener(
   row: ListenerRow,
   targetPersonaId: string | null | undefined,
+  sourceId?: string | null,
 ): ListenerDelivery {
   if (!row.enabled) return 'disabled';
-  if (!targetPersonaId) return 'unknown';
-  return row.personaId === targetPersonaId ? 'targeted' : 'not-targeted';
+  if (targetPersonaId) {
+    return row.personaId === targetPersonaId ? 'targeted' : 'not-targeted';
+  }
+  // A filtered listener only matches a fire whose source passes the filter
+  // (bus.rs match_event; source_filter_matches is false for a missing source).
+  // A test fire carries no source_id, so such a listener is certainly NOT
+  // reached - saying "delivery not reported" there hid the reason nothing ran.
+  if (row.sourceFilter && !sourceFilterMatches(row.sourceFilter, sourceId)) return 'not-targeted';
+  return 'unknown';
+}
+
+/** Mirror of engine/src/bus.rs `source_filter_matches`: exact, or a trailing-`*` prefix. */
+export function sourceFilterMatches(filter: string, sourceId: string | null | undefined): boolean {
+  if (!sourceId) return false;
+  return filter.endsWith('*') ? sourceId.startsWith(filter.slice(0, -1)) : sourceId === filter;
 }

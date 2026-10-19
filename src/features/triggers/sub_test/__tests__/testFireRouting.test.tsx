@@ -97,6 +97,15 @@ describe('deliveryForListener', () => {
     expect(deliveryForListener(row(), null)).toBe('unknown');
   });
 
+  it('reports a source-filtered listener as not reached by a sourceless broadcast', () => {
+    // A test fire publishes with source_id None; bus.rs source_filter_matches
+    // returns false for a missing source, even for the '*' wildcard.
+    expect(deliveryForListener(row({ sourceFilter: '*' }), null, null)).toBe('not-targeted');
+    expect(deliveryForListener(row({ sourceFilter: 'crm' }), null, null)).toBe('not-targeted');
+    expect(deliveryForListener(row({ sourceFilter: 'crm*' }), null, 'crm-sync')).toBe('unknown');
+    expect(deliveryForListener(row({ sourceFilter: 'crm' }), null, 'other')).toBe('not-targeted');
+  });
+
   it('reports a disabled subscription before anything else', () => {
     expect(deliveryForListener(row({ enabled: false }), 'p1')).toBe('disabled');
   });
@@ -127,6 +136,12 @@ describe('TestFireListeners', () => {
   it('marks the outcome per row once fired', () => {
     render(<TestFireListeners listeners={rows} personaName={name} targetPersonaId="p1" fired />);
     expect(screen.getByTestId('test-fire-listener-p1').getAttribute('data-delivery')).toBe('targeted');
+    expect(screen.getByTestId('test-fire-listener-p2').getAttribute('data-delivery')).toBe('not-targeted');
+  });
+
+  it('marks a source-filtered listener not reached after a sourceless broadcast', () => {
+    render(<TestFireListeners listeners={rows} personaName={name} targetPersonaId={null} sourceId={null} fired />);
+    expect(screen.getByTestId('test-fire-listener-p1').getAttribute('data-delivery')).toBe('unknown');
     expect(screen.getByTestId('test-fire-listener-p2').getAttribute('data-delivery')).toBe('not-targeted');
   });
 

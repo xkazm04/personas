@@ -328,6 +328,7 @@ export function TestTab() {
           listeners={listeners}
           personaName={(id) => getPersona(id)?.name ?? id}
           targetPersonaId={testResult?.target_persona_id ?? null}
+          sourceId={testResult?.source_id ?? null}
           fired={!!testResult && testResult.event_type === activeEventType}
         />
 
