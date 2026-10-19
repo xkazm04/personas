@@ -94,11 +94,16 @@ const OUTCOME_FILTER: &str =
     "(status IN ('engaged', 'dismissed') OR (status = 'expired' AND delivered_at IS NOT NULL))";
 
 /// 30-day engaged / dismissed / ignored for one kind.
+///
+/// Both 30-day reads here normalize `created_at` with `datetime(..)` for the
+/// reason `super::sweep_lifecycle` documents: the column is RFC3339 (`T`
+/// separator) and `datetime('now', ..)` is space-separated, so a raw text
+/// compare admits every row from the cutoff's calendar day regardless of time.
 fn engagement_30d(conn: &rusqlite::Connection, kind: &str) -> (i64, i64, i64) {
     let sql = format!(
         "SELECT {OUTCOME_COLUMNS}
          FROM companion_proactive_message
-         WHERE trigger_kind = ?1 AND created_at >= datetime('now', '-30 days')
+         WHERE trigger_kind = ?1 AND datetime(created_at) >= datetime('now', '-30 days')
            AND {OUTCOME_FILTER}"
     );
     conn.query_row(&sql, params![kind], |r| {
@@ -153,7 +158,7 @@ pub fn modulations_summary(pool: &UserDbPool) -> Vec<KindModulation> {
     let Ok(mut stmt) = conn.prepare(&format!(
         "SELECT trigger_kind, {OUTCOME_COLUMNS}
          FROM companion_proactive_message
-         WHERE created_at >= datetime('now', '-30 days') AND {OUTCOME_FILTER}
+         WHERE datetime(created_at) >= datetime('now', '-30 days') AND {OUTCOME_FILTER}
          GROUP BY trigger_kind"
     )) else {
         return Vec::new();
