@@ -19,7 +19,7 @@ const PREFIX = "store:";
  * Creates:
  *   - mark  `store:<name>:start`   (cleared once the measure exists)
  *   - mark  `store:<name>:end`     (cleared once the measure exists)
- *   - measure `store:<name>` (start → end)
+ *   - measure `store:<name>` (start → end; replaces the previous call's)
  *
  * If `fn` throws, the end-mark and measure are still recorded (with the
  * measure detail containing `{ error: true }`), then the error is re-thrown.
@@ -55,6 +55,12 @@ export async function measureStoreAction<T>(
   } finally {
     try {
       performance.mark(endMark);
+      // One measure per action name, not one per call: clearing the marks
+      // (below) bounded two of the three entries a call left behind, and the
+      // measure itself still accumulated for the life of the session. Nothing
+      // reads these back except a DevTools recording, which captures each
+      // entry as it is made, so dropping the previous one costs nothing.
+      performance.clearMeasures(label);
       performance.measure(label, {
         start: startMark,
         end: endMark,

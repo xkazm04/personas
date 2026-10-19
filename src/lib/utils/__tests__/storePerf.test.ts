@@ -36,6 +36,18 @@ describe('measureStoreAction', () => {
     expect(performance.getEntriesByType('mark')).toHaveLength(0);
   });
 
+  // The marks were bounded; the MEASURES were not. One `store:<name>` measure
+  // per call stayed in the timeline for the life of the session (four call
+  // sites, two of them on polling paths) and nothing reads them back except a
+  // DevTools recording, which captures each entry as it is made. Keeping the
+  // latest per label bounds the buffer at one entry per action name.
+  it('keeps one measure per action name, however many times it runs', async () => {
+    for (let i = 0; i < 25; i += 1) {
+      await measureStoreAction('poll', async () => i);
+    }
+    expect(performance.getEntriesByName('store:poll', 'measure')).toHaveLength(1);
+  });
+
   it('re-throws the caller error and still records the measure', async () => {
     await expect(
       measureStoreAction('boom', async () => {
