@@ -728,6 +728,9 @@ export function UnifiedTable<T>({
           endReachedThreshold={endReachedThreshold}
           rowReveal={resolvedReveal}
           revealSurfaceKey={revealSurfaceKey}
+          keyboardNav={keyboardNav}
+          activeKey={activeKey}
+          rowAttrs={rowAttrs}
         />
       ) : sortedData.length > 0 && (useVirtual ? (
         <div
@@ -827,6 +830,9 @@ function GroupedTableBody<T>({
   endReachedThreshold,
   rowReveal,
   revealSurfaceKey,
+  keyboardNav = true,
+  activeKey,
+  rowAttrs,
 }: {
   sortedData: T[];
   columns: TableColumn<T>[];
@@ -843,6 +849,9 @@ function GroupedTableBody<T>({
   endReachedThreshold?: number;
   rowReveal?: { resetKey?: string | number };
   revealSurfaceKey?: string;
+  keyboardNav?: boolean;
+  activeKey?: string | null;
+  rowAttrs?: (row: T) => { id?: string; testId?: string };
 }) {
   const { delayFor, markEntered } = useRowRevealDelay(rowReveal, revealSurfaceKey);
   const handleRowClick = useStableRowClick(onRowClick);
@@ -861,7 +870,8 @@ function GroupedTableBody<T>({
 
   // Keyboard row navigation, indexed by the item's position in sortedData.
   // scrollToIndex needs the flattened-row index, so map data → flat.
-  const navigable = !!onRowClick;
+  const clickable = !!onRowClick;
+  const navigable = clickable && keyboardNav;
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const flatByData = useMemo(() => {
     const map: number[] = [];
@@ -924,10 +934,12 @@ function GroupedTableBody<T>({
               gridTemplate={gridTemplate}
               indexSensitive={indexSensitive}
               onRowClick={handleRowClick}
-              clickable={navigable}
+              clickable={clickable}
               accent={rowAccent?.(item, dataIndex)}
               fill={rowFill?.(item, dataIndex)}
-              focused={dataIndex === focusedIndex}
+              focused={dataIndex === focusedIndex || rowKey === activeKey}
+              domId={rowAttrs?.(item).id}
+              testId={rowAttrs?.(item).testId}
               revealDelayMs={delayFor(rowKey, dataIndex)}
               onRevealEnd={markEntered}
               padY=""
