@@ -46,7 +46,7 @@ export interface DefaultCockpitLabels {
   };
 }
 
-/** Success-rate → stat intent. Mirrors the FleetHealthStrip red/amber policy. */
+/** Success-rate → stat intent: green from 80%, amber from 50%, red below. */
 function successIntent(rate: number | null): 'default' | 'good' | 'warn' | 'bad' {
   if (rate === null) return 'default';
   if (rate >= 80) return 'good';

@@ -4,14 +4,12 @@ import { silentCatch } from '@/lib/silentCatch';
 /**
  * Single credential source for the Home Welcome surface.
  *
- * Both the nav "Connections" chip (needs the external/built-in split) and
- * FleetHealthStrip (needs just the count) read credentials from the ONE
- * canonical source — the `vaultStore` — through this hook. It lazy-loads the
- * vault store (keeping it off the eager Home bundle), seeds from whatever is
- * already cached, triggers a fetch only when the cache is empty, and stays
- * subscribed so the count updates live. Previously FleetHealthStrip issued its
- * own `list_credentials` IPC on a 30s poll while the nav hook read the store —
- * two sources for the same data; this collapses them to one.
+ * Its one caller is the nav "Connections" chip (`useNavCardStatus`, which needs the
+ * external/built-in split). It reads the ONE canonical source - the `vaultStore` - lazy-loading
+ * it (keeping it off the eager Home bundle), seeds from whatever is already cached, triggers a
+ * fetch only when the cache is empty, and stays subscribed so the count updates live. The retired
+ * FleetHealthStrip once ran its own `list_credentials` poll beside it; this hook is what replaced
+ * that second source.
  */
 export interface CredentialLite {
   service_type: string;

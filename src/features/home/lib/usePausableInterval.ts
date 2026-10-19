@@ -8,9 +8,9 @@ import { useEffect, useRef } from 'react';
  *
  * Why this exists: Home surfaces stay mounted under the keep-alive HomePage, so
  * a naive `setInterval` would keep polling the backend for a tab the user isn't
- * looking at (and while the window is in the background). FleetHealthStrip's 30s
- * metrics poll and the live-roadmap hourly poll both use this to go quiet when
- * off-screen.
+ * looking at (and while the window is in the background). The live-roadmap hourly poll
+ * (`sub_releases/useLiveRoadmap.ts`, its one caller since FleetHealthStrip was retired) uses this
+ * to go quiet when off-screen.
  *
  * Refresh-on-return: the callback fires immediately when the surface RE-activates
  * (returning to the tab) or becomes visible again — so stale data is refreshed
