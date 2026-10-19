@@ -210,17 +210,24 @@ export function useAdoptionDimensionModel(props: PersonaLayoutAdoptionModelProps
     return !dimOnForCap(ucId, dim);
   }, [dimOnForCap]);
 
+  // A petal switched off for a capability drops the questions SHOWN on that
+  // petal. The petal is `questionToDimension` (vault_category, then category);
+  // the authored `dimension` field names a different petal for 107 of 236
+  // template questions, so matching on it hid the wrong questions and left the
+  // disabled petal's own questions gating Continue.
+  const isQuestionDimDisabled = useCallback((q: TransformQuestionResponse) => {
+    const ucId = (q as { use_case_id?: string }).use_case_id;
+    if (!ucId) return false;
+    return disabledDimsByCap[ucId]?.has(questionToDimension(q)) ?? false;
+  }, [disabledDimsByCap]);
+
   const filteredQuestions = useMemo(() => questions.filter((q) => {
     const ucId = (q as { use_case_id?: string }).use_case_id;
-    const dim = (q as { dimension?: string }).dimension;
     if (ucId && activeCapabilityId && items.length > 1 && ucId !== activeCapabilityId) return false;
-    if (ucId && dim) {
-      const dis = disabledDimsByCap[ucId];
-      if (dis && dis.has(dim as GlyphDimension)) return false;
-    }
+    if (isQuestionDimDisabled(q)) return false;
     if (isQuestionDimOff(q)) return false;
     return true;
-  }), [questions, activeCapabilityId, items.length, disabledDimsByCap, isQuestionDimOff]);
+  }), [questions, activeCapabilityId, items.length, isQuestionDimDisabled, isQuestionDimOff]);
 
   const questionsByDim = useMemo(() => groupQuestionsByDimension(filteredQuestions), [filteredQuestions]);
 
@@ -289,15 +296,11 @@ export function useAdoptionDimensionModel(props: PersonaLayoutAdoptionModelProps
 
   const matchesCap = useCallback((q: TransformQuestionResponse, capId: string) => {
     const ucId = (q as { use_case_id?: string }).use_case_id;
-    const dim = (q as { dimension?: string }).dimension;
     if (ucId && items.length > 1 && ucId !== capId) return false;
-    if (ucId && dim) {
-      const dis = disabledDimsByCap[ucId];
-      if (dis && dis.has(dim as GlyphDimension)) return false;
-    }
+    if (isQuestionDimDisabled(q)) return false;
     if (isQuestionDimOff(q)) return false;
     return true;
-  }, [items.length, disabledDimsByCap, isQuestionDimOff]);
+  }, [items.length, isQuestionDimDisabled, isQuestionDimOff]);
 
   const perCapability = useMemo(() => items.map((uc) => {
     const capQs = questions.filter((q) => matchesCap(q, uc.id));
@@ -312,15 +315,10 @@ export function useAdoptionDimensionModel(props: PersonaLayoutAdoptionModelProps
 
   const gatedQuestions = useMemo(() => questions.filter((q) => {
     if ((q as { optional?: boolean }).optional) return false;
-    const ucId = (q as { use_case_id?: string }).use_case_id;
-    const dim = (q as { dimension?: string }).dimension;
-    if (ucId && dim) {
-      const dis = disabledDimsByCap[ucId];
-      if (dis && dis.has(dim as GlyphDimension)) return false;
-    }
+    if (isQuestionDimDisabled(q)) return false;
     if (isQuestionDimOff(q)) return false;
     return true;
-  }), [questions, disabledDimsByCap, isQuestionDimOff]);
+  }), [questions, isQuestionDimDisabled, isQuestionDimOff]);
   const globalRemaining = useMemo(() => gatedQuestions.filter((q) => !userAnswers[q.id]).length, [gatedQuestions, userAnswers]);
   const globalBlocked = useMemo(() => gatedQuestions.filter((q) => blockedQuestionIds.has(q.id) && !userAnswers[q.id]).length, [gatedQuestions, blockedQuestionIds, userAnswers]);
   const canContinue = globalRemaining === 0 && globalBlocked === 0 && (items.length === 0 || selectedUseCaseIds.size > 0);
