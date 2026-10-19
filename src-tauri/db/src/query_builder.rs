@@ -580,7 +580,7 @@ mod tests {
             );
             let mut stmt = conn.prepare(&sql).expect("prepare");
             let rows = stmt
-                .query_map(qb.params_ref().as_slice(), |r| r.get(0))
+                .query_map(qb.params_ref().as_slice(), |r| r.get("n"))
                 .expect("query");
             rows.map(|r| r.expect("row")).collect()
         };
