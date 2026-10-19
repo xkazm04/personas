@@ -1,6 +1,5 @@
 // Design hooks - core
 export * from "./design/core/useDesignAnalysis";
-export * from "./design/core/usePersonaCompiler";
 export * from "./design/core/useAiSearch";
 export * from "./design/core/useTauriStream";
 export * from "./design/core/useAiArtifactTask";
@@ -53,7 +52,6 @@ export * from "./lab/useLabEvents";
 export * from "./useStepProgress";
 
 // Utility hooks - timing
-export * from "./utility/timing/useAnimatedNumber";
 export * from "./utility/timing/useElapsedTimer";
 export * from "./utility/timing/useDebouncedSave";
 export * from "./utility/timing/usePolling";
