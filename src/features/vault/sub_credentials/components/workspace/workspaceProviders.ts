@@ -35,7 +35,7 @@ export const GOOGLE_WORKSPACE: WorkspaceProvider = {
   color: '#4285F4',
   services: [
     {
-      serviceType: 'google_gmail',
+      serviceType: 'gmail',
       label: 'Gmail',
       description: 'Send, read, and manage email',
       scopes: [
