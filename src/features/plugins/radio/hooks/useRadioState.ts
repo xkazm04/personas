@@ -5,6 +5,7 @@ import type { NowPlaying } from '@/lib/bindings/NowPlaying';
 import type { RadioState } from '@/lib/bindings/RadioState';
 import type { Station } from '@/lib/bindings/Station';
 import { silentCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { getNowPlaying, getRadioState, listStations } from '@/api/radio';
 
 interface RadioSnapshot {
@@ -41,17 +42,30 @@ export function useRadioState(): RadioSnapshot {
   useEffect(() => {
     let unlisten: (() => void) | null = null;
     let cancelled = false;
+    // Track changes can arrive in bursts (a run of blacklisted tracks skipped
+    // back to back), and IPC replies are not ordered: only the newest
+    // now-playing read may land, or an older track overwrites the current one.
+    const nowPlayingReads = createLatestWins();
+    // What the last snapshot held, kept here so the refresh decision is made
+    // outside the state updater (updaters must stay pure: StrictMode runs
+    // them twice).
+    let lastState: RadioState | null = null;
+    let haveNowPlaying = false;
 
     const refreshNowPlaying = async () => {
+      const token = nowPlayingReads.next();
       try {
         const np = await getNowPlaying();
-        if (!cancelled) setSnap((s) => ({ ...s, nowPlaying: np }));
+        if (cancelled || !nowPlayingReads.isCurrent(token)) return;
+        haveNowPlaying = np !== null;
+        setSnap((s) => ({ ...s, nowPlaying: np }));
       } catch (e) {
         silentCatch('radio:refresh-now-playing')(e);
       }
     };
 
     (async () => {
+      const token = nowPlayingReads.next();
       try {
         const [state, np, stations] = await Promise.all([
           getRadioState(),
@@ -59,22 +73,30 @@ export function useRadioState(): RadioSnapshot {
           listStations(),
         ]);
         if (cancelled) return;
-        setSnap({ state, nowPlaying: np, stations, loaded: true });
+        lastState = state;
+        const current = nowPlayingReads.isCurrent(token);
+        if (current) haveNowPlaying = np !== null;
+        setSnap((s) => ({ state, nowPlaying: current ? np : s.nowPlaying, stations, loaded: true }));
       } catch (e) {
         silentCatch('radio:initial-load')(e);
         if (!cancelled) setSnap((s) => ({ ...s, loaded: true }));
       }
+      if (cancelled) return;
 
       const fn = await listen<RadioState>('radio:state', (event) => {
         if (cancelled) return;
-        setSnap((prev) => {
-          const next = { ...prev, state: event.payload };
-          if (trackKey(prev.state) !== trackKey(event.payload) || !prev.nowPlaying) {
-            refreshNowPlaying();
-          }
-          return next;
-        });
+        const next = event.payload;
+        const refresh = trackKey(lastState) !== trackKey(next) || !haveNowPlaying;
+        lastState = next;
+        setSnap((prev) => ({ ...prev, state: next }));
+        if (refresh) void refreshNowPlaying();
       });
+      // Unmounted while the listener was attaching: release it now, or it
+      // outlives the component (every StrictMode mount, every fast remount).
+      if (cancelled) {
+        fn();
+        return;
+      }
       unlisten = fn;
     })();
 
