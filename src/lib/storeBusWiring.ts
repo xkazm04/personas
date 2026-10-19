@@ -96,6 +96,13 @@ export function initStoreBus(): void {
     void useAgentStore.getState().fetchDetail(personaId);
   });
 
+  // Only the selected persona: fetchDetail also SELECTS its id, and a write
+  // for another persona must not steal the selection.
+  storeBus.on('automation:changed', ({ personaId }) => {
+    const agents = useAgentStore.getState();
+    if (agents.selectedPersonaId === personaId) void agents.fetchDetail(personaId);
+  });
+
   // Set persona home team — agentStore applies the operation
   storeBus.on('persona:set-home-team', ({ personaId, homeTeamId }) => {
     void useAgentStore.getState().applyPersonaOp(personaId, { kind: 'SetHomeTeam', home_team_id: homeTeamId });

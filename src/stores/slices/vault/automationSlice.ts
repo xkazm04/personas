@@ -6,6 +6,22 @@ import type { AutomationRun } from "@/lib/bindings/AutomationRun";
 import type { UpdateAutomationInput } from "@/lib/bindings/UpdateAutomationInput";
 import type { DeployAutomationInput, DeployAutomationResult } from "@/api/agents/automations";
 import * as api from "@/api/agents/automations";
+import { storeBus, AccessorKey } from "@/lib/storeBus";
+
+/**
+ * Who renders automations: the persona editor's Automations section reads
+ * `selectedPersona.automations` from the AGENT store (persona detail), while
+ * every write goes through this slice. This slice's `automations` list is
+ * only filled by `fetchAutomations` after a deploy, so on a fresh session it
+ * is empty. Two consequences this file guards against:
+ *   - a write must tell the agent store to refresh (`automation:changed`), or
+ *     the section keeps showing the pre-write row;
+ *   - an action must not require the row to be in THIS list, or it silently
+ *     does nothing (delete used to return early on a miss).
+ */
+function announceChange(personaId: string | null | undefined): void {
+  if (personaId) storeBus.emit("automation:changed", { personaId });
+}
 
 export interface AutomationSlice {
   // State
@@ -45,6 +61,7 @@ export const createAutomationSlice: StateCreator<VaultStore, [], [], AutomationS
       set((state) => ({
         automations: state.automations.map((a) => (a.id === id ? updated : a)),
       }));
+      announceChange(updated.personaId);
     } catch (err) {
       reportError(err, "Failed to update automation", set);
     }
@@ -52,24 +69,31 @@ export const createAutomationSlice: StateCreator<VaultStore, [], [], AutomationS
 
   deleteAutomation: async (id) => {
     const itemToDelete = get().automations.find((a) => a.id === id);
-    if (!itemToDelete) return;
+    // The owner, for the refresh: the local row when this list has it, else
+    // the selected persona (the only persona whose automations the UI lists).
+    const personaId = itemToDelete?.personaId
+      ?? storeBus.tryGet<string | undefined>(AccessorKey.AGENTS_SELECTED_PERSONA_ID);
 
-    set((state) => ({ automations: state.automations.filter((a) => a.id !== id) }));
+    if (itemToDelete) {
+      set((state) => ({ automations: state.automations.filter((a) => a.id !== id) }));
+    }
     try {
       await api.deleteAutomation(id);
+      announceChange(personaId);
     } catch (err) {
-      // Re-fetch from backend instead of appending stale item to avoid
-      // duplicates if a concurrent fetch already restored the list.
-      const personaId = itemToDelete.personaId;
-      if (personaId) {
-        await get().fetchAutomations(personaId);
-      } else {
-        // No personaId to scope a re-fetch by — reconcile state directly by
-        // restoring the optimistically-removed item so the UI doesn't
-        // silently diverge from the (still-existing) backend row.
-        set((state) => (state.automations.some((a) => a.id === id)
-          ? state
-          : { automations: [...state.automations, itemToDelete] }));
+      if (itemToDelete) {
+        // Re-fetch from backend instead of appending stale item to avoid
+        // duplicates if a concurrent fetch already restored the list.
+        if (itemToDelete.personaId) {
+          await get().fetchAutomations(itemToDelete.personaId);
+        } else {
+          // No personaId to scope a re-fetch by — reconcile state directly by
+          // restoring the optimistically-removed item so the UI doesn't
+          // silently diverge from the (still-existing) backend row.
+          set((state) => (state.automations.some((a) => a.id === id)
+            ? state
+            : { automations: [...state.automations, itemToDelete] }));
+        }
       }
       reportError(err, "Failed to delete automation", set);
     }
@@ -89,6 +113,7 @@ export const createAutomationSlice: StateCreator<VaultStore, [], [], AutomationS
     try {
       const result = await api.deployAutomation(input);
       set((state) => ({ automations: [...state.automations, result.automation] }));
+      announceChange(result.automation.personaId);
       return result;
     } catch (err) {
       reportError(err, "Failed to deploy automation", set);
