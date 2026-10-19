@@ -1,7 +1,12 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { CompanionTemplateMatch } from '@/api/companion';
 import {
   intentKeywords,
+  MAX_KEYWORDS,
+  MIN_KEYWORD_LEN,
+  STOP_WORDS,
   matchOverlap,
   isStrongMatch,
   strongMatches,
@@ -28,6 +33,49 @@ describe('intentKeywords', () => {
 
   it('returns empty for stop-words-only / too-short input', () => {
     expect(intentKeywords('the and to a')).toEqual([]);
+  });
+});
+
+// The matcher (`extract_keywords` in templates.rs) splits on any non-letter in
+// any script and measures bytes. The gate must agree with it, or it judges a
+// different keyword set than the one that found the match.
+describe('intentKeywords outside ASCII', () => {
+  it('keeps accented words whole instead of cutting them into fragments', () => {
+    expect(intentKeywords('Přehled úkolů z Gmailu')).toEqual(['přehled', 'úkolů', 'gmailu']);
+  });
+
+  it('keeps CJK words, which are three or more UTF-8 bytes each', () => {
+    expect(intentKeywords('发送 邮件 摘要')).toEqual(['发送', '邮件', '摘要']);
+  });
+
+  it('lets a match the backend found for a Chinese intent through the gate', () => {
+    const m = mk({ name: '邮件 摘要', snippet: '每天发送邮件摘要', category: null, connectors: [] });
+    expect(isStrongMatch('发送 邮件 摘要', m)).toBe(true);
+  });
+
+  it('judges only the first 8 keywords, as the matcher searched only those', () => {
+    const intent = 'alpha bravo charlie delta echo foxtrot golf hotel india';
+    expect(intentKeywords(intent)).toHaveLength(8);
+    expect(intentKeywords(intent)).not.toContain('india');
+  });
+});
+
+describe('keyword rules mirror templates.rs', () => {
+  const rs = readFileSync(
+    resolve(__dirname, '../../../../../../src-tauri/src/commands/companion/templates.rs'),
+    'utf8',
+  ).replace(/\/\/.*$/gm, '');
+
+  it('has the same STOP_WORDS, MIN_KEYWORD_LEN and cap', () => {
+    const list = /const STOP_WORDS: &\[&str\] = &\[([\s\S]*?)\];/.exec(rs)?.[1] ?? '';
+    const words = Array.from(list.matchAll(/"([^"]+)"/g), (m) => m[1]);
+    expect(words.length).toBeGreaterThan(0);
+    expect(new Set(words)).toEqual(STOP_WORDS);
+    expect(Number(/const MIN_KEYWORD_LEN: usize = (\d+);/.exec(rs)?.[1])).toBe(MIN_KEYWORD_LEN);
+    const body = /fn extract_keywords[\s\S]*?\n\}/.exec(rs)?.[0] ?? '';
+    expect(Number(/\.take\((\d+)\)/.exec(body)?.[1])).toBe(MAX_KEYWORDS);
+    expect(body).toMatch(/!c\.is_alphanumeric\(\)/);
+    expect(body).toMatch(/w\.len\(\) >= MIN_KEYWORD_LEN/);
   });
 });
 
