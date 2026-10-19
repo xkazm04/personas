@@ -73,4 +73,20 @@ describe('useSystemTraces', () => {
 
     expect(view.result.current.traces).toBe(before);
   });
+
+  it('a panel opened AFTER traces were recorded shows them', () => {
+    // The design flows that start sessions live on other pages, so the usual
+    // order is: work happens with no panel mounted, then the panel opens.
+    const session = SystemTraceSession.start('design_conversation', 'Recorded while closed');
+    session.complete();
+    SystemTraceSession.start('template_adoption', 'Still running');
+
+    const view = renderHook(() => useSystemTraces());
+
+    expect(view.result.current.traces.map((t) => t.label)).toEqual([
+      'Still running',
+      'Recorded while closed',
+    ]);
+    expect(view.result.current.activeCount).toBe(1);
+  });
 });

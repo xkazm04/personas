@@ -283,9 +283,11 @@ function notifySystemTraceChange(): void {
 }
 
 /**
- * Close sessions that have gone quiet past the TTL. Deliberately silent: it
- * runs from reads as well as writes, and notifying from a read would re-enter
- * the subscribers that are mid-read.
+ * Close sessions that have gone quiet past the TTL. It runs from reads as well
+ * as writes, and it is NOT silent: each `abandon()` notifies, so a read that
+ * sweeps re-enters every subscriber. That is safe only because a swept session
+ * leaves `_activeSessions` before it notifies, so the nested read finds nothing
+ * left to sweep; a subscriber must tolerate being called from inside a read.
  */
 function sweepAbandonedSessions(now: number = Date.now()): void {
   for (const session of [..._activeSessions.values()]) {

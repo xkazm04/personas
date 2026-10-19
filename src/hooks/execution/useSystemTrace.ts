@@ -35,16 +35,26 @@ function sameTraces(a: SystemTrace[], b: SystemTrace[]): boolean {
   });
 }
 
+/**
+ * Keep `_snapshot` current for the life of the module, mounted or not.
+ *
+ * The snapshot used to be refreshed only inside a mounted subscriber's
+ * listener, so every trace recorded while no panel was open (the design and
+ * template flows that start sessions live on other pages) left it stale, and
+ * the Observability panel then mounted onto that stale array and showed it
+ * until some later trace event happened to notify. Registered once, first, so
+ * it runs before any React subscriber reads the snapshot.
+ */
+function refreshSnapshot(): void {
+  const next = getAllSystemTraces();
+  // Hold the old array when nothing changed; React then compares the two
+  // getSnapshot results and skips the re-render itself.
+  _snapshot = sameTraces(_snapshot, next) ? _snapshot : next;
+}
+onSystemTraceChange(refreshSnapshot);
+
 function subscribe(callback: () => void): () => void {
-  return onSystemTraceChange(() => {
-    const next = getAllSystemTraces();
-    // Hold the old array when nothing changed; React then compares the two
-    // getSnapshot results and skips the re-render itself. The callback is
-    // ALWAYS invoked -- skipping it here would starve every subscriber but the
-    // first, since the first one's recompute already settled `_snapshot`.
-    _snapshot = sameTraces(_snapshot, next) ? _snapshot : next;
-    callback();
-  });
+  return onSystemTraceChange(callback);
 }
 
 function getSnapshot(): SystemTrace[] {
