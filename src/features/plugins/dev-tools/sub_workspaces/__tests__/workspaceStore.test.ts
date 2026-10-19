@@ -12,6 +12,7 @@ const api = vi.hoisted(() => ({
   installSystemSkill: vi.fn(async () => undefined),
   mirrorActiveWorkspace: vi.fn(async () => undefined),
   deleteWorkspace: vi.fn(async () => true),
+  updateWorkspace: vi.fn(async () => undefined),
 }));
 
 vi.mock('@/api/devTools/workspaces', () => ({
@@ -19,7 +20,7 @@ vi.mock('@/api/devTools/workspaces', () => ({
   assignProjectToWorkspace: api.assignProjectToWorkspace,
   createWorkspace: vi.fn(),
   deleteWorkspace: api.deleteWorkspace,
-  updateWorkspace: vi.fn(),
+  updateWorkspace: api.updateWorkspace,
   importLocalWorkspaces: vi.fn(),
   mirrorActiveWorkspace: api.mirrorActiveWorkspace,
 }));
@@ -193,5 +194,26 @@ describe('concurrent mutations and settlement re-reads', () => {
     await pending;
 
     expect(store.workspacesSnapshot().workspaces.find((w) => w.id === 'w2')!.projectIds).toEqual(['p1']);
+  });
+});
+
+describe('renameWorkspace', () => {
+  it('an unchanged name writes nothing and re-reads nothing', async () => {
+    serverRows('w1');
+    const store = await freshStore();
+    const reads = api.listProjects.mock.calls.length;
+
+    store.renameWorkspace('w1', '  Northwind ');
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(api.updateWorkspace).not.toHaveBeenCalled();
+    expect(api.listProjects.mock.calls.length).toBe(reads);
+  });
+
+  it('a changed name still writes', async () => {
+    serverRows('w1');
+    const store = await freshStore();
+    store.renameWorkspace('w1', 'Northwind Labs');
+    expect(api.updateWorkspace).toHaveBeenCalledWith('w1', { name: 'Northwind Labs' });
   });
 });

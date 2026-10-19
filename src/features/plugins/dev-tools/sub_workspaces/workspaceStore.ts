@@ -245,6 +245,9 @@ async function installPresetSkills(projectId: string): Promise<void> {
 export function renameWorkspace(id: string, name: string): void {
   const trimmed = name.trim();
   if (!trimmed) return;
+  // The Atlas header calls this on every blur of its name field: an unchanged
+  // name cost a write plus a two-list re-read for nothing.
+  if (snapshot.workspaces.find((w) => w.id === id)?.name === trimmed) return;
   beginMutation();
   paint({
     ...snapshot,
