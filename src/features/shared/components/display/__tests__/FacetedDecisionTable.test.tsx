@@ -50,3 +50,25 @@ describe('FacetedDecisionTable rail semantics', () => {
     expect(screen.getByRole('button', { name: /All/ }).getAttribute('aria-current')).toBeNull();
   });
 });
+
+describe('FacetedDecisionTable selection when the data changes', () => {
+  it('falls back to the root when the chosen group no longer exists, and restores it when it returns', () => {
+    const props = {
+      getRowKey: (r: Item) => r.id,
+      getGroupPath: (r: Item) => r.path,
+      columns,
+      labels,
+    };
+    const { rerender } = render(<FacetedDecisionTable<Item> items={items} {...props} />);
+    fireEvent.click(screen.getByRole('button', { name: /^api/ }));
+    expect(screen.getByText('1 items')).toBeTruthy();
+
+    // The only 'api' item is gone after a refetch.
+    rerender(<FacetedDecisionTable<Item> items={items.filter((i) => i.path !== 'api')} {...props} />);
+    expect(screen.getByText('2 items')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /All/ }).getAttribute('aria-current')).toBe('true');
+
+    rerender(<FacetedDecisionTable<Item> items={items} {...props} />);
+    expect(screen.getByText('1 items')).toBeTruthy();
+  });
+});

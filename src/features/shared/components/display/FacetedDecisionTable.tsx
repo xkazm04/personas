@@ -133,11 +133,16 @@ export function FacetedDecisionTable<T>({
   bulkActions,
   onClearSelection,
 }: FacetedDecisionTableProps<T>) {
-  const [selected, setSelected] = useState('');
+  const [chosen, setSelected] = useState('');
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set(['']));
   const [query, setQuery] = useState('');
 
   const tree = useMemo(() => buildGroupTree(items, getGroupPath), [items, getGroupPath]);
+  // A chosen group the data no longer contains (a refetch emptied it, a
+  // sibling decision moved its last item) reads as the root, not as an
+  // empty table under a summary naming a group the rail no longer shows.
+  // Derived, not reset: if the group comes back, so does the choice.
+  const selected = chosen && !hasGroup(tree, chosen) ? '' : chosen;
 
   const rows = useMemo(() => {
     const branch = itemsUnderGroup(items, getGroupPath, selected);
@@ -237,6 +242,11 @@ export function FacetedDecisionTable<T>({
       </div>
     </div>
   );
+}
+
+function hasGroup(node: GroupNode, path: string): boolean {
+  if (node.path === path) return true;
+  return node.children.some((child) => (path === child.path || path.startsWith(`${child.path}/`)) && hasGroup(child, path));
 }
 
 function TreeBranch({
