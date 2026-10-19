@@ -700,13 +700,19 @@ fn touch_recalled(pool: &UserDbPool, facts: &[Fact], procedurals: &[Procedural])
     if PROBE_READ.load(std::sync::atomic::Ordering::Acquire) {
         return;
     }
+    // A lost touch leaves a recalled memory looking unused, which is what decay
+    // retires; recall must not fail on it, but it must not vanish silently.
     if !facts.is_empty() {
         let ids: Vec<String> = facts.iter().map(|f| f.id.clone()).collect();
-        let _ = semantic::touch_last_seen(pool, &ids);
+        if let Err(e) = semantic::touch_last_seen(pool, &ids) {
+            tracing::warn!(count = ids.len(), error = %e, "recall: fact last_seen_at touch failed");
+        }
     }
     if !procedurals.is_empty() {
         let ids: Vec<String> = procedurals.iter().map(|p| p.id.clone()).collect();
-        let _ = procedural::touch_last_used(pool, &ids);
+        if let Err(e) = procedural::touch_last_used(pool, &ids) {
+            tracing::warn!(count = ids.len(), error = %e, "recall: procedural last_used_at touch failed");
+        }
     }
 }
 
