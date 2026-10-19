@@ -6,7 +6,9 @@
  * domain already owns: `useNavCardStatus` fired `list_all_executions(500)` +
  * `list_events_in_range(48h)` + `get_audit_incidents_summary`, and
  * `FleetHealthStrip` separately polled `get_metrics_summary` — duplicating
- * spine work and re-firing on every Welcome mount.
+ * spine work and re-firing on every Welcome mount. (FleetHealthStrip has since
+ * retired, and with it the slice's `fleetMetrics`: it had no reader left while
+ * every prime still paid a `get_metrics_summary(1)` aggregate for it.)
  *
  * This slice centralizes those fetches in the shared store with a per-source
  * TTL + in-flight guard, so:
@@ -23,8 +25,6 @@
  */
 import type { StateCreator } from "zustand";
 import type { OverviewStore } from "../../storeTypes";
-import type { MetricsSummary } from "@/lib/bindings/MetricsSummary";
-import { getMetricsSummary } from "@/api/overview/observability";
 import { listAllExecutions } from "@/api/agents/executions";
 import { listEventsInRange } from "@/api/overview/events";
 import { getAuditIncidentsSummary } from "@/api/overview/incidents";
@@ -38,7 +38,6 @@ import {
 
 // Per-source freshness windows. The landing is a snapshot view, so these are
 // generous — the point is to dedupe repeat mounts, not to poll aggressively.
-const METRICS_TTL_MS = 30_000;
 const RUNS_TTL_MS = 60_000;
 const EVENTS_TTL_MS = 60_000;
 const INCIDENTS_TTL_MS = 30_000;
@@ -50,15 +49,11 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 // Module-level in-flight guards. A second caller while a fetch is pending is a
 // no-op (the pending fetch will populate state for everyone).
-let metricsInFlight = false;
 let runsInFlight = false;
 let eventsInFlight = false;
 let incidentsInFlight = false;
 
 export interface HomeSpineSlice {
-  /** 1-day fleet metrics snapshot (executions today, success/fail counts,
-   *  active personas). Backs FleetHealthStrip. `null` until first fetch. */
-  fleetMetrics: MetricsSummary | null;
   /** Slim projection of the most-recent runs — feeds the nav "active personas"
    *  window AND the "since you left" briefing without a second query. */
   homeRunsSample: RunSample[] | null;
@@ -69,9 +64,8 @@ export interface HomeSpineSlice {
   /** Open audit incidents (nav overview chip). */
   homeOpenIncidents: number | null;
   /** Last-success epoch-ms per source, for TTL gating. */
-  _homeSpineAt: { metrics: number; runs: number; events: number; incidents: number };
+  _homeSpineAt: { runs: number; events: number; incidents: number };
 
-  fetchFleetMetrics: (force?: boolean) => Promise<void>;
   fetchHomeRunsSample: (force?: boolean) => Promise<void>;
   fetchHomeEventWindow: (force?: boolean) => Promise<void>;
   fetchHomeOpenIncidents: (force?: boolean) => Promise<void>;
@@ -80,26 +74,11 @@ export interface HomeSpineSlice {
 }
 
 export const createHomeSpineSlice: StateCreator<OverviewStore, [], [], HomeSpineSlice> = (set, get) => ({
-  fleetMetrics: null,
   homeRunsSample: null,
   homeActivePersonaWindow: null,
   homeEventWindow: null,
   homeOpenIncidents: null,
-  _homeSpineAt: { metrics: 0, runs: 0, events: 0, incidents: 0 },
-
-  fetchFleetMetrics: async (force) => {
-    if (!force && Date.now() - get()._homeSpineAt.metrics < METRICS_TTL_MS) return;
-    if (metricsInFlight) return;
-    metricsInFlight = true;
-    try {
-      const metrics = await getMetricsSummary(1);
-      set((s) => ({ fleetMetrics: metrics, _homeSpineAt: { ...s._homeSpineAt, metrics: Date.now() } }));
-    } catch (err) {
-      silentCatch("homeSpineSlice:fetchFleetMetrics")(err);
-    } finally {
-      metricsInFlight = false;
-    }
-  },
+  _homeSpineAt: { runs: 0, events: 0, incidents: 0 },
 
   fetchHomeRunsSample: async (force) => {
     if (!force && Date.now() - get()._homeSpineAt.runs < RUNS_TTL_MS) return;
@@ -164,7 +143,6 @@ export const createHomeSpineSlice: StateCreator<OverviewStore, [], [], HomeSpine
 
   primeHomeSpine: (force) => {
     const s = get();
-    void s.fetchFleetMetrics(force);
     void s.fetchHomeRunsSample(force);
     void s.fetchHomeEventWindow(force);
     void s.fetchHomeOpenIncidents(force);
