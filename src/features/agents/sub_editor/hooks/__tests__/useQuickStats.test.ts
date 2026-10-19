@@ -85,4 +85,23 @@ describe('useQuickStats', () => {
     // Still only the mount fetch.
     expect(listExecutions).toHaveBeenCalledTimes(1);
   });
+  it('leaves in-flight runs out of the success rate', async () => {
+    // One finished success plus one run still going: the rate is about the
+    // runs that have an outcome, so it reads 100%, not 50%.
+    listExecutions.mockResolvedValue([
+      row({ id: 'e1', status: 'running', started_at: '2026-07-15T00:00:00Z' }),
+      row({ id: 'e2', status: 'completed' }),
+    ]);
+    const { result } = renderHook(() => useQuickStats('p1'));
+    await waitFor(() => expect(result.current.stats).not.toBeNull());
+    expect(result.current.stats?.successRate).toBe(100);
+    expect(result.current.stats?.lastRunStatus).toBe('running');
+  });
+
+  it('reports no success rate while every recent run is still in flight', async () => {
+    listExecutions.mockResolvedValue([row({ status: 'queued' }), row({ id: 'e2', status: 'running' })]);
+    const { result } = renderHook(() => useQuickStats('p1'));
+    await waitFor(() => expect(result.current.stats).not.toBeNull());
+    expect(result.current.stats?.successRate).toBeNull();
+  });
 });

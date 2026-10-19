@@ -2,12 +2,15 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { listExecutions } from '@/api/agents/executions';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { silentCatch } from '@/lib/silentCatch';
+import { isActiveState } from '@/lib/execution/executionState';
 import { storeBus } from '@/lib/storeBus';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import type { HealthGrade } from '@/stores/slices/overview/personaHealthSlice';
 
 export interface QuickStats {
-  successRate: number;           // 0-100
+  /** 0-100 over the recent runs that have an outcome; null while every one is
+   *  still queued or running (there is no rate to show yet). */
+  successRate: number | null;
   avgLatencyMs: number;          // milliseconds
   avgCostPerRun: number;         // USD
   /** True when at least one recent run carried a positive duration — lets the
@@ -90,8 +93,13 @@ export function useQuickStats(personaId: string | undefined) {
   const stats = useMemo((): QuickStats | null => {
     if (executions.length === 0) return null;
 
-    const completed = executions.filter((e) => e.status === 'completed' || e.status === 'success');
-    const successRate = (completed.length / executions.length) * 100;
+    // A run still queued or running has no outcome yet. Counting it in the
+    // denominator scored it as a failure, so a persona read 50% the moment
+    // its next run started after a clean success. `pending` is the legacy
+    // alias of `queued`.
+    const settled = executions.filter((e) => !isActiveState(e.status) && e.status !== 'pending');
+    const completed = settled.filter((e) => e.status === 'completed' || e.status === 'success');
+    const successRate = settled.length > 0 ? Math.round((completed.length / settled.length) * 100) : null;
 
     const withDuration = executions.filter((e) => e.duration_ms != null && e.duration_ms > 0);
     const avgLatencyMs = withDuration.length > 0
@@ -113,7 +121,7 @@ export function useQuickStats(personaId: string | undefined) {
     const latest = sorted[0];
 
     return {
-      successRate: Math.round(successRate),
+      successRate,
       avgLatencyMs: Math.round(avgLatencyMs),
       avgCostPerRun,
       hasLatencyData: withDuration.length > 0,
