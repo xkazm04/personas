@@ -23786,7 +23786,7 @@
       "severity_high": "높은 위험",
       "severity_low": "낮은 위험",
       "severity_medium": "중간 위험",
-      "sim_high": "{credentialName} 취소 시 워크스페이스의 {personas}개 페르소나{personaPlural}에 영향을 줍니다.",
+      "sim_high": "{credentialName} 취소 시 워크스페이스의 {personas}개 페르소나에 영향을 줍니다.",
       "sim_low": "이 자격 증명에 의존하는 페르소나나 워크플로가 없습니다. 취소가 안전합니다.",
       "sim_medium": "{credentialName} 취소 시 영향 범위가 제한적입니다.",
       "simulate_revocation": "취소 시뮬레이션",

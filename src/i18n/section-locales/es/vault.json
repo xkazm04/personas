@@ -583,7 +583,7 @@
     "severity_high": "Riesgo alto",
     "severity_low": "Riesgo bajo",
     "severity_medium": "Riesgo medio",
-    "sim_high": "Revocar {credentialName} afectaría a {personas} persona{personaPlural} en su espacio de trabajo.",
+    "sim_high": "Revocar {credentialName} afectaría a {personas} persona en su espacio de trabajo.",
     "sim_low": "Ninguna persona ni flujo de trabajo depende de esta credencial. Es seguro revocarla.",
     "sim_medium": "Revocar {credentialName} tiene un radio de impacto limitado.",
     "simulate_revocation": "Simular revocación",

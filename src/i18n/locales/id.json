@@ -23786,7 +23786,7 @@
       "severity_high": "Risiko tinggi",
       "severity_low": "Risiko rendah",
       "severity_medium": "Risiko sedang",
-      "sim_high": "Mencabut {credentialName} akan berdampak pada {personas} persona{personaPlural} di seluruh ruang kerja Anda.",
+      "sim_high": "Mencabut {credentialName} akan berdampak pada {personas} persona di seluruh ruang kerja Anda.",
       "sim_low": "Tidak ada persona atau alur kerja yang bergantung pada kredensial ini. Aman untuk dicabut.",
       "sim_medium": "Mencabut {credentialName} memiliki dampak terbatas.",
       "simulate_revocation": "Simulasi pencabutan",

@@ -23786,7 +23786,7 @@
       "severity_high": "उच्च जोखिम",
       "severity_low": "कम जोखिम",
       "severity_medium": "मध्यम जोखिम",
-      "sim_high": "{credentialName} को रद्द करने से आपके वर्कस्पेस में {personas} पर्सोना{personaPlural} प्रभावित होंगे।",
+      "sim_high": "{credentialName} को रद्द करने से आपके वर्कस्पेस में {personas} पर्सोना प्रभावित होंगे।",
       "sim_low": "कोई पर्सोना या वर्कफ़्लो इस क्रेडेंशियल पर निर्भर नहीं। रद्द करना सुरक्षित है।",
       "sim_medium": "{credentialName} को रद्द करने का सीमित प्रभाव है।",
       "simulate_revocation": "रद्दीकरण अनुकरण करें",

@@ -23786,7 +23786,7 @@
       "severity_high": "مخاطر عالية",
       "severity_low": "مخاطر منخفضة",
       "severity_medium": "مخاطر متوسطة",
-      "sim_high": "إلغاء {credentialName} سيؤثر على {personas} شخصية{personaPlural} عبر مساحة عملك.",
+      "sim_high": "إلغاء {credentialName} سيؤثر على {personas} شخصية عبر مساحة عملك.",
       "sim_low": "لا يعتمد أي وكيل أو سير عمل على بيانات الاعتماد هذه. آمن للإبطال.",
       "sim_medium": "إلغاء {credentialName} له نطاق تأثير محدود.",
       "simulate_revocation": "محاكاة الإبطال",

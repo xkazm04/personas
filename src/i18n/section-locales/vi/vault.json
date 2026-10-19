@@ -583,7 +583,7 @@
     "severity_high": "Rủi ro cao",
     "severity_low": "Rủi ro thấp",
     "severity_medium": "Rủi ro trung bình",
-    "sim_high": "Thu hồi {credentialName} sẽ ảnh hưởng đến {personas} tác nhân{personaPlural} trên không gian làm việc của bạn.",
+    "sim_high": "Thu hồi {credentialName} sẽ ảnh hưởng đến {personas} tác nhân trên không gian làm việc của bạn.",
     "sim_low": "Không có personas hoặc quy trình nào phụ thuộc vào thông tin xác thực này. Có thể thu hồi an toàn.",
     "sim_medium": "Thu hồi {credentialName} có phạm vi ảnh hưởng hạn chế.",
     "simulate_revocation": "Mô phỏng thu hồi",

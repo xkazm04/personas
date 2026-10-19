@@ -23786,7 +23786,7 @@
       "severity_high": "উচ্চ ঝুঁকি",
       "severity_low": "কম ঝুঁকি",
       "severity_medium": "মাঝারি ঝুঁকি",
-      "sim_high": "{credentialName} প্রত্যাহার করলে আপনার ওয়ার্কস্পেসের {personas}টি পার্সোনা{personaPlural}-এ প্রভাব পড়বে।",
+      "sim_high": "{credentialName} প্রত্যাহার করলে আপনার ওয়ার্কস্পেসের {personas}টি পার্সোনা-এ প্রভাব পড়বে।",
       "sim_low": "কোনো পার্সোনা বা ওয়ার্কফ্লো এই ক্রেডেনশিয়ালের উপর নির্ভর করে না। বাতিল করা নিরাপদ।",
       "sim_medium": "{credentialName} প্রত্যাহার করার প্রভাবের পরিসর সীমিত।",
       "simulate_revocation": "বাতিলকরণ সিমুলেট করুন",

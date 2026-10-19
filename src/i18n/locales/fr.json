@@ -23786,7 +23786,7 @@
       "severity_high": "Élevé",
       "severity_low": "Faible",
       "severity_medium": "Moyen",
-      "sim_high": "La révocation de {credentialName} impacterait {personas} persona{personaPlural} dans votre espace de travail.",
+      "sim_high": "La révocation de {credentialName} impacterait {personas} persona dans votre espace de travail.",
       "sim_low": "Faible",
       "sim_medium": "La révocation de {credentialName} a un rayon d’impact limité.",
       "simulate_revocation": "Simuler la révocation",

@@ -583,7 +583,7 @@
     "severity_high": "高风险",
     "severity_low": "低风险",
     "severity_medium": "中等风险",
-    "sim_high": "撤销 {credentialName} 将影响工作区中 {personas} 个智能体{personaPlural}。",
+    "sim_high": "撤销 {credentialName} 将影响工作区中 {personas} 个智能体。",
     "sim_low": "无智能体或工作流依赖此凭据。可以安全撤销。",
     "sim_medium": "撤销 {credentialName} 的影响范围有限。",
     "simulate_revocation": "模拟撤销",

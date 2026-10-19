@@ -583,7 +583,7 @@
     "severity_high": "高リスク",
     "severity_low": "低リスク",
     "severity_medium": "中リスク",
-    "sim_high": "{credentialName} を取り消すと、ワークスペース全体の {personas} persona{personaPlural} に影響します。",
+    "sim_high": "{credentialName} を取り消すと、ワークスペース全体の {personas} persona に影響します。",
     "sim_low": "この認証情報に依存するペルソナやワークフローはありません。失効しても安全です。",
     "sim_medium": "{credentialName} の取り消しは影響範囲が限定的です。",
     "simulate_revocation": "失効をシミュレート",

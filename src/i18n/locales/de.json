@@ -23786,7 +23786,7 @@
       "severity_high": "Hohes Risiko",
       "severity_low": "Geringes Risiko",
       "severity_medium": "Mittleres Risiko",
-      "sim_high": "Ein Widerruf von {credentialName} würde {personas} Persona{personaPlural} in Ihrem Workspace beeinträchtigen.",
+      "sim_high": "Ein Widerruf von {credentialName} würde {personas} Persona in Ihrem Workspace beeinträchtigen.",
       "sim_low": "Keine Personas oder Workflows hängen von diesen Zugangsdaten ab. Sicher zu widerrufen.",
       "sim_medium": "Ein Widerruf von {credentialName} hat begrenzte Auswirkungen.",
       "simulate_revocation": "Widerruf simulieren",
