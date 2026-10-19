@@ -250,3 +250,17 @@ describe("eventSlice - pushRecentEvents (batch)", () => {
     expect(h.get().recentEvents).toBe(before);
   });
 });
+
+describe("eventSlice — a failed fetch is recorded, not only logged", () => {
+  it("records the AppError text and clears it on the next success", async () => {
+    vi.mocked(eventsApi.listEvents).mockRejectedValueOnce({ error: "Database error: database is locked", kind: "Database" });
+    const h = makeHarness();
+    await (h.get() as EventSlice).fetchRecentEvents(10);
+    expect(h.get().recentEventsError).toBe("Database error: database is locked");
+
+    vi.mocked(eventsApi.listEvents).mockResolvedValueOnce([makeEvent({ id: "ok" })]);
+    await (h.get() as EventSlice).fetchRecentEvents(10);
+    expect(h.get().recentEventsError).toBeNull();
+    expect(h.get().recentEvents.map((e) => e.id)).toEqual(["ok"]);
+  });
+});

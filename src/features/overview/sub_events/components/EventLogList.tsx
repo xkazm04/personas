@@ -4,6 +4,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useSystemStore } from '@/stores/systemStore';
+import { useOverviewStore } from '@/stores/overviewStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { UnifiedTable } from '@/features/shared/components/display/UnifiedTable';
 import { timeGroupKey, timeGroupLabels } from '@/features/shared/components/display/grouping';
@@ -120,7 +121,11 @@ export default function EventLogList() {
   // data pre-warmed by the event bus or a prior visit — are never hidden by a
   // fetch. The only thing left here is gating this surface's own rich
   // zero-events CTA on the fetch having settled (law 5).
-  const showRichEmpty = !isFetching && displayedEvents.length === 0 && !hasActiveFilters;
+  // A failed read of the live window is not "no events yet": with nothing on
+  // screen it gets the failure banner and a retry, never the first-run CTA.
+  const recentEventsError = useOverviewStore((s) => s.recentEventsError);
+  const readFailed = recentEventsError != null && !isFetching && displayedEvents.length === 0 && !hasActiveFilters;
+  const showRichEmpty = !readFailed && !isFetching && displayedEvents.length === 0 && !hasActiveFilters;
 
   return (
     <ContentBox>
@@ -179,7 +184,14 @@ export default function EventLogList() {
       />
 
       <ContentBody flex>
-        {showRichEmpty ? (
+        {readFailed ? (
+          <div className="p-4">
+            <InlineErrorBanner
+              message={resolveErrorTranslated(t, recentEventsError).message}
+              onRetry={() => void handleRefresh()}
+            />
+          </div>
+        ) : showRichEmpty ? (
           <div className="flex-1 flex items-center justify-center p-6">
             <EmptyState
               art="stream"

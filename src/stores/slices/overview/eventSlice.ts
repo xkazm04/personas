@@ -3,9 +3,7 @@ import type { OverviewStore } from "../../storeTypes";
 import type { PersonaEvent } from "@/lib/types/types";
 import { listEvents } from "@/api/overview/events";
 import { deduplicateKeyedFetch } from "@/lib/utils/deduplicateFetch";
-import { createLogger } from "@/lib/log";
-
-const logger = createLogger("events");
+import { extractMessage, silentCatch } from "@/lib/silentCatch";
 
 /** Default ceiling on the live window. Matches the value the event-log and
  *  live-stream surfaces pass explicitly, so a caller that omits it lands on
@@ -74,6 +72,10 @@ export interface EventSlice {
   // State
   recentEvents: PersonaEvent[];
   pendingEventCount: number;
+  /** Non-null when the last fetchRecentEvents rejected; cleared by the next
+   *  success. EventLogList reads it so a failed cold read is not shown as the
+   *  first-run "No events yet" + Create persona state. */
+  recentEventsError: string | null;
 
   // Actions
   fetchRecentEvents: (limit?: number) => Promise<void>;
@@ -86,6 +88,7 @@ export interface EventSlice {
 export const createEventSlice: StateCreator<OverviewStore, [], [], EventSlice> = (set, get) => ({
   recentEvents: [],
   pendingEventCount: 0,
+  recentEventsError: null,
 
   fetchRecentEvents: deduplicateKeyedFetch('recentEvents', async (limit?: number) => {
     // Captured BEFORE the await: anything pushed after this point is newer than
@@ -95,10 +98,15 @@ export const createEventSlice: StateCreator<OverviewStore, [], [], EventSlice> =
       const events = await listEvents(limit ?? 50);
       set((state) => {
         const merged = mergeSnapshot(state.recentEvents, events, idsAtRequest, MAX_RECENT_EVENTS);
-        return { recentEvents: merged, pendingEventCount: countPending(merged) };
+        return { recentEvents: merged, pendingEventCount: countPending(merged), recentEventsError: null };
       });
     } catch (err) {
-      logger.warn("fetchRecentEvents failed", { error: String(err) });
+      // Still resolves: the sidebar badge ticker and the bus-driven refresh
+      // treat this as best-effort. The failure is recorded for the Events
+      // page instead of only logged (String(err) also logged "[object
+      // Object]" for an AppError rejection).
+      silentCatch("eventSlice:fetchRecentEvents")(err);
+      set({ recentEventsError: extractMessage(err) });
     }
   }),
 
