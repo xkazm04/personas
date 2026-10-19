@@ -21,9 +21,9 @@ pub fn create(
 
         // Validate review_id exists in persona_design_reviews
         let review_exists: bool = conn.query_row(
-            "SELECT EXISTS(SELECT 1 FROM persona_design_reviews WHERE id = ?1)",
+            "SELECT EXISTS(SELECT 1 FROM persona_design_reviews WHERE id = ?1) AS present",
             params![input.review_id],
-            |row| row.get(0),
+            |row| row.get("present"),
         )?;
         if !review_exists {
             return Err(AppError::NotFound(format!(
@@ -34,9 +34,9 @@ pub fn create(
 
         // Validate persona_id exists in personas
         let persona_exists: bool = conn.query_row(
-            "SELECT EXISTS(SELECT 1 FROM personas WHERE id = ?1)",
+            "SELECT EXISTS(SELECT 1 FROM personas WHERE id = ?1) AS present",
             params![input.persona_id],
-            |row| row.get(0),
+            |row| row.get("present"),
         )?;
         if !persona_exists {
             return Err(AppError::NotFound(format!(
@@ -92,9 +92,9 @@ pub fn get_performance(pool: &DbPool, review_id: &str) -> Result<TemplatePerform
 
         // Verify the review exists before aggregating metrics
         let review_exists: bool = conn.query_row(
-            "SELECT EXISTS(SELECT 1 FROM persona_design_reviews WHERE id = ?1)",
+            "SELECT EXISTS(SELECT 1 FROM persona_design_reviews WHERE id = ?1) AS present",
             params![review_id],
-            |row| row.get(0),
+            |row| row.get("present"),
         )?;
         if !review_exists {
             return Err(AppError::NotFound(format!(
@@ -108,9 +108,9 @@ pub fn get_performance(pool: &DbPool, review_id: &str) -> Result<TemplatePerform
         // Combined review metrics: adoption count + structural/semantic scores in one query
         let (total_adoptions, structural_score, semantic_score): (i64, f64, f64) = conn
         .query_row(
-            "SELECT COALESCE(adoption_count, 0), COALESCE(structural_score, 50), COALESCE(semantic_score, 50) FROM persona_design_reviews WHERE id = ?1",
+            "SELECT COALESCE(adoption_count, 0) AS adoptions, COALESCE(structural_score, 50) AS structural, COALESCE(semantic_score, 50) AS semantic FROM persona_design_reviews WHERE id = ?1",
             params![review_id],
-            |row| Ok((row.get::<_, i64>(0)?, row.get::<_, f64>(1)?, row.get::<_, f64>(2)?)),
+            |row| Ok((row.get::<_, i64>("adoptions")?, row.get::<_, f64>("structural")?, row.get::<_, f64>("semantic")?)),
         )
         .unwrap_or_else(|e| {
             tracing::warn!(review_id = %review_id, error = %e, "Failed to query review metrics, defaulting");
@@ -164,7 +164,10 @@ pub fn get_performance(pool: &DbPool, review_id: &str) -> Result<TemplatePerform
             let mut stmt =
                 conn.prepare("SELECT rating, labels FROM template_feedback WHERE review_id = ?1")?;
             let rows = stmt.query_map(params![review_id], |row| {
-                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+                Ok((
+                    row.get::<_, String>("rating")?,
+                    row.get::<_, String>("labels")?,
+                ))
             })?;
             for row in collect_rows(rows, "template_feedback::get_performance") {
                 let (rating, labels_json) = row;

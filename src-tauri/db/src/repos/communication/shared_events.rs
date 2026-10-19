@@ -184,9 +184,9 @@ pub fn max_firing_seq(pool: &DbPool, slug: &str) -> Result<i64, AppError> {
     timed_query!("shared_events", "shared_events::max_firing_seq", {
         let conn = pool.get()?;
         let max: i64 = conn.query_row(
-            "SELECT COALESCE(MAX(seq), 0) FROM shared_event_firings WHERE slug = ?1",
+            "SELECT COALESCE(MAX(seq), 0) AS max_seq FROM shared_event_firings WHERE slug = ?1",
             params![slug],
-            |r| r.get(0),
+            |r| r.get("max_seq"),
         )?;
         Ok(max)
     })

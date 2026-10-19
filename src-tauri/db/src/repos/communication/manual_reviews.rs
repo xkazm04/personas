@@ -145,7 +145,12 @@ pub fn get_team_step_by_execution(
             "SELECT assignment_id, id FROM team_assignment_steps
              WHERE execution_id = ?1 LIMIT 1",
             params![execution_id],
-            |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)),
+            |r| {
+                Ok((
+                    r.get::<_, String>("assignment_id")?,
+                    r.get::<_, String>("id")?,
+                ))
+            },
         )
         .optional()?;
     Ok(row)
@@ -618,7 +623,7 @@ fn flip_status(
                 .query_row(
                     "SELECT home_team_id FROM personas WHERE id = ?1",
                     params![current.persona_id],
-                    |r| r.get::<_, Option<String>>(0),
+                    |r| r.get::<_, Option<String>>("home_team_id"),
                 )
                 .unwrap_or(None);
 
@@ -928,17 +933,17 @@ pub fn get_pending_count(pool: &DbPool, persona_id: Option<&str>) -> Result<i64,
 
         if let Some(pid) = persona_id {
             let count: i64 = conn.query_row(
-                "SELECT COUNT(*) FROM persona_manual_reviews
+                "SELECT COUNT(*) AS n FROM persona_manual_reviews
                  WHERE status = 'pending' AND persona_id = ?1",
                 params![pid],
-                |row| row.get(0),
+                |row| row.get("n"),
             )?;
             Ok(count)
         } else {
             let count: i64 = conn.query_row(
-                "SELECT COUNT(*) FROM persona_manual_reviews WHERE status = 'pending'",
+                "SELECT COUNT(*) AS n FROM persona_manual_reviews WHERE status = 'pending'",
                 [],
-                |row| row.get(0),
+                |row| row.get("n"),
             )?;
             Ok(count)
         }
@@ -1022,20 +1027,23 @@ pub fn counts(pool: &DbPool, persona_id: Option<&str>) -> Result<ManualReviewCou
         };
         if let Some(pid) = persona_id {
             let mut stmt = conn.prepare(
-                "SELECT status, COUNT(*) FROM persona_manual_reviews
+                "SELECT status, COUNT(*) AS n FROM persona_manual_reviews
                  WHERE persona_id = ?1 GROUP BY status",
             )?;
             let rows = stmt.query_map(params![pid], |r| {
-                Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?))
+                Ok((r.get::<_, String>("status")?, r.get::<_, i64>("n")?))
             })?;
             for row in rows {
                 let (status, n) = row?;
                 apply(&status, n);
             }
         } else {
-            let mut stmt = conn
-                .prepare("SELECT status, COUNT(*) FROM persona_manual_reviews GROUP BY status")?;
-            let rows = stmt.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?)))?;
+            let mut stmt = conn.prepare(
+                "SELECT status, COUNT(*) AS n FROM persona_manual_reviews GROUP BY status",
+            )?;
+            let rows = stmt.query_map([], |r| {
+                Ok((r.get::<_, String>("status")?, r.get::<_, i64>("n")?))
+            })?;
             for row in rows {
                 let (status, n) = row?;
                 apply(&status, n);

@@ -110,10 +110,11 @@ pub fn search_reviews_compact(
             let conn = pool.get()?;
 
             // Count total templates (for truncation detection)
-            let total: i64 =
-                conn.query_row("SELECT COUNT(*) FROM persona_design_reviews", [], |row| {
-                    row.get(0)
-                })?;
+            let total: i64 = conn.query_row(
+                "SELECT COUNT(*) AS n FROM persona_design_reviews",
+                [],
+                |row| row.get("n"),
+            )?;
 
             if keywords.is_empty() {
                 let mut stmt = conn.prepare(
@@ -563,9 +564,9 @@ pub fn get_reviews_paginated(
             // Fast path: no coverage filter -- use SQL LIMIT/OFFSET
             // Count total
             let count_sql =
-                format!("SELECT COUNT(*) FROM persona_design_reviews{where_with_space}");
+                format!("SELECT COUNT(*) AS n FROM persona_design_reviews{where_with_space}");
             let total: i64 =
-                conn.query_row(&count_sql, qb.params_ref().as_slice(), |row| row.get(0))?;
+                conn.query_row(&count_sql, qb.params_ref().as_slice(), |row| row.get("n"))?;
 
             // Sort
             let order_col = match sort_by.unwrap_or("created_at") {
@@ -625,7 +626,7 @@ pub fn increment_adoption_count(
             // Look up the review id for the audit log
             let review_id: Option<String> = tx
                 .prepare("SELECT id FROM persona_design_reviews WHERE test_case_name = ?1")?
-                .query_row(params![template_name], |row| row.get(0))
+                .query_row(params![template_name], |row| row.get("id"))
                 .ok();
 
             // Insert audit log entry
@@ -679,7 +680,7 @@ pub fn get_distinct_connectors(pool: &DbPool) -> Result<Vec<ConnectorWithCount>,
         "SELECT connectors_used FROM persona_design_reviews WHERE connectors_used IS NOT NULL",
     )?;
             let rows = stmt.query_map([], |row| {
-                let json_str: String = row.get(0)?;
+                let json_str: String = row.get("connectors_used")?;
                 Ok(json_str)
             })?;
 
@@ -716,8 +717,8 @@ pub fn get_distinct_categories(pool: &DbPool) -> Result<Vec<CategoryWithCount>, 
             )?;
             let rows = stmt.query_map([], |row| {
                 Ok(CategoryWithCount {
-                    name: row.get(0)?,
-                    count: row.get(1)?,
+                    name: row.get("cat")?,
+                    count: row.get("cnt")?,
                 })
             })?;
             rows.collect::<Result<Vec<_>, _>>()
