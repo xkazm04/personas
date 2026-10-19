@@ -407,11 +407,11 @@ export function DeadLetterTab() {
 
   const handleDiscard = (evt: PersonaEvent) => {
     confirm({
-      title: 'Discard Event',
-      message: 'This dead-letter event will be permanently discarded.',
-      confirmLabel: 'Discard',
+      title: t.common.confirm_destructive_discard_event,
+      message: t.common.confirm_destructive_discard_event_warning,
+      confirmLabel: t.common.confirm_destructive_discard,
       details: [
-        { label: 'Type', value: evt.event_type },
+        { label: t.triggers.col_type, value: evt.event_type },
         { label: 'Retries', value: String(evt.retry_count) },
       ],
       onConfirm: async () => {
