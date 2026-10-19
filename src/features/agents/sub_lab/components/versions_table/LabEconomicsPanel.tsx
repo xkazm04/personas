@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
 import { useAgentStore } from '@/stores/agentStore';
@@ -13,11 +13,18 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
  */
 export function LabEconomicsPanel({ personaId }: { personaId: string }) {
   const { t } = useTranslation();
-  const { economics, fetchEconomics } = useAgentStore(
+  const { economics, fetchEconomics, promptVersions } = useAgentStore(
     useShallow((s) => ({
       economics: s.versionEconomics,
       fetchEconomics: s.fetchVersionEconomics,
+      promptVersions: s.promptVersions,
     })),
+  );
+  // Rows are per (version x model): without the version a model measured on two
+  // versions rendered as two identical-looking rows with different numbers.
+  const versionNumberById = useMemo(
+    () => new Map(promptVersions.map((v) => [v.id, v.version_number])),
+    [promptVersions],
   );
 
   useEffect(() => {
@@ -44,7 +51,8 @@ export function LabEconomicsPanel({ personaId }: { personaId: string }) {
         <table className="w-full text-left">
           <thead>
             <tr className="typo-caption text-foreground">
-              <th className="py-1 pr-3 typo-caption font-mono uppercase tracking-widest text-foreground">{t.agents.lab.eco_col_model}</th>
+              <th className="py-1 pr-3 typo-caption font-mono uppercase tracking-widest text-foreground">{t.agents.lab.vr_col_version}</th>
+              <th className="py-1 px-3 typo-caption font-mono uppercase tracking-widest text-foreground">{t.agents.lab.eco_col_model}</th>
               <th className="py-1 px-3 text-right typo-caption font-mono uppercase tracking-widest text-foreground">{t.agents.lab.eco_col_attempted}</th>
               <th className="py-1 px-3 text-right typo-caption font-mono uppercase tracking-widest text-foreground">{t.agents.lab.eco_col_resolved}</th>
               <th className="py-1 px-3 text-right typo-caption font-mono uppercase tracking-widest text-foreground">{t.agents.lab.eco_col_rate}</th>
@@ -57,7 +65,10 @@ export function LabEconomicsPanel({ personaId }: { personaId: string }) {
                 key={`${r.versionId}::${r.modelId}`}
                 className="typo-body text-foreground border-t border-border/20"
               >
-                <td className="py-1.5 pr-3">{r.modelId}</td>
+                <td className="py-1.5 pr-3 font-mono">
+                  {versionNumberById.has(r.versionId) ? `v${versionNumberById.get(r.versionId)}` : '—'}
+                </td>
+                <td className="py-1.5 px-3">{r.modelId}</td>
                 <td className="py-1.5 px-3 text-right">
                   <Numeric value={r.attempted} unit="count" />
                 </td>
