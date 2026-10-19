@@ -9,9 +9,9 @@ interface CancelledResumeFooterProps {
 
 /**
  * Shared "stopped while running <tool> + Resume from here" block rendered by
- * both PersonaRunner's inline cancelled-summary and ExecutionSummaryCard.
- * Previously copy-pasted between the two (identical markup, i18n tokens) —
- * extracted so status-header/resume affordance changes only need to land once.
+ * by PersonaRunner's inline cancelled-summary. ExecutionSummaryCard also
+ * rendered it behind an `onResume` prop that no caller ever passed, so that
+ * branch was removed (2026-10-19); wire a real resume before re-adding it.
  */
 export function CancelledResumeFooter({ lastTool, onResume }: CancelledResumeFooterProps) {
   const { t } = useTranslation();
