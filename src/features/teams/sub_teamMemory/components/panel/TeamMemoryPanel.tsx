@@ -62,11 +62,12 @@ interface TeamMemoryPanelProps {
   onClose: () => void;
   onDelete: (id: string) => void;
   onImportanceChange: (id: string, importance: number) => void;
-  onCreate: (input: CreateTeamMemoryInput) => void;
+  onCreate: (input: CreateTeamMemoryInput) => Promise<boolean> | void;
   onFilter: (category?: string, search?: string) => void;
   onLoadMore: () => Promise<void>;
   onFilterByRun?: (runId: string | null) => void;
-  onEdit?: (id: string, title: string, content: string, category: string, importance: number) => void;
+  /** Resolves `false` when the write failed; the editor then stays open with the draft. */
+  onEdit?: (id: string, title: string, content: string, category: string, importance: number) => Promise<boolean> | void;
 }
 
 export default function TeamMemoryPanel({

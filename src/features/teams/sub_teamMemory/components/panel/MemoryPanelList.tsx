@@ -30,7 +30,8 @@ interface MemoryPanelListProps {
   onLoadMore: () => void;
   onDelete: (id: string) => void;
   onImportanceChange: (id: string, importance: number) => void;
-  onEdit?: (id: string, title: string, content: string, category: string, importance: number) => void;
+  /** Resolves `false` when the write failed; the editor then stays open with the draft. */
+  onEdit?: (id: string, title: string, content: string, category: string, importance: number) => Promise<boolean> | void;
 }
 
 export default function MemoryPanelList({

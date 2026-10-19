@@ -140,15 +140,19 @@ export function useTeamMemories(teamId: string) {
     refresh().catch(toastCatch(context));
   }, [refresh]);
 
-  const onCreate = useCallback((input: CreateTeamMemoryInput) => {
-    createTeamMemory(input)
+  /** Resolves `true` once the write landed, `false` when it failed: the form
+   *  that typed the draft keeps it on `false` instead of discarding it. */
+  const onCreate = useCallback((input: CreateTeamMemoryInput): Promise<boolean> => {
+    return createTeamMemory(input)
       .then(() => {
         trackInteraction(IX_CATEGORY, 'create', IX_OK);
         addToast(t.pipeline.memory_created, 'success');
         refreshAfterWrite('teamMemory/useTeamMemories:createRefresh');
+        return true;
       }, (err) => {
         trackInteraction(IX_CATEGORY, 'create', IX_FAILED);
         toastCatch('teamMemory/useTeamMemories:create')(err);
+        return false;
       });
   }, [addToast, refreshAfterWrite, t]);
 
@@ -176,15 +180,18 @@ export function useTeamMemories(teamId: string) {
     });
   }, [refresh]);
 
-  const onEdit = useCallback((id: string, title: string, content: string, category: string, importance: number) => {
-    updateTeamMemory(id, title, content, category, importance)
+  /** Same outcome contract as `onCreate`: the open editor stays open on `false`. */
+  const onEdit = useCallback((id: string, title: string, content: string, category: string, importance: number): Promise<boolean> => {
+    return updateTeamMemory(id, title, content, category, importance)
       .then(() => {
         trackInteraction(IX_CATEGORY, 'edit', IX_OK);
         addToast(t.pipeline.memory_updated, 'success');
         refreshAfterWrite('teamMemory/useTeamMemories:editRefresh');
+        return true;
       }, (err) => {
         trackInteraction(IX_CATEGORY, 'edit', IX_FAILED);
         toastCatch('teamMemory/useTeamMemories:edit')(err);
+        return false;
       });
   }, [addToast, refreshAfterWrite, t]);
 
