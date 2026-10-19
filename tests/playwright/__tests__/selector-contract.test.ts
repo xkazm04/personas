@@ -48,12 +48,6 @@ const KNOWN: Record<string, Reason> = {
   'fleet-smoke.spec.ts:fleet-decisions-page': 'drift',
   'fleet-smoke.spec.ts:fleet-decision-text': 'drift',
   'getting-started-tour.spec.ts:capability-run-now': 'drift',
-  'team-functionality.spec.ts:team-mode-orchestrate': 'drift',
-  'team-functionality.spec.ts:team-mode-board': 'drift',
-  'team-functionality.spec.ts:team-goal-input': 'drift',
-  'team-functionality.spec.ts:team-preview-button': 'drift',
-  'team-functionality.spec.ts:team-assign-button': 'drift',
-  'team-functionality.spec.ts:team-assignment-board': 'drift',
   'twin-cycle-features.spec.ts:setup-open-fields': 'drift',
 };
 
