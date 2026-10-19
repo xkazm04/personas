@@ -157,9 +157,17 @@ export function usePersonaExecution() {
       store.appendExecutionOutput(`[ERROR] ${error}`);
     }
 
-    // Capture persona info before finishExecution resets state
+    // Capture persona info before finishExecution resets state. The name comes
+    // from the RUN's persona, not the selected one: a detached run is
+    // finalized here after the user switched personas, and the review
+    // notification would otherwise carry the persona now on screen.
     const execPersonaId = store.executionPersonaId;
-    const execPersonaName = store.selectedPersona?.name ?? null;
+    const execPersona = execPersonaId
+      ? store.personas.find((p) => p.id === execPersonaId)
+        ?? (store.selectedPersona?.id === execPersonaId ? store.selectedPersona : null)
+      : null;
+    // checkNewHumanReviews already takes `null` as "name unknown".
+    const execPersonaName = execPersona ? execPersona.name : null;
 
     store.finishExecution(status, {
       durationMs: duration_ms ?? null,

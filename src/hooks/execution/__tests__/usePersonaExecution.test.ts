@@ -41,6 +41,7 @@ vi.mock('@/lib/notifications/checkHumanReviews', () => ({
 }));
 
 import { useAgentStore } from '@/stores/agentStore';
+import { checkNewHumanReviews } from '@/lib/notifications/checkHumanReviews';
 import { executionSink } from '@/lib/execution/executionSink';
 import { usePersonaExecution } from '../usePersonaExecution';
 
@@ -260,6 +261,40 @@ describe('detached focused stream', () => {
 
     expect(useAgentStore.getState().activeExecutionId).toBeNull();
     expect(useAgentStore.getState().isExecuting).toBe(false);
+  });
+
+  it("names the RUN's persona in the review check, not the one now selected", async () => {
+    getExecutionLogLinesMock.mockResolvedValue([]);
+    vi.mocked(checkNewHumanReviews).mockClear();
+    seedRun('exec-A', 'p-1');
+    useAgentStore.setState({
+      personas: [
+        { id: 'p-1', name: 'Alice' },
+        { id: 'p-2', name: 'Bob' },
+      ] as unknown as ReturnType<typeof useAgentStore.getState>['personas'],
+      selectedPersona: { id: 'p-1', name: 'Alice' } as unknown as ReturnType<typeof useAgentStore.getState>['selectedPersona'],
+    });
+
+    const { rerender } = renderHook(() => usePersonaExecution());
+    await waitFor(() => {
+      expect(registered.some((h) => h.name === EventName.EXECUTION_STATUS)).toBe(true);
+    });
+
+    // Switch to Bob mid-run; Alice's run is finalized by the background listener.
+    await act(async () => {
+      useAgentStore.setState({
+        selectedPersonaId: 'p-2',
+        selectedPersona: { id: 'p-2', name: 'Bob' } as unknown as ReturnType<typeof useAgentStore.getState>['selectedPersona'],
+      });
+      rerender();
+      await Promise.resolve();
+    });
+    await act(async () => {
+      emitTo(EventName.EXECUTION_STATUS, { execution_id: 'exec-A', status: 'completed' });
+      await Promise.resolve();
+    });
+
+    expect(checkNewHumanReviews).toHaveBeenCalledWith('p-1', 'Alice');
   });
 
   it('does NOT finalize the focused run while its own stream is still live', async () => {
