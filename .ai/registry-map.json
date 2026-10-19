@@ -16054,7 +16054,11 @@
           "revision": 4,
           "changedAt": "2026-09-24",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/hooks/utility/interaction/useCopyToClipboard.ts:43 When clipboard writing fails, the hook silently aborts execution without notifying the caller or setting error state, violating the micro-interaction contract that clipboard failure must not result in silence.",
+          "evaluatedAt": "2026-10-19",
+          "evaluatedAgainst": "sha256-b2:a6af68867a07fdfa",
+          "evaluatedRevision": 4
         },
         {
           "subject": "plan-entitlements",

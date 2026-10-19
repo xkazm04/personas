@@ -30006,6 +30006,93 @@
         "at": "2026-10-19T00:46:14.202743+00:00",
         "reason": "reviewer (sonnet): The primary anchor at homeSpineSlice.ts:13 is a doc comment about TTL caching and doesn't show the precondition is absent. The not-applicable rests on a grep for 'tenant' and 'AsyncLocalStorage', which are the wrong terms for this app, and the technique anchors only show these slices pass persona id"
       }
+    },
+    "cc76d419-f457-4fe4-833c-6869efbc9287/ui-controls": {
+      "context": "hooks-utility-interaction",
+      "subject": "ui-controls",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-19",
+      "evaluatedTs": "2026-10-19T08:19:20.079Z",
+      "worker": "08263e89-8d2e-4c2d-984e-8af8e157fdbf",
+      "techniques": [
+        {
+          "technique": "micro-interaction-contracts",
+          "verdict": "deviation",
+          "evidence": "src/hooks/utility/interaction/useCopyToClipboard.ts:43 Failed copy silently aborts with no error state or announcement, violating the clipboard contract."
+        },
+        {
+          "technique": "adoption-enforcement",
+          "verdict": "deviation",
+          "evidence": "src/hooks/utility/interaction/useRovingTabIndex.ts:9 useRovingTabIndex is an unratified zero-adopter primitive across the codebase."
+        },
+        {
+          "technique": "composition-contracts",
+          "verdict": "deviation",
+          "evidence": "src/hooks/utility/interaction/useAsyncAction.ts:54 useAsyncAction's execute callback does not guard against concurrent double-invocation during pending state."
+        },
+        {
+          "technique": "control-inventory-and-discovery",
+          "verdict": "deviation",
+          "evidence": "src/hooks/utility/interaction/useRovingTabIndex.ts:11 The catalogued roving focus primitive keys by array index rather than identity, causing consumers to bypass it."
+        },
+        {
+          "technique": "call-site-ownership",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/useTrackedElementRect.ts:15 Headless interaction utility hooks do not render DOM elements or accept CSS styling passthroughs."
+        },
+        {
+          "technique": "variant-discipline",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/useMotion.ts:22 Headless interaction utility hooks implement motion logic rather than visual UI variants."
+        }
+      ]
+    },
+    "7dddb34a-3a9b-4ce0-832f-55ea352c12b5/ui-controls": {
+      "context": "templates-generated-adoption-ucpicker",
+      "subject": "ui-controls",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-19",
+      "evaluatedTs": "2026-10-19T08:19:20.079Z",
+      "techniques": [
+        {
+          "technique": "call-site-ownership",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucPicker.tsx:73 The call site injects full visual appearance classes into the button root instead of letting the control own its styling."
+        },
+        {
+          "technique": "micro-interaction-contracts",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucCardHeader.tsx:71 Uses native title attributes on action buttons instead of the shared Tooltip primitive."
+        },
+        {
+          "technique": "adoption-enforcement",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/adoption/chronology/commandCenterParts.tsx:24 Renders LoadingSpinner, hitting the null-spinner-busy-state signature that produces an invisible busy indicator."
+        },
+        {
+          "technique": "variant-discipline",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucRouteToggle.tsx:33 Constructs ad-hoc visual styling with template strings and ternary operators instead of a closed variant enum."
+        },
+        {
+          "technique": "composition-contracts",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucCardHeader.tsx:50 Forks checkbox/toggle behavior using a raw button and Check icon rather than rendering AccessibleToggle."
+        },
+        {
+          "technique": "control-inventory-and-discovery",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/adoption/chronology/ChronologyCommandHub.tsx:218 Hand-rolls a custom spinner via Lucide Loader2 and animate-spin rather than routing to a catalogued loading primitive."
+        }
+      ],
+      "withdrawn": {
+        "worker": "08263e89-8d2e-4c2d-984e-8af8e157fdbf",
+        "state": "deviation",
+        "at": "2026-10-19T08:19:54.388509+00:00",
+        "reason": "reviewer (sonnet): The ucPicker.tsx:73, ucCardHeader.tsx:71 and ucRouteToggle.tsx:33 anchors are confirmed, but the technique anchor commandCenterParts.tsx:24 sits in the chronology directory, which is not among this context's files, so the verdict rests partly on another context's code."
+      }
     }
   }
 }
