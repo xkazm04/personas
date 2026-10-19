@@ -67,7 +67,7 @@ export function kpiFloorBreached(kpi: DevKpi): boolean {
  * `unpaced` is a finer reading of the not-off-track side (see `KpiTrack`) and
  * changes no derivation behavior.
  */
-export function kpiTrack(kpi: DevKpi, toleranceFrac = 0.1): KpiTrack {
+export function kpiTrack(kpi: DevKpi, toleranceFrac = 0.1, now = Date.now()): KpiTrack {
   const { current_value: cur, target_value: target, baseline_value: baseline, direction } = kpi;
   if (cur == null) return 'unmeasured';
   if (kpiFloorBreached(kpi)) return 'off-track';
@@ -86,7 +86,6 @@ export function kpiTrack(kpi: DevKpi, toleranceFrac = 0.1): KpiTrack {
   if (kpi.target_date && baseline != null) {
     const start = kpiInstantMs(kpi.created_at);
     const end = kpiInstantMs(kpi.target_date);
-    const now = Date.now();
     if (end > start) {
       const frac = Math.min(1, Math.max(0, (now - start) / (end - start)));
       const span = target - baseline;
@@ -101,6 +100,17 @@ export function kpiTrack(kpi: DevKpi, toleranceFrac = 0.1): KpiTrack {
   // verdict; otherwise nothing was evaluated and saying "on track" would be a
   // claim we cannot support.
   return kpi.crit_at != null ? 'on-track' : 'unpaced';
+}
+
+/**
+ * The verdict a past reading earned AT THE TIME it was taken. Pace is a
+ * function of time: judging an old value with `kpiTrack` alone compares it to
+ * TODAY's expected point on the baseline-to-target line, so a reading that was
+ * on pace in week 2 reads off-track in week 12. History (the weekly river, the
+ * ledger's state changes) must judge each value at its own instant.
+ */
+export function kpiTrackAt(kpi: DevKpi, value: number, atMs: number): KpiTrack {
+  return kpiTrack({ ...kpi, current_value: value }, 0.1, atMs);
 }
 
 /** Which of the three triggers put this KPI off-track (null when on-track/met/

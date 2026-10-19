@@ -6,7 +6,7 @@
 // measurement yields NO point — a gap, never a zero.
 import type { DevKpi } from '@/lib/bindings/DevKpi';
 import type { DevKpiMeasurement } from '@/lib/bindings/DevKpiMeasurement';
-import { kpiInstantMs, kpiTrack } from './kpiMath';
+import { kpiInstantMs, kpiTrackAt } from './kpiMath';
 
 export interface TimeWindow {
   from: number;
@@ -122,7 +122,8 @@ export function mondayOf(ms: number, timeZone: string): number {
 /**
  * Weekly state distribution of a KPI set, rebuilt from the append-only
  * measurement log: for each of the last `weeks` weeks, every KPI's latest
- * production value at or before the week's end is judged with `kpiTrack`.
+ * production value at or before the week's end is judged AS OF that week's
+ * end (`kpiTrackAt`), never at today's pace.
  * A week where no KPI had any value yet has `measured: 0` — callers draw a
  * gap there, never a zero. `now` is injectable for tests.
  */
@@ -153,7 +154,7 @@ export function weeklyStateSeries(
       for (const p of pts) { if (p.t < end) last = p; else break; }
       if (!last) continue;
       row.measured += 1;
-      const t = kpiTrack({ ...kpi, current_value: last.v });
+      const t = kpiTrackAt(kpi, last.v, Math.min(end, now));
       if (t === 'met') row.met += 1;
       else if (t === 'on-track') row.onTrack += 1;
       else if (t === 'off-track') row.offTrack += 1;
