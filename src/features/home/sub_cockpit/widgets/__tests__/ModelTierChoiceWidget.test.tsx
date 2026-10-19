@@ -25,6 +25,10 @@ describe('ModelTierChoiceWidget', () => {
     expect(screen.getByText('Haiku')).toBeInTheDocument();
     expect(screen.getByText('Sonnet')).toBeInTheDocument();
     expect(screen.getByText('Opus')).toBeInTheDocument();
+    // "with rationale": each tier's reason is the row's meta (and its Hint's text).
+    expect(screen.getAllByText('Too thin for drafting.').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Right balance.').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Overkill for triage.').length).toBeGreaterThan(0);
   });
 
   it('marks the recommended tier with the badge', () => {
