@@ -77,8 +77,11 @@ interface Subscriber {
 }
 
 const subscribers = new Set<Subscriber>();
-let timerId: ReturnType<typeof setInterval> | null = null;
+let timerId: ReturnType<typeof setTimeout> | null = null;
+/** Finest cadence any live subscriber needs (reported for tests and stats). */
 let timerCadence = 0;
+/** Epoch ms the armed timer fires at: the earliest subscriber due time. */
+let timerDueAt = 0;
 let documentHidden = false;
 
 function smallestCadence(): number {
@@ -90,9 +93,24 @@ function smallestCadence(): number {
 }
 
 function stopTimer(): void {
-  if (timerId !== null) clearInterval(timerId);
+  if (timerId !== null) clearTimeout(timerId);
   timerId = null;
   timerCadence = 0;
+  timerDueAt = 0;
+}
+
+function earliestDueAt(): number {
+  let min = Infinity;
+  for (const s of subscribers) {
+    if (s.dueAt < min) min = s.dueAt;
+  }
+  return min;
+}
+
+function onTimer(): void {
+  timerId = null;
+  fireDue();
+  reschedule();
 }
 
 /**
@@ -119,10 +137,16 @@ function fireAll(): void {
 }
 
 /**
- * Recompute the global timer to match the finest cadence any live subscriber
- * needs. Stops the timer entirely when there are no subscribers or the document
- * is hidden; restarts it only when the target cadence actually changes (so a
- * no-op realignment after a tick doesn't thrash the timer).
+ * Arm the single timer for the EARLIEST due time any live subscriber has.
+ * Stops it when there are no subscribers or the document is hidden.
+ *
+ * It used to be a `setInterval` at the finest cadence, anchored wherever it
+ * was last (re)started. Due times are per subscriber, so a subscriber whose
+ * due time fell between two interval ticks waited for the next one: a 30s
+ * label that mounted 10s after the interval started got its first refresh at
+ * 50s, and a 30s label whose 1s neighbour unmounted at 45s waited until 75s.
+ * Arming for the earliest due time serves every subscriber when it is owed,
+ * and still costs one timer for the whole app.
  */
 function reschedule(): void {
   const target = smallestCadence();
@@ -132,11 +156,13 @@ function reschedule(): void {
     return;
   }
 
-  if (timerId !== null && target === timerCadence) return;
-
-  if (timerId !== null) clearInterval(timerId);
   timerCadence = target;
-  timerId = setInterval(fireDue, target);
+  const next = earliestDueAt();
+  if (timerId !== null && next === timerDueAt) return;
+
+  if (timerId !== null) clearTimeout(timerId);
+  timerDueAt = next;
+  timerId = setTimeout(onTimer, Math.max(0, next - Date.now()));
 }
 
 /** Test override for the document's visibility; `null` = ask the real document. */
