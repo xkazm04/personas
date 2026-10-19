@@ -1,7 +1,6 @@
 import { useTranslation } from '@/i18n/useTranslation';
 import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { Play } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { Button } from '@/features/shared/components/buttons';
 import { ToolInputForm } from './McpToolInputForm';
@@ -59,7 +58,7 @@ export function ToolDetail({
       <Button
         variant="accent"
         size="sm"
-        icon={executing ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
+        icon={<Play className="w-3.5 h-3.5" />}
         onClick={() => onExecute(currentTool.name)}
         disabled={executing}
         loading={executing}

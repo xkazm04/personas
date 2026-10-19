@@ -1,7 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { Button } from '@/features/shared/components/buttons';
 import { listMcpTools, executeMcpTool } from '@/api/agents/mcpTools';
@@ -102,7 +101,7 @@ export function McpToolsTab({ credentialId }: McpToolsTabProps) {
         <div className="flex-1" />
         <Button
           variant="secondary" size="sm"
-          icon={loading ? <LoadingSpinner size="xs" /> : <RefreshCw className="w-3 h-3" />}
+          icon={<RefreshCw className="w-3 h-3" />}
           onClick={handleRefresh} disabled={loading} loading={loading}
         >
           {loading ? sh.discovering : hasLoaded ? sh.refresh : sh.discover_tools}

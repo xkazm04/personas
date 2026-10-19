@@ -1,7 +1,7 @@
 import { EngineCapabilityBadge } from '@/features/settings/sub_engine/components/EngineCapabilityBadge';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Sparkles, X, Save } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { Button } from '@/features/shared/components/buttons';
 import { PromptTemplateRenderer } from '@/features/shared/components/editors/PromptTemplateRenderer';
 import { TerminalStrip } from '@/features/shared/components/terminal/TerminalStrip';
 import { EstimatedProgressBar } from '@/features/shared/components/progress/EstimatedProgressBar';
@@ -152,14 +152,16 @@ export function RecipeCreateFlow({
               )}
 
               <div className="flex items-center gap-2 pt-1">
-                <button
+                <Button
+                  variant="accent"
+                  tone="success"
+                  size="sm"
+                  icon={<Save className="w-3.5 h-3.5" />}
                   onClick={onSaveDraft}
-                  disabled={saving}
-                  className="flex items-center gap-1.5 rounded-modal bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 typo-body text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-40 transition-colors"
+                  loading={saving}
                 >
-                  {saving ? <LoadingSpinner size="sm" /> : <Save className="w-3.5 h-3.5" />}
                   {sh.accept_save}
-                </button>
+                </Button>
                 <button
                   onClick={() => {
                     generator.reset();

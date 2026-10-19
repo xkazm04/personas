@@ -1,7 +1,7 @@
 import { useTranslation } from '@/i18n/useTranslation';
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Play } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { Button } from '@/features/shared/components/buttons';
 import { SqlEditor } from '@/features/vault/sub_databases/SqlEditor';
 import { Section, KeyValueEditor, initQueryParams, type KeyValue } from './BuilderParams';
 import type { ApiEndpoint } from '@/api/system/apiProxy';
@@ -93,14 +93,21 @@ export function RequestBuilder({ endpoint, onSend, isSending, scopedResources }:
           placeholder={t.vault.shared.api_path_placeholder}
           className="flex-1 px-3 py-2 rounded-modal typo-code bg-secondary/20 border border-primary/10 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30"
         />
-        <button
+        {/* LoadingSpinner renders null, so the old busy state was the icon
+            vanishing. Button's own spinner is real. */}
+        <Button
+          variant="accent"
+          tone="success"
+          size="md"
+          icon={<Play className="w-3.5 h-3.5" />}
           onClick={handleSend}
-          disabled={isSending || !path.trim()}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-modal typo-body bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+          disabled={!path.trim()}
+          loading={isSending}
+          loadingLabel={t.vault.shared.sending}
+          className="shrink-0"
         >
-          {isSending ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
-          {isSending ? t.vault.shared.sending : t.vault.shared.send}
-        </button>
+          {t.vault.shared.send}
+        </Button>
       </div>
 
       {/* Path parameters */}
