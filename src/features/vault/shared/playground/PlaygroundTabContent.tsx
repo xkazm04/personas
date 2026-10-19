@@ -62,9 +62,6 @@ export function PlaygroundTabContent({
             effectiveHealthcheckResult={effectiveHealthcheckResult}
             isHealthchecking={isHealthchecking}
             health={health}
-            rotationStatus={rotationStatus}
-            rotationCountdown={rotationCountdown}
-            fetchRotationStatus={fetchRotationStatus}
             editError={editError}
             setEditError={setEditError}
             onOAuthConsent={onOAuthConsent}
