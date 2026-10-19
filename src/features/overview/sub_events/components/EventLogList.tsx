@@ -5,14 +5,14 @@ import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useSystemStore } from '@/stores/systemStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
 import { UnifiedTable } from '@/features/shared/components/display/UnifiedTable';
 import { timeGroupKey, timeGroupLabels } from '@/features/shared/components/display/grouping';
 import type { PersonaEvent } from '@/lib/types/types';
 import { seedMockEvent } from '@/api/overview/events';
 import { useEventLog } from '../libs/useEventLog';
 import { eventSourceLabel } from '../libs/eventSourceRegistry';
-import { EventDetailContent } from './EventDetailContent';
+import { EventDetailModal } from '../EventDetailModal';
+import { eventTypeLabel } from '../libs/eventTypeLabel';
 import { EventLogToolbar } from './EventLogToolbar';
 import { useEventLogColumns } from './eventLogColumns';
 import { createLogger } from "@/lib/log";
@@ -82,8 +82,13 @@ export default function EventLogList() {
 
   const typeOptions = useMemo(() => [
     { value: 'all', label: t.overview.events.all_types },
-    ...[...availableTypes].sort((a, b) => a.localeCompare(b)).map((v) => ({ value: v, label: v.replace(/_/g, ' ') })),
-  ], [availableTypes, t.overview.events.all_types]);
+    // Same label as the Event column's cell (eventTypeLabel), so the filter
+    // offers "SLA breach opened" for the row that says "SLA breach opened"
+    // rather than a third spelling ("sla.breach.opened").
+    ...availableTypes
+      .map((v) => ({ value: v, label: eventTypeLabel(t, v) }))
+      .sort((a, b) => a.label.localeCompare(b.label)),
+  ], [availableTypes, t]);
 
   // Bucket the event stream under sticky day headers (Today / Yesterday / …)
   // for temporal wayfinding. Grouping runs over UnifiedTable's already-sorted
@@ -232,14 +237,11 @@ export default function EventLogList() {
         )}
       </ContentBody>
 
+      {/* The one event-detail modal (also opened from Agents > Activity), so
+          the title names the event the way the row and the filter do instead
+          of printing the raw type id. */}
       {selectedEvent && (
-        <DetailModal
-          title={`${t.overview.events.event_detail_title} ${selectedEvent.event_type}`}
-          subtitle={`${t.overview.events.event_detail_status} ${selectedEvent.status}`}
-          onClose={() => setSelectedEvent(null)}
-        >
-          <EventDetailContent event={selectedEvent} />
-        </DetailModal>
+        <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} />
       )}
     </ContentBox>
   );
