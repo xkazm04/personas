@@ -29,7 +29,7 @@ import { PulseGlyph } from './PulseGlyph';
 
 // Re-export shared helpers so existing call sites keep resolving.
 export { formatErr } from './overviewHelpers';
-import { buildTodayActivity, computeVitalTones, type ActivityEvent, type ActivityKind, type VitalTone } from './overviewHelpers';
+import { activityJumpTarget, buildTodayActivity, computeVitalTones, type ActivityEvent, type ActivityKind, type VitalTone } from './overviewHelpers';
 import { listTasks } from '@/api/devTools/devTools';
 import type { DevTask } from '@/lib/bindings/DevTask';
 import { silentCatch } from '@/lib/silentCatch';
@@ -152,14 +152,14 @@ export default function ProjectOverviewPage() {
   const setPendingTaskFocusId = useSystemStore((s) => s.setPendingTaskFocusId);
   const setPendingGoalSpotlightId = useSystemStore((s) => s.setPendingGoalSpotlightId);
   const handleActivityJump = (event: ActivityEvent) => {
-    if (!event.sourceId) return;
-    if (event.kind === 'task_created' || event.kind === 'task_completed' || event.kind === 'task_failed') {
+    const target = activityJumpTarget(event);
+    if (target === 'task' && event.sourceId) {
       setPendingTaskFocusId(event.sourceId);
       setDevToolsTab('task-runner');
-    } else if (event.kind === 'goal_signal') {
+    } else if (target === 'goal' && event.sourceId) {
       setPendingGoalSpotlightId(event.sourceId);
       openGoalsBoard();
-    } else if (event.kind === 'scan_run') {
+    } else if (target === 'skills') {
       setDevToolsTab('skills');
     }
   };
@@ -735,7 +735,7 @@ const ACTIVITY_META: Record<ActivityKind, { icon: typeof CircleDot; tint: string
 function ActivityRow({ event, onJump }: { event: ActivityEvent; onJump: (e: ActivityEvent) => void }) {
   const meta = ACTIVITY_META[event.kind];
   const Icon = meta.icon;
-  const clickable = Boolean(event.sourceId) || event.kind === 'scan_run';
+  const clickable = activityJumpTarget(event) !== null;
   const inner = (
     <div className="flex items-center gap-2.5 px-4 py-2">
       <Icon className={`w-3.5 h-3.5 shrink-0 ${meta.tint}`} />

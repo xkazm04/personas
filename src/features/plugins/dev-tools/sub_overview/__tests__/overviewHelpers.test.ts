@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { buildTodayActivity, computeVitalTones, formatErr, type ActivityKind } from '../overviewHelpers';
+import { activityJumpTarget, buildTodayActivity, computeVitalTones, formatErr, type ActivityKind } from '../overviewHelpers';
 import type { MonitoringStats, RepoStats } from '../adapters';
 import type { DevScan } from '@/lib/bindings/DevScan';
 import type { DevTask } from '@/lib/bindings/DevTask';
@@ -226,5 +226,19 @@ describe('computeVitalTones', () => {
     expect(tones.events24).toBe('error');
     expect(tones.events7).toBe('info');
     expect(tones.unresolved).toBe('error');
+  });
+});
+
+describe('activityJumpTarget', () => {
+  const base = { id: 'e1', timestamp: '2026-10-19T09:00:00Z', label: 'x' };
+
+  it('a scan row jumps to Skills even though it carries no source id', () => {
+    expect(activityJumpTarget({ ...base, kind: 'scan_run' })).toBe('skills');
+  });
+
+  it('task and goal rows jump only when they name their source', () => {
+    expect(activityJumpTarget({ ...base, kind: 'task_failed', sourceId: 't1' })).toBe('task');
+    expect(activityJumpTarget({ ...base, kind: 'goal_signal', sourceId: 'g1' })).toBe('goal');
+    expect(activityJumpTarget({ ...base, kind: 'task_created' })).toBeNull();
   });
 });

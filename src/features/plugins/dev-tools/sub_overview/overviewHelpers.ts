@@ -128,6 +128,27 @@ export function buildTodayActivity(
   return events.slice(0, 30).map(({ _ts: _, ...rest }) => rest);
 }
 
+/**
+ * Where a "Today" row jumps to. One predicate for both questions the row asks
+ * (is it clickable? where does it go?): the row rendered every `scan_run` as a
+ * button while the handler returned early on its missing `sourceId`, so a
+ * scan row was a control that did nothing.
+ */
+export function activityJumpTarget(event: ActivityEvent): 'task' | 'goal' | 'skills' | null {
+  switch (event.kind) {
+    case 'scan_run':
+      return 'skills';
+    case 'task_created':
+    case 'task_completed':
+    case 'task_failed':
+      return event.sourceId ? 'task' : null;
+    case 'goal_signal':
+      return event.sourceId ? 'goal' : null;
+    default:
+      return null;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Vital-signs tinting
 // ---------------------------------------------------------------------------
