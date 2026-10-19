@@ -16,6 +16,8 @@ import { useOverviewStore } from '@/stores/overviewStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { deleteAllMemories } from '@/api/overview/memories';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { Button } from '@/features/shared/components/buttons';
@@ -99,12 +101,13 @@ export default function MemoriesPageDense() {
   const [confirmingDeleteAll, setConfirmingDeleteAll] = useState(false);
   const personas = useAgentStore((s) => s.personas);
   const {
-    memories, memoriesTotal, memoriesLoading, memoryStats, fetchMemories, deleteMemory, reviewMemories, reflectMemories,
+    memories, memoriesTotal, memoriesLoading, memoriesError, memoryStats, fetchMemories, deleteMemory, reviewMemories, reflectMemories,
     memoryReviewRunning, memoryReviewResult, memoryReviewError, clearMemoryReviewResult,
   } = useOverviewStore(useShallow((s) => ({
     memories: s.memories,
     memoriesTotal: s.memoriesTotal,
     memoriesLoading: s.memoriesLoading,
+    memoriesError: s.memoriesError,
     memoryStats: s.memoryStats,
     fetchMemories: s.fetchMemories,
     deleteMemory: s.deleteMemory,
@@ -153,25 +156,27 @@ export default function MemoriesPageDense() {
   const categoryForFetch = categoryFilters.size === 1 ? [...categoryFilters][0] : undefined;
   const sortColumn = SERVER_SORT[sortField] ?? 'created_at';
 
+  const fetchFirstPage = useCallback(() => fetchMemories({
+    search: search || undefined,
+    persona_id: personaFilter ?? undefined,
+    tier: tierFilter ?? undefined,
+    category: categoryForFetch,
+    sort_column: sortColumn,
+    sort_direction: sortDir,
+    limit: PAGE_SIZE,
+    offset: 0,
+  }), [fetchMemories, search, personaFilter, tierFilter, categoryForFetch, sortColumn, sortDir]);
+
   useEffect(() => {
     const requestId = latest.next();
     setDebouncePending(true);
     const timer = setTimeout(() => {
       if (!latest.isCurrent(requestId)) return;
       setDebouncePending(false);
-      fetchMemories({
-        search: search || undefined,
-        persona_id: personaFilter ?? undefined,
-        tier: tierFilter ?? undefined,
-        category: categoryForFetch,
-        sort_column: sortColumn,
-        sort_direction: sortDir,
-        limit: PAGE_SIZE,
-        offset: 0,
-      });
+      void fetchFirstPage();
     }, 300);
     return () => clearTimeout(timer);
-  }, [fetchMemories, search, personaFilter, tierFilter, categoryForFetch, sortColumn, sortDir, latest]);
+  }, [fetchFirstPage, latest]);
 
   const isFetching = debouncePending || memoriesLoading;
   const hasActiveFilters = search.trim().length > 0 || categoryFilters.size > 0 || personaFilter !== null || tierFilter !== null;
@@ -523,6 +528,15 @@ export default function MemoriesPageDense() {
           <div className="flex-1 overflow-y-auto relative z-10">
             {isFetching && sortedMemories.length === 0 ? (
               <DenseGhostRows />
+            ) : memoriesError && sortedMemories.length === 0 ? (
+              // A failed read with nothing on screen is unknown, not "no
+              // memories yet": the store records the failure, so say so.
+              <div className="px-4 py-6">
+                <InlineErrorBanner
+                  message={resolveErrorTranslated(t, memoriesError).message}
+                  onRetry={() => void fetchFirstPage()}
+                />
+              </div>
             ) : sortedMemories.length === 0 ? (
               // Both zero-row conditions used to read "No memories match current
               // filters", so a first-run user with an empty store and no filter

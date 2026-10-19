@@ -23,6 +23,8 @@ import type { PersonaMemory } from '@/lib/types/types';
 import { DebtText, debtText } from '@/i18n/DebtText';
 import { silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { tokenLabel } from '@/i18n/tokenMaps';
 
 interface NodePosition { x: number; y: number; }
@@ -33,12 +35,13 @@ export default function MemoriesPageGraph() {
   const mui = t.overview.memories_ui;
   const personas = useAgentStore((s) => s.personas);
   const {
-    memories, memoriesTotal, memoriesLoading, memoryStats, fetchMemories, deleteMemory, reviewMemories,
+    memories, memoriesTotal, memoriesLoading, memoriesError, memoryStats, fetchMemories, deleteMemory, reviewMemories,
     memoryReviewRunning,
   } = useOverviewStore(useShallow((s) => ({
     memories: s.memories,
     memoriesTotal: s.memoriesTotal,
     memoriesLoading: s.memoriesLoading,
+    memoriesError: s.memoriesError,
     memoryStats: s.memoryStats,
     fetchMemories: s.fetchMemories,
     deleteMemory: s.deleteMemory,
@@ -275,9 +278,16 @@ export default function MemoriesPageGraph() {
               {/* Settled-only empty state — never paints while a fetch is
                   still in flight (that's the ghost's job above). */}
               {filtered.length === 0 && !isFetching && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <ScenarioEmptyState art="link" size="sm" title={debtText('auto_no_memories_in_this_cluster_29741022')} />
-                </div>
+                memoriesError && memories.length === 0 ? (
+                  // A failed read is unknown, not an empty cluster.
+                  <div className="absolute inset-0 flex items-center justify-center px-6">
+                    <InlineErrorBanner message={resolveErrorTranslated(t, memoriesError).message} />
+                  </div>
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <ScenarioEmptyState art="link" size="sm" title={debtText('auto_no_memories_in_this_cluster_29741022')} />
+                  </div>
+                )
               )}
             </div>
           )}

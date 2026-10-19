@@ -19,6 +19,8 @@ import { mergeMemories } from '../libs/conflictHelpers';
 import ConflictCard from './ConflictCard';
 import { DebtText, debtText } from '@/i18n/DebtText';
 import { useTranslation } from '@/i18n/useTranslation';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 
 
 interface MemoryConflictReviewProps {
@@ -39,9 +41,10 @@ export function MemoryConflictReview({ onConflictsResolved, loading }: MemoryCon
   const { t, tx } = useTranslation();
   const mc = t.overview.memory_conflict;
   const {
-    memories, memoriesTotal, setMemoryTier, mergeMemories: mergeMemoriesAction, fetchMemories,
+    memories, memoriesTotal, memoriesError, setMemoryTier, mergeMemories: mergeMemoriesAction, fetchMemories,
   } = useOverviewStore(useShallow((s) => ({
     memories: s.memories,
+    memoriesError: s.memoriesError,
     memoriesTotal: s.memoriesTotal,
     setMemoryTier: s.setMemoryTier,
     mergeMemories: s.mergeMemories,
@@ -208,6 +211,16 @@ export function MemoryConflictReview({ onConflictsResolved, loading }: MemoryCon
           <span className="w-4 h-4 rounded-card bg-primary/[0.06] flex-shrink-0" />
           <span className="h-3.5 flex-1 max-w-[18rem] rounded-card bg-primary/[0.06]" />
         </div>
+      </div>
+    );
+  }
+
+  // The memories read FAILED and nothing arrived: there was nothing to audit,
+  // so the all-clear below would certify a store nobody looked at.
+  if (memoriesError && memories.length === 0) {
+    return (
+      <div className="mx-4 md:mx-6">
+        <InlineErrorBanner message={resolveErrorTranslated(t, memoriesError).message} />
       </div>
     );
   }
