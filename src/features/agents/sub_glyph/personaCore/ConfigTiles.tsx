@@ -1,6 +1,6 @@
 /** ConfigTiles — icon-forward, low-text configuration controls. Conflict / model
  *  are icon TILES, effort is an ascending stepped METER — symbols and alignment
- *  instead of segmented rows of words. (Disposition uses PolaritySlider.)
+ *  instead of segmented rows of words.
  *
  *  Two different a11y contracts live here on purpose. Model and effort are
  *  mutually exclusive, so they are radiogroups with roving tabindex: a screen

@@ -32,7 +32,10 @@
  *     in selection order.
  *   • conflict style, model and effort produce NO seed: the first is carried as
  *     a prose directive in the build intent (`usePersonaCore.launchAugmentation`),
- *     the other two are real backend knobs with their own fields.
+ *     and so are the other two: model and effort reach the build only as
+ *     the launchAugmentation line "Model tier: ...; reasoning effort: ...".
+ *     Nothing writes them to the persona's model_profile (no reader of
+ *     `core.state.model` / `.effort` exists outside this folder).
  *
  *  Returns `null` when the codex authored no prose, so the caller leaves the
  *  promote stamp's own source untouched.
