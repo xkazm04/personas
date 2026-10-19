@@ -1,0 +1,22 @@
+{
+ "schema": "conform-run/1",
+ "worker": "da15bb4b-cd52-4a77-ae42-002d26e7a5c2",
+ "subject": "settings",
+ "evaluatedAt": "2026-10-19T00:39:00.874385+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [],
+ "declined": [
+  {
+   "subject": "settings",
+   "context": "plugins-artist-media-studio-hooks",
+   "reason": "No implementation exists in this checkout: context-map.json:7596 has \"file_paths\": [], src/features/plugins/artist does not exist, git ls-files finds none of the named hooks, and searches across src and src-tauri find no useMediaStudio, useFfmpegDetect, useMediaExport, or artistSaveComposition implementation."
+  },
+  {
+   "subject": "settings",
+   "context": "plugins-artist-hooks",
+   "reason": "No implementation exists in this checkout: context-map.json:7513 has \"file_paths\": [], git ls-files finds none of its entry-point hooks, and searches across src and src-tauri find no useArtistAssets, useGallerySelection, useBlenderMcp, artistScanFolder, artistListAssets, or artistGetDefaultFolder implementation."
+  }
+ ],
+ "consults": []
+}
