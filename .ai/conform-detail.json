@@ -30155,6 +30155,28 @@
           "evidence": "src/features/overview/sub_usage/components/MetricChart.tsx:29 The reusable primitive accepts a chart renderer; inspection and searches found no tiered charge or numeric pricing ranges."
         }
       ]
+    },
+    "ef73ca1c-fc54-4b9c-83ec-390c54929192/admission-queue": {
+      "context": "overview-manual-review",
+      "subject": "admission-queue",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-19",
+      "evaluatedTs": "2026-10-19T09:17:44.092Z",
+      "techniques": [
+        {
+          "technique": "depth-bounds-and-shed",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/communication/manual_reviews.rs:67 The inspected ManualReview dispatch branch and repository create function insert pending reviews without a pending-depth check or saturation refusal; this violates the technique's explicit requirement to bound automatically produced output awaiting a human."
+        }
+      ],
+      "registryProposal": "Clarify that the golden path's exclusion of human triage queues still permits auditing their automated producers under depth-bounds-and-shed's downstream-backlog rule.",
+      "withdrawn": {
+        "worker": "46ec955f-5a3e-4931-a617-0b6a572a23aa",
+        "state": "deviation",
+        "at": "2026-10-19T09:18:18.075695+00:00",
+        "reason": "reviewer (sonnet): The backend claim holds: dispatch.rs:1120 calls review_repo::create, and manual_reviews.rs:52-86 inserts a 'pending' row with no depth check, even though IDEA_BACKLOG_CAP exists for dev_ideas. But both anchors are Rust producer code outside this context, which is only the React inbox UI under sub_ma"
+      }
     }
   }
 }
