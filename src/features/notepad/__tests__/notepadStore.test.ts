@@ -205,6 +205,37 @@ describe('patchNote — the shadow/debounce/clear cycle', () => {
     expect(updates[0]?.patch).toEqual({ id: 'n1', projectId: null });
   });
 
+  it('keeps a keystroke typed while the save is in flight', async () => {
+    rows = [note({ id: 'n1' })];
+    await load();
+    let release!: () => void;
+    const held = new Promise<void>((r) => {
+      release = r;
+    });
+    const fake = mocked.getMockImplementation()!;
+    mocked.mockImplementation(async (cmd: string, args?: unknown) => {
+      if (cmd === 'notepad_update_note') await held;
+      return fake(cmd, args as never);
+    });
+
+    patchNote('n1', { bodyMd: 'abc' });
+    const saving = flush('n1');
+    await vi.advanceTimersByTimeAsync(0);
+    patchNote('n1', { bodyMd: 'abcd' });
+    release();
+    await saving;
+
+    // The row that came back is 'abc'; the editor must still read 'abcd'.
+    expect(getNote('n1')?.bodyMd).toBe('abcd');
+    expect(saveStateOf('n1')).toBe('dirty');
+    expect(JSON.parse(readShadow('n1') ?? '{}')).toMatchObject({ bodyMd: 'abcd' });
+
+    await vi.advanceTimersByTimeAsync(SAVE_DEBOUNCE_MS);
+    await flush('n1');
+    expect(updates.at(-1)?.patch.bodyMd).toBe('abcd');
+    expect(saveStateOf('n1')).toBe('clean');
+  });
+
   it('flush() forces a pending save without waiting out the debounce', async () => {
     rows = [note({ id: 'n1' })];
     await load();

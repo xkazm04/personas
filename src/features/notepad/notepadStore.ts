@@ -364,23 +364,28 @@ async function runSave(id: string): Promise<void> {
   const p = (async () => {
     try {
       const row = await notepadApi.updateNote(id, sent);
-      adopt(row);
-      // Compare what was SENT against what memory holds NOW. A keystroke that
-      // landed while the IPC was in flight leaves the note genuinely dirty, and
-      // calling it clean would drop that edit at the next flush — and clear the
-      // shadow that was covering it.
-      const after = notes[id];
-      const settled =
-        !!after &&
-        (!('title' in sent) || after.title === sent.title) &&
-        (!('bodyMd' in sent) || after.bodyMd === sent.bodyMd) &&
-        (!('projectId' in sent) || after.projectId === sent.projectId);
-      if (settled) {
-        setSaveState(id, 'clean');
-        clearShadow(id);
-      } else {
+      const local = notes[id];
+      // Deleted while the save was in flight: adopting the row would bring it back.
+      if (!local) return;
+      // A keystroke that landed while the IPC was in flight is in `unsent`
+      // again. The row is the copy from BEFORE it, so adopting the row
+      // wholesale put the older text back in the editor, called the note clean
+      // and cleared the shadow covering the newer text. Those fields keep what
+      // memory holds and the note stays dirty for the next save.
+      const again = unsent.get(id);
+      if (again && again.size > 0) {
+        adopt({
+          ...row,
+          ...(again.has('title') ? { title: local.title } : {}),
+          ...(again.has('bodyMd') ? { bodyMd: local.bodyMd } : {}),
+          ...(again.has('projectId') ? { projectId: local.projectId } : {}),
+        });
         setSaveState(id, 'dirty');
         scheduleSave(id);
+      } else {
+        adopt(row);
+        setSaveState(id, 'clean');
+        clearShadow(id);
       }
     } catch (e) {
       // The edit is still unsaved: the retry must carry the same keys.
