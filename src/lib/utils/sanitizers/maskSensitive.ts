@@ -7,8 +7,22 @@
 
 import { silentCatch } from '@/lib/silentCatch';
 
+/**
+ * Matched against the key's LAST words, after `normalizeKey`. Anchoring the
+ * whole key used to let every qualified name through - `github_token`,
+ * `OPENAI_API_KEY`, `db_password`, `githubToken` - which is how real payloads
+ * name their secrets; `max_tokens` / `token_count` / `author` stay visible.
+ */
 const SENSITIVE_KEY_RE =
-  /^(password|passwd|secret|token|api_key|apikey|api[-_]?secret|access[-_]?key|auth|authorization|credential|private[-_]?key|client[-_]?secret|refresh[-_]?token|access[-_]?token|bearer|session[-_]?id|cookie|x[-_]?api[-_]?key|connection[-_]?string|dsn)$/i;
+  /(?:^|_)(password|passwd|secret|token|api_?key|api_?secret|access_?key|auth|authorization|credentials?|private_?key|client_?secret|bearer|session_?id|cookie|connection_?string|dsn)$/;
+
+/** `githubToken` / `X-Api-Key` / `OPENAI_API_KEY` -> `github_token` / `x_api_key` / `openai_api_key`. */
+function normalizeKey(key: string): string {
+  return key
+    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+    .replace(/[-.\s]+/g, '_')
+    .toLowerCase();
+}
 
 const MASK = '********';
 
@@ -22,7 +36,7 @@ function redactObject(obj: unknown): unknown {
   if (typeof obj === 'object') {
     const out: Record<string, unknown> = {};
     for (const [key, val] of Object.entries(obj as Record<string, unknown>)) {
-      if (SENSITIVE_KEY_RE.test(key) && (typeof val === 'string' || typeof val === 'number')) {
+      if (SENSITIVE_KEY_RE.test(normalizeKey(key)) && (typeof val === 'string' || typeof val === 'number')) {
         out[key] = MASK;
       } else {
         out[key] = redactObject(val);
