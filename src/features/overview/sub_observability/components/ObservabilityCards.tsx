@@ -40,6 +40,11 @@ interface CardShellProps {
   loading?: boolean;
   /** False = the card states its figure and is not a door (there is no level to enter). */
   enterable?: boolean;
+  /**
+   * The card's own read failed and left nothing to show: the figures would be zeros the read
+   * never measured, so the tile states the failure instead (never present absence as an answer).
+   */
+  failed?: boolean;
   stats: readonly StatTile[];
 }
 
@@ -50,8 +55,9 @@ interface CardShellProps {
  * are in". The loading state is the StatStrip's own calm ghost at the figure's geometry, not
  * `Tile`'s row ghosts, which would be the wrong shape for a two-figure card.
  */
-function CardShell({ id, open, onOpen, w, span = 3, mark, meta, loading, enterable = true, stats }: CardShellProps) {
+function CardShell({ id, open, onOpen, w, span = 3, mark, meta, loading, enterable = true, failed, stats }: CardShellProps) {
   const isOpen = open === id;
+  const failedLabel = w.o.observability.error_recovery.panel_failed;
   return (
     <Tile
       span={span}
@@ -59,8 +65,9 @@ function CardShell({ id, open, onOpen, w, span = 3, mark, meta, loading, enterab
       title={w.region[id]}
       // The open card's own summary line is said again by the section it opened, and a long one
       // pushes the Collapse action onto its own row, so the card drops it while it is the door.
-      meta={loading || isOpen ? undefined : meta}
-      mark={loading ? undefined : mark}
+      meta={loading || isOpen || failed ? undefined : meta}
+      mark={loading ? undefined : failed ? { tone: 'error', glyph: 'solid', label: failedLabel } : mark}
+      error={failed && !loading ? { title: failedLabel, tone: 'error' } : undefined}
       state={isOpen ? 'selected' : undefined}
       onPress={enterable ? () => onOpen(id) : undefined}
       // The card is the disclosure, so the way back up lives on it: the press toggles, and the
@@ -79,7 +86,7 @@ function CardShell({ id, open, onOpen, w, span = 3, mark, meta, loading, enterab
 type Shell = Pick<CardShellProps, 'open' | 'onOpen' | 'w'>;
 
 /** Health issues: the open count, drawn as open against auto-fixed. */
-function HealthCard({ issues, loading, ...s }: Shell & { issues: PersonaHealingIssue[]; loading: boolean }) {
+function HealthCard({ issues, loading, failed, ...s }: Shell & { issues: PersonaHealingIssue[]; loading: boolean; failed: boolean }) {
   const counts = useMemo(() => {
     let open = 0;
     let fixed = 0;
@@ -96,6 +103,7 @@ function HealthCard({ issues, loading, ...s }: Shell & { issues: PersonaHealingI
       id="health"
       span={6}
       loading={loading && issues.length === 0}
+      failed={failed && issues.length === 0}
       meta={issues.length > 0 ? <HealingIssueSummary issues={issues} w={s.w} /> : undefined}
       mark={counts.open > 0
         ? { tone: 'warning', glyph: 'solid', label }
@@ -114,12 +122,13 @@ function HealthCard({ issues, loading, ...s }: Shell & { issues: PersonaHealingI
 }
 
 /** Metrics: the window's cost and run count - the two figures the charts a level down draw. */
-function ChartsCard({ peakCost, failed, anomalies, loading, ...s }: Shell & { peakCost: number | null; failed: number; anomalies: number; loading: boolean }) {
+function ChartsCard({ peakCost, failed, anomalies, loading, readFailed, ...s }: Shell & { peakCost: number | null; failed: number; anomalies: number; loading: boolean; readFailed: boolean }) {
   const c = s.w.o.observability_charts;
   return (
     <CardShell
       id="charts"
       loading={loading}
+      failed={readFailed}
       mark={anomalies > 0
         ? { tone: 'error', glyph: 'solid', label: s.w.tx(anomalies === 1 ? s.w.o.observability_charts.anomaly_detected : s.w.o.observability_charts.anomalies_detected, { count: anomalies }) }
         : { tone: 'primary', glyph: 'soft', label: s.w.o.activity.metrics }}
@@ -141,6 +150,7 @@ const AlertsCard = memo(function AlertsCard(s: Shell) {
     rules: st.alertRules.length,
     active: st.alertHistory.filter((x) => !x.dismissed).length,
     loading: st.alertRulesLoading,
+    failed: st.alertRulesError != null,
   })));
   const x = s.w.o.observability_extra;
   const history = s.w.o.healing_issues_panel.alert_history_title;
@@ -148,6 +158,7 @@ const AlertsCard = memo(function AlertsCard(s: Shell) {
     <CardShell
       id="alerts"
       loading={a.loading && a.rules === 0}
+      failed={a.failed && a.rules === 0}
       mark={a.active > 0
         ? { tone: 'error', glyph: 'solid', label: history }
         : { tone: 'success', glyph: 'hollow', label: x.alert_rules_label }}
@@ -191,6 +202,7 @@ function ToolsCard({ perf, ...s }: Shell & { perf: ToolPerformance }) {
     <CardShell
       id="tools"
       loading={perf.loading && perf.rows.length === 0}
+      failed={perf.failed}
       mark={worst >= 0.05
         ? { tone: 'error', glyph: 'solid', label: errLabel }
         : worst > 0
@@ -226,12 +238,13 @@ const TracesCard = memo(function TracesCard(s: Shell) {
 });
 
 /** Athena: the dashboard's single `companion_get_health` read, shared with the panel. */
-function AthenaCard({ health, loading, ...s }: Shell & { health: AthenaHealth | null; loading: boolean }) {
+function AthenaCard({ health, loading, failed, ...s }: Shell & { health: AthenaHealth | null; loading: boolean; failed: boolean }) {
   const a = s.w.o.athena;
   return (
     <CardShell
       id="athena"
       loading={loading && !health}
+      failed={failed}
       mark={health && health.errors > 0
         ? { tone: 'error', glyph: 'solid', label: a.errors }
         : { tone: 'agent', glyph: 'soft', label: a.health_title }}
@@ -247,25 +260,29 @@ function AthenaCard({ health, loading, ...s }: Shell & { health: AthenaHealth | 
 export interface ObservabilityCardsProps extends Shell {
   issues: PersonaHealingIssue[];
   issuesLoading: boolean;
+  /** The last healing-issues read recorded an error. */
+  issuesFailed: boolean;
   peakCost: number | null;
   failed: number;
   anomalies: number;
   metricsLoading: boolean;
+  /** The metrics read failed and there is no summary to draw from. */
+  metricsFailed: boolean;
   tools: ToolPerformance;
-  athena: { data: AthenaHealth | null; loading: boolean };
+  athena: { data: AthenaHealth | null; loading: boolean; error: boolean };
 }
 
 export function ObservabilityCards(p: ObservabilityCardsProps) {
   const s: Shell = { open: p.open, onOpen: p.onOpen, w: p.w };
   return (
     <Tiles label={p.w.o.observability.title}>
-      <HealthCard issues={p.issues} loading={p.issuesLoading} {...s} />
-      <ChartsCard peakCost={p.peakCost} failed={p.failed} anomalies={p.anomalies} loading={p.metricsLoading} {...s} />
+      <HealthCard issues={p.issues} loading={p.issuesLoading} failed={p.issuesFailed} {...s} />
+      <ChartsCard peakCost={p.peakCost} failed={p.failed} anomalies={p.anomalies} loading={p.metricsLoading} readFailed={p.metricsFailed} {...s} />
       <AlertsCard {...s} />
       <IpcCard {...s} />
       <ToolsCard perf={p.tools} {...s} />
       <TracesCard {...s} />
-      <AthenaCard health={p.athena.data} loading={p.athena.loading} {...s} />
+      <AthenaCard health={p.athena.data} loading={p.athena.loading} failed={p.athena.error} {...s} />
     </Tiles>
   );
 }
