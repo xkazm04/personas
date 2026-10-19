@@ -98,6 +98,16 @@ export function useDynamicQuestionOptions(
     return out;
   }, [credentials]);
 
+  // A question that falls back to waiting on its parent must forget what it
+  // last fetched. Otherwise re-picking the SAME parent value reproduces the old
+  // fingerprint, the walk skips it, and the question stays on "waiting" with no
+  // items; and a fetch still in flight for the cleared parent lands over the
+  // waiting state. Advancing the request id makes that late response stale.
+  const forgetRequest = (questionId: string) => {
+    delete lastFingerprintRef.current[questionId];
+    requestIdRef.current[questionId] = (requestIdRef.current[questionId] ?? 0) + 1;
+  };
+
   useEffect(() => {
     // Walk each question and decide whether to (re)fetch.
     for (const q of questions) {
@@ -106,6 +116,7 @@ export function useDynamicQuestionOptions(
 
       // Chained: wait for the parent answer.
       if (src.depends_on && !userAnswers[src.depends_on]) {
+        forgetRequest(q.id);
         setStateByQuestion((prev) => {
           if (prev[q.id]?.waitingOnParent) return prev;
           return { ...prev, [q.id]: { ...EMPTY_STATE, waitingOnParent: true } };
@@ -133,6 +144,7 @@ export function useDynamicQuestionOptions(
         }
         const credServiceType = userAnswers[fromCredQ];
         if (!credServiceType) {
+          forgetRequest(q.id);
           setStateByQuestion((prev) => {
             if (prev[q.id]?.waitingOnParent) return prev;
             return { ...prev, [q.id]: { ...EMPTY_STATE, waitingOnParent: true } };
