@@ -5,11 +5,10 @@ import { useCredentialDesign } from '@/hooks/design/credential/useCredentialDesi
 import { AutoCredPanel } from './AutoCredPanel';
 import { AnalyzingPhase } from '@/features/vault/sub_catalog/components/design/phases/AnalyzingPhase';
 import { useVaultStore } from "@/stores/vaultStore";
-import { checkPlaywrightAvailable } from '@/api/vault/autoCredBrowser';
+import { probeAutoCredMode } from '../helpers/probeAutoCredMode';
 import { isDesktopBridge } from '@/lib/utils/platform/connectors';
 import { lookupRecipeAsDesignResult } from '@/lib/credentials/credentialRecipeRegistry';
 import type { AutoCredMode } from '../helpers/types';
-import { silentCatch } from '@/lib/silentCatch';
 import { DesktopBridgeBlock, SetupHeader } from './SetupSteps';
 
 type Phase = 'analyzing' | 'auto';
@@ -71,12 +70,7 @@ function CatalogAutoSetupInner({ connector, onComplete, onCancel }: CatalogAutoS
   const [mode, setMode] = useState<AutoCredMode>('playwright');
 
   useEffect(() => {
-    checkPlaywrightAvailable()
-      .then((available) => setMode(available ? 'playwright' : 'guided'))
-      .catch((err: unknown) => {
-        silentCatch('CatalogAutoSetup:checkPlaywrightAvailable')(err);
-        setMode('guided');
-      });
+    void probeAutoCredMode().then(setMode);
   }, []);
 
   const design = useCredentialDesign();
