@@ -30,13 +30,20 @@ interface StatusPageState {
 }
 
 /**
- * Average composite score across personas, or null when there are none.
- * Extracted as a pure function so the "no personas at all" honesty fix is
- * unit-testable without mounting the hook (store/IPC free).
+ * Average composite score across the personas that have SLA data, or null when
+ * none do. Extracted as a pure function so the honesty rules are unit-testable
+ * without mounting the hook (store/IPC free).
+ *
+ * A persona with no SLA row carries `grade: 'unknown'`, but its `score` is
+ * still the weighted formula run over defaults (success 0, latency/healing/
+ * stability 100), which lands near 70. Averaging that in lets every dormant
+ * persona drag a healthy fleet toward "degraded" with a number nobody measured,
+ * the same rule `computeGlobalUptime` below already applies to no-data days.
  */
 export function computeGlobalScore(entries: CompositeHealthEntry[]): number | null {
-  if (entries.length === 0) return null;
-  return Math.round(entries.reduce((s, e) => s + e.score, 0) / entries.length);
+  const measured = entries.filter((e) => e.hasSlaData);
+  if (measured.length === 0) return null;
+  return Math.round(measured.reduce((s, e) => s + e.score, 0) / measured.length);
 }
 
 /**
