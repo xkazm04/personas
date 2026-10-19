@@ -74,7 +74,11 @@ export const AbsoluteTime = memo(function AbsoluteTime({
     return typeof timestamp === 'number' ? timestamp : Date.parse(normalizeTimestamp(timestamp));
   }, [timestamp]);
 
-  if (Number.isNaN(ms)) return <span className={className}>{fallback}</span>;
+  // Not `Number.isNaN`: Infinity and any |ms| past 8.64e15 are numbers too, and
+  // Intl.DateTimeFormat#format THROWS RangeError for them.
+  if (!Number.isFinite(ms) || Number.isNaN(new Date(ms).getTime())) {
+    return <span className={className}>{fallback}</span>;
+  }
 
   const label = new Intl.DateTimeFormat(locale, FORMATS[variant]).format(ms);
   const span = <span className={className}>{label}</span>;

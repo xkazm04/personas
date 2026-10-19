@@ -42,4 +42,13 @@ describe('AbsoluteTime', () => {
     expect(screen.getByText('n/a')).toBeTruthy();
     expect(screen.queryByText(/Invalid Date/)).toBeNull();
   });
+
+  it('renders the fallback for a non-finite or out-of-range epoch instead of throwing', () => {
+    // Number.isNaN alone let Infinity and |ms| > 8.64e15 through to
+    // Intl.DateTimeFormat#format, which throws RangeError and unmounts the row.
+    render(<AbsoluteTime timestamp={Number.POSITIVE_INFINITY} fallback="inf" />);
+    render(<AbsoluteTime timestamp={9e15} fallback="far" />);
+    expect(screen.getByText('inf')).toBeTruthy();
+    expect(screen.getByText('far')).toBeTruthy();
+  });
 });
