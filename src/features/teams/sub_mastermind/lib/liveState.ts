@@ -34,7 +34,8 @@ export type IslandStateSource = 'readiness' | 'errors';
  *  quiet; `none` = clean or unknown. */
 export function monitoringSeverity(s: MonitoringSummary | undefined): 'error' | 'warn' | 'none' {
   if (!s) return 'none';
-  if (s.eventsLast24h > 0) return 'error';
+  // An unread 24h window (null) is unknown, not fresh errors.
+  if ((s.eventsLast24h ?? 0) > 0) return 'error';
   if ((s.unresolvedIssues ?? 0) > 0) return 'warn';
   return 'none';
 }

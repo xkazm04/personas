@@ -49,7 +49,7 @@ export function buildIslandStats(
     ? { key: 'errors', label: 'Errors', value: NONE, tone: 'muted' }
     : {
         key: 'errors', label: 'Errors',
-        value: String(monitoring.unresolvedIssues ?? monitoring.eventsLast24h),
+        value: String(monitoring.unresolvedIssues ?? monitoring.eventsLast24h ?? NONE),
         tone: monitoringSeverity(monitoring) === 'error' ? 'bad' : monitoringSeverity(monitoring) === 'warn' ? 'warn' : 'good',
       };
 
