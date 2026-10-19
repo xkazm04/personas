@@ -64,6 +64,10 @@ describe('DecisionLogWidget', () => {
     );
     expect(screen.getByText('Valid')).toBeInTheDocument();
     expect(screen.queryByText('NoChoice')).toBeNull();
+    // The empty-LABEL row is the other half of the filter: its choice and its
+    // rationale must not surface either (a filter on `choice` alone kept it).
+    expect(screen.queryByText('X')).toBeNull();
+    expect(screen.queryByText('no label')).toBeNull();
   });
 });
 
