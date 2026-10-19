@@ -144,9 +144,12 @@ export function FleetTerminalPane({ sessionId, className, autoFocus = true, live
         data-live={live ? 'true' : 'false'}
         data-displaced={displaced ? 'true' : 'false'}
       />
+      {/* Theme tokens, not the terminal's hex: `text-foreground` is near-black
+          in the light themes, and on the old `#0a0a0c` scrim the notice
+          measured 1.01:1 there - present in the DOM, invisible on screen. */}
       {displaced ? (
         <div
-          className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[#0a0a0c]/95 px-4 text-center"
+          className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/95 px-4 text-center"
           data-testid={`fleet-terminal-displaced-${sessionId}`}
         >
           <p role="status" className="text-[13px] text-foreground">
