@@ -188,8 +188,22 @@ function GraphNodeCircle({ node, pos, selected, highlighted, dimmed, onHover, on
       animate={{ opacity: dimmed ? 0.2 : 1, scale: 1 }}
       transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
       style={{ cursor: 'pointer' }}
+      // The graph is the only way to open a credential's blast radius, so
+      // each node is a keyboard stop: focus highlights it like hover does,
+      // Enter / Space select it like a click.
+      tabIndex={0}
+      role="button"
+      aria-label={node.label}
+      aria-pressed={selected}
       onMouseEnter={() => onHover(node.id)}
+      onFocus={() => onHover(node.id)}
       onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
     >
       {(selected || highlighted) && (
         <circle cx={pos.x} cy={pos.y} r={pos.r + 5} fill="none" stroke={color} strokeWidth={1.5} opacity={0.5} />
