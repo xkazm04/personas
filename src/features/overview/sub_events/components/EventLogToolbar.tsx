@@ -56,6 +56,7 @@ export function EventLogToolbar({
             <button
               type="button"
               onClick={() => setSearchText('')}
+              aria-label={t.common.clear}
               className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-foreground hover:text-foreground/70"
             >
               <X className="w-3.5 h-3.5" />
@@ -89,27 +90,37 @@ export function EventLogToolbar({
       {savedViews.length > 0 && (
         <div className="flex items-center gap-1.5 flex-wrap">
           <span className="typo-caption text-foreground">{t.overview.events.views_label}</span>
+          {/* Each chip is a group of two SIBLING buttons. The delete control
+              used to be a <button> nested inside the apply <button> (invalid
+              HTML: browsers and screen readers flatten it) and was visible only
+              on mouse hover, so a keyboard user could never reach it. */}
           {savedViews.map((view) => (
-            <button
-              type="button"
+            <span
               key={view.id}
-              onClick={() => applySavedView(view)}
-              className={`group flex items-center gap-1 px-2 py-0.5 typo-caption rounded-card border transition-colors ${activeViewId === view.id
+              className={`group inline-flex items-center gap-1 px-2 py-0.5 typo-caption rounded-card border transition-colors ${activeViewId === view.id
                   ? 'bg-primary/15 text-primary border-primary/30'
                   : 'bg-secondary/30 text-foreground border-primary/10 hover:bg-secondary/50'
                 }`}
             >
-              <Bookmark className="w-2.5 h-2.5" />
-              {view.name}
               <button
                 type="button"
-                onClick={(e) => { e.stopPropagation(); removeSavedView(view.id); }}
-                className="ml-0.5 opacity-0 group-hover:opacity-100 text-foreground hover:text-status-error transition-opacity"
+                onClick={() => applySavedView(view)}
+                aria-pressed={activeViewId === view.id}
+                className="inline-flex items-center gap-1 focus-ring rounded-card"
+              >
+                <Bookmark className="w-2.5 h-2.5" />
+                {view.name}
+              </button>
+              <button
+                type="button"
+                onClick={() => removeSavedView(view.id)}
+                className="ml-0.5 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 text-foreground hover:text-status-error transition-opacity focus-ring rounded-card"
                 title={t.overview.events.delete_view}
+                aria-label={`${t.overview.events.delete_view}: ${view.name}`}
               >
                 <BookmarkX className="w-2.5 h-2.5" />
               </button>
-            </button>
+            </span>
           ))}
         </div>
       )}
