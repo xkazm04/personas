@@ -4,6 +4,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import type { DiscoveredPeer, ConnectionState } from '@/api/network/discovery';
 import { TrustVerifiedIcon, TrustUnknownIcon, NodeConnectedIcon, NodeDisconnectedIcon } from './NetworkIcons';
 import { useTranslation } from '@/i18n/useTranslation';
+import { resolvePeerConnectionState } from './peerConnectionState';
 
 interface PeerCardProps {
   peer: DiscoveredPeer;
@@ -33,7 +34,7 @@ export const PeerCard = memo(function PeerCard({
 }: PeerCardProps) {
   const { t } = useTranslation();
   const st = t.sharing;
-  const state = connectionState ?? (peer.is_connected ? 'Connected' : 'Disconnected');
+  const state = resolvePeerConnectionState(peer, connectionState);
   const dotColor = STATE_DOT[state] ?? STATE_DOT.Disconnected;
   const isConnected = state === 'Connected';
 
