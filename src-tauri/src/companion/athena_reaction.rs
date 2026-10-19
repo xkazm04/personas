@@ -590,26 +590,11 @@ async fn cli_text_inner(
     })
 }
 
-/// Extract the `{"athena_channel_batch": {...}}` object (string-aware
-/// [`match_braces`], as [`parse_athena_review`] uses; last occurrence wins).
+/// Extract the `{"athena_channel_batch": {...}}` object via
+/// [`extract_json_envelope`] (string-aware brace match; last occurrence wins).
 fn parse_athena_batch(blob: &str) -> Option<AthenaBatchDecision> {
-    let marker = "\"athena_channel_batch\"";
-    let mut result = None;
-    let mut search_from = 0;
-    while let Some(rel) = blob[search_from..].find(marker) {
-        let marker_pos = search_from + rel;
-        search_from = marker_pos + marker.len();
-        let Some(open) = blob[..marker_pos].rfind('{') else {
-            continue;
-        };
-        if let Some(close) = match_braces(&blob[open..]) {
-            let candidate = &blob[open..open + close + 1];
-            if let Ok(env) = serde_json::from_str::<AthenaBatchEnvelope>(candidate) {
-                result = Some(env.athena_channel_batch);
-            }
-        }
-    }
-    result
+    extract_json_envelope::<AthenaBatchEnvelope>(blob, "\"athena_channel_batch\"")
+        .map(|env| env.athena_channel_batch)
 }
 
 /// Build the BATCH decision prompt: every pending signal as a numbered block
@@ -1452,24 +1437,8 @@ pub async fn run_athena_review_resolution(
 /// Extract the `{"athena_review": {...}}` object (same tolerant brace-matching
 /// as `parse_athena_decision`).
 fn parse_athena_review(blob: &str) -> Option<AthenaReviewDecision> {
-    let marker = "\"athena_review\"";
-    let mut result = None;
-    let mut search_from = 0;
-    while let Some(rel) = blob[search_from..].find(marker) {
-        let marker_pos = search_from + rel;
-        search_from = marker_pos + marker.len();
-        let Some(open) = blob[..marker_pos].rfind('{') else {
-            continue;
-        };
-        if let Some(close) = match_braces(&blob[open..]) {
-            if let Ok(env) =
-                serde_json::from_str::<AthenaReviewEnvelope>(&blob[open..open + close + 1])
-            {
-                result = Some(env.athena_review);
-            }
-        }
-    }
-    result
+    extract_json_envelope::<AthenaReviewEnvelope>(blob, "\"athena_review\"")
+        .map(|env| env.athena_review)
 }
 
 #[cfg(test)]
