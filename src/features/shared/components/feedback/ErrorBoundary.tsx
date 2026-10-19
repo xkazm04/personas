@@ -16,7 +16,8 @@ interface ErrorBoundaryProps {
   /** Called when the user clicks "Try Again" */
   onReset?: () => void;
   /** Called when the user clicks "Go to dashboard". Lets the host navigate home
-   *  without the boundary (a shared primitive) importing an app store. */
+   *  without the boundary (a shared primitive) importing an app store. The
+   *  button renders only when this is set. */
   onGoHome?: () => void;
 }
 
@@ -98,8 +99,8 @@ function ErrorFallback({
   const handleGoHome = () => {
     try {
       // The host wires `onGoHome` (e.g. navigate to the dashboard) — the boundary
-      // itself stays store-free so it can live in the shared catalog. If no host
-      // handler is provided we still clear the error via onReset().
+      // itself stays store-free so it can live in the shared catalog. The
+      // button only renders when the host provided one.
       onGoHome?.();
       onReset();
     } catch {
@@ -169,14 +170,20 @@ function ErrorFallback({
                 {t.common.reload_app}
               </button>
             )}
-            <button
-              type="button"
-              onClick={handleGoHome}
-              className="flex items-center gap-2 px-3 py-2 typo-body rounded-xl border border-primary/15 text-foreground hover:text-foreground transition-colors"
-            >
-              <Home className="w-3.5 h-3.5" />
-              {t.common.go_to_dashboard}
-            </button>
+            {/* Only a host that can navigate gets this button. Without
+                `onGoHome` it used to fall through to onReset() alone, which
+                re-renders the same crashed child: a second "Try Again"
+                labelled as a way out. */}
+            {onGoHome && (
+              <button
+                type="button"
+                onClick={handleGoHome}
+                className="flex items-center gap-2 px-3 py-2 typo-body rounded-xl border border-primary/15 text-foreground hover:text-foreground transition-colors"
+              >
+                <Home className="w-3.5 h-3.5" />
+                {t.common.go_to_dashboard}
+              </button>
+            )}
           </div>
 
           {/* Report button */}
