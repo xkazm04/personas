@@ -70,13 +70,33 @@ export function BacklogFocusDeck({
   const pendingRef = useRef(rows);
   pendingRef.current = rows;
 
+  // One verdict in flight at a time. The slice rewrites a row only AFTER its
+  // write returns, so until then the top card is still the idea just decided:
+  // a second → (keys and drags ignore the buttons' `busy`) re-decided THAT idea
+  // (a lost compare-and-swap, "decided elsewhere", a full reload) instead of the
+  // next one, and a double-click on Build now queued two implementation tasks
+  // (`busy` only covers the accept, not the createTask before it). A ref, not
+  // state, so the second event in the same frame already sees it.
+  const inFlightRef = useRef(false);
+  const once = useCallback(async (work: () => Promise<unknown>) => {
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
+    try {
+      await work();
+    } finally {
+      inFlightRef.current = false;
+    }
+  }, []);
+
   const swipe = useCallback((direction: 'left' | 'right') => {
     const idea = pendingRef.current[0];
     if (!idea) return;
     // The queue toasts a failed verdict and rejects; the card simply stays.
-    (direction === 'right' ? onAccept(idea.id) : onReject(idea.id))
-      .catch(silentCatch('BacklogFocusDeck:swipe'));
-  }, [onAccept, onReject]);
+    void once(() =>
+      (direction === 'right' ? onAccept(idea.id) : onReject(idea.id))
+        .catch(silentCatch('BacklogFocusDeck:swipe')),
+    );
+  }, [once, onAccept, onReject]);
 
   const stackRef = useRef<HTMLDivElement>(null);
   const openTop = useCallback(() => {
@@ -88,12 +108,12 @@ export function BacklogFocusDeck({
   const removeTop = useCallback(() => {
     const idea = pendingRef.current[0];
     if (!idea) return;
-    void onDelete(idea.id);
-  }, [onDelete]);
+    void once(() => onDelete(idea.id));
+  }, [once, onDelete]);
 
   // "Build now": queue a linked implementation task AND accept, in one move —
   // the direct idea→task path for obvious wins.
-  const buildNow = useCallback(async () => {
+  const buildNow = useCallback(() => once(async () => {
     const idea = pendingRef.current[0];
     if (!idea) return;
     try {
@@ -105,7 +125,7 @@ export function BacklogFocusDeck({
     }
     // The queue toasts its own failure; the card stays on top.
     await onAccept(idea.id).catch(silentCatch('BacklogFocusDeck:buildNow:accept'));
-  }, [addToast, r.backlog_build_queued, onAccept]);
+  }), [once, addToast, r.backlog_build_queued, onAccept]);
 
   // Stable handler: ←/A reject, →/Z accept. Ignored inside text fields and
   // whenever a modifier is held (those belong to the browser / the app shell).
