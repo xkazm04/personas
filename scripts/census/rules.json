@@ -103,8 +103,8 @@
         }
       ],
       "baseline": {
-        "files": 116,
-        "matches": 161
+        "files": 115,
+        "matches": 159
       },
       "floor": 2500
     },
@@ -132,8 +132,8 @@
         }
       ],
       "baseline": {
-        "files": 29,
-        "matches": 41
+        "files": 28,
+        "matches": 40
       },
       "floor": 4000
     },
@@ -155,8 +155,8 @@
         "description": "a chunk boundary declared with raw React.lazy(); lazyRetry() is the drop-in that survives a failed chunk fetch instead of caching the rejection forever (2026-06-07 incident). Proxy for: a dynamic-import boundary with no recovery path."
       },
       "baseline": {
-        "files": 16,
-        "matches": 57
+        "files": 14,
+        "matches": 53
       },
       "floor": 4000
     },
@@ -316,8 +316,8 @@
         }
       ],
       "baseline": {
-        "files": 42,
-        "matches": 42
+        "files": 40,
+        "matches": 40
       },
       "floor": 4000
     },
@@ -486,8 +486,8 @@
         }
       ],
       "baseline": {
-        "files": 6,
-        "matches": 8
+        "files": 5,
+        "matches": 7
       },
       "floor": 4000
     },
@@ -593,8 +593,8 @@
         }
       ],
       "baseline": {
-        "files": 247,
-        "matches": 544
+        "files": 246,
+        "matches": 541
       },
       "floor": 4000
     },
@@ -634,8 +634,8 @@
         }
       ],
       "baseline": {
-        "files": 57,
-        "matches": 88
+        "files": 56,
+        "matches": 87
       },
       "floor": 4000
     },
@@ -1180,8 +1180,8 @@
         "description": "a literal `$` glyph immediately followed by an interpolation (`` `$${x.toFixed(2)}` ``) or by the shared <Numeric> primitive (`$<Numeric value={x} precision={4}/>`). PROXY FOR the stack-free condition: a monetary amount is composed at the call site out of a hard-coded currency glyph plus a number that was rounded by whoever wrote that line, so (a) the rounding contract is re-decided per call site, (b) the glyph cannot move to the position the locale requires, and (c) no currency other than USD can ever be represented. Precision measured 50/50 on a full read of every match: every one is a real money render, zero test-fixture or non-money hits. Two of the 50 are non-UI destinations (analyticsMiddleware.ts:33 writes a Sentry breadcrumb; knowledgeMiddleware.ts:33 builds an LLM prompt) and are left in deliberately — the rounding argument applies to them too and excluding two lines would cost more than it buys. Measured consequences in this repo: of the 40 `$${…}` sites, 22 round a sub-cent amount to a displayed `$0.00` (or `$0` at toFixed(0)) — FactoryOverviewTab.tsx:284 renders per-project spend at toFixed(0), so $0.49 of real spend reads as `$0`; and the 5 distinct precisions in flight (0,1,2,3,4 decimals) mean the same cost_usd field renders differently on two screens. The 10 `$<Numeric …>` sites are the sharper shape: the primitive IS imported, and the caller still hand-rolls the currency semantics around it (LlmTrackingCell.tsx:72 re-derives formatCost's 'auto' precision inline as `precision={spend >= 1 ? 2 : 4}`). PRECONDITION (measured, must be re-derived per repo): this repo denominates all money in USD, stores it as a float, and spells a currency render as a template literal starting with `$`. A repo that formats through Intl currency style, or uses a non-`$` symbol, or stores integer cents, scores zero while the condition is present — and the sibling personas-web, which has the identical idiom 11 times, ALSO has 0 `Intl.NumberFormat`, so the condition is convergent while this exact proxy is not portable to a repo that had adopted Intl. LEGAL FIX: `formatCost(usd, { language })` from @/lib/utils/formatters, or `<Numeric value={usd} unit=\"usd\" language={language} />` — both emit the currency glyph through Intl, so it lands where the locale puts it (`$1,234.50` en / `1.234,50 $` de / `US$1.234,50` id), and both carry the `<$0.01` sub-cent guard the hand-rolled sites lack."
       },
       "baseline": {
-        "files": 32,
-        "matches": 41
+        "files": 31,
+        "matches": 40
       },
       "floor": 4000
     },
@@ -1209,8 +1209,8 @@
         }
       ],
       "baseline": {
-        "files": 36,
-        "matches": 51
+        "files": 35,
+        "matches": 50
       },
       "floor": 4000
     },
@@ -1426,8 +1426,8 @@
         "description": "the native `title` attribute on a lowercase DOM element. PROXY FOR the stack-free condition: explanatory text is attached to a control through a channel the user agent alone renders, so it appears only on mouse hover - it is never reachable by keyboard, never appears on a touch device, cannot be dismissed, is not reliably announced by assistive technology, and is not routed through the application's own translation layer. PRECONDITION (must be re-derived per repo): this repo renders to a DOM where `title` has that user-agent behaviour AND owns a shared Tooltip primitive that is the alternative; a repo with no primitive would find this rule fires on 100% of its tooltip sites and should read that as the finding, not baseline it. Measured precision 1109/1109 (zero false positives) and recall 99.7% against a JSX-parser ground truth of 1112 on the 2026-08-14 corpus; the 3 misses are opening tags whose attribute region exceeds 1200 characters before `title=`. `iframe` is deliberately absent from the tag list: `title` on an iframe is a REQUIRED accessible name (WCAG 4.1.2), not a tooltip, so including it would gate a correct construct."
       },
       "baseline": {
-        "files": 389,
-        "matches": 712
+        "files": 387,
+        "matches": 708
       },
       "floor": 2000
     },
@@ -1499,8 +1499,8 @@
         }
       ],
       "baseline": {
-        "files": 32,
-        "matches": 32
+        "files": 30,
+        "matches": 30
       },
       "floor": 4000
     },
@@ -2122,8 +2122,8 @@
         "$comment": "Recall is deliberately partial: it cannot see a toggle whose button lives in a child component while the state lives in the parent, nor a non-button disclosure. Both are stated in the golden path rather than papered over."
       },
       "baseline": {
-        "files": 34,
-        "matches": 35
+        "files": 33,
+        "matches": 34
       },
       "floor": 2000
     },
@@ -2145,8 +2145,8 @@
         "description": "The semantic body-text token composited toward the canvas at 45% alpha or less. PROXY FOR the stack-free condition: TEXT HIERARCHY EXPRESSED AS ALPHA ON THE BODY-TEXT TOKEN, TUNED ON ONE THEME FAMILY AND SHIPPED TO ALL OF THEM. Computed, not asserted: on the three light themes this repo ships, text-foreground at 45% alpha measures 2.65-2.93:1 across every configuration the app can be in (canvas and card surfaces, all three brightness levels of the Appearance setting) - below the 3:1 AA-large floor as well as the 4.5:1 AA floor, so no font size rescues it. The same class measures 4.52-4.94:1 on all eight dark themes, which is why it was authored and why it survives review. 45 is the highest alpha at which the failure is unconditional; 50-60 also fail AA on every light configuration but can clear 3:1 for large text, so they are excluded to keep precision at 100% of the WCAG floor that applies. Measured precision 94.0% (23 of 385 are aria-hidden decorative marks, WCAG-exempt but still 2.4:1). PRECONDITION: this repo expresses alpha with Tailwind's /N modifier on a CSS-variable-backed colour token, and renders light themes through a global brightness(0.82) filter that lowers their contrast further. A repo whose light theme is a separate stylesheet, or that has no light theme, must re-derive the proxy - the condition is the alpha, not the slash. The legal fix is bare text-foreground with hierarchy carried by the typo-* scale, per Design.md principle 4."
       },
       "baseline": {
-        "files": 129,
-        "matches": 266
+        "files": 128,
+        "matches": 263
       },
       "floor": 4000
     },
@@ -2992,8 +2992,8 @@
         }
       ],
       "baseline": {
-        "files": 7,
-        "matches": 9
+        "files": 6,
+        "matches": 8
       },
       "floor": 3000
     },
@@ -3088,8 +3088,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 27,
-        "matches": 52
+        "files": 26,
+        "matches": 51
       },
       "floor": 3000
     },
@@ -4256,8 +4256,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 28,
-        "matches": 32
+        "files": 27,
+        "matches": 31
       },
       "floor": 3000
     },
@@ -5399,8 +5399,8 @@
         "description": "A catch handler whose only state write is an empty array, and which sets no error/failure identity anywhere in the handler. The rejection becomes indistinguishable from an empty result."
       },
       "baseline": {
-        "files": 29,
-        "matches": 32
+        "files": 28,
+        "matches": 31
       },
       "floor": 4000
     },
@@ -5725,8 +5725,8 @@
         }
       ],
       "baseline": {
-        "files": 821,
-        "matches": 3856
+        "files": 820,
+        "matches": 3852
       },
       "floor": 5000
     },
@@ -5841,8 +5841,8 @@
         }
       ],
       "baseline": {
-        "files": 939,
-        "matches": 2097
+        "files": 938,
+        "matches": 2093
       },
       "floor": 2200
     },
@@ -5915,8 +5915,8 @@
         }
       ],
       "baseline": {
-        "files": 678,
-        "matches": 1647
+        "files": 676,
+        "matches": 1642
       },
       "floor": 5000
     }
