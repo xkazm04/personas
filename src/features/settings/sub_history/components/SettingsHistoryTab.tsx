@@ -11,6 +11,9 @@ import { formatRelativeTime, formatTimestamp } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
+import { createLatestWins } from '@/stores/util/latestWins';
+import { extractMessage } from '@/lib/silentCatch';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 
 const PAGE_SIZE = 100;
 
@@ -23,6 +26,10 @@ const PAGE_SIZE = 100;
  * `Map` (see docs/concepts/golden-paths/shared-fetch-cache.md §12 item 10).
  */
 const historyCache = createModuleCache<string, SettingsAuditEntry[]>({ maxSize: 32 });
+
+/** Only the newest read may paint: a category switch while the previous
+ *  category's read is in flight otherwise lets whichever lands LAST win. */
+const historyReads = createLatestWins();
 
 /** Rows in the first viewport that play the one-shot entrance cascade. */
 const CASCADE_ROWS = 20;
@@ -65,23 +72,29 @@ export default function SettingsHistoryTab() {
   // EMPTY row region shows ghosts (fetch running) or the empty state (fetch
   // settled). Warm cache means it can be true while cached rows still paint.
   const [loading, setLoading] = useState(() => !historyCache.has(''));
-  const [error, setError] = useState<string | null>(null);
+  // The raw rejection, resolved to copy at render: invokeWithTimeout rejects
+  // with an AppError object, which `String(e)` rendered as "[object Object]".
+  const [failure, setFailure] = useState<{ raw: unknown } | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const load = useCallback(async () => {
+    const token = historyReads.next();
     setLoading(true);
-    setError(null);
+    setFailure(null);
     try {
       const rows = await listSettingsAuditEntries(
         PAGE_SIZE,
         categoryFilter || undefined,
       );
-      setEntries(rows);
+      // The rows are still true for THEIR category: cache them either way.
       historyCache.set(categoryFilter, rows);
+      if (!historyReads.isCurrent(token)) return;
+      setEntries(rows);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      if (!historyReads.isCurrent(token)) return;
+      setFailure({ raw: e });
     } finally {
-      setLoading(false);
+      if (historyReads.isCurrent(token)) setLoading(false);
     }
   }, [categoryFilter]);
 
@@ -133,10 +146,10 @@ export default function SettingsHistoryTab() {
         }
       />
       <ContentBody>
-        {error && (
+        {failure && (
           <div className="flex items-center gap-2 typo-caption text-red-400 bg-red-400/10 rounded p-2 mb-3">
             <AlertTriangle size={14} />
-            {error}
+            {resolveErrorTranslated(t, extractMessage(failure.raw)).message}
           </div>
         )}
 
