@@ -128,6 +128,13 @@ describe('RecipeAdoptionModal over an adapted catalog recipe', () => {
     expect(toggle.getAttribute('aria-label')).toBe('Audit enabled');
   });
 
+  it('names its icon-only close button instead of leaning on a native title', () => {
+    const recipe = recipeDefinitionToRecipe(defWith({ id: 'uc', title: 'Plain' }));
+    render(<RecipeAdoptionModal recipe={recipe} onClose={() => {}} />);
+    const close = screen.getByRole('button', { name: 'Close' });
+    expect(close.getAttribute('title')).toBeNull();
+  });
+
   it('renders no settings block for a recipe that declares none', () => {
     const recipe = recipeDefinitionToRecipe(defWith({ id: 'uc', title: 'Plain' }));
     expect(recipe.bindings).toEqual([]);
