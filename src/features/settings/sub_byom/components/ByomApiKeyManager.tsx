@@ -9,6 +9,7 @@ import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
 import { silentCatch } from '@/lib/silentCatch';
+import { secretSafeErrorCode } from '../libs/secretSafeError';
 
 const logger = createLogger('ByomApiKeyManager');
 
@@ -16,8 +17,7 @@ const logger = createLogger('ByomApiKeyManager');
 // Never surface raw error messages or values from this module — they would leak to
 // Sentry, browser console, or React error boundaries. Log only the settings key.
 function logSecretSafeError(op: string, settingsKey: string, err: unknown): void {
-  const code = err instanceof Error ? err.name : typeof err;
-  logger.error(`${op} failed`, { settingsKey, code });
+  logger.error(`${op} failed`, { settingsKey, code: secretSafeErrorCode(err) });
 }
 
 /** Definition of a provider API key entry that maps to a backend settings_key. */
