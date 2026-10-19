@@ -353,19 +353,16 @@ export const MAX_WEBGL = 6;
 
 // Sessions holding a live WebGL addon, least-recently-loaded first.
 //
-// Two parallel builds each landed this ledger under a name of its own, and both
-// vocabularies now have readers (the stats object exposes both spellings for the
-// same reason). ONE array is published under BOTH keys, so a devtools console —
-// or a test — reaches the same object either way; aliasing beats picking a
-// winner and silently leaving the other name reading `undefined`.
+// Two parallel builds once landed this ledger under two names
+// (`__fleetTerminalWebglOrder__` beside this one) and published one array under
+// both, with a second stats field (`webgl` beside `webglContexts`) for the same
+// number. Neither alias ever had a production reader - the settings budget
+// panel reads `webglContexts` and nothing reads the second key - so they were
+// retired on 2026-10-19 rather than kept as two doors to one value.
 const WEBGL_LRU_KEY = '__fleetTerminalWebglLru__';
-const WEBGL_ORDER_KEY = '__fleetTerminalWebglOrder__';
 const webglLru: string[] =
-  ((globalThis as Record<string, unknown>)[WEBGL_LRU_KEY] as string[] | undefined) ??
-  ((globalThis as Record<string, unknown>)[WEBGL_ORDER_KEY] as string[] | undefined) ??
-  [];
+  ((globalThis as Record<string, unknown>)[WEBGL_LRU_KEY] as string[] | undefined) ?? [];
 (globalThis as Record<string, unknown>)[WEBGL_LRU_KEY] = webglLru;
-(globalThis as Record<string, unknown>)[WEBGL_ORDER_KEY] = webglLru;
 
 /** Renderers dropped BECAUSE of MAX_WEBGL — the same instrument logic as
  *  `bumpEvictions()` below: a cap set too low and a renderer bug both read as
@@ -415,10 +412,6 @@ export interface FleetTerminalStats {
   /** Terminals disposed BECAUSE of that budget, since app start. */
   evictions: number;
   /** Terminals holding a live accelerated (WebGL) renderer right now. */
-  webgl: number;
-  /** The same count under the other name the parallel builds gave it. Both
-   *  spellings already have readers; they are one number read from one
-   *  ledger, so they cannot disagree. */
   webglContexts: number;
   /** The budget those GL contexts are bounded by. */
   maxWebgl: number;
@@ -437,7 +430,6 @@ export function getFleetTerminalStats(): FleetTerminalStats {
     parked: parked.length,
     maxParked: MAX_PARKED,
     evictions: (g[EVICTIONS_KEY] as number | undefined) ?? 0,
-    webgl: webglLru.length,
     webglContexts: webglLru.length,
     maxWebgl: MAX_WEBGL,
     webglEvictions: (g[WEBGL_EVICTIONS_KEY] as number | undefined) ?? 0,

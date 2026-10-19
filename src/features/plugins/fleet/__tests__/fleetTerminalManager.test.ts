@@ -119,10 +119,6 @@ function resetManager(): void {
   const g = globalThis as Record<string, unknown>;
   (g.__fleetTerminalRegistry__ as Map<string, unknown> | undefined)?.clear();
   (g.__fleetTerminalParked__ as string[] | undefined)?.splice(0);
-  // Both keys alias the SAME array (the two budget implementations that landed
-  // in parallel each named it), so splicing either clears it; splice both so a
-  // future rename of one can't silently leave the ledger dirty between tests.
-  (g.__fleetTerminalWebglOrder__ as string[] | undefined)?.splice(0);
   (g.__fleetTerminalWebglLru__ as string[] | undefined)?.splice(0);
   g.__fleetTerminalEvictions__ = 0;
   g.__fleetTerminalWebglEvictions__ = 0;
@@ -499,7 +495,7 @@ describe('WebGL renderer budget', () => {
     // repair, not a demotion — and the head MUST move, or the budget loop
     // freezes the UI thread exactly the way the parked LRU once did.
     const g = globalThis as Record<string, unknown>;
-    const order = g.__fleetTerminalWebglOrder__ as string[];
+    const order = g.__fleetTerminalWebglLru__ as string[];
     const budget = getFleetTerminalStats().maxWebgl;
     for (let i = 0; i < budget; i += 1) order.push(`ghost-${i}`);
 
@@ -729,7 +725,7 @@ describe('accelerated-renderer budget', () => {
 
     const stats = getFleetTerminalStats();
     expect(stats.maxWebgl).toBe(6);
-    expect(stats.webgl).toBe(6);
+    expect(stats.webglContexts).toBe(6);
     expect(glLru()).toEqual(['g3', 'g4', 'g5', 'g6', 'g7', 'g8']);
     // The two oldest were dropped to the DOM fallback, deliberately, and counted.
     expect(registryMap().get('g1')?.webgl).toBeNull();
@@ -768,11 +764,11 @@ describe('accelerated-renderer budget', () => {
 
   it('returns the budget when a pane detaches, so parked terminals cost no context', () => {
     const hosts = ['p1', 'p2'].map((id) => attach(id));
-    expect(getFleetTerminalStats().webgl).toBe(2);
+    expect(getFleetTerminalStats().webglContexts).toBe(2);
 
     detachTerminal('p1');
 
-    expect(getFleetTerminalStats().webgl).toBe(1);
+    expect(getFleetTerminalStats().webglContexts).toBe(1);
     expect(glLru()).toEqual(['p2']);
     hosts.forEach((h) => h.remove());
   });
