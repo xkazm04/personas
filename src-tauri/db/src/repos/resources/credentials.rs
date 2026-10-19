@@ -648,29 +648,6 @@ fn sanitize_ledger_json(meta: &str) -> String {
     }
 }
 
-pub fn update_metadata(pool: &DbPool, id: &str, metadata: Option<&str>) -> Result<(), AppError> {
-    timed_query!(
-        "persona_credentials",
-        "persona_credentials::update_metadata",
-        {
-            let now = chrono::Utc::now().to_rfc3339();
-            let conn = pool.get()?;
-
-            // Sanitize metadata to prevent leaking secrets in plaintext column
-            let sanitized_metadata = metadata.map(sanitize_ledger_json);
-
-            let rows = conn.execute(
-                "UPDATE persona_credentials SET metadata = ?1, updated_at = ?2 WHERE id = ?3",
-                params![sanitized_metadata, now, id],
-            )?;
-            if rows == 0 {
-                return Err(AppError::NotFound(format!("Credential {id}")));
-            }
-            Ok(())
-        }
-    )
-}
-
 /// Atomically merge a metadata patch into the current credential metadata.
 ///
 /// - Reads current metadata inside a transaction

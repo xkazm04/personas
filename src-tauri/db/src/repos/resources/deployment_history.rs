@@ -123,36 +123,6 @@ pub fn list_by_project(
     )
 }
 
-/// Get the most recent successful deployment for a persona+project (for rollback).
-pub fn get_previous_deployment(
-    pool: &DbPool,
-    persona_id: &str,
-    project_id: i64,
-    exclude_id: &str,
-) -> Result<Option<GitLabDeploymentRecord>, AppError> {
-    timed_query!(
-        "deployment_history",
-        "deployment_history::get_previous_deployment",
-        {
-            let conn = pool.get()?;
-            let mut stmt = conn.prepare(&format!(
-                "SELECT {COLUMNS} FROM deployment_history
-             WHERE persona_id = ?1 AND project_id = ?2 AND id != ?3
-                   AND deploy_result = 'success'
-             ORDER BY created_at DESC
-             LIMIT 1",
-            ))?;
-            let mut rows =
-                stmt.query_map(params![persona_id, project_id, exclude_id], row_to_record)?;
-            match rows.next() {
-                Some(Ok(record)) => Ok(Some(record)),
-                Some(Err(e)) => Err(AppError::Database(e)),
-                None => Ok(None),
-            }
-        }
-    )
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

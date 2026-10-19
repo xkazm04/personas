@@ -18,32 +18,6 @@ pub fn insert_document(pool: &DbPool, doc: &OcrDocument) -> Result<OcrDocument, 
     })
 }
 
-pub fn list_documents(pool: &DbPool) -> Result<Vec<OcrDocument>, AppError> {
-    timed_query!("ocr_results", "ocr_results::list_documents", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT id, file_name, file_path, provider, model, extracted_text, structured_data, prompt, duration_ms, token_count, created_at
-             FROM ocr_documents ORDER BY created_at DESC"
-        )?;
-        let rows = stmt.query_map([], |row| {
-            Ok(OcrDocument {
-                id: row.get(0)?,
-                file_name: row.get(1)?,
-                file_path: row.get(2)?,
-                provider: row.get(3)?,
-                model: row.get(4)?,
-                extracted_text: row.get(5)?,
-                structured_data: row.get(6)?,
-                prompt: row.get(7)?,
-                duration_ms: row.get(8)?,
-                token_count: row.get(9)?,
-                created_at: row.get(10)?,
-            })
-        })?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::from)
-    })
-}
-
 pub fn get_document(pool: &DbPool, id: &str) -> Result<OcrDocument, AppError> {
     timed_query!("ocr_results", "ocr_results::get_document", {
         let conn = pool.get()?;
@@ -61,13 +35,5 @@ pub fn get_document(pool: &DbPool, id: &str) -> Result<OcrDocument, AppError> {
             rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("OCR document not found: {id}")),
             other => AppError::from(other),
         })
-    })
-}
-
-pub fn delete_document(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    timed_query!("ocr_results", "ocr_results::delete_document", {
-        let conn = pool.get()?;
-        let rows = conn.execute("DELETE FROM ocr_documents WHERE id = ?1", [id])?;
-        Ok(rows > 0)
     })
 }
