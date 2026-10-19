@@ -1,6 +1,9 @@
 # `sub_incidents` — Cross-Source Incidents Inbox (DESIGN)
 
-> **Status:** design proposal · awaiting user approval before implementation.
+> **Status:** IMPLEMENTED; this is the original 2026-04-30 proposal, kept as history. Where it and the code differ, the code wins (checked 2026-10-19):
+> - **Lifecycle:** five statuses, not three: `open / acknowledged / in_progress / resolved / dismissed` (`IncidentStatus`, `src-tauri/core/src/models/audit_incident.rs`). The inbox's tables live in `libs/incidentStatus.ts`, pinned to Rust by `libs/__tests__/incidentStatusParity.test.ts`.
+> - **Sources:** the backend now promotes from 15 `source_table` values, not 7 (grep `source_table: "` under `src-tauri/`); the inbox labels and filters the 9 in `INCIDENT_SOURCE_TABLES` (`libs/incidentTaxonomy.ts`). The rest render as their raw token.
+> - **Files:** section 5's tree is the plan, not the tree. `IncidentBulkActions`, `IncidentBackfillBanner` and `IncidentSourceBadge` were never built; the ledger is `components/ledger/`, the autonomous log `components/autonomous/`, and open incidents open the Decision Deck (`libs/incidentDeckDoor.ts`).
 > **Source:** `/research` run on 2026-04-30 (PokeeClaw walkthrough — Approach B from the three-approach scan).
 > **Scope:** new top-level Overview panel that promotes failure-shaped audit rows from 7 existing streams into a single triage inbox with `open → acknowledged → resolved` lifecycle.
 
