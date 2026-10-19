@@ -87,6 +87,12 @@ export function parseGitLabUrl(url: string): { path: string } | null {
 // GitHub adapter
 // ---------------------------------------------------------------------------
 
+function assertListOk(what: string, res: { status: number; body: string }): void {
+  if (res.status >= 400) {
+    throw new Error(`${what} request failed (${res.status}): ${res.body.slice(0, 200)}`);
+  }
+}
+
 export async function fetchGitHubStats(
   credentialId: string,
   owner: string,
@@ -119,6 +125,10 @@ export async function fetchGitHubStats(
     `/repos/${owner}/${repo}/pulls?state=open&per_page=100`,
     headers,
   );
+  // A failed sub-request is a failed read, not a zero: open issues are derived
+  // by SUBTRACTING the PR count, so a 403/429 on /pulls read as "0 PRs" and
+  // inflated open issues by every open PR, under a tile tinted as measured.
+  assertListOk('GitHub pulls', prRes);
   const prData = JSON.parse(prRes.body);
   const openPrs = Array.isArray(prData) ? prData.length : 0;
   // A full page (exactly per_page items) means there may be more beyond it —
@@ -133,7 +143,8 @@ export async function fetchGitHubStats(
     `/repos/${owner}/${repo}/commits?since=${weekAgo}&per_page=100`,
     headers,
   );
-  const commitsData = JSON.parse(commitsRes.body);
+  // 409 is GitHub's answer for an empty repository: genuinely zero commits.
+  const commitsData = commitsRes.status === 409 ? [] : (assertListOk('GitHub commits', commitsRes), JSON.parse(commitsRes.body));
   const commitsLastWeek = Array.isArray(commitsData) ? commitsData.length : 0;
   const commitsLastWeekCapped = commitsLastWeek === 100;
 
@@ -184,6 +195,7 @@ export async function fetchGitLabStats(
     `/api/v4/projects/${encoded}/merge_requests?state=opened&per_page=100`,
     headers,
   );
+  assertListOk('GitLab merge requests', mrRes);
   const mrData = JSON.parse(mrRes.body);
   const openMRs = Array.isArray(mrData) ? mrData.length : 0;
 
@@ -195,6 +207,7 @@ export async function fetchGitLabStats(
     `/api/v4/projects/${encoded}/repository/commits?since=${weekAgo}&per_page=100`,
     headers,
   );
+  assertListOk('GitLab commits', commitsRes);
   const commitsData = JSON.parse(commitsRes.body);
   const commitsLastWeek = Array.isArray(commitsData) ? commitsData.length : 0;
 
