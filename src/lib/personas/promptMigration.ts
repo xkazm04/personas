@@ -64,47 +64,6 @@ export const SECTION_LABELS: Record<StandardSectionKey, string> = {
   errorHandling: 'Error Handling',
 };
 
-// -- Creation & Migration ---------------------------------------
-
-/** Create an empty structured prompt with all fields initialized. */
-export function createEmptyStructuredPrompt(): StructuredPrompt {
-  return {
-    identity: '',
-    instructions: '',
-    toolGuidance: '',
-    examples: '',
-    errorHandling: '',
-    customSections: [],
-    webSearch: '',
-  };
-}
-
-/**
- * Migrate a flat prompt string into the structured format.
- * Places the entire flat text into the `instructions` section.
- */
-export function migratePromptToStructured(flatPrompt: string): StructuredPrompt {
-  return {
-    ...createEmptyStructuredPrompt(),
-    instructions: flatPrompt,
-  };
-}
-
-// -- Validation -------------------------------------------------
-
-/** Check if all sections of a structured prompt are empty. */
-export function isStructuredPromptEmpty(sp: StructuredPrompt): boolean {
-  return (
-    !sp.identity.trim() &&
-    !sp.instructions.trim() &&
-    !sp.toolGuidance.trim() &&
-    !sp.examples.trim() &&
-    !sp.errorHandling.trim() &&
-    !sp.webSearch.trim() &&
-    sp.customSections.every(s => !s.content.trim())
-  );
-}
-
 // -- Parsing ----------------------------------------------------
 
 /**
@@ -167,83 +126,6 @@ export function parseFromRecord(value: Record<string, unknown> | null | undefine
     webSearch: asStr(value.webSearch),
     customSections,
   };
-}
-
-// -- Serialization ----------------------------------------------
-
-/** Serialize a StructuredPrompt to a JSON string for database persistence. */
-export function stringifyStructuredPrompt(sp: StructuredPrompt): string {
-  return JSON.stringify(sp);
-}
-
-// -- Rendering --------------------------------------------------
-
-import { previewPrompt as tauriPreviewPrompt } from '@/api/design/design';
-
-/**
- * Local-only rendering of structured prompt sections to markdown.
- *
- * This is a lightweight fallback that only renders the prompt sections
- * themselves (no tools, credentials, protocols, etc.). Use `previewPrompt`
- * to get the full runtime-accurate preview from the Rust engine.
- */
-export function renderToMarkdown(sp: StructuredPrompt): string {
-  const parts: string[] = [];
-
-  if (sp.identity.trim()) {
-    parts.push(`## Identity\n${sp.identity}`);
-  }
-  if (sp.instructions.trim()) {
-    parts.push(`## Instructions\n${sp.instructions}`);
-  }
-  if (sp.toolGuidance.trim()) {
-    parts.push(`## Tool Guidance\n${sp.toolGuidance}`);
-  }
-  if (sp.examples.trim()) {
-    parts.push(`## Examples\n${sp.examples}`);
-  }
-  if (sp.errorHandling.trim()) {
-    parts.push(`## Error Handling\n${sp.errorHandling}`);
-  }
-
-  for (const cs of sp.customSections) {
-    if (cs.title.trim() && cs.content.trim()) {
-      parts.push(`## ${cs.title}\n${cs.content}`);
-    }
-  }
-
-  if (sp.webSearch.trim()) {
-    parts.push(
-      `## Web Search Research Prompt\nWhen performing web searches during this execution, use the following research guidance:\n\n${sp.webSearch}`,
-    );
-  }
-
-  return parts.join('\n\n') + (parts.length ? '\n' : '');
-}
-
-/**
- * Preview the full assembled prompt via the Rust engine.
- *
- * Calls the `preview_prompt` Tauri command which runs the same
- * `assemble_prompt()` used at runtime, including tools, environment
- * guidance, and communication protocols. Falls back to the local
- * `renderToMarkdown` if the IPC call fails.
- *
- * @param personaId  -- Persona to preview.
- * @param sp         -- Optional draft structured prompt (previews unsaved edits).
- */
-export async function previewPrompt(
-  personaId: string,
-  sp?: StructuredPrompt | null,
-): Promise<string> {
-  try {
-    const spJson = sp ? JSON.stringify(sp) : null;
-    return await tauriPreviewPrompt(personaId, spJson);
-  } catch {
-    // intentional: non-critical -- Tauri IPC fallback, render locally from draft
-    if (sp) return renderToMarkdown(sp);
-    return '';
-  }
 }
 
 // -- Section Summaries ------------------------------------------
