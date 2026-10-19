@@ -115,13 +115,19 @@ export function useAutoTeam(): AutoTeamState {
       });
 
       if (!team) {
+        if (cancelledRef.current) return;
         setError('Failed to create team');
         setPhase('error');
         return;
       }
-      if (cancelledRef.current) return;
+      // From here the team row EXISTS. Closing the modal (reset) must not
+      // abandon the build half-way: it used to return after the member loop,
+      // leaving a team with members, zero connections, no seeded memories and
+      // a stale team list. A cancel now only silences the UI; the build itself
+      // runs to completion (or rolls back on a member failure, as before).
+      const live = () => !cancelledRef.current;
 
-      setCreatedTeam(team);
+      if (live()) setCreatedTeam(team);
 
       // 2. Add members and collect their IDs. addTeamMember can return null
       // (the store action swallows backend errors); without the nullcheck this
@@ -147,11 +153,10 @@ export function useAutoTeam(): AutoTeamState {
         // Roll back the partial team — best-effort, we've already surfaced the
         // failure via the outer catch.
         try { await deleteTeam(team.id); } catch (err) { silentCatch("features/teams/sub_teamWorkspace/useAutoTeam:catch1")(err); }
-        setCreatedTeam(null);
+        if (live()) setCreatedTeam(null);
         throw err;
       }
-      if (cancelledRef.current) return;
-      setMemberCount(newMemberIds.length);
+      if (live()) setMemberCount(newMemberIds.length);
 
       // 3. Create connections. The LLM blueprint routinely contains edges the
       // backend legitimately rejects — duplicate pairs, self-loops, or
@@ -179,11 +184,11 @@ export function useAutoTeam(): AutoTeamState {
           silentCatch("features/teams/sub_teamWorkspace/useAutoTeam:connection")(err);
         }
       }
-      if (cancelledRef.current) return;
-      setConnectionCount(connCount);
-
-      // 4. Seed memories from similar past teams
-      setPhase('seeding');
+      if (live()) {
+        setConnectionCount(connCount);
+        // 4. Seed memories from similar past teams
+        setPhase('seeding');
+      }
       let seeded = 0;
 
       try {
@@ -224,8 +229,10 @@ export function useAutoTeam(): AutoTeamState {
         }
       } catch (err) { silentCatch("features/teams/sub_teamWorkspace/useAutoTeam:catch3")(err); }
 
-      setMemoriesSeeded(seeded);
+      // Refresh the list even when cancelled: the team exists either way.
       await fetchTeams();
+      if (!live()) return;
+      setMemoriesSeeded(seeded);
       setPhase('done');
 
       // Auto-navigate to the new team after a short pause
