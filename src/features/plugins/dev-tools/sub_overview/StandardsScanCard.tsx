@@ -10,10 +10,9 @@ import { ShieldCheck, ScanSearch, ListPlus } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { AsyncButton, Button } from '@/features/shared/components/buttons';
-import { createTask } from '@/api/devTools/devTools';
+import { createTask, runStandardsScan } from '@/api/devTools/devTools';
 import { toastCatch } from '@/lib/silentCatch';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useTypedTauriEvent } from '@/hooks/useTauriEvent';
 import { EventName } from '@/lib/eventRegistry';
 
@@ -29,7 +28,6 @@ export function StandardsScanCard({ projectId }: { projectId: string }) {
   const dp = t.plugins.dev_projects;
   const standards = useSystemStore((s) => s.standards);
   const fetchStandards = useSystemStore((s) => s.fetchStandards);
-  const runStandardsScan = useSystemStore((s) => s.runStandardsScan);
   const setPendingTaskFocusId = useSystemStore((s) => s.setPendingTaskFocusId);
   const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
   const [scanning, setScanning] = useState(false);
@@ -63,9 +61,18 @@ export function StandardsScanCard({ projectId }: { projectId: string }) {
   }, [projectId, fetchStandards]);
   useTypedTauriEvent(EventName.STANDARDS_SCAN_STATUS, onScanStatus, 'StandardsScanCard:listen');
 
+  // The IPC is called directly: the store action swallows a failed start
+  // (reportError, then resolves), so the card could not tell it apart from a
+  // started scan and sat on "Scanning..." with the button disabled until the
+  // tab remounted, waiting for a status event that would never come.
   const handleScan = async () => {
     setScanning(true);
-    await runStandardsScan(projectId);
+    try {
+      await runStandardsScan(projectId);
+    } catch (err) {
+      setScanning(false);
+      toastCatch('StandardsScanCard:runScan')(err);
+    }
   };
 
   const compliancePct = useMemo(() => {
@@ -88,7 +95,8 @@ export function StandardsScanCard({ projectId }: { projectId: string }) {
           variant="secondary"
           size="xs"
           className="ml-auto"
-          icon={scanning ? <LoadingSpinner size="sm" /> : <ScanSearch className="w-3 h-3" />}
+          icon={<ScanSearch className="w-3 h-3" />}
+          loading={scanning}
           disabled={scanning}
           onClick={handleScan}
         >
