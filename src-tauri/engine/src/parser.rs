@@ -14,6 +14,52 @@ fn truncate_field(text: &str, max_len: usize) -> String {
     }
 }
 
+/// The display preview of a tool input: its JSON text cut to `max_chars`
+/// characters, exactly as `truncate_field(&serde_json::to_string(value), ..)`
+/// would produce it, but serialized only as far as the preview can show.
+///
+/// A `Write`/`Edit` input carries the whole file body, so serializing it whole
+/// to keep 500 chars was most of the cost of parsing such a line (measured
+/// 2026-10-19, release, 57 KB `Write` line: 41-50 us whole vs 3-4 us capped,
+/// against 57-66 us for the line's own `serde_json` parse). The writer refuses
+/// bytes past `(max_chars + 1) * 4`, which always holds more than `max_chars`
+/// characters, so the cut lands on the same character either way; a code
+/// point split at the byte cap lies past the cut and is dropped.
+fn bounded_json_preview(value: &serde_json::Value, max_chars: usize) -> String {
+    struct Capped {
+        buf: Vec<u8>,
+        cap: usize,
+    }
+    impl std::io::Write for Capped {
+        fn write(&mut self, data: &[u8]) -> std::io::Result<usize> {
+            let room = self.cap - self.buf.len();
+            if room == 0 {
+                // Stops the serializer: everything past here is cut anyway.
+                return Err(std::io::Error::other("preview full"));
+            }
+            let take = data.len().min(room);
+            self.buf.extend_from_slice(&data[..take]);
+            Ok(take)
+        }
+        fn flush(&mut self) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
+
+    let cap = (max_chars + 1) * 4;
+    let mut out = Capped {
+        buf: Vec::with_capacity(cap.min(4096)),
+        cap,
+    };
+    // The only error a `Value` can raise here is the writer's own "full".
+    let _ = serde_json::to_writer(&mut out, value);
+    let text = match std::str::from_utf8(&out.buf) {
+        Ok(s) => std::borrow::Cow::Borrowed(s),
+        Err(e) => String::from_utf8_lossy(&out.buf[..e.valid_up_to()]),
+    };
+    truncate_field(&text, max_chars)
+}
+
 /// P4 fan-out attribution key. Every `assistant`/`user` stream message carries a
 /// top-level `parent_tool_use_id`: `null` for the root agent, or the parent
 /// `Task` tool call's id for a subagent's own messages (see
@@ -293,17 +339,17 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
                                     .and_then(|n| n.as_str())
                                     .unwrap_or("unknown")
                                     .to_string();
-                                let input_json = block
-                                    .get("input")
-                                    .cloned()
-                                    .unwrap_or(serde_json::Value::Null);
+                                // Borrowed, never cloned: a `Write` input carries the
+                                // whole file body, and only 500 chars of it are shown.
+                                let input_json =
+                                    block.get("input").unwrap_or(&serde_json::Value::Null);
 
                                 // Special-case TodoWrite: parse the structured `todos` array
                                 // so the chat can render a checklist instead of a truncated
                                 // JSON preview. Falls through to the generic tool_use path
                                 // if the input shape is unrecognized.
                                 if name == "TodoWrite" {
-                                    if let Some(items) = extract_todo_items(&input_json) {
+                                    if let Some(items) = extract_todo_items(input_json) {
                                         let display =
                                             format!("> Plan updated: {} item(s)", items.len());
                                         if first_type.is_none() {
@@ -317,21 +363,20 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
                                     }
                                 }
 
-                                let input_preview =
-                                    serde_json::to_string(&input_json).unwrap_or_default();
-                                let input_preview_truncated =
-                                    truncate_field(&input_preview, MAX_TOOL_INPUT_DISPLAY);
                                 let display = format!("> Using tool: {name}");
                                 if first_type.is_none() {
                                     // Decode here, from the full value: the preview
-                                    // above is a display string and is invalid JSON
+                                    // below is a display string and is invalid JSON
                                     // once the cut appends `...`.
                                     first_type = Some(StreamLineType::AssistantToolUse {
                                         tool_use_id: str_field(block, "id"),
-                                        file_path: decode_file_path(&name, &input_json),
-                                        protocol: decode_protocol_tool(&name, &input_json),
+                                        file_path: decode_file_path(&name, input_json),
+                                        protocol: decode_protocol_tool(&name, input_json),
+                                        input_preview: bounded_json_preview(
+                                            input_json,
+                                            MAX_TOOL_INPUT_DISPLAY,
+                                        ),
                                         tool_name: name,
-                                        input_preview: input_preview_truncated,
                                     });
                                     tool_display = Some(display);
                                 } else if tool_display.is_none() {
@@ -2779,5 +2824,71 @@ mod tool_call_decode_tests {
         assert_eq!(name, "Bash");
         assert_eq!(file_path, None);
         assert_eq!(protocol, None);
+    }
+}
+
+#[cfg(test)]
+mod bounded_preview_tests {
+    use super::*;
+
+    /// The preview the parser produced before it stopped serializing whole
+    /// inputs. Kept as the oracle: the capped writer must cut on the same char.
+    fn whole_then_cut(value: &serde_json::Value, max_chars: usize) -> String {
+        truncate_field(&serde_json::to_string(value).unwrap(), max_chars)
+    }
+
+    #[test]
+    fn the_capped_preview_matches_the_whole_serialization_cut() {
+        let cases = vec![
+            serde_json::Value::Null,
+            serde_json::json!({}),
+            serde_json::json!({"file_path": "/a.rs"}),
+            serde_json::json!({"file_path": "/a.rs", "content": "x".repeat(60_000)}),
+            serde_json::json!({"content": "fn main() {\n\t\"q\"\n}".repeat(3_000)}),
+            // Multi-byte text straddling every byte offset of the cap.
+            serde_json::json!({"content": "\u{1F600}\u{00E9}\u{4E2D}a".repeat(2_000)}),
+            serde_json::json!({"a": "\u{1F600}".repeat(MAX_TOOL_INPUT_DISPLAY)}),
+            serde_json::json!({"nested": [{"k": "v".repeat(700)}, 1, 2.5, true]}),
+        ];
+        for value in &cases {
+            for max in [0usize, 1, 7, 499, 500, 501] {
+                assert_eq!(
+                    bounded_json_preview(value, max),
+                    whole_then_cut(value, max),
+                    "max={max} value head={:.80}",
+                    value.to_string()
+                );
+            }
+        }
+        // Exactly at the boundary: a serialization of max chars is not cut.
+        let exact = serde_json::Value::String("y".repeat(498));
+        assert_eq!(serde_json::to_string(&exact).unwrap().len(), 500);
+        assert_eq!(
+            bounded_json_preview(&exact, 500),
+            whole_then_cut(&exact, 500)
+        );
+        assert!(!bounded_json_preview(&exact, 500).ends_with("..."));
+    }
+
+    #[test]
+    fn a_huge_write_still_previews_its_head_and_decodes_its_path() {
+        let line = serde_json::json!({"type":"assistant","message":{"id":"m1","content":[
+            {"type":"tool_use","id":"t1","name":"Write",
+             "input":{"file_path":"/big.rs","content":"z".repeat(60_000)}}
+        ]}})
+        .to_string();
+        let (st, display) = parse_stream_line(&line);
+        assert_eq!(display.as_deref(), Some("> Using tool: Write"));
+        let StreamLineType::AssistantToolUse {
+            input_preview,
+            file_path,
+            ..
+        } = st
+        else {
+            panic!("expected a tool use, got {st:?}");
+        };
+        assert_eq!(input_preview.chars().count(), MAX_TOOL_INPUT_DISPLAY + 3);
+        assert!(input_preview.contains("zzzz"), "{input_preview:.80}");
+        assert_eq!(file_path.as_deref(), Some("/big.rs"));
     }
 }
