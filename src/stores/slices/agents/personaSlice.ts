@@ -300,7 +300,12 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
 
   fetchDetail: async (id: string) => {
     const seq = ++fetchDetailSeq;
-    set({ isLoading: true, error: null });
+    // No `isLoading` here. That flag is the ROSTER's busy state (Home's
+    // get-started band and Mission Control read it as "personas are still
+    // loading"); a detail load writing it cleared the roster's busy state
+    // early, and a load superseded by a deselect or a delete returned before
+    // its own clear, stranding the flag at true for the session.
+    set({ error: null });
     try {
       // Single IPC round trip: persona + tools + triggers + subscriptions + automations
       const detail = await getPersonaDetail(id);
@@ -322,7 +327,6 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
           selectedPersonaId: id,
           detailCache: nextCache,
           selectedPersona: deriveSelectedPersona(nextPersonas, id, nextCache),
-          isLoading: false,
         };
       });
     } catch (err) {
@@ -335,7 +339,6 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
         if (id in nextCache) delete nextCache[id];
         return {
           error: errMsg(err, "Failed to fetch persona"),
-          isLoading: false,
           selectedPersonaId: null,
           detailCache: nextCache,
           selectedPersona: null,

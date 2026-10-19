@@ -236,6 +236,49 @@ describe("personaStore", () => {
   });
 });
 
+// `isLoading` is the roster's busy flag: Home's get-started band and Mission
+// Control read it as "personas are still loading". A detail load must neither
+// set it nor clear it.
+describe("isLoading belongs to the roster, not the detail load", () => {
+  beforeEach(() => {
+    useAgentStore.setState({ personas: [makePersona({ id: "p-1" })], selectedPersonaId: null, selectedPersona: null, detailCache: {}, isLoading: false, isEditorDirty: false });
+    resetInvokeMocks();
+  });
+
+  it("a detail load superseded by a deselect does not strand the flag at true", async () => {
+    let resolveDetail!: (v: unknown) => void;
+    mockedTauriInvoke.mockImplementation((cmd: string) => {
+      if (cmd === "get_persona_detail") return new Promise((r) => { resolveDetail = r; });
+      return Promise.resolve(undefined);
+    });
+
+    useAgentStore.getState().selectPersona("p-1");
+    await vi.waitFor(() => expect(resolveDetail).toBeTypeOf("function"));
+    useAgentStore.getState().selectPersona(null);
+    resolveDetail({ ...makePersona({ id: "p-1" }), tools: [], triggers: [] });
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(useAgentStore.getState().isLoading).toBe(false);
+  });
+
+  it("a detail load landing first does not clear the roster's busy state", async () => {
+    let resolveList!: (v: unknown) => void;
+    mockedTauriInvoke.mockImplementation((cmd: string) => {
+      if (cmd === "list_personas") return new Promise((r) => { resolveList = r; });
+      if (cmd === "get_persona_detail") return Promise.resolve({ ...makePersona({ id: "p-1" }), tools: [], triggers: [] });
+      return Promise.resolve(undefined);
+    });
+
+    const roster = useAgentStore.getState().fetchPersonas();
+    await useAgentStore.getState().fetchDetail("p-1");
+    expect(useAgentStore.getState().isLoading).toBe(true);
+
+    resolveList([makePersona({ id: "p-1" })]);
+    await roster;
+    expect(useAgentStore.getState().isLoading).toBe(false);
+  });
+});
+
 const DELETED = {
   deleted: true,
   executionsCancelled: 0,
