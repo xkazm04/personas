@@ -334,6 +334,7 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
               size="sm"
               icon={<RotateCcw className="w-4 h-4" />}
               onClick={() => void a.retry()}
+              loading={a.retrying}
               data-testid="preset-retry-failed-button"
             >
               {tx(t.templates.presets.retry_failed_button, { count: a.result.failed_members.length })}
