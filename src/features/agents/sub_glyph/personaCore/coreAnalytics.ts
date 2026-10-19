@@ -4,7 +4,7 @@
  *  and still in hand: after it the core leaves the component tree only as prose
  *  folded into the build intent, which is why nothing downstream could ever
  *  answer "which archetypes and traits do people actually pick?". Every surface
- *  that hosts the configurator (the modal, the Sheet · Cinema loupe layer)
+ *  that hosts the configurator (today the Sheet · Cinema loupe layer)
  *  calls this on EVERY user exit route (Done, Esc, backdrop, back) so an
  *  ABANDONED open is recorded too. It routes through getAnalyticsSink() rather
  *  than Sentry directly so the user's telemetry switch governs it like every

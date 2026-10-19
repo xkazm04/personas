@@ -596,7 +596,9 @@ describe("config tile semantics", () => {
 // What the surface reports about itself.
 // --------------------------------------------------------------------------
 import { personaCoreSelectionLabel } from "../usePersonaCore";
-import { PersonaCoreModal } from "../PersonaCoreModal";
+import { PersonaCoreBody } from "../PersonaCoreBody";
+import { recordPersonaCoreClose } from "../coreAnalytics";
+import type { PersonaCore } from "../types";
 import { setAnalyticsSink, noopSink, type InteractionEvent } from "@/lib/analytics/sink";
 
 describe("persona-core selection label", () => {
@@ -637,7 +639,7 @@ describe("persona-core selection label", () => {
   });
 });
 
-describe("PersonaCoreModal analytics", () => {
+describe("persona-core close analytics", () => {
   const events: InteractionEvent[] = [];
 
   beforeEach(() => {
@@ -648,7 +650,12 @@ describe("PersonaCoreModal analytics", () => {
   });
   afterEach(() => setAnalyticsSink(noopSink));
 
-  it("records the settled selection when the user closes the modal", async () => {
+  // The live host (the Sheet · Cinema core layer) wires the body's Done to
+  // recordPersonaCoreClose; render the body the same way.
+  const renderBody = (core: PersonaCore, onClose: () => void) =>
+    render(<PersonaCoreBody core={core} onDone={() => { recordPersonaCoreClose(core); onClose(); }} onCrashReset={onClose} />);
+
+  it("records the settled selection when the user closes the configurator", async () => {
     // Before this, every choice left the component tree only as prose folded
     // into the build intent, so nothing downstream could answer which
     // archetypes or traits people actually pick.
@@ -657,7 +664,7 @@ describe("PersonaCoreModal analytics", () => {
     act(() => result.current.toggleTrait("terse"));
 
     const onClose = vi.fn();
-    render(<PersonaCoreModal core={result.current} isOpen onClose={onClose} />);
+    renderBody(result.current, onClose);
     fireEvent.click(screen.getByTestId("persona-core-done"));
 
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -673,7 +680,7 @@ describe("PersonaCoreModal analytics", () => {
     const { result } = renderHook(() => usePersonaCore("build-1"));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    render(<PersonaCoreModal core={result.current} isOpen onClose={() => {}} />);
+    renderBody(result.current, () => {});
     fireEvent.click(screen.getByTestId("persona-core-done"));
 
     expect(events).toHaveLength(1);

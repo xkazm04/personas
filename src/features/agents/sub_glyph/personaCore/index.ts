@@ -1,9 +1,10 @@
 /** persona-core — the temperament configurator under the build intent.
- *  Public surface: the badge (dimension-row chip), the modal, the two of them
- *  pre-wired as PersonaCoreEntry, the chrome-free body (PersonaCoreBody) for hosts with their own surface, the close analytics, the state hook, and the PersonaCore type. Internals (catalog, leaf components, orchestrator) stay
- *  private to the folder. */
+ *  Public surface: the badge (dimension-row chip) and PersonaCoreEntry, its
+ *  compose-surface door, the chrome-free body (PersonaCoreBody) the host's own
+ *  layer renders, the close analytics, the state hook, and the PersonaCore
+ *  type. Internals (catalog, leaf components, orchestrator) stay private to
+ *  the folder. */
 export { PersonaCoreBadge } from "./PersonaCoreBadge";
-export { PersonaCoreModal } from "./PersonaCoreModal";
 export { PersonaCoreEntry } from "./PersonaCoreEntry";
 export { PersonaCoreBody } from "./PersonaCoreBody";
 export { recordPersonaCoreClose, personaCoreAccent } from "./coreAnalytics";
