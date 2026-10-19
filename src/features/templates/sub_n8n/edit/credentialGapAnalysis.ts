@@ -1,6 +1,6 @@
 import type { SuggestedConnector } from '@/lib/types/designTypes';
 import type { CredentialMetadata } from '@/lib/types/types';
-import { matchCredentialToConnector } from './connectorMatching';
+import { matchCredentialToConnector, MIN_FUZZY_LENGTH } from './connectorMatching';
 
 export type CredentialGapStatus = 'ready' | 'ambiguous' | 'missing';
 
@@ -18,6 +18,16 @@ export interface CredentialGapResult {
   readyCount: number;
   ambiguousCount: number;
   missingCount: number;
+}
+
+/** Exact service type, or (for names long enough to be specific) a prefix in
+ *  either direction or the connector name inside the credential's name. */
+function isCandidate(c: CredentialMetadata, connectorName: string): boolean {
+  if (c.service_type === connectorName) return true;
+  if (connectorName.length < MIN_FUZZY_LENGTH) return false;
+  return c.service_type.startsWith(connectorName)
+    || connectorName.startsWith(c.service_type)
+    || c.name.toLowerCase().includes(connectorName.toLowerCase());
 }
 
 /**
@@ -44,38 +54,23 @@ export function analyzeCredentialGaps(
   const entries: CredentialGapEntry[] = connectors
     .filter((c) => !selectedConnectorNames || selectedConnectorNames.has(c.name))
     .map((connector) => {
+      // Every credential that could serve this connector. Counted BEFORE the
+      // single-pick matcher: matchCredentialToConnector refuses an ambiguous
+      // prefix (two `google_*` items for `google`) by returning null, and
+      // reading that null as "missing" told the user to add a credential they
+      // already had twice.
+      const candidates = credentials.filter((c) => isCandidate(c, connector.name));
       const match = matchCredentialToConnector(asPersonaCreds, connector.name);
+      const matchedCredential = match ? credentials.find((c) => c.id === match.id) ?? null : null;
 
-      if (match) {
-        // Check if there are multiple potential matches (ambiguous)
-        const lower = connector.name.toLowerCase();
-        const allMatches = credentials.filter(
-          (c) =>
-            c.service_type === connector.name ||
-            (connector.name.length >= 4 && (
-              c.service_type.startsWith(connector.name) ||
-              connector.name.startsWith(c.service_type) ||
-              c.name.toLowerCase().includes(lower)
-            )),
-        );
+      if (candidates.length > 1) {
+        ambiguousCount++;
+        return { connector, status: 'ambiguous' as const, matchedCredential, ambiguousCandidates: candidates };
+      }
 
-        if (allMatches.length > 1) {
-          ambiguousCount++;
-          return {
-            connector,
-            status: 'ambiguous' as const,
-            matchedCredential: credentials.find((c) => c.id === match.id) ?? null,
-            ambiguousCandidates: allMatches,
-          };
-        }
-
+      if (candidates.length === 1) {
         readyCount++;
-        return {
-          connector,
-          status: 'ready' as const,
-          matchedCredential: credentials.find((c) => c.id === match.id) ?? null,
-          ambiguousCandidates: [],
-        };
+        return { connector, status: 'ready' as const, matchedCredential: candidates[0]!, ambiguousCandidates: [] };
       }
 
       missingCount++;

@@ -8,7 +8,7 @@
 export type CredentialLike = { id: string; name: string; serviceType: string };
 
 /** Minimum connector name length for fuzzy (prefix / substring) matching. */
-const MIN_FUZZY_LENGTH = 4;
+export const MIN_FUZZY_LENGTH = 4;
 
 /**
  * Canonical credential-to-connector matching.
