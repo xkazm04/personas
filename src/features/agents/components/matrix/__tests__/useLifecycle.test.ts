@@ -100,7 +100,8 @@ vi.mock("@/api/agents/personaBrain", () => ({
   getPersonaManifest: (...args: unknown[]) => mockGetPersonaManifest(...args),
 }));
 
-vi.mock("@/lib/silentCatch", () => ({
+vi.mock("@/lib/silentCatch", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/silentCatch")>()),
   silentCatch: () => () => {},
 }));
 
@@ -294,6 +295,19 @@ describe("useLifecycle", () => {
       });
 
       expect(mockHandleTestFailed).toHaveBeenCalledWith("Network error");
+    });
+
+    it("carries the backend's reason when IPC rejects with an AppError object", async () => {
+      mockTestBuildDraft.mockRejectedValueOnce({
+        error: "Build session sess-9 is in phase resolving",
+        kind: "validation",
+      });
+      setStoreState({ buildPhase: "draft_ready", buildSessionId: "session-123" });
+
+      const { result } = renderHook(() => useLifecycle({ personaId: "persona-1" }));
+      await act(async () => { await result.current.handleStartTest(); });
+
+      expect(mockHandleTestFailed).toHaveBeenCalledWith("Build session sess-9 is in phase resolving");
     });
 
     it("reports failures correctly in summary", async () => {

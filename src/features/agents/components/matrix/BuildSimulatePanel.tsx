@@ -19,7 +19,8 @@ import {
   type SimulationArtefacts,
   type SimulatedExecution,
 } from "@/api/agents/buildSession";
-import { silentCatch } from "@/lib/silentCatch";
+import { extractMessage, silentCatch } from "@/lib/silentCatch";
+import { resolveErrorTranslated } from "@/i18n/useTranslatedError";
 import { awaitExecutionResult } from "@/features/agents/sub_deployment/hooks/awaitExecutionResult";
 import { createLatestWins } from "@/stores/util/latestWins";
 
@@ -107,7 +108,9 @@ export function BuildSimulatePanel({
   const [isRunning, setIsRunning] = useState(false);
   const [execution, setExecution] = useState<SimulatedExecution | null>(null);
   const [artefacts, setArtefacts] = useState<SimulationArtefacts | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // The raw rejection: `invokeWithTimeout` rejects with a serialized AppError
+  // object, never an `Error`, so it is resolved to copy at render.
+  const [error, setError] = useState<{ raw: unknown } | null>(null);
   // A run outlives the modal: closing it (or starting another) makes the
   // in-flight wait inert instead of writing into a fresh panel.
   const runs = useRef(createLatestWins()).current;
@@ -169,8 +172,7 @@ export function BuildSimulatePanel({
       setArtefacts(art);
     } catch (e) {
       if (!runs.isCurrent(token)) return;
-      const msg = e instanceof Error ? e.message : String(e);
-      setError(msg);
+      setError({ raw: e });
       silentCatch("BuildSimulatePanel.handleRun")(e);
     } finally {
       if (runs.isCurrent(token)) setIsRunning(false);
@@ -293,7 +295,7 @@ export function BuildSimulatePanel({
                   className="p-3 rounded-card border border-orange-400/40 bg-orange-500/10 typo-body text-orange-200"
                 >
                   <strong>{t.agents.build_simulate.error_label}:</strong>{" "}
-                  {error}
+                  {simulateErrorCopy(t, error.raw)}
                 </div>
               )}
 
@@ -317,6 +319,15 @@ export function BuildSimulatePanel({
       </div>
     </BaseModal>
   );
+}
+
+/** A known failure reads as its translated copy; an unclassified one keeps the
+ *  backend's own reason (a dry-run's validation text names the capability),
+ *  which beats a generic "Something went wrong". */
+function simulateErrorCopy(t: Parameters<typeof resolveErrorTranslated>[0], raw: unknown): string {
+  const text = extractMessage(raw);
+  const resolved = resolveErrorTranslated(t, text);
+  return resolved.category === "unclassified" && text ? text : resolved.message;
 }
 
 // ---------------------------------------------------------------------------

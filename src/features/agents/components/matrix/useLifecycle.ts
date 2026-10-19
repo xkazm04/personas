@@ -17,7 +17,7 @@ import { listen } from "@tauri-apps/api/event";
 import { EventName } from "@/lib/eventRegistry";
 import { answerBuildQuestion, cancelBuildSession, promoteBuildDraft, testBuildDraft } from "@/api/agents/buildSession";
 import { sendAppNotification } from "@/api/system/system";
-import { silentCatch } from "@/lib/silentCatch";
+import { extractMessage, silentCatch } from "@/lib/silentCatch";
 import { useSystemStore } from "@/stores/systemStore";
 import {
   updatePersona,
@@ -215,7 +215,9 @@ export function useLifecycle({
         allPassed ? `All ${report.tools_passed} tools passed. Ready to promote.` : summary,
       ).catch(silentCatch("lifecycle:testComplete"));
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to run tests";
+      // IPC rejects with an AppError object, not an Error: reading `.message`
+      // off `instanceof Error` dropped every backend reason for a fixed string.
+      const message = extractMessage(err) || "Failed to run tests";
       useAgentStore.getState().handleTestFailed(message);
       sendAppNotification('Agent Test Failed', message).catch(silentCatch("lifecycle:testFailed"));
     }

@@ -296,6 +296,24 @@ describe("BuildSimulatePanel", () => {
     expect(mockArtefacts).not.toHaveBeenCalled();
   });
 
+  // invokeWithTimeout rejects with a serialized AppError object, never an Error.
+  it("names the backend's reason, not [object Object], when IPC rejects with an AppError", async () => {
+    mockSimulate.mockRejectedValueOnce({
+      error: "use_case_id 'uc_x' not found in draft agent_ir",
+      kind: "validation",
+    });
+
+    render(
+      <BuildSimulatePanel isOpen onClose={() => {}} sessionId="sess_1" draft={SAMPLE_DRAFT} />,
+    );
+    fireEvent.click(screen.getByTestId("build-simulate-run"));
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert").textContent).toMatch(/uc_x' not found in draft/);
+    });
+    expect(screen.getByRole("alert").textContent).not.toMatch(/\[object Object\]/);
+  });
+
   it("disables the run button when no sessionId is available", () => {
     render(
       <BuildSimulatePanel
