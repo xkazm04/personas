@@ -40,6 +40,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU8, Ordering};
 
 use personas_core::error::AppError;
+use personas_core::utils::text::ceil_char_boundary;
 
 /// Env var that overrides the scratchpad enable state. `"1"` forces ON, `"0"`
 /// forces OFF; any other/unset value defers to the DB-seeded setting.
@@ -166,7 +167,9 @@ fn rotate_if_needed(path: &Path) {
     if content.len() <= MAX_FILE_BYTES {
         return;
     }
-    let cut = content.len() - MAX_FILE_BYTES;
+    // A byte offset can land inside a multi-byte char (Czech, emoji):
+    // `&content[cut..]` would panic there, inside prompt assembly.
+    let cut = ceil_char_boundary(&content, content.len() - MAX_FILE_BYTES);
     let trailing = &content[cut..];
     // Start at a line boundary so a rotated file never opens mid-line.
     let tail = trailing
@@ -193,7 +196,7 @@ fn format_injection(content: &str) -> String {
     if content.len() <= MAX_INJECTION_BYTES {
         return content.to_string();
     }
-    let cut = content.len() - MAX_INJECTION_BYTES;
+    let cut = ceil_char_boundary(content, content.len() - MAX_INJECTION_BYTES);
     let trailing = &content[cut..];
     let trimmed = trailing
         .find('\n')
@@ -338,6 +341,27 @@ mod tests {
         let out = format_injection(&big);
         assert!(out.starts_with("_(scratchpad truncated"));
         assert!(out.len() < big.len());
+    }
+
+    /// Notes in Czech or with emoji put multi-byte chars at the byte cut; a
+    /// raw byte slice panicked there, inside prompt assembly.
+    #[test]
+    fn trims_never_split_a_multibyte_char() {
+        // One-line bodies so the line snap cannot move the cut off the char.
+        for pad in 0..4 {
+            let big = format!("{}{}", "x".repeat(pad), "ř😀".repeat(MAX_INJECTION_BYTES));
+            let out = format_injection(&big);
+            assert!(out.starts_with("_(scratchpad truncated"));
+
+            let dir = tempfile::tempdir().expect("tempdir");
+            let path = dir.path().join("scratch.md");
+            let big = format!("{}{}", "x".repeat(pad), "ř😀".repeat(MAX_FILE_BYTES));
+            std::fs::write(&path, &big).expect("write");
+            rotate_if_needed(&path);
+            let after = std::fs::read_to_string(&path).expect("read");
+            assert!(after.starts_with("_(scratchpad rotated"));
+            assert!(after.len() < big.len());
+        }
     }
 
     #[test]
