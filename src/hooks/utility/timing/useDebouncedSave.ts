@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useToastStore } from '@/stores/toastStore';
 import { createLogger } from '@/lib/log';
-import { extractMessage } from '@/lib/silentCatch';
+import { extractMessage, toastCatch } from '@/lib/silentCatch';
 
 const logger = createLogger('useDebouncedSave');
+const noop = () => undefined;
 
 /**
  * Debounces an async save function, firing `delay`ms after the last dep change.
@@ -32,6 +33,25 @@ export function useDebouncedSave(
   const [isSaving, setIsSaving] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
 
+  // Saves run one at a time, in the order they were scheduled. Unserialized, a
+  // slow save followed by a fast one landed the OLDER value last (measured
+  // ['v2', 'v1']), and the first save's `finally` cleared isSaving while the
+  // second was still writing.
+  // An idle chain starts the save synchronously, so an unmount flush still
+  // begins before the component is gone.
+  const chainRef = useRef<Promise<void> | null>(null);
+  const pendingRef = useRef(0);
+  const enqueueRef = useRef((): Promise<void> => {
+    const prev = chainRef.current;
+    const next = prev ? prev.then(() => saveFnRef.current()) : saveFnRef.current();
+    const settled = next.then(noop, noop);
+    chainRef.current = settled;
+    void settled.then(() => {
+      if (chainRef.current === settled) chainRef.current = null;
+    });
+    return next;
+  });
+
   const cancel = useCallback(() => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
@@ -47,16 +67,18 @@ export function useDebouncedSave(
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(async () => {
       timerRef.current = null;
+      pendingRef.current += 1;
       setIsSaving(true);
       try {
-        await saveFnRef.current();
+        await enqueueRef.current();
         setLastError(null);
       } catch (err) {
         // invokeWithTimeout rejects with an AppError object, not an Error, so
         // an `instanceof Error` ladder reduced every backend reason to 'Save failed'.
         setLastError(reportPersistFailure(err));
       } finally {
-        setIsSaving(false);
+        pendingRef.current -= 1;
+        if (pendingRef.current === 0) setIsSaving(false);
       }
     }, delay);
     return () => {
@@ -77,6 +99,7 @@ export function useDebouncedSave(
   // calls cancel() first (nulling the timer), so this never double-saves that
   // path; it only catches an unguarded unmount.
   useEffect(() => {
+    const enqueue = enqueueRef.current;
     return () => {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
@@ -84,7 +107,7 @@ export function useDebouncedSave(
         // Fire-and-forget: the component is gone so isSaving/lastError can't be
         // tracked, but the persist (which reads the latest draft via refs) runs,
         // and a failure still reaches the user instead of an unhandled rejection.
-        void saveFnRef.current().catch(reportPersistFailure);
+        void enqueue().catch(toastCatch('useDebouncedSave:unmountFlush'));
       }
     };
   }, []);

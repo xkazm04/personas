@@ -56,4 +56,34 @@ describe('useDebouncedSave', () => {
       process.off('unhandledRejection', unhandled);
     }
   });
+
+  it('lands overlapping saves in edit order, so the newer value is the one that persists', async () => {
+    const persisted: string[] = [];
+    let current = 'v1';
+    // The first write is slow, the second fast: unserialized, v1 lands last.
+    const saveFn = vi.fn(async () => {
+      const value = current;
+      await new Promise((r) => setTimeout(r, value === 'v1' ? 300 : 10));
+      persisted.push(value);
+    });
+
+    const { rerender } = renderHook(
+      ({ value }) => useDebouncedSave(saveFn, true, [value], 50),
+      { initialProps: { value: 'v1' } },
+    );
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(50); // v1 save starts (300 ms)
+    });
+    current = 'v2';
+    rerender({ value: 'v2' });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(50); // v2 save is due while v1 is in flight
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+
+    expect(persisted).toEqual(['v1', 'v2']);
+  });
 });
