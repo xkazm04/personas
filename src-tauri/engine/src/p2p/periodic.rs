@@ -22,19 +22,7 @@ pub struct PeriodicTask {
     cancel: CancellationToken,
 }
 
-#[allow(dead_code)]
 impl PeriodicTask {
-    /// Create a new periodic task with a fixed interval.
-    pub fn new(name: &'static str, interval: Duration, cancel: CancellationToken) -> Self {
-        Self {
-            name,
-            get_interval: Box::new(move || interval),
-            max_consecutive_errors: 3,
-            backoff_multiplier: 2,
-            cancel,
-        }
-    }
-
     /// Create a periodic task that reads its interval dynamically each tick.
     /// This supports hot-reloading config without restarting the task.
     pub fn with_dynamic_interval(
@@ -49,18 +37,6 @@ impl PeriodicTask {
             backoff_multiplier: 2,
             cancel,
         }
-    }
-
-    /// Override the consecutive error threshold for backoff (default: 3).
-    pub fn with_max_errors(mut self, n: u32) -> Self {
-        self.max_consecutive_errors = n;
-        self
-    }
-
-    /// Override the backoff multiplier (default: 2).
-    pub fn with_backoff_multiplier(mut self, m: u32) -> Self {
-        self.backoff_multiplier = m;
-        self
     }
 
     /// Run the periodic task loop until the cancellation token is triggered.
