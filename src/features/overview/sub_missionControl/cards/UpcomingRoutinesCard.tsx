@@ -30,6 +30,9 @@ export default function UpcomingRoutinesCard() {
   const personas = useAgentStore((s) => s.personas);
   const [triggers, setTriggers] = useState<PersonaTrigger[]>([]);
   const [loaded, setLoaded] = useState(false);
+  // A failed read before anything loaded. Without it the card held its
+  // loading ghost for as long as the read kept failing (every 30s, forever).
+  const [failed, setFailed] = useState(false);
   // Ticking clock: the card stays mounted for the whole session, so a `now`
   // captured once at render froze every relative time and never re-ran the
   // "drop past runs" filter — a routine 2m out read "2m" ten minutes later and
@@ -69,8 +72,14 @@ export default function UpcomingRoutinesCard() {
           if (!latest.isCurrent(token)) return;
           setTriggers(rows);
           setLoaded(true);
+          setFailed(false);
         })
-        .catch(silentCatch('dashboard/UpcomingRoutinesCard'))
+        .catch((err: unknown) => {
+          // A failed read is not "no routines": rows already shown stay, and the
+          // cold path says it failed (see `showGhost` below).
+          if (latest.isCurrent(token)) setFailed(true);
+          silentCatch('dashboard/UpcomingRoutinesCard')(err);
+        })
         .finally(() => {
           // Only release the slot this request claimed.
           if (inFlightTokenRef.current === token) inFlightTokenRef.current = null;
@@ -127,6 +136,7 @@ export default function UpcomingRoutinesCard() {
   // takes over. Data already on screen from a warm store paints instantly —
   // `loaded` never hides it.
   const showGhost = !loaded && rows.length === 0;
+  const showFailed = showGhost && failed;
 
   // Frame (header) renders immediately — the title/subtitle are static i18n
   // strings, never gated on data. Only the row region has three states:
@@ -140,7 +150,9 @@ export default function UpcomingRoutinesCard() {
       >
         <ArrowRight className="w-3 h-3 text-foreground" />
       </PaneHeader>
-      {showGhost ? (
+      {showFailed ? (
+        <p className="typo-caption px-3 py-4 text-foreground">{t.overview.observability.error_recovery.panel_failed}</p>
+      ) : showGhost ? (
         <RoutinesGhostRows />
       ) : rows.length === 0 ? (
         <EmptyState variant="routines" heading={t.overview.upcoming_routines.empty} dominant className="py-6" />
