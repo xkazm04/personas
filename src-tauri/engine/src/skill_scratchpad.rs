@@ -234,6 +234,15 @@ fn sanitize_id(persona_id: &str) -> String {
 mod tests {
     use super::*;
 
+    /// `SCRATCHPAD_ENV` and `ENABLED_CACHE` are process-global and cargo runs
+    /// tests in parallel threads: every test that sets or reads them holds
+    /// this lock, or one test's `set_var("0")` flips another's assertion.
+    static ENABLE_STATE_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+    fn enable_state_guard() -> std::sync::MutexGuard<'static, ()> {
+        ENABLE_STATE_LOCK.lock().unwrap_or_else(|e| e.into_inner())
+    }
+
     #[test]
     fn setting_key_matches_settings_keys_constant() {
         // Cross-module constant-equality discipline (round-10 P1): the key this
@@ -244,15 +253,16 @@ mod tests {
 
     #[test]
     fn is_enabled_defaults_on_when_env_unset_and_cache_unset() {
-        // SAFETY: tests in this crate do not run in parallel with other tests
-        // touching the same env var. The cache is left unseeded here, so the
-        // DEFAULT_ENABLED (true) applies — the feature now ships ON.
+        let _guard = enable_state_guard();
+        // The cache may hold a sibling's seed; sibling tests re-store the
+        // default (ON) before releasing the lock, which is what this reads.
         std::env::remove_var(SCRATCHPAD_ENV);
         assert!(is_enabled());
     }
 
     #[test]
     fn env_var_overrides_both_ways() {
+        let _guard = enable_state_guard();
         std::env::set_var(SCRATCHPAD_ENV, "1");
         assert!(is_enabled());
         std::env::set_var(SCRATCHPAD_ENV, "0");
@@ -262,6 +272,7 @@ mod tests {
 
     #[test]
     fn seed_enabled_toggles_cache_when_env_unset() {
+        let _guard = enable_state_guard();
         std::env::remove_var(SCRATCHPAD_ENV);
         seed_enabled(false);
         assert!(!is_enabled());
@@ -366,6 +377,7 @@ mod tests {
 
     #[test]
     fn read_for_prompt_returns_none_when_disabled() {
+        let _guard = enable_state_guard();
         // Force OFF via the env override (default is now ON).
         std::env::set_var(SCRATCHPAD_ENV, "0");
         assert!(read_for_prompt("any-persona").is_none());
@@ -374,6 +386,7 @@ mod tests {
 
     #[test]
     fn read_for_prompt_returns_none_for_empty_id() {
+        let _guard = enable_state_guard();
         std::env::set_var(SCRATCHPAD_ENV, "1");
         assert!(read_for_prompt("").is_none());
         std::env::remove_var(SCRATCHPAD_ENV);
@@ -381,6 +394,7 @@ mod tests {
 
     #[test]
     fn appended_note_survives_to_next_prompt_build() {
+        let _guard = enable_state_guard();
         // Simulate the agent appending a technique, then a later run building
         // its prompt: the note must be read back and injected. Skips gracefully
         // when the sandbox has no data_dir (scratchpad_path would err).
