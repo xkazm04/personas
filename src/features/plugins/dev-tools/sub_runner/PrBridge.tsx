@@ -152,6 +152,14 @@ function slugifyForBranch(raw: string, maxLength = 50): string {
 // PR content builder
 // ---------------------------------------------------------------------------
 
+/**
+ * The one scale `effort`, `impact` and `risk` are stored on. Mirrors
+ * `personas_core::models::IDEA_SCALE_MAX` (pinned by prBridgeContent.test.ts):
+ * migration e45 moved every producer onto it, and the PR body went on
+ * printing "/10" beside 1-5 numbers, so a top-risk idea read as "Risk: 5/10".
+ */
+export const IDEA_SCALE_MAX = 5;
+
 interface PrContent {
   branchName: string;
   commitMessage: string;
@@ -161,7 +169,7 @@ interface PrContent {
   agentEmoji: string | null;
 }
 
-function buildPrContent(
+export function buildPrContent(
   task: DevTask,
   idea: DevIdea | null,
   taskIdShort: string,
@@ -200,9 +208,9 @@ function buildPrContent(
   if (idea) {
     const metadata: string[] = [];
     if (idea.category) metadata.push(`**Category:** ${idea.category}`);
-    if (typeof idea.effort === 'number') metadata.push(`**Effort:** ${idea.effort}/10`);
-    if (typeof idea.impact === 'number') metadata.push(`**Impact:** ${idea.impact}/10`);
-    if (typeof idea.risk === 'number') metadata.push(`**Risk:** ${idea.risk}/10`);
+    if (typeof idea.effort === 'number') metadata.push(`**Effort:** ${idea.effort}/${IDEA_SCALE_MAX}`);
+    if (typeof idea.impact === 'number') metadata.push(`**Impact:** ${idea.impact}/${IDEA_SCALE_MAX}`);
+    if (typeof idea.risk === 'number') metadata.push(`**Risk:** ${idea.risk}/${IDEA_SCALE_MAX}`);
     if (metadata.length > 0) bodyParts.push(metadata.join('  \u00B7  '));
     if (idea.description) bodyParts.push(`### Description\n${idea.description}`);
     if (idea.reasoning) bodyParts.push(`### Agent reasoning\n${idea.reasoning}`);
