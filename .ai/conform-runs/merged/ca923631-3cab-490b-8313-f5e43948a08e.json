@@ -1,0 +1,135 @@
+{
+ "schema": "conform-run/1",
+ "worker": "ca923631-3cab-490b-8313-f5e43948a08e",
+ "subject": "self-describing-model-packages",
+ "evaluatedAt": "2026-10-19T00:33:32.163068+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [
+  {
+   "context": "core-validation",
+   "subject": "self-describing-model-packages",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/core/src/retrieval/mod.rs:16 The inspected code validates application fields and processes retrieval hits; context-directory searches found no onnx, torchscript, weights_path, or safetensors occurrences establishing a trained-model package.",
+   "techniques": [
+    {
+     "technique": "advisory-version-floors",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/core/src/retrieval/mod.rs:105 This compares embedding-model identities on stored hits, not framework versions recorded by a model package."
+    },
+    {
+     "technique": "config-frozen-artifact",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/core/src/validation/persona.rs:253 The serialized configuration being checked is a persona profile, not an exported network graph."
+    },
+    {
+     "technique": "declared-vs-derived-outputs",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/core/src/retrieval/mod.rs:63 The retrieval transformation consumes scored identifiers, not network tensors described by package metadata."
+    },
+    {
+     "technique": "normative-layout-contract",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/core/src/validation/contract.rs:118 This assembles an application validation-rule catalog; no model-package filesystem layout was found."
+    },
+    {
+     "technique": "self-locating-validation-schema",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/core/src/validation/persona.rs:92 The validated object is a structured persona prompt, not metadata accompanying trained weights."
+    },
+    {
+     "technique": "symbolic-shape-constraints",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/core/src/validation/chat.rs:18 This limits chat-message bytes; it does not describe a network's family of accepted tensor shapes."
+    }
+   ],
+   "absenceTerms": [
+    "onnx",
+    "torchscript",
+    "weights_path",
+    "safetensors"
+   ]
+  },
+  {
+   "context": "commands-recipes",
+   "subject": "self-describing-model-packages",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/commands/recipes/recipe_generation.rs:4 These commands generate and execute prompt recipes through Claude CLI; context-directory searches found no onnx, torchscript, weights_path, or safetensors occurrences indicating packaged trained models.",
+   "techniques": [
+    {
+     "technique": "advisory-version-floors",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/recipes/recipe_derivation.rs:246 This increments recipe-content provenance versions, not model-package runtime compatibility floors."
+    },
+    {
+     "technique": "config-frozen-artifact",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/recipes/recipe_derivation.rs:138 This serializes a use-case definition into a prompt template; it does not compile or export a trained model."
+    },
+    {
+     "technique": "declared-vs-derived-outputs",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/recipes/recipe_execution.rs:34 This wraps returned LLM text in an IPC result rather than declaring raw and derived tensor outputs of a model package."
+    },
+    {
+     "technique": "normative-layout-contract",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/recipes/crud.rs:108 Recipes are retrieved as database records, with no trained-model package bootstrap files found in this context."
+    },
+    {
+     "technique": "self-locating-validation-schema",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/recipes/recipe_generation.rs:64 The schema describes recipe form inputs, not metadata shipped with trained weights."
+    }
+   ],
+   "absenceTerms": [
+    "onnx",
+    "torchscript",
+    "weights_path",
+    "safetensors"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-19T00:33:32.163068+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "self-describing-model-packages"
+   ],
+   "techniques": [
+    "advisory-version-floors",
+    "config-frozen-artifact",
+    "declared-vs-derived-outputs",
+    "normative-layout-contract",
+    "self-locating-validation-schema",
+    "symbolic-shape-constraints"
+   ],
+   "deviations": 0,
+   "context": "core-validation",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-19T00:33:32.163068+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "self-describing-model-packages"
+   ],
+   "techniques": [
+    "advisory-version-floors",
+    "config-frozen-artifact",
+    "declared-vs-derived-outputs",
+    "normative-layout-contract",
+    "self-locating-validation-schema"
+   ],
+   "deviations": 0,
+   "context": "commands-recipes",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  }
+ ]
+}

@@ -29837,6 +29837,83 @@
         "at": "2026-10-19T00:26:28.342786+00:00",
         "reason": "reviewer (sonnet): Both not-applicable verdicts rest on incidental anchors and on a keyword search that is the wrong test. The lines I opened match their quotes, but none of them shows that a scale-investment decision is absent: executionSink.ts:304 is a byte-budget truncation check, and cloud.ts:74 is a cloud-deploy "
       }
+    },
+    "dc7c4f48-e819-47d0-80be-6afb942d28fd/self-describing-model-packages": {
+      "context": "core-validation",
+      "subject": "self-describing-model-packages",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-19",
+      "evaluatedTs": "2026-10-19T00:33:32.163Z",
+      "worker": "ca923631-3cab-490b-8313-f5e43948a08e",
+      "techniques": [
+        {
+          "technique": "advisory-version-floors",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/retrieval/mod.rs:105 This compares embedding-model identities on stored hits, not framework versions recorded by a model package."
+        },
+        {
+          "technique": "config-frozen-artifact",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/validation/persona.rs:253 The serialized configuration being checked is a persona profile, not an exported network graph."
+        },
+        {
+          "technique": "declared-vs-derived-outputs",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/retrieval/mod.rs:63 The retrieval transformation consumes scored identifiers, not network tensors described by package metadata."
+        },
+        {
+          "technique": "normative-layout-contract",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/validation/contract.rs:118 This assembles an application validation-rule catalog; no model-package filesystem layout was found."
+        },
+        {
+          "technique": "self-locating-validation-schema",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/validation/persona.rs:92 The validated object is a structured persona prompt, not metadata accompanying trained weights."
+        },
+        {
+          "technique": "symbolic-shape-constraints",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/validation/chat.rs:18 This limits chat-message bytes; it does not describe a network's family of accepted tensor shapes."
+        }
+      ]
+    },
+    "17f44718-7d6d-4579-91bf-86191e29595a/self-describing-model-packages": {
+      "context": "commands-recipes",
+      "subject": "self-describing-model-packages",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-19",
+      "evaluatedTs": "2026-10-19T00:33:32.163Z",
+      "worker": "ca923631-3cab-490b-8313-f5e43948a08e",
+      "techniques": [
+        {
+          "technique": "advisory-version-floors",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/recipes/recipe_derivation.rs:246 This increments recipe-content provenance versions, not model-package runtime compatibility floors."
+        },
+        {
+          "technique": "config-frozen-artifact",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/recipes/recipe_derivation.rs:138 This serializes a use-case definition into a prompt template; it does not compile or export a trained model."
+        },
+        {
+          "technique": "declared-vs-derived-outputs",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/recipes/recipe_execution.rs:34 This wraps returned LLM text in an IPC result rather than declaring raw and derived tensor outputs of a model package."
+        },
+        {
+          "technique": "normative-layout-contract",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/recipes/crud.rs:108 Recipes are retrieved as database records, with no trained-model package bootstrap files found in this context."
+        },
+        {
+          "technique": "self-locating-validation-schema",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/recipes/recipe_generation.rs:64 The schema describes recipe form inputs, not metadata shipped with trained weights."
+        }
+      ]
     }
   }
 }

@@ -7952,7 +7952,11 @@
           "revision": 1,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/commands/recipes/recipe_generation.rs:4 These commands generate and execute prompt recipes through Claude CLI; context-directory searches found no onnx, torchscript, weights_path, or safetensors occurrences indicating packaged trained models.",
+          "evaluatedAt": "2026-10-19",
+          "evaluatedAgainst": "sha256-b2:d22f4172adbc5004",
+          "evaluatedRevision": 1
         },
         {
           "subject": "connector-catalog",
@@ -9888,7 +9892,11 @@
           "revision": 1,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/core/src/retrieval/mod.rs:16 The inspected code validates application fields and processes retrieval hits; context-directory searches found no onnx, torchscript, weights_path, or safetensors occurrences establishing a trained-model package.",
+          "evaluatedAt": "2026-10-19",
+          "evaluatedAgainst": "sha256-b2:d22f4172adbc5004",
+          "evaluatedRevision": 1
         },
         {
           "subject": "retrieval",
