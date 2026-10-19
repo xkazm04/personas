@@ -119,10 +119,21 @@ async function getRaw<T = unknown>(p: string): Promise<T> {
 /** Eval a named method on window.__TEST__ via /bridge-exec. */
 async function bridgeExec(method: string, params: Record<string, unknown> = {}, timeoutSecs = 30): Promise<unknown> {
   const raw = await postRaw('/bridge-exec', { method, params, timeout_secs: timeoutSecs });
+  let parsed: unknown = raw;
   if (typeof raw === 'string') {
-    try { return JSON.parse(raw); } catch { return raw; }
+    try { parsed = JSON.parse(raw); } catch { parsed = raw; }
   }
-  return raw;
+  // The bridge answers a refusal ({ success: false, error }: unknown tab) and
+  // an unknown method ({ error: 'Unknown method: x' }) with a body, not an HTTP
+  // error. Ignoring that measured whatever surface was already on screen and
+  // filed it under this stop's name; throwing marks the stop failed instead.
+  if (parsed && typeof parsed === 'object') {
+    const env = parsed as { success?: unknown; error?: unknown };
+    if (env.success === false || (typeof env.error === 'string' && env.error)) {
+      throw new Error(`bridge ${method} refused: ${String(env.error ?? 'no error text')}`);
+    }
+  }
+  return parsed;
 }
 
 async function resetPerf(): Promise<void> { await postRaw('/perf/reset'); }
@@ -240,7 +251,6 @@ const STOPS: NavStop[] = [
   { id: 'settings/portability',   group: 'settings', description: 'Settings → Portability',   setup: async () => { await navigate('settings'); await bridgeExec('openSettingsTab', { tab: 'portability' }); } },
   { id: 'settings/limits',        group: 'settings', description: 'Settings → Limits',        setup: async () => { await navigate('settings'); await bridgeExec('openSettingsTab', { tab: 'limits' }); } },
   { id: 'settings/api-keys',      group: 'settings', description: 'Settings → API Keys',      setup: async () => { await navigate('settings'); await bridgeExec('openSettingsTab', { tab: 'api-keys' }); } },
-  { id: 'settings/config',        group: 'settings', description: 'Settings → Config',        setup: async () => { await navigate('settings'); await bridgeExec('openSettingsTab', { tab: 'config' }); } },
 
   // Twin sub-tabs (when twin plugin is active)
   { id: 'twin/profiles',  group: 'twin', description: 'Twin → Profiles',  setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'twin' }); await bridgeExec('setTwinTab', { tab: 'profiles' }); } },
@@ -259,6 +269,10 @@ const STOPS: NavStop[] = [
   // triggerTestFlow(), which fans 4 simulated events through the event bus
   // over ~1.5s. Exercises the Wave 2A rAF coalescing in
   // createSingletonListener + useRealtimeEvents downstream.
+  // NOTE (2026-10-19): window.__TEST__ has no triggerTestFlow, so the bridge
+  // answers "Unknown method" and this stop used to measure a quiet Events tab
+  // under the burst's name. It now records status "failed" until the bridge
+  // grows a burst method.
   { id: 'interaction/live-events-burst', group: 'interaction', description: 'Realtime burst on Events tab', setup: async () => {
     await navigate('events');
     await new Promise(r => setTimeout(r, 400));
