@@ -102,6 +102,16 @@ const INLINE_SECRET_RE =
 const PREFIXED_SECRET_RE =
   /(?:PMR?S[a-zA-Z0-9]{16,}|gh[pousr]_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|sk-ant-[A-Za-z0-9_-]{20,}|sk-[A-Za-z0-9]{20,}|sk_live_[a-zA-Z0-9]{16,}|xox[baprs]-[A-Za-z0-9-]{10,}|AIza[0-9A-Za-z_-]{35}|eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)/g;
 
+/** Every pass except the file-path one, applied to a URL's scheme+host+path. */
+function redactUrlParts(url: string): string {
+  return url
+    .replace(IPV4_RE, '[ip]')
+    .replace(INTERNAL_HOST_RE, '[host]')
+    .replace(EMAIL_RE, '[email]')
+    .replace(INLINE_SECRET_RE, (_match, key) => `${key}: [secret]`)
+    .replace(PREFIXED_SECRET_RE, '[secret]');
+}
+
 /**
  * Strip internal file paths, IP addresses, internal hostnames, emails,
  * and potential secrets from a string to prevent leakage in plaintext storage.
@@ -125,7 +135,11 @@ export function sanitizeErrorMessage(msg: string): string {
       // Not a parseable URL despite matching the loose regex; leave as-is
       // and let the remaining passes handle it.
     }
-    const idx = urls.push(safe) - 1;
+    // The shield exists to keep FILE_PATH_RE off the URL, not to exempt it
+    // from redaction: an IP or internal host in the authority and an email or
+    // token in a path segment are exactly what the passes below remove from
+    // bare text, so they run on the kept URL here, before it is restored.
+    const idx = urls.push(redactUrlParts(safe)) - 1;
     return `@@SANITIZED_URL_${idx}@@`;
   });
 
