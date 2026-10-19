@@ -13,7 +13,8 @@ category: string,
  */
 model: string, 
 /**
- * Terminal executions in the window (completed + failed/incomplete/cancelled).
+ * Decided executions in the window (completed + failed/incomplete); a
+ * user-cancelled run is not an outcome of the model and stays out.
  */
 runs: number, completed: number, failed: number, 
 /**

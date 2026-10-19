@@ -31,6 +31,11 @@ pub fn gather(pool: &DbPool, window_days: Option<i64>) -> Result<PolicyEvidenceS
     let conn = pool.conn("policy_evidence::gather")?;
 
     // -- Per-(category, model) execution cells -----------------------------
+    // DECIDED runs only: every state of ExecutionState::TERMINAL except
+    // `cancelled`. A cancel is the operator's choice, not the model's outcome,
+    // so counting it made a model with cancelled runs read as failing (and let
+    // a cell of cancels clear the `min_runs_per_cell` floor at 0% success).
+    // `incomplete` (a stalled or dead run) stays in as not-a-success.
     let mut cells: Vec<EvidenceCell>;
     let lab: HashMap<String, (i64, f64)>;
     let spend_totals: (f64, i64);
@@ -46,7 +51,7 @@ pub fn gather(pool: &DbPool, window_days: Option<i64>) -> Result<PolicyEvidenceS
          FROM persona_executions e
          JOIN personas p ON p.id = e.persona_id
          WHERE e.model_used IS NOT NULL AND e.model_used != ''
-           AND e.status IN ('completed', 'failed', 'incomplete', 'cancelled')
+           AND e.status IN ('completed', 'failed', 'incomplete')
            AND e.created_at >= ?1
          GROUP BY category, model
          ORDER BY category ASC, runs DESC",
@@ -210,6 +215,33 @@ mod tests {
         let haiku = snap.cells.iter().find(|c| c.model == "haiku").unwrap();
         assert_eq!(haiku.runs, 1); // 'running' excluded
         assert!(snap.id.starts_with("polsnap_"));
+    }
+
+    /// A user cancel is not the model's outcome: it must neither lower the
+    /// success rate nor count toward the `min_runs_per_cell` floor. A stalled
+    /// run (`incomplete`) is decided and counts as not-a-success.
+    #[test]
+    fn cancelled_runs_stay_out_of_the_success_rate() {
+        let pool = test_pool();
+        seed_persona(&pool, "p1", "ops");
+        for _ in 0..3 {
+            seed_execution(&pool, "p1", "sonnet", "completed", 0.1);
+        }
+        seed_execution(&pool, "p1", "sonnet", "incomplete", 0.1);
+        for _ in 0..6 {
+            seed_execution(&pool, "p1", "sonnet", "cancelled", 0.1);
+        }
+
+        let snap = gather(&pool, Some(30)).unwrap();
+        let cell = snap.cells.iter().find(|c| c.model == "sonnet").unwrap();
+        assert_eq!(cell.runs, 4, "6 cancels are not runs of the model");
+        assert_eq!(cell.completed, 3);
+        assert_eq!(cell.failed, 1, "incomplete is not a success");
+        assert!(
+            (cell.success_rate - 0.75).abs() < 1e-9,
+            "{}",
+            cell.success_rate
+        );
     }
 
     #[test]

@@ -37,7 +37,8 @@ pub struct EvidenceCell {
     pub category: String,
     /// `persona_executions.model_used`.
     pub model: String,
-    /// Terminal executions in the window (completed + failed/incomplete/cancelled).
+    /// Decided executions in the window (completed + failed/incomplete); a
+    /// user-cancelled run is not an outcome of the model and stays out.
     #[ts(type = "number")]
     pub runs: i64,
     #[ts(type = "number")]
