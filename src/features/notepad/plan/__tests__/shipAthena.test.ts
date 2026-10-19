@@ -14,7 +14,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { DevProject } from '@/lib/bindings/DevProject';
 
-import { buildShipAskPrompt, buildShipDecomposePrompt } from '../shipAthena';
+import { buildShipDecomposePrompt } from '../shipAthena';
 import { buildReadinessPayload, SHIP_READINESS_DOC_VERSION } from '../shipReadinessPublish';
 import type { ExitCriterion, ShipMilestoneVM } from '@/lib/milestone/shipModel';
 import { ctx, feature, member, milestone } from '@/lib/milestone/__tests__/shipFixtures';
@@ -56,63 +56,9 @@ function vm(over: Partial<ShipMilestoneVM> = {}): ShipMilestoneVM {
 
 const project = { id: 'p1', name: 'gravitone' } as DevProject;
 
-describe('buildShipAskPrompt', () => {
-  it('names the operator, the project and the milestone id', () => {
-    const out = buildShipAskPrompt(vm(), project);
-    expect(out).toContain('gravitone');
-    expect(out).toContain('ms-1');
-    expect(out).toContain('Test milestone');
-    expect(out).toContain('describe_ship_milestone');
-  });
-
-  it('names the verdict as something the OP answers, never as a value', () => {
-    // The distinction this test exists to hold. Saying "the op carries the
-    // verdict" is a pointer — it tells her where to look. Saying "the verdict
-    // is setup" is a conclusion, and a conclusion handed to a model before it
-    // has read anything comes back as that model's own finding. The old
-    // builder did the second (`the ship verdict is **${verdict}**` plus an
-    // unmet-criteria roll-up), which is precisely what produced a turn that
-    // restated the pasted word and asked the operator to explain his own
-    // milestone. So: the WORD may appear, a VALUE may not.
-    const out = buildShipAskPrompt(vm(), project);
-    expect(out).toMatch(/verdict/i);
-    // No asserted value, in any of the forms the retired builder could emit.
-    expect(out).not.toMatch(/verdict is/i);
-    expect(out).not.toMatch(/\*\*(go|warn|nogo|setup)\*\*/i);
-    expect(out).not.toMatch(/unmet criteria/i);
-    expect(out).not.toMatch(/every exit criterion is currently met/i);
-    // And no count of anything — a "2/5" is a conclusion wearing a number.
-    expect(out).not.toMatch(/\d+\s*\/\s*\d+/);
-  });
-
-  it('carries NO response script', () => {
-    // The retired paragraph named the output shape ("a SHORT read", "the one
-    // thing you would look at first") and then told her to stop investigating
-    // ("then let him talk"). How she works a milestone is constitution
-    // doctrine; a per-message script neither survives nor generalises.
-    const out = buildShipAskPrompt(vm(), project).toLowerCase();
-    for (const phrase of ['short read', 'let him talk', 'first', 'what he wants']) {
-      expect(out).not.toContain(phrase);
-    }
-  });
-
-  it('does not paste the cut, the goals or the objective prose', () => {
-    // The whole point of the pointer: the op is the one place any of this is
-    // read, so a copy here can only be a second copy that goes stale.
-    const out = buildShipAskPrompt(vm(), project);
-    expect(out).not.toContain('Deep research web resources');
-    expect(out).not.toContain('login');
-    expect(out).not.toContain('trailer storytelling');
-  });
-
-  it('stays short — a pointer, not a briefing', () => {
-    expect(buildShipAskPrompt(vm(), project).length).toBeLessThan(700);
-  });
-});
-
 describe('buildShipDecomposePrompt', () => {
   // This message is a REQUEST, not a situation, so it may say what is wanted —
-  // that is the one licence it has over `buildShipAskPrompt`. Everything the
+  // that is the one licence it had over the retired `buildShipAskPrompt`. Everything the
   // round-1/round-2 rewrites established still holds, and these are the same
   // ABSENCE assertions applied to the new case.
   it('names both ops it needs her to call, and the milestone id for each', () => {
