@@ -8,6 +8,7 @@ import type { ConnectorDefinition } from '@/lib/types/types';
 import type { CredentialViewState } from '@/features/vault/shared/hooks/useCredentialViewFSM';
 import type { CredentialViewAction } from '@/features/vault/shared/hooks/useCredentialViewFSM';
 import { usePostSaveResourcePicker } from '@/features/vault/sub_credentials/components/picker/usePostSaveResourcePicker';
+import { silentCatch } from '@/lib/silentCatch';
 
 interface CatalogFormData {
   connector: ConnectorDefinition;
@@ -91,23 +92,29 @@ export function useCatalogHandlers({
     const name = catalogFormData.credentialName.trim() || `${catalogFormData.connector.label} Credential`;
     const serviceType = catalogFormData.connector.name;
     setError(null);
+    let newCredId: string;
     try {
-      const newCredId = await createCredential({
+      newCredId = await createCredential({
         name,
         service_type: serviceType,
         data: values,
       });
-      await fetchCredentials();
-      // Prompt for scope BEFORE GO_LIST so the catalog form stays mounted
-      // (visually obscured by the picker) until the user commits or skips.
-      // The global ResourcePickerHost would handle this either way, but
-      // keeping the flow here is clearer: form save → scope → list.
-      await promptIfScoped({ credentialId: newCredId, serviceType });
-      dispatch({ type: 'GO_LIST' });
-      setCredentialSearch('');
     } catch {
       setError('Failed to create credential');
+      return;
     }
+    // The credential exists from here on (the store already appended it).
+    // A failed list refresh or scope prompt must not read as a failed create:
+    // that left the form open and a second Save made a duplicate credential.
+    await fetchCredentials().catch(silentCatch('useCatalogHandlers:refreshAfterCreate'));
+    // Prompt for scope BEFORE GO_LIST so the catalog form stays mounted
+    // (visually obscured by the picker) until the user commits or skips.
+    // The global ResourcePickerHost would handle this either way, but
+    // keeping the flow here is clearer: form save → scope → list.
+    await promptIfScoped({ credentialId: newCredId, serviceType })
+      .catch(silentCatch('useCatalogHandlers:scopePromptAfterCreate'));
+    dispatch({ type: 'GO_LIST' });
+    setCredentialSearch('');
   };
 
   const handleCliSaved = async () => {
