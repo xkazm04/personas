@@ -16,6 +16,7 @@ import { sectionsForRoute, useActiveI18nSections } from './routeSections';
 import { useSystemStore } from '@/stores/systemStore';
 import { silentCatch } from '@/lib/silentCatch';
 import { idlePrefetch } from '@/lib/idlePrefetch';
+import { createLatestWins } from '@/stores/util/latestWins';
 
 export type { Translations };
 
@@ -226,8 +227,16 @@ export const LANGUAGE_SWITCH_TIMEOUT_MS = 1200;
  *
  * Awaits at most {@link LANGUAGE_SWITCH_TIMEOUT_MS}; callers render a busy
  * state on the pressed control until the promise settles.
+ *
+ * Latest pick wins: a switch that is still awaiting its chunks when a newer
+ * switch starts never commits. Without that, picking a cold locale and then a
+ * warm one (or English) committed the warm one first and the stale cold one
+ * last, leaving the app in the language the user moved away from.
  */
+const switchLatestWins = createLatestWins();
+
 export async function switchLanguage(lang: Language): Promise<void> {
+  const token = switchLatestWins.next();
   const store = useI18nStore.getState();
   if (store.language === lang) return;
   if (lang !== 'en') {
@@ -251,6 +260,7 @@ export async function switchLanguage(lang: Language): Promise<void> {
       if (timer !== undefined) clearTimeout(timer);
     }
   }
+  if (!switchLatestWins.isCurrent(token)) return;
   useI18nStore.getState().setLanguage(lang);
 }
 
