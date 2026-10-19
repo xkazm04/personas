@@ -5,13 +5,14 @@
  * node, the status legend, and the empty state — the pieces GoalsProgress
  * composes. Kept as a separate module so the view file stays about layout.
  */
-import { memo, useCallback, useEffect, useState, type ReactNode } from 'react';
+import { memo, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Plus } from 'lucide-react';
 import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useSystemStore } from '@/stores/systemStore';
 import * as devApi from '@/api/devTools/devTools';
 import { silentCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { Translations } from '@/i18n/en';
@@ -77,11 +78,16 @@ export type ProgressDoneFilter = 'all' | 'recent' | 'none';
 export function useGoalsPortfolio(doneFilter: ProgressDoneFilter = 'recent'): {
   projects: DevProject[];
   allGoals: DevGoal[] | null;
+  /** The latest read REJECTED. With `allGoals` null that is a failure, not a load. */
+  failed: boolean;
   refresh: () => void;
 } {
   const projects = useSystemStore((s) => s.projects);
   const fetchProjects = useSystemStore((s) => s.fetchProjects);
   const [allGoals, setAllGoals] = useState<DevGoal[] | null>(null);
+  const [failed, setFailed] = useState(false);
+  // A done-filter flip fires a second read; the first must not land over it.
+  const latest = useRef(createLatestWins()).current;
 
   const load = useCallback(() => {
     const opts =
@@ -90,18 +96,25 @@ export function useGoalsPortfolio(doneFilter: ProgressDoneFilter = 'recent'): {
         : doneFilter === 'recent'
           ? { includeCompleted: true, completedWithinDays: 7 }
           : { includeCompleted: true };
+    const token = latest.next();
+    setFailed(false);
     void devApi
       .listAllGoals(opts)
-      .then(setAllGoals)
-      .catch(silentCatch('GoalsProgress.allGoals'));
-  }, [doneFilter]);
+      .then((goals) => {
+        if (latest.isCurrent(token)) setAllGoals(goals);
+      })
+      .catch((err) => {
+        silentCatch('GoalsProgress.allGoals')(err);
+        if (latest.isCurrent(token)) setFailed(true);
+      });
+  }, [doneFilter, latest]);
 
   useEffect(() => {
     void fetchProjects?.();
     load();
   }, [fetchProjects, load]);
 
-  return { projects, allGoals, refresh: load };
+  return { projects, allGoals, failed, refresh: load };
 }
 
 export interface PortfolioProjectGoals {

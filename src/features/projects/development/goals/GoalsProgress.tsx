@@ -40,6 +40,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import type { GoalsView } from '@/lib/types/types';
 import type { PickerScope } from '@/features/plugins/dev-tools/sub_workspaces/usePickerScope';
 import { SegmentedTabs, segmentedTabPanelProps } from '@/features/shared/components/layout/SegmentedTabs';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 
 import { GoalAtmosphere } from './goalsTheme';
 import { ProgressLegend, ProgressEmpty, ProgressGhost, useGoalDrawer } from './progressShared';
@@ -84,6 +85,12 @@ export function GoalsProgress({ projectScope }: { projectScope?: PickerScope } =
     [model, canvas, openGoal, createGoalIn, dl],
   );
 
+  // A refused first read is a failure with a retry, never an endless ghost.
+  if (model.allGoals === null && model.failed) {
+    return (
+      <InlineErrorBanner severity="warning" message={t.common.source_unreachable} onRetry={model.refresh} />
+    );
+  }
   // Still fetching - a calm delayed ghost of the rows rather than a blank
   // region or the (settled-only) empty state. See ProgressGhost.
   if (model.allGoals === null) return <ProgressGhost />;

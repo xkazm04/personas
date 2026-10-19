@@ -74,8 +74,10 @@ export interface ProgressRow extends PortfolioProjectGoals {
 export interface ProgressModel {
   doneFilter: DoneFilter;
   setDoneFilter: (next: DoneFilter) => void;
-  /** `null` while the first portfolio fetch is in flight. */
+  /** `null` while the first portfolio fetch is in flight (or after it failed). */
   allGoals: DevGoal[] | null;
+  /** The latest portfolio read was refused; with `allGoals` null, nothing is held. */
+  failed: boolean;
   rows: ProgressRow[];
   /** Goals the done-filter is hiding in CSS - drives the counts, never the list. */
   hiddenIds: ReadonlySet<string>;
@@ -89,7 +91,7 @@ export interface ProgressModel {
 
 export function useProgressModel(projectScope?: PickerScope): ProgressModel {
   const [doneFilter, setFilter] = useState<DoneFilter>(readDoneFilter);
-  const { projects, allGoals: portfolioGoals, refresh } = useGoalsPortfolio(doneFilter);
+  const { projects, allGoals: portfolioGoals, failed, refresh } = useGoalsPortfolio(doneFilter);
 
   // The header picker's workspace / project filters the portfolio.
   const allGoals = useMemo(
@@ -166,6 +168,7 @@ export function useProgressModel(projectScope?: PickerScope): ProgressModel {
     doneFilter,
     setDoneFilter,
     allGoals,
+    failed,
     rows,
     hiddenIds,
     shownGoals: (allGoals?.length ?? 0) - hiddenIds.size,
