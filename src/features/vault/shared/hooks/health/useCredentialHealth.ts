@@ -7,7 +7,7 @@ import { encryptWithSessionKey } from '@/lib/utils/platform/crypto';
 import { toCredentialMetadata } from '@/lib/types/types';
 import { useVaultStore } from "@/stores/vaultStore";
 import { createModuleCache, useModuleSubscription } from '@/hooks/utility/data/useModuleSubscription';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, extractMessage } from '@/lib/silentCatch';
 
 // -- Types -------------------------------------------------------------
 
@@ -157,7 +157,9 @@ export function useCredentialHealth(target: CredentialHealthTarget) {
       if (!(targetMode === 'preview' && unmountedRef.current)) {
         resultCache.set(key, {
           success: false,
-          message: e instanceof Error ? e.message : 'Healthcheck failed',
+          // invokeWithTimeout rejects with a serialized AppError object, never
+          // an Error, so an instanceof ladder dropped every backend reason.
+          message: extractMessage(e) || 'Healthcheck failed',
           // A throw at the IPC boundary means no probe verdict was ever
           // produced: the command timed out, the machine is offline, the
           // transport died. That is `unreachable`, NOT `failed` -- a rejected

@@ -67,4 +67,19 @@ describe('useCredentialHealth — a probe verdict survives its bookkeeping', () 
     expect(result.current.result?.state).toBe('verified');
     expect(result.current.result?.success).toBe(true);
   });
+
+  it('keeps the backend reason when the IPC rejects with a serialized AppError', async () => {
+    // invokeWithTimeout rejects with an AppError OBJECT, never an Error, so the
+    // old `e instanceof Error ? e.message : 'Healthcheck failed'` dropped the
+    // reason on every real failure.
+    healthcheckCredential.mockRejectedValue({ error: 'Credential not found: cred-1', kind: 'NotFound' });
+    const { result } = mount();
+
+    await act(async () => {
+      await result.current.checkStored();
+    });
+
+    expect(result.current.result?.message).toBe('Credential not found: cred-1');
+    expect(result.current.result?.state).toBe('unreachable');
+  });
 });
