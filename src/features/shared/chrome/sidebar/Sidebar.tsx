@@ -274,13 +274,16 @@ export default function Sidebar() {
                     />
                   </div>
               </div>
+              {/* color-mix, not hsl(): `--secondary` is a hex colour in every
+                  theme, so `hsl(var(--secondary) / 0.3)` was invalid at
+                  computed-value time and both shadows never painted. */}
               <div
                 className={`absolute top-0 inset-x-0 h-6 pointer-events-none z-[1] transition-opacity duration-200 ${l2ScrollUp ? 'opacity-100' : 'opacity-0'}`}
-                style={{ background: 'linear-gradient(to bottom, hsl(var(--secondary) / 0.3), transparent)' }}
+                style={{ background: 'linear-gradient(to bottom, color-mix(in srgb, var(--secondary) 30%, transparent), transparent)' }}
               />
               <div
                 className={`absolute bottom-0 inset-x-0 h-6 pointer-events-none z-[1] transition-opacity duration-200 ${l2ScrollDown ? 'opacity-100' : 'opacity-0'}`}
-                style={{ background: 'linear-gradient(to top, hsl(var(--secondary) / 0.3), transparent)' }}
+                style={{ background: 'linear-gradient(to top, color-mix(in srgb, var(--secondary) 30%, transparent), transparent)' }}
               />
             </div>
           </div>
