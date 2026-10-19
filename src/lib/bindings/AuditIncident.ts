@@ -50,7 +50,8 @@ title: string,
  */
 detail: string | null, 
 /**
- * One of `open` / `acknowledged` / `resolved` / `dismissed`. See
+ * One of `open` / `acknowledged` / `in_progress` / `resolved` /
+ * `dismissed`. See
  * `IncidentStatus`.
  */
 status: string, acknowledgedAt: string | null, 

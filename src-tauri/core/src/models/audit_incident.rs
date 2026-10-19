@@ -124,7 +124,8 @@ pub struct AuditIncident {
     pub title: String,
     /// Optional longer payload (free text or JSON) for the detail modal.
     pub detail: Option<String>,
-    /// One of `open` / `acknowledged` / `resolved` / `dismissed`. See
+    /// One of `open` / `acknowledged` / `in_progress` / `resolved` /
+    /// `dismissed`. See
     /// `IncidentStatus`.
     pub status: String,
     pub acknowledged_at: Option<String>,
