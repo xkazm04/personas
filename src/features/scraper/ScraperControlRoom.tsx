@@ -6,6 +6,8 @@ import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import Button from '@/features/shared/components/buttons/Button';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
+import { inlineErrorCopy } from '@/features/triggers/lib/inlineErrorCopy';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { errMsg } from '@/stores/storeTypes';
@@ -37,6 +39,7 @@ const CASCADE_ROWS = 14;
  * Extractable: StatChip, StatusPill, FieldChips.
  */
 export function ScraperControlRoom({ data, onNew, onEdit }: ScraperVariantProps) {
+  const { t } = useTranslation();
   // Which dataset's records are open below the strip. The chips carried a
   // count and nothing behind it; this is the operator's handoff after a run.
   const [openDataset, setOpenDataset] = useState<string | null>(null);
@@ -51,6 +54,12 @@ export function ScraperControlRoom({ data, onNew, onEdit }: ScraperVariantProps)
   // fetch runs. Configs already on screen (incl. from the module cache) are
   // never hidden by a fetch — see useScraperData's cache comment.
   const showGhost = data.loading && data.configs.length === 0;
+  // A failed load is not an empty list. `data.error` had no reader, so a
+  // refused read (in a build without the `scraper` feature: every read) fell
+  // through to "No scrapes yet", inviting the user to build one that could
+  // not be saved either. Rows already on screen stay; the banner says why
+  // they may be stale.
+  const loadFailed = data.error !== null && !data.loading;
 
   return (
     <div className="space-y-5">
@@ -67,10 +76,14 @@ export function ScraperControlRoom({ data, onNew, onEdit }: ScraperVariantProps)
         </Button>
       </div>
 
+      {loadFailed && (
+        <ErrorBanner message={inlineErrorCopy(t, data.error)} onRetry={() => void data.reload()} />
+      )}
+
       {showGhost ? (
         <ScraperGhostTable />
       ) : data.configs.length === 0 ? (
-        <EmptyRow onNew={onNew} />
+        loadFailed ? null : <EmptyRow onNew={onNew} />
       ) : (
         <div className="overflow-hidden rounded-card border border-primary/10">
           <table className="w-full text-left">
