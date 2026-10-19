@@ -1,4 +1,4 @@
-import { collectAllTags, getCredentialTags } from '@/features/vault/shared/utils/credentialTags';
+import { getCredentialTags } from '@/features/vault/shared/utils/credentialTags';
 import { computeHealthScore } from '@/features/vault/shared/utils/credentialHealthScore';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { readCredentialHealthState } from '@/lib/credentials/healthState';
@@ -19,26 +19,6 @@ export function capitalize(s: string) {
   return s.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
-export function healthFilterLabel(f: HealthFilter): string {
-  switch (f) {
-    case 'all': return 'All health';
-    case 'healthy': return 'Healthy';
-    case 'unverifiable': return 'Unverifiable';
-    case 'failing': return 'Failing';
-    case 'untested': return 'Untested';
-  }
-}
-
-export function sortLabel(s: SortKey): string {
-  switch (s) {
-    case 'name': return 'Name';
-    case 'type': return 'Type';
-    case 'created': return 'Created';
-    case 'last-used': return 'Last used';
-    case 'health': return 'Health status';
-  }
-}
-
 export interface CredentialListProps {
   credentials: CredentialMetadata[];
   connectorDefinitions: ConnectorDefinition[];
@@ -55,11 +35,6 @@ export interface CredentialListProps {
   onGoToCatalog?: () => void;
   onGoToAddNew?: () => void;
   onWorkspaceConnect?: () => void;
-}
-
-export interface GroupedCredentials {
-  category: string;
-  items: { credential: CredentialMetadata; connector?: ConnectorDefinition }[];
 }
 
 export interface CredentialFilterOptions {
@@ -172,25 +147,3 @@ export function filterAndSortCredentials(
 
   return sorted;
 }
-
-export function groupCredentials(
-  filteredCredentials: CredentialMetadata[],
-  sortKey: SortKey,
-  getConnectorForType: (type: string) => ConnectorDefinition | undefined,
-): GroupedCredentials[] {
-  if (sortKey !== 'name') {
-    return [{ category: '', items: filteredCredentials.map((cred) => ({ credential: cred, connector: getConnectorForType(cred.service_type) })) }];
-  }
-  const groups: Record<string, { credential: CredentialMetadata; connector?: ConnectorDefinition }[]> = {};
-  for (const cred of filteredCredentials) {
-    const conn = getConnectorForType(cred.service_type);
-    const cat = conn?.category || 'other';
-    if (!groups[cat]) groups[cat] = [];
-    groups[cat].push({ credential: cred, connector: conn });
-  }
-  return Object.entries(groups)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([cat, items]) => ({ category: cat, items }));
-}
-
-export { collectAllTags };
