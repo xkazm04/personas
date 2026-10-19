@@ -5,6 +5,9 @@ import {
   setAnimationTarget,
   unregisterAnimation,
 } from '@/lib/utils/rafAnimationEngine';
+// The app's hook: it reads the OS media query AND the in-app Appearance toggle
+// (<html data-motion="reduce">). The local copy this replaced read only the OS.
+import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 
 export type AnimatedCounterMode = 'fade' | 'roll';
 
@@ -194,23 +197,4 @@ function RollSlot({ digit }: { digit: number }) {
       </motion.span>
     </span>
   );
-}
-
-/* Minimal prefers-reduced-motion hook — avoids pulling in framer-motion's
- * useReducedMotion (which has additional behavior we don't need here). */
-function useReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) return false;
-    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  });
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) return;
-    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const handler = () => setReduced(mq.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
-
-  return reduced;
 }

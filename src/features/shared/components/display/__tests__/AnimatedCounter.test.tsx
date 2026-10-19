@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { render } from '@testing-library/react';
 import { AnimatedCounter } from '../AnimatedCounter';
 
@@ -14,6 +14,10 @@ function accessibleText(root: HTMLElement): string {
   return out;
 }
 
+afterEach(() => {
+  document.documentElement.removeAttribute('data-motion');
+});
+
 describe('AnimatedCounter', () => {
   it('roll mode exposes the whole value to assistive tech, not just its separators', () => {
     const { container } = render(<AnimatedCounter value={1234} formatFn={group} mode="roll" />);
@@ -25,5 +29,12 @@ describe('AnimatedCounter', () => {
   it('fade mode reads the value once', () => {
     const { container } = render(<AnimatedCounter value={1234} formatFn={group} />);
     expect(accessibleText(container)).toBe('1,234');
+  });
+
+  it('honours the in-app Reduce Motion toggle, not only the OS media query', () => {
+    document.documentElement.setAttribute('data-motion', 'reduce');
+    const { container } = render(<AnimatedCounter value={42} mode="roll" />);
+    // Under reduced motion roll falls back to fade: no 0-9 digit columns.
+    expect(container.textContent).toBe('42');
   });
 });
