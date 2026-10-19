@@ -9,6 +9,9 @@ import type { McpTool, McpToolResult } from '@/api/agents/mcpTools';
 import { ToolRow } from './McpToolRow';
 import { EmptyState } from './McpToolResultDisplay';
 import { ToolDetail, ToolEmptyList } from './ToolDetail';
+import { buildToolArgs } from './mcpToolArgs';
+import { inlineErrorCopy } from '@/features/triggers/lib/inlineErrorCopy';
+import { createLatestWins } from '@/stores/util/latestWins';
 
 interface McpToolsTabProps {
   credentialId: string;
@@ -19,7 +22,10 @@ export function McpToolsTab({ credentialId }: McpToolsTabProps) {
   const sh = t.vault.shared;
   const [tools, setTools] = useState<McpTool[]>([]);
   const [loading, setLoading] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  // The rejection itself, resolved at render: an IPC rejection is an AppError
+  // object, and `err instanceof Error ? err.message : String(err)` painted
+  // "[object Object]" in both banners for every backend failure.
+  const [loadError, setLoadError] = useState<{ raw: unknown } | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
 
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
@@ -27,7 +33,10 @@ export function McpToolsTab({ credentialId }: McpToolsTabProps) {
   const [inputValues, setInputValues] = useState<Record<string, string>>({});
   const [executing, setExecuting] = useState(false);
   const [result, setResult] = useState<McpToolResult | null>(null);
-  const [execError, setExecError] = useState<string | null>(null);
+  const [execError, setExecError] = useState<{ raw: unknown } | null>(null);
+  // A run still in flight when the operator picks another tool (or closes the
+  // panel) must not paint its result under the next tool's name.
+  const [runLatest] = useState(createLatestWins);
 
   const handleRefresh = useCallback(async () => {
     setLoading(true);
@@ -37,32 +46,31 @@ export function McpToolsTab({ credentialId }: McpToolsTabProps) {
       setTools(list);
       setHasLoaded(true);
     } catch (err) {
-      setLoadError(err instanceof Error ? err.message : String(err));
+      setLoadError({ raw: err });
     } finally {
       setLoading(false);
     }
   }, [credentialId]);
 
   const handleExecute = useCallback(async (toolName: string) => {
+    const token = runLatest.next();
     setExecuting(true);
     setExecError(null);
     setResult(null);
     try {
-      const args: Record<string, unknown> = {};
-      for (const [key, val] of Object.entries(inputValues)) {
-        if (!val.trim()) continue;
-        try { args[key] = JSON.parse(val); } catch { args[key] = val; }
-      }
-      const res = await executeMcpTool(credentialId, toolName, args);
-      setResult(res);
+      const schema = tools.find((tool) => tool.name === toolName)?.input_schema;
+      const res = await executeMcpTool(credentialId, toolName, buildToolArgs(schema, inputValues));
+      if (runLatest.isCurrent(token)) setResult(res);
     } catch (err) {
-      setExecError(err instanceof Error ? err.message : String(err));
+      if (runLatest.isCurrent(token)) setExecError({ raw: err });
     } finally {
-      setExecuting(false);
+      if (runLatest.isCurrent(token)) setExecuting(false);
     }
-  }, [credentialId, inputValues]);
+  }, [credentialId, inputValues, tools, runLatest]);
 
   const handleSelectTool = useCallback((tool: McpTool) => {
+    runLatest.next();
+    setExecuting(false);
     setSelectedTool(tool.name);
     setResult(null);
     setExecError(null);
@@ -72,7 +80,7 @@ export function McpToolsTab({ credentialId }: McpToolsTabProps) {
       if (props) { for (const key of Object.keys(props)) initial[key] = ''; }
     }
     setInputValues(initial);
-  }, []);
+  }, [runLatest]);
 
   const currentTool = useMemo(
     () => tools.find((t) => t.name === selectedTool),
@@ -102,7 +110,7 @@ export function McpToolsTab({ credentialId }: McpToolsTabProps) {
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
-        {loadError && <InlineErrorBanner message={loadError} />}
+        {loadError && <InlineErrorBanner message={inlineErrorCopy(t, loadError.raw)} />}
 
         {!hasLoaded && !loading && !loadError && <EmptyState onDiscover={handleRefresh} />}
 
@@ -129,10 +137,10 @@ export function McpToolsTab({ credentialId }: McpToolsTabProps) {
             inputValues={inputValues}
             onInputChange={setInputValues}
             executing={executing}
-            execError={execError}
+            execError={execError && inlineErrorCopy(t, execError.raw)}
             result={result}
             onExecute={handleExecute}
-            onClose={() => { setSelectedTool(null); setResult(null); setExecError(null); }}
+            onClose={() => { runLatest.next(); setExecuting(false); setSelectedTool(null); setResult(null); setExecError(null); }}
           />
         )}
       </div>
