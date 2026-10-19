@@ -72,8 +72,14 @@ function installIpc(): void {
       // for the assertions below.
       const a = { id: raw.id, ...(raw.patch ?? {}) } as { id: string } & Record<string, unknown>;
       if (failUpdate) throw new Error('save refused');
-      updates.push({ id: a.id, patch: a });
       const base = rows.find((r) => r.id === a.id) ?? note({ id: a.id });
+      // The server's per-key refusals (`update_note`, notes.rs): a body only
+      // while draft/scoped/cut, a project only while draft, a title anywhere but
+      // archived. A fake that accepted every key hid a writer that sent them all.
+      if ('bodyMd' in a && !['draft', 'scoped', 'cut'].includes(base.status)) throw new Error('body locked');
+      if ('projectId' in a && base.status !== 'draft') throw new Error('project locked');
+      if ('title' in a && base.status === 'archived') throw new Error('archived');
+      updates.push({ id: a.id, patch: a });
       const merged = note({
         ...base,
         ...(typeof a.title === 'string' ? { title: a.title } : {}),
@@ -162,6 +168,41 @@ describe('patchNote — the shadow/debounce/clear cycle', () => {
     // The shadow is the ONLY surviving copy of this text — clearing it on a
     // failure would be the exact data loss the tier exists to prevent.
     expect(JSON.parse(readShadow('n1') ?? '{}')).toMatchObject({ bodyMd: 'unsaved' });
+  });
+
+  it("saves a milestone brief's body without sending its project", async () => {
+    rows = [note({ id: 'n1', status: 'scoped', projectId: 'p1', milestoneId: 'm1' })];
+    await load();
+
+    patchNote('n1', { bodyMd: 'the brief grows' });
+    await flush('n1');
+
+    expect(saveStateOf('n1')).toBe('clean');
+    expect(updates).toHaveLength(1);
+    expect(updates[0]?.patch).not.toHaveProperty('projectId');
+    expect(updates[0]?.patch).not.toHaveProperty('title');
+    expect(updates[0]?.patch.bodyMd).toBe('the brief grows');
+  });
+
+  it('renames a dispatched note without sending its body', async () => {
+    rows = [note({ id: 'n1', status: 'published', projectId: 'p1' })];
+    await load();
+
+    patchNote('n1', { title: 'Renamed' });
+    await flush('n1');
+
+    expect(saveStateOf('n1')).toBe('clean');
+    expect(updates[0]?.patch).toEqual({ id: 'n1', title: 'Renamed' });
+  });
+
+  it('sends a cleared project as an explicit null', async () => {
+    rows = [note({ id: 'n1', projectId: 'p1' })];
+    await load();
+
+    patchNote('n1', { projectId: null });
+    await flush('n1');
+
+    expect(updates[0]?.patch).toEqual({ id: 'n1', projectId: null });
   });
 
   it('flush() forces a pending save without waiting out the debounce', async () => {

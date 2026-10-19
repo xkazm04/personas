@@ -111,6 +111,27 @@ export interface NotepadStatus {
 
 /** Pending debounce timer per note id. */
 const timers = new Map<string, ReturnType<typeof setTimeout>>();
+
+/** An editable field the debounced writer can carry. */
+type SaveField = 'title' | 'bodyMd' | 'projectId';
+
+/**
+ * The fields edited since the last save that carried them, per note id.
+ *
+ * A save sends THESE and nothing else. The server checks each key on its own
+ * (`update_note` in `src-tauri/db/src/repos/dev/notes.rs`): a body only while
+ * `draft | scoped | cut`, a project only while `draft`, a title anywhere but
+ * `archived`. A patch that always carried all three was refused for every
+ * keystroke on a milestone brief (its untouched `projectId`) and for every
+ * rename of a dispatched note (its untouched `bodyMd`).
+ */
+const unsent = new Map<string, Set<SaveField>>();
+
+function markUnsent(id: string, fields: Iterable<SaveField>): void {
+  const set = unsent.get(id) ?? new Set<SaveField>();
+  for (const f of fields) set.add(f);
+  if (set.size > 0) unsent.set(id, set);
+}
 /** In-flight save promise per note id, so `flush` can await a save already running. */
 const inFlight = new Map<string, Promise<void>>();
 
@@ -296,6 +317,11 @@ export function patchNote(id: string, patch: NotePatch): void {
   };
   notes = { ...notes, [id]: next };
   saveStates = { ...saveStates, [id]: 'dirty' };
+  markUnsent(id, [
+    ...(patch.title !== undefined ? (['title'] as const) : []),
+    ...(patch.bodyMd !== undefined ? (['bodyMd'] as const) : []),
+    ...('projectId' in patch ? (['projectId'] as const) : []),
+  ]);
   emit();
 
   writeShadow(next);
@@ -323,7 +349,16 @@ async function runSave(id: string): Promise<void> {
 
   const note = notes[id];
   if (!note) return;
-  const sent = { title: note.title, bodyMd: note.bodyMd, projectId: note.projectId };
+  const fields = unsent.get(id);
+  if (!fields || fields.size === 0) return;
+  unsent.delete(id);
+  // Only the edited keys travel (see `unsent`). `in` on the wire for
+  // `projectId`, so an edit that CLEARED the project still reaches the server.
+  const sent: NotePatch = {
+    ...(fields.has('title') ? { title: note.title } : {}),
+    ...(fields.has('bodyMd') ? { bodyMd: note.bodyMd } : {}),
+    ...(fields.has('projectId') ? { projectId: note.projectId } : {}),
+  };
 
   setSaveState(id, 'saving');
   const p = (async () => {
@@ -337,9 +372,9 @@ async function runSave(id: string): Promise<void> {
       const after = notes[id];
       const settled =
         !!after &&
-        after.title === sent.title &&
-        after.bodyMd === sent.bodyMd &&
-        after.projectId === sent.projectId;
+        (!('title' in sent) || after.title === sent.title) &&
+        (!('bodyMd' in sent) || after.bodyMd === sent.bodyMd) &&
+        (!('projectId' in sent) || after.projectId === sent.projectId);
       if (settled) {
         setSaveState(id, 'clean');
         clearShadow(id);
@@ -348,6 +383,8 @@ async function runSave(id: string): Promise<void> {
         scheduleSave(id);
       }
     } catch (e) {
+      // The edit is still unsaved: the retry must carry the same keys.
+      markUnsent(id, fields);
       setSaveState(id, 'error');
       toastCatch('notepad save')(e);
     } finally {
@@ -440,6 +477,7 @@ export async function load(): Promise<void> {
         // published note cannot be replayed — it would be refused server-side.
         nextNotes[row.id] = { ...row, bodyMd: shadow.bodyMd, title: shadow.title };
         recovered.push(row.id);
+        markUnsent(row.id, ['title', 'bodyMd']);
       } else {
         nextNotes[row.id] = row;
         if (shadow) clearShadow(row.id);
@@ -855,6 +893,7 @@ export function __resetNotepadStoreForTests(): void {
   for (const timer of timers.values()) clearTimeout(timer);
   timers.clear();
   inFlight.clear();
+  unsent.clear();
   notes = {};
   order = [];
   saveStates = {};
