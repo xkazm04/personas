@@ -31,7 +31,10 @@ export function titleFromText(text: string, fallback: string): string {
     ?.replace(/^[#>*\-\s]+/, '')
     .trim();
   if (!first) return fallback;
-  return first.length > 48 ? `${first.slice(0, 47).trimEnd()}…` : first;
+  // By code point, not UTF-16 unit: a cut through an emoji left a lone
+  // surrogate in the title, which the IPC's JSON cannot carry.
+  const chars = Array.from(first);
+  return chars.length > 48 ? `${chars.slice(0, 47).join('').trimEnd()}…` : first;
 }
 
 /** Parse the sweeper's `result_json` for a human-readable summary. */
