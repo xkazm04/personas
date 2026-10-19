@@ -4,7 +4,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { storageUsage, pruneStorage, reclaimStorage } from '@/api/system/system';
 import { Button, AsyncButton } from '@/features/shared/components/buttons';
 import { Numeric } from '@/features/shared/components/display/Numeric';
-import { toastCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch, toastCatch } from '@/lib/silentCatch';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import type { StorageReport } from '@/lib/bindings/StorageReport';
 import type { PruneResult } from '@/lib/bindings/PruneResult';
 import type { ReclaimResult } from '@/lib/bindings/ReclaimResult';
@@ -68,9 +69,20 @@ export function StorageUsageSection() {
   const [receipt, setReceipt] = useState<PruneResult | null>(null);
   const [reclaimPreview, setReclaimPreview] = useState<ReclaimResult | null>(null);
   const [reclaimReceipt, setReclaimReceipt] = useState<ReclaimResult | null>(null);
+  // A failed read is shown in place, never as an empty section: the report is
+  // what arms both destructive actions, so its absence must say why.
+  const [loadFailure, setLoadFailure] = useState<{ raw: unknown } | null>(null);
 
   const refresh = () => {
-    storageUsage().then(setReport).catch(toastCatch('StorageUsageSection:fetch'));
+    storageUsage()
+      .then((next) => {
+        setReport(next);
+        setLoadFailure(null);
+      })
+      .catch((err: unknown) => {
+        silentCatch('StorageUsageSection:fetch')(err);
+        setLoadFailure({ raw: err });
+      });
   };
   useEffect(refresh, []);
 
@@ -121,6 +133,17 @@ export function StorageUsageSection() {
 
   return (
     <div className="flex flex-col gap-3">
+      {loadFailure && (
+        <div className="flex flex-wrap items-center gap-2" data-testid="storage-usage-load-failed">
+          <span className="typo-body text-status-error" role="alert">
+            {resolveErrorTranslated(t, extractMessage(loadFailure.raw)).message}
+          </span>
+          <Button variant="ghost" size="sm" onClick={refresh}>
+            {t.common.retry}
+          </Button>
+        </div>
+      )}
+
       {report && (
         <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <StatCell
