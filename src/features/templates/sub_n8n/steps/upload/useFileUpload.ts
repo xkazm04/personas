@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { createLogger } from '@/lib/log';
+import { createLatestWins } from '@/stores/util/latestWins';
 
 const logger = createLogger('n8n-import');
 import {
@@ -22,7 +23,7 @@ export function useFileUpload(onContentPaste?: (content: string, sourceName: str
   const [preview, setPreview] = useState<FilePreview | null>(null);
   const mountedRef = useRef(true);
   const validatedFileRef = useRef<File | null>(null);
-  const validationGenerationRef = useRef(0);
+  const [latestValidation] = useState(createLatestWins);
   const activeReaderRef = useRef<FileReader | null>(null);
   const validatedContentRef = useRef<string | null>(null);
 
@@ -77,7 +78,7 @@ export function useFileUpload(onContentPaste?: (content: string, sourceName: str
 
   const validateAndPreview = useCallback(
     (file: File) => {
-      const generation = ++validationGenerationRef.current;
+      const generation = latestValidation.next();
       if (activeReaderRef.current?.readyState === FileReader.LOADING) {
         activeReaderRef.current.abort();
       }
@@ -100,7 +101,7 @@ export function useFileUpload(onContentPaste?: (content: string, sourceName: str
       const reader = new FileReader();
       activeReaderRef.current = reader;
       reader.onload = (e) => {
-        if (!mountedRef.current || generation !== validationGenerationRef.current) return;
+        if (!mountedRef.current || !latestValidation.isCurrent(generation)) return;
         const content = e.target?.result as string;
         if (!content || content.length === 0) {
           setPreview({ kind: 'error', fileName: file.name, message: 'File is empty.' });
@@ -166,13 +167,13 @@ export function useFileUpload(onContentPaste?: (content: string, sourceName: str
         setPreview({ kind: 'valid', fileName: file.name, fileSize: formatFileSize(file.size), workflowName, nodeCount: count, platform });
       };
       reader.onerror = () => {
-        if (!mountedRef.current || generation !== validationGenerationRef.current) return;
+        if (!mountedRef.current || !latestValidation.isCurrent(generation)) return;
         logger.warn('FileReader error', { fileName: file.name });
         setPreview({ kind: 'error', fileName: file.name, message: 'Failed to read the file.' });
       };
       reader.readAsText(file);
     },
-    [invalidYamlMessage],
+    [invalidYamlMessage, latestValidation],
   );
 
   const handleDrop = useCallback((e: React.DragEvent) => {
