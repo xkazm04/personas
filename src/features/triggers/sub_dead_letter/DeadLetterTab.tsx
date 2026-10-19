@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import {
   listDeadLetterEvents,
+  countDeadLetterEvents,
   retryDeadLetterEvent,
   discardDeadLetterEvent,
   getDeadLetterConfig,
@@ -38,6 +39,9 @@ import { silentCatch, toastCatch } from '@/lib/silentCatch';
  * this so UI labels never drift from `MAX_MANUAL_RETRIES` in `events.rs`.
  */
 const MAX_MANUAL_RETRIES_FALLBACK = 5;
+
+/** The list read's window. The queue can hold more; the header says so. */
+const DLQ_WINDOW = 100;
 
 type AgeFilter = 'any' | '15m' | '1h' | '24h' | 'old';
 type ViewMode = 'list' | 'grouped';
@@ -134,6 +138,9 @@ export function DeadLetterTab() {
   // listDeadLetterEvents rendered "No dead-lettered events / All events
   // processed successfully" over a queue nobody had looked at.
   const [loadFailed, setLoadFailed] = useState(false);
+  // The queue's real size. The list is a DLQ_WINDOW-row window, and its length
+  // was printed as the queue's count: a 4,000-event backlog read "(100 events)".
+  const [queueTotal, setQueueTotal] = useState<number | null>(null);
   const [maxManualRetries, setMaxManualRetries] = useState<number>(MAX_MANUAL_RETRIES_FALLBACK);
   const [actionsInProgress, setActionsInProgress] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -159,8 +166,15 @@ export function DeadLetterTab() {
   const loadEvents = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await listDeadLetterEvents(100);
+      const [data, total] = await Promise.all([
+        listDeadLetterEvents(DLQ_WINDOW),
+        countDeadLetterEvents().catch((err) => {
+          silentCatch('DeadLetterTab:countDeadLetterEvents')(err);
+          return null;
+        }),
+      ]);
       setEvents(data);
+      setQueueTotal(total);
       setLoadFailed(false);
       setSelected((prev) => {
         // Drop selections for ids that are no longer in the queue.
@@ -427,6 +441,10 @@ export function DeadLetterTab() {
   // ---- Render ------------------------------------------------------------
 
   const totalEvents = events.length;
+  // A successful action shrinks `events` locally, so never report fewer than
+  // the rows on screen; the count re-syncs on the next load.
+  const shownTotal = Math.max(totalEvents, queueTotal ?? 0);
+  const windowed = shownTotal > totalEvents;
   const allFilteredVisibleSelected =
     selectableFilteredIds.length > 0 && selectableFilteredIds.every((id) => selected.has(id));
 
@@ -438,8 +456,13 @@ export function DeadLetterTab() {
             <Archive className="w-5 h-5 text-red-400" />
             <h3 className="typo-heading">{t.triggers.tab_dead_letter}</h3>
             <span className="typo-caption text-foreground">
-              ({totalEvents} event{totalEvents !== 1 ? 's' : ''})
+              ({tx(shownTotal === 1 ? t.triggers.dead_letter_group_singular : t.triggers.dead_letter_group_plural, { count: shownTotal })})
             </span>
+            {windowed && (
+              <span className="typo-caption text-foreground">
+                · {tx(t.triggers.dead_letter_filtered_summary, { visible: totalEvents, total: shownTotal })}
+              </span>
+            )}
             {filtersDirty && (
               <span className="typo-caption text-foreground">
                 · {tx(t.triggers.dead_letter_filtered_summary, { visible: filtered.length, total: totalEvents })}

@@ -76,6 +76,11 @@ export const getEventSkippedStats = (sinceDays?: number) =>
 export const listDeadLetterEvents = (limit?: number) =>
   invoke<PersonaEvent[]>("list_dead_letter_events", { limit });
 
+/** How many events sit in the dead-letter queue, uncapped. The list read is
+ *  capped (default 100), so its length is not the queue's size. */
+export const countDeadLetterEvents = () =>
+  invoke<number>("count_dead_letter_events");
+
 export const retryDeadLetterEvent = (id: string) =>
   invoke<PersonaEvent>("retry_dead_letter_event", { id });
 
