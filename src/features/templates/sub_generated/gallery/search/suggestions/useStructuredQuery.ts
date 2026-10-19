@@ -14,6 +14,8 @@ export interface UseStructuredQueryReturn {
   chips: QueryChip[];
   addChip: (chip: QueryChip) => void;
   removeChip: (index: number) => void;
+  /** Drop every chip of one type and clear that filter (the filter row's own chip X). */
+  removeChipsOfType: (type: ChipType) => void;
   clearAll: () => void;
   /** Non-null when user is typing a recognized prefix (e.g. "category:") */
   autocompletePrefix: string | null;
@@ -46,7 +48,16 @@ export function useStructuredQuery(
   callbacks?: Pick<StructuredQueryCallbacks, 'onDifficultyFilterChange' | 'onSetupFilterChange'>,
 ): UseStructuredQueryReturn {
   const [inputValue, setInputValueRaw] = useState(_cachedInput);
-  const [chips, setChips] = useState<QueryChip[]>(_cachedChips);
+  const [chips, setChipsState] = useState<QueryChip[]>(_cachedChips);
+  // The current chips, readable outside a state updater. Chip changes notify
+  // the parent's filter setters, and a parent setState inside this hook's
+  // updater runs during render (and twice under StrictMode).
+  const chipsRef = useRef<QueryChip[]>(_cachedChips);
+  const commitChips = useCallback((next: QueryChip[]) => {
+    chipsRef.current = next;
+    _cachedChips = next;
+    setChipsState(next);
+  }, []);
 
   // On mount, if the module-level cache has a value (user switched modules and
   // returned), rehydrate the parent filter state so the gallery actually filters
@@ -118,50 +129,50 @@ export function useStructuredQuery(
   }, [onCategoryFilterChange, callbacks]);
 
   const addChip = useCallback((chip: QueryChip) => {
-    setChips((prev) => {
-      if (prev.some((c) => c.type === chip.type && c.value === chip.value)) return prev;
+    const prev = chipsRef.current;
+    if (!prev.some((c) => c.type === chip.type && c.value === chip.value)) {
       const next = [...prev, chip];
-      _cachedChips = next;
+      commitChips(next);
       syncChipFilters(next, chip.type);
-      return next;
-    });
+    }
 
-    setInputValueRaw((prev) => {
-      const words = prev.split(/\s+/);
-      const lastWord = words[words.length - 1] ?? '';
-      const isPrefix = PREFIXES.some(
-        (p) => lastWord.toLowerCase().startsWith(p) || (p.startsWith(lastWord.toLowerCase()) && lastWord.length >= 3),
-      );
-      if (isPrefix) {
-        const cleaned = words.slice(0, -1).join(' ');
-        _cachedInput = cleaned;
-        onSearchChange(cleaned);
-        return cleaned;
-      }
-      return prev;
-    });
-  }, [syncChipFilters, onSearchChange]);
+    const words = _cachedInput.split(/\s+/);
+    const lastWord = words[words.length - 1] ?? '';
+    const isPrefix = PREFIXES.some(
+      (p) => lastWord.toLowerCase().startsWith(p) || (p.startsWith(lastWord.toLowerCase()) && lastWord.length >= 3),
+    );
+    if (isPrefix) {
+      const cleaned = words.slice(0, -1).join(' ');
+      _cachedInput = cleaned;
+      setInputValueRaw(cleaned);
+      onSearchChange(cleaned);
+    }
+  }, [commitChips, syncChipFilters, onSearchChange]);
 
   const removeChip = useCallback((index: number) => {
-    setChips((prev) => {
-      const removed = prev[index];
-      const next = prev.filter((_, i) => i !== index);
-      _cachedChips = next;
-      if (removed) syncChipFilters(next, removed.type);
-      return next;
-    });
-  }, [syncChipFilters]);
+    const prev = chipsRef.current;
+    const removed = prev[index];
+    if (!removed) return;
+    const next = prev.filter((_, i) => i !== index);
+    commitChips(next);
+    syncChipFilters(next, removed.type);
+  }, [commitChips, syncChipFilters]);
+
+  const removeChipsOfType = useCallback((type: ChipType) => {
+    const next = chipsRef.current.filter((c) => c.type !== type);
+    commitChips(next);
+    syncChipFilters(next, type);
+  }, [commitChips, syncChipFilters]);
 
   const clearAll = useCallback(() => {
     _cachedInput = '';
-    _cachedChips = [];
-    setChips([]);
+    commitChips([]);
     setInputValueRaw('');
     onCategoryFilterChange([]);
     callbacks?.onDifficultyFilterChange?.([]);
     callbacks?.onSetupFilterChange?.([]);
     onSearchChange('');
-  }, [onCategoryFilterChange, callbacks, onSearchChange]);
+  }, [commitChips, onCategoryFilterChange, callbacks, onSearchChange]);
 
   // Also handle external category filter changes (e.g. from explore view)
   // by syncing chips when category filter is set externally
@@ -174,6 +185,7 @@ export function useStructuredQuery(
     chips,
     addChip,
     removeChip,
+    removeChipsOfType,
     clearAll,
     autocompletePrefix,
     autocompleteQuery,
