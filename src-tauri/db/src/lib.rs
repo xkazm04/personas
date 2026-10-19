@@ -64,7 +64,6 @@ pub mod execution_project;
 /// `kp.gig_persona_policy` — the operator's standing approval for kp gig personas.
 pub mod kp_gig_policy;
 pub mod memory_recall;
-#[allow(dead_code)] // Functions used by Tauri commands in Phase 3
 pub mod migrations;
 pub mod model_routing;
 /// The file-delivered `operator-local` API key (`personas:approve`).
@@ -83,7 +82,6 @@ pub use personas_core::models;
 pub mod perf;
 pub mod query_builder;
 pub mod reclaim;
-#[allow(dead_code)]
 pub mod repos;
 pub mod restore;
 pub mod settings_keys;

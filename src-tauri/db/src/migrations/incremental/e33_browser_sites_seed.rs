@@ -31,7 +31,10 @@ const SEED_MARKER: &str = "browser_sites_seeded";
 
 /// The example origin. Already in the normalised form
 /// `personas_core::models::normalize_site_origin` produces, so the row is
-/// byte-identical to one the operator could have typed.
+/// byte-identical to one the operator could have typed. The step itself
+/// writes it as a literal inside one SQL batch (`ddl_step` binds nothing), so
+/// this constant is the tests' handle on that literal and exists only there.
+#[cfg(test)]
 const SEED_ORIGIN: &str = "http://localhost:3000";
 
 pub(super) fn run(conn: &Connection) -> Result<(), AppError> {

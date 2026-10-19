@@ -60,20 +60,6 @@ pub(crate) fn row_to_project(row: &Row) -> rusqlite::Result<DevProject> {
 // serves both.
 // ----------------------------------------------------------------------------
 
-/// Member projects of a workspace, projected to the two columns the knowledge
-/// lanes need. Was inline in `workspaces::mining` and `workspaces::knowledge`.
-pub(crate) fn workspace_members_with_tech_stack(
-    conn: &rusqlite::Connection,
-    workspace_id: &str,
-) -> rusqlite::Result<Vec<(String, Option<String>)>> {
-    let mut stmt =
-        conn.prepare("SELECT id, tech_stack FROM dev_projects WHERE workspace_id = ?1")?;
-    let rows = stmt.query_map(params![workspace_id], |r| {
-        Ok((r.get("id")?, r.get("tech_stack")?))
-    })?;
-    rows.collect()
-}
-
 /// Full member projects of a workspace, name-sorted. Was inline in
 /// `workspaces::org::list_workspace_projects`, which already had to reach for
 /// this module's `row_to_project` to read the result.

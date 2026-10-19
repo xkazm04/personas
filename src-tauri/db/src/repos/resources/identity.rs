@@ -1,19 +1,11 @@
 use rusqlite::{params, Row};
 use tracing::instrument;
 
-use crate::models::{LocalIdentity, PeerIdentity, TrustedPeer, UpdateTrustedPeerInput};
+use crate::models::{PeerIdentity, TrustedPeer, UpdateTrustedPeerInput};
 use crate::DbPool;
 use personas_core::error::AppError;
 
 // -- Row mappers ---------------------------------------------------------
-
-fn row_to_local_identity(row: &Row) -> rusqlite::Result<LocalIdentity> {
-    Ok(LocalIdentity {
-        peer_id: row.get("peer_id")?,
-        display_name: row.get("display_name")?,
-        created_at: row.get("created_at")?,
-    })
-}
 
 fn row_to_peer_identity(row: &Row) -> rusqlite::Result<PeerIdentity> {
     let pk_bytes: Vec<u8> = row.get("public_key")?;
