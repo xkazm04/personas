@@ -337,7 +337,14 @@ export const createTwinSlice: StateCreator<SystemStore, [], [], TwinSlice> = (se
 
   fetchTwinProfiles: async (opts) => {
     if (!opts?.force && Date.now() - twinProfilesFetchedAt < TWIN_PROFILES_FRESH_MS) return;
-    if (twinProfilesInflight) return twinProfilesInflight;
+    if (twinProfilesInflight) {
+      if (!opts?.force) return twinProfilesInflight;
+      // A forced read is issued AFTER a write (setActiveTwin, create, delete)
+      // and must see it. Joining a read that started before the write handed
+      // back the old roster, and setActiveTwin wrote the previous twin back as
+      // active. Wait for that read, then issue a fresh one.
+      return twinProfilesInflight.then(() => get().fetchTwinProfiles({ force: true }));
+    }
     twinProfilesInflight = (async () => {
       set({ twinProfilesLoading: true });
       try {
