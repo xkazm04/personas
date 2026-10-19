@@ -312,3 +312,33 @@ fn renormalized_composite_reweights_present_scores() {
     // Nothing present → None.
     assert_eq!(renormalized_composite(None, None, None), None);
 }
+
+// -- Absence is not a score --------------------------------------------------
+
+/// The judge rubric grades a cell whose scenario expects no tools as N/A
+/// ("give 50"). That placeholder must not be stored as a measurement, or a
+/// tool-less persona at oq 90 / pc 90 reads as composite 74 instead of 90.
+#[test]
+fn tool_accuracy_absent_when_scenario_expects_no_tools() {
+    let none: Option<&[String]> = None;
+    let empty: Vec<String> = Vec::new();
+    assert_eq!(measured_tool_accuracy(false, none, 50), None);
+    assert_eq!(measured_tool_accuracy(false, Some(&empty), 50), None);
+    // Sandbox cells stay excluded, as before.
+    let expected = vec!["gmail_send".to_string()];
+    assert_eq!(measured_tool_accuracy(true, Some(&expected), 70), None);
+    // A real expectation is a real measurement (clamped).
+    assert_eq!(measured_tool_accuracy(false, Some(&expected), 70), Some(70));
+    assert_eq!(
+        measured_tool_accuracy(false, Some(&expected), 140),
+        Some(100)
+    );
+
+    let composite = renormalized_composite(
+        measured_tool_accuracy(false, none, 50).map(f64::from),
+        Some(90.0),
+        Some(90.0),
+    )
+    .unwrap();
+    assert!((composite - 90.0).abs() < 1e-9, "got {composite}");
+}

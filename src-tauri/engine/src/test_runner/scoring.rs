@@ -79,6 +79,25 @@ pub(crate) fn verdict_status(s: &ScoreResult) -> String {
     }
 }
 
+/// `tool_accuracy` as a measurement, or `None` when the cell had nothing to
+/// measure it against. A sandbox cell was told not to call real tools; a cell
+/// whose scenario expects no tools is graded by the judge rubric's own N/A
+/// rule ("no tools were expected ... give 50"), so that 50 is a placeholder,
+/// not a score. Storing it would pull every tool-less persona's composite
+/// toward 50 at 40% weight (oq 90 / pc 90 read as 74 instead of 90).
+pub(crate) fn measured_tool_accuracy(
+    is_sandbox: bool,
+    expected_tools: Option<&[String]>,
+    judged: i32,
+) -> Option<i32> {
+    let nothing_expected = expected_tools.map_or(true, |t| t.is_empty());
+    if is_sandbox || nothing_expected {
+        None
+    } else {
+        Some(judged.clamp(0, 100))
+    }
+}
+
 // -- Scoring (delegates to unified eval framework + LLM eval) ---
 
 pub async fn score_result(
@@ -141,16 +160,13 @@ pub async fn score_result(
         "protocol": llm_result.protocol_rationale,
     });
 
-    // Exclude tool_accuracy from sandbox cells: store NULL so the composite
-    // renormalises over output_quality + protocol_compliance (see
-    // `renormalized_composite`) and the ratings rollup flags `partial_coverage`
-    // instead of auto-failing the cell on a degenerate zero. The judge's
+    // Exclude tool_accuracy from sandbox cells and from cells that expected no
+    // tools: store NULL so the composite renormalises over output_quality +
+    // protocol_compliance (see `renormalized_composite`) and the ratings rollup
+    // flags `partial_coverage` instead of scoring a placeholder. The judge's
     // tool-usage rationale is still preserved in `rationale_json` above.
-    let tool_accuracy = if is_sandbox {
-        None
-    } else {
-        Some(llm_result.tool_accuracy.clamp(0, 100))
-    };
+    let tool_accuracy =
+        measured_tool_accuracy(is_sandbox, expected_tools, llm_result.tool_accuracy);
     let output_quality = Some(llm_result.output_quality.clamp(0, 100));
     let protocol_compliance = Some(llm_result.protocol_compliance.clamp(0, 100));
 
