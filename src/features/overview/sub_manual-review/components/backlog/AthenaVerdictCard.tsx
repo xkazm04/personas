@@ -24,7 +24,8 @@ import { BaseModal } from '@/lib/ui/BaseModal';
 import * as devApi from '@/api/devTools/devTools';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { DecisionRow } from '@/features/shared/components/decisions/DecisionRow';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { AthenaTriageBatch } from '@/lib/bindings/AthenaTriageBatch';
@@ -32,6 +33,15 @@ import type { BacklogVerdict } from '@/lib/bindings/BacklogVerdict';
 
 import { useCategoryLabel } from './backlogLabels';
 import type { BacklogIdea } from './backlogModel';
+
+/**
+ * True when the apply was refused because the approval outlived its
+ * consent-freshness window (`approval_headless.rs` "has expired"). Read from
+ * the message of whatever shape the IPC door rejected with.
+ */
+function isExpiredApproval(err: unknown): boolean {
+  return /expired/i.test(extractMessage(err));
+}
 
 type Phase = 'requesting' | 'review' | 'applying' | 'error';
 type EffectiveVerdict = 'accept' | 'reject' | 'skip';
@@ -64,7 +74,13 @@ export function AthenaVerdictCard({
 
   const [phase, setPhase] = useState<Phase>('requesting');
   const [batch, setBatch] = useState<AthenaTriageBatch | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // The rejection VALUE, resolved at render. Every devApi door rejects with a
+  // serialized AppError OBJECT (invokeWithTimeout), never an `Error`, so the old
+  // `err instanceof Error ? err.message : String(err)` ladder rendered
+  // "[object Object]" and — worse — tested /expired/ against that string, so an
+  // expired batch was never recognised and the card asked for a retry that
+  // cannot succeed instead of a re-run.
+  const [error, setError] = useState<unknown>(null);
   const [expired, setExpired] = useState(false);
   const [overrides, setOverrides] = useState<Record<string, EffectiveVerdict>>({});
 
@@ -82,7 +98,7 @@ export function AthenaVerdictCard({
         setPhase('review');
       } catch (err) {
         silentCatch('AthenaVerdictCard:triage')(err);
-        setError(err instanceof Error ? err.message : String(err));
+        setError(err);
         setPhase('error');
       }
     })();
@@ -121,12 +137,11 @@ export function AthenaVerdictCard({
       onClose();
     } catch (err) {
       silentCatch('AthenaVerdictCard:apply')(err);
-      const msg = err instanceof Error ? err.message : String(err);
       // The lifecycle loader refuses a stale approval by design. That is not a
       // retryable failure — the ideas may have moved on, so the batch has to be
       // judged again.
-      setExpired(/expired/i.test(msg));
-      setError(msg);
+      setExpired(isExpiredApproval(err));
+      setError(err);
       setPhase('error');
     }
   }, [batch, effective, addToast, tx, r.backlog_athena_applied, onApplied, onClose]);
@@ -178,8 +193,10 @@ export function AthenaVerdictCard({
             <p className="typo-body text-foreground">
               {expired ? r.backlog_athena_expired : r.backlog_athena_failed}
             </p>
-            {error && !expired && (
-              <p className="typo-caption text-muted-foreground mt-2 break-words">{error}</p>
+            {error != null && !expired && (
+              <p className="typo-caption text-muted-foreground mt-2 break-words">
+                {resolveErrorTranslated(t, extractMessage(error)).message}
+              </p>
             )}
           </div>
         )}
