@@ -1,5 +1,6 @@
-import { memo, useMemo } from 'react';
+import { memo } from 'react';
 import { ChevronRight } from 'lucide-react';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { DiscoveredPeer, ConnectionState } from '@/api/network/discovery';
 import { TrustVerifiedIcon, TrustUnknownIcon, NodeConnectedIcon, NodeDisconnectedIcon } from './NetworkIcons';
@@ -42,18 +43,6 @@ export const PeerCard = memo(function PeerCard({
     ? `${peer.peer_id.slice(0, 8)}...${peer.peer_id.slice(-8)}`
     : peer.peer_id;
 
-  const lastSeen = useMemo(() => {
-    try {
-      const d = new Date(peer.last_seen_at);
-      const diff = Date.now() - d.getTime();
-      if (diff < 60_000) return 'just now';
-      if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
-      return `${Math.floor(diff / 3_600_000)}h ago`;
-    } catch {
-      return '';
-    }
-  }, [peer.last_seen_at]);
-
   return (
     <div className="rounded-modal border border-border bg-secondary/20 p-3 flex items-center gap-3">
       {/* Status dot */}
@@ -77,9 +66,9 @@ export const PeerCard = memo(function PeerCard({
         </div>
         <div className="flex items-center gap-2 mt-0.5">
           <span className="typo-code text-foreground">{truncatedId}</span>
-          {lastSeen && (
-            <span className="text-[10px] text-foreground">{lastSeen}</span>
-          )}
+          <span className="text-[10px] text-foreground">
+            <RelativeTime timestamp={peer.last_seen_at} showTooltip={false} />
+          </span>
         </div>
       </button>
 
