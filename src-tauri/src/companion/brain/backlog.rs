@@ -10,7 +10,9 @@
 //!
 //! Append-only: items are resolved (`done` | `dropped`), not deleted.
 //! `reminded_count` lets the proactive engine (Phase E) ratchet
-//! frequency without re-pinging the same item every day.
+//! frequency without re-pinging the same item every day. The engine bumps
+//! it itself when a `backlog_aging` nudge is engaged
+//! (`companion/proactive/mod.rs`, the resolve step).
 //!
 //! ## Disk and index say the same thing about resolution
 //!
@@ -294,23 +296,6 @@ pub fn get_item(pool: &UserDbPool, id: &str) -> Result<Option<BacklogItem>, AppE
         )
         .optional()?;
     Ok(row)
-}
-
-/// Increment `reminded_count` so the proactive engine can ratchet
-/// down its surfacing frequency. Returns the new count.
-#[allow(dead_code)] // wired by Phase E proactive engine
-pub fn bump_reminded(pool: &UserDbPool, id: &str) -> Result<i32, AppError> {
-    let conn = pool.get()?;
-    conn.execute(
-        "UPDATE companion_backlog_item SET reminded_count = reminded_count + 1 WHERE id = ?1",
-        params![id],
-    )?;
-    let count: i32 = conn.query_row(
-        "SELECT reminded_count FROM companion_backlog_item WHERE id = ?1",
-        params![id],
-        |r| r.get(0),
-    )?;
-    Ok(count)
 }
 
 // ── helpers ─────────────────────────────────────────────────────────────

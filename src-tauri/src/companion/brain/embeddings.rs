@@ -51,12 +51,10 @@ static VEC_TABLE_READY: AtomicBool = AtomicBool::new(false);
 #[cfg(feature = "ml")]
 static MODEL_GUARD_EXCLUDED: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 
-/// Read the cumulative companion model-guard exclusion counter. Reserved
-/// queryable diagnostic — the active surface today is the `tracing::warn` at
-/// exclusion time; this reader lets a future recall-stats command expose the
-/// running total without re-plumbing the counter.
+/// Read the cumulative companion model-guard exclusion counter. Beside the
+/// `tracing::warn` at exclusion time, the brain health snapshot reports it as
+/// `model_guard_excluded` (`brain/health.rs`).
 #[cfg(feature = "ml")]
-#[allow(dead_code)]
 pub fn model_guard_excluded_total() -> u64 {
     MODEL_GUARD_EXCLUDED.load(Ordering::Relaxed)
 }
