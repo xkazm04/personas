@@ -106,24 +106,49 @@ export function createSingletonListener<T>(eventName: string) {
     scheduleFrameFlush();
   }
 
+  const reportAttachError = silentCatch(
+    `hooks/realtime/createSingletonListener:${eventName}:attach`,
+  );
+
   function ensureListener(): Promise<void> {
     if (setupPromise) return setupPromise;
     setupInFlight = true;
-    setupPromise = (async () => {
-      const unlisten = await listen<T>(eventName, (tauriEvent) => {
-        const payload = tauriEvent.payload;
-        if (subscribers.size === 0) {
-          // No subscribers yet — buffer for later delivery
-          if (earlyBuffer.length < MAX_BUFFER) {
-            earlyBuffer.push(payload);
-          } else {
-            recordEarlyDrop();
+    let attempt: Promise<void> | null = null;
+    let failed = false;
+    attempt = (async () => {
+      let unlisten: UnlistenFn;
+      try {
+        unlisten = await listen<T>(eventName, (tauriEvent) => {
+          const payload = tauriEvent.payload;
+          if (subscribers.size === 0) {
+            // No subscribers yet — buffer for later delivery
+            if (earlyBuffer.length < MAX_BUFFER) {
+              earlyBuffer.push(payload);
+            } else {
+              recordEarlyDrop();
+            }
+            return;
           }
-          return;
+          frameQueue.push(payload);
+          scheduleFrameFlush();
+        });
+      } catch (err) {
+        // A rejected `listen()` must not be cached. Before this, the rejected
+        // promise stayed in `setupPromise` and `setupInFlight` stayed true for
+        // the rest of the session: every later mount got the same rejection,
+        // the hook's `attached` never turned true, `teardownIfEmpty` bailed
+        // forever, and the channel was dead until reload with nothing on
+        // screen saying so. Clear the attempt and report it, so the next
+        // mount attaches afresh. (`attempt` is still null when listen()
+        // threw synchronously, before the first await.)
+        failed = true;
+        if (attempt === null || setupPromise === attempt) {
+          setupPromise = null;
+          setupInFlight = false;
         }
-        frameQueue.push(payload);
-        scheduleFrameFlush();
-      });
+        reportAttachError(err);
+        throw err;
+      }
       setupInFlight = false;
 
       // If all subscribers left while setup was in-flight, tear down immediately
@@ -135,7 +160,8 @@ export function createSingletonListener<T>(eventName: string) {
         singletonUnlisten = unlisten;
       }
     })();
-    return setupPromise;
+    if (!failed) setupPromise = attempt;
+    return attempt;
   }
 
   function teardownIfEmpty() {
@@ -177,9 +203,13 @@ export function createSingletonListener<T>(eventName: string) {
       // Flush any events that arrived before this subscriber registered
       flushBuffer();
 
-      currentSetup.then(() => {
-        if (!cancelled) setAttached(true);
-      });
+      currentSetup.then(
+        () => {
+          if (!cancelled) setAttached(true);
+        },
+        // Already reported by ensureListener; `attached` stays false.
+        () => {},
+      );
 
       return () => {
         cancelled = true;

@@ -244,3 +244,38 @@ describe('createSingletonListener — __resetForTests', () => {
     warn.mockRestore();
   });
 });
+
+describe('createSingletonListener — a failed native attach is not cached', () => {
+  it('lets the next mount attach after listen() rejected once', async () => {
+    const useTestListener = createSingletonListener<Payload>('test-event');
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    listenMock.mockImplementationOnce(async () => {
+      throw { error: 'listen failed', kind: 'ipc' };
+    });
+
+    const first = renderHook(() => useTestListener(() => {}));
+    await flush();
+    expect(first.result.current).toBe(false);
+    first.unmount();
+    await flush();
+
+    // Before the fix the rejected promise stayed cached: listen() was never
+    // called again and this mount stayed detached for the whole session.
+    const seen: number[] = [];
+    const second = renderHook(() => useTestListener((p) => seen.push(p.n)));
+    await flush();
+    expect(listenMock).toHaveBeenCalledTimes(2);
+    expect(second.result.current).toBe(true);
+    emitNative(7);
+    await flush();
+    expect(seen).toEqual([7]);
+
+    second.unmount();
+    await flush();
+    expect(unlistenSpy).toHaveBeenCalledTimes(1);
+    useTestListener.__resetForTests();
+    err.mockRestore();
+    warn.mockRestore();
+  });
+});
