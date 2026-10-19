@@ -39,8 +39,6 @@ export interface AutoRunBannerProps {
   projectId?: string;
   /** Bumped by the page when it starts a run, to force an immediate rehydrate. */
   refreshToken?: number;
-  /** Called on any terminal transition so the page can reload the queue. */
-  onRunFinished?: () => void;
 }
 
 /**
@@ -52,7 +50,7 @@ export interface AutoRunBannerProps {
  * - `live && status === 'running'` → the live banner with a Cancel action;
  * - a terminal row → a quiet, dismissible summary line.
  */
-export function AutoRunBanner({ projectId, refreshToken = 0, onRunFinished }: AutoRunBannerProps) {
+export function AutoRunBanner({ projectId, refreshToken = 0 }: AutoRunBannerProps) {
   const { t, tx } = useTranslation();
   const dr = t.plugins.dev_runner;
   const [status, setStatus] = useState<AutoRunStatus | null>(null);
@@ -73,17 +71,16 @@ export function AutoRunBanner({ projectId, refreshToken = 0, onRunFinished }: Au
 
   // Live updates. AUTO_RUN_COMPLETE flips the durable row, so re-reading the
   // backend is both simpler and more truthful than patching a local shape.
+  // The QUEUE reload on that event belongs to useTaskQueue's own listener; the
+  // banner used to trigger a second one through an onRunFinished prop.
   useEffect(() => {
-    const completeUn = listen(EventName.AUTO_RUN_COMPLETE, () => {
-      rehydrate();
-      onRunFinished?.();
-    });
+    const completeUn = listen(EventName.AUTO_RUN_COMPLETE, () => rehydrate());
     const statusUn = listen(EventName.AUTO_RUN_STATUS, () => rehydrate());
     return () => {
       completeUn.then((fn) => fn()).catch(silentCatch('AutoRunBanner:unlisten-complete'));
       statusUn.then((fn) => fn()).catch(silentCatch('AutoRunBanner:unlisten-status'));
     };
-  }, [rehydrate, onRunFinished]);
+  }, [rehydrate]);
 
   // A rejected cancel used to escape as an unhandled rejection from the click
   // handler: no busy state while it ran, no report when it failed, and the

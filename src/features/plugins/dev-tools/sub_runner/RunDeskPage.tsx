@@ -175,7 +175,7 @@ export default function RunDeskPage() {
           onAutoRunStarted={() => setAutoRunToken((n) => n + 1)}
         />
 
-        <AutoRunBanner projectId={projectId} refreshToken={autoRunToken} onRunFinished={reload} />
+        <AutoRunBanner projectId={projectId} refreshToken={autoRunToken} />
 
         <div className="space-y-5">
           {/* Status filter chips — fed by L0 counts, so they stay truthful
