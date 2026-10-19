@@ -293,7 +293,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
     } catch (err) {
       if (!summaryLoads.isCurrent(seq)) return; // superseded by a newer request
       const category = classifyUnknownError(err);
-      logger.warn("fetchPersonaSummaries failed", { category: categoryLabel(category), error: String(err) });
+      logger.warn("fetchPersonaSummaries failed", { category: categoryLabel(category), error: extractMessage(err) });
       // The warn was the ONLY record. A surface cannot render a log line, so an
       // unreadable fleet looked exactly like an idle one.
       set({ personaSummariesError: extractMessage(err) });
@@ -334,7 +334,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
     } catch (err) {
       if (!detailLoads.isCurrent(seq)) return; // superseded by a newer request
       const category = classifyUnknownError(err);
-      logger.warn("fetchDetail failed", { personaId: id, category: categoryLabel(category), error: String(err) });
+      logger.warn("fetchDetail failed", { personaId: id, category: categoryLabel(category), error: extractMessage(err) });
       // Clear stale selection so the editor doesn't render with missing data
       set((state) => {
         const nextCache = { ...state.detailCache };

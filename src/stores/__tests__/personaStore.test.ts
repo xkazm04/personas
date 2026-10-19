@@ -279,6 +279,37 @@ describe("isLoading belongs to the roster, not the detail load", () => {
   });
 });
 
+// IPC rejects with a serialized AppError OBJECT, so `String(err)` logged
+// "[object Object]" and the one record of why the fleet board was blank had
+// no reason in it.
+describe("load-failure logs carry the backend's reason", () => {
+  beforeEach(() => {
+    useAgentStore.setState({ personas: [makePersona({ id: "p-1" })], selectedPersonaId: null, selectedPersona: null, detailCache: {}, isEditorDirty: false });
+    resetInvokeMocks();
+    mockedTauriInvoke.mockImplementation(async (cmd: string) => {
+      if (cmd === "get_persona_summaries" || cmd === "get_persona_detail") {
+        throw { error: "database is locked", kind: "Database" };
+      }
+      return undefined;
+    });
+  });
+
+  it.each([
+    ["fetchPersonaSummaries", () => useAgentStore.getState().fetchPersonaSummaries()],
+    ["fetchDetail", () => useAgentStore.getState().fetchDetail("p-1")],
+  ])("%s", async (_name, run) => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      await run();
+      const line = warn.mock.calls.map((c) => String(c[0])).find((l) => l.includes("failed"));
+      expect(line).toContain("database is locked");
+      expect(line).not.toContain("[object Object]");
+    } finally {
+      warn.mockRestore();
+    }
+  });
+});
+
 const DELETED = {
   deleted: true,
   executionsCancelled: 0,
