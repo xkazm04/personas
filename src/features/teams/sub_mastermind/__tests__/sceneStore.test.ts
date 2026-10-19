@@ -76,7 +76,10 @@ describe('sceneStore — mapWithConcurrency', () => {
     expect(out).toEqual([30, 10, 20, 5]);
   });
 
-  it('never exceeds the concurrency width', async () => {
+  // Both bounds. `<= 4` alone passed a fully SERIAL limiter (width forced to
+  // 1), so the scene's 5-wide family fan-out could collapse to one lane with
+  // every test green. The four lanes start synchronously, so the peak is exact.
+  it('runs exactly the concurrency width in parallel, never more', async () => {
     let inFlight = 0;
     let peak = 0;
     await mapWithConcurrency(Array.from({ length: 20 }, (_, i) => i), 4, async () => {
@@ -86,7 +89,7 @@ describe('sceneStore — mapWithConcurrency', () => {
       inFlight--;
       return null;
     });
-    expect(peak).toBeLessThanOrEqual(4);
+    expect(peak).toBe(4);
   });
 
   it('handles an empty list', async () => {
