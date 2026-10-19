@@ -106,6 +106,17 @@ describe('pure helpers', () => {
     expect(countWords('')).toBe(0);
   });
 
+  it('caps by characters like Rust, never splitting a surrogate pair', () => {
+    const emoji = '\u{1F600}';
+    // SAMPLE_CAP emoji are within Rust's char cap (hands::SELECTION_CAP): kept whole.
+    expect(Array.from(clipSample(emoji.repeat(SAMPLE_CAP)))).toHaveLength(SAMPLE_CAP);
+    // One unit short of the cap, then an astral char: a UTF-16 slice cut it in half.
+    const clipped = clipSample('x'.repeat(SAMPLE_CAP - 1) + emoji + 'tail');
+    expect(Array.from(clipped)).toHaveLength(SAMPLE_CAP);
+    expect(clipped.endsWith(emoji)).toBe(true);
+    expect(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/.test(clipped)).toBe(false);
+  });
+
   it('settles only on its own sample, and only on a terminal status', () => {
     const learning: TwinLearnSnapshot = { ...twinLearnSnapshot(), phase: 'learning', sampleId: 's1', twinId: 't1' };
     const other = { twinId: 't1', sampleId: 's2', status: 'ready', proposals: 3 };

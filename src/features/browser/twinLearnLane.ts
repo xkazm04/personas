@@ -89,9 +89,17 @@ const EMPTY: TwinLearnSnapshot = {
 
 // --- pure helpers ---------------------------------------------------------------
 
-/** Trim, then cap. A whitespace-only read is empty. */
+/**
+ * Trim, then cap. A whitespace-only read is empty.
+ *
+ * The cap counts CHARACTERS (code points), as Rust's does: `.slice` counts
+ * UTF-16 units, so it kept half as many emoji as the backend allows and could
+ * cut a surrogate pair, leaving a lone half the IPC cannot carry as a string.
+ */
 export function clipSample(raw: string | null | undefined): string {
-  return (raw ?? '').trim().slice(0, SAMPLE_CAP);
+  const text = (raw ?? '').trim();
+  if (text.length <= SAMPLE_CAP) return text;
+  return Array.from(text).slice(0, SAMPLE_CAP).join('');
 }
 
 /** Whitespace-separated words; good enough for "n words from host". */
