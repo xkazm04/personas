@@ -193,6 +193,12 @@ export async function saveAdoptionAnswers(
 /**
  * Test a build draft by executing each tool against its real API.
  * Returns a per-tool test report with HTTP status codes, latency, and errors.
+ *
+ * The backend runs the whole test inline: a test-plan CLI leg capped at
+ * `TEST_PLAN_TIMEOUT` (240 s), the probes, then a summary leg capped at
+ * `TEST_SUMMARY_TIMEOUT` (120 s), both in engine/build_session/tool_tests.rs.
+ * The IPC must outlive those 360 s or the UI reports a failed test while the
+ * backend goes on to write `test_complete`.
  */
 export async function testBuildDraft(
   sessionId: string,
@@ -201,7 +207,7 @@ export async function testBuildDraft(
   return invokeWithTimeout<TestReport>("test_build_draft", {
     sessionId,
     personaId,
-  }, undefined, 180_000);
+  }, undefined, 600_000);
 }
 
 /**
