@@ -68,7 +68,7 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
               </p>
             </div>
           </div>
-          <button type="button" onClick={handleClose} className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors">
+          <button type="button" onClick={handleClose} aria-label={t.common.close} className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors">
             <X className="w-4 h-4 text-foreground" />
           </button>
         </div>
@@ -78,10 +78,11 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
           {!result ? (
             <>
               <div>
-                <label className="typo-body text-foreground block mb-1.5">
+                <label htmlFor="team-synthesis-name" className="typo-body text-foreground block mb-1.5">
                   {t.templates.team_synthesis.team_name_label}
                 </label>
                 <input
+                  id="team-synthesis-name"
                   type="text"
                   value={teamName}
                   onChange={(e) => setTeamName(e.target.value)}
@@ -92,10 +93,11 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
               </div>
 
               <div>
-                <label className="typo-body text-foreground block mb-1.5">
+                <label htmlFor="team-synthesis-query" className="typo-body text-foreground block mb-1.5">
                   {t.templates.team_synthesis.describe_team}
                 </label>
                 <textarea
+                  id="team-synthesis-query"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder={t.templates.team_synthesis.describe_placeholder}
