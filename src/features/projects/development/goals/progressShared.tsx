@@ -48,9 +48,12 @@ export const RECENT_WINDOW = 7 * DAY;
  * history (not recent).
  */
 export function isRecentlyDone(g: DevGoal, now: number = Date.now()): boolean {
-  if (!isComplete(g.status)) return false;
-  const at = anchorDate(g);
-  return at !== null && now - at <= RECENT_WINDOW;
+  if (!isComplete(g.status) || !g.completed_at) return false;
+  // The completion stamp only: `anchorDate` falls back to the TARGET date, which
+  // says nothing about when the goal finished (a future target read as "just
+  // done"). The backend's `completedWithinDays` window reads the stamp alone.
+  const at = new Date(g.completed_at).getTime();
+  return !Number.isNaN(at) && now - at <= RECENT_WINDOW;
 }
 
 /** Compact tooltip line — the drawer carries the full story. */
