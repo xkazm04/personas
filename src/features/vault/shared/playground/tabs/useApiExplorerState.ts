@@ -21,7 +21,10 @@ export function useApiExplorerState(credentialId: string, catalogEndpoints?: Api
   const [parseError, setParseError] = useState<{ raw: unknown } | null>(null);
 
   // Selection + testing state
-  const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
+  // Keyed by METHOD:path, not by row index: the index pointed into the
+  // FILTERED list, so typing in the filter re-pointed the open row at
+  // whichever endpoint slid into that slot.
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const [selectedEndpoint, setSelectedEndpoint] = useState<ApiEndpoint | null>(null);
   const [response, setResponse] = useState<ApiProxyResponse | null>(null);
   const [sendError, setSendError] = useState<{ raw: unknown } | null>(null);
@@ -160,8 +163,8 @@ export function useApiExplorerState(credentialId: string, catalogEndpoints?: Api
     loading,
     parseError,
     setParseError,
-    expandedIdx,
-    setExpandedIdx,
+    expandedKey,
+    setExpandedKey,
     selectedEndpoint,
     response,
     sendError,

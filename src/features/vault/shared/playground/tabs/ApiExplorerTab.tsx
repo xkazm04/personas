@@ -97,21 +97,26 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints, scopedResources
       )}
 
       <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
-        {state.endpoints.length === 0 ? (
+        {state.endpoints.length === 0 && state.loading ? null : state.endpoints.length === 0 ? (
+          // The saved spec loads after mount; until it settles "no endpoints,
+          // upload a spec" is a claim nobody has checked.
           <EmptyState onUpload={() => state.fileInputRef.current?.click()} onPaste={() => state.setShowPasteModal(true)} />
         ) : (
           <>
             <div className="space-y-1">
-              {state.filtered.map((ep, i) => (
+              {state.filtered.map((ep) => {
+                const rowKey = `${ep.method}:${ep.path}`;
+                return (
                 <EndpointRow
-                  key={`${ep.method}:${ep.path}`}
+                  key={rowKey}
                   endpoint={ep}
-                  isExpanded={state.expandedIdx === i}
-                  onToggle={() => state.setExpandedIdx(state.expandedIdx === i ? null : i)}
+                  isExpanded={state.expandedKey === rowKey}
+                  onToggle={() => state.setExpandedKey(state.expandedKey === rowKey ? null : rowKey)}
                   onTry={() => state.selectEndpointForTry(ep)}
                   testResult={state.testRunner.results.get(`${ep.method.toUpperCase()}:${ep.path}`)}
                 />
-              ))}
+                );
+              })}
               {state.filtered.length === 0 && (
                 <EmptyIllustration icon={SearchX} heading={tx(sh.no_endpoints_match, { search: state.search })} description={sh.no_endpoints_match_hint} className="py-4" />
               )}
