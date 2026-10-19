@@ -347,7 +347,7 @@ export function DataGrid<T>({
                   // for the chevron, and ellipsizes its label; the open list carries
                   // every option in full.
                   wrapperClassName="flex-1 min-w-0"
-                  className="!pl-2 !pr-7 !py-0 -mx-2 !rounded-interactive !border-transparent !bg-transparent hover:!bg-secondary/30 hover:!text-foreground ${TABLE_HEAD_LABEL} whitespace-nowrap [&>span]:block [&>span]:truncate"
+                  className={`!pl-2 !pr-7 !py-0 -mx-2 !rounded-interactive !border-transparent !bg-transparent hover:!bg-secondary/30 hover:!text-foreground ${TABLE_HEAD_LABEL} whitespace-nowrap [&>span]:block [&>span]:truncate`}
                 />
               </div>
             );
