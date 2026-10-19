@@ -4,7 +4,6 @@
  *
  *  - LevelBadge      — effort/impact/risk numeric badge
  *  - ValueBadge      — synthesises effort/impact/risk into one verdict
- *  - ideaValueScore  — the shared scorer (drives triage queue ordering)
  */
 import { TrendingUp } from 'lucide-react';
 
@@ -22,8 +21,8 @@ export function LevelBadge({ label, value }: { label: string; value: number }) {
   );
 }
 
-/** Reward impact, charge for effort + risk. */
-export function ideaValueScore(i: { impact: number; effort: number; risk: number }): number {
+/** Reward impact, charge for effort + risk. Only ValueBadge reads it. */
+function ideaValueScore(i: { impact: number; effort: number; risk: number }): number {
   return i.impact * 2 - i.effort - i.risk;
 }
 

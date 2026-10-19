@@ -10,20 +10,6 @@ export interface CategoryTw {
   border: string;
 }
 
-/** Hex → Tailwind class mapping used by scan agents */
-export const HEX_COLOR_MAP: Record<string, { bg: string; text: string; border: string }> = {
-  '#3B82F6': { bg: 'bg-blue-500/15', text: 'text-blue-400', border: 'border-blue-500/25' },
-  '#EF4444': { bg: 'bg-red-500/15', text: 'text-red-400', border: 'border-red-500/25' },
-  '#8B5CF6': { bg: 'bg-violet-500/15', text: 'text-violet-400', border: 'border-violet-500/25' },
-  '#10B981': { bg: 'bg-emerald-500/15', text: 'text-emerald-400', border: 'border-emerald-500/25' },
-  '#F59E0B': { bg: 'bg-amber-500/15', text: 'text-amber-400', border: 'border-amber-500/25' },
-  '#EC4899': { bg: 'bg-pink-500/15', text: 'text-pink-400', border: 'border-pink-500/25' },
-  '#6366F1': { bg: 'bg-indigo-500/15', text: 'text-indigo-400', border: 'border-indigo-500/25' },
-  '#14B8A6': { bg: 'bg-teal-500/15', text: 'text-teal-400', border: 'border-teal-500/25' },
-  '#F97316': { bg: 'bg-orange-500/15', text: 'text-orange-400', border: 'border-orange-500/25' },
-  '#06B6D4': { bg: 'bg-cyan-500/15', text: 'text-cyan-400', border: 'border-cyan-500/25' },
-};
-
 /** Default Tailwind classes when a category key is unknown */
 export const DEFAULT_CATEGORY_TW: CategoryTw = {
   bg: 'bg-blue-500/15',
@@ -57,18 +43,4 @@ export function levelSeverity(value: number): 'low' | 'med' | 'high' {
   if (value <= 3) return 'low';
   if (value <= 6) return 'med';
   return 'high';
-}
-
-/** Returns a text color class based on fitness score */
-export function fitnessColor(fitness: number): string {
-  if (fitness > 0.3) return 'text-emerald-400';
-  if (fitness > 0) return 'text-amber-400';
-  return 'text-red-400';
-}
-
-/** Returns a background color class based on fitness score (for progress bars) */
-export function fitnessBar(fitness: number): string {
-  if (fitness > 0.3) return 'bg-emerald-400';
-  if (fitness > 0) return 'bg-amber-400';
-  return 'bg-red-400';
 }
