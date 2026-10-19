@@ -16,7 +16,8 @@ import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineE
 import Button from '@/features/shared/components/buttons/Button';
 import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { bulkResolveAuditIncidents } from '@/api/overview/incidents';
-import { toastCatch } from '@/lib/silentCatch';
+import { extractMessage, toastCatch } from '@/lib/silentCatch';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { useIncidentsData, DEFAULT_LIMIT } from '../libs/useIncidentsData';
 import { useIncidentActions } from '../libs/useIncidentActions';
 import { useAutonomousIncidents } from '../libs/useAutonomousIncidents';
@@ -224,7 +225,8 @@ export default function IncidentsInbox() {
             {error && (
               <div className="px-4 py-3">
                 <InlineErrorBanner
-                  message={`${t.overview.incidents.load_failed}: ${error}`}
+                  title={t.overview.incidents.load_failed}
+                  message={resolveErrorTranslated(t, extractMessage(error.raw)).message}
                   onRetry={() => void refresh()}
                 />
               </div>
