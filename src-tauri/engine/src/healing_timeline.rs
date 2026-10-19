@@ -429,8 +429,7 @@ pub fn build_healing_timeline(
                             timestamp: exec
                                 .started_at
                                 .clone()
-                                .or_else(|| Some(exec.created_at.clone()))
-                                .unwrap(),
+                                .unwrap_or_else(|| exec.created_at.clone()),
                             title: format!("Retry #{} {}", exec.retry_count, outcome_label),
                             description: exec
                                 .error_message
