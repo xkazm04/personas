@@ -1,0 +1,95 @@
+{
+ "schema": "conform-run/1",
+ "worker": "cc721e28-c090-406e-b474-e049d4fc291f",
+ "subject": "delivery-guarantees",
+ "evaluatedAt": "2026-10-19T21:27:25.537063+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [
+  {
+   "context": "home-learning",
+   "subject": "delivery-guarantees",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/home/sub_releases/useLiveRoadmap.ts:58 Context and repository searches found snapshot retrieval, learning progress, and a dead-letter navigation link, but no claimed_at, lease_until, retry_count, or watermark in this context to indicate an accepted-event processing lifecycle.",
+   "techniques": [
+    {
+     "technique": "atomic-claiming",
+     "verdict": "not-applicable",
+     "evidence": "src/features/home/sub_releases/useLiveRoadmap.ts:81 The fetched snapshot replaces React state; this is not a pending-to-processing work claim."
+    },
+    {
+     "technique": "co-transactional-consume",
+     "verdict": "not-applicable",
+     "evidence": "src/features/home/sub_releases/roadmapItems.ts:148 Roadmap items undergo display transformation rather than transactional queue consumption."
+    },
+    {
+     "technique": "dead-letter-design",
+     "verdict": "not-applicable",
+     "evidence": "src/features/home/sub_learning/powerMoves/registry.ts:77 This context supplies a navigation destination, not dead-letter storage or triage operations."
+    },
+    {
+     "technique": "guarantee-selection",
+     "verdict": "not-applicable",
+     "evidence": "src/features/home/sub_learning/powerMoves/PowerMoveRow.tsx:23 The action directly launches navigation; it does not accept a durable event for subsequent delivery."
+    },
+    {
+     "technique": "marker-certifies-what-was-done",
+     "verdict": "not-applicable",
+     "evidence": "src/features/home/sub_learning/powerMoves/powerMovesStore.ts:42 This records a detected learning achievement, not consumption or acknowledgment of queued work."
+    },
+    {
+     "technique": "non-delivery-ledgers",
+     "verdict": "not-applicable",
+     "evidence": "src/features/home/sub_releases/roadmapItems.ts:92 Filtering presentation content does not discard an accepted event or extinguish a processing obligation."
+    },
+    {
+     "technique": "ordered-lane-blocking",
+     "verdict": "not-applicable",
+     "evidence": "src/features/home/sub_releases/HomeReleases.tsx:91 NOW/NEXT/LATER lanes group displayed roadmap priorities; they are not ordered delivery streams."
+    },
+    {
+     "technique": "retry-escalation",
+     "verdict": "not-applicable",
+     "evidence": "src/features/home/sub_releases/useLiveRoadmap.ts:103 Manual refresh repeats snapshot retrieval rather than retrying an accepted event against a persisted attempt budget."
+    },
+    {
+     "technique": "stuck-reaping",
+     "verdict": "not-applicable",
+     "evidence": "src/features/home/sub_learning/powerMoves/powerMovesStore.ts:49 Unmount cancels observation of detection results; it leaves no durable processing claim requiring reclamation."
+    }
+   ],
+   "absenceTerms": [
+    "claimed_at",
+    "lease_until",
+    "retry_count",
+    "watermark"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-19T21:27:25.537063+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "delivery-guarantees"
+   ],
+   "techniques": [
+    "atomic-claiming",
+    "co-transactional-consume",
+    "dead-letter-design",
+    "guarantee-selection",
+    "marker-certifies-what-was-done",
+    "non-delivery-ledgers",
+    "ordered-lane-blocking",
+    "retry-escalation",
+    "stuck-reaping"
+   ],
+   "deviations": 0,
+   "context": "home-learning",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  }
+ ]
+}

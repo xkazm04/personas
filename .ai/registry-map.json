@@ -14726,7 +14726,11 @@
           "revision": 8,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/home/sub_releases/useLiveRoadmap.ts:58 Context and repository searches found snapshot retrieval, learning progress, and a dead-letter navigation link, but no claimed_at, lease_until, retry_count, or watermark in this context to indicate an accepted-event processing lifecycle.",
+          "evaluatedAt": "2026-10-19",
+          "evaluatedAgainst": "sha256-b2:1023ff3ecf23d679",
+          "evaluatedRevision": 8
         },
         {
           "subject": "translation-pipeline-topology",

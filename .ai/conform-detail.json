@@ -30177,6 +30177,62 @@
         "at": "2026-10-19T09:18:18.075695+00:00",
         "reason": "reviewer (sonnet): The backend claim holds: dispatch.rs:1120 calls review_repo::create, and manual_reviews.rs:52-86 inserts a 'pending' row with no depth check, even though IDEA_BACKLOG_CAP exists for dev_ideas. But both anchors are Rust producer code outside this context, which is only the React inbox UI under sub_ma"
       }
+    },
+    "b39776f5-3909-41e3-b69f-14c9a6c70bec/delivery-guarantees": {
+      "context": "home-learning",
+      "subject": "delivery-guarantees",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-19",
+      "evaluatedTs": "2026-10-19T21:27:25.537Z",
+      "worker": "cc721e28-c090-406e-b474-e049d4fc291f",
+      "techniques": [
+        {
+          "technique": "atomic-claiming",
+          "verdict": "not-applicable",
+          "evidence": "src/features/home/sub_releases/useLiveRoadmap.ts:81 The fetched snapshot replaces React state; this is not a pending-to-processing work claim."
+        },
+        {
+          "technique": "co-transactional-consume",
+          "verdict": "not-applicable",
+          "evidence": "src/features/home/sub_releases/roadmapItems.ts:148 Roadmap items undergo display transformation rather than transactional queue consumption."
+        },
+        {
+          "technique": "dead-letter-design",
+          "verdict": "not-applicable",
+          "evidence": "src/features/home/sub_learning/powerMoves/registry.ts:77 This context supplies a navigation destination, not dead-letter storage or triage operations."
+        },
+        {
+          "technique": "guarantee-selection",
+          "verdict": "not-applicable",
+          "evidence": "src/features/home/sub_learning/powerMoves/PowerMoveRow.tsx:23 The action directly launches navigation; it does not accept a durable event for subsequent delivery."
+        },
+        {
+          "technique": "marker-certifies-what-was-done",
+          "verdict": "not-applicable",
+          "evidence": "src/features/home/sub_learning/powerMoves/powerMovesStore.ts:42 This records a detected learning achievement, not consumption or acknowledgment of queued work."
+        },
+        {
+          "technique": "non-delivery-ledgers",
+          "verdict": "not-applicable",
+          "evidence": "src/features/home/sub_releases/roadmapItems.ts:92 Filtering presentation content does not discard an accepted event or extinguish a processing obligation."
+        },
+        {
+          "technique": "ordered-lane-blocking",
+          "verdict": "not-applicable",
+          "evidence": "src/features/home/sub_releases/HomeReleases.tsx:91 NOW/NEXT/LATER lanes group displayed roadmap priorities; they are not ordered delivery streams."
+        },
+        {
+          "technique": "retry-escalation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/home/sub_releases/useLiveRoadmap.ts:103 Manual refresh repeats snapshot retrieval rather than retrying an accepted event against a persisted attempt budget."
+        },
+        {
+          "technique": "stuck-reaping",
+          "verdict": "not-applicable",
+          "evidence": "src/features/home/sub_learning/powerMoves/powerMovesStore.ts:49 Unmount cancels observation of detection results; it leaves no durable processing claim requiring reclamation."
+        }
+      ]
     }
   }
 }
