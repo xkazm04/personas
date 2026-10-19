@@ -128,4 +128,13 @@ describe('runFindingSweep - verification reads the uncapped signal set', () => {
     expect(createFinding).toHaveBeenCalledTimes(MEMORY_DISPUTED_TOP_N);
     expect(res.created).toBe(MEMORY_DISPUTED_TOP_N);
   });
+
+  it('names a persistence failure by its IPC message, not "[object Object]"', async () => {
+    getMemoryDisputedOverview.mockResolvedValue([memory('m-1', 2)]);
+    createFinding.mockRejectedValue({ error: 'database is locked', kind: 'Database' });
+
+    const res = await runFindingSweep({ project, credentials: [], kpiAttention: [] });
+
+    expect(res.errors).toEqual(['persist: database is locked']);
+  });
 });

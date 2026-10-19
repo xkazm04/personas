@@ -23,7 +23,7 @@ import { getIdea, listProjects, createTask, executeTask, updateIdea } from '@/ap
 import { spawnSession } from '@/api/fleet/fleet';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 import type { DevIdea } from '@/lib/bindings/DevIdea';
 
 export type DispatchTarget = 'runner' | 'fleet';
@@ -116,6 +116,8 @@ export async function handleSignalDispatchRequested(
   } catch (e) {
     silentCatch('dispatch:run')(e);
     addToast(`Finding dispatch to ${target} failed`, 'error');
-    report('failed', e instanceof Error ? e.message : String(e));
+    // IPC rejects with an AppError OBJECT, not an Error: String(e) wrote
+    // "[object Object]" into the automation row's outcome.
+    report('failed', extractMessage(e));
   }
 }

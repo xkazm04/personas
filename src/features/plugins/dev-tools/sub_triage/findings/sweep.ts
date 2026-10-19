@@ -34,7 +34,7 @@ import {
 } from '@/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters';
 import type { AppPassport } from '@/features/teams/sub_factory/passport/passportModel';
 import type { PlanItem } from '@/features/teams/sub_factory/passport/improve/improvePlan';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 
 import {
   emitDocBrokenRefFindings,
@@ -102,7 +102,7 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
   const skippedSensors: string[] = [];
   const errors: string[] = [];
   const recordError = (stage: string, e: unknown) => {
-    errors.push(`${stage}: ${e instanceof Error ? e.message : String(e)}`);
+    errors.push(`${stage}: ${extractMessage(e)}`);
   };
   // Origins whose sensor ACTUALLY RAN this sweep. Verification treats absence
   // from the drafts as `cleared` ONLY for probed origins — a skipped sensor's

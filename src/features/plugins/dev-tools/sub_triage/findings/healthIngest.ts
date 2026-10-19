@@ -19,7 +19,7 @@ import { derivePassportFromMetadata } from '@/features/teams/sub_factory/passpor
 import { useVaultStore } from '@/stores/vaultStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 
 import { runFindingSweep } from './sweep';
 import { recordSweep } from './lastSweep';
@@ -149,6 +149,6 @@ export async function handleHealthIngestRequested(
     report(res.errors.length > 0 ? 'partial' : 'ok', describeSweep(res));
   } catch (e) {
     silentCatch('healthIngest:run')(e);
-    report('failed', e instanceof Error ? e.message : String(e));
+    report('failed', extractMessage(e));
   }
 }
