@@ -11,6 +11,7 @@ import { extractMessage } from '@/lib/silentCatch';
 import type { PersonaSlaStats } from '@/lib/bindings/PersonaSlaStats';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 import type { Persona } from '@/lib/bindings/Persona';
+import type { PersonaDailyReliability } from '@/lib/bindings/PersonaDailyReliability';
 import { computeCompositeHealth, type CompositeHealthEntry } from './compositeHealthScore';
 
 interface StatusPageState {
@@ -73,6 +74,12 @@ export function useStatusPageData() {
 
   const [slaStats, setSlaStats] = useState<PersonaSlaStats[]>([]);
   const [healingIssues, setHealingIssues] = useState<PersonaHealingIssue[]>([]);
+  // Each persona's own day-by-day success series, from the same health bundle.
+  // null = not read (or the read failed): the day bars then say 'no-data'.
+  const [personaDaily, setPersonaDaily] = useState<PersonaDailyReliability[] | null>(null);
+  // A failed daily read greys every bar, which must not pass for "no activity":
+  // it joins the combined error below so the banner says it.
+  const [dailyError, setDailyError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Per-source errors — a rejected SLA or healing fetch previously vanished
@@ -115,10 +122,19 @@ export function useStatusPageData() {
           setHealingIssues(bundle.healingIssues ?? []);
           setHealingError(null);
         }
+        if (bundle.errors.personaDaily) {
+          log.warn('useStatusPageData', 'Failed to load per-persona daily series', { error: bundle.errors.personaDaily });
+          setPersonaDaily(null);
+          setDailyError(bundle.errors.personaDaily);
+        } else {
+          setPersonaDaily(bundle.personaDaily ?? []);
+          setDailyError(null);
+        }
       } else {
         const msg = extractMessage(healingResult.reason);
         log.warn('useStatusPageData', 'Failed to load healing issues', { error: msg });
         setHealingError(msg);
+        setDailyError(msg);
       }
 
       setLastRefreshedAt(Date.now());
@@ -199,8 +215,9 @@ export function useStatusPageData() {
       healingIssues,
       costAnomalyCount: executionDashboard?.cost_anomalies?.length ?? 0,
       dailyPoints,
+      personaDaily,
     });
-  }, [executionDashboard, slaStats, healingIssues]);
+  }, [executionDashboard, slaStats, healingIssues, personaDaily]);
 
   // A score computed over a partial read is not a lower-confidence score — it is
   // a WRONG one, and wrong in the flattering direction.
@@ -228,7 +245,7 @@ export function useStatusPageData() {
   // Combined error: the hard fetchExecutionDashboard failure takes priority,
   // then whichever per-source fetch rejected — so the existing error banner
   // fires for a partial failure instead of only a total one.
-  const combinedError = error ?? slaError ?? healingError;
+  const combinedError = error ?? slaError ?? healingError ?? dailyError;
 
   return useMemo((): StatusPageState & { refresh: () => Promise<void> } => ({
     entries,
