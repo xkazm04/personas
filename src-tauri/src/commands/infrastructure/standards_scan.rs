@@ -126,8 +126,8 @@ pub async fn dev_tools_run_standards_scan(
     require_auth(&state).await?;
     let project = repo::get_project_by_id(&state.db, &project_id)?;
 
-    // Fresh scan replaces the prior findings.
-    let _ = repo::clear_standards_for_project(&state.db, &project_id);
+    // The prior findings stay until this scan has finished with findings of
+    // its own: see `repo::supersede_standards` in the Ok arm below.
     let scan = repo::create_scan(&state.db, Some(&project_id), "standards", Some("running"))?;
     let scan_id = scan.id.clone();
 
@@ -163,6 +163,12 @@ pub async fn dev_tools_run_standards_scan(
             .await;
             match result {
                 Ok(count) => {
+                    // Swap the verdict only now that a complete one exists.
+                    if let Err(e) =
+                        repo::supersede_standards(&pool, &project_id_task, &scan_id_task)
+                    {
+                        tracing::warn!(error = %e, "failed to retire superseded standards findings");
+                    }
                     let _ = repo::update_scan(
                         &pool,
                         &scan_id_task,
@@ -185,6 +191,8 @@ pub async fn dev_tools_run_standards_scan(
                 }
                 Err(e) => {
                     let msg = format!("{e}");
+                    // Keep the previous verdict as the only one listed.
+                    let _ = repo::discard_scan_standards(&pool, &project_id_task, &scan_id_task);
                     let _ = repo::update_scan(
                         &pool,
                         &scan_id_task,
@@ -203,6 +211,11 @@ pub async fn dev_tools_run_standards_scan(
             }
         },
         move |msg| async move {
+            let _ = repo::discard_scan_standards(
+                &pool_for_panic,
+                &project_id_for_panic,
+                &scan_id_for_panic,
+            );
             let _ = repo::update_scan(
                 &pool_for_panic,
                 &scan_id_for_panic,
@@ -241,6 +254,10 @@ pub async fn dev_tools_list_standards(
 /// (`personas_core::model_class`).
 const STANDARDS_SCAN_CLASS: personas_core::model_class::CallClass =
     personas_core::model_class::CallClass::Synthesis;
+
+/// How long a CLI whose stdout already closed gets to report its exit status
+/// before the scan stops waiting and treats the status as unknown.
+const EXIT_STATUS_GRACE: std::time::Duration = std::time::Duration::from_secs(5);
 
 async fn run_standards_scan(
     pool: &crate::db::DbPool,
@@ -367,12 +384,41 @@ async fn run_standards_scan(
     })
     .await;
 
+    // A stream that ended on its own was the CLI exiting: read how it exited,
+    // briefly, before the kill below reaps whatever is left.
+    let exit = if streamed.is_ok() {
+        tokio::time::timeout(EXIT_STATUS_GRACE, child.wait())
+            .await
+            .ok()
+            .and_then(|r| r.ok())
+    } else {
+        None
+    };
     let _ = child.kill().await;
 
-    if streamed.is_err() && count == 0 {
+    // Only a run that finished cleanly with findings may become the verdict
+    // (the caller supersedes the previous one on Ok). A timed-out run, a CLI
+    // that exited non-zero, or a stream that parsed to nothing is a failure,
+    // and its partial rows are discarded rather than replacing a full verdict.
+    let failure = if streamed.is_err() {
+        Some(format!(
+            "timed out after {}s with {count} finding(s)",
+            timeout.as_secs()
+        ))
+    } else if exit.is_some_and(|s| !s.success()) {
+        Some(format!(
+            "Claude CLI exited with {} after {count} finding(s)",
+            exit.map(|s| s.to_string()).unwrap_or_default()
+        ))
+    } else if count == 0 {
+        Some("produced no findings".to_string())
+    } else {
+        None
+    };
+    if let Some(why) = failure {
         let tail = stderr_buf.lock().map(|s| s.clone()).unwrap_or_default();
         return Err(AppError::Internal(format!(
-            "Standards scan timed out with no findings. {}",
+            "Standards scan {why}. {}",
             tail.chars().take(500).collect::<String>()
         )));
     }
