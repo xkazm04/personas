@@ -34,6 +34,14 @@ export const INCIDENT_SOURCE_ICONS: Record<IncidentSourceTable, typeof Bell> = {
   mcp_sidecar: Unplug,
 };
 
+/**
+ * Every source the inbox has an icon and a label for, in declaration order.
+ * The filter bar lists exactly these, so a source added above is filterable
+ * the moment it has a label (it used to be a second hand-copied list that had
+ * already lost `mcp_sidecar`).
+ */
+export const INCIDENT_SOURCE_TABLES = Object.keys(INCIDENT_SOURCE_ICONS) as IncidentSourceTable[];
+
 export function sourceTableIcon(source: string): typeof Bell {
   return INCIDENT_SOURCE_ICONS[source as IncidentSourceTable] ?? Database;
 }

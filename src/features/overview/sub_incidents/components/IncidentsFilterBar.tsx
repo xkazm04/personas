@@ -2,7 +2,7 @@ import { X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
-import { sourceTableLabel } from '../libs/incidentTaxonomy';
+import { INCIDENT_SOURCE_TABLES, sourceTableLabel } from '../libs/incidentTaxonomy';
 import type { IncidentFilters } from '@/lib/bindings/IncidentFilters';
 import { OPEN_ONLY_FILTERS } from '../libs/incidentFilterDefaults';
 
@@ -12,16 +12,6 @@ interface Props {
 }
 
 const SEVERITY_VALUES = ['critical', 'high', 'medium', 'low'] as const;
-const SOURCE_VALUES = [
-  'fired_alerts',
-  'tool_execution_audit_log',
-  'credential_audit_log',
-  'healing_audit_log',
-  'provider_audit_log',
-  'policy_events',
-  'persona_healing_issues',
-  'execution_error',
-] as const;
 
 const HOUR_MS = 3_600_000;
 
@@ -62,7 +52,7 @@ export function IncidentsFilterBar({ filters, onChange }: Props) {
   ];
   const sourceOptions = [
     { value: 'all', label: t.overview.incidents.filter_source_all },
-    ...SOURCE_VALUES.map((s) => ({ value: s, label: sourceTableLabel(t, s) })),
+    ...INCIDENT_SOURCE_TABLES.map((s) => ({ value: s, label: sourceTableLabel(t, s) })),
   ];
   const rangeOptions = [
     { value: 'all', label: t.overview.incidents.range_all_time },
