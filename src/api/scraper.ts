@@ -118,6 +118,16 @@ export const previewScraperExtract = (
   );
 
 /**
+ * The backend's whole budget for `scraper_generate_rules`, plus headroom:
+ * the grounding fetch (30 s client timeout) and then up to TWO model attempts
+ * of 90 s each (an `Extract` call escalates once on an answer with no JSON).
+ * At the old 120 s the wrapper rejected a slow fetch + one attempt, or any
+ * escalated run, while the backend went on to produce the rules nobody
+ * received. Pinned against the Rust source by scraperTimeoutParity.test.ts.
+ */
+export const GENERATE_RULES_TIMEOUT_MS = 240_000;
+
+/**
  * Generate an extraction ruleset from a natural-language description via the
  * Claude Code CLI. Pass a `url` to have the page's HTML fetched for grounding,
  * or `sampleHtml` to supply it directly. Returns field → rule (Phase 1b-2).
@@ -131,7 +141,7 @@ export const generateScraperRules = (
   invokeWithTimeout<ScrapeRuleSet>(
     'scraper_generate_rules',
     { description, url: url ?? null, sampleHtml: sampleHtml ?? null },
-    { timeoutMs: 120_000 },
+    { timeoutMs: GENERATE_RULES_TIMEOUT_MS },
   );
 
 export const listScraperDatasets = () =>
