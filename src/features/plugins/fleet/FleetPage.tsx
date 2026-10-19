@@ -1,8 +1,6 @@
 import { lazy, Suspense, useState } from 'react';
 import { Terminal, LayoutDashboard, Settings as SettingsIcon, Activity, Unplug } from 'lucide-react';
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import { debtText } from '@/i18n/DebtText';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -156,26 +154,5 @@ export default function FleetPage() {
         </Suspense>
       </div>
     </div>
-  );
-}
-
-// Retained for the three sub_*/page modules that still import it as a
-// placeholder. Used only when a sub-page wants to surface "this surface
-// isn't fully wired yet" while iterating; harmless to keep.
-export function FleetPhaseBanner({ phase, summary }: { phase: string; summary: string }) {
-  return (
-    <ContentBox>
-      <ContentHeader
-        icon={<Terminal className="w-5 h-5 text-primary" />}
-        title={debtText("auto_fleet_claude_code_session_aggregator_d33e41a2")}
-        subtitle="Experimental — lives under Dev Tools, inherits the active project"
-      />
-      <ContentBody>
-        <div className="border border-primary/20 rounded-modal bg-primary/5 px-4 py-3">
-          <p className="typo-caption text-primary mb-1">{phase}</p>
-          <p className="text-[14px] text-foreground leading-relaxed">{summary}</p>
-        </div>
-      </ContentBody>
-    </ContentBox>
   );
 }

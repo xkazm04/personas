@@ -2,9 +2,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 /**
  * Compact, always-visible legend for the grid tile *border* colours
- * (`fleetAttention.ts` → `attentionClass`). Distinct from `FleetStatusLegend`,
- * which is a hover disclosure decoding the two-axis status *dots* — this one
- * decodes the pulsing tile borders an operator sees on the grid at a glance:
+ * (`fleetAttention.ts` → `attentionClass`); the two-axis status *dots* carry
+ * their own hover tooltips (the old dot legend was retired). This one decodes the pulsing tile borders an operator sees on the grid at a glance:
  * violet = needs you, light blue = Athena's on it, amber = stale, red = errored.
  * A plain (un-pulsing) border = healthy/running, so it needs no swatch.
  *
