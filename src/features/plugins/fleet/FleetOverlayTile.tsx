@@ -9,6 +9,7 @@ import { FleetSessionInsights } from './sub_grid/FleetSessionInsights';
 import { FleetStatusDots } from './FleetStatusDots';
 import { FleetTileAthenaBar } from './FleetTileAthenaBar';
 import { sessionAttention, attentionClass, type FleetTileApproval } from './fleetAttention';
+import { isTombstoneState } from './fleetStateMeta';
 
 interface Props {
   session: FleetSession;
@@ -44,10 +45,10 @@ export function FleetOverlayTile({
   // Attention border wins over the base/active border when set.
   const attn = attentionClass(sessionAttention(s));
   const borderCls = attn || (isActive ? 'border-primary/50' : 'border-primary/10 hover:border-primary/25');
-  // Exited / hibernated tiles are in-place TOMBSTONES: they hold their grid
+  // Exited / hibernated / expired tiles are in-place TOMBSTONES: they hold their grid
   // slot (so the layout never shifts) but have no PTY to attach — status block
   // only, and the trash control dismisses instead of kills.
-  const tombstone = s.state === 'exited' || s.state === 'hibernated';
+  const tombstone = isTombstoneState(s.state);
   const showsTerminal = live && !tombstone && s.mode !== 'headless' && !showInsights;
 
   // Selecting a tile must also FOCUS its terminal — clicking the frame used to

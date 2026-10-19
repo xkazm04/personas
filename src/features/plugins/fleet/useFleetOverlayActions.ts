@@ -10,6 +10,7 @@ import { toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import { craftStalePrompt } from './fleetAttention';
 import { gridSessions } from './fleetSessionScope';
+import { isTombstoneState } from './fleetStateMeta';
 
 /**
  * Everything the fullscreen terminal grid needs to act on the fleet.
@@ -96,7 +97,7 @@ export function useFleetOverlayActions() {
   // the one deliberate way a tile ever leaves the grid).
   const handleKill = useCallback(async (id: string) => {
     const target = sessions.find((s) => s.id === id);
-    const tombstone = target && (target.state === 'exited' || target.state === 'hibernated');
+    const tombstone = target && isTombstoneState(target.state);
     try {
       if (tombstone) await removeSession(id);
       else await killSession(id);

@@ -10,6 +10,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { debtText } from '@/i18n/DebtText';
 import { useTranslation } from '@/i18n/useTranslation';
 import { formatAgo } from './relativeAgo';
+import { canHibernateState, isTombstoneState } from './fleetStateMeta';
 
 
 /**
@@ -92,7 +93,7 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
     async (e: React.MouseEvent) => {
       e.stopPropagation();
       try {
-        if (session.state === 'exited' || session.state === 'hibernated') {
+        if (isTombstoneState(session.state)) {
           // No live process — just drop the row (the placeholder).
           await removeSession(session.id);
           onRemovedLocal(session.id);
@@ -112,7 +113,7 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
   // policy already calls it, and the overlay tile already offers it. Live rows
   // only: an exited or hibernated row has no process to free, and its X is
   // already "remove from list".
-  const canHibernate = session.state !== 'exited' && session.state !== 'hibernated';
+  const canHibernate = canHibernateState(session.state);
 
   const handleHibernate = useCallback(
     async (e: React.MouseEvent) => {
@@ -269,7 +270,7 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
             role="button"
             tabIndex={0}
             data-testid={`fleet-session-close-${session.id}`}
-            aria-label={session.state === 'exited' || session.state === 'hibernated' ? f.dismiss_session : f.kill_session}
+            aria-label={isTombstoneState(session.state) ? f.dismiss_session : f.kill_session}
             onClick={handleClose}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
