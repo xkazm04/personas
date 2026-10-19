@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   History,
   RotateCcw,
@@ -18,6 +18,7 @@ import type { GitLabDeploymentRecord } from '@/api/system/gitlab';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { currentDeploymentIds } from './deploymentHistory';
 
 
 interface DeploymentHistoryTabProps {
@@ -35,6 +36,8 @@ export function DeploymentHistoryTab({ projectId }: DeploymentHistoryTabProps) {
   const rollingBack = useSystemStore((s) => s.gitlabRollingBackFromHistory);
   const fetchHistory = useSystemStore((s) => s.gitlabFetchDeploymentHistory);
   const rollbackFromHistory = useSystemStore((s) => s.gitlabRollbackFromHistory);
+  // Current = newest record PER PERSONA, not the newest row of a mixed list.
+  const currentIds = useMemo(() => currentDeploymentIds(history), [history]);
 
   const loadHistory = useCallback(() => {
     if (projectId) {
@@ -137,11 +140,11 @@ export function DeploymentHistoryTab({ projectId }: DeploymentHistoryTabProps) {
           {/* Vertical timeline line */}
           <div className="absolute left-[18px] top-4 bottom-4 w-px bg-primary/10" />
 
-          {history.map((record, idx) => (
+          {history.map((record) => (
             <DeploymentRow
               key={record.id}
               record={record}
-              isLatest={idx === 0}
+              isLatest={currentIds.has(record.id)}
               isConfirming={confirmRollback === record.id}
               rollingBack={rollingBack}
               onRollback={() => handleRollback(record)}
