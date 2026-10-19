@@ -137,3 +137,19 @@ export function resolveReviewQueueView(state: {
   return 'empty';
 }
 
+/**
+ * Whether the inbox should open its first visible review on its own.
+ *
+ * On desktop the detail is a split pane, so an empty pane next to a full list
+ * is just a blank: open the first row. On mobile the detail is a full-screen
+ * overlay whose X sets the active review to null -- and the auto-open used to
+ * fire on that null and reopen the first review on the same frame, so the
+ * overlay could never be closed (and opened by itself on arrival).
+ */
+export function shouldAutoOpenFirstReview(state: {
+  hasActive: boolean;
+  visibleCount: number;
+  isMobile: boolean;
+}): boolean {
+  return !state.isMobile && !state.hasActive && state.visibleCount > 0;
+}

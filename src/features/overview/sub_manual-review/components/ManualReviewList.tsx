@@ -18,7 +18,7 @@ import { seedMockManualReview, gcStaleManualReviews, deleteAllManualReviews } fr
 import { isDecisionConflict, resolveReviewRow } from '@/lib/decisions/rowWrites';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { toastCatch } from '@/lib/silentCatch';
-import { reviewStatusLabel, resolveReviewQueueView, type FilterStatus, type SourceFilter } from '../libs/reviewHelpers';
+import { reviewStatusLabel, resolveReviewQueueView, shouldAutoOpenFirstReview, type FilterStatus, type SourceFilter } from '../libs/reviewHelpers';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { useManualReviewQueue } from '../hooks/useManualReviewQueue';
 import { useFilteredCollection } from '@/hooks/utility/data/useFilteredCollection';
@@ -27,6 +27,7 @@ import { BulkActionBar } from './BulkActionBar';
 import { dashboardItem } from '@/lib/utils/animation/animationPresets';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { createLogger } from "@/lib/log";
+import { IS_MOBILE } from '@/lib/utils/platform/platform';
 
 const logger = createLogger("manual-review");
 import { ReviewInboxPanel } from './ReviewInboxPanel';
@@ -176,7 +177,11 @@ export default function ManualReviewList() {
   });
 
   const activeReview = useMemo(() => filteredReviews.find((r) => r.id === activeReviewId) ?? null, [filteredReviews, activeReviewId]);
-  useEffect(() => { if (!activeReview && filteredReviews.length > 0) setActiveReviewId(filteredReviews[0]!.id); }, [activeReview, filteredReviews]);
+  useEffect(() => {
+    if (shouldAutoOpenFirstReview({ hasActive: activeReview != null, visibleCount: filteredReviews.length, isMobile: IS_MOBILE })) {
+      setActiveReviewId(filteredReviews[0]!.id);
+    }
+  }, [activeReview, filteredReviews]);
   useEffect(() => { setSelectedIds(new Set()); setConfirmAction(null); }, [filter, sourceFilter, selectedPersonaId]);
   const selectablePendingIds = useMemo(() => new Set(filteredReviews.filter((r) => r.status === 'pending').map((r) => r.id)), [filteredReviews]);
 

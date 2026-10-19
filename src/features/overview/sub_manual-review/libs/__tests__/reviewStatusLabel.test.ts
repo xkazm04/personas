@@ -9,7 +9,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { getActiveTranslations, preloadSectionsAsync } from '@/i18n/useTranslation';
-import { reviewSourceLabel, reviewStatusLabel } from '../reviewHelpers';
+import { reviewSourceLabel, reviewStatusLabel, shouldAutoOpenFirstReview } from '../reviewHelpers';
 
 beforeAll(async () => {
   await preloadSectionsAsync('en', ['overview']);
@@ -39,5 +39,20 @@ describe('reviewStatusLabel', () => {
     expect(reviewSourceLabel(t, 'cloud')).toBe(t.overview.review.source_cloud);
     expect(reviewSourceLabel(t, 'local')).toBe(t.overview.review.source_local);
     expect(reviewSourceLabel(t, 'all')).toBe(t.overview.review.source_all);
+  });
+});
+
+describe('shouldAutoOpenFirstReview', () => {
+  it('desktop opens the first row into the empty split pane', () => {
+    expect(shouldAutoOpenFirstReview({ hasActive: false, visibleCount: 3, isMobile: false })).toBe(true);
+  });
+
+  it('mobile never reopens the full-screen overlay the reviewer just closed', () => {
+    expect(shouldAutoOpenFirstReview({ hasActive: false, visibleCount: 3, isMobile: true })).toBe(false);
+  });
+
+  it('nothing to open, or something already open', () => {
+    expect(shouldAutoOpenFirstReview({ hasActive: false, visibleCount: 0, isMobile: false })).toBe(false);
+    expect(shouldAutoOpenFirstReview({ hasActive: true, visibleCount: 3, isMobile: false })).toBe(false);
   });
 });
