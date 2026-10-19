@@ -407,8 +407,11 @@ interface AggRow {
 
 function markdownSummary(title: string, rows: AggRow[], scenarios: string[]): string {
   let md = `# ${title}\n\n`;
-  md += `| | Composite | Tool Acc. | Output Q. | Protocol | Cost | Avg Duration |\n`;
-  md += `|---|:---:|:---:|:---:|:---:|---:|---:|\n`;
+  // One header cell per row cell: the Tokens column was added to the rows
+  // without a header, so GFM dropped the eighth cell (duration) and printed
+  // token counts under "Avg Duration".
+  md += `| | Composite | Tool Acc. | Output Q. | Protocol | Cost | Tokens | Avg Duration |\n`;
+  md += `|---|:---:|:---:|:---:|:---:|---:|---:|---:|\n`;
   for (const r of rows) {
     md += `| **${r.label}** | ${r.compositeScore} | ${r.avgToolAccuracy} | ${r.avgOutputQuality} | ${r.avgProtocolCompliance} | ${fmtCost(r.totalCost)} | ${fmtTokens(r.totalTokens)} | ${fmtDuration(r.avgDuration)} |\n`;
   }
