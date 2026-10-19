@@ -110,12 +110,28 @@ function squeezeUrl(raw: string): string {
   return out;
 }
 
+/**
+ * The prefix test alone accepted `https://asset.localhost:x@evil.com/a.png`:
+ * the `:` the regex allows after the host starts USERINFO, and the request
+ * goes to evil.com. An http(s) asset URL is app-local only when the PARSED
+ * host is `asset.localhost` and it carries no credentials.
+ */
+function isAppAssetUrl(url: string): boolean {
+  if (/^asset:/i.test(url)) return true;
+  try {
+    const u = new URL(url);
+    return u.hostname === 'asset.localhost' && !u.username && !u.password;
+  } catch {
+    return false;
+  }
+}
+
 export function classifyDocumentUrl(raw: string): DocumentUrlKind {
   const url = squeezeUrl(raw);
   if (url === '') return 'drop';
   if (url.startsWith('#')) return 'keep';
   if (/^blob:/i.test(url)) return 'keep';
-  if (ASSET_RE.test(url)) return 'keep';
+  if (ASSET_RE.test(url)) return isAppAssetUrl(url) ? 'keep' : 'drop';
   if (/^data:/i.test(url)) return DATA_MEDIA_RE.test(url) ? 'keep' : 'drop';
   if (SCHEME_RE.test(url)) return 'drop';
   // Protocol-relative (`//host`), root-absolute (`/x` would resolve against

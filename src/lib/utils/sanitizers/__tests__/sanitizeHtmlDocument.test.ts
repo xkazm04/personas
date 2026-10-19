@@ -82,6 +82,10 @@ describe('classifyDocumentUrl', () => {
     ['asset://localhost/x.png', 'keep'],
     ['http://asset.localhost/x.png', 'keep'],
     ['http://asset.localhost.evil.com/x.png', 'drop'],
+    // userinfo: the request goes to evil.com, not to the asset protocol
+    ['https://asset.localhost:x@evil.com/a.png', 'drop'],
+    ['http://asset.localhost:443@evil.com/a.png', 'drop'],
+    ['https://asset.localhost/C%3A/runs/a.png', 'keep'],
     ['https://example.com/a.png', 'drop'],
     ['//example.com/a.png', 'drop'],
     ['/abs/a.png', 'drop'],
