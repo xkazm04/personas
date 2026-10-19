@@ -33,11 +33,15 @@ const Legend = ({ q, label }: { q: number; label: string }) => (
   </span>
 );
 
-export const AthenaHealthPanel = memo(function AthenaHealthPanel({ health: data, loading }: { health: AthenaHealth | null; loading: boolean }) {
+export const AthenaHealthPanel = memo(function AthenaHealthPanel({ health: data, loading, failed }: { health: AthenaHealth | null; loading: boolean; failed?: boolean }) {
   const { t } = useTranslation();
   const a = t.overview.athena;
   const head = { id: 's-obs-athena', title: a.health_title, meta: a.health_hint };
   if (loading && !data) return <Section {...head} state="loading" ghostRows={3} />;
+  // A failed read says so; it used to render nothing at all, a blank level under an open card.
+  if (failed && !data) {
+    return <Section {...head} state="empty" empty={{ title: t.overview.observability.error_recovery.panel_failed, tone: 'error' }} />;
+  }
   if (!data) return null;
 
   const { triage, proactive, jobs, errors, turns } = data;

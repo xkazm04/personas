@@ -6,6 +6,7 @@ import type { AthenaSpendRow } from '@/lib/bindings/AthenaSpendRow';
 import { DataTable, KitButton, Meta, Section, sortRows, type TableRow, type TableSort } from '@/features/shared/components/kit';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { silentCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 
 /**
  * "What does Athena cost" — the unified spend rollup, rendered inside the
@@ -32,39 +33,45 @@ function useAthenaSpend() {
   const { effectiveDays } = useOverviewFilterValues();
   const [rows, setRows] = useState<AthenaSpendRow[]>([]);
   const [loading, setLoading] = useState(true);
-  // Bumped per request so a response for a day-range the user has already
+  const [failed, setFailed] = useState(false);
+  // A token per request so a response for a day-range the user has already
   // navigated away from cannot clobber the range now on screen.
-  const seqRef = useRef(0);
+  const latest = useRef(createLatestWins()).current;
 
   const load = useCallback(() => {
-    const seq = ++seqRef.current;
+    const seq = latest.next();
     setLoading(true);
+    setFailed(false);
     companionGetSpendRollup(effectiveDays)
       .then((r) => {
-        if (seq !== seqRef.current) return;
+        if (!latest.isCurrent(seq)) return;
         setRows(r);
       })
       .catch((e) => {
-        if (seq !== seqRef.current) return;
+        if (!latest.isCurrent(seq)) return;
         silentCatch('companion_get_spend_rollup')(e);
+        // A failed read is not "no spend": the empty band and a $0 total used to say exactly
+        // that, and a failed range change kept the previous window's rows under the new range.
+        setRows([]);
+        setFailed(true);
       })
       .finally(() => {
-        if (seq !== seqRef.current) return;
+        if (!latest.isCurrent(seq)) return;
         setLoading(false);
       });
-  }, [effectiveDays]);
+  }, [effectiveDays, latest]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  return { rows, loading };
+  return { rows, loading, failed };
 }
 
 export const AthenaSpendSection = memo(function AthenaSpendSection() {
   const { t, language } = useTranslation();
   const a = t.overview.athena;
-  const { rows, loading } = useAthenaSpend();
+  const { rows, loading, failed } = useAthenaSpend();
   const [all, setAll] = useState(false);
   const [sort, setSort] = useState<TableSort<Col>>({ key: 'day', dir: 'desc' });
 
@@ -98,7 +105,7 @@ export const AthenaSpendSection = memo(function AthenaSpendSection() {
     <Section
       level={2}
       title={a.spend_title}
-      meta={<Meta parts={[a.spend_hint, <Numeric key="c" value={totalCost} unit="usd" />, <Numeric key="n" value={totalTurns} unit="count" />]} />}
+      meta={failed ? a.spend_hint : <Meta parts={[a.spend_hint, <Numeric key="c" value={totalCost} unit="usd" />, <Numeric key="n" value={totalTurns} unit="count" />]} />}
     >
       <div data-testid="athena-spend-section">
         <DataTable<Col>
@@ -113,7 +120,9 @@ export const AthenaSpendSection = memo(function AthenaSpendSection() {
           sort={sort}
           onSortChange={setSort}
           locale={language}
-          empty={{ title: a.spend_empty_title, hint: a.spend_empty_description }}
+          empty={failed
+            ? { title: t.overview.observability.error_recovery.panel_failed, tone: 'error' }
+            : { title: a.spend_empty_title, hint: a.spend_empty_description }}
           pager={sorted.length > SHOWN && !all ? (
             <>
               <span className="typo-data k-regular k-quiet">{table.length} / {sorted.length}</span>
