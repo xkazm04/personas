@@ -201,6 +201,7 @@ export function FacetedDecisionTable<T>({
               <input
                 className={`${INPUT_FIELD} pl-8 w-56`}
                 placeholder={labels.searchPlaceholder}
+                aria-label={labels.searchPlaceholder}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
@@ -333,6 +334,7 @@ function NodeButton({
         <button
           type="button"
           aria-label={expanded ? collapseLabel : expandLabel}
+          aria-expanded={expanded}
           onClick={onToggle}
           className="p-0.5 text-foreground/70 hover:text-foreground"
         >
@@ -346,6 +348,7 @@ function NodeButton({
       <button
         type="button"
         onClick={onSelect}
+        aria-current={active ? 'true' : undefined}
         className="flex-1 min-w-0 flex flex-col gap-0.5 py-1 text-left"
       >
         <span className="flex items-center justify-between gap-2">
