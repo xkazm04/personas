@@ -18,6 +18,7 @@ import { openNoteInObsidian } from '../openInObsidian';
 import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
 import { parseNote } from './parseNote';
 import { extractMessage, toastCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 
@@ -149,47 +150,63 @@ export default function BrowsePanel() {
   const [loadingFolders, setLoadingFolders] = useState<Set<string>>(() => new Set());
   const loadedFoldersRef = useRef(new Set<string>());
   const loadingFoldersRef = useRef(new Set<string>());
+  // Vault reads are async and unordered: a slow read for the previous vault or
+  // the previously clicked note must not land over the current one.
+  const treeLoads = useRef(createLatestWins()).current;
+  const noteLoads = useRef(createLatestWins()).current;
 
   const loadTree = useCallback(async () => {
+    const token = treeLoads.next();
     setLoading(true);
     try {
       const root = await obsidianBrainListVaultFiles();
+      if (!treeLoads.isCurrent(token)) return;
       setTree(root);
       loadedFoldersRef.current = new Set([root.path]);
       loadingFoldersRef.current = new Set();
       setLoadingFolders(new Set());
     } catch (e) {
-      toastCatch('BrowsePanel:loadTree')(e);
+      if (treeLoads.isCurrent(token)) toastCatch('BrowsePanel:loadTree')(e);
     } finally {
-      setLoading(false);
+      if (treeLoads.isCurrent(token)) setLoading(false);
     }
-  }, []);
+  }, [treeLoads]);
 
   const expandFolder = useCallback(async (path: string) => {
     if (loadedFoldersRef.current.has(path) || loadingFoldersRef.current.has(path)) return;
     loadingFoldersRef.current.add(path);
     setLoadingFolders(new Set(loadingFoldersRef.current));
+    // The tree generation this expand started under; a reload since then
+    // (vault switch) means the folder belongs to another vault.
+    const generation = treeLoads.current();
     try {
       const node = await obsidianBrainListVaultFiles(path);
+      if (treeLoads.current() !== generation) return;
       setTree((prev) => (prev ? mergeFolderChildren(prev, node.path, node.children) : node));
       loadedFoldersRef.current.add(node.path);
     } catch (e) {
-      toastCatch('BrowsePanel:expandFolder')(e);
+      if (treeLoads.current() === generation) toastCatch('BrowsePanel:expandFolder')(e);
     } finally {
-      loadingFoldersRef.current.delete(path);
-      setLoadingFolders(new Set(loadingFoldersRef.current));
+      if (treeLoads.current() === generation) {
+        loadingFoldersRef.current.delete(path);
+        setLoadingFolders(new Set(loadingFoldersRef.current));
+      }
     }
-  }, []);
+  }, [treeLoads]);
 
   useEffect(() => {
     if (connected) {
+      noteLoads.next(); // a note read for the previous vault is now stale
       setSelectedPath(null);
       setNoteContent(null);
+      setNoteError(null);
+      setLoadingNote(false);
       loadTree();
     }
-  }, [connected, vaultPath, loadTree]);
+  }, [connected, vaultPath, loadTree, noteLoads]);
 
   const selectNote = useCallback(async (path: string) => {
+    const token = noteLoads.next();
     setSelectedPath(path);
     // Clear the previous note immediately — this is a context switch to a
     // different resource, not a refresh of the same one, so the stale body
@@ -199,13 +216,13 @@ export default function BrowsePanel() {
     setLoadingNote(true);
     try {
       const content = await obsidianBrainReadVaultNote(path);
-      setNoteContent(content);
+      if (noteLoads.isCurrent(token)) setNoteContent(content);
     } catch (e) {
-      setNoteError({ raw: e });
+      if (noteLoads.isCurrent(token)) setNoteError({ raw: e });
     } finally {
-      setLoadingNote(false);
+      if (noteLoads.isCurrent(token)) setLoadingNote(false);
     }
-  }, []);
+  }, [noteLoads]);
 
   const openInObsidian = useCallback(() => {
     if (!selectedPath) return;
