@@ -376,6 +376,9 @@ impl DevicePairing {
             self.emit_pending_changed().await;
             return Ok(());
         }
+        // The responder's name is its own claim: cap it like every other
+        // peer-supplied name before it becomes our `owned_devices` row.
+        let display_name = super::mdns::sanitise_display_name(&display_name);
         // Trust the key proven at handshake over the one echoed in the payload —
         // the payload is just a convenience, the handshake is the evidence.
         let key = if public_key_b64 == pending.public_key_b64 {
@@ -422,6 +425,9 @@ impl DevicePairing {
         devices_at_stake: u32,
     ) -> Result<Message, AppError> {
         protocol::validate_nonce(&session_nonce, "pairing session")?;
+        // Shown in the confirm prompt and written to `owned_devices` on accept:
+        // cap it like the mDNS name (a frame may carry up to 16 MB).
+        let display_name = super::mdns::sanitise_display_name(&display_name);
         let local = crate::identity::get_or_create_identity(&self.pool)?;
         let public_key_b64 = self.proven_key(peer_id).await?;
         let fingerprint = protocol::pairing_fingerprint(

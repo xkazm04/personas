@@ -60,7 +60,12 @@ fn validate_peer_id(raw: &str) -> bool {
 /// whenever byte `N` lands inside a multibyte codepoint (emoji/CJK/accented),
 /// which would crash the inline `buffer_mdns_event` and abort the whole
 /// `browse_loop` discovery task.
-fn sanitise_display_name(raw: &str) -> String {
+///
+/// mDNS is not the only door a peer's name comes through: the handshake
+/// (`Hello` / `HelloAck`) and the pairing frames (`PairRequest` /
+/// `PairResponse`) carry one too, and those reach the pairing prompt and the
+/// `owned_devices` row. They go through this same function.
+pub(crate) fn sanitise_display_name(raw: &str) -> String {
     let trimmed = raw.trim();
     if trimmed.is_empty() {
         "Unknown Peer".to_string()

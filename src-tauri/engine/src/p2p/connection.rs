@@ -625,6 +625,8 @@ impl ConnectionManager {
                             remote_id, version, PROTOCOL_VERSION
                         )));
                     }
+                    // Peer-supplied, like the mDNS TXT name: same cap.
+                    let display_name = super::mdns::sanitise_display_name(&display_name);
                     (remote_id, display_name, public_key_b64, nonce, signature)
                 }
                 _ => {
@@ -800,6 +802,8 @@ impl ConnectionManager {
                             peer_id, version, PROTOCOL_VERSION
                         )));
                     }
+                    // Peer-supplied, like the mDNS TXT name: same cap.
+                    let display_name = super::mdns::sanitise_display_name(&display_name);
                     (peer_id, display_name, public_key_b64, nonce, signature)
                 }
                 _ => {
