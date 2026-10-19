@@ -10,7 +10,7 @@ import {
   approveDesktopCapabilities,
   type DiscoveredApp,
 } from '@/api/system/desktop';
-import { toastCatch, silentCatch } from '@/lib/silentCatch';
+import { toastCatch, silentCatch, extractMessage } from '@/lib/silentCatch';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { trackInteraction } from '@/lib/sentry';
 import * as Sentry from '@sentry/react';
@@ -42,11 +42,20 @@ function prioritizeZeroCredential(reviews: PersonaDesignReview[]): PersonaDesign
 /** Observable load state for the onboarding template list. */
 export type TemplateLoadPhase = 'loading' | 'loaded' | 'empty' | 'error';
 
+/**
+ * A failed load, kept RAW. The IPC layer rejects with a serialized AppError
+ * object, not an `Error`, so stringifying it here rendered "[object Object]";
+ * the step resolves it to translated copy at render instead.
+ */
+export interface LoadFailure {
+  raw: unknown;
+}
+
 export interface TemplateLoadState {
   phase: TemplateLoadPhase;
   /** Which backend path produced the current template list (for diagnostics). */
   source: 'trending' | 'fallback' | null;
-  error: string | null;
+  error: LoadFailure | null;
 }
 
 /** Observable scan state for desktop app discovery. */
@@ -54,7 +63,7 @@ export type DiscoveryScanPhase = 'scanning' | 'success' | 'error';
 
 export interface DiscoveryScanState {
   phase: DiscoveryScanPhase;
-  error: string | null;
+  error: LoadFailure | null;
 }
 
 function countTemplateLoad(phase: TemplateLoadPhase, source: 'trending' | 'fallback' | null) {
@@ -136,12 +145,11 @@ export function useOnboardingState() {
       .catch((err) => {
         silentCatch('useOnboardingState:discoverDesktopApps')(err);
         if (cancelled) return;
-        const message = err instanceof Error ? err.message : String(err);
         setDiscoveredApps([]);
-        setDiscoveryState({ phase: 'error', error: message });
+        setDiscoveryState({ phase: 'error', error: { raw: err } });
         Sentry.addBreadcrumb({
           category: 'onboarding.discover',
-          message: `Desktop discovery failed: ${message}`,
+          message: `Desktop discovery failed: ${extractMessage(err)}`,
           level: 'error',
         });
         Sentry.captureException(err, {
@@ -233,8 +241,7 @@ export function useOnboardingState() {
 
       setTemplates([]);
       if (trendingErr && fallbackErr) {
-        const msg = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
-        setTemplateLoadState({ phase: 'error', source: null, error: msg });
+        setTemplateLoadState({ phase: 'error', source: null, error: { raw: fallbackErr } });
         countTemplateLoad('error', null);
       } else {
         setTemplateLoadState({ phase: 'empty', source, error: null });

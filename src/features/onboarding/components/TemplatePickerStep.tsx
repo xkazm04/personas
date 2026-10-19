@@ -10,6 +10,8 @@ import type { AgentIR } from '@/lib/types/designTypes';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { DimensionRadial } from '@/features/templates/sub_generated/shared/DimensionRadial';
 import { useTranslation } from '@/i18n/useTranslation';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import { extractMessage } from '@/lib/silentCatch';
 import { useMemo } from 'react';
 import {
   approvedAppDisplayLabel,
@@ -62,7 +64,9 @@ export function TemplatePickerStep({
         <AlertCircle className="w-10 h-10 mx-auto text-amber-400 mb-3" />
         <p className="typo-body text-foreground">{t.onboarding.templates_load_error}</p>
         {loadState.error && (
-          <p className="typo-body text-foreground mt-1">{loadState.error}</p>
+          <p className="typo-body text-foreground mt-1">
+            {resolveErrorTranslated(t, extractMessage(loadState.error.raw)).message}
+          </p>
         )}
         <button
           type="button"

@@ -9,6 +9,8 @@ import {
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { DiscoveredApp } from '@/api/system/desktop';
 import { useTranslation } from '@/i18n/useTranslation';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import { extractMessage } from '@/lib/silentCatch';
 import type { DiscoveryScanState } from './useOnboardingState';
 
 const APP_ICONS: Record<string, string> = {
@@ -85,7 +87,9 @@ export function DesktopDiscoveryStep({
         <AlertCircle className="w-10 h-10 mx-auto text-amber-400 mb-3" />
         <p className="typo-body text-foreground">{t.onboarding.desktop_scan_error}</p>
         <p className="typo-body text-foreground mt-1">
-          {scanState.error ?? t.onboarding.desktop_scan_error_hint}
+          {scanState.error
+            ? resolveErrorTranslated(t, extractMessage(scanState.error.raw)).message
+            : t.onboarding.desktop_scan_error_hint}
         </p>
         <button
           type="button"
