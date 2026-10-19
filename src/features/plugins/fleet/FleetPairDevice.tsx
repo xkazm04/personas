@@ -96,8 +96,13 @@ export function FleetPairDevice() {
 
   const copy = useCallback(() => {
     if (!pair) return;
+    // `copyText` RESOLVES false on a refused write (it reports the failure
+    // itself); it never rejects. Confirming regardless told the operator the
+    // pairing link was on the clipboard when the clipboard still held whatever
+    // was there before - possibly an older pairing link.
     copyText(pair.url)
-      .then(() => {
+      .then((ok) => {
+        if (!ok) return;
         setCopied(true);
         if (copiedTimer.current !== null) clearTimeout(copiedTimer.current);
         copiedTimer.current = setTimeout(() => {
