@@ -59,6 +59,38 @@ function StatusDot({ grade, isRunning, label }: { grade: string | undefined; isR
   return <span className={`h-2 w-2 flex-shrink-0 rounded-full ${color}`} aria-label={label} title={label} />;
 }
 
+/**
+ * Health grades for the per-agent dots, read from overviewStore (lazy-loaded so
+ * the store stays out of the main bundle).
+ *
+ * The subscription fires on EVERY overviewStore change (process events, cost
+ * ticks, tab switches); it rebuilds the map only when `healthSignals` itself
+ * changed. It used to rebuild unconditionally, and a fresh object in state
+ * re-rendered the whole Agents nav on each unrelated store write.
+ */
+export function usePersonaHealthGrades(): Record<string, string> {
+  const [healthGrades, setHealthGrades] = useState<Record<string, string>>({});
+  useEffect(() => {
+    let unsub: (() => void) | undefined;
+    let cancelled = false;
+    void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
+      if (cancelled) return;
+      let prev: unknown = undefined;
+      const update = (signals: Array<{ personaId: string; grade: string }>) => {
+        if (signals === prev) return;
+        prev = signals;
+        const map: Record<string, string> = {};
+        for (const s of signals) map[s.personaId] = s.grade;
+        setHealthGrades(map);
+      };
+      update(useOverviewStore.getState().healthSignals);
+      unsub = useOverviewStore.subscribe((s) => update(s.healthSignals));
+    });
+    return () => { cancelled = true; unsub?.(); };
+  }, []);
+  return healthGrades;
+}
+
 export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) {
   const { t, tx } = useTranslation();
   const selectPersona = useAgentStore((s) => s.selectPersona);
@@ -135,21 +167,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
   // sidebar roster matches the management table.
   
 
-  // Health grades for per-agent dots (lazy-loaded from overviewStore)
-  const [healthGrades, setHealthGrades] = useState<Record<string, string>>({});
-  useEffect(() => {
-    let unsub: (() => void) | undefined;
-    void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
-      const update = (signals: Array<{ personaId: string; grade: string }>) => {
-        const map: Record<string, string> = {};
-        for (const s of signals) map[s.personaId] = s.grade;
-        setHealthGrades(map);
-      };
-      update(useOverviewStore.getState().healthSignals);
-      unsub = useOverviewStore.subscribe((s) => update(s.healthSignals));
-    });
-    return () => unsub?.();
-  }, []);
+  const healthGrades = usePersonaHealthGrades();
 
   // Set of persona IDs that are currently executing (foreground + background)
   const executingPersonaIds = useMemo(() => {
