@@ -46,16 +46,24 @@ export function FleetHarvestPanel({ open, onClose }: Props) {
       .finally(() => setLoading(false));
   }, [open]);
 
+  // A run switch supersedes the read in flight: without the cancel, a slow
+  // report for the previous run lands after the new one and stays on screen
+  // (and in the Copy button) under the new run's highlighted chip.
   useEffect(() => {
     if (!open || !runId) return;
+    let cancelled = false;
     setLoading(true);
     runReport(runId)
-      .then(setReport)
+      .then((r) => { if (!cancelled) setReport(r); })
       .catch(silentCatch('fleet harvest: run report'))
-      .finally(() => setLoading(false));
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, [open, runId]);
 
-  const markdown = useMemo(() => (report ? buildRunMarkdown(report) : ''), [report]);
+  // Only the selected run's report is ever shown or copied: until the new
+  // run's report arrives, the previous one is not an answer for it.
+  const shown = report && report.runId === runId ? report : null;
+  const markdown = useMemo(() => (shown ? buildRunMarkdown(shown) : ''), [shown]);
   const runLabel = useCallback(
     (r: FleetRunSummary) =>
       r.runLabel ?? interpolate(t.plugins.fleet.harvest_run_untitled, { id: r.runId.slice(0, 6) }),
@@ -101,25 +109,25 @@ export function FleetHarvestPanel({ open, onClose }: Props) {
         )}
 
         <div className="flex-1 overflow-y-auto px-4 py-3">
-          {loading && !report ? (
+          {loading && !shown ? (
             <div className="flex justify-center py-8">
               <LoadingSpinner />
             </div>
-          ) : !report || report.sessions.length === 0 ? (
+          ) : !shown || shown.sessions.length === 0 ? (
             <EmptyState art="report" title={t.plugins.fleet.harvest_empty} />
           ) : (
             <>
               <p className="mb-3 typo-caption tabular-nums opacity-80">
                 {interpolate(t.plugins.fleet.harvest_totals, {
-                  delivered: report.totals.finishedCount,
-                  total: report.totals.sessionCount,
-                  files: report.totals.filesTouched,
-                  tokensIn: formatTokens(report.totals.tokens.input),
-                  tokensOut: formatTokens(report.totals.tokens.output),
+                  delivered: shown.totals.finishedCount,
+                  total: shown.totals.sessionCount,
+                  files: shown.totals.filesTouched,
+                  tokensIn: formatTokens(shown.totals.tokens.input),
+                  tokensOut: formatTokens(shown.totals.tokens.output),
                 })}
               </p>
               <ul className="flex flex-col gap-2">
-                {report.sessions.map((s) => (
+                {shown.sessions.map((s) => (
                   <FleetRunSessionRow key={s.sessionId} session={s} />
                 ))}
               </ul>
