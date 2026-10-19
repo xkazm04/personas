@@ -1,9 +1,8 @@
 //! 5-tier cognitive memory model (working, episodic, semantic, procedural,
 //! identity) plus a typed-relations graph and provenance enforcement.
 //!
-//! Phase 0: empty submodules. Implementations land in subsequent phases —
-//! this file just declares the shape so the rest of the scaffolding
-//! compiles cleanly.
+//! This file only declares the submodules; each one carries its own
+//! implementation and tests.
 
 pub mod backlog;
 pub mod briefing;

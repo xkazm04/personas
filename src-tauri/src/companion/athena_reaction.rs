@@ -224,8 +224,8 @@ fn recent_channel_history(pool: &crate::db::DbPool, team_id: &str) -> String {
     lines.join("\n")
 }
 
-/// Post one decided reaction to the team channel (shared by the single-signal
-/// path and the batch path): audit-footer body, inject-vs-display consumer,
+/// Post one decided reaction to the team channel (called per verdict by
+/// [`run_athena_reaction_batch`]): audit-footer body, inject-vs-display consumer,
 /// assignment linkage, optional user escalation. Returns Ok(true) if posted.
 fn post_reaction_message(
     app: &tauri::AppHandle,
@@ -317,7 +317,7 @@ fn post_reaction_message(
     Ok(true)
 }
 
-/// Like [`cli_text`], but also returns the parsed terminal `result` usage so an
+/// Runs a [`MICRO`](crate::companion::model_routing::MICRO) leg and also returns the parsed terminal `result` usage so an
 /// engine caller can record the spend in its OWN ledger (e.g. `kpi_*` →
 /// `dev_llm_spend`, which is a `DbPool` table, not the companion `UserDbPool`
 /// that `cli_text_tracked` writes). `None` usage = the CLI emitted no result
@@ -391,7 +391,7 @@ async fn cli_decision_inner(
     Ok((run.text, cost))
 }
 
-/// Like [`cli_text`], but records a `companion_turn` ledger row
+/// Runs a [`MICRO`](crate::companion::model_routing::MICRO) leg and records a `companion_turn` ledger row
 /// (origin=`headless`, labeled with `trigger_kind`) for Athena's own usage
 /// accounting. Returns `(display_text, turn_id)` — the triage legs use the id
 /// to attach their verdict counts via `turn_ledger::update_outcome` after they
@@ -590,8 +590,8 @@ async fn cli_text_inner(
     })
 }
 
-/// Extract the `{"athena_channel_batch": {...}}` object (same brace-match
-/// tolerance as the single-decision parse; last occurrence wins).
+/// Extract the `{"athena_channel_batch": {...}}` object (string-aware
+/// [`match_braces`], as [`parse_athena_review`] uses; last occurrence wins).
 fn parse_athena_batch(blob: &str) -> Option<AthenaBatchDecision> {
     let marker = "\"athena_channel_batch\"";
     let mut result = None;

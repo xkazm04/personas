@@ -1,7 +1,9 @@
 //! Companion (Athena) — always-available chat partner over the agent ecosystem.
 //!
-//! Phase 0 scaffold: directory layout, embedded constitution/identity templates,
-//! and brain submodule stubs. Real wiring lands in subsequent phases.
+//! The module tree below is the whole runtime: the brain (`brain`), the turn
+//! (`session`, `prompt`, `dispatcher`), proactive outreach (`proactive`),
+//! voice (`stt`, `tts`) and the integration shims that connect Athena to the
+//! rest of the app.
 //!
 //! Source of truth for memory is markdown on disk at
 //! `~/.personas/companion-brain/`. SQL tables (see `companion_node`,

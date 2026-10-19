@@ -6,11 +6,11 @@
 //! `list_enabled_for_prompt` on every turn so Athena's awareness stays
 //! in sync with the sidebar UI without additional plumbing.
 //!
-//! v1 scope: awareness only. We *list* the enabled connectors in the
-//! prompt so Athena can reference them ("you have GitHub attached, want
-//! me to look at your repos?") but she doesn't actually invoke them
-//! yet — the `use_connector` op lands in a follow-up phase that needs
-//! careful sandboxing of which credential payloads are passed through.
+//! Athena acts on a pinned connector through the `use_connector` op: a
+//! read capability runs as a background job
+//! (`companion::jobs::connector_use`), a write capability becomes an
+//! approval card (`requires_approval` below). [`capabilities_for`] is the
+//! registry both the prompt and the executors read.
 
 use chrono::Utc;
 use rusqlite::params;
