@@ -74,6 +74,31 @@ describe('useHealthCheck — a failed check leaves a trace', () => {
   });
 });
 
+describe('useHealthCheck — latest run wins', () => {
+  it('drops a slower earlier run that resolves after a newer one', async () => {
+    select(personaA);
+    let releaseFirst: (v: unknown) => void = () => {};
+    mockFeasibility
+      .mockImplementationOnce(() => new Promise((r) => { releaseFirst = r; }))
+      .mockResolvedValueOnce({ overall: 'ready', confirmed_capabilities: [], issues: [] });
+    const { result } = renderHook(() => useHealthCheck());
+
+    let first: Promise<unknown> = Promise.resolve();
+    await act(async () => {
+      first = result.current.runHealthCheck(personaA);
+      await result.current.runHealthCheck(personaA);
+    });
+    expect(result.current.result?.result.status).toBe('ready');
+
+    await act(async () => {
+      releaseFirst({ overall: 'blocked', confirmed_capabilities: [], issues: ['Tool x is not installed'] });
+      await first;
+    });
+    expect(await first).toBeNull();
+    expect(result.current.result?.result.status).toBe('ready');
+  });
+});
+
 describe('useHealthCheck — verdict is scoped to the selected persona', () => {
   it('presents idle when the app selects a different persona than the one checked', async () => {
     select(personaA);
