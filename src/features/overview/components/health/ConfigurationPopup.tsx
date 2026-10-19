@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useId } from 'react';
 import { Key } from 'lucide-react';
 import { getAppSettingsBulk, setAppSetting } from "@/api/system/settings";
 import { useToastStore } from '@/stores/toastStore';
@@ -54,6 +54,7 @@ export function ConfigurationPopup({
   onSaved,
 }: ConfigurationPopupProps) {
   const { t } = useTranslation();
+  const idBase = useId();
   const [values, setValues] = useState<Record<string, string>>(() =>
     Object.fromEntries(fields.map((f) => [f.key, '']))
   );
@@ -130,10 +131,11 @@ export function ConfigurationPopup({
           )}
           {fields.map((field) => (
             <div key={field.key}>
-              <label className="block typo-body text-foreground mb-1.5">
+              <label htmlFor={`${idBase}-${field.key}`} className="block typo-body text-foreground mb-1.5">
                 {field.label}
               </label>
               <input
+                id={`${idBase}-${field.key}`}
                 type={field.type}
                 value={values[field.key] ?? ''}
                 onChange={(e) =>
