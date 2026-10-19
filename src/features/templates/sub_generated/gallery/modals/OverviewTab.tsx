@@ -87,14 +87,21 @@ export function OverviewTab({
                 <BarChart3 className="w-3.5 h-3.5 text-emerald-400/70" />
                 <span className="typo-body text-foreground">{t.templates.overview_tab.success_label}</span>
               </div>
-              <span className="typo-heading-lg text-foreground/90 font-mono">{Math.round(performance.success_rate * 100)}%</span>
+              {/* No run yet is "not measured", never 0%: the backend reports a
+                  rate of 0 when it has nothing to divide by. */}
+              <Numeric
+                value={performance.total_executions > 0 ? performance.success_rate : null}
+                unit="ratio"
+                precision={0}
+                className="typo-heading-lg text-foreground/90 font-mono"
+              />
             </div>
             <div className="rounded-modal border border-primary/10 bg-secondary/20 px-3 py-2.5">
               <div className="flex items-center gap-1.5 mb-1">
                 <DollarSign className="w-3.5 h-3.5 text-amber-400/70" />
                 <span className="typo-body text-foreground">{t.templates.overview_tab.avg_cost_label}</span>
               </div>
-              <Numeric value={performance.avg_cost_usd} unit="usd" className="typo-heading-lg text-foreground/90 font-mono" />
+              <Numeric value={performance.total_executions > 0 ? performance.avg_cost_usd : null} unit="usd" className="typo-heading-lg text-foreground/90 font-mono" />
             </div>
           </div>
           {/* Feedback summary */}
