@@ -6,7 +6,7 @@
 //                    background compose that applies the tested measurement +
 //                    baseline. The modal closes immediately; the proposal lands
 //                    in Teams › KPIs and fills in on its own.
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import * as kpiApi from '@/api/devTools/kpis';
 import { listCredentials } from '@/api/vault/credentials';
@@ -75,19 +75,31 @@ export function useAddKpi({
   const isManual = measured === 'manual';
   const manualReady = name.trim() !== '' && unit.trim() !== '' && num(baseline) != null && num(target) != null;
 
+  // A manual KPI is two writes (createKpi takes no tier). Once the first one
+  // commits, the KPI exists: a retry after the tier write failed must finish
+  // THAT row, not insert a second one.
+  const createdId = useRef<string | null>(null);
+
   const createManual = async () => {
     setBusy(true);
     setMsg(null);
     try {
-      const kpi = await kpiApi.createKpi({
-        projectId, name: name.trim(), description: description.trim() || undefined,
-        contextGroupId, contextId, category, measureKind: 'manual',
+      const fields = {
+        name: name.trim(), description: description.trim() || undefined, category,
         unit: unit.trim() || undefined, direction,
         baselineValue: num(baseline), targetValue: num(target),
-        targetDate: targetDate || undefined,
-        cadence, status: 'active',
-      });
-      if (tier !== 'supporting') await kpiApi.updateKpi(kpi.id, { tier });
+        targetDate: targetDate || undefined, cadence,
+      };
+      if (createdId.current) {
+        // Retry: bring the row already created to what the form says now.
+        await kpiApi.updateKpi(createdId.current, { ...fields, tier });
+      } else {
+        const kpi = await kpiApi.createKpi({
+          projectId, contextGroupId, contextId, measureKind: 'manual', status: 'active', ...fields,
+        });
+        createdId.current = kpi.id;
+        if (tier !== 'supporting') await kpiApi.updateKpi(kpi.id, { tier });
+      }
       reload();
       onClose();
     } catch (e) {
