@@ -1,8 +1,8 @@
 use rusqlite::params;
 
 use crate::models::{
-    CategoryWithCount, ConnectorWithCount, CreateDesignReviewInput, PersonaDesignPattern,
-    PersonaDesignReview, SmartSearchRow,
+    CategoryWithCount, ConnectorWithCount, CreateDesignReviewInput, PersonaDesignReview,
+    SmartSearchRow,
 };
 use crate::query_builder::QueryBuilder;
 use crate::repos::utils::collect_rows;
@@ -51,12 +51,6 @@ fn row_to_review(row: &rusqlite::Row) -> rusqlite::Result<PersonaDesignReview> {
         category: row.get("category")?,
     })
 }
-
-row_mapper!(row_to_pattern -> PersonaDesignPattern {
-    id, pattern_type, pattern_text, trigger_condition,
-    confidence, usage_count,
-    last_validated_at, is_active [bool], created_at,
-});
 
 fn row_to_smart(row: &rusqlite::Row) -> rusqlite::Result<SmartSearchRow> {
     Ok(SmartSearchRow {
@@ -839,63 +833,6 @@ pub fn cleanup_duplicate_reviews(pool: &DbPool) -> Result<i64, AppError> {
     )
 }
 
-// ============================================================================
-// Design Patterns
-// ============================================================================
-
-pub fn get_active_patterns(pool: &DbPool) -> Result<Vec<PersonaDesignPattern>, AppError> {
-    timed_query!("design_reviews", "design_reviews::get_active_patterns", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM persona_design_patterns WHERE is_active = 1 ORDER BY confidence DESC",
-        )?;
-        let rows = stmt.query_map([], row_to_pattern)?;
-        rows.collect::<Result<Vec<_>, _>>()
-            .map_err(AppError::Database)
-    })
-}
-
-pub fn create_pattern(
-    pool: &DbPool,
-    pattern_type: &str,
-    pattern_text: &str,
-    trigger_condition: &str,
-    confidence: i32,
-) -> Result<PersonaDesignPattern, AppError> {
-    timed_query!("design_reviews", "design_reviews::create_pattern", {
-        let id = uuid::Uuid::new_v4().to_string();
-        let now = chrono::Utc::now().to_rfc3339();
-
-        let conn = pool.get()?;
-        conn.execute(
-            "INSERT INTO persona_design_patterns
-         (id, pattern_type, pattern_text, trigger_condition, confidence,
-          usage_count, is_active, created_at)
-         VALUES (?1,?2,?3,?4,?5,0,1,?6)",
-            params![
-                id,
-                pattern_type,
-                pattern_text,
-                trigger_condition,
-                confidence,
-                now
-            ],
-        )?;
-
-        Ok(PersonaDesignPattern {
-            id,
-            pattern_type: pattern_type.to_string(),
-            pattern_text: pattern_text.to_string(),
-            trigger_condition: trigger_condition.to_string(),
-            confidence,
-            usage_count: 0,
-            last_validated_at: None,
-            is_active: true,
-            created_at: now,
-        })
-    })
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -950,30 +887,6 @@ mod tests {
 
         let empty = get_reviews(&pool, Some("run-999"), None).unwrap();
         assert_eq!(empty.len(), 0);
-    }
-
-    #[test]
-    fn test_pattern_crud() {
-        let pool = init_test_db().unwrap();
-
-        // Create pattern
-        let pattern = create_pattern(
-            &pool,
-            "routing",
-            "Use conditional routing when multiple output paths exist",
-            "output_count > 1",
-            80,
-        )
-        .unwrap();
-        assert_eq!(pattern.pattern_type, "routing");
-        assert!(pattern.is_active);
-        assert_eq!(pattern.confidence, 80);
-        assert_eq!(pattern.usage_count, 0);
-
-        // Get active patterns
-        let active = get_active_patterns(&pool).unwrap();
-        assert_eq!(active.len(), 1);
-        assert_eq!(active[0].id, pattern.id);
     }
 
     #[test]

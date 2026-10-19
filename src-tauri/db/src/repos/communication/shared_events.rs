@@ -426,22 +426,6 @@ pub fn set_error(
     })
 }
 
-pub fn toggle_enabled(
-    pool: &DbPool,
-    subscription_id: &str,
-    enabled: bool,
-) -> Result<SharedEventSubscription, AppError> {
-    timed_query!("shared_events", "shared_events::toggle_enabled", {
-        let now = chrono::Utc::now().to_rfc3339();
-        let conn = pool.get()?;
-        conn.execute(
-            "UPDATE shared_event_subscriptions SET enabled = ?2, updated_at = ?3 WHERE id = ?1",
-            params![subscription_id, enabled as i32, now],
-        )?;
-        get_subscription(pool, subscription_id)
-    })
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

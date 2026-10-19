@@ -785,23 +785,6 @@ pub struct SkippedRateRow {
     pub skipped: i64,
 }
 
-/// Delete every event whose `source_id` matches a specific id. Used when a
-/// trigger is deleted to purge its event history from persona_events. Returns
-/// the number of deleted rows.
-pub fn delete_events_by_source_id(pool: &DbPool, source_id: &str) -> Result<u32, AppError> {
-    timed_query!(
-        "persona_events",
-        "persona_events::delete_events_by_source_id",
-        {
-            let conn = pool.conn("events::delete_events_by_source_id")?;
-            let mut stmt =
-                conn.prepare_cached("DELETE FROM persona_events WHERE source_id = ?1")?;
-            let rows = stmt.execute(params![source_id])?;
-            Ok(rows as u32)
-        }
-    )
-}
-
 /// Delete events emitted by triggers that no longer exist (or whose owning
 /// persona no longer exists). Catches accumulated noise from orphaned
 /// triggers that the cleanup sweep in background.rs then prunes. Returns
@@ -1573,33 +1556,6 @@ pub fn get_subscriptions_by_event_type(
             ))?;
             let rows = stmt.query_map(params![event_type], row_to_subscription)?;
             Ok(collect_rows(rows, "get_subscriptions_by_event_type"))
-        }
-    )
-}
-
-/// Bulk-fetch enabled subscriptions for multiple event types in a single query.
-pub fn get_subscriptions_by_event_types(
-    pool: &DbPool,
-    event_types: &[String],
-) -> Result<Vec<PersonaEventSubscription>, AppError> {
-    if event_types.is_empty() {
-        return Ok(Vec::new());
-    }
-    timed_query!(
-        "event_subscriptions",
-        "event_subscriptions::get_subscriptions_by_event_types",
-        {
-            let conn = pool.conn("events::get_subscriptions_by_event_types")?;
-            let mut qb = QueryBuilder::new();
-            qb.where_in("event_type", event_types.to_vec());
-            qb.where_raw(|_| "enabled = 1".to_string(), vec![]);
-            qb.order_by("created_at", "DESC");
-            let sql = qb.build_select(&format!(
-                "SELECT {SUBSCRIPTION_COLUMNS} FROM persona_event_subscriptions"
-            ));
-            let mut stmt = conn.prepare(&sql)?;
-            let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_subscription)?;
-            Ok(collect_rows(rows, "get_subscriptions_by_event_types"))
         }
     )
 }
@@ -3030,57 +2986,6 @@ mod tests {
     // ========================================================================
     // Fix 1: orphan event cleanup
     // ========================================================================
-
-    #[test]
-    fn test_fix1_delete_events_by_source_id() {
-        let pool = init_test_db().unwrap();
-
-        // Publish 3 events tied to one fake trigger id + 2 events tied to another
-        for i in 0..3 {
-            publish(
-                &pool,
-                CreatePersonaEventInput {
-                    event_type: format!("evt_{i}"),
-                    source_type: "trigger".into(),
-                    source_id: Some("trigger-alpha".into()),
-                    target_persona_id: None,
-                    project_id: None,
-                    payload: None,
-                    use_case_id: None,
-                },
-            )
-            .unwrap();
-        }
-        for i in 0..2 {
-            publish(
-                &pool,
-                CreatePersonaEventInput {
-                    event_type: format!("beta_{i}"),
-                    source_type: "trigger".into(),
-                    source_id: Some("trigger-beta".into()),
-                    target_persona_id: None,
-                    project_id: None,
-                    payload: None,
-                    use_case_id: None,
-                },
-            )
-            .unwrap();
-        }
-
-        let removed = delete_events_by_source_id(&pool, "trigger-alpha").unwrap();
-        assert_eq!(removed, 3);
-
-        // Beta events still there
-        let conn = pool.get().unwrap();
-        let beta_count: i64 = conn
-            .query_row(
-                "SELECT COUNT(*) AS n FROM persona_events WHERE source_id = ?1",
-                params!["trigger-beta"],
-                |row| row.get("n"),
-            )
-            .unwrap();
-        assert_eq!(beta_count, 2);
-    }
 
     #[test]
     fn test_fix1_delete_orphaned_trigger_events_matches_only_orphans() {

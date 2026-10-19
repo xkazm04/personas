@@ -98,27 +98,6 @@ pub fn list_impact_runs_for_entry(
     )
 }
 
-/// Impact runs for one firing, newest first.
-pub fn list_impact_runs_for_firing(
-    pool: &DbPool,
-    firing_id: &str,
-) -> Result<Vec<SharedEventImpactRun>, AppError> {
-    timed_query!(
-        "shared_event_impact_runs",
-        "shared_event_impact_runs::list_impact_runs_for_firing",
-        {
-            let conn = pool.get()?;
-            let mut stmt = conn.prepare(&format!(
-                "SELECT {COLUMNS} FROM shared_event_impact_runs
-                 WHERE firing_id = ?1
-                 ORDER BY created_at DESC, id DESC"
-            ))?;
-            let rows = stmt.query_map(params![firing_id], row_to_run)?;
-            rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
-        }
-    )
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -145,7 +124,7 @@ mod tests {
     }
 
     #[test]
-    fn insert_and_list_by_entry_and_firing() {
+    fn insert_and_list_by_entry() {
         let pool = init_test_db().unwrap();
         let entry = "shared-connector-elevenlabs";
         insert(&pool, "fire-1", entry, "proj_a", "committed");
@@ -156,10 +135,7 @@ mod tests {
         let by_entry = list_impact_runs_for_entry(&pool, entry, 50).unwrap();
         assert_eq!(by_entry.len(), 3);
         assert!(by_entry.iter().all(|r| r.catalog_entry_id == entry));
-
-        let by_firing = list_impact_runs_for_firing(&pool, "fire-1").unwrap();
-        assert_eq!(by_firing.len(), 2);
-        let committed = by_firing.iter().find(|r| r.verdict == "committed").unwrap();
+        let committed = by_entry.iter().find(|r| r.verdict == "committed").unwrap();
         assert_eq!(committed.commit_sha.as_deref(), Some("abc1234"));
         assert_eq!(committed.project_id, "proj_a");
     }
