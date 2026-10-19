@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { HealingTimelineEvent } from '@/lib/bindings/HealingTimelineEvent';
-import { canResolve, chainMark, groupChains, issueRowStates, issueState, ISSUE_GLYPH } from '../issueModel';
+import { act, renderHook } from '@testing-library/react';
+import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
+import { canResolve, chainMark, groupChains, isAutoFixedIssue, isOpenIssue, issueRowStates, issueState, ISSUE_GLYPH } from '../issueModel';
+import { useHealingPanelState } from '../useHealingPanelState';
 import { quantumFor } from '@/features/shared/components/kit/quantum';
 
 const base = { is_circuit_breaker: false, status: 'open', auto_fixed: false, severity: 'medium' };
@@ -55,5 +58,40 @@ describe('quantumFor', () => {
     expect(quantumFor(1624, 60)).toBe(50);
     expect(quantumFor(6, 60)).toBe(1);
     expect(quantumFor(0, 60)).toBe(1);
+  });
+});
+
+// The four states a healing issue row can hold (healing.rs: VALID_STATUSES, auto_fixed written
+// with auto_fix_pending at schedule time, cleared when a retry reverts the issue to open).
+const ISSUES = [
+  { id: 'open', status: 'open', auto_fixed: false },
+  { id: 'pending', status: 'auto_fix_pending', auto_fixed: true },
+  { id: 'by-hand', status: 'resolved', auto_fixed: false },
+  { id: 'auto', status: 'resolved', auto_fixed: true },
+];
+
+describe('isOpenIssue / isAutoFixedIssue', () => {
+  it('open is every unresolved issue, a pending retry included', () => {
+    expect(ISSUES.filter(isOpenIssue).map((i) => i.id)).toEqual(['open', 'pending']);
+  });
+  it('auto-fixed is only a confirmed fix, never a pending retry or a hand resolve', () => {
+    expect(ISSUES.filter(isAutoFixedIssue).map((i) => i.id)).toEqual(['auto']);
+  });
+});
+
+describe('useHealingPanelState filters', () => {
+  const rows: PersonaHealingIssue[] = ISSUES.map((i) => ({
+    ...i, persona_id: 'p1', execution_id: null, title: i.id, description: '', is_circuit_breaker: false,
+    severity: 'medium', category: 'config', suggested_fix: null, created_at: '2026-10-01T10:00:00Z', resolved_at: null, source: null,
+  }));
+  const params = { healingIssues: rows, triggerHealing: async () => null, selectedPersonaId: null, personas: [], fetchHealingTimeline: () => {} };
+
+  it('counts and lists Open and Auto-fixed with the same predicates as the card', () => {
+    const { result } = renderHook(() => useHealingPanelState(params));
+    expect(result.current.issueCounts).toEqual({ all: 4, open: 2, autoFixed: 1 });
+    act(() => result.current.setIssueFilter('open'));
+    expect(result.current.sortedFilteredIssues.map((i) => i.id)).toEqual(['open', 'pending']);
+    act(() => result.current.setIssueFilter('auto-fixed'));
+    expect(result.current.sortedFilteredIssues.map((i) => i.id)).toEqual(['auto']);
   });
 });

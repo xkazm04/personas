@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
+import { isAutoFixedIssue, isOpenIssue } from './issueModel';
 
 interface UseHealingPanelStateParams {
   healingIssues: PersonaHealingIssue[];
@@ -58,18 +59,22 @@ export function useHealingPanelState({
   }, [healingViewMode, selectedPersonaId, personas, fetchHealingTimeline]);
 
   const { issueCounts, sortedFilteredIssues } = useMemo(() => {
+    // Open and Auto-fixed through issueModel, the same predicates the layer-1 card and the
+    // section summary count with. `!auto_fixed` used to be "open", which put every issue an
+    // operator resolved by hand under Open and every still-pending retry under Auto-fixed.
     let open = 0, autoFixed = 0;
     for (const i of healingIssues) {
-      if (i.auto_fixed) autoFixed++;
-      else open++;
+      if (isOpenIssue(i)) open++;
+      else if (isAutoFixedIssue(i)) autoFixed++;
     }
     const counts = { all: healingIssues.length, open, autoFixed };
     const filtered = issueFilter === 'all' ? healingIssues
-      : issueFilter === 'open' ? healingIssues.filter(i => !i.auto_fixed)
-      : healingIssues.filter(i => i.auto_fixed);
+      : issueFilter === 'open' ? healingIssues.filter(isOpenIssue)
+      : healingIssues.filter(isAutoFixedIssue);
     const severityOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
     const sorted = [...filtered].sort((a, b) => {
-      if (a.auto_fixed !== b.auto_fixed) return a.auto_fixed ? 1 : -1;
+      const ao = isOpenIssue(a), bo = isOpenIssue(b);
+      if (ao !== bo) return ao ? -1 : 1;
       return (severityOrder[a.severity] ?? 99) - (severityOrder[b.severity] ?? 99);
     });
     return { issueCounts: counts, sortedFilteredIssues: sorted };

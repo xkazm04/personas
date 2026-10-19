@@ -18,7 +18,7 @@ import { useSystemTraces } from '@/hooks/execution/useSystemTrace';
 import { useOverviewStore } from '@/stores/overviewStore';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 import type { AthenaHealth } from '@/lib/bindings/AthenaHealth';
-import { issueState } from '../libs/issueModel';
+import { isAutoFixedIssue, isOpenIssue } from '../libs/issueModel';
 import { HealingIssueSummary } from './HealingIssueSummary';
 import { latencyTone } from '../libs/latencyTone';
 import { worstErrorRate, type ToolPerformance } from '../libs/useToolPerformance';
@@ -91,8 +91,8 @@ function HealthCard({ issues, loading, failed, ...s }: Shell & { issues: Persona
     let open = 0;
     let fixed = 0;
     for (const i of issues) {
-      const st = issueState(i);
-      if (st === 'fixed' || st === 'resolved') fixed += 1; else open += 1;
+      if (isOpenIssue(i)) open += 1;
+      else if (isAutoFixedIssue(i)) fixed += 1;
     }
     return { open, fixed };
   }, [issues]);
