@@ -4,6 +4,7 @@ import type { AuthUser, AuthStateResponse } from "@/api/auth/auth";
 import { clearCryptoCache } from "@/lib/utils/platform/crypto";
 import { getActiveTranslations } from "@/i18n/useTranslation";
 import { errMsg } from "./storeTypes";
+import { silentCatch } from "@/lib/silentCatch";
 
 // Re-export so existing consumers can still import from authStore
 export type { AuthUser, AuthStateResponse };
@@ -62,7 +63,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
         loginTimeoutId = null;
         const s = useAuthStore.getState();
         if (s.isLoading && !s.isAuthenticated) {
-          void invoke("clear_pending_oauth");
+          void invoke("clear_pending_oauth").catch(silentCatch("authStore:clear_pending_oauth"));
           set({
             isLoading: false,
             error: getActiveTranslations().auth.login_timed_out,
@@ -71,7 +72,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
       }, 120_000);
     } catch (err) {
       clearLoginTimeout();
-      void invoke("clear_pending_oauth");
+      void invoke("clear_pending_oauth").catch(silentCatch("authStore:clear_pending_oauth"));
       set({ isLoading: false, error: errMsg(err, "Login failed") });
     }
   },
