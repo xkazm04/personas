@@ -25,7 +25,8 @@ export function FilterChips({
   componentFilter?: string[];
   onComponentFilterChange?: (components: string[]) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const removeLabel = (label: string) => tx(t.templates.search.remove_filter_aria, { label });
   const activeCategoryMeta = selectedCategory ? getCategoryMeta(selectedCategory) : null;
   const ActiveCategoryIcon = activeCategoryMeta?.icon ?? null;
 
@@ -51,9 +52,10 @@ export function FilterChips({
           <button
             type="button"
             onClick={() => onCategoryFilterChange([])}
+            aria-label={removeLabel(activeCategoryMeta.label)}
             className="ml-0.5 hover:text-white transition-colors"
           >
-            <X className="w-3 h-3" />
+            <X className="w-3 h-3" aria-hidden="true" />
           </button>
         </span>
       )}
@@ -74,9 +76,10 @@ export function FilterChips({
                 <button
                   type="button"
                   onClick={() => onConnectorFilterChange(connectorFilter.filter((c) => c !== name))}
+                  aria-label={removeLabel(meta.label)}
                   className="ml-0.5 hover:text-white transition-colors"
                 >
-                  <X className="w-3 h-3" />
+                  <X className="w-3 h-3" aria-hidden="true" />
                 </button>
               </span>
             );
@@ -103,9 +106,10 @@ export function FilterChips({
                 <button
                   type="button"
                   onClick={() => onComponentFilterChange(componentFilter.filter((c) => c !== key))}
+                  aria-label={removeLabel(cat.label)}
                   className="ml-0.5 hover:text-white transition-colors"
                 >
-                  <X className="w-3 h-3" />
+                  <X className="w-3 h-3" aria-hidden="true" />
                 </button>
               </span>
             );

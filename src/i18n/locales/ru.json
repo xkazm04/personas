@@ -21091,6 +21091,7 @@
       "backfill_tools": "Заполнить инструменты",
       "clear_all": "Сбросить всё",
       "clear_search_aria": "Очистить поиск",
+      "remove_filter_aria": "Удалить фильтр «{label}»",
       "comfortable_view": "Удобный вид",
       "compact_view": "Компактный вид",
       "components_label": "Компоненты",

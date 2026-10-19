@@ -29,7 +29,7 @@ function SearchChipInputImpl({
   autocompletePrefix, autocompleteQuery,
   aiSearchMode, aiSearchLoading, onAiSearchSubmit, availableCategories,
 }: SearchChipInputProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [activeDescendant, setActiveDescendant] = useState<string | undefined>(undefined);
   // Focusing an empty input opens the same chip groups the prefix DSL reaches,
   // so category / difficulty / setup are pickable without knowing the syntax.
@@ -77,7 +77,7 @@ function SearchChipInputImpl({
             {Icon && <Icon className="w-3 h-3" style={{ color: chipColor }} />}
             {chip.label}
             <button type="button" onClick={() => removeChip(i)}
-              aria-label={`Remove ${chip.label} filter`}
+              aria-label={tx(t.templates.search.remove_filter_aria, { label: chip.label })}
               className="ml-0.5 p-0.5 hover:text-white transition-colors rounded-full hover:bg-white/10">
               <X className="w-2.5 h-2.5" aria-hidden="true" />
             </button>

@@ -1159,6 +1159,7 @@
     "backfill_tools": "ツールをバックフィル",
     "clear_all": "すべてクリア",
     "clear_search_aria": "検索をクリア",
+    "remove_filter_aria": "{label} フィルターを削除",
     "comfortable_view": "ゆったりビュー",
     "compact_view": "コンパクトビュー",
     "components_label": "コンポーネント",

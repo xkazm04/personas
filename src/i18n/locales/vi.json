@@ -21091,6 +21091,7 @@
       "backfill_tools": "Bổ sung công cụ",
       "clear_all": "Xóa tất cả",
       "clear_search_aria": "Xóa tìm kiếm",
+      "remove_filter_aria": "Xóa bộ lọc {label}",
       "comfortable_view": "Chế độ thoải mái",
       "compact_view": "Chế độ nhỏ gọn",
       "components_label": "Thành phần",

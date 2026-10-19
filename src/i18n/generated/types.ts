@@ -11500,6 +11500,7 @@ export type Translations = {
       coverage_drafts: string;
       search_suggestions_aria: string;
       clear_search_aria: string;
+      remove_filter_aria: string;
       search_with_ai_aria: string;
       density_filter_aria: string;
     };

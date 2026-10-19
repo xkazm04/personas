@@ -21091,6 +21091,7 @@
       "backfill_tools": "Tools nachfüllen",
       "clear_all": "Alle löschen",
       "clear_search_aria": "Suche löschen",
+      "remove_filter_aria": "Filter {label} entfernen",
       "comfortable_view": "Komfortable Ansicht",
       "compact_view": "Kompakte Ansicht",
       "components_label": "Komponenten",

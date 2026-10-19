@@ -21091,6 +21091,7 @@
       "backfill_tools": "回填工具",
       "clear_all": "清除全部",
       "clear_search_aria": "清除搜索",
+      "remove_filter_aria": "移除筛选条件 {label}",
       "comfortable_view": "舒适视图",
       "compact_view": "紧凑视图",
       "components_label": "组件",

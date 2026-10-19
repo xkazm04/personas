@@ -11494,6 +11494,7 @@
       "coverage_drafts": "Drafts",
       "search_suggestions_aria": "Search suggestions",
       "clear_search_aria": "Clear search",
+      "remove_filter_aria": "Remove {label} filter",
       "search_with_ai_aria": "Search with AI",
       "density_filter_aria": "Layout density"
     },

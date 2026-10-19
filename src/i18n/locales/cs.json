@@ -21091,6 +21091,7 @@
       "backfill_tools": "Doplnit nástroje",
       "clear_all": "Vymazat vše",
       "clear_search_aria": "Vymazat vyhledávání",
+      "remove_filter_aria": "Odebrat filtr {label}",
       "comfortable_view": "Pohodlné zobrazení",
       "compact_view": "Kompaktní zobrazení",
       "components_label": "Komponenty",

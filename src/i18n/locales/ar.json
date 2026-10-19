@@ -21091,6 +21091,7 @@
       "backfill_tools": "تعبئة الأدوات",
       "clear_all": "مسح الكل",
       "clear_search_aria": "مسح البحث",
+      "remove_filter_aria": "إزالة عامل التصفية {label}",
       "comfortable_view": "عرض مريح",
       "compact_view": "عرض مضغوط",
       "components_label": "المكوّنات",

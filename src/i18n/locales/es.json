@@ -21091,6 +21091,7 @@
       "backfill_tools": "Completar Herramientas",
       "clear_all": "Limpiar todo",
       "clear_search_aria": "Limpiar búsqueda",
+      "remove_filter_aria": "Quitar el filtro {label}",
       "comfortable_view": "Vista cómoda",
       "compact_view": "Vista compacta",
       "components_label": "Componentes",

@@ -21091,6 +21091,7 @@
       "backfill_tools": "Backfill alat",
       "clear_all": "Hapus semua",
       "clear_search_aria": "Bersihkan pencarian",
+      "remove_filter_aria": "Hapus filter {label}",
       "comfortable_view": "Tampilan nyaman",
       "compact_view": "Tampilan ringkas",
       "components_label": "Komponen",

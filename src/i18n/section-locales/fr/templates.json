@@ -1159,6 +1159,7 @@
     "backfill_tools": "Remplissage rétroactif des outils",
     "clear_all": "Tout effacer",
     "clear_search_aria": "Effacer la recherche",
+    "remove_filter_aria": "Retirer le filtre {label}",
     "comfortable_view": "Vue confortable",
     "compact_view": "Vue compacte",
     "components_label": "Composants",

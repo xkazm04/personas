@@ -1159,6 +1159,7 @@
     "backfill_tools": "도구 백필",
     "clear_all": "전체 초기화",
     "clear_search_aria": "검색 지우기",
+    "remove_filter_aria": "{label} 필터 제거",
     "comfortable_view": "편안한 뷰",
     "compact_view": "컴팩트 뷰",
     "components_label": "컴포넌트",
