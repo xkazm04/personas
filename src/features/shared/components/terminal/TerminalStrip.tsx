@@ -82,14 +82,15 @@ export function TerminalStrip({
 
         {/* Copy log */}
         {!isRunning && lines.length > 0 && (
-          <CopyButton text={logText} tooltip="Copy log" iconSize="w-3 h-3" className="p-1 shrink-0" />
+          <CopyButton text={logText} tooltip={t.agents.executions.copy_log_tooltip} iconSize="w-3 h-3" className="p-1 shrink-0" />
         )}
 
         {/* Expand / collapse */}
-        <Tooltip content={isExpanded ? 'Collapse log' : 'Expand log'}>
+        <Tooltip content={isExpanded ? t.execution.collapse : t.execution.expand}>
           <button
             type="button"
-            title={isExpanded ? 'Collapse log' : 'Expand log'}
+            aria-label={isExpanded ? t.execution.collapse : t.execution.expand}
+            aria-expanded={isExpanded}
             onClick={onToggle}
             className="p-1 rounded hover:bg-secondary/40 text-foreground hover:text-muted-foreground/60 transition-colors shrink-0"
           >
@@ -99,10 +100,10 @@ export function TerminalStrip({
 
         {/* Clear / dismiss */}
         {!isRunning && onClear && lines.length > 0 && (
-          <Tooltip content="Dismiss">
+          <Tooltip content={t.shared.terminal_extra.dismiss}>
             <button
               type="button"
-              title={t.shared.terminal_extra.dismiss}
+              aria-label={t.shared.terminal_extra.dismiss}
               onClick={onClear}
               className="p-1 rounded hover:bg-secondary/40 text-foreground hover:text-muted-foreground/60 transition-colors shrink-0"
             >
