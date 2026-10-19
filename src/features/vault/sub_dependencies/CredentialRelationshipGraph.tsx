@@ -65,16 +65,6 @@ export function CredentialRelationshipGraph() {
     [credentials, connectorDefinitions, personas, credentialEvents, dependentsMap],
   );
 
-  const filteredNodes = useMemo(
-    () => filterKind === 'all' ? graph.nodes : graph.nodes.filter((n) => n.kind === filterKind),
-    [graph.nodes, filterKind],
-  );
-
-  const filteredEdges = useMemo(() => {
-    const nodeIds = new Set(filteredNodes.map((n) => n.id));
-    return graph.edges.filter((e) => nodeIds.has(e.source) || nodeIds.has(e.target));
-  }, [filteredNodes, graph.edges]);
-
   const selectedBlast = useMemo(() => {
     if (!selectedNodeId) return null;
     const node = graph.nodes.find((n) => n.id === selectedNodeId);
@@ -151,11 +141,9 @@ export function CredentialRelationshipGraph() {
       <GraphCanvas
         nodes={graph.nodes}
         edges={graph.edges}
-        filteredNodes={filteredNodes}
-        filteredEdges={filteredEdges}
+        counts={stats}
         filterKind={filterKind}
         selectedNodeId={selectedNodeId}
-        credentials={credentials}
         onNodeClick={handleNodeClick}
         detailPanel={detailPanel}
       />

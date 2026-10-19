@@ -5,16 +5,16 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { GraphNode, GraphEdge, GraphNodeKind } from './credentialGraph';
 import { getKindLabels, KIND_ICONS } from './graphConstants';
 import { computeGraphLayout, clusterCenters, KIND_ORDER, type NodePos } from './graphLayout';
-import type { CredentialMetadata } from '@/lib/types/types';
 
 interface GraphCanvasProps {
   nodes: GraphNode[];
   edges: GraphEdge[];
-  filteredNodes: GraphNode[];
-  filteredEdges: GraphEdge[];
+  /** Node count per kind, computed once by the parent (it feeds the filter
+   *  tiles too). Filtering is drawn by dimming, so the canvas always gets the
+   *  whole graph. */
+  counts: Record<GraphNodeKind, number>;
   filterKind: GraphNodeKind | 'all';
   selectedNodeId: string | null;
-  credentials: CredentialMetadata[];
   onNodeClick: (nodeId: string) => void;
   detailPanel: React.ReactNode;
 }
@@ -32,7 +32,7 @@ function truncate(s: string, n: number): string {
   return s.length > n ? `${s.slice(0, n - 1)}…` : s;
 }
 
-export function GraphCanvas({ nodes, edges, filterKind, selectedNodeId, onNodeClick, detailPanel }: GraphCanvasProps) {
+export function GraphCanvas({ nodes, edges, counts, filterKind, selectedNodeId, onNodeClick, detailPanel }: GraphCanvasProps) {
   const { t, tx } = useTranslation();
   const dep = t.vault.dependencies;
   const kindLabels = getKindLabels(t);
@@ -73,12 +73,6 @@ export function GraphCanvas({ nodes, edges, filterKind, selectedNodeId, onNodeCl
     adjacency.get(hovered)?.forEach((id) => set.add(id));
     return set;
   }, [hovered, adjacency]);
-
-  const counts = useMemo(() => {
-    const c: Record<GraphNodeKind, number> = { credential: 0, agent: 0, event: 0 };
-    for (const n of nodes) c[n.kind]++;
-    return c;
-  }, [nodes]);
 
   const nodeDimmed = (node: GraphNode): boolean => {
     if (neighborIds) return !neighborIds.has(node.id);
