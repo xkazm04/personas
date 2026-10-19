@@ -5,10 +5,10 @@
 // on LLM calls in the last 30 days. Both are cheap reads the wall shouldn't block
 // on, so we render the base cell immediately and fill the sub-label in when the
 // spend resolves. One fetch per project per session (module-level cache).
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 import { Numeric } from '@/features/shared/components/display/Numeric';
-import { createModuleCache } from '@/hooks/utility/data/useModuleSubscription';
+import { createModuleCache, useModuleSubscription } from '@/hooks/utility/data/useModuleSubscription';
 import { useVaultStore } from '@/stores/vaultStore';
 import { silentCatch } from '@/lib/silentCatch';
 import {
@@ -32,7 +32,13 @@ import { useImprove } from './improve/ImproveContext';
  *  `createModuleCache` gives it a `maxSize` eviction door — the compound
  *  `slug|credId` key space grows with every (project, connector) pair
  *  visited this session, and a bare `Map` had no reaper (see
- *  docs/concepts/golden-paths/shared-fetch-cache.md §12 item 10). */
+ *  docs/concepts/golden-paths/shared-fetch-cache.md §12 item 10).
+ *
+ *  Cells READ the value through `useModuleSubscription`, not a local copy: the
+ *  in-flight dedupe below lets only the first cell for a key start the fetch,
+ *  and a second cell (the Atlas and the Wall both mount one, StrictMode mounts
+ *  every effect twice) used to return early with no way to hear the answer, so
+ *  it never showed the spend. `set` + `notify` now reaches every reader. */
 const spendCache = createModuleCache<string, number | null>({ maxSize: 32 });
 const inFlight = new Set<string>();
 
@@ -44,23 +50,16 @@ export function LlmTrackingCell({ slug, label }: { slug: string; label: string |
   const cred = credId ? credentials.find((c) => c.id === credId) ?? null : null;
   const cacheKey = `${slug}|${credId ?? ''}`;
 
-  const [spend, setSpend] = useState<number | null | undefined>(() => spendCache.get(cacheKey));
+  const spend = useModuleSubscription(spendCache, cacheKey);
 
   useEffect(() => {
     if (!credId || !cred || !hasLiveAdapter(cred.serviceType)) return;
-    if (spendCache.has(cacheKey)) {
-      setSpend(spendCache.get(cacheKey));
-      return;
-    }
-    if (inFlight.has(cacheKey)) return;
+    if (spendCache.has(cacheKey) || inFlight.has(cacheKey)) return;
     inFlight.add(cacheKey);
-    let cancelled = false;
     void fetchLlmPinpoints(cred.serviceType, credId, '30d')
       .then((rows) => {
         const total = rows.reduce((sum, r) => sum + r.totalCostUsd, 0);
-        const value = rows.length > 0 ? total : null;
-        spendCache.set(cacheKey, value);
-        if (!cancelled) setSpend(value);
+        spendCache.set(cacheKey, rows.length > 0 ? total : null);
       })
       .catch((e) => {
         // Telemetry being down must never degrade the wall — cache the miss so
@@ -68,10 +67,10 @@ export function LlmTrackingCell({ slug, label }: { slug: string; label: string |
         spendCache.set(cacheKey, null);
         silentCatch('LlmTrackingCell:fetchLlmPinpoints')(e);
       })
-      .finally(() => inFlight.delete(cacheKey));
-    return () => {
-      cancelled = true;
-    };
+      .finally(() => {
+        inFlight.delete(cacheKey);
+        spendCache.notify();
+      });
   }, [cacheKey, credId, cred]);
 
   // The bound connector's own name beats the passport's generic "connected".
