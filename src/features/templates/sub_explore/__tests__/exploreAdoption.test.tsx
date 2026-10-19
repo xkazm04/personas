@@ -20,6 +20,29 @@ vi.mock('@/api/overview/reviews', () => ({
   listDesignReviewsPaginated: (...a: unknown[]) => listDesignReviewsPaginated(...a),
 }));
 
+// The catalog the seed rows were written from: English canonical names plus a
+// per-language overlay (seedTemplates.ts writes the overlay name for the
+// active language into test_case_name).
+const language = { current: 'en' };
+vi.mock('@/stores/i18nStore', () => ({
+  useI18nStore: { getState: () => ({ language: language.current }) },
+}));
+vi.mock('@/lib/personas/templates/templateCatalog', () => ({
+  getTemplateCatalog: async () => [{ id: 'email-digest', name: 'Email Morning Digest' }],
+  getLocalizedTemplateCatalog: async (lang: string) => [
+    { id: 'email-digest', name: lang === 'cs' ? 'Ranní souhrn e-mailů' : 'Email Morning Digest' },
+  ],
+}));
+
+/** The backend's search: SQLite `LIKE '%term%'` over test_case_name / instruction. */
+function seededRows(rows: PersonaDesignReview[]) {
+  listDesignReviewsPaginated.mockImplementation(async ({ search }: { search: string }) => {
+    const like = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    const items = rows.filter((r) => like.test(r.test_case_name) || like.test(r.instruction ?? ''));
+    return { items, total: items.length };
+  });
+}
+
 const addToast = vi.fn();
 vi.mock('@/stores/toastStore', () => ({
   useToastStore: (sel: (s: Record<string, unknown>) => unknown) => sel({ addToast }),
@@ -69,6 +92,7 @@ describe('Explore pick opens adoption', () => {
     adoptProps.length = 0;
     addToast.mockClear();
     listDesignReviewsPaginated.mockReset();
+    language.current = 'en';
   });
 
   it('opens the wizard on the review whose test_case_id is the picked catalog id', async () => {
@@ -84,15 +108,34 @@ describe('Explore pick opens adoption', () => {
     expect(addToast).not.toHaveBeenCalled();
   });
 
-  it('resolves a recipe through its source template', async () => {
-    listDesignReviewsPaginated.mockResolvedValue({ items: [review()], total: 1 });
+  it('resolves a recipe through its source template, searching by the template name', async () => {
+    // The recipe title appears in neither the seed's name nor its instruction.
+    seededRows([review({ instruction: 'Summarise the inbox every morning' })]);
     await openDomain();
     fireEvent.click(screen.getByTestId('pick-recipe-linked'));
 
     await waitFor(() => expect(screen.getByTestId('adopt-wizard')).toBeTruthy());
-    expect(listDesignReviewsPaginated).toHaveBeenCalledWith(
-      expect.objectContaining({ search: 'Digest at 8am' }),
-    );
+    expect(screen.getByTestId('adopt-wizard').getAttribute('data-review')).toBe('review-1');
+    expect(addToast).not.toHaveBeenCalled();
+  });
+
+  it('finds a template whose seed row was written in the active language', async () => {
+    language.current = 'cs';
+    seededRows([review({ test_case_name: 'Ranní souhrn e-mailů', instruction: 'Shrne doručenou poštu' })]);
+    await openDomain();
+    fireEvent.click(screen.getByTestId('pick-template'));
+
+    await waitFor(() => expect(screen.getByTestId('adopt-wizard')).toBeTruthy());
+    expect(addToast).not.toHaveBeenCalled();
+  });
+
+  it('still finds an English seed row after a language switch', async () => {
+    language.current = 'cs';
+    seededRows([review()]);
+    await openDomain();
+    fireEvent.click(screen.getByTestId('pick-recipe-linked'));
+
+    await waitFor(() => expect(screen.getByTestId('adopt-wizard')).toBeTruthy());
   });
 
   it('says so instead of opening when the catalog id has no seeded review', async () => {
