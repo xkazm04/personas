@@ -212,7 +212,7 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
   ],
   'src-tauri/core/src/models/review.rs': [
     'CreateManualReviewInput', 'CreateReviewMessageInput', 'PersonaDesignPattern',
-    'PersonaDesignReview', 'PersonaManualReview', 'ReviewMessage', 'UpdateManualReviewInput',
+    'PersonaDesignReview', 'PersonaManualReview', 'ReviewMessage',
   ],
   'src-tauri/core/src/models/rotation.rs': [
     'CreateRotationPolicyInput', 'CredentialRotationEntry', 'CredentialRotationPolicy',

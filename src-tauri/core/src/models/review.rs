@@ -160,14 +160,6 @@ pub struct LearnedMemoryRef {
     pub persona_id: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
-pub struct UpdateManualReviewInput {
-    pub status: Option<ManualReviewStatus>,
-    pub reviewer_notes: Option<String>,
-    pub resolved_at: Option<String>,
-}
-
 // ============================================================================
 // Review Messages (conversational thread per review)
 // ============================================================================
