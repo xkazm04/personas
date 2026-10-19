@@ -840,13 +840,33 @@ async fn delete_persona_cascade(client: &SyncClient, persona_id: &str) -> Result
     Ok(())
 }
 
-/// Process persona tombstones since the cursor: cascade-delete each in the
-/// cloud, then advance the cursor only if all deletes succeeded (so a failure
-/// is retried next pass). Fault-isolated like a table — returns its outcome.
+/// How far behind wall-clock the tombstone pass reads. A tombstone is stamped
+/// `datetime('now')` (whole seconds) inside the delete's transaction and is
+/// only visible once that commits, so the newest second is never complete when
+/// the pass reads it.
+const TOMBSTONE_SETTLE: chrono::Duration = chrono::Duration::seconds(30);
+
+/// The upper bound of one tombstone read: every tombstone stamped at or before
+/// it has committed by the time the pass reads, so the cursor can move there
+/// without passing a row the read did not see.
+fn tombstone_horizon(now: chrono::DateTime<chrono::Utc>) -> String {
+    (now - TOMBSTONE_SETTLE).to_rfc3339()
+}
+
+/// Process persona tombstones in `(cursor, horizon]`: cascade-delete each in
+/// the cloud, then advance the cursor to the horizon only if all deletes
+/// succeeded (so a failure is retried next pass). Fault-isolated like a table
+/// — returns its outcome.
+///
+/// The cursor used to be the pass's wall-clock start, read BEFORE the fetch: a
+/// delete committed after the fetch but stamped in the same second (or any
+/// earlier one) fell at or below the new cursor and was never read again, so
+/// the persona stayed in the cloud forever. The cursor write's failure was also
+/// dropped (`let _ =`), so a pass reported clean while its watermark was lost.
 async fn process_tombstones(pool: &DbPool, client: &SyncClient) -> LastTable {
     let cursor_prev = cursor::get_cursor(pool, "tombstones", false);
-    let tick_start = now_rfc3339();
-    let tombstones = match rows::fetch_tombstones(pool, &cursor_prev) {
+    let horizon = tombstone_horizon(chrono::Utc::now());
+    let tombstones = match rows::fetch_tombstones(pool, &cursor_prev, &horizon) {
         Ok(t) => t,
         Err(e) => {
             return LastTable {
@@ -872,11 +892,17 @@ async fn process_tombstones(pool: &DbPool, client: &SyncClient) -> LastTable {
         deleted += 1;
     }
 
-    let _ = cursor::set_cursor(pool, "tombstones", &tick_start);
+    let error = match cursor::set_cursor(pool, "tombstones", &horizon) {
+        Ok(()) => None,
+        Err(e) => {
+            tracing::warn!(error = %e, "cloud sync: tombstone cursor not saved");
+            Some(e.to_string())
+        }
+    };
     LastTable {
         remote: "deletes".into(),
         rows: deleted,
-        error: None,
+        error,
     }
 }
 
@@ -1167,6 +1193,22 @@ mod tests {
         assert_eq!(
             notes_due(Some((first, due)), late),
             (t0, t0 + NOTES_MAX_WAIT)
+        );
+    }
+
+    /// The tombstone horizon trails the clock by the settle window and stays
+    /// RFC3339, so the `datetime()` comparison in `TOMBSTONES_SQL` reads it.
+    #[test]
+    fn the_tombstone_horizon_trails_the_clock() {
+        let now = chrono::DateTime::parse_from_rfc3339("2026-10-20T12:00:05.100Z")
+            .expect("fixed instant")
+            .with_timezone(&chrono::Utc);
+        let h = tombstone_horizon(now);
+        let parsed = chrono::DateTime::parse_from_rfc3339(&h).expect("RFC3339");
+        assert_eq!(now - parsed.with_timezone(&chrono::Utc), TOMBSTONE_SETTLE);
+        assert!(
+            rows::TOMBSTONES_SQL.contains("<= datetime(?2)"),
+            "bounded read"
         );
     }
 
