@@ -29,6 +29,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { GoalEditorModal } from '../../projects/development/goals/GoalEditorModal';
 import { GoalStatusBadge } from '../../projects/development/goals/GoalStatusBadge';
 import { kpiInstantMs, kpiTrack } from './kpiMath';
+import { NOT_DIRECTLY_MEASURED } from './kpiSample';
 import { silentCatch } from '@/lib/silentCatch';
 import { KpiSection } from './KpiDetailSection';
 
@@ -49,7 +50,11 @@ interface Outcome {
 function outcomeFor(goal: DevGoal, kpi: DevKpi, measurements: DevKpiMeasurement[]): Outcome | null {
   if (!goal.completed_at) return null;
   const cT = ts(goal.completed_at);
+  // Only a real observation can say whether shipping the goal moved the line:
+  // a simulated or AI-composed row is a prediction, and the detail modal hands
+  // this panel every channel.
   const pts = measurements
+    .filter((m) => (m.env ?? 'production') === 'production' && !NOT_DIRECTLY_MEASURED.has(m.source))
     .map((m) => ({ t: ts(m.measured_at), v: m.value }))
     .filter((p) => Number.isFinite(p.t))
     .sort((a, b) => a.t - b.t);
