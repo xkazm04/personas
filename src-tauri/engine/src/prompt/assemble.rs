@@ -59,6 +59,25 @@ fn episode_run_line(ep: &EpisodeExcerpt) -> Option<String> {
     }
 }
 
+/// Longest `_event` field rendered inline (an id, a type, a drive path).
+const MAX_EVENT_META_CHARS: usize = 256;
+
+/// An `_event` field as it is rendered INLINE in trusted structure: inside
+/// backticks under `## Triggering Event` / `## Event Handlers`, above the
+/// canary, unfenced. `event_type` and `source_type` pass a charset check at
+/// the events door, but `source_id` does not (a drive event carries the
+/// user's file path there), and other paths build `_event` too. Control
+/// characters (newlines) and backticks would let the value end the code span
+/// or start a heading of its own, so they are dropped, and the length is
+/// clamped. Nothing else changes: a legitimate id or path renders as before.
+fn event_meta_token(value: &str) -> String {
+    value
+        .chars()
+        .filter(|c| !c.is_control() && *c != '`')
+        .take(MAX_EVENT_META_CHARS)
+        .collect()
+}
+
 /// Resolved connector usage hint scoped to a single execution.
 ///
 /// `name` is the stable connector slug (e.g. "github") used by
@@ -282,24 +301,33 @@ pub fn assemble_prompt_with_skills(
             .unwrap_or("");
         if !event_type.is_empty() {
             prompt.push_str("## Triggering Event\n");
-            prompt.push_str(&format!("- **event_type**: `{event_type}`\n"));
+            prompt.push_str(&format!(
+                "- **event_type**: `{}`\n",
+                event_meta_token(event_type)
+            ));
             if let Some(st) = event_meta.get("source_type").and_then(|v| v.as_str()) {
                 if !st.is_empty() {
-                    prompt.push_str(&format!("- **source_type**: `{st}`\n"));
+                    prompt.push_str(&format!("- **source_type**: `{}`\n", event_meta_token(st)));
                 }
             }
             if let Some(spid) = event_meta.get("source_persona_id").and_then(|v| v.as_str()) {
                 if !spid.is_empty() {
-                    prompt.push_str(&format!("- **source_persona_id**: `{spid}`\n"));
+                    prompt.push_str(&format!(
+                        "- **source_persona_id**: `{}`\n",
+                        event_meta_token(spid)
+                    ));
                 }
             } else if let Some(sid) = event_meta.get("source_id").and_then(|v| v.as_str()) {
                 if !sid.is_empty() {
-                    prompt.push_str(&format!("- **source_id**: `{sid}`\n"));
+                    prompt.push_str(&format!("- **source_id**: `{}`\n", event_meta_token(sid)));
                 }
             }
             if let Some(tpid) = event_meta.get("target_persona_id").and_then(|v| v.as_str()) {
                 if !tpid.is_empty() {
-                    prompt.push_str(&format!("- **target_persona_id**: `{tpid}`\n"));
+                    prompt.push_str(&format!(
+                        "- **target_persona_id**: `{}`\n",
+                        event_meta_token(tpid)
+                    ));
                 }
             }
             prompt.push_str(
@@ -438,13 +466,15 @@ pub fn assemble_prompt_with_skills(
                     if let Some(handler) = handlers.get(et).and_then(|v| v.as_str()) {
                         let substituted = replace_variables(handler, persona, input_data);
                         prompt.push_str(&format!(
-                            "**Currently firing: `{et}`**\n\n{substituted}\n\n",
+                            "**Currently firing: `{}`**\n\n{substituted}\n\n",
+                            event_meta_token(et),
                         ));
                     } else if let Some(default) = handlers.get("_default").and_then(|v| v.as_str())
                     {
                         let substituted = replace_variables(default, persona, input_data);
                         prompt.push_str(&format!(
-                            "**Currently firing: `{et}` (no specific handler, using _default)**\n\n{substituted}\n\n",
+                            "**Currently firing: `{}` (no specific handler, using _default)**\n\n{substituted}\n\n",
+                            event_meta_token(et),
                         ));
                     }
                 }
