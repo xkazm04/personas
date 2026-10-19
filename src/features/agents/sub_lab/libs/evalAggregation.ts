@@ -1,4 +1,4 @@
-import { compositeScore } from '@/lib/eval/evalFramework';
+import { compositeScoreFromRow } from '@/lib/eval/evalFramework';
 import type { LabEvalResult } from '@/lib/bindings/LabEvalResult';
 
 export interface CellAggregate {
@@ -40,6 +40,18 @@ export interface EvalGridData {
   grid: Record<string, Record<string, CellAggregate>>;
   winnerId: string | null;
 }
+
+/** Mean of the scored samples, or null when no sample carried the score. */
+const meanOrNull = (sum: number, n: number): number | null => (n > 0 ? sum / n : null);
+
+/**
+ * Weighted composite renormalised over the dimensions that were measured, as
+ * the backend's own `renormalized_composite` and the per-row report cells do.
+ * A dimension no sample scored (sandbox cells never carry tool accuracy) must
+ * not enter at weight 0.4 as a zero. 0 only when nothing was scored at all.
+ */
+const compositeOf = (ta: number | null, oq: number | null, pc: number | null): number =>
+  compositeScoreFromRow(ta, oq, pc) ?? 0;
 
 interface VersionAccum {
   versionNumber: number;
@@ -165,19 +177,18 @@ export function buildEvalGridData(results: LabEvalResult[]): EvalGridData {
   const aggs: VersionAggregate[] = versionOrder.map((vId) => {
     const a = versionAccums.get(vId)!;
     const n = a.count || 1;
-    const avgTA = a.toolAccuracyCount > 0 ? a.toolAccuracy / a.toolAccuracyCount : 0;
-    const avgOQ = a.outputQualityCount > 0 ? a.outputQuality / a.outputQualityCount : 0;
-    const avgPC = a.protocolComplianceCount > 0 ? a.protocolCompliance / a.protocolComplianceCount : 0;
+    const avgTA = meanOrNull(a.toolAccuracy, a.toolAccuracyCount);
+    const avgOQ = meanOrNull(a.outputQuality, a.outputQualityCount);
+    const avgPC = meanOrNull(a.protocolCompliance, a.protocolComplianceCount);
     return {
       versionId: vId,
       versionNumber: a.versionNumber,
-      avgToolAccuracy: Math.round(avgTA),
-      avgOutputQuality: Math.round(avgOQ),
-      avgProtocolCompliance: Math.round(avgPC),
-      // composite = round(avgTA * 0.4 + avgOQ * 0.4 + avgPC * 0.2). Sorts the
-      // version leaderboard below — see `compositeScore` JSDoc for the canonical
-      // formula and the golden test that pins it.
-      compositeScore: compositeScore(avgTA, avgOQ, avgPC),
+      avgToolAccuracy: Math.round(avgTA ?? 0),
+      avgOutputQuality: Math.round(avgOQ ?? 0),
+      avgProtocolCompliance: Math.round(avgPC ?? 0),
+      // Sorts the version leaderboard below; renormalised over the measured
+      // dimensions (see `compositeOf`).
+      compositeScore: compositeOf(avgTA, avgOQ, avgPC),
       totalCost: a.totalCost,
       totalTokens: a.totalTokens,
       avgDuration: Math.round(a.totalDuration / n),
@@ -198,15 +209,15 @@ export function buildEvalGridData(results: LabEvalResult[]): EvalGridData {
     grid[vId] = {};
     for (const mId of Object.keys(cellAccums[vId]!)) {
       const c = cellAccums[vId]![mId]!;
-      const avgTA = c.toolAccuracyCount > 0 ? Math.round(c.toolAccuracy / c.toolAccuracyCount) : 0;
-      const avgOQ = c.outputQualityCount > 0 ? Math.round(c.outputQuality / c.outputQualityCount) : 0;
-      const avgPC = c.protocolComplianceCount > 0 ? Math.round(c.protocolCompliance / c.protocolComplianceCount) : 0;
+      const avgTA = meanOrNull(c.toolAccuracy, c.toolAccuracyCount);
+      const avgOQ = meanOrNull(c.outputQuality, c.outputQualityCount);
+      const avgPC = meanOrNull(c.protocolCompliance, c.protocolComplianceCount);
       const n = c.count || 1;
       grid[vId]![mId] = {
-        avgToolAccuracy: avgTA,
-        avgOutputQuality: avgOQ,
-        avgProtocolCompliance: avgPC,
-        compositeScore: compositeScore(avgTA, avgOQ, avgPC),
+        avgToolAccuracy: Math.round(avgTA ?? 0),
+        avgOutputQuality: Math.round(avgOQ ?? 0),
+        avgProtocolCompliance: Math.round(avgPC ?? 0),
+        compositeScore: compositeOf(avgTA, avgOQ, avgPC),
         totalCost: c.totalCost,
         totalTokens: c.totalTokens,
         avgDuration: Math.round(c.totalDuration / n),

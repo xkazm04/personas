@@ -161,4 +161,15 @@ describe('buildEvalGridData', () => {
     expect(out.grid['v1']!['haiku']!.avgToolAccuracy).toBe(80); // (60+100)/2
     expect(out.grid['v1']!['haiku']!.count).toBe(2);
   });
+  it('renormalises the composite over measured dimensions: a sandbox version is not sunk by its absent tool accuracy', () => {
+    const out = buildEvalGridData([
+      // Sandbox cells carry no tool accuracy (scoring.rs stores NULL).
+      evalResult('sandbox', 1, { ta: null, oq: 80, pc: 80 }),
+      evalResult('full', 2, { ta: 70, oq: 70, pc: 70 }),
+    ]);
+    const sandbox = out.versionAggs.find((a) => a.versionId === 'sandbox')!;
+    expect(sandbox.compositeScore).toBe(80);
+    expect(out.grid['sandbox']!['haiku']!.compositeScore).toBe(80);
+    expect(out.winnerId).toBe('sandbox');
+  });
 });
