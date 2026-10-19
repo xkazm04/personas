@@ -17,9 +17,16 @@ vi.mock('@/api/devTools/devTools', () => ({
 const busEmit = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/storeBus', () => ({ storeBus: { emit: busEmit } }));
 
-vi.mock('@/api/devTools/kpis', () => ({}));
+vi.mock('@/api/devTools/kpis', () => ({
+  recordKpiMeasurement: vi.fn(),
+  evaluateKpi: vi.fn(),
+  scanKpis: vi.fn(),
+  evaluateDueKpis: vi.fn(),
+  createKpi: vi.fn(),
+}));
 
 import * as devApi from '@/api/devTools/devTools';
+import * as kpiApi from '@/api/devTools/kpis';
 import { createDevToolsProjectSlice, type DevToolsProjectSlice } from '../devToolsProjectSlice';
 
 const resolveMock = vi.mocked(devApi.resolveGoalAcceptance);
@@ -130,4 +137,31 @@ describe('devToolsProjectSlice — goal edits report failure to the editor', () 
     await h.get().updateGoal('g1', { title: 'After' });
     expect(h.get().goals[0]!.title).toBe('After');
   });
+});
+
+describe('devToolsProjectSlice — KPI actions leave the toast to their caller', () => {
+  // Every caller of these five actions (useKpiDetail, KPIsPage, ContextDetail)
+  // already toastCatch-es with a localized message. A store toast on top made
+  // two toasts per failure, one of them the English fallback.
+  beforeEach(() => { vi.clearAllMocks(); });
+
+  // reportError dedupes identical toast text inside a cooldown, so each case
+  // rejects with its own text or only the first store toast would be counted.
+  const appError = (n: string) => ({ error: `${n}: KPI k1 has no measure config`, kind: 'validation' });
+  const cases: Array<[string, (h: ReturnType<typeof harness>) => Promise<unknown>, () => void]> = [
+    ['recordKpiMeasurement', (h) => h.get().recordKpiMeasurement('k1', 3), () => vi.mocked(kpiApi.recordKpiMeasurement).mockRejectedValueOnce(appError('recordKpiMeasurement'))],
+    ['evaluateKpi', (h) => h.get().evaluateKpi('k1'), () => vi.mocked(kpiApi.evaluateKpi).mockRejectedValueOnce(appError('evaluateKpi'))],
+    ['scanKpis', (h) => h.get().scanKpis('p1'), () => vi.mocked(kpiApi.scanKpis).mockRejectedValueOnce(appError('scanKpis'))],
+    ['evaluateDueKpis', (h) => h.get().evaluateDueKpis('p1'), () => vi.mocked(kpiApi.evaluateDueKpis).mockRejectedValueOnce(appError('evaluateDueKpis'))],
+    ['createKpi', (h) => h.get().createKpi({ projectId: 'p1', name: 'n' } as never), () => vi.mocked(kpiApi.createKpi).mockRejectedValueOnce(appError('createKpi'))],
+  ];
+
+  for (const [name, run, arrange] of cases) {
+    it(`${name} rejects with zero store toasts`, async () => {
+      const h = harness();
+      arrange();
+      await expect(run(h)).rejects.toEqual(appError(name));
+      expect(await storeToasts()).toBe(0);
+    });
+  }
 });

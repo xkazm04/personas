@@ -97,6 +97,13 @@ export interface DevToolsProjectSlice {
   evaluateDueKpis: (projectId: string) => Promise<Record<string, number | string>>;
 }
 
+/**
+ * Report options for an action that rethrows to callers which ALL toast their
+ * own localized message (useKpiDetail, KPIsPage, ContextDetail). A store toast
+ * on top made two toasts per failure, one of them the English fallback.
+ */
+const CALLER_TOASTS = { severity: "state" } as const;
+
 export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevToolsProjectSlice> = (set, get) => ({
   // -- Projects state --------------------------------------------------
   projects: [],
@@ -438,7 +445,7 @@ export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevTo
       set((state) => ({ kpis: [kpi, ...state.kpis], error: null }));
       return kpi;
     } catch (err) {
-      reportError(err, "Failed to create KPI", set);
+      reportError(err, "Failed to create KPI", set, CALLER_TOASTS);
       throw err;
     }
   },
@@ -482,7 +489,7 @@ export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevTo
         error: null,
       }));
     } catch (err) {
-      reportError(err, "Failed to record KPI measurement", set);
+      reportError(err, "Failed to record KPI measurement", set, CALLER_TOASTS);
       throw err;
     }
   },
@@ -492,7 +499,7 @@ export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevTo
       const r = await kpiApi.scanKpis(projectId);
       return r.scan_id;
     } catch (err) {
-      reportError(err, "Failed to start KPI scan", set);
+      reportError(err, "Failed to start KPI scan", set, CALLER_TOASTS);
       throw err;
     }
   },
@@ -508,7 +515,7 @@ export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevTo
         error: null,
       }));
     } catch (err) {
-      reportError(err, "Failed to measure KPI", set);
+      reportError(err, "Failed to measure KPI", set, CALLER_TOASTS);
       throw err;
     }
   },
@@ -519,7 +526,7 @@ export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevTo
       await get().fetchKpis(projectId);
       return results;
     } catch (err) {
-      reportError(err, "Failed to evaluate due KPIs", set);
+      reportError(err, "Failed to evaluate due KPIs", set, CALLER_TOASTS);
       throw err;
     }
   },
