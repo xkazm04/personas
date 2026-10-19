@@ -10,6 +10,7 @@ import type { PersonaEvent } from '@/lib/types/types';
 import { useTranslation } from '@/i18n/useTranslation';
 import { EventReasonNote } from '../lib/EventReasonView';
 import { classifyEventReason } from '../lib/eventReason';
+import { eventStatusLabel } from './eventStatusLabels';
 
 interface EventDetailModalProps {
   event: PersonaEvent;
@@ -59,7 +60,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
               </h3>
               {/* Improvement #4: Status badge with color coding */}
               <span className={`inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-full ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
-                {event.status}
+                {eventStatusLabel(t, event.status)}
               </span>
             </div>
             {/* Improvement #6: Relative + absolute timestamp */}

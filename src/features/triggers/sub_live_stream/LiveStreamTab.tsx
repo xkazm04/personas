@@ -11,6 +11,7 @@ import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import type { PersonaEvent } from '@/lib/types/types';
 import { useEventBusListener } from '@/hooks/realtime/useEventBusListener';
 import { EventDetailModal } from './EventDetailModal';
+import { EVENT_STATUS_ORDER, eventStatusLabel, eventStatusLabels } from './eventStatusLabels';
 import { EventTypeChip } from './EventTypeChip';
 import { EventReasonChip } from '../lib/EventReasonView';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -63,13 +64,10 @@ export function LiveStreamTab() {
   const { t } = useTranslation();
   const reduceMotion = useReducedMotion();
 
+  const statusLabels = eventStatusLabels(t);
   const STATUS_OPTIONS = [
     { value: 'all', label: t.triggers.all_statuses },
-    { value: 'completed', label: t.execution_status.completed },
-    { value: 'failed', label: t.execution_status.failed },
-    { value: 'pending', label: t.status_tokens.event.pending },
-    { value: 'processing', label: t.status_tokens.event.processing },
-    { value: 'skipped', label: t.triggers.live_status_skipped },
+    ...EVENT_STATUS_ORDER.map((status) => ({ value: status, label: statusLabels[status] })),
   ];
   const personas = useAgentStore((s) => s.personas);
 
@@ -349,7 +347,7 @@ export function LiveStreamTab() {
         const statusStyle = EVENT_STATUS_COLORS[event.status] ?? defaultStatus;
         return (
           <span className={`inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-card ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
-            {event.status}
+            {eventStatusLabel(t, event.status)}
           </span>
         );
       },
