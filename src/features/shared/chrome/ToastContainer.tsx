@@ -182,8 +182,11 @@ function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss
     // holding (never fetched, still in flight, or past its 100-row window):
     // the resolve then refused with "no persona_id available" while the toast
     // dismissed itself as if it had worked.
-    await useOverviewStore.getState().resolveHealingIssue(toast.issueId, toast.personaId);
-    onDismiss(toast.id);
+    // A failed resolve keeps the toast (the slice already reported why), so the
+    // issue is not dismissed from view while it stays open.
+    if (await useOverviewStore.getState().resolveHealingIssue(toast.issueId, toast.personaId)) {
+      onDismiss(toast.id);
+    }
   }, [toast.issueId, toast.personaId, toast.id, onDismiss]);
 
   return (

@@ -1,6 +1,10 @@
 /**
  * What a caller of the healing slice can learn about a failure.
  *
+ * - `resolveHealingIssue` catches and toasts, so `await` alone always looked
+ *   like success: HealingIssueModal showed "Issue resolved" and the healing
+ *   toast dismissed itself while the issue stayed open. It now resolves a
+ *   boolean the callers check.
  * - The HEALING_ISSUE_UPDATED subscriber drops an issue only on a definitive
  *   "not found". IPC rejects with a serialized AppError OBJECT, which the old
  *   `String(err)` fallback rendered as "[object Object]", so the matcher never
@@ -52,6 +56,30 @@ beforeEach(() => {
   updateHealingStatus.mockReset();
   getHealingIssue.mockReset();
   listener = null;
+});
+
+describe('resolveHealingIssue', () => {
+  it('resolves true and drops the issue when the backend records it', async () => {
+    updateHealingStatus.mockResolvedValue(undefined);
+    const store = makeStore();
+    store.setState({ healingIssues: [ISSUE] });
+    await expect(store.getState().resolveHealingIssue('issue-1')).resolves.toBe(true);
+    expect(store.getState().healingIssues).toHaveLength(0);
+  });
+
+  it('resolves false and keeps the issue when the backend refuses', async () => {
+    updateHealingStatus.mockRejectedValue({ error: 'Database error: locked', kind: 'Database' });
+    const store = makeStore();
+    store.setState({ healingIssues: [ISSUE] });
+    await expect(store.getState().resolveHealingIssue('issue-1')).resolves.toBe(false);
+    expect(store.getState().healingIssues).toHaveLength(1);
+  });
+
+  it('resolves false when no persona id can be found', async () => {
+    const store = makeStore();
+    await expect(store.getState().resolveHealingIssue('unknown')).resolves.toBe(false);
+    expect(updateHealingStatus).not.toHaveBeenCalled();
+  });
 });
 
 describe('subscribeHealingEvents', () => {

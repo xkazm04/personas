@@ -24,7 +24,10 @@ export interface HealingSlice {
   // Actions
   fetchHealingIssues: () => Promise<void>;
   triggerHealing: (personaId?: string) => Promise<{ failures_analyzed: number; issues_created: number; auto_fixed: number } | null>;
-  resolveHealingIssue: (id: string, personaId?: string) => Promise<void>;
+  /** Resolves `true` once the backend recorded the resolution, `false` when it
+   *  refused or failed (already reported). A caller that shows success must
+   *  check it: the failure is caught here, so an `await` alone cannot tell. */
+  resolveHealingIssue: (id: string, personaId?: string) => Promise<boolean>;
   fetchRetryChain: (executionId: string, personaId?: string) => Promise<void>;
   fetchHealingTimeline: (personaId: string) => Promise<void>;
   subscribeHealingEvents: () => Promise<UnlistenFn>;
@@ -70,13 +73,15 @@ export const createHealingSlice: StateCreator<OverviewStore, [], [], HealingSlic
       ?? null;
     if (!callerPersonaId) {
       reportError(new Error("Cannot resolve healing issue: no persona_id available"), "Failed to resolve healing issue", set);
-      return;
+      return false;
     }
     try {
       await updateHealingStatus(id, "resolved", callerPersonaId);
       set((state) => ({ healingIssues: state.healingIssues.filter((i) => i.id !== id) }));
+      return true;
     } catch (err) {
       reportError(err, "Failed to resolve healing issue", set);
+      return false;
     }
   },
 

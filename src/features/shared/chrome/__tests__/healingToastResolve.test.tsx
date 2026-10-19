@@ -10,7 +10,7 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 (globalThis as Record<string, unknown>).__IPC_TOKEN = 'test-token';
 
 const { resolveHealingIssue } = vi.hoisted(() => ({
-  resolveHealingIssue: vi.fn((_id: string, _personaId?: string) => Promise.resolve()),
+  resolveHealingIssue: vi.fn((_id: string, _personaId?: string) => Promise.resolve(true)),
 }));
 vi.mock('@/stores/overviewStore', () => ({
   useOverviewStore: { getState: () => ({ resolveHealingIssue }) },
@@ -46,5 +46,24 @@ describe('healing toast Resolve', () => {
     render(<ToastContainer />);
     await act(async () => { fireEvent.click(screen.getByText('Resolve')); });
     expect(resolveHealingIssue).toHaveBeenCalledWith('issue-7', 'persona-3');
+    expect(useToastStore.getState().toasts.some((x) => x.id === 'healing-issue-7')).toBe(false);
+  });
+
+  it('keeps the toast when the resolve failed', async () => {
+    resolveHealingIssue.mockResolvedValueOnce(false);
+    act(() => {
+      useToastStore.getState().addHealingToast({
+        issueId: 'issue-8',
+        personaId: 'persona-3',
+        title: 'Budget loop',
+        severity: 'high',
+        personaName: 'Scout',
+        suggestedFix: null,
+      });
+    });
+    render(<ToastContainer />);
+    await act(async () => { fireEvent.click(screen.getByText('Resolve')); });
+    expect(resolveHealingIssue).toHaveBeenCalledWith('issue-8', 'persona-3');
+    expect(useToastStore.getState().toasts.some((x) => x.id === 'healing-issue-8')).toBe(true);
   });
 });
