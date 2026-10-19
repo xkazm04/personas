@@ -31,9 +31,20 @@ export async function companionSetEngineSettings(settings: AthenaEngineSettings)
   return invoke<void>('companion_set_engine_settings', { settings });
 }
 
+/**
+ * The backend runs its three probes (claude --version, grok --version, grok
+ * models) one after another, each under a 10 s PROBE_TIMEOUT
+ * (`companion/session/launch.rs`). At 30 s the wrapper gave up exactly when an
+ * all-hung probe pass would answer, turning per-engine reasons into a bare
+ * failure. Pinned by `__tests__/probeEnginesTimeoutParity.test.ts`.
+ */
+const PROBE_ENGINES_IPC_TIMEOUT_MS = 45_000;
+
 /** Probe each engine (claude, grok) through the spawn door the real turn uses. */
 export async function companionProbeEngines(): Promise<EngineAvailability[]> {
-  return invoke<EngineAvailability[]>('companion_probe_engines', {}, { timeoutMs: 30_000 });
+  return invoke<EngineAvailability[]>('companion_probe_engines', {}, {
+    timeoutMs: PROBE_ENGINES_IPC_TIMEOUT_MS,
+  });
 }
 
 /**
