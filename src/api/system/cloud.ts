@@ -12,6 +12,7 @@ import type { CloudTrigger } from "@/lib/bindings/CloudTrigger";
 import type { CloudTriggerFiring } from "@/lib/bindings/CloudTriggerFiring";
 import type { CloudDiagnostics } from "@/lib/bindings/CloudDiagnostics";
 import type { SmeeRelay } from "@/lib/bindings/SmeeRelay";
+import type { CloudWebhookRelayStatus } from "@/lib/bindings/CloudWebhookRelayStatus";
 
 export type { CloudConfig } from "@/lib/bindings/CloudConfig";
 export type { SmeeRelay } from "@/lib/bindings/SmeeRelay";
@@ -164,6 +165,15 @@ export const cloudListTriggerFirings = (triggerId: string, limit?: number) =>
     triggerId,
     limit: limit,
   });
+
+/**
+ * Current cloud webhook relay counters. The snapshot half of the relay's
+ * snapshot-plus-stream: `cloud-webhook-relay-status` only fires on a relay
+ * tick (15 s active, 60 s idle), so a view that mounts between ticks reads
+ * this first.
+ */
+export const cloudWebhookRelayStatus = () =>
+  invoke<CloudWebhookRelayStatus>("cloud_webhook_relay_status");
 
 // ============================================================================
 // Smee Relay Management
