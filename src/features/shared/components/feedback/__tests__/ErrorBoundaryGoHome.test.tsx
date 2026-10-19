@@ -14,7 +14,7 @@ describe('ErrorBoundary "Go to dashboard"', () => {
   it('is not offered when the host cannot navigate (it would only re-render the crash)', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     render(
-      <ErrorBoundary name="Section">
+      <ErrorBoundary key="section" name="Section">
         <Boom />
       </ErrorBoundary>,
     );
