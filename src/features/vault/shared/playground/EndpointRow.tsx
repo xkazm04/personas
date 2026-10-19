@@ -4,6 +4,7 @@ import type { ApiEndpoint } from '@/api/system/apiProxy';
 import type { EndpointTestResult } from './useApiTestRunner';
 import { useTranslation } from '@/i18n/useTranslation';
 import { prettyJson } from './prettyJson';
+import { Button } from '@/features/shared/components/buttons';
 
 // -- Method badge colors ------------------------------------------
 
@@ -33,44 +34,52 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
 
   return (
     <div className="border border-primary/8 rounded-card overflow-hidden transition-colors hover:border-primary/15">
-      {/* Compact row */}
-      <div
-        role="row"
-        className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-secondary/20 transition-colors cursor-pointer"
-        onClick={onToggle}
-      >
-        {isExpanded ? (
-          <ChevronDown className="w-3 h-3 text-foreground shrink-0" />
-        ) : (
-          <ChevronRight className="w-3 h-3 text-foreground shrink-0" />
-        )}
-
-        <span
-          className={`px-2 py-0.5 rounded typo-heading uppercase border ${methodStyle} shrink-0 min-w-[52px] text-center`}
+      {/* Compact row: the expander is a real button (it was a clickable
+          div with role="row", unreachable by keyboard and silent about its
+          state), and Try sits beside it rather than inside it. */}
+      <div className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-secondary/20 transition-colors">
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={isExpanded}
+          className="flex-1 min-w-0 flex items-center gap-2.5 text-left"
         >
-          {endpoint.method.toUpperCase()}
-        </span>
+          {isExpanded ? (
+            <ChevronDown className="w-3 h-3 text-foreground shrink-0" />
+          ) : (
+            <ChevronRight className="w-3 h-3 text-foreground shrink-0" />
+          )}
 
-        <span className="typo-code text-foreground truncate flex-1">
-          {endpoint.path}
-        </span>
-
-        {endpoint.summary && (
-          <span className="typo-body text-foreground truncate max-w-[240px] hidden sm:inline">
-            {endpoint.summary}
+          <span
+            className={`px-2 py-0.5 rounded typo-heading uppercase border ${methodStyle} shrink-0 min-w-[52px] text-center`}
+          >
+            {endpoint.method.toUpperCase()}
           </span>
-        )}
+
+          <span className="typo-code text-foreground truncate flex-1">
+            {endpoint.path}
+          </span>
+
+          {endpoint.summary && (
+            <span className="typo-body text-foreground truncate max-w-[240px] hidden sm:inline">
+              {endpoint.summary}
+            </span>
+          )}
+        </button>
 
         {/* Test result badge */}
         {testResult && <TestBadge result={testResult} skipLabel={t.common.skip} />}
 
-        <button
-          onClick={(e) => { e.stopPropagation(); onTry(); }}
-          className="flex items-center gap-1 px-2 py-1 rounded typo-body bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors shrink-0"
+        <Button
+          variant="accent"
+          tone="success"
+          size="xs"
+          icon={<Play className="w-2.5 h-2.5" />}
+          onClick={onTry}
+          className="shrink-0"
         >
-          <Play className="w-2.5 h-2.5" />
           {t.vault.playground.try_button}
-        </button>
+        </Button>
       </div>
 
       {/* Expanded detail */}
