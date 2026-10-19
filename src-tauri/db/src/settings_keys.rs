@@ -2160,6 +2160,20 @@ pub fn deprecated_replacement(key: &str) -> Option<&'static str> {
         AUTONOMOUS_MESSAGE_TRIAGE | AUTONOMOUS_REVIEW_TRIAGE => {
             Some("implied by companion_autonomous_mode (the master autonomy toggle); this key is no longer read")
         }
+        // Allow-listed and validated, never read: the watcher debounces on its
+        // compiled `DEBOUNCE_MS` (engine/src/file_watcher.rs).
+        FILE_WATCHER_DEBOUNCE_MS => {
+            Some("nothing reads this key: the file watcher uses its compiled 500 ms debounce")
+        }
+        // Its only reader, the Obsidian semantic lint command, was deleted
+        // with the unreachable IPC commands (4bf1845d70).
+        SEMANTIC_LINT_MODEL => {
+            Some("nothing reads this key: the semantic vault lint that consumed it was removed")
+        }
+        // The Activation Quest pill that read and wrote it was descoped (459f86e082).
+        ONBOARDING_QUEST_STATE => {
+            Some("nothing reads this key: the onboarding quest pill was descoped")
+        }
         _ => None,
     }
 }
@@ -2508,6 +2522,11 @@ mod tests {
     fn deprecated_keys_flagged_live_keys_not() {
         assert!(deprecated_replacement(AUTONOMOUS_MESSAGE_TRIAGE).is_some());
         assert!(deprecated_replacement(AUTONOMOUS_REVIEW_TRIAGE).is_some());
+        // Allow-listed keys whose last reader is gone: a write to one must
+        // surface the stale writer, not persist silently.
+        assert!(deprecated_replacement(FILE_WATCHER_DEBOUNCE_MS).is_some());
+        assert!(deprecated_replacement(SEMANTIC_LINT_MODEL).is_some());
+        assert!(deprecated_replacement(ONBOARDING_QUEST_STATE).is_some());
         // Live keys and the still-active high-severity opt-in are NOT deprecated.
         assert!(deprecated_replacement(COMPANION_AUTONOMOUS_MODE).is_none());
         assert!(deprecated_replacement(AUTONOMOUS_REVIEW_TRIAGE_HIGH).is_none());
