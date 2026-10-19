@@ -17,6 +17,7 @@ import type { PartialPersonaUpdate, PersonaOperation } from "@/api/agents/person
 import { buildUpdateInput, operationToPartial } from "@/api/agents/personas";
 import { listExecutionsSummary } from "@/api/agents/executions";
 import type { PersonaHealth } from "@/lib/bindings/PersonaHealth";
+import type { DeletePersonaResult } from "@/lib/bindings/DeletePersonaResult";
 import { createPersona, deletePersona, duplicatePersona, getPersonaDetail, getPersonaSummaries, listPersonas, setPersonaEnabled, updatePersona } from "@/api/agents/personas";
 import { trackRecentAgent, removeRecentAgent } from "@/hooks/agents/useRecentAgents";
 import { classifyUnknownError, categoryLabel } from "@/lib/errorTaxonomy";
@@ -505,62 +506,69 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
 
   deletePersona: async (id) => {
     set({ error: null });
+    let result: DeletePersonaResult;
     try {
-      const result = await deletePersona(id);
-      removeRecentAgent(id);
-      // Invalidate any in-flight fetchDetail for this persona so it can't
-      // resurrect the deleted persona in state after the delete completes.
-      if (get().selectedPersonaId === id) ++fetchDetailSeq;
-
-      // 2026-05-04 — also drop any in-flight build sessions tied to this
-      // persona so the sidebar's "Draft Builds" list stays in sync. Pre-fix
-      // a deleted persona would still appear in the drafts list as a ghost
-      // session row until the user refreshed the app. We delegate to the
-      // matrixBuildSlice helper so the next-active-session pick + scalar
-      // mirror updates run correctly.
-      const sessionIdsToRemove: string[] = [];
-      for (const [sid, sess] of Object.entries(get().buildSessions)) {
-        if (sess.personaId === id) sessionIdsToRemove.push(sid);
-      }
-      for (const sid of sessionIdsToRemove) {
-        get().removeBuildSession(sid);
-      }
-
-      set((state) => {
-        const nextPersonas = state.personas.filter((p) => p.id !== id);
-        const nextId = state.selectedPersonaId === id ? null : state.selectedPersonaId;
-        const nextCache = { ...state.detailCache };
-        delete nextCache[id];
-        return {
-          personas: nextPersonas,
-          selectedPersonaId: nextId,
-          detailCache: nextCache,
-          selectedPersona: deriveSelectedPersona(nextPersonas, nextId, nextCache),
-        };
-      });
-
-      // Show a summary toast when executions were affected during deletion
-      const stopped = result.executionsCancelled + result.executionsForceCancelled;
-      if (stopped > 0 || result.cancelFailures.length > 0) {
-        const parts: string[] = ["Deleted."];
-        if (stopped > 0) {
-          parts.push(`${stopped} running execution${stopped !== 1 ? "s were" : " was"} force-stopped.`);
-        }
-        if (result.cancelFailures.length > 0) {
-          parts.push(`${result.cancelFailures.length} execution${result.cancelFailures.length !== 1 ? "s" : ""} could not be cancelled.`);
-        }
-        if (result.timeoutReached) {
-          parts.push("Drain timeout was reached.");
-        }
-        const hasFailures = result.cancelFailures.length > 0;
-        storeBus.emit('toast', {
-          message: parts.join(" "),
-          type: hasFailures ? "error" : "success",
-          duration: hasFailures ? 8000 : 5000,
-        });
-      }
+      result = await deletePersona(id);
     } catch (err) {
-      reportError(err, "Failed to delete persona", set);
+      // REJECT, do not resolve. Every caller awaits this and treats a
+      // resolution as "deleted": the editor closed its confirm dialog and reset
+      // the build session, the overview dropped the row from its selection.
+      // State only - the callers that face the user toast it themselves, and
+      // the cleanup callers silence it on purpose.
+      reportError(err, "Failed to delete persona", set, { severity: "state" });
+      throw err;
+    }
+    removeRecentAgent(id);
+    // Invalidate any in-flight fetchDetail for this persona so it can't
+    // resurrect the deleted persona in state after the delete completes.
+    if (get().selectedPersonaId === id) ++fetchDetailSeq;
+
+    // 2026-05-04 — also drop any in-flight build sessions tied to this
+    // persona so the sidebar's "Draft Builds" list stays in sync. Pre-fix
+    // a deleted persona would still appear in the drafts list as a ghost
+    // session row until the user refreshed the app. We delegate to the
+    // matrixBuildSlice helper so the next-active-session pick + scalar
+    // mirror updates run correctly.
+    const sessionIdsToRemove: string[] = [];
+    for (const [sid, sess] of Object.entries(get().buildSessions)) {
+      if (sess.personaId === id) sessionIdsToRemove.push(sid);
+    }
+    for (const sid of sessionIdsToRemove) {
+      get().removeBuildSession(sid);
+    }
+
+    set((state) => {
+      const nextPersonas = state.personas.filter((p) => p.id !== id);
+      const nextId = state.selectedPersonaId === id ? null : state.selectedPersonaId;
+      const nextCache = { ...state.detailCache };
+      delete nextCache[id];
+      return {
+        personas: nextPersonas,
+        selectedPersonaId: nextId,
+        detailCache: nextCache,
+        selectedPersona: deriveSelectedPersona(nextPersonas, nextId, nextCache),
+      };
+    });
+
+    // Show a summary toast when executions were affected during deletion
+    const stopped = result.executionsCancelled + result.executionsForceCancelled;
+    if (stopped > 0 || result.cancelFailures.length > 0) {
+      const parts: string[] = ["Deleted."];
+      if (stopped > 0) {
+        parts.push(`${stopped} running execution${stopped !== 1 ? "s were" : " was"} force-stopped.`);
+      }
+      if (result.cancelFailures.length > 0) {
+        parts.push(`${result.cancelFailures.length} execution${result.cancelFailures.length !== 1 ? "s" : ""} could not be cancelled.`);
+      }
+      if (result.timeoutReached) {
+        parts.push("Drain timeout was reached.");
+      }
+      const hasFailures = result.cancelFailures.length > 0;
+      storeBus.emit('toast', {
+        message: parts.join(" "),
+        type: hasFailures ? "error" : "success",
+        duration: hasFailures ? 8000 : 5000,
+      });
     }
   },
 

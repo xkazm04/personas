@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { useAgentStore } from "../agentStore";
 import { useSystemStore } from "../systemStore";
-import { mockInvokeMap, resetInvokeMocks } from "@/test/tauriMock";
+import { mockInvokeMap, mockedTauriInvoke, resetInvokeMocks } from "@/test/tauriMock";
 import type { Persona } from "@/lib/bindings/Persona";
 
 // Helper to create a minimal Persona fixture
@@ -192,7 +192,7 @@ describe("personaStore", () => {
 
   describe("deletePersona", () => {
     it("removes persona from list and clears selection if selected", async () => {
-      mockInvokeMap({ delete_persona: undefined });
+      mockInvokeMap({ delete_persona: DELETED });
 
       useAgentStore.setState({
         personas: [makePersona({ id: "p-1" }), makePersona({ id: "p-2" })],
@@ -209,5 +209,37 @@ describe("personaStore", () => {
       expect(state.selectedPersonaId).toBeNull();
       expect(state.selectedPersona).toBeNull();
     });
+
+    // Every caller awaits the action and reads a resolution as "deleted": the
+    // editor closes its confirm dialog and resets the build session, the
+    // overview drops the row from its selection. A swallowed failure lied to
+    // all of them.
+    it("rejects when the backend refuses, and keeps the persona", async () => {
+      mockedTauriInvoke.mockImplementation(async (cmd: string) => {
+        if (cmd === "delete_persona") throw { error: "persona is locked", kind: "Validation" };
+        return undefined;
+      });
+      useAgentStore.setState({
+        personas: [makePersona({ id: "p-1" })],
+        selectedPersonaId: "p-1",
+      });
+
+      await expect(useAgentStore.getState().deletePersona("p-1")).rejects.toMatchObject({
+        error: "persona is locked",
+      });
+
+      const state = useAgentStore.getState();
+      expect(state.personas.map((p) => p.id)).toEqual(["p-1"]);
+      expect(state.selectedPersonaId).toBe("p-1");
+      expect(state.error).toBe("persona is locked");
+    });
   });
 });
+
+const DELETED = {
+  deleted: true,
+  executionsCancelled: 0,
+  executionsForceCancelled: 0,
+  timeoutReached: false,
+  cancelFailures: [],
+};
