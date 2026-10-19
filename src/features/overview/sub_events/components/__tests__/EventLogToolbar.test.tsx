@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { preloadSectionsAsync } from '@/i18n/useTranslation';
 import type { SavedView } from '@/lib/bindings/SavedView';
 import { EventLogToolbar } from '../EventLogToolbar';
@@ -32,5 +32,19 @@ describe('EventLogToolbar saved-view chips', () => {
     fireEvent.click(screen.getByRole('button', { name: /delete view: failures/i }));
     expect(props.removeSavedView).toHaveBeenCalledWith('v1');
     expect(props.applySavedView).not.toHaveBeenCalled();
+  });
+});
+
+describe('EventLogToolbar save view', () => {
+  it('keeps the name field open when the save did not land', async () => {
+    const saveCurrentView = vi.fn(() => Promise.resolve(false));
+    renderToolbar({ hasActiveFilters: true, saveCurrentView });
+    fireEvent.click(screen.getByRole('button', { name: /save view/i }));
+    const input = screen.getByPlaceholderText(/name/i) as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'My view' } });
+    fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    expect(saveCurrentView).toHaveBeenCalledWith('My view');
+    expect((screen.getByPlaceholderText(/name/i) as HTMLInputElement).value).toBe('My view');
   });
 });

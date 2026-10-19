@@ -13,7 +13,8 @@ export interface EventLogToolbarProps {
   clearFilters: () => void;
   savedViews: SavedView[];
   activeViewId: string | null;
-  saveCurrentView: (name: string) => Promise<void>;
+  /** Resolves true once the view exists; false keeps the name field open. */
+  saveCurrentView: (name: string) => Promise<boolean>;
   applySavedView: (view: SavedView) => void;
   removeSavedView: (viewId: string) => void;
 }
@@ -35,7 +36,7 @@ export function EventLogToolbar({
 
   const handleSaveView = async () => {
     if (!viewName.trim()) return;
-    await saveCurrentView(viewName.trim());
+    if (!(await saveCurrentView(viewName.trim()))) return;
     setViewName('');
     setShowSaveDialog(false);
   };
