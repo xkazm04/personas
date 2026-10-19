@@ -38,9 +38,6 @@ export interface Workspace {
   adoptDefaultSkills: boolean;
 }
 
-/** Sentinel for "no workspace selected" — every project is in scope. */
-export const ALL_WORKSPACES = null;
-
 export const WORKSPACE_COLORS = [
   '#6366f1', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#a78bfa', '#ec4899', '#64748b',
 ] as const;
@@ -342,10 +339,4 @@ export function scopeProjects<T extends { id: string }>(
   if (!ws) return projects;
   const set = new Set(ws.projectIds);
   return projects.filter((p) => set.has(p.id));
-}
-
-/** Projects assigned to no workspace at all. */
-export function unassignedProjects<T extends { id: string }>(projects: T[], workspaces: Workspace[]): T[] {
-  const assigned = new Set(workspaces.flatMap((w) => w.projectIds));
-  return projects.filter((p) => !assigned.has(p.id));
 }
