@@ -4,7 +4,7 @@
 //! ring buffer and rate limiting (max 10 messages/second per peer).
 
 use std::collections::{HashMap, VecDeque};
-use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU32, AtomicU64, AtomicUsize, Ordering};
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
@@ -25,6 +25,12 @@ const MAX_MESSAGES_PER_PERSONA: usize = 100;
 const MAX_INBOX_PERSONAS: usize = 256;
 /// Per-envelope payload cap, well below the 16 MB protocol frame limit.
 const MAX_AGENT_PAYLOAD_BYTES: usize = 1024 * 1024;
+/// Cap on payload bytes held across the WHOLE inbox. The two caps above bound
+/// the count of keys and messages, not their weight: 256 keys x 100 messages x
+/// 1 MB is 25.6 GB a single LAN peer could park at 10 messages a second. Like
+/// the key cap, a message that would cross this is refused rather than allowed
+/// to evict other personas' messages.
+const MAX_INBOX_BYTES: usize = 32 * 1024 * 1024;
 
 /// Rate limit: max messages per second per peer.
 const MAX_MESSAGES_PER_SECOND: u32 = 10;
@@ -92,6 +98,9 @@ pub struct MessageRouter {
     connections: Arc<ConnectionManager>,
     /// In-memory ring buffer: target_persona_id -> Vec<AgentEnvelope>
     inbox: RwLock<HashMap<String, VecDeque<AgentEnvelope>>>,
+    /// Payload bytes currently held in `inbox`. Only changed while holding the
+    /// inbox write lock, so it never disagrees with the queues.
+    inbox_bytes: AtomicUsize,
     /// Lock-free rate tracking: source_peer_id -> RateEntry
     rate_tracker: std::sync::Mutex<HashMap<String, RateEntry>>,
     /// Delivery metrics counters.
@@ -103,6 +112,7 @@ impl MessageRouter {
         Self {
             connections,
             inbox: RwLock::new(HashMap::new()),
+            inbox_bytes: AtomicUsize::new(0),
             rate_tracker: std::sync::Mutex::new(HashMap::new()),
             counters: MessagingCounters::new(),
         }
@@ -186,11 +196,33 @@ impl MessageRouter {
                 "Inbox persona-key capacity exceeded".into(),
             ));
         }
+        // A full ring evicts its own oldest message, so that one's bytes are
+        // freed by this insert; nothing else is.
+        let freed = inbox
+            .get(target)
+            .filter(|q| q.len() >= MAX_MESSAGES_PER_PERSONA)
+            .and_then(|q| q.front())
+            .map_or(0, |e| e.payload.len());
+        let held = self.inbox_bytes.load(Ordering::Relaxed);
+        if held - freed + envelope.payload.len() > MAX_INBOX_BYTES {
+            self.counters
+                .messages_dropped_buffer_full
+                .fetch_add(1, Ordering::Relaxed);
+            tracing::warn!(
+                target_persona = %target,
+                held_bytes = held,
+                "Inbox byte budget reached — message dropped"
+            );
+            return Err(AppError::RateLimited("Inbox byte capacity exceeded".into()));
+        }
         let queue = inbox.entry(target.clone()).or_insert_with(VecDeque::new);
 
         // Ring buffer: evict oldest if at capacity
         if queue.len() >= MAX_MESSAGES_PER_PERSONA {
-            queue.pop_front();
+            if let Some(evicted) = queue.pop_front() {
+                self.inbox_bytes
+                    .fetch_sub(evicted.payload.len(), Ordering::Relaxed);
+            }
             self.counters
                 .messages_dropped_buffer_full
                 .fetch_add(1, Ordering::Relaxed);
@@ -206,6 +238,8 @@ impl MessageRouter {
         self.counters
             .bytes_received
             .fetch_add(payload_bytes, Ordering::Relaxed);
+        self.inbox_bytes
+            .fetch_add(envelope.payload.len(), Ordering::Relaxed);
         queue.push_back(envelope);
         Ok(())
     }
@@ -315,5 +349,73 @@ impl MessageRouter {
         tracker.retain(|_, entry| {
             now_ms.saturating_sub(entry.window_ms.load(Ordering::Relaxed)) < 60_000
         });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn router() -> MessageRouter {
+        let pool = personas_db::init_test_db().expect("test db");
+        let transport = Arc::new(
+            super::super::transport::QuicTransport::new("LocalPeer0001".into()).expect("transport"),
+        );
+        let connections = Arc::new(ConnectionManager::new(
+            transport,
+            pool,
+            "LocalPeer0001".into(),
+            "Local".into(),
+            8,
+        ));
+        MessageRouter::new(connections)
+    }
+
+    fn envelope(target: &str, bytes: usize) -> AgentEnvelope {
+        AgentEnvelope {
+            id: uuid::Uuid::new_v4().to_string(),
+            source_persona_id: "src".into(),
+            target_persona_id: target.into(),
+            payload: vec![0u8; bytes],
+            timestamp: "2026-10-19T00:00:00Z".into(),
+        }
+    }
+
+    /// The key and per-key caps bound how MANY messages are held, not how much
+    /// they weigh. Peers spread over fresh persona keys (one peer id each, so
+    /// the per-peer rate limit never fires) fill the inbox up to the byte
+    /// budget and no further.
+    #[tokio::test]
+    async fn the_inbox_holds_at_most_its_byte_budget() {
+        let r = router();
+        let mut accepted = 0usize;
+        for i in 0..64 {
+            let peer = format!("peer-{i}");
+            let msg = envelope(&format!("persona-{i}"), MAX_AGENT_PAYLOAD_BYTES);
+            if r.store_received(&peer, msg).await.is_ok() {
+                accepted += 1;
+            }
+        }
+        assert_eq!(accepted, MAX_INBOX_BYTES / MAX_AGENT_PAYLOAD_BYTES);
+        assert_eq!(r.inbox_bytes.load(Ordering::Relaxed), MAX_INBOX_BYTES);
+        assert_eq!(r.get_metrics().messages_received, accepted as u64);
+    }
+
+    /// A full ring evicting its own oldest message frees that message's bytes,
+    /// so a persona at the budget can still receive (its queue rolls over).
+    #[tokio::test]
+    async fn a_ring_eviction_frees_its_bytes() {
+        let r = router();
+        let size = MAX_INBOX_BYTES / MAX_MESSAGES_PER_PERSONA;
+        for i in 0..(MAX_MESSAGES_PER_PERSONA + 5) {
+            r.store_received(&format!("peer-{i}"), envelope("one", size))
+                .await
+                .expect("rolls over");
+        }
+        assert_eq!(r.get_messages("one").await.len(), MAX_MESSAGES_PER_PERSONA);
+        assert_eq!(
+            r.inbox_bytes.load(Ordering::Relaxed),
+            size * MAX_MESSAGES_PER_PERSONA
+        );
     }
 }
