@@ -103,8 +103,8 @@
         }
       ],
       "baseline": {
-        "files": 114,
-        "matches": 157
+        "files": 113,
+        "matches": 156
       },
       "floor": 2500
     },
@@ -519,8 +519,8 @@
         }
       ],
       "baseline": {
-        "files": 17,
-        "matches": 22
+        "files": 16,
+        "matches": 19
       },
       "floor": 4000
     },
@@ -593,8 +593,8 @@
         }
       ],
       "baseline": {
-        "files": 244,
-        "matches": 536
+        "files": 242,
+        "matches": 531
       },
       "floor": 4000
     },
@@ -685,8 +685,8 @@
         }
       ],
       "baseline": {
-        "files": 33,
-        "matches": 56
+        "files": 32,
+        "matches": 55
       },
       "floor": 4000
     },
@@ -1209,8 +1209,8 @@
         }
       ],
       "baseline": {
-        "files": 32,
-        "matches": 46
+        "files": 31,
+        "matches": 45
       },
       "floor": 4000
     },
@@ -1313,8 +1313,8 @@
         }
       ],
       "baseline": {
-        "files": 10,
-        "matches": 10
+        "files": 9,
+        "matches": 9
       },
       "floor": 4000
     },
@@ -1359,8 +1359,8 @@
         "description": "a string interpolation closed by an English elapsed suffix and the word `ago`, or a bare `return 'just now'`. PROXY FOR the stack-free condition: the closed, universal vocabulary of elapsed time — a set every locale already has a canonical form for, including its plural rules and word order — is authored per call site in one natural language, so it can be neither translated nor made consistent with the other places that authored it. The interpolation anchor is load-bearing: it restricts matches to a LADDER RUNG (a computed count plus a unit) rather than to prose containing the word `ago`; dropping it to a bare \\bago\\b admits 11 more files of comments and sentences (measured). Measured population: 28 independent elapsed ladders exist in this repo, every one located and read — 12 hardcoded English (including lib/utils/formatters.ts:41, the SHARED one behind 100 <RelativeTime> tags and 69 direct calls), 4 unit-letter-only, 2 partly translated, 7 fully translated each with its OWN key namespace, and 3 using Intl.RelativeTimeFormat of which one passes the app language. The catalog side is the receipt: 48 rung strings across 14 namespaces, fully translated into all 13 non-English locales (611 strings for one four-rung vocabulary), spelled with 9 different placeholder names, ALREADY DRIFTED per locale (Czech `před {n}min` in plugins.fleet vs `před {minutes}m` in common.staleness), and 11 of the keys have no code consumer at all — 143 translated strings that render nowhere, invisible to check-coverage.mjs because they are present in every locale. Precision 47/47 on a full read: all 47 are English elapsed phrases. 45 of the 47 are ladder rungs whose fix is this path's; 2 (provenance.ts:78, populateDispatch.ts:124) are English sentences that happen to contain an elapsed phrase, whose fix is i18n-string-authoring.md's — recorded rather than excluded because both readings agree the string is wrong. Deliberately NOT matched: the English fallbacks behind a translated lookup (`t?.x ?? 'just now'`), because those render only when a key is missing. PRECONDITION (measured, must be re-derived per repo): this repo writes an elapsed label as a template literal ending in `ago` and its lowest rung as the literal `just now`. A repo whose ladder returns `il y a {n} min`, or spells the rung `Ns`/`Nm` with no word at all (this repo already has 4 such, and brainiac/console has 2 of 7), scores zero while the condition is present — which is why this rule is the SECOND of the two and not the first. LEGAL FIX, in order: (1) replace lib/utils/formatters.ts:41's ladder body with `new Intl.RelativeTimeFormat(activeLanguage(), { numeric: 'auto', style: 'narrow' })`, which retires 47 catalog keys across 14 locales and gets plural categories and word order right in languages nobody here speaks — LiveRoadmapStatusPill.tsx:30 is the working precedent and it also clamps the future, which 2 of these ladders fail to do (`-45s ago` at PersonaHealthDashboard.tsx:74 and StatusPageView.tsx:45); (2) then delete each local ladder in favour of <RelativeTime> or formatRelativeTime. Doing (2) first consolidates 28 English ladders into 1 English ladder, which is progress but not a fix."
       },
       "baseline": {
-        "files": 7,
-        "matches": 15
+        "files": 6,
+        "matches": 12
       },
       "floor": 4000
     },
@@ -1426,8 +1426,8 @@
         "description": "the native `title` attribute on a lowercase DOM element. PROXY FOR the stack-free condition: explanatory text is attached to a control through a channel the user agent alone renders, so it appears only on mouse hover - it is never reachable by keyboard, never appears on a touch device, cannot be dismissed, is not reliably announced by assistive technology, and is not routed through the application's own translation layer. PRECONDITION (must be re-derived per repo): this repo renders to a DOM where `title` has that user-agent behaviour AND owns a shared Tooltip primitive that is the alternative; a repo with no primitive would find this rule fires on 100% of its tooltip sites and should read that as the finding, not baseline it. Measured precision 1109/1109 (zero false positives) and recall 99.7% against a JSX-parser ground truth of 1112 on the 2026-08-14 corpus; the 3 misses are opening tags whose attribute region exceeds 1200 characters before `title=`. `iframe` is deliberately absent from the tag list: `title` on an iframe is a REQUIRED accessible name (WCAG 4.1.2), not a tooltip, so including it would gate a correct construct."
       },
       "baseline": {
-        "files": 373,
-        "matches": 683
+        "files": 371,
+        "matches": 680
       },
       "floor": 2000
     },
@@ -1856,8 +1856,8 @@
         }
       ],
       "baseline": {
-        "files": 59,
-        "matches": 87
+        "files": 54,
+        "matches": 80
       },
       "floor": 4000
     },
@@ -2122,8 +2122,8 @@
         "$comment": "Recall is deliberately partial: it cannot see a toggle whose button lives in a child component while the state lives in the parent, nor a non-button disclosure. Both are stated in the golden path rather than papered over."
       },
       "baseline": {
-        "files": 32,
-        "matches": 33
+        "files": 31,
+        "matches": 32
       },
       "floor": 2000
     },
@@ -2992,8 +2992,8 @@
         }
       ],
       "baseline": {
-        "files": 6,
-        "matches": 8
+        "files": 5,
+        "matches": 6
       },
       "floor": 3000
     },
@@ -3563,7 +3563,7 @@
       ],
       "baseline": {
         "files": 39,
-        "matches": 64
+        "matches": 63
       },
       "floor": 3000
     },
@@ -4009,6 +4009,14 @@
         {
           "path": "src/features/plugins/gitlab/components/pipelineHelpers.tsx",
           "reason": "TETHERED mirror (repo law): slugifyPersonaName mirrors slugify_persona_name in src-tauri/src/commands/infrastructure/gitlab.rs; src/features/plugins/gitlab/components/__tests__/pipelineForAgent.test.ts reads the Rust source at run time and checks the pinned names, so the two cannot drift (scan-sweep 2026-10-19, 7e2fde4cd0)"
+        },
+        {
+          "path": "src/features/plugins/dev-tools/sub_runner/PrBridge.tsx",
+          "reason": "TETHERED mirror (repo law): the PR body prints idea scores out of IDEA_SCALE_MAX, mirroring core/src/models/dev_tools.rs; src/features/plugins/dev-tools/sub_runner/__tests__/prBridgeContent.test.ts reads the Rust constant at run time, so the two cannot drift (scan-sweep 2026-10-20, f7c74322d0)"
+        },
+        {
+          "path": "src/features/plugins/dev-tools/sub_runner/__tests__/prBridgeContent.test.ts",
+          "reason": "the parity test that tethers the PrBridge.tsx mirror: its title names the Rust constant it reads, it does not declare a second copy of the rule"
         }
       ],
       "baseline": {
@@ -5168,8 +5176,8 @@
         "description": "A control's busy state rendered as <LoadingSpinner/> in the consequent of a ternary whose alternate is another element — almost always an icon. feedback/LoadingSpinner renders null (it emits only an sr-only role=status when passed a label), so the icon vanishes and nothing takes its place while the action is in flight. Use buttons/AsyncButton (returns-a-promise onClick) or buttons/Button loading={flag}, whose spinners are real (Button.tsx:230,237; AsyncButton.tsx:85). Doctrine: inline-busy-state.md."
       },
       "baseline": {
-        "files": 31,
-        "matches": 43
+        "files": 24,
+        "matches": 35
       },
       "floor": 4000
     },
@@ -5338,8 +5346,8 @@
         "description": "A <button> whose body opens another activator (<button>, <Button>, <a href>) before its own </button>. Invalid HTML: the inner control is not independently reachable by keyboard in several AT/browser combinations, and it survives only on an e.stopPropagation() no test covers. The opening tag is matched with strings and {…} attribute expressions treated as OPAQUE — a bare `>` inside className={cond ? 'a' : 'b'} or onClick={() => i > n} is arithmetic, never a tag close. Fix: make the row a <div> with the affordances as siblings, or hoist the inner control out."
       },
       "baseline": {
-        "files": 5,
-        "matches": 5
+        "files": 4,
+        "matches": 4
       },
       "floor": 1500
     },
@@ -5733,8 +5741,8 @@
         }
       ],
       "baseline": {
-        "files": 810,
-        "matches": 3786
+        "files": 808,
+        "matches": 3769
       },
       "floor": 5000
     },
@@ -5772,8 +5780,8 @@
         }
       ],
       "baseline": {
-        "files": 269,
-        "matches": 561
+        "files": 268,
+        "matches": 558
       },
       "floor": 5000
     },
@@ -5849,8 +5857,8 @@
         }
       ],
       "baseline": {
-        "files": 933,
-        "matches": 2081
+        "files": 931,
+        "matches": 2073
       },
       "floor": 2200
     },
@@ -5923,8 +5931,8 @@
         }
       ],
       "baseline": {
-        "files": 672,
-        "matches": 1636
+        "files": 670,
+        "matches": 1634
       },
       "floor": 5000
     }
