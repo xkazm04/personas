@@ -1,67 +1,47 @@
 /**
- * ContentLoader -- universal loading state for pages and panels.
+ * ContentLoader -- loading state for a page or panel body.
  *
- * Uses one of three AI-themed illustrations with a CSS opacity pulse.
- * Centers within the nearest flex parent (content area), not the viewport,
- * so the sidebar never collides with the loader.
+ * Renders the calm, static ghost lines the loading pattern requires
+ * (`docs/design/overview-loading.md` law 3: no spinner, no pulse), centred in
+ * the nearest flex parent rather than the viewport.
+ *
+ * It used to draw one of three PNG illustrations from
+ * `/illustrations/loading/` with an opacity pulse. Those files were deleted in
+ * 7d6e67ad04 ("Preprod polish") and nothing here noticed: every mount since
+ * requested a missing image, and because the `<img>` had `alt=""` the browser
+ * drew nothing, so the one live caller (the execution comparison diff) showed
+ * an empty pulsing box while it loaded.
  *
  * Variants:
- *  - "page"  (default) -- full content-area loader (Suspense fallbacks, page loads)
- *  - "panel" -- smaller loader for sections/tabs within a page
+ *  - "page"  (default) -- fills the content area (Suspense fallbacks, page loads)
+ *  - "panel" -- compact, for sections/tabs within a page
  */
-
-const ILLUSTRATIONS = [
-  '/illustrations/loading/neural-nexus.png',
-  '/illustrations/loading/quantum-core.png',
-  '/illustrations/loading/signal-pulse.png',
-] as const;
-
-/** Pick a stable illustration per mount based on a simple hash of the label. */
-function pickIllustration(hint?: string): (typeof ILLUSTRATIONS)[number] {
-  if (!hint) return ILLUSTRATIONS[0];
-  let hash = 0;
-  for (let i = 0; i < hint.length; i++) hash = ((hash << 5) - hash + hint.charCodeAt(i)) | 0;
-  return ILLUSTRATIONS[Math.abs(hash) % ILLUSTRATIONS.length]!;
-}
+import { DocumentGhost } from '@/features/shared/components/document/DocumentGhost';
 
 interface ContentLoaderProps {
-  /** "page" fills flex parent, "panel" is compact with py-8. */
+  /** "page" fills the flex parent, "panel" is compact. */
   variant?: 'page' | 'panel';
-  /** Optional label shown beneath the animation. */
+  /** Optional label shown beneath the ghost. */
   label?: string;
-  /** Hint string used to deterministically pick an illustration. */
+  /**
+   * @deprecated No-op since the illustrations were removed; it only ever chose
+   * which picture to draw. Accepted so existing call sites keep compiling.
+   */
   hint?: string;
 }
 
-export default function ContentLoader({
-  variant = 'page',
-  label,
-  hint,
-}: ContentLoaderProps) {
-  const src = pickIllustration(hint ?? label);
+export default function ContentLoader({ variant = 'page', label }: ContentLoaderProps) {
   const isPage = variant === 'page';
 
   return (
     <div
       className={[
-        'flex flex-col items-center justify-center',
-        isPage ? 'flex-1 min-h-0' : 'py-8',
+        'flex flex-col justify-center w-full',
+        isPage ? 'flex-1 min-h-0 px-6' : 'py-3',
       ].join(' ')}
     >
-      <img
-        src={src}
-        alt=""
-        draggable={false}
-        className={[
-          'select-none pointer-events-none animate-pulse-slow',
-          isPage ? 'w-20 h-20' : 'w-14 h-14',
-        ].join(' ')}
-      />
-      {label && (
-        <p className="mt-3 typo-caption text-foreground animate-pulse-slow">
-          {label}
-        </p>
-      )}
+      <DocumentGhost testId="content-loader-ghost" />
+      {label && <p className="mt-3 typo-caption text-foreground">{label}</p>}
     </div>
   );
 }
