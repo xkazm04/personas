@@ -372,7 +372,7 @@ pub fn mark_discarded(pool: &DbPool, id: &str) -> Result<bool, AppError> {
 }
 
 fn map_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<MemoryReviewProposal> {
-    let entries_json: String = row.get(4)?;
+    let entries_json: String = row.get("proposal_json")?;
     let entries: Vec<ProposalEntry> = serde_json::from_str(&entries_json).unwrap_or_default();
     let kind: String = row.get("kind")?;
     // The payload column carries a `ProposalEntry` array for the curation
@@ -384,18 +384,18 @@ fn map_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<MemoryReviewProposal> {
         None
     };
     Ok(MemoryReviewProposal {
-        id: row.get(0)?,
-        persona_id: row.get(1)?,
-        threshold: row.get(2)?,
-        instructions: row.get(3)?,
+        id: row.get("id")?,
+        persona_id: row.get("persona_id")?,
+        threshold: row.get("threshold")?,
+        instructions: row.get("instructions")?,
         entries,
-        summary: row.get(5)?,
-        reviewed_count: row.get(6)?,
-        proposed_changes: row.get(7)?,
-        status: row.get(8)?,
-        created_at: row.get(9)?,
-        decided_at: row.get(10)?,
-        team_id: row.get(11)?,
+        summary: row.get("summary")?,
+        reviewed_count: row.get("reviewed_count")?,
+        proposed_changes: row.get("proposed_changes")?,
+        status: row.get("status")?,
+        created_at: row.get("created_at")?,
+        decided_at: row.get("decided_at")?,
+        team_id: row.get("team_id")?,
         // By name, not position — this column joined the projection late
         // (e16) and a named read cannot shift under a future ALTER.
         kind,
@@ -452,6 +452,50 @@ mod tests {
 
         let n = count_discarded_since(&pool, "mrp_p", "2026-10-12T10:00:00.123456789+00:00")?;
         assert_eq!(n, 1, "the 15:00 discard is after a 10:00 cutoff");
+        Ok(())
+    }
+
+    /// `get` and `list` map every column by name against the real schema.
+    #[test]
+    fn get_and_list_map_every_column_by_name() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        pool.get()?.execute(
+            "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
+             VALUES ('mrp_q', 'Echo', 'sp', datetime('now'), datetime('now'))",
+            [],
+        )?;
+        let id = create(
+            &pool,
+            CreateProposalInput {
+                persona_id: Some("mrp_q"),
+                threshold: 7,
+                instructions: Some("tidy"),
+                entries: &[],
+                summary: Some("sum"),
+                team_id: None,
+                kind: None,
+            },
+        )?;
+        let got = get(&pool, &id)?.ok_or_else(|| AppError::NotFound(id.clone()))?;
+        assert_eq!(
+            (
+                got.persona_id.as_deref(),
+                got.threshold,
+                got.instructions.as_deref()
+            ),
+            (Some("mrp_q"), 7, Some("tidy"))
+        );
+        assert_eq!(
+            (
+                got.summary.as_deref(),
+                got.status.as_str(),
+                got.kind.as_str()
+            ),
+            (Some("sum"), "pending_review", "memory_curation")
+        );
+        assert_eq!((got.reviewed_count, got.proposed_changes), (0, 0));
+        assert!(got.decided_at.is_none() && got.team_id.is_none());
+        assert_eq!(list(&pool, Some("mrp_q"), true, 10)?.len(), 1);
         Ok(())
     }
 }

@@ -53,15 +53,15 @@ pub struct DisputedMemoryRow {
 
 fn row_to_claim(row: &rusqlite::Row<'_>) -> rusqlite::Result<MemoryClaim> {
     Ok(MemoryClaim {
-        id: row.get(0)?,
-        memory_id: row.get(1)?,
-        verdict: row.get(2)?,
-        note: row.get(3)?,
-        source: row.get(4)?,
-        created_at: row.get(5)?,
-        resolution: row.get(6)?,
-        resolution_note: row.get(7)?,
-        resolved_at: row.get(8)?,
+        id: row.get("id")?,
+        memory_id: row.get("memory_id")?,
+        verdict: row.get("verdict")?,
+        note: row.get("note")?,
+        source: row.get("source")?,
+        created_at: row.get("created_at")?,
+        resolution: row.get("resolution")?,
+        resolution_note: row.get("resolution_note")?,
+        resolved_at: row.get("resolved_at")?,
     })
 }
 
@@ -196,14 +196,17 @@ pub fn count_disputed_for_persona(pool: &DbPool, persona_id: &str) -> Result<i64
 pub fn disputed_overview(pool: &DbPool) -> Result<Vec<DisputedMemoryRow>, AppError> {
     let conn = pool.conn("memory_claims::disputed_overview")?;
     let mut stmt = conn.prepare_cached(
-        "SELECT dp.id, m.id, m.title, m.persona_id, p.name, m.open_claim_count,
+        "SELECT dp.id AS project_id, m.id AS memory_id, m.title AS memory_title,
+                m.persona_id AS persona_id, p.name AS persona_name,
+                m.open_claim_count AS open_claims,
                 (SELECT c.verdict FROM memory_claims c
                   WHERE c.memory_id = m.id AND c.resolution IS NULL AND c.verdict != 'helpful'
-                  ORDER BY c.created_at DESC LIMIT 1),
+                  ORDER BY c.created_at DESC LIMIT 1) AS latest_verdict,
                 (SELECT c.note FROM memory_claims c
                   WHERE c.memory_id = m.id AND c.resolution IS NULL AND c.verdict != 'helpful'
-                  ORDER BY c.created_at DESC LIMIT 1),
+                  ORDER BY c.created_at DESC LIMIT 1) AS latest_note,
                 (SELECT MAX(c.created_at) FROM memory_claims c WHERE c.memory_id = m.id)
+                  AS last_claim_at
          FROM persona_memories m
          JOIN personas p ON p.id = m.persona_id
          JOIN dev_projects dp ON dp.team_id IS NOT NULL AND (
@@ -217,16 +220,78 @@ pub fn disputed_overview(pool: &DbPool) -> Result<Vec<DisputedMemoryRow>, AppErr
     )?;
     let rows = stmt.query_map([], |r| {
         Ok(DisputedMemoryRow {
-            project_id: r.get(0)?,
-            memory_id: r.get(1)?,
-            memory_title: r.get(2)?,
-            persona_id: r.get(3)?,
-            persona_name: r.get(4)?,
-            open_claims: r.get(5)?,
-            latest_verdict: r.get(6)?,
-            latest_note: r.get(7)?,
-            last_claim_at: r.get(8)?,
+            project_id: r.get("project_id")?,
+            memory_id: r.get("memory_id")?,
+            memory_title: r.get("memory_title")?,
+            persona_id: r.get("persona_id")?,
+            persona_name: r.get("persona_name")?,
+            open_claims: r.get("open_claims")?,
+            latest_verdict: r.get("latest_verdict")?,
+            latest_note: r.get("latest_note")?,
+            last_claim_at: r.get("last_claim_at")?,
         })
     })?;
-    Ok(rows.flatten().collect())
+    Ok(rows.collect::<Result<Vec<_>, _>>()?)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::init_test_db;
+
+    /// The claim projection and the disputed overview's aliased projection
+    /// both map by name; an alias that drifted from its field would fail here
+    /// instead of silently emptying the findings sensor.
+    #[test]
+    fn claim_and_overview_reads_map_every_column_by_name() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let conn = pool.get()?;
+        conn.execute_batch(
+            "INSERT INTO persona_teams (id, name, created_at, updated_at)
+               VALUES ('mc_t', 'Team', datetime('now'), datetime('now'));
+             INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
+               VALUES ('mc_p', 'Echo', 'sp', datetime('now'), datetime('now'));
+             INSERT INTO persona_memories (id, persona_id, title, content, home_team_id, created_at, updated_at)
+               VALUES ('mc_m', 'mc_p', 'Fact', 'c', 'mc_t', datetime('now'), datetime('now'));
+             INSERT INTO dev_projects (id, name, root_path, team_id)
+               VALUES ('mc_dp', 'Proj', '/tmp/mc_dp', 'mc_t');",
+        )?;
+        drop(conn);
+
+        let filed = file_claim(&pool, "mc_m", "wrong", Some("stale"), "test")?;
+        let listed = list_claims(&pool, "mc_m")?;
+        assert_eq!(listed.len(), 1);
+        assert_eq!(listed[0].id, filed.id);
+        assert_eq!(
+            (
+                listed[0].verdict.as_str(),
+                listed[0].note.as_deref(),
+                listed[0].source.as_str()
+            ),
+            ("wrong", Some("stale"), "test")
+        );
+
+        let overview = disputed_overview(&pool)?;
+        assert_eq!(overview.len(), 1);
+        let o = &overview[0];
+        assert_eq!(
+            (
+                o.project_id.as_str(),
+                o.memory_id.as_str(),
+                o.memory_title.as_str()
+            ),
+            ("mc_dp", "mc_m", "Fact")
+        );
+        assert_eq!(
+            (o.persona_id.as_str(), o.persona_name.as_str()),
+            ("mc_p", "Echo")
+        );
+        assert_eq!(o.open_claims, 1);
+        assert_eq!(
+            (o.latest_verdict.as_deref(), o.latest_note.as_deref()),
+            (Some("wrong"), Some("stale"))
+        );
+        assert!(o.last_claim_at.is_some());
+        Ok(())
+    }
 }
