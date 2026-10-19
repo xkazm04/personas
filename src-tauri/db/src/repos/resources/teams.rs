@@ -466,13 +466,15 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
         // (the last via the 2026-05-02-fk-hygiene-cascade ADR), and
         // PRAGMA foreign_keys = ON is the global default (db/mod.rs), so
         // deleting the team row cascades to all three automatically.
-        // TWO child tables carry a bare `team_id TEXT NOT NULL` with NO foreign
+        // FOUR child tables carry a bare `team_id TEXT NOT NULL` with NO foreign
         // key, so nothing cascades them and each needs an explicit DELETE here:
         //   - team_memories
         //   - team_channel_messages  (added later, and missed by this cleanup
         //     until 2026-08-09 — every message and directive for a deleted team
         //     was stranded in the DB forever, unreachable from any UI and
         //     counted by no retention sweep)
+        //   - assignment_outcomes, team_member_trust  (c04 migration; missed
+        //     the same way until 2026-10-19 — every reader keys them by team)
         // Both run inside the same transaction as the team row's own delete, so
         // a partial failure can never leave the team gone and its history
         // behind. If you add another table keyed by team_id without an FK, add
@@ -480,6 +482,14 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
         tx.execute("DELETE FROM team_memories WHERE team_id = ?1", params![id])?;
         tx.execute(
             "DELETE FROM team_channel_messages WHERE team_id = ?1",
+            params![id],
+        )?;
+        tx.execute(
+            "DELETE FROM assignment_outcomes WHERE team_id = ?1",
+            params![id],
+        )?;
+        tx.execute(
+            "DELETE FROM team_member_trust WHERE team_id = ?1",
             params![id],
         )?;
         let rows = tx.execute("DELETE FROM persona_teams WHERE id = ?1", params![id])?;
@@ -1100,6 +1110,59 @@ mod tests {
             channel_message_count(&pool, &bystander.id),
             1,
             "the sweep must be scoped to the deleted team only",
+        );
+    }
+
+    /// team-delete-strands-learning-rows: `assignment_outcomes.team_id` and
+    /// `team_member_trust.team_id` carry no foreign key (c04 migration), so the
+    /// team row's delete cascades neither. Every reader keys them by team, so a
+    /// deleted team's outcomes and trust scores are unreachable and never swept.
+    #[test]
+    fn delete_team_sweeps_its_outcomes_and_trust() {
+        use crate::repos::orchestration::assignment_outcomes as outcomes;
+        let pool = init_test_db().unwrap();
+        let doomed = mk_team(&pool, "Doomed Learners");
+        let bystander = mk_team(&pool, "Bystander Learners");
+
+        for (team_id, assignment_id) in [(&doomed.id, "asg-doomed"), (&bystander.id, "asg-keep")] {
+            outcomes::record_outcome(
+                &pool,
+                &outcomes::RecordOutcomeInput {
+                    assignment_id,
+                    team_id,
+                    status: "done",
+                    steps_total: 1,
+                    steps_done: 1,
+                    steps_failed: 0,
+                    steps_skipped: 0,
+                    review_interventions: 0,
+                    duration_secs: Some(5),
+                    outcome_json: "{}",
+                },
+            )
+            .unwrap();
+            outcomes::upsert_trust(&pool, team_id, "persona-x", 0.8, 3).unwrap();
+        }
+
+        assert!(delete(&pool, &doomed.id).unwrap());
+
+        assert!(outcomes::list_for_team(&pool, &doomed.id, 10)
+            .unwrap()
+            .is_empty());
+        assert!(outcomes::list_trust_for_team(&pool, &doomed.id)
+            .unwrap()
+            .is_empty());
+        assert_eq!(
+            outcomes::list_for_team(&pool, &bystander.id, 10)
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            outcomes::list_trust_for_team(&pool, &bystander.id)
+                .unwrap()
+                .len(),
+            1
         );
     }
 
