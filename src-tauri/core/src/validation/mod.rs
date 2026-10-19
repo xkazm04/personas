@@ -20,12 +20,15 @@ pub fn strip_html_tags(input: &str) -> String {
         .tags(std::collections::HashSet::new())
         .clean(input)
         .to_string();
-    // Decode entities that ammonia introduced for non-tag angle brackets.
+    // Decode the entities ammonia's serializer writes in text: angle brackets,
+    // quotes, and U+00A0, which it spells `&nbsp;` (left encoded, a pasted
+    // non-breaking space was stored as the six characters "&nbsp;").
     // Order matters: &amp; must be last so we do not double-decode.
     cleaned
         .replace("&lt;", "<")
         .replace("&gt;", ">")
         .replace("&quot;", "\"")
+        .replace("&nbsp;", "\u{a0}")
         .replace("&amp;", "&")
 }
 
@@ -310,5 +313,17 @@ mod tests {
 
         // Ampersands preserved
         assert_eq!(strip_html_tags("a & b"), "a & b");
+    }
+
+    #[test]
+    fn strip_html_tags_keeps_a_non_breaking_space_as_a_character() {
+        // The HTML serializer behind ammonia writes U+00A0 as the entity
+        // `&nbsp;`. Pasted text carries it routinely (Czech "Ing. Novák",
+        // French "Bonjour !", anything copied from a web page or Word), and
+        // without decoding it a stored name or memory read "&nbsp;" verbatim.
+        assert_eq!(strip_html_tags("Ing.\u{a0}Novák"), "Ing.\u{a0}Novák");
+        assert_eq!(strip_html_tags("Bonjour\u{a0}!"), "Bonjour\u{a0}!");
+        // A literal "&nbsp;" the user typed stays literal text: single decode.
+        assert_eq!(strip_html_tags("&amp;nbsp;"), "&nbsp;");
     }
 }
