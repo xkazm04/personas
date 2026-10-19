@@ -22,8 +22,10 @@ const COST_AXIS_FORMATTER = (v: number) => `$${v.toFixed(2)}`;
  * `companion_get_usage_dashboard` via {@link useAthenaUsage}.
  */
 interface AthenaUsageSectionProps {
-  /** Fleet total cost for the same window — the headline comparison. */
-  fleetCost: number;
+  /** Fleet total cost for the same window — the headline comparison. Null
+   *  while the fleet figure is not known (loading or failed): the comparison
+   *  is then withheld rather than drawn against a $0 fleet. */
+  fleetCost: number | null;
 }
 
 /** Friendly label for a (origin, triggerKind) action bucket. */
@@ -120,6 +122,7 @@ export const AthenaUsageSection = memo(function AthenaUsageSection({ fleetCost }
           </div>
 
           {/* Athena vs fleet headline */}
+          {fleetCost !== null && (
           <div className="rounded-modal border border-primary/10 bg-secondary/20 px-4 py-3 space-y-1.5">
             <div className="flex items-center justify-between">
               <span className="typo-body text-foreground">{a.vs_fleet}</span>
@@ -134,6 +137,7 @@ export const AthenaUsageSection = memo(function AthenaUsageSection({ fleetCost }
               />
             </div>
           </div>
+          )}
 
           {/* Cost by action type */}
           {topActions.length > 0 && (

@@ -1,4 +1,78 @@
 import type { MetricAnomaly } from '@/lib/bindings/MetricAnomaly';
+import type { ExecutionDashboardData } from '@/lib/bindings/ExecutionDashboardData';
+import type { DashboardDailyPoint } from '@/lib/bindings/DashboardDailyPoint';
+import type { DashboardCostAnomaly } from '@/lib/bindings/DashboardCostAnomaly';
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** The selected window's headline figures, measured over THAT window only. */
+export interface CurrentWindowSummary {
+  totalExecutions: number;
+  totalCost: number;
+  /** completed / (completed + failed); null when the window decided no run. */
+  successRatio: number | null;
+  /** Mean run duration; null when this payload cannot measure it for the window. */
+  avgLatencyMs: number | null;
+  /** Daily points inside the window, oldest first. */
+  dailyPoints: DashboardDailyPoint[];
+  /** Cost anomalies dated inside the window. */
+  anomalies: DashboardCostAnomaly[];
+}
+
+/**
+ * Cut the execution dashboard down to the window the operator selected.
+ *
+ * With Compare on, the shared pipeline fetches `2 x effectiveDays` so the
+ * prior period can be drawn as ghost lines, and every summary field of that
+ * payload (`total_cost`, `total_executions`, `overall_success_rate`,
+ * `avg_latency_ms`) is measured over BOTH periods. Reading them straight made
+ * the "Total cost" tile double the moment Compare was switched on, under a
+ * label naming the single window.
+ *
+ * The cut is by calendar date, not by point count: the backend emits a point
+ * only for a day that had runs, so "the last N points" is not "the last N
+ * days" on a sparse series. Dates are UTC (`DATE(created_at)` over RFC3339
+ * rows), so the cutoff is computed in UTC too. The mean latency of the cut
+ * cannot be derived from daily percentiles, so it is null rather than the
+ * double-window figure.
+ */
+export function summarizeCurrentWindow(
+  data: ExecutionDashboardData,
+  effectiveDays: number,
+  compareEnabled: boolean,
+  now: number = Date.now(),
+): CurrentWindowSummary {
+  if (!compareEnabled) {
+    return {
+      totalExecutions: data.total_executions,
+      totalCost: data.total_cost,
+      successRatio: data.total_executions > 0 ? data.overall_success_rate : null,
+      avgLatencyMs: data.total_executions > 0 ? data.avg_latency_ms : null,
+      dailyPoints: data.daily_points,
+      anomalies: data.cost_anomalies,
+    };
+  }
+  const cutoff = new Date(now - (Math.max(1, effectiveDays) - 1) * DAY_MS).toISOString().slice(0, 10);
+  const dailyPoints = data.daily_points.filter((p) => p.date >= cutoff);
+  let totalExecutions = 0;
+  let totalCost = 0;
+  let completed = 0;
+  let decided = 0;
+  for (const p of dailyPoints) {
+    totalExecutions += p.total_executions;
+    totalCost += p.total_cost;
+    completed += p.completed;
+    decided += p.completed + p.failed;
+  }
+  return {
+    totalExecutions,
+    totalCost,
+    successRatio: decided > 0 ? completed / decided : null,
+    avgLatencyMs: null,
+    dailyPoints,
+    anomalies: data.cost_anomalies.filter((a) => a.date >= cutoff),
+  };
+}
 
 export const fmtCost = (v: number) =>
   v >= 0 && v < 0.01 ? '<$0.01' : `$${v.toFixed(2)}`;
