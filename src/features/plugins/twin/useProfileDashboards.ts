@@ -50,10 +50,16 @@ export function useProfileDashboards(profiles: TwinProfile[]): Record<string, Pr
 
   useEffect(() => {
     let cancelled = false;
+    // Loads this run started and has not finished. A re-run (the profile list
+    // arrives twice on mount: TwinPage and ProfilesAtelier both fetch it)
+    // cancels them, so the cleanup below must un-mark them or the next run
+    // skips the id and the card stays `loading` for the whole mount.
+    const pending = new Set<string>();
 
     const loadOne = async (profile: TwinProfile) => {
       if (loadedRef.current.has(profile.id)) return;
       loadedRef.current.add(profile.id);
+      pending.add(profile.id);
 
       // Mark as loading with an empty-derived readiness so the card can render something immediately.
       setData((prev) => ({
@@ -72,6 +78,7 @@ export function useProfileDashboards(profiles: TwinProfile[]): Record<string, Pr
       ]);
 
       if (cancelled) return;
+      pending.delete(profile.id);
 
       // Surface failed legs as Sentry breadcrumbs — without this, dashboards
       // silently degrade to "empty=0%" with no signal in production.
@@ -111,7 +118,7 @@ export function useProfileDashboards(profiles: TwinProfile[]): Record<string, Pr
       // fetch. IDs still present remain marked-loaded — see lifecycle note above.
       const stillPresent = new Set(profiles.map((p) => p.id));
       for (const id of loaded) {
-        if (!stillPresent.has(id)) loaded.delete(id);
+        if (!stillPresent.has(id) || pending.has(id)) loaded.delete(id);
       }
     };
   }, [profileIds, profiles]);
