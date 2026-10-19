@@ -18,7 +18,24 @@ import { useTranslation } from '@/i18n/useTranslation';
 // If the backend job never reaches a terminal status (crash, dropped job,
 // stuck snapshot), stop polling after this long instead of locking the chat
 // input forever.
-const NL_QUERY_POLL_TIMEOUT_MS = 60_000;
+//
+// This is a LOST-JOB watchdog, so it must outlast the backend's own budget for
+// a job that is still working. It was 60 s, while `run_nl_query` hands the
+// model to `ai_helpers::run_single_turn_prompt`: a 120 s silence lease that a
+// producing call may stretch to LEASE_CEILING_FACTOR (3) x 120 s, and an
+// output with no SQL block escalates ONCE to a second model (with_escalation).
+// Any answer slower than 60 s was cancelled here -- the model call it had
+// already paid for thrown away, the bubble painted "timed out" -- while the
+// backend was inside its budget. Pinned against the Rust source by
+// __tests__/nlQueryTimeoutParity.test.ts. The Cancel button stays live the
+// whole time, so the user is never held to this number.
+const NL_SINGLE_TURN_LEASE_SECS = 120; // ai_helpers::run_single_turn_prompt
+const NL_LEASE_CEILING_FACTOR = 3; // cli_runner::LEASE_CEILING_FACTOR
+const NL_ATTEMPTS = 2; // with_escalation: first route + one escalation
+/** Headroom for the schema introspection that runs before the model call. */
+const NL_SCHEMA_CONTEXT_SLACK_SECS = 60;
+export const NL_QUERY_POLL_TIMEOUT_MS =
+  (NL_ATTEMPTS * NL_SINGLE_TURN_LEASE_SECS * NL_LEASE_CEILING_FACTOR + NL_SCHEMA_CONTEXT_SLACK_SECS) * 1000;
 
 /**
  * Telemetry category for the NL-query lane. This is the most expensive surface

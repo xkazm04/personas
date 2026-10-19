@@ -3,7 +3,7 @@ import { render, screen, fireEvent, act } from "@testing-library/react";
 import en from "@/i18n/locales/en.json";
 // eslint-disable-next-line no-restricted-imports
 import { invoke } from "@tauri-apps/api/core";
-import { ChatTab } from "../tabs/ChatTab";
+import { ChatTab, NL_QUERY_POLL_TIMEOUT_MS } from "../tabs/ChatTab";
 import { resetInvokeMocks } from "@/test/tauriMock";
 import { __resetChatTranscriptsForTests } from "../tabs/chatTranscriptCache";
 
@@ -168,8 +168,11 @@ describe("ChatTab -- generation failure paths", () => {
 
     const before = cancelCount();
 
-    // Still generating at 59s: the timeout must not fire early.
-    await act(async () => { await vi.advanceTimersByTimeAsync(59_000); });
+    // Still generating at 61s -- inside the backend's own budget, where the old
+    // 60s watchdog already gave up -- and just short of the watchdog.
+    await act(async () => { await vi.advanceTimersByTimeAsync(61_000); });
+    expect(screen.queryByText(en.vault.databases.query_timeout)).not.toBeInTheDocument();
+    await act(async () => { await vi.advanceTimersByTimeAsync(NL_QUERY_POLL_TIMEOUT_MS - 62_000); });
     expect(screen.queryByText(en.vault.databases.query_timeout)).not.toBeInTheDocument();
     expect(cancelCount()).toBe(before);
 
@@ -188,7 +191,7 @@ describe("ChatTab -- generation failure paths", () => {
     // While generating the composer's control is Cancel, so no Send exists.
     expect(screen.queryByLabelText(en.common.send)).not.toBeInTheDocument();
 
-    await act(async () => { await vi.advanceTimersByTimeAsync(62_000); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(NL_QUERY_POLL_TIMEOUT_MS + 2_000); });
 
     // Guard released: a follow-up question can be asked again.
     expect(screen.getByLabelText(en.common.send)).toBeInTheDocument();
@@ -218,7 +221,7 @@ describe("ChatTab -- generation failure paths", () => {
 
     // The poll swallows the read error and retries; the timeout is the only
     // thing that ends it, so it has to actually end it.
-    await act(async () => { await vi.advanceTimersByTimeAsync(62_000); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(NL_QUERY_POLL_TIMEOUT_MS + 2_000); });
 
     expect(screen.getByText(en.vault.databases.query_timeout)).toBeInTheDocument();
     expect(screen.getByLabelText(en.common.send)).toBeInTheDocument();

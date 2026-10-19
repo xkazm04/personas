@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 // eslint-disable-next-line no-restricted-imports
 import { invoke } from "@tauri-apps/api/core";
-import { ChatTab } from "../ChatTab";
+import { ChatTab, NL_QUERY_POLL_TIMEOUT_MS } from "../ChatTab";
 import { trackInteraction } from "@/lib/sentry";
 import { resetInvokeMocks } from "@/test/tauriMock";
 import { __resetChatTranscriptsForTests } from "../chatTranscriptCache";
@@ -96,7 +96,7 @@ describe("ChatTab — NL-query outcome telemetry", () => {
     expect(actionsFor()).toContain("generation_failed");
   });
 
-  it("records the 60s timeout, which previously left no trace anywhere", async () => {
+  it("records the watchdog timeout, which previously left no trace anywhere", async () => {
     mockSnapshot({
       job_id: "job-1", status: "running", error: null, lines: [],
       generated_sql: null, explanation: null,
@@ -106,7 +106,7 @@ describe("ChatTab — NL-query outcome telemetry", () => {
 
     expect(actionsFor()).not.toContain("generation_timeout");
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(61_000);
+      await vi.advanceTimersByTimeAsync(NL_QUERY_POLL_TIMEOUT_MS + 1_000);
     });
     expect(actionsFor()).toContain("generation_timeout");
   });
