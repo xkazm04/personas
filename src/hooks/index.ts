@@ -61,7 +61,6 @@ export * from "./utility/timing/useDebounce";
 
 // Utility hooks - interaction
 export * from "./utility/data/useAutoInstaller";
-export * from "./utility/interaction/useToggleSet";
 export * from "./utility/interaction/useCopyToClipboard";
 export * from "./utility/interaction/useClickOutside";
 export * from "./utility/interaction/useViewportClamp";
