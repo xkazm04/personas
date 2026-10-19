@@ -47,22 +47,22 @@ export interface SystemInitEvent {
   type: 'system_init';
   execution_id: string;
   model: string;
-  session_id?: string;
+  session_id?: string | null;
 }
 
 export interface ResultEvent {
   type: 'result';
   execution_id: string;
-  duration_ms?: number;
-  cost_usd?: number;
-  input_tokens?: number;
-  output_tokens?: number;
+  duration_ms?: number | null;
+  cost_usd?: number | null;
+  input_tokens?: number | null;
+  output_tokens?: number | null;
   /** Prompt-cache tokens served from cache (cheap input reuse). */
-  cache_read_tokens?: number;
+  cache_read_tokens?: number | null;
   /** Prompt-cache tokens written this run (cache-creation cost). */
-  cache_creation_tokens?: number;
-  model?: string;
-  session_id?: string;
+  cache_creation_tokens?: number | null;
+  model?: string | null;
+  session_id?: string | null;
 }
 
 export interface FileChangeEvent {
@@ -94,8 +94,8 @@ export interface SubagentUpdateEvent {
   execution_id: string;
   task_id: string;
   status: string;
-  total_tokens?: number;
-  duration_ms?: number;
+  total_tokens?: number | null;
+  duration_ms?: number | null;
 }
 
 /**
@@ -109,7 +109,7 @@ export interface SubagentMessageEvent {
   /** tool_use_id of the parent Task call — matches SubagentStartedEvent.tool_use_id. */
   parent_tool_use_id: string;
   text: string;
-  tool_name?: string;
+  tool_name?: string | null;
 }
 
 export type StructuredExecutionEvent =

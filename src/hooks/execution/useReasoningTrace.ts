@@ -59,7 +59,7 @@ export function useReasoningTrace(executionId: string | null): {
   useStructuredStream(executionId, {
     onSystemInit: useCallback(
       (e) => {
-        push({ type: "init", model: e.model, sessionId: e.session_id, ts: Date.now() });
+        push({ type: "init", model: e.model, sessionId: e.session_id ?? undefined, ts: Date.now() });
       },
       [push],
     ),
@@ -98,7 +98,7 @@ export function useReasoningTrace(executionId: string | null): {
         push({
           type: "complete",
           durationMs: e.duration_ms ?? 0,
-          cost: e.cost_usd,
+          cost: e.cost_usd ?? undefined,
           tokens: e.input_tokens != null && e.output_tokens != null ? e.input_tokens + e.output_tokens : undefined,
           ts: Date.now(),
         });
