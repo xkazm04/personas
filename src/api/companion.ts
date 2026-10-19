@@ -1568,8 +1568,22 @@ export interface ApplyConsolidationEdits {
   confidence?: number;
 }
 
+/**
+ * Consolidation and reflection run one Claude call inline, under an absolute
+ * backstop of 300 s and 180 s (`CONSOLIDATION_TIMEOUT` in
+ * `companion/brain/consolidation.rs`, `REFLECTION_TIMEOUT` in `reflection.rs`).
+ * At the 90 s IPC default the UI reported a failure while the backend went on
+ * to write its proposals, and a retry ran a second pass with no dedup. Each
+ * ceiling sits 30 s above its backstop; `consolidationTimeoutParity.test.ts`
+ * reads the Rust constants so the two cannot drift apart.
+ */
+const CONSOLIDATION_IPC_TIMEOUT_MS = 330_000;
+const REFLECTION_IPC_TIMEOUT_MS = 210_000;
+
 export async function companionRunConsolidation(): Promise<string> {
-  return invoke<string>('companion_run_consolidation');
+  return invoke<string>('companion_run_consolidation', undefined, {
+    timeoutMs: CONSOLIDATION_IPC_TIMEOUT_MS,
+  });
 }
 
 export async function companionListConsolidationRuns(
@@ -1637,7 +1651,9 @@ export interface ReflectionDetail {
 }
 
 export async function companionRunReflection(): Promise<string> {
-  return invoke<string>('companion_run_reflection');
+  return invoke<string>('companion_run_reflection', undefined, {
+    timeoutMs: REFLECTION_IPC_TIMEOUT_MS,
+  });
 }
 
 // ── Phase E: proactive messaging ──────────────────────────────────────
