@@ -103,6 +103,7 @@ export function LeaderboardMatrixView({
   const { t } = useTranslation();
   const reduce = useReducedMotion();
   const lb = t.overview.leaderboard;
+  const notMeasured = t.overview.mission_layers.state_unmeasured;
   const [sortKey, setSortKey] = useState<RankKey>('overall');
   const [visibleCount, setVisibleCount] = useState(VISIBLE_CAP);
 
@@ -120,8 +121,8 @@ export function LeaderboardMatrixView({
   // Surface the known latency-mapping gap: if every agent has the same speed
   // score, the column is non-differentiating and we flag it inline.
   const speedAllEqual = useMemo(() => {
-    const vals = new Set(leaderboard.map((e) => metricValue(e, 'speed')));
-    return leaderboard.length > 1 && vals.size === 1;
+    const measured = leaderboard.map((e) => metricValue(e, 'speed')).filter((v) => v !== null);
+    return measured.length > 1 && new Set(measured).size === 1;
   }, [leaderboard]);
 
   return (
@@ -190,6 +191,8 @@ export function LeaderboardMatrixView({
                     <span className={`inline-flex items-center justify-center min-w-[2rem] px-1.5 py-0.5 rounded-card border typo-caption tabular-nums ${MEDAL_STYLE[entry.medal]}`}>
                       {entry.rank}
                     </span>
+                  ) : entry.rank === null ? (
+                    <Unmeasured label={notMeasured} />
                   ) : (
                     <span className="typo-caption text-foreground tabular-nums">{entry.rank}</span>
                   )}
@@ -211,6 +214,7 @@ export function LeaderboardMatrixView({
                     value={metricValue(entry, opt.key)}
                     emphasized={sortKey === opt.key}
                     headline={opt.key === 'overall'}
+                    notMeasured={notMeasured}
                   />
                 ))}
               </tr>
@@ -238,11 +242,14 @@ export function LeaderboardMatrixView({
                 <span className="typo-caption text-foreground uppercase tracking-wide">{COPY.fleetAvg}</span>
               </td>
               {RANK_OPTIONS.map((opt) => {
-                const v = Math.round(fleetValue(opt.key, fleetAvgScore, fleetBenchmark));
-                const tint = scoreTint(v);
+                const v = fleetValue(opt.key, fleetAvgScore, fleetBenchmark);
                 return (
                   <td key={opt.key} className={`px-2 py-1.5 text-center border-t-2 border-dashed border-primary/20 ${opt.key === 'overall' ? 'border-r border-primary/10' : ''}`}>
-                    <span className={`typo-body font-mono tabular-nums ${tint.text}`}>{v}</span>
+                    {v === null ? (
+                      <Unmeasured label={notMeasured} />
+                    ) : (
+                      <span className={`typo-body font-mono tabular-nums ${scoreTint(Math.round(v)).text}`}>{Math.round(v)}</span>
+                    )}
                   </td>
                 );
               })}
@@ -254,7 +261,29 @@ export function LeaderboardMatrixView({
   );
 }
 
-function MetricCell({ value, emphasized, headline }: { value: number; emphasized?: boolean; headline?: boolean }) {
+/** An absent measurement: a dash for the eye, the words for a screen reader.
+ *  Never a 0 or a neutral 50 (registry scoring-rubrics / unmeasured-honesty). */
+function Unmeasured({ label }: { label: string }) {
+  return (
+    <span className="typo-caption text-foreground">
+      <span aria-hidden>—</span>
+      <span className="sr-only">{label}</span>
+    </span>
+  );
+}
+
+function MetricCell({ value, emphasized, headline, notMeasured }: {
+  value: number | null; emphasized?: boolean; headline?: boolean; notMeasured: string;
+}) {
+  if (value === null) {
+    return (
+      <td className={`px-1.5 py-1 align-middle text-center border-t border-primary/[0.06] ${headline ? 'border-r border-primary/10' : ''}`}>
+        <div className={`rounded-card px-2 py-1 ${emphasized ? 'ring-1 ring-primary/40' : ''}`}>
+          <Unmeasured label={notMeasured} />
+        </div>
+      </td>
+    );
+  }
   const tint = scoreTint(value);
   return (
     <td className={`px-1.5 py-1 align-middle border-t border-primary/[0.06] ${headline ? 'border-r border-primary/10' : ''}`}>

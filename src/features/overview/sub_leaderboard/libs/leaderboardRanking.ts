@@ -7,7 +7,7 @@
  * re-medals existing entries, it never mutates the underlying dimension data.
  */
 
-import type { LeaderboardEntry, Medal, DimensionKey } from './leaderboardScoring';
+import { dimensionValue, medalFor, type LeaderboardEntry, type DimensionKey } from './leaderboardScoring';
 
 export type RankKey = 'overall' | DimensionKey;
 
@@ -32,26 +32,21 @@ export const RANK_OPTIONS: RankOption[] = [
   { key: 'activity', labelKey: 'dim_activity' },
 ];
 
-const MEDALS = ['gold', 'silver', 'bronze'] as const;
-
-function dimensionValue(entry: LeaderboardEntry, key: DimensionKey): number {
-  return entry.dimensions.find((d) => d.key === key)?.value ?? 0;
-}
-
 /**
  * Re-rank entries by the chosen key. `'overall'` returns the input untouched
- * (it is already composite-sorted). For a dimension key, entries are sorted by
- * that dimension's normalized value (composite as the tiebreaker) and rank +
- * medal are recomputed to match the new order.
+ * (it is already composite-sorted). For a dimension key, entries measured on
+ * that dimension are sorted by its normalized value (composite as the
+ * tiebreaker) and re-ranked and re-medalled; entries NOT measured on it follow,
+ * unranked, so an absence never takes a medal.
  */
 export function rankBy(entries: LeaderboardEntry[], key: RankKey): LeaderboardEntry[] {
   if (key === 'overall') return entries;
+  const value = (e: LeaderboardEntry) => dimensionValue(e, key) ?? -1;
   const sorted = [...entries].sort(
-    (a, b) => dimensionValue(b, key) - dimensionValue(a, key) || b.compositeScore - a.compositeScore,
+    (a, b) => value(b) - value(a) || (b.compositeScore ?? -1) - (a.compositeScore ?? -1),
   );
-  return sorted.map((entry, i) => ({
-    ...entry,
-    rank: i + 1,
-    medal: (i < 3 ? MEDALS[i]! : null) as Medal,
-  }));
+  return sorted.map((entry, i) => {
+    const rank = dimensionValue(entry, key) === null ? null : i + 1;
+    return { ...entry, rank, medal: medalFor(rank) };
+  });
 }
