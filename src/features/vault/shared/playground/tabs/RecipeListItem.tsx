@@ -8,7 +8,11 @@ interface RecipeListItemProps {
   recipe: RecipeDefinition;
   isExpanded: boolean;
   onToggleExpand: () => void;
-  onOpenPlayground: () => void;
+  /**
+   * Omitted by every caller today, so the settings control is not drawn: it
+   * used to render on every row and do nothing when pressed.
+   */
+  onOpenPlayground?: () => void;
   onDelete: () => void;
 }
 
@@ -25,7 +29,10 @@ export function RecipeListItem({
     <div className="rounded-modal border border-border/40 bg-card/30 overflow-hidden hover:border-border/60 transition-colors">
       <div className="flex items-center gap-3 px-4 py-3">
         <button
+          type="button"
           onClick={onToggleExpand}
+          aria-expanded={isExpanded}
+          aria-label={recipe.name}
           className="text-foreground hover:text-foreground/80 transition-colors"
         >
           {isExpanded ? (
@@ -48,15 +55,20 @@ export function RecipeListItem({
             {recipe.category}
           </span>
         )}
+        {onOpenPlayground && (
+          <button
+            type="button"
+            onClick={onOpenPlayground}
+            aria-label={sh.open_settings}
+            className="flex items-center justify-center rounded-card p-1.5 text-foreground hover:text-foreground hover:bg-muted/50 transition-colors shrink-0"
+          >
+            <Settings className="w-3.5 h-3.5" />
+          </button>
+        )}
         <button
-          onClick={onOpenPlayground}
-          className="flex items-center justify-center rounded-card p-1.5 text-foreground hover:text-foreground hover:bg-muted/50 transition-colors shrink-0"
-          title={sh.open_settings}
-        >
-          <Settings className="w-3.5 h-3.5" />
-        </button>
-        <button
+          type="button"
           onClick={onDelete}
+          aria-label={t.common.delete}
           className="rounded-card p-1.5 text-red-400/40 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
         >
           <Trash2 className="w-3.5 h-3.5" />
