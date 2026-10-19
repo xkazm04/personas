@@ -382,6 +382,11 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
               suggestions: selectedResult.suggestions ?? null,
             }}
             onClose={() => setSelectedCell(null)}
+            // The arena runner persists each cell's event stream and tool
+            // calls under this result id (modes.rs insert_events_batch);
+            // without these two props the panel never asked for them.
+            resultId={selectedResult.id}
+            resultKind="arena"
             rating={ratingEntry?.rating}
             ratingFeedback={ratingEntry?.feedback}
             onRate={onRate ? (rating, feedback) => onRate(selectedCell.scenario, selectedCell.model, rating, feedback) : undefined}
