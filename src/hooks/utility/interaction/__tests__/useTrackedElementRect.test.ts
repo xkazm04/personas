@@ -58,6 +58,31 @@ describe('useTrackedElementRect', () => {
     expect(result.current).toEqual({ x: 94, y: 194, width: 62, height: 42 });
   });
 
+  // Re-measure runs on every scroll anywhere in the app (capture listener).
+  // A target that did not move must not re-render the overlay each frame.
+  it('does not re-render on scroll frames where the target did not move', () => {
+    mountTarget('still', { x: 10, y: 20, width: 30, height: 40 });
+    let renders = 0;
+    const { result } = renderHook(() => {
+      renders += 1;
+      return useTrackedElementRect('still');
+    });
+    act(() => void vi.advanceTimersByTime(150));
+    expect(result.current).toEqual({ x: 10, y: 20, width: 30, height: 40 });
+    const settled = renders;
+
+    for (let i = 0; i < 5; i++) {
+      act(() => {
+        window.dispatchEvent(new Event('scroll'));
+        vi.advanceTimersByTime(20);
+      });
+    }
+
+    // React may run ONE bail-out render before it can skip eagerly; the old
+    // fresh-object setRect re-rendered on all five frames.
+    expect(renders - settled).toBeLessThanOrEqual(1);
+  });
+
   it('fires onMissing once when the target is absent from the start', () => {
     const onMissing = vi.fn();
     const { result } = renderHook(() =>

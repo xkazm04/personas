@@ -89,12 +89,25 @@ export function useTrackedElementRect(
       return null;
     }
     const r = el.getBoundingClientRect();
-    setRect({
+    const next = {
       x: r.x - padding,
       y: r.y - padding,
       width: r.width + padding * 2,
       height: r.height + padding * 2,
-    });
+    };
+    // Keep the previous object when nothing moved. Re-measure runs on every
+    // scroll anywhere in the app (capture listener) and every DOM mutation
+    // near the target; a fresh object each time re-rendered the overlay on
+    // every one of those frames even while the target sat still.
+    setRect((prev) =>
+      prev &&
+      prev.x === next.x &&
+      prev.y === next.y &&
+      prev.width === next.width &&
+      prev.height === next.height
+        ? prev
+        : next,
+    );
     return el;
   }, [testId, padding]);
 
