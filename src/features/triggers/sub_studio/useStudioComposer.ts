@@ -15,7 +15,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { attentionFor } from '@/features/home/sub_cockpit/widgets/personaStats';
 import { createTrigger, deleteTrigger, dryRunTrigger, updateTrigger } from '@/api/pipeline/triggers';
-import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch, toastCatch } from '@/lib/silentCatch';
 import {
   loadDraft, saveDraft, newLinkId, LINK_CONDITION_PRESETS,
   type ChainDraft, type DraftSource, type DraftLink,
@@ -165,7 +165,10 @@ export function useStudioComposer(onRouteCommitted?: () => void) {
       onRouteCommitted?.();
       return undefined;
     } catch (e) {
-      return e instanceof Error ? e.message : String(e);
+      // The form resolves this string (resolveErrorTranslated). An IPC
+      // rejection is an AppError object, so String(e) handed it "[object Object]";
+      // an empty string would read as success and close nothing.
+      return extractMessage(e) || st.route_commit_failed;
     }
   };
 

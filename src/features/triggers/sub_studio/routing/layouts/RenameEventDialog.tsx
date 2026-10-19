@@ -16,6 +16,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Pencil, X, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { BaseModal } from '@/features/shared/components/modals';
+import { inlineErrorCopy } from '@/features/triggers/lib/inlineErrorCopy';
 
 const TITLE_ID = 'rename-event-dialog-title';
 
@@ -87,7 +88,9 @@ export function RenameEventDialog({
   const { t, tx } = useTranslation();
   const [newEventType, setNewEventType] = useState(oldEventType);
   const [busy, setBusy] = useState(false);
-  const [serverError, setServerError] = useState<string | null>(null);
+  // The rejection itself, resolved at render: an IPC rejection is a serialized
+  // AppError object, so stringifying it here printed "[object Object]".
+  const [serverError, setServerError] = useState<{ raw: unknown } | null>(null);
   const sourceReserved = reserved || RESERVED_EVENT_TYPES.has(oldEventType);
 
   // Reset the input whenever the dialog re-opens on a different row.
@@ -126,7 +129,7 @@ export function RenameEventDialog({
       await onConfirm(newEventType.trim());
       // Parent closes the dialog on success.
     } catch (e) {
-      setServerError(e instanceof Error ? e.message : String(e));
+      setServerError({ raw: e });
       setBusy(false);
     }
   }
@@ -229,7 +232,7 @@ export function RenameEventDialog({
             <div className="flex items-start gap-2 rounded-card border border-amber-400/25 bg-amber-500/10 px-3 py-2">
               <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5" />
               <p className="typo-caption text-amber-300/90 break-words">
-                {serverError ?? clientError}
+                {serverError ? inlineErrorCopy(t, serverError.raw) : clientError}
               </p>
             </div>
           )}

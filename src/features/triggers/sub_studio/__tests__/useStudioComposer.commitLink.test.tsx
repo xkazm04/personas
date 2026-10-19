@@ -160,3 +160,36 @@ describe('commitAll in-flight guard', () => {
     expect(createTrigger).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('commitFormLink error slot', () => {
+  const SCHEDULE_LINK: DraftLink = {
+    id: 'link-3',
+    source: { kind: 'trigger', triggerType: 'schedule' },
+    targetPersonaId: 'dst-persona',
+    condition: null,
+  };
+
+  it('hands the form the AppError message, not "[object Object]"', async () => {
+    // invokeWithTimeout rejects with the serialized AppError, never an Error.
+    createTrigger.mockRejectedValueOnce({ error: 'Validation error: cron is not valid', kind: 'validation' });
+    const { result } = renderHook(() => useStudioComposer());
+    await act(async () => { await result.current.commitLink(SCHEDULE_LINK); });
+
+    let slot: string | undefined;
+    await act(async () => { slot = await result.current.commitFormLink('schedule', { cron: 'bad' }); });
+
+    expect(slot).toBe('Validation error: cron is not valid');
+    expect(result.current.formCommit).not.toBeNull();
+  });
+
+  it('never returns an empty string, which the form would read as success', async () => {
+    createTrigger.mockRejectedValueOnce({});
+    const { result } = renderHook(() => useStudioComposer());
+    await act(async () => { await result.current.commitLink(SCHEDULE_LINK); });
+
+    let slot: string | undefined;
+    await act(async () => { slot = await result.current.commitFormLink('schedule', { cron: '0 3 * * *' }); });
+
+    expect(slot).toBeTruthy();
+  });
+});
