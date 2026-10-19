@@ -16,6 +16,17 @@ export const DIMENSIONS = [
 
 export type DimensionKey = (typeof DIMENSIONS)[number];
 
+const UTF8 = new TextEncoder();
+
+/**
+ * Length the way Rust's `str::len()` counts it: UTF-8 bytes. JS `.length`
+ * counts UTF-16 units, so a non-Latin text (a 20-character Japanese summary is
+ * 60 bytes) passed the backend's `> 50` threshold and failed this mirror.
+ */
+function rustLen(v: unknown): number {
+  return typeof v === 'string' ? UTF8.encode(v).length : -1;
+}
+
 const DIMENSION_LABELS: Record<DimensionKey, string> = {
   prompt: 'Prompt',
   tools: 'Tools',
@@ -51,8 +62,8 @@ export function evaluateDimensions(designResult: AgentIR | null): Record<Dimensi
   // 1. Prompt -- structured_prompt with identity(>20), instructions(>50), and guidance
   const sp = raw.structured_prompt as Record<string, unknown> | undefined;
   if (sp) {
-    const identity = typeof sp.identity === 'string' && sp.identity.length > 20;
-    const instructions = typeof sp.instructions === 'string' && sp.instructions.length > 50;
+    const identity = rustLen(sp.identity) > 20;
+    const instructions = rustLen(sp.instructions) > 50;
     const guidance =
       (typeof sp.toolGuidance === 'string' && sp.toolGuidance.length > 0) ||
       (typeof sp.errorHandling === 'string' && sp.errorHandling.length > 0);
@@ -65,7 +76,8 @@ export function evaluateDimensions(designResult: AgentIR | null): Record<Dimensi
   // 3. Triggers
   const triggers = Array.isArray(raw.suggested_triggers) ? raw.suggested_triggers : [];
   result.triggers = triggers.length > 0 && triggers.some(
-    (t: unknown) => typeof t === 'object' && t !== null && 'trigger_type' in (t as Record<string, unknown>),
+    // Rust: `t.get("trigger_type").and_then(as_str).is_some()` - a string, not mere presence.
+    (t: unknown) => typeof t === 'object' && t !== null && typeof (t as Record<string, unknown>).trigger_type === 'string',
   );
 
   // 4. Connectors -- need credential_fields + auth_type
@@ -96,7 +108,7 @@ export function evaluateDimensions(designResult: AgentIR | null): Record<Dimensi
   result.notifications = Array.isArray(raw.suggested_notification_channels) && raw.suggested_notification_channels.length > 0;
 
   // 8. Summary
-  result.summary = typeof raw.summary === 'string' && raw.summary.length > 50;
+  result.summary = rustLen(raw.summary) > 50;
 
   // 9. Service flow
   result.service_flow = Array.isArray(raw.service_flow) && raw.service_flow.length > 0;
