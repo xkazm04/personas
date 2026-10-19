@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ExternalLink, Info, ChevronDown } from 'lucide-react';
+import { ExternalLink, ChevronDown } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { TableSkeleton, type TableSkeletonColumn } from '@/features/shared/components/layout/TableSkeleton';
@@ -63,15 +63,10 @@ export function LeaderboardMatrixPlaceholder() {
   );
 }
 
-// Prototype-local copy — extracted to en.json at consolidation.
+// Rank glyph and the one string with no key yet (carded for i18n).
 const COPY = {
   rank: '#',
-  agent: 'Agent',
-  fleetAvg: 'Fleet avg',
   sortHint: 'Click a metric to sort',
-  tied: 'tied',
-  speedCaveat:
-    'Identical for every agent — latency is mapped fleet-wide, not per-agent (known bug). This column can’t differentiate until per-persona latency is plumbed through.',
 };
 
 const MEDAL_STYLE: Record<string, string> = {
@@ -118,13 +113,6 @@ export function LeaderboardMatrixView({
   // genuinely new persona id ripples in.
   const enter = useRevealTracker();
 
-  // Surface the known latency-mapping gap: if every agent has the same speed
-  // score, the column is non-differentiating and we flag it inline.
-  const speedAllEqual = useMemo(() => {
-    const measured = leaderboard.map((e) => metricValue(e, 'speed')).filter((v) => v !== null);
-    return measured.length > 1 && new Set(measured).size === 1;
-  }, [leaderboard]);
-
   return (
     <div className="max-w-5xl mx-auto w-full">
       {/* Heatmap legend + sort hint */}
@@ -145,10 +133,9 @@ export function LeaderboardMatrixView({
           <thead>
             <tr className="bg-primary/[0.03]">
               <th className="w-12 px-2 py-3 text-center typo-caption text-foreground">{COPY.rank}</th>
-              <th className="px-3 py-3 text-left typo-caption text-foreground">{COPY.agent}</th>
+              <th className="px-3 py-3 text-left typo-caption text-foreground">{t.overview.sla_card.agent}</th>
               {RANK_OPTIONS.map((opt) => {
                 const active = sortKey === opt.key;
-                const flagged = opt.key === 'speed' && speedAllEqual;
                 const headline = opt.key === 'overall';
                 return (
                   <th key={opt.key} className={`px-2 py-2 align-bottom ${headline ? 'border-r border-primary/10' : ''}`}>
@@ -161,12 +148,6 @@ export function LeaderboardMatrixView({
                       <ChevronDown className={`w-3 h-3 transition-opacity ${active ? 'opacity-100' : 'opacity-0'}`} />
                     </button>
                     <div className={`mx-auto mt-1 h-0.5 w-6 rounded-full transition-colors ${active ? 'bg-primary' : 'bg-transparent'}`} />
-                    {flagged && (
-                      <span title={COPY.speedCaveat} className="mt-0.5 flex items-center justify-center gap-1 typo-caption text-amber-400 cursor-help">
-                        <Info className="w-3 h-3 flex-shrink-0" aria-hidden />
-                        <span className="leading-none">{COPY.tied}</span>
-                      </span>
-                    )}
                   </th>
                 );
               })}
@@ -239,7 +220,7 @@ export function LeaderboardMatrixView({
             <tr className="bg-primary/[0.02]">
               <td className="border-t-2 border-dashed border-primary/20" />
               <td className="px-3 py-1.5 align-middle border-t-2 border-dashed border-primary/20">
-                <span className="typo-caption text-foreground uppercase tracking-wide">{COPY.fleetAvg}</span>
+                <span className="typo-caption text-foreground uppercase tracking-wide">{lb.fleet_average}</span>
               </td>
               {RANK_OPTIONS.map((opt) => {
                 const v = fleetValue(opt.key, fleetAvgScore, fleetBenchmark);
