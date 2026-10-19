@@ -13,7 +13,15 @@ import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 export function useKpiDetail(kpi: DevKpi) {
   const { t } = useTranslation();
-  const measurements = useSystemStore((s) => s.kpiMeasurements);
+  // The store holds ONE measurement list, for whichever KPI was fetched last.
+  // Opening KPI B shows A's rows until B's read lands, and a slow read for A
+  // landing after B's leaves A's series under B's name for good. Only rows of
+  // THIS KPI are this KPI's history.
+  const storeMeasurements = useSystemStore((s) => s.kpiMeasurements);
+  const measurements = useMemo(
+    () => storeMeasurements.filter((m) => m.kpi_id === kpi.id),
+    [storeMeasurements, kpi.id],
+  );
   const goals = useSystemStore((s) => s.goals);
   const fetchKpiMeasurements = useSystemStore((s) => s.fetchKpiMeasurements);
   const fetchGoals = useSystemStore((s) => s.fetchGoals);
