@@ -23,6 +23,7 @@ import { trackRecentAgent, removeRecentAgent } from "@/hooks/agents/useRecentAge
 import { classifyUnknownError, categoryLabel } from "@/lib/errorTaxonomy";
 import { storeBus } from "@/lib/storeBus";
 import { autoAssignPersonaIcons } from "@/lib/icons/autoAssignIcons";
+import { createLatestWins } from "../../util/latestWins";
 
 /** Sub-resources fetched via getPersonaDetail, cached by persona ID. */
 export interface PersonaDetailExtras {
@@ -105,8 +106,9 @@ export interface PersonaSlice {
   cancelPendingSwitch: () => void;
 }
 
-let fetchDetailSeq = 0;
-let fetchSummariesSeq = 0;
+// One latest-wins slot per request family (src/stores/util/latestWins.ts).
+const detailLoads = createLatestWins();
+const summaryLoads = createLatestWins();
 const prefetchInflight = new Map<string, Promise<void>>();
 
 /**
@@ -258,10 +260,10 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
   },
 
   fetchPersonaSummaries: async () => {
-    const seq = ++fetchSummariesSeq;
+    const seq = summaryLoads.next();
     try {
       const summaries = await getPersonaSummaries();
-      if (seq !== fetchSummariesSeq) return; // superseded by a newer request
+      if (!summaryLoads.isCurrent(seq)) return; // superseded by a newer request
       const triggerCounts: Record<string, number> = {};
       const lastRun: Record<string, string | null> = {};
       const healthMap: Record<string, PersonaHealth> = {};
@@ -289,7 +291,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
         personaSummariesRefreshedAt: Date.now(),
       }));
     } catch (err) {
-      if (seq !== fetchSummariesSeq) return; // superseded by a newer request
+      if (!summaryLoads.isCurrent(seq)) return; // superseded by a newer request
       const category = classifyUnknownError(err);
       logger.warn("fetchPersonaSummaries failed", { category: categoryLabel(category), error: String(err) });
       // The warn was the ONLY record. A surface cannot render a log line, so an
@@ -299,7 +301,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
   },
 
   fetchDetail: async (id: string) => {
-    const seq = ++fetchDetailSeq;
+    const seq = detailLoads.next();
     // No `isLoading` here. That flag is the ROSTER's busy state (Home's
     // get-started band and Mission Control read it as "personas are still
     // loading"); a detail load writing it cleared the roster's busy state
@@ -309,7 +311,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
     try {
       // Single IPC round trip: persona + tools + triggers + subscriptions + automations
       const detail = await getPersonaDetail(id);
-      if (seq !== fetchDetailSeq) return; // superseded by a newer request
+      if (!detailLoads.isCurrent(seq)) return; // superseded by a newer request
 
       // Split detail into base Persona fields and sub-resource extras
       const { tools, triggers, subscriptions, automations, warnings, ...baseFields } = detail;
@@ -330,7 +332,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
         };
       });
     } catch (err) {
-      if (seq !== fetchDetailSeq) return; // superseded by a newer request
+      if (!detailLoads.isCurrent(seq)) return; // superseded by a newer request
       const category = classifyUnknownError(err);
       logger.warn("fetchDetail failed", { personaId: id, category: categoryLabel(category), error: String(err) });
       // Clear stale selection so the editor doesn't render with missing data
@@ -524,7 +526,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
     removeRecentAgent(id);
     // Invalidate any in-flight fetchDetail for this persona so it can't
     // resurrect the deleted persona in state after the delete completes.
-    if (get().selectedPersonaId === id) ++fetchDetailSeq;
+    if (get().selectedPersonaId === id) detailLoads.next();
 
     // 2026-05-04 — also drop any in-flight build sessions tied to this
     // persona so the sidebar's "Draft Builds" list stays in sync. Pre-fix
@@ -600,7 +602,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
       }
     }
 
-    if (!id) ++fetchDetailSeq; // invalidate any in-flight fetchDetail
+    if (!id) detailLoads.next(); // invalidate any in-flight fetchDetail
     set((state) => ({
       selectedPersonaId: id,
       pendingSelectPersonaId: null,
