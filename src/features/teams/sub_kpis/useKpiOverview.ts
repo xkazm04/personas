@@ -39,7 +39,11 @@ export function useKpiOverview(): { overview: KpiProjectRollup[]; loading: boole
   const [groupsLoading, setGroupsLoading] = useState(false);
 
   useEffect(() => {
-    if (!projectIdsKey) return;
+    // No project left to read: settle. Returning without this left a read
+    // cancelled mid-flight (scope switched to a project with no active KPIs)
+    // holding `loading` true forever, so the variants drew their ghost
+    // instead of the empty estate.
+    if (!projectIdsKey) { setGroupsLoading(false); return; }
     let cancelled = false;
     setGroupsLoading(true);
     const ids = projectIdsKey.split(',');
