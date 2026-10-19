@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Bell, ShieldAlert, Activity, PlayCircle, DollarSign } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { SettingRow } from '@/features/shared/components/forms/SettingRow';
 import { useAppSetting } from '@/hooks/utility/data/useAppSetting';
+import { useDebouncedSave } from '@/hooks/utility/timing/useDebouncedSave';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { WebhookSubscriptionsPanel } from './WebhookSubscriptionsPanel';
@@ -43,24 +44,17 @@ function WeeklyDigestToggle() {
 
   const enabled = digestSetting.value === 'true';
 
+  const [edited, setEdited] = useState(false);
   const handleToggle = useCallback(() => {
+    setEdited(true);
     digestSetting.setValue(enabled ? 'false' : 'true');
   }, [enabled, digestSetting]);
 
-  // Auto-save (debounced to prevent race conditions from rapid toggles).
-  // Scalar deps only — see the matching comment in NotificationSettings below;
-  // depending on the per-render `digestSetting` object caused a write loop.
-  const digestLoadedOnce = useRef(false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- digestSetting.save is stable (useCallback on key)
-  useEffect(() => {
-    if (!digestSetting.loaded) return;
-    if (!digestLoadedOnce.current) {
-      digestLoadedOnce.current = true;
-      return;
-    }
-    const timer = setTimeout(() => digestSetting.save(), 300);
-    return () => clearTimeout(timer);
-  }, [digestSetting.loaded, digestSetting.value]);
+  // Auto-save, debounced so rapid toggles coalesce into one write, and FLUSHED
+  // on unmount: a toggle made in the last 300ms before leaving the tab used to
+  // be dropped by the timer cleanup. Keyed on the scalar value, never the
+  // per-render setting object (that caused a write loop).
+  useDebouncedSave(() => digestSetting.save(), digestSetting.loaded && edited, [digestSetting.value], 300);
 
   if (!digestSetting.loaded) return null;
 
@@ -84,26 +78,16 @@ export default function NotificationSettings() {
   const setting = useAppSetting(NOTIFICATION_PREFS_KEY, JSON.stringify(DEFAULT_NOTIFICATION_PREFS), (v) => {
     try { const p = JSON.parse(v); return typeof p === 'object' && p !== null; } catch { /* intentional: non-critical -- JSON parse fallback */ return false; }
   });
-  const hasLoadedOnce = useRef(false);
+  const [edited, setEdited] = useState(false);
   const { t, tx } = useTranslation();
   const s = t.settings.notifications;
 
-  // Auto-save whenever value changes (debounced to prevent race conditions from
-  // rapid toggles). Deps must be the scalar fields, NOT the `setting` object —
-  // useAppSetting returns a fresh object every render, so depending on it made
-  // this effect re-run on every render and `save()` flips the `saved` flag
-  // (another render), producing an endless set_app_setting write loop while
-  // the tab was mounted.
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- setting.save is stable (useCallback on key)
-  useEffect(() => {
-    if (!setting.loaded) return;
-    if (!hasLoadedOnce.current) {
-      hasLoadedOnce.current = true;
-      return;
-    }
-    const timer = setTimeout(() => setting.save(), 300);
-    return () => clearTimeout(timer);
-  }, [setting.loaded, setting.value]);
+  // Auto-save after an operator edit, debounced so rapid toggles coalesce, and
+  // flushed on unmount so a toggle made just before leaving the tab still
+  // lands. Deps are the scalar value, NOT the `setting` object: useAppSetting
+  // returns a fresh object every render, and depending on it once produced an
+  // endless set_app_setting write loop while the tab was mounted.
+  useDebouncedSave(() => setting.save(), setting.loaded && edited, [setting.value], 300);
 
   const prefs = useMemo<NotificationPrefs>(() => parseNotificationPrefs(setting.value), [setting.value]);
 
@@ -117,6 +101,7 @@ export default function NotificationSettings() {
       const current = prefsRef.current;
       const next = { ...current, [key]: !current[key] };
       prefsRef.current = next;
+      setEdited(true);
       setting.setValue(JSON.stringify(next));
     },
     [setting],
