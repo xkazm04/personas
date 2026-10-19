@@ -5,7 +5,7 @@ import * as devApi from '@/api/devTools/devTools';
 import type { SkillEntry, SkillInstallPreview } from '@/api/devTools/devTools';
 import type { SkillInstallResult } from '@/lib/bindings/SkillInstallResult';
 import { useTranslation } from '@/i18n/useTranslation';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 /** Which library the browser is showing — the active project's skills, or
  *  the user-global `~/.claude/skills` library. */
@@ -89,11 +89,14 @@ export function useSkillData(initialSource: SkillSource = 'project') {
         const sourceProjectId = source === 'global' ? null : (activeProjectId ?? null);
         return await devApi.installSkill(skillName, sourceProjectId, targetProjectId, overwrite);
       } catch (err) {
-        addToast(err instanceof Error ? err.message : t.plugins.fleet.skill_install_failed, 'error');
+        // The IPC rejects with an AppError object, never an Error, and a real
+        // Error carries OS prose (EACCES ...): the operator gets the translated
+        // sentence, the raw error goes to the log and Sentry where it is read.
+        toastCatch('features/plugins/fleet/sub_skills/useSkillData:installSkill', t.plugins.fleet.skill_install_failed)(err);
         return null;
       }
     },
-    [source, activeProjectId, addToast, t],
+    [source, activeProjectId, t],
   );
 
   // Preview a (re-)install diff before overwriting. Returns null on error (the

@@ -7,12 +7,17 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 // Mock the skill files API surface used by useSkillData.
 vi.mock('@/api/devTools/devTools', () => ({
   listSkills: vi.fn(),
+  installSkill: vi.fn(),
 }));
 
 // Avoid pulling the toast store's full module graph.
+// toastCatch writes through getState(), the hook through a selector: carry both.
+const addToast = vi.fn();
 vi.mock('@/stores/toastStore', () => ({
-  useToastStore: (selector: (s: { addToast: () => void }) => unknown) =>
-    selector({ addToast: vi.fn() }),
+  useToastStore: Object.assign(
+    (selector: (s: { addToast: typeof addToast }) => unknown) => selector({ addToast }),
+    { getState: () => ({ addToast }) },
+  ),
 }));
 
 // useSkillData now subscribes to activeProjectId so it can scope skill
@@ -27,7 +32,7 @@ vi.mock('@/stores/systemStore', () => ({
 // strings only matter when an error path fires. Stub minimally.
 vi.mock('@/i18n/useTranslation', () => ({
   useTranslation: () => ({
-    t: { plugins: { dev_tools: {} } },
+    t: { plugins: { dev_tools: {}, fleet: { skill_install_failed: 'Install failed' } } },
     tx: (s: string) => s,
   }),
 }));
@@ -89,5 +94,35 @@ describe('useSkillData — favorites', () => {
     const { result } = renderHook(() => useSkillData());
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.isFavorite('research')).toBe(false);
+  });
+});
+
+describe('useSkillData — install failure', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    addToast.mockClear();
+    vi.mocked(devApi.listSkills).mockResolvedValue(SKILLS);
+  });
+
+  it('toasts the translated sentence, never the raw OS error', async () => {
+    vi.mocked(devApi.installSkill).mockRejectedValue(new Error('EACCES: permission denied, mkdir /b/.claude/skills'));
+    const { result } = renderHook(() => useSkillData('global'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let out: unknown = 'unset';
+    await act(async () => { out = await result.current.installSkill('research', 'p2', false); });
+    expect(out).toBeNull();
+    expect(addToast).toHaveBeenCalledWith('Install failed', 'error', expect.any(Number));
+    expect(addToast.mock.calls.flat().join(' ')).not.toContain('EACCES');
+  });
+
+  it('handles the AppError object the IPC actually rejects with', async () => {
+    vi.mocked(devApi.installSkill).mockRejectedValue({ error: 'target project has no root', kind: 'NotFound' });
+    const { result } = renderHook(() => useSkillData('global'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => { await result.current.installSkill('research', 'p2', false); });
+    expect(addToast.mock.calls.at(-1)?.slice(0, 2)).toEqual(['Install failed', 'error']);
+    expect(addToast.mock.calls.flat().join(' ')).not.toContain('[object Object]');
   });
 });
