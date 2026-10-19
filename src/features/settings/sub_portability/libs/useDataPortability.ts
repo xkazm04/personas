@@ -2,7 +2,6 @@ import { silentCatch } from "@/lib/silentCatch";
 import { useState, useEffect, useCallback } from 'react';
 import {
   getExportStats,
-  exportFull,
   exportSelective,
   importPortabilityBundle,
   exportCredentials,
@@ -108,20 +107,6 @@ export function useDataPortability() {
         setStatsStatus('error');
       });
   }, []);
-
-  const handleExportFull = useCallback(async (includeMemories: boolean, passphrase?: string) => {
-    if (exportStatus === 'loading') return;
-    setExportStatus('loading');
-    setErrorMsg('');
-    try {
-      const saved = await exportFull(includeMemories, passphrase);
-      setExportStatus(saved ? 'success' : 'idle');
-    } catch (e) {
-      silentCatch("useDataPortability:exportFull")(e);
-      setErrorMsg(errMsg(e, s.export_failed));
-      setExportStatus('error');
-    }
-  }, [exportStatus, s.export_failed]);
 
   // One options object end to end — see `ExportSelectionArgs`. The previous
   // 8-positional-`string[]` signature made a transposed scope invisible to tsc.
@@ -341,7 +326,6 @@ export function useDataPortability() {
     showExportModal,
     setShowExportModal,
     errorMsg,
-    handleExportFull,
     handleExportSelective,
     handleImport,
     handleImportWithResolutions,
