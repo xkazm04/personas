@@ -7,6 +7,7 @@ import type { MemoryAction } from "@/features/overview/sub_memories/libs/memoryA
 import { extractActionsFromReview, loadActions, saveActions } from "@/features/overview/sub_memories/libs/memoryActions";
 import { createMemory, deleteMemory, listMemoriesWithStats, mergeMemoriesAtomic, reflectMemoriesWithCli, reviewMemoriesWithCli, updateMemoryTier } from "@/api/overview/memories";
 import { createLatestWins } from "../../util/latestWins";
+import { extractMessage } from "@/lib/silentCatch";
 
 
 export interface MemorySlice {
@@ -139,7 +140,10 @@ export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice>
     } catch (err) {
       if (!latestWins.isCurrent(token)) return;
       reportError(err, "Failed to fetch memories", set);
-      set({ memoriesLoading: false, memoriesError: err instanceof Error ? err.message : String(err) });
+      // extractMessage, not `instanceof Error ? .. : String(err)`: IPC rejects
+      // with an AppError object, which String() turns into "[object Object]"
+      // and the page's resolveErrorTranslated can only call generic.
+      set({ memoriesLoading: false, memoriesError: extractMessage(err) });
     }
   },
 
@@ -244,7 +248,7 @@ export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice>
       set({ memoryReviewRunning: false, memoryReviewResult: result });
       return result;
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
+      const message = extractMessage(err);
       set({ memoryReviewRunning: false, memoryReviewError: message });
       reportError(err, "Failed to review memories", set);
       throw err;
@@ -261,7 +265,7 @@ export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice>
       set({ memoryReviewRunning: false, memoryReviewResult: result });
       return result;
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
+      const message = extractMessage(err);
       set({ memoryReviewRunning: false, memoryReviewError: message });
       reportError(err, "Failed to reflect on memories", set);
       throw err;
