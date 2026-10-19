@@ -315,6 +315,10 @@ pub fn count_pending_for_persona(
 /// Proposals (any kind) a human DISCARDED since `since` (RFC-3339 / SQLite
 /// datetime text, compared on `decided_at`) — the dashboard's rejected-drafts
 /// signal: how often the agent's proposals are being thrown out.
+///
+/// Compared through `julianday()` on both sides: `decided_at` is written by
+/// `datetime('now')` (space separator) and callers pass RFC-3339 (`T`), and
+/// as TEXT every discard on the cutoff's own day sorted below the cutoff.
 pub fn count_discarded_since(
     pool: &DbPool,
     persona_id: &str,
@@ -328,7 +332,8 @@ pub fn count_discarded_since(
             let n: i64 = conn.query_row(
                 "SELECT COUNT(*) AS n FROM persona_memory_review_proposal
                  WHERE persona_id = ?1 AND status = 'discarded'
-                   AND decided_at IS NOT NULL AND decided_at >= ?2",
+                   AND decided_at IS NOT NULL
+                   AND julianday(decided_at) >= julianday(?2)",
                 params![persona_id, since],
                 |r| r.get("n"),
             )?;
@@ -396,4 +401,57 @@ fn map_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<MemoryReviewProposal> {
         kind,
         draft,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::init_test_db;
+
+    /// `decided_at` is written by `datetime('now')` ("YYYY-MM-DD HH:MM:SS")
+    /// while the dashboard passes an RFC3339 `since` ("YYYY-MM-DDTHH:MM:SS+00:00").
+    /// Compared as TEXT, ' ' sorts below 'T', so every discard on the cutoff's
+    /// own UTC day read as older than the cutoff, whatever its time.
+    #[test]
+    fn count_discarded_since_compares_instants_not_text() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
+             VALUES ('mrp_p', 'Echo', 'sp', datetime('now'), datetime('now'))",
+            [],
+        )?;
+        drop(conn);
+        let mut ids = Vec::new();
+        for _ in 0..2 {
+            let id = create_raw(
+                &pool,
+                CreateRawProposalInput {
+                    persona_id: "mrp_p",
+                    kind: "self_model_diff",
+                    proposal_json: "{\"diffs\":[]}",
+                    summary: None,
+                    proposed_changes: 0,
+                },
+            )?;
+            assert!(mark_discarded(&pool, &id)?);
+            ids.push(id);
+        }
+        // Same UTC day as the cutoff: one after it, one before it.
+        let conn = pool.get()?;
+        for (id, at) in ids
+            .iter()
+            .zip(["2026-10-12 15:00:00", "2026-10-12 09:00:00"])
+        {
+            conn.execute(
+                "UPDATE persona_memory_review_proposal SET decided_at = ?2 WHERE id = ?1",
+                params![id, at],
+            )?;
+        }
+        drop(conn);
+
+        let n = count_discarded_since(&pool, "mrp_p", "2026-10-12T10:00:00.123456789+00:00")?;
+        assert_eq!(n, 1, "the 15:00 discard is after a 10:00 cutoff");
+        Ok(())
+    }
 }
