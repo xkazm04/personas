@@ -1,4 +1,5 @@
 import { useCallback, type ReactNode } from 'react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { Components } from 'react-markdown';
 import {
   Check,
@@ -20,19 +21,21 @@ export function CopyButton({ text, className }: { text: string; className?: stri
   }, [text, copy]);
 
   return (
-    <button
-      type="button"
-      onClick={handleCopy}
-      title={t.vault.design_phases.copy_to_clipboard}
-      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded typo-body transition-all ${
-        copied
-          ? 'text-emerald-400 bg-emerald-500/10'
-          : 'text-foreground hover:text-foreground/95 hover:bg-secondary/60'
-      } ${className ?? ''}`}
-    >
-      {copied ? <Check className="w-2.5 h-2.5" /> : <Copy className="w-2.5 h-2.5" />}
-      {copied ? 'Copied' : 'Copy'}
-    </button>
+    <Tooltip content={t.vault.design_phases.copy_to_clipboard}>
+      <button
+        type="button"
+        onClick={handleCopy}
+        aria-label={t.vault.design_phases.copy_to_clipboard}
+        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded typo-body transition-all ${
+          copied
+            ? 'text-emerald-400 bg-emerald-500/10'
+            : 'text-foreground hover:text-foreground/95 hover:bg-secondary/60'
+        } ${className ?? ''}`}
+      >
+        {copied ? <Check className="w-2.5 h-2.5" /> : <Copy className="w-2.5 h-2.5" />}
+        {copied ? 'Copied' : 'Copy'}
+      </button>
+    </Tooltip>
   );
 }
 

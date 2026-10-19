@@ -1,4 +1,5 @@
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { ThemedSelectOption } from '@/features/shared/components/forms/ThemedSelect';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { Code2, HeadsetIcon, Briefcase } from 'lucide-react';
@@ -89,21 +90,21 @@ export function CredentialPickerFilters({
           { role: 'support' as const, icon: HeadsetIcon, label: t.vault.picker_section.role_support },
           { role: 'manager' as const, icon: Briefcase, label: t.vault.picker_section.role_manager },
         ]).map(({ role, icon: Icon, label }) => (
-          <button
-            key={role}
-            type="button"
-            onClick={() => onRoleToggle(role)}
-            title={label}
-            aria-label={label}
-            aria-pressed={activeRole === role}
-            className={`p-1.5 rounded-card border transition-colors ${
-              activeRole === role
-                ? 'bg-violet-500/15 border-violet-500/30 text-violet-400'
-                : 'bg-secondary/30 border-primary/10 text-foreground hover:text-muted-foreground/80 hover:border-primary/20'
-            }`}
-          >
-            <Icon className="w-4 h-4" />
-          </button>
+          <Tooltip key={role} content={label}>
+            <button
+              type="button"
+              onClick={() => onRoleToggle(role)}
+              aria-label={label}
+              aria-pressed={activeRole === role}
+              className={`p-1.5 rounded-card border transition-colors ${
+                activeRole === role
+                  ? 'bg-violet-500/15 border-violet-500/30 text-violet-400'
+                  : 'bg-secondary/30 border-primary/10 text-foreground hover:text-muted-foreground/80 hover:border-primary/20'
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+            </button>
+          </Tooltip>
         ))}
       </div>
     </div>
