@@ -10,6 +10,7 @@ import type { EffectiveModelConfig } from '@/lib/bindings/EffectiveModelConfig';
 import type { ConfigSource } from '@/lib/bindings/ConfigSource';
 import type { ConfigField } from '@/lib/bindings/ConfigField';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 import { extractMessage, silentCatch } from '@/lib/silentCatch';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 
@@ -385,15 +386,16 @@ export function PersonaConfigPanel() {
       {/* Subtitle + refresh */}
       <div className="flex items-start justify-between gap-3">
         <p className="typo-caption text-foreground max-w-2xl">{s.subtitle}</p>
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="xs"
           onClick={() => load(true)}
-          disabled={globalLoading}
-          className="flex items-center gap-1 px-2 py-1 typo-caption text-foreground hover:text-foreground bg-secondary/30 hover:bg-secondary/50 rounded transition-colors disabled:opacity-50 shrink-0"
+          loading={globalLoading}
+          icon={<RefreshCw className="w-3 h-3" />}
+          className="shrink-0"
         >
-          <RefreshCw className={`w-3 h-3 ${globalLoading ? 'animate-spin' : ''}`} />
           {s.refresh}
-        </button>
+        </Button>
       </div>
 
       {/* Legend */}

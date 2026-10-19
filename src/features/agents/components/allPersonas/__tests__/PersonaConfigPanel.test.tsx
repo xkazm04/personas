@@ -52,4 +52,14 @@ describe('PersonaConfigPanel - load', () => {
     expect(alert.textContent).not.toContain('[object Object]');
     expect(screen.queryByText('No agents found')).toBeNull();
   });
+
+  it('the Refresh control is busy and inert while a load runs, then re-arms', async () => {
+    const pending = deferred<Persona[]>();
+    listPersonas.mockReturnValueOnce(pending.promise);
+    render(<PersonaConfigPanel />);
+    const refresh = screen.getByRole('button', { name: /refresh/i }) as HTMLButtonElement;
+    expect(refresh.disabled).toBe(true);
+    await act(async () => { pending.resolve([persona('p-1', 'One')]); });
+    await waitFor(() => expect((screen.getByRole('button', { name: /refresh/i }) as HTMLButtonElement).disabled).toBe(false));
+  });
 });
