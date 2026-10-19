@@ -334,7 +334,10 @@ async function runPassportBuild(regen: boolean, projectId: string | undefined, s
   const phase2 = assemble(evidenceById);
   // Append to the local readiness history (deduped) so the cover sparkline +
   // "since last scan" delta accrue across scans. Best-effort, never blocks.
-  recordSnapshot(phase2.passports, Date.now());
+  // Gated like publish(): a superseded build's readings are stale, and
+  // recording them after the newer build's would append a false regression
+  // to the series that the cover's "since last scan" delta then reports.
+  if (sink.isCurrent()) recordSnapshot(phase2.passports, Date.now());
   publish(phase2.passports, phase2.rawByProject, map.generated_at, true);
 }
 
