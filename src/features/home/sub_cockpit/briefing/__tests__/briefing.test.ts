@@ -221,3 +221,26 @@ describe('deterministic compositions', () => {
     ]);
   });
 });
+
+describe('buildSessionDelta - a run whose process died', () => {
+  const anchor = Date.parse('2026-07-30T06:00:00Z');
+
+  it('counts an incomplete run as failed and names its persona, but not a cancelled one', () => {
+    const delta = buildSessionDelta({
+      lastSeen: anchor,
+      runs: [
+        // `sweep_zombie_executions` writes `incomplete` when the run's process died.
+        { persona_id: 'p1', status: 'incomplete', created_at: '2026-07-30T07:00:00Z' },
+        // A user stop is a decision, not a failure.
+        { persona_id: 'p2', status: 'cancelled', created_at: '2026-07-30T07:30:00Z' },
+      ],
+      alerts: [],
+      approvals: [],
+      personas: [],
+      openIncidents: 0,
+    });
+    expect(delta.runs).toBe(2);
+    expect(delta.failedRuns).toBe(1);
+    expect(delta.failedPersonas.map((p) => p.id)).toEqual(['p1']);
+  });
+});

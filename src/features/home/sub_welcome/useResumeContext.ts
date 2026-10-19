@@ -6,6 +6,7 @@ import { useTourStore } from '@/stores/tourStore';
 import { getLocalizedTourById, getLocalizedTourSteps } from '@/stores/slices/system/tourSlice';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { isLostRun } from '@/features/home/lib/lostRun';
 
 
 /**
@@ -198,14 +199,14 @@ export function collectRecentFailures(
     return ts;
   };
   for (const e of executions) {
-    if (e.status !== 'failed') continue;
+    if (!isLostRun(e.status)) continue;
     const ts = fresh(e.created_at);
     if (ts == null) continue;
     out.push({ personaId: e.persona_id, failureKey: e.id, executionId: e.id, ts });
   }
   const seen = new Set(out.map((c) => `${c.personaId}@${new Date(c.ts).toISOString()}`));
   for (const r of runs ?? []) {
-    if (r.status !== 'failed') continue;
+    if (!isLostRun(r.status)) continue;
     const ts = fresh(r.created_at);
     if (ts == null) continue;
     const key = `${r.persona_id}@${r.created_at}`;

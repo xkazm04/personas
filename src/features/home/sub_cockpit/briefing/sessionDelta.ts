@@ -22,6 +22,7 @@ import type { FiredAlert } from '@/lib/bindings/FiredAlert';
 import type { RunSample } from '@/stores/slices/overview/homeSpineWindows';
 import type { CompanionCockpitSpecBody, CompanionCockpitWidget, PendingApproval } from '@/api/companion';
 import type { SessionDelta } from '@/api/companion/briefing';
+import { isLostRun } from '@/features/home/lib/lostRun';
 
 /** Max failing personas / alerts / approvals carried in the delta doc. */
 const DELTA_PERSONA_LIMIT = 5;
@@ -53,7 +54,7 @@ export function buildSessionDelta(input: SessionDeltaInput): SessionDelta {
     const ts = Date.parse(r.created_at);
     if (Number.isNaN(ts) || ts <= lastSeen) continue;
     runs++;
-    if (r.status === 'failed') {
+    if (isLostRun(r.status)) {
       failedRuns++;
       failedByPersona.set(r.persona_id, (failedByPersona.get(r.persona_id) ?? 0) + 1);
     }

@@ -229,3 +229,18 @@ describe('useSinceLeftBriefing outcome', () => {
     expect(primeHomeSpine).toHaveBeenCalledWith(true);
   });
 });
+
+describe('computeSinceLeftBriefing - a run whose process died', () => {
+  it('counts an incomplete run as failed, and a cancelled one as neither', () => {
+    const r = computeSinceLeftBriefing(
+      input({
+        runs: [
+          { persona_id: 'a', status: 'incomplete', created_at: iso(NOW - HOUR) },
+          { persona_id: 'b', status: 'cancelled', created_at: iso(NOW - HOUR) },
+        ],
+      }),
+      LAST_SEEN,
+    );
+    expect(r.lines).toEqual([{ kind: 'runs', count: 2, failed: 1 }]);
+  });
+});

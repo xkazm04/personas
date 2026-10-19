@@ -17,6 +17,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useOverviewStore } from '@/stores/overviewStore';
 import type { RunSample } from '@/stores/slices/overview/homeSpineWindows';
 import { silentCatch } from '@/lib/silentCatch';
+import { isLostRun } from '@/features/home/lib/lostRun';
 
 const LAST_SEEN_KEY = 'personas:home-last-seen';
 const HEARTBEAT_MS = 60_000;
@@ -80,7 +81,7 @@ export function computeSinceLeftBriefing(
       const ts = Date.parse(r.created_at);
       if (Number.isNaN(ts) || ts <= lastSeen) continue;
       runs++;
-      if (r.status === 'failed') failed++;
+      if (isLostRun(r.status)) failed++;
     }
     if (runs > 0) lines.push({ kind: 'runs', count: runs, failed });
   }
