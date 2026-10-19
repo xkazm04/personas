@@ -13,6 +13,14 @@
 import { rotateCredentialNow, listRotationPolicies, updateRotationPolicy } from '@/api/vault/rotation';
 import { sendOsNotification } from '@/lib/utils/platform/osNotification';
 import { remediationBus, type RemediationEvent, type RemediationAction } from './remediationBus';
+import { extractMessage } from '@/lib/silentCatch';
+
+// The rotation IPC rejects with a serialized AppError OBJECT, never an Error:
+// `err instanceof Error` turned every refusal into the bare fallback, so the
+// OS notification and the outcome log never carried the backend's reason.
+function reasonOf(err: unknown, fallback: string): string {
+  return extractMessage(err) || fallback;
+}
 
 // -- Action Handlers -------------------------------------------------
 
@@ -21,7 +29,7 @@ async function executeAutoRotate(event: RemediationEvent): Promise<void> {
     const detail = await rotateCredentialNow(event.credentialId);
     remediationBus.updateOutcome(event.id, 'success', detail);
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Rotation failed';
+    const message = reasonOf(err, 'Rotation failed');
     remediationBus.updateOutcome(event.id, 'failed', message);
     // Rotation failure triggers a notification
     void sendOsNotification(
@@ -56,7 +64,7 @@ async function executeAutoDisable(event: RemediationEvent): Promise<void> {
       `${event.credentialName}: sustained critical failures detected. Rotation policies disabled to prevent cascading errors.`,
     );
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Disable failed';
+    const message = reasonOf(err, 'Disable failed');
     remediationBus.updateOutcome(event.id, 'failed', message);
   }
 }
@@ -105,7 +113,7 @@ export async function executeRemediationAction(event: RemediationEvent): Promise
     remediationBus.updateOutcome(
       event.id,
       'failed',
-      err instanceof Error ? err.message : 'Execution error',
+      reasonOf(err, 'Execution error'),
     );
   }
 }
