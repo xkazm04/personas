@@ -138,7 +138,7 @@ export function LeaderboardMatrixView({
                 const active = sortKey === opt.key;
                 const headline = opt.key === 'overall';
                 return (
-                  <th key={opt.key} className={`px-2 py-2 align-bottom ${headline ? 'border-r border-primary/10' : ''}`}>
+                  <th key={opt.key} aria-sort={active ? 'descending' : undefined} className={`px-2 py-2 align-bottom ${headline ? 'border-r border-primary/10' : ''}`}>
                     <button
                       type="button"
                       onClick={() => setSortKey(opt.key)}
