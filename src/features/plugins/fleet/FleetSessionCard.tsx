@@ -269,7 +269,7 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
             role="button"
             tabIndex={0}
             data-testid={`fleet-session-close-${session.id}`}
-            aria-label={session.state === 'exited' || session.state === 'hibernated' ? 'Remove from list' : 'Kill session'}
+            aria-label={session.state === 'exited' || session.state === 'hibernated' ? f.dismiss_session : f.kill_session}
             onClick={handleClose}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
