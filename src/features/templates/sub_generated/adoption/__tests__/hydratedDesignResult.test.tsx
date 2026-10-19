@@ -55,3 +55,39 @@ describe('adoption recipe-ref hydration', () => {
     expect(result.current.failed).toBe(false);
   });
 });
+
+describe('adoption hydration keeps recipe provenance (parity with template_v3.rs)', () => {
+  beforeEach(() => {
+    listRecipes.mockReset();
+  });
+
+  it('stamps source_recipe_id and source_recipe_version onto the inlined use case', async () => {
+    listRecipes.mockResolvedValue([RECIPE]);
+    const json = JSON.stringify({
+      use_cases: [{ recipe_ref: { id: 'r1', version: '3', bindings: { channel: 'ops' } } }],
+    });
+    const { result } = renderHook(() => useHydratedDesignResult(json));
+    await waitFor(() => {
+      const ucs = result.current.result?.use_cases as Array<Record<string, unknown>>;
+      expect(ucs[0]?.title).toBe('Post to ops');
+    });
+    const uc = (result.current.result?.use_cases as Array<Record<string, unknown>>)[0]!;
+    expect(uc.source_recipe_id).toBe('r1');
+    expect(uc.source_recipe_version).toBe('3');
+    expect('recipe_ref' in uc).toBe(false);
+  });
+
+  it('never overwrites provenance the recipe body already carries', async () => {
+    listRecipes.mockResolvedValue([
+      { id: 'r1', prompt_template: JSON.stringify({ id: 'uc1', source_recipe_id: 'origin' }) },
+    ]);
+    const { result } = renderHook(() => useHydratedDesignResult(WITH_REFS));
+    await waitFor(() => {
+      const ucs = result.current.result?.use_cases as Array<Record<string, unknown>>;
+      expect(ucs[0]?.id).toBe('uc1');
+    });
+    const uc = (result.current.result?.use_cases as Array<Record<string, unknown>>)[0]!;
+    expect(uc.source_recipe_id).toBe('origin');
+    expect('source_recipe_version' in uc).toBe(false);
+  });
+});

@@ -64,6 +64,23 @@ function applyBindings(uc: unknown, bindings: Record<string, unknown> | undefine
   }
 }
 
+/** Stamp catalog provenance onto a hydrated UC, as
+ *  `engine::template_v3::hydrate_recipe_refs` does after `apply_bindings`:
+ *  `source_recipe_id` always, `source_recipe_version` when the ref names a
+ *  string version, neither overwriting a value the recipe already carries.
+ *  Without it the adoption draft built from this result loses the only link
+ *  back to the recipe (the Rust hydration never runs on an already-inline UC),
+ *  and the composition x-ray, which reads the link, unmounts once hydration lands. */
+function stampProvenance(uc: unknown, recipeId: string, version: unknown): unknown {
+  if (!uc || typeof uc !== 'object' || Array.isArray(uc)) return uc;
+  const out = { ...(uc as Record<string, unknown>) };
+  if (!('source_recipe_id' in out)) out.source_recipe_id = recipeId;
+  if (typeof version === 'string' && !('source_recipe_version' in out)) {
+    out.source_recipe_version = version;
+  }
+  return out;
+}
+
 export interface HydratedDesignResult {
   result: Record<string, unknown> | null;
   /** The recipe lookup rejected; capabilities are unresolved refs, not absent. */
@@ -100,13 +117,17 @@ export function useHydratedDesignResult(
         const byId = new Map(recipes.map((r) => [r.id, r]));
         const ucs = (parsed.use_cases ?? []) as Array<Record<string, unknown>>;
         const hydrated = ucs.map((uc) => {
-          const ref = (uc?.recipe_ref ?? null) as { id?: string; bindings?: Record<string, unknown> } | null;
+          const ref = (uc?.recipe_ref ?? null) as {
+            id?: string;
+            version?: unknown;
+            bindings?: Record<string, unknown>;
+          } | null;
           if (!ref?.id) return uc;
           const recipe = byId.get(ref.id);
           if (!recipe?.prompt_template) return uc;
           try {
             const inline = JSON.parse(recipe.prompt_template);
-            return applyBindings(inline, ref.bindings);
+            return stampProvenance(applyBindings(inline, ref.bindings), ref.id, ref.version);
           } catch {
             return uc;
           }

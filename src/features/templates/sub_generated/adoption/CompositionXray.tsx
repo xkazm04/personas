@@ -26,8 +26,12 @@ export function CompositionXray({ designResult }: CompositionXrayProps) {
 
   const refIds = useMemo(() => {
     const ucs = (designResult.use_cases ?? []) as Array<Record<string, unknown>>;
+    // A raw payload names the recipe in `recipe_ref.id`; once
+    // useHydratedDesignResult inlines the UC, the same id survives as the
+    // `source_recipe_id` provenance stamp. Reading only the first made the
+    // x-ray vanish the moment hydration succeeded.
     return ucs
-      .map((uc) => (uc.recipe_ref as Record<string, unknown> | undefined)?.id)
+      .map((uc) => (uc.recipe_ref as Record<string, unknown> | undefined)?.id ?? uc.source_recipe_id)
       .filter((id): id is string => typeof id === 'string');
   }, [designResult]);
 
