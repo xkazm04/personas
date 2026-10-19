@@ -3,6 +3,7 @@ import { cronFireTimesInRange, listRecentScheduleRuns } from '@/api/pipeline/tri
 import { classifyRunOutcome, matchPastSlotsToRuns, type CalendarEvent, type RunPoint } from './calendarHelpers';
 import type { ScheduleEntry } from './scheduleHelpers';
 import { silentCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 
 // The recent-runs history command caps at 168h / 200 rows; a month view whose
 // past portion reaches further back simply gets no run records for the older
@@ -60,7 +61,7 @@ function slotCapForWindow(startMs: number, endMs: number): number {
  *    downtime drift, contribute their real runs directly as past events.
  *
  * Run history is fetched only when the window has a past portion, bounded to the
- * command's 168h cap. Stale responses are discarded via a request-id ref.
+ * command's 168h cap. Stale responses are discarded via a createLatestWins token.
  */
 export function useCalendarEvents(
   entries: ScheduleEntry[],
@@ -68,7 +69,7 @@ export function useCalendarEvents(
   end: Date,
 ): CalendarEventsResult {
   const [result, setResult] = useState<CalendarEventsResult>({ events: [], loading: false });
-  const reqIdRef = useRef(0);
+  const latestWins = useRef(createLatestWins()).current;
   const startMs = start.getTime();
   const endMs = end.getTime();
 
@@ -95,7 +96,7 @@ export function useCalendarEvents(
       setResult({ events: [], loading: false });
       return;
     }
-    const myId = ++reqIdRef.current;
+    const myId = latestWins.next();
     setResult((prev) => ({ ...prev, loading: true }));
     const startD = new Date(startMs);
     const endD = new Date(endMs);
@@ -109,7 +110,7 @@ export function useCalendarEvents(
     let runsLeft = startMs < nowMs ? 1 : 0;
 
     const publish = () => {
-      if (myId !== reqIdRef.current) return;
+      if (!latestWins.isCurrent(myId)) return;
       const events = assembleCalendarEvents(entries, slotsPerEntry, runsByTrigger);
       setResult({ events, loading: slotsLeft > 0 || runsLeft > 0 });
     };
@@ -158,7 +159,7 @@ export function useCalendarEvents(
       );
       void listRecentScheduleRuns(hours)
         .then((runs) => {
-          if (myId !== reqIdRef.current) return;
+          if (!latestWins.isCurrent(myId)) return;
           for (const run of runs) {
             const t = Date.parse(run.created_at);
             if (Number.isNaN(t) || t < startMs || t > nowMs) continue;
@@ -179,18 +180,19 @@ export function useCalendarEvents(
     entries.forEach((entry, i) => {
       void slotOf(entry)
         .then((slots) => {
-          if (myId !== reqIdRef.current) return;
+          if (!latestWins.isCurrent(myId)) return;
           slotsPerEntry[i] = slots;
           slotsLeft -= 1;
           publish();
         })
-        .catch(() => {
-          if (myId !== reqIdRef.current) return;
+        .catch((err) => {
+          silentCatch('features/schedules/libs/useCronPreview:slots')(err);
+          if (!latestWins.isCurrent(myId)) return;
           slotsLeft -= 1;
           publish();
         });
     });
-  }, [sig, startMs, endMs]);
+  }, [sig, startMs, endMs, latestWins]);
 
   return result;
 }
