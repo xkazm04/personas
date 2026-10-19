@@ -1822,20 +1822,11 @@ pub fn obsidian_brain_lint_vault(
     self::lint::lint_vault(Path::new(&path), stale_days)
 }
 
-// ── Phase 5.1: Semantic Vault Lint (LLM-assisted integrity check) ────
-//
-// Complement to `obsidian_brain_lint_vault`: spawns a short Claude Code CLI
-// call to find inconsistencies, missing-page candidates, and obvious missing
-// wikilinks the syntactic lint can't catch. Opt-in; bills tokens. Inspired by
-// Karpathy's LLM knowledge base walkthrough (research run 2026-04-08,
-// youtube.com/watch?v=sboNwYmH3AY).
-
 // ── Phase 6: Google Drive Cloud Sync ────────────────────────────────────
-// pending: companion of `drive.rs`. These commands need to be registered in
-// `lib.rs`'s `invoke_handler` once the Drive sync UI ships.
+// Companion of `drive.rs`. Registered in `ipc_shards/shard_4.rs` and called by
+// the Cloud Sync panel (`src/api/obsidianBrain/index.ts`).
 
 #[tauri::command]
-#[allow(dead_code)]
 pub async fn obsidian_drive_status(
     state: State<'_, Arc<AppState>>,
 ) -> Result<drive::DriveStatus, AppError> {
@@ -1853,7 +1844,6 @@ pub async fn obsidian_drive_status(
 }
 
 #[tauri::command]
-#[allow(dead_code)]
 pub async fn obsidian_drive_push_sync(
     state: State<'_, Arc<AppState>>,
     folder_names: Option<Vec<String>>,
@@ -1890,7 +1880,6 @@ pub async fn obsidian_drive_push_sync(
 }
 
 #[tauri::command]
-#[allow(dead_code)]
 pub async fn obsidian_drive_pull_sync(
     state: State<'_, Arc<AppState>>,
     folder_names: Option<Vec<String>>,
@@ -1929,7 +1918,6 @@ pub async fn obsidian_drive_pull_sync(
 /// Extract the Google provider token from auth state.
 /// This is the raw Google access token (not the Supabase JWT),
 /// obtained when the user authenticates with the `drive.file` scope.
-#[allow(dead_code)] // pending: only called from obsidian_drive_* commands above (also dormant)
 async fn get_google_provider_token(state: &Arc<AppState>) -> Result<String, AppError> {
     let auth = state.auth.read().await;
     auth.google_provider_token
