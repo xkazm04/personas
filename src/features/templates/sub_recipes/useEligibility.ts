@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { CONNECTOR_META } from '@/lib/connectors/connectorMeta';
 import { useSelectedCredentialLinks } from '@/stores/selectors/personaSelectors';
-import { useAgentStore } from '@/stores/agentStore';
 import { resolveEligibility } from './eligibility';
 import type { Recipe, Eligibility } from './types';
 
@@ -38,12 +37,6 @@ export function usePersonaConnectors(): ReadonlySet<string> {
   );
 }
 
-/** True when the catalog is being viewed without a selected persona — used
- *  by the browse UI to hide eligibility chips and show a generic CTA. */
-export function useNoPersonaSelected(): boolean {
-  return useAgentStore((s) => s.selectedPersona === null || s.selectedPersona === undefined);
-}
-
 /** Resolve eligibility for a single recipe against the current persona. */
 export function useRecipeEligibility(recipe: Recipe): Eligibility {
   const personaConnectors = usePersonaConnectors();
@@ -59,8 +52,7 @@ export function useRecipeEligibility(recipe: Recipe): Eligibility {
  * filter chips ("Eligible (5)" / "Setup needed (3)") and sort.
  *
  * Memoised on the input recipes array reference + persona/available sets,
- * so passing a stable `MOCK_RECIPES` array (or any memoised list) means
- * the resolver runs once per persona switch.
+ * so passing a memoised list means the resolver runs once per persona switch.
  */
 export function useRecipeEligibilityMap(recipes: Recipe[]): Map<string, Eligibility> {
   const personaConnectors = usePersonaConnectors();
