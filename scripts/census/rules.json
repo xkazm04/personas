@@ -686,7 +686,7 @@
       ],
       "baseline": {
         "files": 36,
-        "matches": 63
+        "matches": 61
       },
       "floor": 4000
     },
@@ -771,8 +771,8 @@
         "description": "a ts-rs-generated field typed `bigint`. PROXY FOR the stack-free condition \"a generated wire type declares a value the transport cannot carry\". ts-rs v10 maps i64/u64/CORRECTED 2026-08-14 (this sentence previously claimed usize/isize also map to bigint, which is FALSE and would rewrite correct fields): ts-rs maps i64 and u64 to bigint, but usize maps to number (verified: LedgerAnomalyScore.sample_count is `number`) and isize does not appear in any exported type.parse (which cannot produce a bigint). Verified from the workaround rather than assumed - src/api/companion.ts:744 guards with `typeof raw.totalSignalsCaptured === 'bigint'`, a branch that can never be taken at runtime, and its comment at :722-726 states the coercion exists because the binding uses bigint; src/features/agents/sub_deployment/components/cloud/CloudExecutionRow.tsx:31 writes Number(exec.durationMs) for the same reason. Precision is 100% by construction: every match was emitted by the generator and the argument applies to all of them identically. 288 are field declarations; the balance are tuple positions such as Array<[string, bigint]>, which are the same defect. PRECONDITION (must be re-derived per repo): this repo generates frontend types with ts-rs v10. A repo whose generator emits number or string for 64-bit integers, or which hand-authors its types, has this condition wearing different markup and scores zero here. LEGAL FIX, in order: (1) narrow the Rust field to i32/f64 where the value provably fits, which is the honest fix; (2) `#[ts(type = \"number\")]` where the Rust type must stay 64-bit and the value stays under 2^53 - 314 such pins already exist, core/src/models/execution.rs:36,38,43,46,55 being the densest; (3) for a value that genuinely exceeds 2^53, change the Rust field to String, because JSON has no other honest carrier. Never hand-author a shadowing TypeScript interface - src/api/companion.ts:705-714 is what that costs."
       },
       "baseline": {
-        "files": 135,
-        "matches": 281
+        "files": 128,
+        "matches": 264
       },
       "floor": 900
     },
@@ -816,7 +816,7 @@
       },
       "baseline": {
         "files": 40,
-        "matches": 193
+        "matches": 192
       },
       "floor": 50
     },
@@ -1336,8 +1336,8 @@
         "description": "RECALL FIX 2026-08-14: the original pattern required toLocale(Date|Time)String, so a bare `new Date(x).toLocaleString()` was invisible — including RelativeTime.tsx:38, which renders the tooltip behind ~100 <RelativeTime> tags and is the most-rendered date in the app. Found by the tooltip composer critiquing a rule another path had already shipped. The fix is a date-specific alternative, NOT a relaxed (?:Date|Time)? — measured: 26 bare .toLocaleString() sites, only 12 are dates; the rest are token counts and KPI numbers owned by the numeric rules, and relaxing would have imported 14 false positives into a date rule. STILL INVISIBLE, stated rather than hidden: a Date held in a variable (`date.toLocaleString()`) cannot be distinguished from a number by any regex — that residue needs type information. a date/time formatting call whose locale argument is absent, `undefined`, or `[]` — three spellings of \"use whatever locale the operating system is set to\". PROXY FOR the stack-free condition: a moment is projected into a calendar and a clock using the locale of the machine the code runs on rather than the language the user chose in the application, so a user who set this app to Japanese on an en-US laptop reads `5/24/26` and a user who set it to English on a German laptop reads `24.05.26`. Verified against the app's own machinery: useTranslation() (src/i18n/useTranslation.ts:325) returns `{ t, tx, language }` over 14 shipped locales and i18nStore.ts:94 even mirrors the chosen language into the Rust backend — so the correct value is available at every one of these call sites and reaches exactly ONE of them (LiveRoadmapStatusPill.tsx:38). Measured population: a balanced-paren census of every toLocale*String / Intl.DateTimeFormat / Intl.RelativeTimeFormat first argument in all 4,829 src .ts+.tsx found 84 date-locale decisions — 76 host-OS, 6 hardcoded 'en-US', 1 parameterised-but-never-passed, 1 correct. This pattern covers 55 of the 76: `.toLocaleString(` is deliberately EXCLUDED because it is ambiguous between a Date and a number and would collide with number-and-cost-formatting.md's territory, which costs ~20 date sites of recall and buys 100% precision. Precision 55/55 on a full read of every match: every one is a date or time formatted for a locale the app did not choose. Two matches are non-product destinations (LabVersionsTable.tsx:298,312 stamp an exported comparison report; run-harness.ts:56 prints a harness console line) and are carried in the baseline rather than excluded, because a directory-level exemption for two lines adds a stale-exclude failure mode worth more than it saves. PRECONDITION (measured, must be re-derived per repo): this repo owns an app-level language, exposes it through one hook, and spells a date render as a toLocale*String method or an Intl constructor. A repo with no i18n system has the condition and no fix — brainiac/console has 3 such calls, zero locale channel, and nothing to wire; a repo that pins a literal locale instead scores zero here while being equally locale-blind — personas-web spells 4 of its 12 date-locale calls as 'en-US' and this pattern declines all four. LEGAL FIX: <RelativeTime timestamp={x}/> for elapsed, <AbsoluteTime timestamp={x} variant=\"datetime|date|time|compact\"/> for a fixed moment, or — for a raw Intl call that must stay raw — the `language` from useTranslation(), as LiveRoadmapStatusPill.tsx:38 does. NOTE THE DESTINATION IS NOT YET CORRECT BY DEFAULT: both primitives resolve their own locale from the host OS today (AbsoluteTime.tsx:51, RelativeTime.tsx:38), so routing a call site there buys correctness of instant, cadence and style and defers the language until §8 Gap 1 lands. Sequence Gap 1 before burning this baseline."
       },
       "baseline": {
-        "files": 34,
-        "matches": 41
+        "files": 33,
+        "matches": 40
       },
       "floor": 4000
     },
@@ -1426,8 +1426,8 @@
         "description": "the native `title` attribute on a lowercase DOM element. PROXY FOR the stack-free condition: explanatory text is attached to a control through a channel the user agent alone renders, so it appears only on mouse hover - it is never reachable by keyboard, never appears on a touch device, cannot be dismissed, is not reliably announced by assistive technology, and is not routed through the application's own translation layer. PRECONDITION (must be re-derived per repo): this repo renders to a DOM where `title` has that user-agent behaviour AND owns a shared Tooltip primitive that is the alternative; a repo with no primitive would find this rule fires on 100% of its tooltip sites and should read that as the finding, not baseline it. Measured precision 1109/1109 (zero false positives) and recall 99.7% against a JSX-parser ground truth of 1112 on the 2026-08-14 corpus; the 3 misses are opening tags whose attribute region exceeds 1200 characters before `title=`. `iframe` is deliberately absent from the tag list: `title` on an iframe is a REQUIRED accessible name (WCAG 4.1.2), not a tooltip, so including it would gate a correct construct."
       },
       "baseline": {
-        "files": 391,
-        "matches": 720
+        "files": 390,
+        "matches": 718
       },
       "floor": 2000
     },
@@ -2122,8 +2122,8 @@
         "$comment": "Recall is deliberately partial: it cannot see a toggle whose button lives in a child component while the state lives in the parent, nor a non-button disclosure. Both are stated in the golden path rather than papered over."
       },
       "baseline": {
-        "files": 37,
-        "matches": 38
+        "files": 36,
+        "matches": 37
       },
       "floor": 2000
     },
@@ -5666,8 +5666,8 @@
         }
       ],
       "baseline": {
-        "files": 167,
-        "matches": 464
+        "files": 166,
+        "matches": 461
       },
       "floor": 5000
     },
@@ -5833,8 +5833,8 @@
         }
       ],
       "baseline": {
-        "files": 946,
-        "matches": 2117
+        "files": 945,
+        "matches": 2116
       },
       "floor": 2200
     },
