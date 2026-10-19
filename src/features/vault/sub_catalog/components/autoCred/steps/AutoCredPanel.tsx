@@ -119,6 +119,7 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
           <motion.div key="browser" {...PHASE_TRANSITION}>
             <AutoCredBrowser
               logs={session.logs}
+              startedAt={session.browserStartedAt}
               onCancel={session.cancelBrowser}
               mode={mode}
             />

@@ -121,6 +121,10 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
   const [phase, setPhase] = useState<AutoCredPhase>('consent');
   const [designResult, setDesignResult] = useState<CredentialDesignResult | null>(null);
   const [logs, setLogs] = useState<BrowserLogEntry[]>([]);
+  // When the current browser run started. The elapsed clock reads this, not
+  // `logs[0].ts`: the log keeps only its last 500 entries, so its first entry
+  // moves forward on a long session and the clock would jump back.
+  const [browserStartedAt, setBrowserStartedAt] = useState<number | null>(null);
   const [extractedValues, setExtractedValues] = useState<ExtractedValues>({});
   const [credentialName, setCredentialName] = useState('');
   const [error, setError] = useState<AutoCredErrorInfo | null>(null);
@@ -209,6 +213,7 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
 
     setPhase('browser');
     setLogs([]);
+    setBrowserStartedAt(Date.now());
     setError(null);
     setIsPartial(false);
     // A re-run replaces every value, so the last verdict tested other values.
@@ -366,6 +371,7 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
     phase,
     designResult,
     logs,
+    browserStartedAt,
     extractedValues,
     credentialName,
     error,
