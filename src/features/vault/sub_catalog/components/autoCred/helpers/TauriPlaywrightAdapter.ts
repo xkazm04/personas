@@ -3,6 +3,7 @@ import type { PlaywrightAdapter, AdapterResult } from './useAutoCredSession';
 import type { AutoCredConnectorContext, BrowserLogEntry, ExtractedValues, DiscoveredField, DiscoveredConnector } from './types';
 import { startAutoCredBrowser, getPlaywrightProcedure, cancelAutoCredBrowser } from '@/api/vault/autoCredBrowser';
 import { openExternalUrl } from '@/api/system/system';
+import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { silentCatch } from '@/lib/silentCatch';
 
 type AutoCredProgressFrame = {
@@ -87,16 +88,25 @@ export class TauriPlaywrightAdapter implements PlaywrightAdapter {
       // auto_open defaults to true for OPEN_URL: protocol lines,
       // false for inline URL detections
       const autoOpen = event.payload.auto_open !== false;
-      if (autoOpen) {
-        openExternalUrl(event.payload.url).catch((err: unknown) => {
-          silentCatch('TauriPlaywrightAdapter:openUrl')(err);
-          onLog({
-            ts: Date.now(),
-            message: `Failed to open URL: ${event.payload.url}`,
-            type: 'error',
-          });
-        });
+      if (!autoOpen) return;
+      // The URL comes from a model reading arbitrary web pages, and this path
+      // opens it with no click. It gets the same sanitizer the click paths
+      // (AutoCredBrowser, AutoCredCards, UrlCard) apply: no embedded
+      // credentials, no control/bidi codepoints, http(s) only.
+      const safe = sanitizeExternalUrl(event.payload.url);
+      if (!safe) {
+        // The rejected URL is not echoed: it may carry embedded credentials.
+        onLog({ ts: Date.now(), message: 'Blocked an unsafe URL from the setup session', type: 'error' });
+        return;
       }
+      openExternalUrl(safe).catch((err: unknown) => {
+        silentCatch('TauriPlaywrightAdapter:openUrl')(err);
+        onLog({
+          ts: Date.now(),
+          message: `Failed to open URL: ${safe}`,
+          type: 'error',
+        });
+      });
     });
 
     // Handle abort -- kill the subprocess and clean up listeners
