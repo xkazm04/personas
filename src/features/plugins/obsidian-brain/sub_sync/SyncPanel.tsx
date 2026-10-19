@@ -114,7 +114,12 @@ export default function SyncPanel() {
         at: new Date().toISOString(),
       });
       setLastSyncAt(new Date().toISOString());
-      addToast(`Push: ${result.created} created, ${result.updated} updated, ${result.skipped} skipped${result.errors.length > 0 ? `, ${result.errors.length} errors` : ''}`, result.errors.length > 0 ? 'error' : 'success');
+      // The per-category breakdown lives in the SyncResultCard rendered below;
+      // the toast is the localized headline, a warning when part of it failed.
+      addToast(
+        tx(t.plugins.obsidian_brain.result_pushed_headline, { count: result.created + result.updated + result.skipped }),
+        result.errors.length > 0 ? 'warning' : 'success',
+      );
       obsidianBrainGetSyncLog(50).then(setSyncLog).catch(silentCatch('SyncPanel:refreshSyncLogAfterPush'));
     } catch (e) {
       toastCatch('SyncPanel:push')(e);
@@ -122,7 +127,7 @@ export default function SyncPanel() {
       setPushing(false);
       setSyncRunning(false);
     }
-  }, [selectedPersonaIds, addToast, announce, recordResult, setSyncRunning, setLastSyncAt, t]);
+  }, [selectedPersonaIds, addToast, announce, recordResult, setSyncRunning, setLastSyncAt, t, tx]);
 
   const pullSync = useCallback(async () => {
     setPulling(true);
@@ -142,17 +147,14 @@ export default function SyncPanel() {
         at: new Date().toISOString(),
       });
       setLastSyncAt(new Date().toISOString());
-      addToast(`Pull: ${result.created} created, ${result.updated} updated${result.conflicts.length > 0 ? `, ${result.conflicts.length} conflicts` : ''}`, result.conflicts.length > 0 ? 'error' : 'success');
-      // Lucky-convergence audit trail: both sides edited but ended up
-      // identical. Distinct from a no-op so the user sees the avoided
-      // conflict instead of nothing.
-      if (result.converged && result.converged > 0) {
-        const noun = result.converged === 1 ? 'entry' : 'entries';
-        addToast(
-          `Both sides edited ${result.converged} ${noun} and ended up identical — keeping shared version`,
-          'success',
-        );
-      }
+      // Headline only: the SyncResultCard below carries the breakdown,
+      // including the lucky-convergence count (both sides edited, ended up
+      // identical) that used to get its own English toast.
+      const pulled = result.created + result.updated + result.conflicts.length + (result.converged ?? 0);
+      addToast(
+        tx(t.plugins.obsidian_brain.result_pulled_headline, { count: pulled }),
+        result.conflicts.length > 0 || result.errors.length > 0 ? 'warning' : 'success',
+      );
       obsidianBrainGetSyncLog(50).then(setSyncLog).catch(silentCatch('SyncPanel:refreshSyncLogAfterPull'));
     } catch (e) {
       toastCatch('SyncPanel:pull')(e);
@@ -160,7 +162,7 @@ export default function SyncPanel() {
       setPulling(false);
       setSyncRunning(false);
     }
-  }, [addToast, announce, recordResult, setSyncRunning, setLastSyncAt, setPendingConflicts, t]);
+  }, [addToast, announce, recordResult, setSyncRunning, setLastSyncAt, setPendingConflicts, t, tx]);
 
   const resolveConflict = useCallback(async (conflict: SyncConflict, resolution: ObsidianConflictResolution) => {
     try {
