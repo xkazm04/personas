@@ -82,8 +82,9 @@ export function useDebouncedSave(
         clearTimeout(timerRef.current);
         timerRef.current = null;
         // Fire-and-forget: the component is gone so isSaving/lastError can't be
-        // tracked, but the persist (which reads the latest draft via refs) runs.
-        void saveFnRef.current();
+        // tracked, but the persist (which reads the latest draft via refs) runs,
+        // and a failure still reaches the user instead of an unhandled rejection.
+        void saveFnRef.current().catch(reportPersistFailure);
       }
     };
   }, []);
