@@ -212,16 +212,20 @@ pub fn verify_document(
     })
 }
 
-/// Generate or regenerate the local Ed25519 signing identity.
+/// Return the local Ed25519 signing identity, generating it on first use.
 /// Returns the peer ID and display name for confirmation.
+///
+/// It never regenerates and never touches the OS keyring for an identity that
+/// already exists: an existing DB identity is returned as-is even when its
+/// private key is gone from the keyring, and the loss only surfaces as
+/// `AppError::KeyringLost` when something signs. Rotating the key is
+/// `reinitialize_identity`.
 #[tauri::command]
 pub fn generate_signing_key(
     state: State<'_, Arc<AppState>>,
 ) -> Result<serde_json::Value, AppError> {
     require_auth_sync(&state)?;
     let ident = identity::get_or_create_identity(&state.db)?;
-    // Force-refresh the keyring entry by re-storing
-    // This handles the case where DB identity exists but keyring is empty
     Ok(serde_json::json!({
         "peer_id": ident.peer_id,
         "display_name": ident.display_name,
