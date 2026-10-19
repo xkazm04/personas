@@ -121,7 +121,7 @@ export function useLifecycle({
     let cancelled = false;
 
     async function setup() {
-      unlisten = await listen<ToolTestEventPayload>(
+      const stop = await listen<ToolTestEventPayload>(
         EventName.BUILD_TEST_TOOL_RESULT,
         (event) => {
           if (cancelled) return;
@@ -150,9 +150,14 @@ export function useLifecycle({
           );
         },
       );
+      // Unmounted while `listen` was still resolving: the cleanup below ran
+      // with nothing to detach, so detach here or the channel leaks for the
+      // session (StrictMode's double mount does exactly this every time).
+      if (cancelled) stop();
+      else unlisten = stop;
     }
 
-    setup();
+    setup().catch(silentCatch("lifecycle:listenToolResults"));
     return () => { cancelled = true; unlisten?.(); };
   }, []);
 

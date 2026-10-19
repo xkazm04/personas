@@ -397,6 +397,21 @@ describe("useLifecycle", () => {
       expect(listenerMap.has("build-test-tool-result")).toBe(true);
     });
 
+    it("detaches a listener that resolves after the hook unmounted", async () => {
+      const { listen } = await import("@tauri-apps/api/event");
+      let resolveListen!: (un: () => void) => void;
+      vi.mocked(listen).mockImplementationOnce(
+        () => new Promise<() => void>((r) => { resolveListen = r; }),
+      );
+      const lateUnlisten = vi.fn();
+
+      const { unmount } = renderHook(() => useLifecycle({ personaId: "persona-1" }));
+      unmount();
+      await act(async () => { resolveListen(lateUnlisten); });
+
+      expect(lateUnlisten).toHaveBeenCalledTimes(1);
+    });
+
     it("filters events by session_id", async () => {
       setStoreState({
         buildPhase: "testing",
