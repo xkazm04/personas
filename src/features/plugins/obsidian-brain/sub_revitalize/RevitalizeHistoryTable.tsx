@@ -6,7 +6,9 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import {
   obsidianRevitalizeHistory,
   type RevitalizeRunRecord,
@@ -29,6 +31,9 @@ export default function RevitalizeHistoryTable() {
   const ob = t.plugins.obsidian_brain;
   const running = useSystemStore((s) => s.obsidianRevitalizeRunning);
   const [runs, setRuns] = useState<RevitalizeRunRecord[] | null>(null);
+  // Raw failure, resolved at render. Without it a failed read left `runs`
+  // null and the whole section vanished, as if no history existed.
+  const [loadFailure, setLoadFailure] = useState<{ raw: unknown } | null>(null);
 
   // Load on mount, and reload whenever a pass settles (running → false) so
   // the freshly recorded run appears without a manual refresh.
@@ -37,15 +42,20 @@ export default function RevitalizeHistoryTable() {
     let alive = true;
     obsidianRevitalizeHistory(HISTORY_LIMIT)
       .then((rows) => {
-        if (alive) setRuns(rows);
+        if (!alive) return;
+        setRuns(rows);
+        setLoadFailure(null);
       })
-      .catch(silentCatch('obsidian-brain/RevitalizeHistoryTable:load'));
+      .catch((err: unknown) => {
+        silentCatch('obsidian-brain/RevitalizeHistoryTable:load')(err);
+        if (alive) setLoadFailure({ raw: err });
+      });
     return () => {
       alive = false;
     };
   }, [running]);
 
-  if (runs === null) return null;
+  if (runs === null && !loadFailure) return null;
 
   return (
     <SectionCard
@@ -53,7 +63,14 @@ export default function RevitalizeHistoryTable() {
       subtitle={ob.revitalize_history_subtitle}
       titleClassName="text-primary"
     >
-      {runs.length === 0 ? (
+      {loadFailure && runs === null ? (
+        <InlineErrorBanner
+          compact
+          message={tx(ob.revitalize_history_load_failed, {
+            error: resolveErrorTranslated(t, extractMessage(loadFailure.raw)).message,
+          })}
+        />
+      ) : !runs || runs.length === 0 ? (
         <EmptyState art="archive" size="sm" title={ob.revitalize_history_empty} />
       ) : (
         <div className="overflow-x-auto">
