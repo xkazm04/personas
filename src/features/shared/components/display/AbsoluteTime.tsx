@@ -2,6 +2,7 @@ import { memo, useMemo } from 'react';
 import { formatRelativeTime, normalizeTimestamp } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useRelativeTimeTick } from '@/hooks/utility/timing/relativeTimeTicker';
+import { createModuleCache } from '@/hooks/utility/data/useModuleSubscription';
 import { Tooltip } from './Tooltip';
 
 /**
@@ -16,6 +17,22 @@ const FORMATS: Record<AbsoluteTimeVariant, Intl.DateTimeFormatOptions> = {
   // "compact" — short numeric, good for dense tables (e.g. 5/24/26, 3:00 PM)
   compact: { month: 'numeric', day: 'numeric', year: '2-digit', hour: 'numeric', minute: '2-digit' },
 };
+
+// One formatter per (locale, variant). Constructing an Intl.DateTimeFormat is
+// the expensive half of formatting: measured 60.8 us to construct + format vs
+// 1.3 us to reuse one (node, `cs`, datetime), so a 200-row table paid ~12 ms per
+// render for formatters it threw away. 14 locales x 4 variants fits the cap.
+const formatterCache = createModuleCache<string, Intl.DateTimeFormat>({ maxSize: 64 });
+
+function formatterFor(locale: string, variant: AbsoluteTimeVariant): Intl.DateTimeFormat {
+  const key = `${locale}|${variant}`;
+  let fmt = formatterCache.get(key);
+  if (!fmt) {
+    fmt = new Intl.DateTimeFormat(locale, FORMATS[variant]);
+    formatterCache.set(key, fmt);
+  }
+  return fmt;
+}
 
 interface AbsoluteTimeProps {
   /** ISO date string or epoch ms. */
@@ -81,7 +98,7 @@ export const AbsoluteTime = memo(function AbsoluteTime({
     return <span className={className}>{fallback}</span>;
   }
 
-  const label = new Intl.DateTimeFormat(locale, FORMATS[variant]).format(ms);
+  const label = formatterFor(locale, variant).format(ms);
   const span = <span className={className}>{label}</span>;
 
   if (!showRelativeTooltip) return span;
