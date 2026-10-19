@@ -7,6 +7,8 @@
 //! de-duplication do not need an `AppHandle`, so they live here, where a
 //! regression is a red `cargo test -p personas-engine webhook_ingest`.
 
+use std::collections::{HashSet, VecDeque};
+
 // ---------------------------------------------------------------------------
 // Request-log header redaction
 // ---------------------------------------------------------------------------
@@ -179,6 +181,48 @@ impl SseDecoder {
 }
 
 // ---------------------------------------------------------------------------
+// Delivery de-duplication (smee.io relay)
+// ---------------------------------------------------------------------------
+
+/// Cross-reconnect de-duplication for one relay. smee.io replays the
+/// channel's recent history on every new SSE connection, so a delivery key
+/// is remembered once handled. Bounded FIFO.
+#[derive(Debug, Default)]
+pub struct DeliveryDedup {
+    /// Most recent SSE `id:` seen, sent as `Last-Event-ID` on reconnect.
+    pub last_event_id: Option<String>,
+    seen_order: VecDeque<String>,
+    seen_set: HashSet<String>,
+}
+
+impl DeliveryDedup {
+    pub const CAP: usize = 512;
+
+    /// Record `key`; true if new, false if already handled.
+    pub fn check_and_insert(&mut self, key: String) -> bool {
+        if self.seen_set.contains(&key) {
+            return false;
+        }
+        self.seen_set.insert(key.clone());
+        self.seen_order.push_back(key);
+        if self.seen_order.len() > Self::CAP {
+            if let Some(old) = self.seen_order.pop_front() {
+                self.seen_set.remove(&old);
+            }
+        }
+        true
+    }
+
+    /// Un-record a key whose delivery did NOT land (the publish failed), so
+    /// the next replay of the same delivery is handled instead of skipped.
+    pub fn forget(&mut self, key: &str) {
+        if self.seen_set.remove(key) {
+            self.seen_order.retain(|k| k != key);
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Cloud firing relay watermarks
 // ---------------------------------------------------------------------------
 
@@ -297,6 +341,28 @@ mod tests {
         // Complete lines without the dispatching blank line still count.
         assert!(d.push(b"data: abc\ndata: de\n").is_empty());
         assert_eq!(d.pending_bytes(), 5);
+    }
+
+    #[test]
+    fn forgotten_key_is_handled_again_on_replay() {
+        let mut dedup = DeliveryDedup::default();
+        assert!(dedup.check_and_insert("d-1".into()));
+        assert!(!dedup.check_and_insert("d-1".into()), "replay is skipped");
+        dedup.forget("d-1"); // publish failed
+        assert!(
+            dedup.check_and_insert("d-1".into()),
+            "replay after a failed publish lands"
+        );
+    }
+
+    #[test]
+    fn dedup_stays_bounded() {
+        let mut dedup = DeliveryDedup::default();
+        for i in 0..(DeliveryDedup::CAP + 10) {
+            dedup.check_and_insert(format!("k{i}"));
+        }
+        assert!(dedup.check_and_insert("k0".into()), "oldest key evicted");
+        assert!(!dedup.check_and_insert(format!("k{}", DeliveryDedup::CAP + 9)));
     }
 
     #[test]

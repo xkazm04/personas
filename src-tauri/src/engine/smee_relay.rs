@@ -234,34 +234,8 @@ struct RelayParams {
 /// channel's recent event history on every new SSE connection, so without this
 /// each transient disconnect (laptop sleep, Wi-Fi drop, smee rate-limit) would
 /// re-publish already-handled webhooks and spawn duplicate persona executions
-/// (bug-hunt 2026-06-07 triggers #1). Bounded FIFO so it can't grow unboundedly.
-#[derive(Default)]
-struct RelayDedup {
-    /// Most recent SSE `id:` seen — sent as `Last-Event-ID` on reconnect so a
-    /// spec-compliant server resumes after it instead of replaying from scratch.
-    last_event_id: Option<String>,
-    seen_order: std::collections::VecDeque<String>,
-    seen_set: std::collections::HashSet<String>,
-}
-
-impl RelayDedup {
-    const CAP: usize = 512;
-
-    /// Record `key`; return true if new, false if already seen this process.
-    fn check_and_insert(&mut self, key: String) -> bool {
-        if self.seen_set.contains(&key) {
-            return false;
-        }
-        self.seen_set.insert(key.clone());
-        self.seen_order.push_back(key);
-        if self.seen_order.len() > Self::CAP {
-            if let Some(old) = self.seen_order.pop_front() {
-                self.seen_set.remove(&old);
-            }
-        }
-        true
-    }
-}
+/// (bug-hunt 2026-06-07 triggers #1). Bounded FIFO, tested in personas-engine.
+type RelayDedup = personas_engine::webhook_ingest::DeliveryDedup;
 
 /// SSE relay loop: connects to a smee.io channel, streams SSE events,
 /// and publishes parsed payloads to the local event bus.
@@ -479,7 +453,7 @@ async fn relay_sse_core(
                     data.hash(&mut h);
                     format!("h:{:x}", h.finish())
                 });
-            if !dedup.check_and_insert(dedup_key) {
+            if !dedup.check_and_insert(dedup_key.clone()) {
                 tracing::debug!(
                     relay_key = %params.relay_key,
                     "Smee relay: skipping duplicate (replayed) event"
@@ -541,7 +515,15 @@ async fn relay_sse_core(
                     tracing::debug!(event_id = %event.id, "Smee relay: published event");
                 }
                 Err(e) => {
-                    tracing::debug!(error = %e, "Smee relay: failed to publish event");
+                    // The delivery did not land: un-record it so smee's replay
+                    // on the next reconnect is handled instead of skipped as a
+                    // duplicate.
+                    dedup.forget(&dedup_key);
+                    tracing::warn!(
+                        relay_key = %params.relay_key,
+                        error = %e,
+                        "Smee relay: failed to publish event; it will be accepted again if replayed"
+                    );
                 }
             }
         }
