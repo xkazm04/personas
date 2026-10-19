@@ -22,18 +22,6 @@ import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
  * its own poll + listener.
  * -------------------------------------------------------------------------- */
 
-/** Per-team composer-draft storage key prefix. */
-export const CHANNEL_DRAFT_PREFIX = 'personas.channel.draft.';
-
-/** Whether a team has an unsent channel draft persisted locally. */
-export function hasUnsentDraft(teamId: string): boolean {
-  try {
-    return !!localStorage.getItem(CHANNEL_DRAFT_PREFIX + teamId)?.trim();
-  } catch {
-    return false;
-  }
-}
-
 export type PresenceStatus = 'working' | 'waiting';
 
 /**
