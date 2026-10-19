@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import {
   type FieldInputType,
@@ -56,8 +56,18 @@ export function FieldCaptureRow({
 }: FieldCaptureRowProps) {
   const isEditable = mode !== 'readonly' && !!onChange;
   const isSecret = inputType === 'password';
-  const fieldId = testIdBase ?? label.toLowerCase().replace(/\s+/g, '-');
+  // A React id, not one derived from the label or test id: two rows with the
+  // same label (or the same form mounted twice) produced duplicate DOM ids,
+  // which point a <label> and aria-describedby at the wrong input.
+  const fieldId = `fcr-${useId()}`;
   const errorId = `${fieldId}-error`;
+  const hintId = `${fieldId}-hint`;
+  const helpId = `${fieldId}-help`;
+  // Same contract as the shared FormField: the hint above the input is always
+  // described, then one occupant of the slot below it (error wins over help).
+  const describedBy = [hint ? hintId : undefined, error ? errorId : helpText ? helpId : undefined]
+    .filter(Boolean)
+    .join(' ') || undefined;
   const [isVisible, setIsVisible] = useState(false);
 
   const glow: ValidationGlow = useMemo(
@@ -74,7 +84,7 @@ export function FieldCaptureRow({
       <div className="flex items-center justify-between gap-2">
         <label htmlFor={fieldId} className="typo-body text-foreground">
           {label}
-          {required && <span className="text-red-400 ml-1">*</span>}
+          {required && <span aria-hidden="true" className="text-red-400 ml-1">*</span>}
         </label>
         <FieldActionButtons
           mode={mode}
@@ -90,7 +100,7 @@ export function FieldCaptureRow({
         />
       </div>
 
-      {hint && <p className="typo-body text-foreground">{hint}</p>}
+      {hint && <p id={hintId} className="typo-body text-foreground">{hint}</p>}
 
       {inputType === 'select' && options ? (
         <ThemedSelect
@@ -100,7 +110,8 @@ export function FieldCaptureRow({
           onBlur={onBlur}
           disabled={!isEditable}
           aria-invalid={!!error}
-          aria-describedby={error ? errorId : undefined}
+          aria-describedby={describedBy}
+          aria-required={required || undefined}
           className={`rounded-modal ${error ? 'border-red-500/50' : ''}`}
         >
           <option value="">{placeholder || 'Select...'}</option>
@@ -123,7 +134,8 @@ export function FieldCaptureRow({
           disabled={!isEditable}
           placeholder={placeholder}
           aria-invalid={!!error}
-          aria-describedby={error ? errorId : undefined}
+          aria-describedby={describedBy}
+          aria-required={required || undefined}
           className={`w-full px-3 py-2 border rounded-modal typo-body focus-visible:outline-none focus-visible:ring-2 transition-all duration-300 placeholder-muted-foreground/30 disabled:opacity-70 disabled:cursor-not-allowed ${SOURCE_ACCENT[source]} ${error ? 'border-red-500/50' : glow !== 'none' ? GLOW_CLASSES[glow] : valueClass}`}
           data-testid={testIdBase ? `${testIdBase}-input` : undefined}
         />
@@ -132,7 +144,7 @@ export function FieldCaptureRow({
       {error ? (
         <p id={errorId} className="typo-body text-red-400">{error}</p>
       ) : (
-        (helpText ? <p className="typo-body text-foreground">{helpText}</p> : null)
+        (helpText ? <p id={helpId} className="typo-body text-foreground">{helpText}</p> : null)
       )}
     </div>
   );
