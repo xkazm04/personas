@@ -89,3 +89,27 @@ describe('BrowserTestReportWidget goal-UAT close', () => {
     expect(completeGoalUat).not.toHaveBeenCalled();
   });
 });
+
+/**
+ * The attempted-flag READ ran in render as a bare `localStorage.getItem`, while
+ * the write beside it was guarded. A WebView2 profile with storage disabled
+ * throws on access, so the report crashed out of the component instead of
+ * rendering (and simply re-trying the close, which the backend tolerates).
+ */
+describe('BrowserTestReportWidget with storage that throws', () => {
+  it('still renders the report', async () => {
+    cleanup();
+    completeGoalUat.mockReset();
+    completeGoalUat.mockResolvedValue(undefined);
+    const get = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('SecurityError'); });
+    const set = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('SecurityError'); });
+    try {
+      render(<BrowserTestReportWidget config={{ goal_id: 'g-storage', steps: PASSING }} />);
+      expect(screen.getByTestId('companion-browser-test-report')).toBeInTheDocument();
+      await waitFor(() => expect(completeGoalUat).toHaveBeenCalledWith('g-storage'));
+    } finally {
+      get.mockRestore();
+      set.mockRestore();
+    }
+  });
+});

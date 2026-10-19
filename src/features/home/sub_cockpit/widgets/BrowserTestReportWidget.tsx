@@ -3,6 +3,7 @@ import { KitButton, Meta, Tile } from '@/features/shared/components/kit';
 import { companionFileBrowserDefects } from '@/api/companion';
 import { completeGoalUat } from '@/api/devTools/devTools';
 import { toastCatch, silentCatch } from '@/lib/silentCatch';
+import { safeLocalGet, safeLocalSet } from '@/lib/safeLocalStorage';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CockpitWidgetProps } from '../widgetRegistry';
 import { BrowserReportSections, type ReportDefect, type ReportStep } from './BrowserReportSections';
@@ -41,15 +42,17 @@ export function BrowserTestReportWidget({ config, title, span, actions, footer }
   const allPass = steps.length > 0 && steps.every((s) => s.result === 'pass');
   const [uatClosed, setUatClosed] = useState(false);
   const closeAttemptedStorageKey = goalId ? `cockpit_uat_close_attempted:${goalId}` : '';
+  // Both halves go through the guarded door: the READ used to be a bare getItem in render, so a
+  // WebView2 profile with storage disabled threw out of the component and took the report with it.
   const closeAttempted = useRef(
-    closeAttemptedStorageKey ? window.localStorage.getItem(closeAttemptedStorageKey) === '1' : false,
+    closeAttemptedStorageKey
+      ? safeLocalGet(closeAttemptedStorageKey, 'BrowserTestReportWidget:readAttempted') === '1'
+      : false,
   );
   useEffect(() => {
     if (goalId && allPass && !closeAttempted.current) {
       closeAttempted.current = true;
-      try {
-        window.localStorage.setItem(closeAttemptedStorageKey, '1');
-      } catch (err) { silentCatch('BrowserTestReportWidget:persistAttempted')(err); }
+      safeLocalSet(closeAttemptedStorageKey, '1', 'BrowserTestReportWidget:persistAttempted');
       completeGoalUat(goalId)
         .then(() => setUatClosed(true))
         .catch(silentCatch('BrowserTestReportWidget:completeGoalUat'));
