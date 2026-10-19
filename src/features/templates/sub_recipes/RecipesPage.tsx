@@ -110,6 +110,7 @@ export function RecipesPage() {
               onSearchChange={setSearch}
               onOpenDetail={(id) => setSelectedRecipeId(id)}
               hasMoreRemote={recipesHasMore}
+              isLoadingMore={isLoadingMore}
               onLoadMore={handleLoadMore}
             />
           </motion.div>

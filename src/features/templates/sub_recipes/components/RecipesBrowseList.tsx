@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Search, Sparkles, AlertTriangle, Lock, Check, ChevronDown,
 } from 'lucide-react';
@@ -27,6 +27,8 @@ interface RecipesBrowseListProps {
   isLoading?: boolean;
   /** Backend has another page beyond what is already in `recipes`. */
   hasMoreRemote?: boolean;
+  /** A next-page IPC request is in flight. */
+  isLoadingMore?: boolean;
   onLoadMore?: () => void;
 }
 
@@ -55,7 +57,7 @@ type EligibilityFilter = 'all' | 'eligible' | 'adoptable-with-setup' | 'incompat
  * loaded set is exhausted. Debounce + haystack still keep client-side
  * filter off the typing path for the loaded window.
  */
-export function RecipesBrowseList({ recipes, search, onSearchChange, onOpenDetail, isLoading, hasMoreRemote, onLoadMore }: RecipesBrowseListProps) {
+export function RecipesBrowseList({ recipes, search, onSearchChange, onOpenDetail, isLoading, hasMoreRemote, isLoadingMore, onLoadMore }: RecipesBrowseListProps) {
   const { t } = useTranslation();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const eligibilityMap = useRecipeEligibilityMap(recipes);
@@ -122,6 +124,21 @@ export function RecipesBrowseList({ recipes, search, onSearchChange, onOpenDetai
     });
   }, [recipes, debouncedSearch, searchIndex, category, eligibilityFilter, eligibilityMap, selectedPersona]);
 
+  // The filters run over the LOADED window only (one IPC page at a time). A
+  // narrowing that matches nothing in it says nothing about the rows not yet
+  // fetched, so "no results" is only true once the backend has no more pages.
+  // Until then keep paging, one request per loaded length, so a failed fetch
+  // (length unchanged) falls through to the empty state instead of looping.
+  const narrowed = filtered !== recipes;
+  const searchingRemote = narrowed && filtered.length === 0 && !!hasMoreRemote;
+  const [requestedAtLength, setRequestedAtLength] = useState<number | null>(null);
+  useEffect(() => {
+    if (!searchingRemote || isLoadingMore || requestedAtLength === recipes.length) return;
+    setRequestedAtLength(recipes.length);
+    onLoadMore?.();
+  }, [searchingRemote, isLoadingMore, requestedAtLength, recipes.length, onLoadMore]);
+  const awaitingRemote = searchingRemote && (!!isLoadingMore || requestedAtLength !== recipes.length);
+
   const resetFilters = useCallback(() => {
     onSearchChange('');
     setCategory('all');
@@ -161,7 +178,10 @@ export function RecipesBrowseList({ recipes, search, onSearchChange, onOpenDetai
           </div>
         </div>
         <div className="text-right shrink-0">
-          <div className="typo-data font-mono text-foreground">{recipes.length}</div>
+          {/* Only the loaded pages are counted; "+" says the catalog goes on. */}
+          <div className="typo-data font-mono text-foreground" data-testid="recipes-available-count">
+            {recipes.length}{hasMoreRemote ? '+' : ''}
+          </div>
           <div className="typo-label text-foreground">{t.recipes_catalog.available_label}</div>
         </div>
       </div>
@@ -224,7 +244,7 @@ export function RecipesBrowseList({ recipes, search, onSearchChange, onOpenDetai
           sticky header and infinite scroll work), so this wrapper only gives
           it a bounded height — it must NOT scroll itself. */}
       <div className="flex-1 min-h-0 p-4">
-        {filtered.length === 0 && !(isLoading && recipes.length === 0) ? (
+        {filtered.length === 0 && !(isLoading && recipes.length === 0) && !awaitingRemote ? (
           <NoResults
             onReset={resetFilters}
             title={t.recipes_catalog.no_results_heading}
@@ -239,7 +259,7 @@ export function RecipesBrowseList({ recipes, search, onSearchChange, onOpenDetai
             adoptedRecipeIds={adoptedRecipeIds}
             staleRecipeIds={staleRecipeIds}
             onOpenDetail={onOpenDetail}
-            isLoading={!!isLoading && recipes.length === 0}
+            isLoading={(!!isLoading && recipes.length === 0) || awaitingRemote}
             hasMoreRemote={hasMoreRemote}
             onLoadMore={onLoadMore}
           />
