@@ -82,8 +82,6 @@ export default function NotepadLayer() {
 
   if (open) markNotepadPhase('layer');
 
-  if (open) markNotepadPhase('layer');
-
   return (
     <>
       {/* Always mounted: an entry for a note whose card is not on screen —
