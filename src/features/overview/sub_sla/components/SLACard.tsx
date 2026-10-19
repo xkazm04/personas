@@ -166,13 +166,20 @@ export function DailyTrendChart({ points }: { points: { date: string; success_ra
   return (
     <div className="flex items-end gap-px overflow-x-auto overflow-y-hidden" style={{ height: TREND_PLOT_H }}>
       {points.map((p, i) => {
-        const color = `${HEALTH_STATUS_TOKEN[rateToHealth(p.success_rate)].icon}/60`;
+        // A day with no runs has no success rate. Both callers send 0 for it,
+        // which painted an idle day as a full-red 0% failure; it gets the
+        // neutral floor mark instead, never a rate colour.
+        const noData = p.total <= 0;
+        const color = noData
+          ? HEALTH_STATUS_TOKEN.neutral.icon
+          : `${HEALTH_STATUS_TOKEN[rateToHealth(p.success_rate)].icon}/60`;
         return (
-          <div key={i} className="flex flex-col items-center justify-end flex-shrink-0" style={{ width: barWidth }} title={`${p.date}: ${formatPercent(p.success_rate)} (${p.total} runs)`}>
+          <div key={i} className="flex flex-col items-center justify-end flex-shrink-0" style={{ width: barWidth }} title={`${p.date}: ${noData ? '—' : formatPercent(p.success_rate)} (${p.total} runs)`}>
             <div
               data-testid="sla-trend-bar"
+              data-no-data={noData ? 'true' : undefined}
               className={`animate-fade-in w-full rounded-t-interactive ${color}`}
-              style={{ height: trendBarHeight(p.success_rate) }}
+              style={{ height: noData ? TREND_BAR_MIN_H : trendBarHeight(p.success_rate) }}
             />
           </div>
         );
