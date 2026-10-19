@@ -14,6 +14,7 @@ import { ResponseViewer } from '../ResponseViewer';
 import type { ScopedResources } from '../scopeParamSeed';
 import { RecipesPanel } from './RecipesPanel';
 import { recipeSeedFromRequest, useCredentialRecipes } from './useCredentialRecipes';
+import { inlineErrorCopy } from '@/features/triggers/lib/inlineErrorCopy';
 
 interface ApiExplorerTabProps {
   credentialId: string;
@@ -74,7 +75,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints, scopedResources
 
       {state.parseError && (
         <div className="mx-4 mt-3 p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-body text-red-400 flex items-start gap-2">
-          <span className="flex-1">{state.parseError}</span>
+          <span className="flex-1">{inlineErrorCopy(t, state.parseError.raw)}</span>
           <Button variant="ghost" size="icon-sm" onClick={() => state.setParseError(null)} className="text-red-400/50 hover:text-red-400">
             <X className="w-3 h-3" />
           </Button>
@@ -133,7 +134,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints, scopedResources
                     <div className="min-w-0 pl-4">
                       <span className="typo-heading uppercase text-emerald-400/70 block mb-3">{sh.response}</span>
                       {state.sendError && (
-                        <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-code text-red-400 whitespace-pre-wrap">{state.sendError}</div>
+                        <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-code text-red-400 whitespace-pre-wrap">{inlineErrorCopy(t, state.sendError.raw)}</div>
                       )}
                       {state.response && <ResponseViewer response={state.response} />}
                       {/* A working call is the raw material for an automation,

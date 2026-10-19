@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { executeApiRequest, type ApiEndpoint, type ApiProxyResponse } from '@/api/system/apiProxy';
 import { applyPathSeeds, isFullyResolved, seedPathParams, type ScopedResources } from './scopeParamSeed';
 import { RUN_LOG_MARK } from './tabs/apiExplorerHelpers';
+import { extractMessage } from '@/lib/silentCatch';
 
 // -- Types -------------------------------------------------------------
 
@@ -205,7 +206,8 @@ export function useApiTestRunner(): UseApiTestRunnerReturn {
         failed++;
         current++;
 
-        const errorMsg = err instanceof Error ? err.message : typeof err === 'object' && err !== null ? JSON.stringify(err) : String(err);
+        // The AppError envelope's own sentence, not its JSON.
+        const errorMsg = extractMessage(err);
         setResults(prev => {
           const next = new Map(prev);
           next.set(key, { key, verdict: 'failed', error: errorMsg });

@@ -34,4 +34,15 @@ describe('Run All log colouring', () => {
     expect(classOf('GET /ok')).toBe('text-blue-400/50');
     expect(classOf('Done:')).toBe('text-foreground');
   });
+
+  it("logs a refused request's reason, not the AppError envelope", async () => {
+    invoke.mockImplementation((cmd: string) =>
+      cmd !== 'execute_api_request' ? Promise.resolve(null)
+      : Promise.reject({ error: 'connection refused', kind: 'Internal' }));
+    const { result } = renderHook(() => useApiTestRunner());
+    act(() => result.current.runAll([EP('GET', '/down')], 'cred-1'));
+    await waitFor(() => expect(result.current.isRunning).toBe(false));
+    expect(result.current.lines.some((l) => l.endsWith('ERROR: connection refused'))).toBe(true);
+    expect(result.current.results.get('GET:/down')?.error).toBe('connection refused');
+  });
 });

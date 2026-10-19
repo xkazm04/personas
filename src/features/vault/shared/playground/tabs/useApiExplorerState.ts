@@ -14,13 +14,17 @@ import { silentCatch } from '@/lib/silentCatch';
 export function useApiExplorerState(credentialId: string, catalogEndpoints?: ApiEndpoint[]) {
   const [endpoints, setEndpoints] = useState<ApiEndpoint[]>(() => catalogEndpoints ?? []);
   const [loading, setLoading] = useState(() => !(catalogEndpoints && catalogEndpoints.length > 0));
-  const [parseError, setParseError] = useState<string | null>(null);
+  // Rejections are kept whole and resolved at render (inlineErrorCopy): an IPC
+  // rejection is an AppError object, so the old `err instanceof Error` ladders
+  // dropped every parser reason for a generic English line, and the send slot
+  // printed the raw `{ "error": ..., "kind": ... }` JSON.
+  const [parseError, setParseError] = useState<{ raw: unknown } | null>(null);
 
   // Selection + testing state
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
   const [selectedEndpoint, setSelectedEndpoint] = useState<ApiEndpoint | null>(null);
   const [response, setResponse] = useState<ApiProxyResponse | null>(null);
-  const [sendError, setSendError] = useState<string | null>(null);
+  const [sendError, setSendError] = useState<{ raw: unknown } | null>(null);
   const [isSending, setIsSending] = useState(false);
   /**
    * The request the response on screen came from. Kept so a 2xx can be turned
@@ -74,7 +78,7 @@ export function useApiExplorerState(credentialId: string, catalogEndpoints?: Api
       setEndpoints((prev) => mergeEndpoints(prev, parsed));
       await saveApiDefinition(credentialId, text);
     } catch (err) {
-      setParseError(err instanceof Error ? err.message : 'Failed to parse API definition');
+      setParseError({ raw: err });
     } finally {
       setIsParsing(false);
     }
@@ -99,7 +103,7 @@ export function useApiExplorerState(credentialId: string, catalogEndpoints?: Api
       setShowPasteModal(false);
       setPasteContent('');
     } catch (err) {
-      setParseError(err instanceof Error ? err.message : 'Failed to parse API definition');
+      setParseError({ raw: err });
     } finally {
       setIsParsing(false);
     }
@@ -117,8 +121,7 @@ export function useApiExplorerState(credentialId: string, catalogEndpoints?: Api
       setResponse(res);
       setLastRequest({ method, path });
     } catch (err) {
-      const raw = err instanceof Error ? err.message : typeof err === 'object' && err !== null ? JSON.stringify(err, null, 2) : String(err);
-      setSendError(raw);
+      setSendError({ raw: err });
     } finally {
       setIsSending(false);
     }
