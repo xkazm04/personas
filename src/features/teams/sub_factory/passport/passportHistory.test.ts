@@ -53,4 +53,16 @@ describe('passportHistory', () => {
     expect(d.auto).toBe(20);
     expect(d.prod).toBe(8);
   });
+
+  it('survives a malformed stored map instead of throwing on every scan', () => {
+    // A non-array series, a null map and a junk point all used to reach
+    // `series.push` / `load()[slug]` and throw.
+    localStorage.setItem('passport_history_v1', JSON.stringify({ a: {}, b: [{ t: 1 }, null] }));
+    expect(() => recordSnapshot([mk('a', 30, 20), mk('b', 10, 10)], 1000)).not.toThrow();
+    expect(getHistory('a')).toHaveLength(1);
+    expect(getHistory('b')).toHaveLength(1);
+    localStorage.setItem('passport_history_v1', 'null');
+    expect(() => trendDelta('a')).not.toThrow();
+    expect(getHistory('a')).toEqual([]);
+  });
 });

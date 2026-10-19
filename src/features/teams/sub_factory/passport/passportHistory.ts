@@ -23,10 +23,28 @@ type HistoryMap = Record<string, PassportSnapshot[]>;
 const KEY = 'passport_history_v1';
 const MAX_PER_PROJECT = 40;
 
+function isSnapshot(v: unknown): v is PassportSnapshot {
+  if (!v || typeof v !== 'object') return false;
+  const o = v as Record<string, unknown>;
+  return typeof o.t === 'number' && typeof o.auto === 'number' && typeof o.prod === 'number' && typeof o.golden === 'number';
+}
+
+/** Parse the stored map at the boundary. localStorage is outside this
+ *  module's control (an older shape, a hand edit, a partial write), and a
+ *  non-array series used to reach `series.push` in recordSnapshot: the throw
+ *  failed the Wall's evidence-complete build on every scan, permanently,
+ *  because the bad value stayed stored. Malformed entries are dropped. */
 function load(): HistoryMap {
   try {
     const raw = localStorage.getItem(KEY);
-    return raw ? (JSON.parse(raw) as HistoryMap) : {};
+    if (!raw) return {};
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    const map: HistoryMap = {};
+    for (const [slug, series] of Object.entries(parsed)) {
+      if (Array.isArray(series)) map[slug] = series.filter(isSnapshot);
+    }
+    return map;
   } catch {
     return {};
   }
