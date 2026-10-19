@@ -1,6 +1,7 @@
 import { ArrowLeft, Upload, Terminal } from 'lucide-react';
 import { IMPORT_SOURCES, type ImportSourceId } from './importHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
+import { VaultErrorBanner } from '@/features/vault/sub_credentials/components/card/banners/VaultErrorBanner';
 
 interface ImportInputPhaseProps {
   sourceId: ImportSourceId;
@@ -8,9 +9,12 @@ interface ImportInputPhaseProps {
   onInputChange: (value: string) => void;
   onParse: () => void;
   onBack: () => void;
+  /** Why the last Parse found nothing to import. Without it a failed parse
+   *  left the user on this phase with no feedback at all. */
+  error?: string | null;
 }
 
-export function ImportInputPhase({ sourceId, rawInput, onInputChange, onParse, onBack }: ImportInputPhaseProps) {
+export function ImportInputPhase({ sourceId, rawInput, onInputChange, onParse, onBack, error }: ImportInputPhaseProps) {
   const { t, tx } = useTranslation();
   const vi = t.vault.import;
   const source = IMPORT_SOURCES.find((s) => s.id === sourceId)!;
@@ -61,6 +65,8 @@ export function ImportInputPhase({ sourceId, rawInput, onInputChange, onParse, o
         autoFocus
         className="w-full px-4 py-3 bg-secondary/40 border border-primary/15 rounded-modal text-foreground typo-code placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all resize-none"
       />
+
+      {error && <VaultErrorBanner message={error} variant="inline" />}
 
       <div className="flex justify-end">
         <button
