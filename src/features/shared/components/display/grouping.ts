@@ -19,8 +19,6 @@ export type TimeGroupKey =
   | 'this_month'
   | 'older';
 
-const DAY_MS = 86_400_000;
-
 /**
  * Map a timestamp to its relative time bucket. Boundaries: today, yesterday, this-week (anchored at the most
  * recent Sunday), this-month, then everything older. Unparseable input falls
@@ -30,11 +28,17 @@ export function timeGroupKey(ts: number | string | Date, now: Date = new Date())
   const ms = ts instanceof Date ? ts.getTime() : typeof ts === 'number' ? ts : Date.parse(ts);
   if (Number.isNaN(ms)) return 'older';
 
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const startOfYesterday = startOfToday - DAY_MS;
+  // Boundaries are local midnights built from calendar fields, never
+  // `startOfToday - n * 24h`: a day that crosses a daylight-saving change is
+  // 23 or 25 hours long, and fixed-length arithmetic misfiles that hour.
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const d = now.getDate();
+  const startOfToday = new Date(y, m, d).getTime();
+  const startOfYesterday = new Date(y, m, d - 1).getTime();
   // Anchor "this week" at the most recent Sunday so the bucket matches what a
   // typical date picker shows; tweak if a Monday-start locale ever needs it.
-  const startOfThisWeek = startOfToday - now.getDay() * DAY_MS;
+  const startOfThisWeek = new Date(y, m, d - now.getDay()).getTime();
   const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
 
   if (ms >= startOfToday) return 'today';

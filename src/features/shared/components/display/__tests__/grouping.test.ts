@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { timeGroupKey, timeGroupLabels, buildGroupRows, type GroupSpec } from '../grouping';
 
 // Fixed "now": Thu 2026-05-28 14:00 local. getDay() === 4 (Thursday), so the
@@ -97,5 +97,25 @@ describe('buildGroupRows', () => {
     const { rows, headerIndexes } = buildGroupRows(items, groupOf);
     expect(headerIndexes).toEqual([0, 2, 4]);
     expect(rows.filter((r) => r.kind === 'header')).toHaveLength(3);
+  });
+});
+
+describe('timeGroupKey across a daylight-saving change', () => {
+  // Pin a zone that has DST so the case is real on every machine (CI is UTC).
+  const savedTz = process.env.TZ;
+  beforeAll(() => { process.env.TZ = 'Europe/Prague'; });
+  afterAll(() => { if (savedTz === undefined) delete process.env.TZ; else process.env.TZ = savedTz; });
+
+  it('keeps Saturday out of "yesterday" on the Monday after the spring change (23-hour Sunday)', () => {
+    // EU clocks went forward on Sun 2026-03-29. Now = Mon 2026-03-30 12:00.
+    const now = new Date(2026, 2, 30, 12, 0, 0);
+    expect(timeGroupKey(new Date(2026, 2, 28, 23, 30, 0), now)).toBe('this_month');
+    expect(timeGroupKey(new Date(2026, 2, 29, 0, 30, 0), now)).toBe('yesterday');
+  });
+
+  it('keeps the first hour of Sunday in "yesterday" on the Monday after the autumn change (25-hour Sunday)', () => {
+    // EU clocks went back on Sun 2026-10-25. Now = Mon 2026-10-26 12:00.
+    const now = new Date(2026, 9, 26, 12, 0, 0);
+    expect(timeGroupKey(new Date(2026, 9, 25, 0, 30, 0), now)).toBe('yesterday');
   });
 });
