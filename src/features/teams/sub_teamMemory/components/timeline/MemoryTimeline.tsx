@@ -7,6 +7,7 @@ import type { TeamMemoryStats } from '@/lib/bindings/TeamMemoryStats';
 import { RunMarker, type RunGroup } from './TimelineControls';
 import { ManualGroup } from './TimelineItem';
 import { useRunDiffSummaries } from '../../libs/useRunDiffSummaries';
+import { teamRunCounts } from '../../libs/memoryDiff';
 
 interface TimelineEntry {
   type: 'run' | 'manual';
@@ -84,10 +85,7 @@ export default function MemoryTimeline({ memories, stats, onFilterRun, activeRun
     [timeline],
   );
   const diffSummaries = useRunDiffSummaries(runIdsChronological);
-  const runCounts = useMemo(() => {
-    if (!stats?.run_counts) return new Map<string, number>();
-    return new Map(stats.run_counts);
-  }, [stats]);
+  const runCounts = useMemo(() => new Map(teamRunCounts(stats)), [stats]);
 
   const toggleRun = (runId: string) => {
     setExpandedRuns((prev) => { const next = new Set(prev); if (next.has(runId)) next.delete(runId); else next.add(runId); return next; });

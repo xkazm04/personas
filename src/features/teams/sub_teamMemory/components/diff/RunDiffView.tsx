@@ -6,7 +6,7 @@ import { listTeamMemoriesByRun } from '@/api/pipeline/teamMemories';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { extractMessage } from '@/lib/silentCatch';
 import { createLatestWins } from '@/stores/util/latestWins';
-import { computeMemoryDiff, type MemoryRunDiff } from '../../libs/memoryDiff';
+import { computeMemoryDiff, teamRunCounts, type MemoryRunDiff } from '../../libs/memoryDiff';
 import DiffHeader from './DiffHeader';
 import DiffContent from './DiffContent';
 
@@ -18,10 +18,7 @@ interface RunDiffViewProps {
 export default function RunDiffView({ stats, onClose }: RunDiffViewProps) {
   const { t } = useTranslation();
   const pt = t.pipeline;
-  const runs = useMemo<[string, number][]>(
-    () => (stats?.run_counts ?? []).map(([id, c]) => [id, Number(c)]),
-    [stats],
-  );
+  const runs = useMemo(() => teamRunCounts(stats), [stats]);
   const [runA, setRunA] = useState<string>('');
   const [runB, setRunB] = useState<string>('');
   const [loading, setLoading] = useState(false);

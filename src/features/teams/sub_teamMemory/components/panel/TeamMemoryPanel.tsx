@@ -10,6 +10,7 @@ import AddTeamMemoryForm from './AddTeamMemoryForm';
 import MemoryTimeline from '../timeline/MemoryTimeline';
 import RunDiffView from '../diff/RunDiffView';
 import type { TeamMemoryViewMode as ViewMode } from '@/lib/constants/uiModes';
+import { teamRunCounts } from '../../libs/memoryDiff';
 
 interface TeamMemoryPanelProps {
   teamId: string;
@@ -83,7 +84,7 @@ export default function TeamMemoryPanel({
     onFilter(undefined, undefined);
   }, [onFilter, onFilterByRun]);
 
-  const hasRunData = stats?.run_counts && stats.run_counts.length > 0;
+  const runCount = teamRunCounts(stats).length;
 
   // One layout: the panel fills its host pane. The floating canvas overlay
   // (resize handle, stored width, window drag listeners) went with the DAG
@@ -93,8 +94,8 @@ export default function TeamMemoryPanel({
       <MemoryPanelHeader
         total={total}
         viewMode={viewMode}
-        hasRunData={!!hasRunData}
-        hasDiffData={!!stats?.run_counts && stats.run_counts.length >= 2}
+        hasRunData={runCount > 0}
+        hasDiffData={runCount >= 2}
         onViewModeChange={setViewMode}
         onClearRunFilter={() => handleFilterByRun(null)}
         onClose={onClose}
