@@ -44,19 +44,24 @@ describe('ObservabilityPlanWidget', () => {
     expect(screen.getByText(/Approved >70%/)).toBeInTheDocument();
   });
 
-  it('handles all four metric kinds', () => {
+  it('handles all four metric kinds, each with its own label', () => {
+    // Asserting only that the section exists passed with every kind collapsed
+    // onto the `custom` label. Each kind must name itself, and no two may share
+    // a label.
     const kinds = ['count_by_status', 'cost_per_run', 'latency', 'custom'] as const;
-    kinds.forEach((kind) => {
+    const labels = kinds.map((kind) => {
       const { unmount } = render(
         <ObservabilityPlanWidget
-          config={{ success_metric: { kind, description: 'x' } }}
+          config={{ success_metric: { kind, description: 'DESC' } }}
         />,
       );
-      // each kind should produce SOME rendered label
-      expect(
-        document.querySelector('[data-section="success-metric"]'),
-      ).not.toBeNull();
+      const section = document.querySelector('[data-section="success-metric"]');
+      expect(section).not.toBeNull();
+      const text = (section?.textContent ?? '').replace('DESC', '').trim();
       unmount();
+      return text;
     });
+    expect(labels.every((l) => l.length > 0)).toBe(true);
+    expect(new Set(labels).size).toBe(kinds.length);
   });
 });
