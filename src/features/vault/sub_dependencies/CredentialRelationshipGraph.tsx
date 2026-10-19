@@ -5,7 +5,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useVaultStore } from "@/stores/vaultStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useOverviewStore } from "@/stores/overviewStore";
-import { getCredentialDependentsAll, listCredentialEvents } from '@/api/vault/credentials';
+import { getCredentialDependentsAll, listAllCredentialEvents } from '@/api/vault/credentials';
 import type { CredentialDependent } from '@/lib/bindings/CredentialDependent';
 import type { CredentialEvent } from '@/lib/types/types';
 import { silentCatch } from '@/lib/silentCatch';
@@ -51,6 +51,12 @@ export function CredentialRelationshipGraph() {
         setDependentsMap(map);
       })
       .catch(silentCatch('CredentialRelationshipGraph:dependentsAll'));
+    // Every event, on open. Fetching them one credential at a time on click
+    // left the graph with no event nodes, the Events tile at 0, and an
+    // events-only credential's blast radius at "minimal impact" until clicked.
+    listAllCredentialEvents()
+      .then((events) => { if (!cancelled) setCredentialEvents(events); })
+      .catch(silentCatch('CredentialRelationshipGraph:listAllEvents'));
     return () => { cancelled = true; };
   }, [credentials]);
 
@@ -91,17 +97,7 @@ export function CredentialRelationshipGraph() {
 
   const handleNodeClick = useCallback((nodeId: string) => {
     setSelectedNodeId((prev) => prev === nodeId ? null : nodeId);
-    const cred = credentials.find((c) => c.id === nodeId);
-    if (!cred) return;
-    listCredentialEvents(nodeId)
-      .then((events) => {
-        setCredentialEvents((prev) => [
-          ...prev.filter((e) => e.credential_id !== nodeId),
-          ...events,
-        ]);
-      })
-      .catch(silentCatch('CredentialRelationshipGraph:listEvents'));
-  }, [credentials]);
+  }, []);
 
   const handleToggleSimulation = useCallback(() => {
     setSimulationMode((prev) => !prev);
