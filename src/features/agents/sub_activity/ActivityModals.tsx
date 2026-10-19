@@ -13,7 +13,7 @@ import { EventDetailModal } from '@/features/overview/sub_events/EventDetailModa
 import MemoryDetailModal from '@/features/overview/sub_memories/components/MemoryDetailModal';
 import { ReportDetailModal } from '@/features/overview/sub_reports/components/ReportDetailModal';
 import type { ActivityItem } from './activityTypes';
-import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { toastCatch } from '@/lib/silentCatch';
 import Button from '@/features/shared/components/buttons/Button';
 
 interface ActivityModalsProps {
@@ -90,7 +90,10 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
           message={selectedMessage}
           onClose={() => setSelectedMessage(null)}
           onDelete={async () => {
-            await deleteReport(selectedMessage.id).catch(silentCatch('ActivityModals:deleteReport'));
+            // The user pressed Delete and confirmed: a failure is theirs to see.
+            // It went to silentCatch, so the modal closed, the feed refreshed and
+            // the "deleted" report simply came back with no word why.
+            await deleteReport(selectedMessage.id).catch(toastCatch('ActivityModals:deleteReport'));
             setSelectedMessage(null);
             onDataChanged();
           }}
