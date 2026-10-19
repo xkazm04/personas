@@ -152,7 +152,7 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
           <AccessibleToggle
             checked={effective.enabled}
             onChange={handleHeaderToggle}
-            label={`${effective.enabled ? 'Disable' : 'Enable'} ${effective.name}`}
+            label={tx(effective.enabled ? t.common.disable_item : t.common.enable_item, { name: effective.name })}
             disabled={offProject !== null}
             size="md"
             className={`${effective.enabled && !accent ? 'shadow-[0_0_12px_rgba(16,185,129,0.25)]' : ''} ${
