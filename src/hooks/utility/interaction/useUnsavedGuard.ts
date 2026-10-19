@@ -1,7 +1,8 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import { extractMessage, silentCatch } from '@/lib/silentCatch';
-import { resolveError } from '@/lib/errors/errorRegistry';
+import { useTranslation } from '@/i18n/useTranslation';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import type { SidebarSection, SettingsTab } from '@/lib/types/types';
 
 export type UnsavedGuardAction = 'save' | 'discard' | 'stay';
@@ -53,7 +54,11 @@ export function useUnsavedGuard(
   options?: UnsavedGuardOptions,
 ): UnsavedGuardState {
   const [isOpen, setIsOpen] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  // The RAW failure is state; the sentence is resolved at render in the active
+  // language (below). Resolving at catch time through the English-only
+  // registry showed a German user an English reason inside a German dialog.
+  const [saveFailure, setSaveFailure] = useState<{ raw: unknown } | null>(null);
+  const { t } = useTranslation();
   const [isSaving, setIsSaving] = useState(false);
   const dirtyRef = useRef(isDirty);
   dirtyRef.current = isDirty;
@@ -92,7 +97,7 @@ export function useUnsavedGuard(
         useSystemStore.setState({ sidebarSection: lastSection });
         // Store where the user wanted to go
         pendingNavRef.current = { type: 'sidebar', target: newSection };
-        setSaveError(null);
+        setSaveFailure(null);
         setIsOpen(true);
       } else {
         lastSection = newSection;
@@ -116,7 +121,7 @@ export function useUnsavedGuard(
       if (dirtyRef.current) {
         useSystemStore.setState({ settingsTab: lastTab });
         pendingNavRef.current = { type: 'settingsTab', target: newTab };
-        setSaveError(null);
+        setSaveFailure(null);
         setIsOpen(true);
       } else {
         lastTab = newTab;
@@ -132,13 +137,13 @@ export function useUnsavedGuard(
 
     if (action === 'stay') {
       pendingNavRef.current = null;
-      setSaveError(null);
+      setSaveFailure(null);
       setIsOpen(false);
       return;
     }
 
     if (action === 'save') {
-      setSaveError(null);
+      setSaveFailure(null);
       setIsSaving(true);
       try {
         await callbacksRef.current.onSave();
@@ -148,12 +153,7 @@ export function useUnsavedGuard(
         // editor with no toast, which looks exactly like pressing Stay. Stay
         // and Discard remain available, so this is a report, not a trap.
         silentCatch('useUnsavedGuard:onSave')(err);
-        // Known failures get the registry's friendly copy; an unclassified one
-        // (a validation message, say) keeps its own words rather than a generic
-        // line that hides the reason (error-message-resolution golden path).
-        const raw = extractMessage(err);
-        const friendly = resolveError(raw);
-        setSaveError(friendly.category === 'unclassified' ? raw : friendly.message);
+        setSaveFailure({ raw: err });
         setIsSaving(false);
         return;
       }
@@ -166,7 +166,7 @@ export function useUnsavedGuard(
 
     // Navigate to the pending target
     pendingNavRef.current = null;
-    setSaveError(null);
+    setSaveFailure(null);
     setIsOpen(false);
     if (pending) {
       if (pending.type === 'sidebar') {
@@ -176,6 +176,16 @@ export function useUnsavedGuard(
       }
     }
   }, []);
+
+  // Known failures get the registry's translated copy; an unclassified one
+  // (a validation message, say) keeps its own words rather than a generic
+  // line that hides the reason (error-message-resolution golden path).
+  let saveError: string | null = null;
+  if (saveFailure) {
+    const raw = extractMessage(saveFailure.raw);
+    const friendly = resolveErrorTranslated(t, raw);
+    saveError = friendly.category === 'unclassified' ? raw : friendly.message;
+  }
 
   return { isOpen, resolve, saveError, isSaving };
 }
