@@ -69,6 +69,12 @@ export function UseCaseRow({
   const isAttention = uc.health === 'needs-attention';
   const stateHex = STATE_HEX[uc.health];
   const connectorMeta = uc.connectorKey ? CONNECTOR_META[uc.connectorKey] : null;
+  // ~18% (0x2e) of the row's state colour, the alpha the ring always meant.
+  const hoverRing = isAttention
+    ? '#fbbf242e'
+    : isDisabled
+      ? 'rgba(148,163,184,0.18)'
+      : 'color-mix(in srgb, var(--primary) 18%, transparent)';
 
   const handleRunClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -105,11 +111,9 @@ export function UseCaseRow({
             : 'border-card-border hover:border-primary/45'
       }`}
       style={{
-        boxShadow: hovered
-          ? `0 0 0 1px ${
-              isAttention ? '#fbbf24' : isDisabled ? 'rgba(148,163,184,0.4)' : 'rgb(var(--primary))'
-            }2e inset`
-          : undefined,
+        // `--primary` is a HEX token: `rgb(var(--primary))` plus a hex alpha
+        // suffix was invalid at computed-value time and the ring never drew.
+        boxShadow: hovered ? `0 0 0 1px ${hoverRing} inset` : undefined,
       }}
     >
       <div className="flex items-center gap-4 px-4 py-3">
@@ -180,12 +184,9 @@ export function UseCaseRow({
               </Tooltip>
             )}
             <div
-              className="typo-heading truncate"
-              style={{
-                color: isDisabled
-                  ? 'rgb(var(--foreground) / 0.55)'
-                  : 'rgb(var(--foreground) / 0.95)',
-              }}
+              className={`typo-heading truncate ${
+                isDisabled ? 'text-muted-foreground' : 'text-foreground'
+              }`}
             >
               {uc.title}
             </div>
