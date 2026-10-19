@@ -15,8 +15,8 @@ const FIELD_OPTIONS = [
   { value: 'category', label: 'Category' },
   { value: 'scan_type', label: 'Scan Type' },
   // The findings spine — rules can target which SENSOR raised an idea, e.g.
-  // "auto-accept passport_gap" (values: standards_finding · passport_gap ·
-  // llm_cost · sentry_spike · kpi_offtrack). Never matches a scanner idea.
+  // "auto-accept passport_gap" (values: FINDING_ORIGINS in api/devTools). Never
+  // matches a scanner idea.
   { value: 'origin', label: 'Source (sensor)' },
 ];
 

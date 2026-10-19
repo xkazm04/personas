@@ -1,4 +1,5 @@
-// The five finding emitters (docs/plans/dev-findings-loop.md §3 2B).
+// The finding emitters (docs/plans/dev-findings-loop.md §3 2B): nine functions
+// over eight sensors, E1-E8 (doc rot has a git signal and a broken-ref one).
 //
 // Each is a PURE function over data the app already fetches — no IPC, no LLM, no
 // clock. That's what makes them fixture-testable, and what lets Phase 3's
