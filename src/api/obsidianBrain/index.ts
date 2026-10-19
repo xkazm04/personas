@@ -248,6 +248,19 @@ const EMPTY_DRIVE_SYNC_RESULT: DriveSyncResult = {
 };
 
 /**
+ * IPC ceiling for Drive push/pull. Both run inline: per synced file they make
+ * sequential Google calls (`push_to_drive` / `pull_from_drive` in
+ * `src-tauri/src/commands/obsidian_brain/drive.rs`) and then save the
+ * manifest, so the run grows with the vault, and `drive_client` sets no
+ * request deadline. At the 90 s default a few-hundred-note vault reported a
+ * failure while the backend kept uploading, and a retry started a second sync
+ * racing the first for the same manifest. This matches the 30-minute ceiling
+ * `tauriInvoke.ts` gives other blocking mutations: long enough to wait for the
+ * real result, still bounded.
+ */
+export const OBSIDIAN_DRIVE_SYNC_IPC_TIMEOUT_MS = 30 * 60_000;
+
+/**
  * Push local vault folders to Drive.
  *
  * ## `folderNames` contract
@@ -261,7 +274,11 @@ export const obsidianDrivePushSync = (folderNames?: string[]) => {
   if (folderNames && folderNames.length === 0) {
     return Promise.resolve<DriveSyncResult>({ ...EMPTY_DRIVE_SYNC_RESULT });
   }
-  return invoke<DriveSyncResult>("obsidian_drive_push_sync", { folderNames: folderNames ?? null });
+  return invoke<DriveSyncResult>(
+    "obsidian_drive_push_sync",
+    { folderNames: folderNames ?? null },
+    { timeoutMs: OBSIDIAN_DRIVE_SYNC_IPC_TIMEOUT_MS },
+  );
 };
 
 /**
@@ -272,7 +289,11 @@ export const obsidianDrivePullSync = (folderNames?: string[]) => {
   if (folderNames && folderNames.length === 0) {
     return Promise.resolve<DriveSyncResult>({ ...EMPTY_DRIVE_SYNC_RESULT });
   }
-  return invoke<DriveSyncResult>("obsidian_drive_pull_sync", { folderNames: folderNames ?? null });
+  return invoke<DriveSyncResult>(
+    "obsidian_drive_pull_sync",
+    { folderNames: folderNames ?? null },
+    { timeoutMs: OBSIDIAN_DRIVE_SYNC_IPC_TIMEOUT_MS },
+  );
 };
 
 export const loginWithGoogleDrive = () =>
