@@ -46,6 +46,12 @@ let activeTwinSwitchChain: Promise<void> = Promise.resolve();
 // after B's, overwriting `twinTones` with the wrong twin's tone profiles in
 // the Training Atelier.
 const twinTonesLatestWins = createLatestWins();
+// Same guard for every other per-twin read a twin switch re-fires: without it
+// twin A's slower answer overwrote twin B's channels, conversation history or
+// readiness corpus.
+const twinChannelsLatestWins = createLatestWins();
+const twinCommsLatestWins = createLatestWins();
+const twinReadinessLatestWins = createLatestWins();
 
 export interface TwinSlice {
   // -- State -----------------------------------------------------------
@@ -518,10 +524,13 @@ export const createTwinSlice: StateCreator<SystemStore, [], [], TwinSlice> = (se
   // twinReadinessApproved, so panels filtering twinPendingMemories by
   // rejected/pending can't clobber the corpus the score depends on.
   fetchTwinReadinessApproved: async (twinId) => {
+    const token = twinReadinessLatestWins.next();
     try {
       const approved = await twinApi.listPendingMemories(twinId, 'approved');
+      if (!twinReadinessLatestWins.isCurrent(token)) return;
       set({ twinReadinessApproved: approved });
     } catch (err) {
+      if (!twinReadinessLatestWins.isCurrent(token)) return;
       reportError(err, "Failed to fetch approved memories", set);
     }
   },
@@ -550,11 +559,14 @@ export const createTwinSlice: StateCreator<SystemStore, [], [], TwinSlice> = (se
   // -- Communication actions (P2) --------------------------------------
 
   fetchTwinCommunications: async (twinId, channel, limit) => {
+    const token = twinCommsLatestWins.next();
     set({ twinCommsLoading: true });
     try {
       const twinCommunications = await twinApi.listCommunications(twinId, channel, limit);
+      if (!twinCommsLatestWins.isCurrent(token)) return;
       set({ twinCommunications, twinCommsLoading: false, error: null });
     } catch (err) {
+      if (!twinCommsLatestWins.isCurrent(token)) return;
       reportError(err, "Failed to fetch communications", set, {
         stateUpdates: { twinCommsLoading: false },
       });
@@ -612,11 +624,14 @@ export const createTwinSlice: StateCreator<SystemStore, [], [], TwinSlice> = (se
   // -- Channel actions (P4) ---------------------------------------------
 
   fetchTwinChannels: async (twinId) => {
+    const token = twinChannelsLatestWins.next();
     set({ twinChannelsLoading: true });
     try {
       const twinChannels = await twinApi.listChannels(twinId);
+      if (!twinChannelsLatestWins.isCurrent(token)) return;
       set({ twinChannels, twinChannelsLoading: false, error: null });
     } catch (err) {
+      if (!twinChannelsLatestWins.isCurrent(token)) return;
       reportError(err, "Failed to fetch channels", set, {
         stateUpdates: { twinChannelsLoading: false },
       });
