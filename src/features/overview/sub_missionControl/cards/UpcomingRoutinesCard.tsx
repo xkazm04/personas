@@ -11,9 +11,9 @@ import { PaneHeader } from '../PaneHeader';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
+import { SCHEDULE_TRIGGER_TYPES } from '../variants/shared/useSideReadings';
 
 const MAX_ROWS = 5;
-const SCHEDULE_TRIGGER_TYPES = new Set(['schedule', 'cron', 'polling']);
 const ROW_HEIGHT = 44;
 const GHOST_BAR = 'rounded bg-primary/[0.06]';
 const GHOST_NAME_WIDTHS = ['w-32', 'w-24', 'w-28'];

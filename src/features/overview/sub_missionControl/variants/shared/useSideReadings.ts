@@ -13,6 +13,7 @@ import { getHealingEffectiveness, type HealingEffectivenessReport } from '@/api/
 import { silentCatch } from '@/lib/silentCatch';
 import type { AttentionLoopStatus } from '@/lib/bindings/AttentionLoopStatus';
 import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
+import type { TriggerKind } from '@/lib/bindings/TriggerKind';
 import type { Reading } from './readings';
 
 const REFRESH_MS = 60_000;
@@ -63,5 +64,9 @@ export function useSideReadings(): SideReadings {
   };
 }
 
-/** Schedule-shaped triggers, exactly as UpcomingRoutinesCard filters them. */
-export const SCHEDULE_TRIGGER_TYPES = new Set(['schedule', 'cron', 'polling']);
+/** Clock-driven trigger kinds: the ones with a `next_trigger_at`, read by the
+ *  routines card and the mission readings. Typed against the ts-rs
+ *  `TriggerKind` union so a spelling the schema cannot store fails tsc (the
+ *  hand-typed copies listed 'cron', which `TriggerKind` does not have). */
+const SCHEDULE_TRIGGER_KINDS: readonly TriggerKind[] = ['schedule', 'polling'];
+export const SCHEDULE_TRIGGER_TYPES: ReadonlySet<string> = new Set(SCHEDULE_TRIGGER_KINDS);
