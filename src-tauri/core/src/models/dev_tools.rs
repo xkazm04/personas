@@ -1363,12 +1363,6 @@ impl BacklogSource {
         }
     }
 
-    /// True for a source whose items a static tool produced, so no model
-    /// attribution is owed and `Draft` completeness is expected.
-    pub fn is_mechanical(&self) -> bool {
-        matches!(self, Self::StaticScan | Self::HeadlessBenchSeed)
-    }
-
     /// The scale this producer's prompt actually asks for.
     ///
     /// **Two scales live in one column and this is where the exchange rate is
