@@ -38,16 +38,3 @@ pub async fn acquire(credential_id: &str) -> OwnedMutexGuard<()> {
     };
     mutex.lock_owned().await
 }
-
-/// Try to acquire the lock without blocking. Returns `None` if another
-/// refresh is already in progress for this credential.
-#[allow(dead_code)]
-pub fn try_acquire(credential_id: &str) -> Option<OwnedMutexGuard<()>> {
-    let mutex = {
-        let mut m = map().lock().expect("oauth refresh lock map poisoned");
-        m.entry(credential_id.to_string())
-            .or_insert_with(|| Arc::new(AsyncMutex::new(())))
-            .clone()
-    };
-    mutex.try_lock_owned().ok()
-}
