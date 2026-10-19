@@ -5,6 +5,9 @@ import { storeBus, AccessorKey } from '@/lib/storeBus';
 import { getSlaDashboard } from '@/api/overview/sla';
 import { getHealthBundle } from '@/api/overview/health';
 import { log } from '@/lib/log';
+// IPC rejects with a serialized AppError OBJECT, never an Error, so the old
+// `instanceof Error ? .message : String(x)` ladder put "[object Object]" in the banner.
+import { extractMessage } from '@/lib/silentCatch';
 import type { PersonaSlaStats } from '@/lib/bindings/PersonaSlaStats';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 import type { Persona } from '@/lib/bindings/Persona';
@@ -100,7 +103,7 @@ export function useStatusPageData() {
         setSlaStats(slaResult.value.persona_stats);
         setSlaError(null);
       } else {
-        const msg = slaResult.reason instanceof Error ? slaResult.reason.message : String(slaResult.reason);
+        const msg = extractMessage(slaResult.reason);
         log.warn('useStatusPageData', 'Failed to load SLA stats', { error: msg });
         setSlaError(msg);
       }
@@ -113,14 +116,14 @@ export function useStatusPageData() {
           setHealingError(null);
         }
       } else {
-        const msg = healingResult.reason instanceof Error ? healingResult.reason.message : String(healingResult.reason);
+        const msg = extractMessage(healingResult.reason);
         log.warn('useStatusPageData', 'Failed to load healing issues', { error: msg });
         setHealingError(msg);
       }
 
       setLastRefreshedAt(Date.now());
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractMessage(err);
       log.warn('useStatusPageData', 'Failed to load status page data', { error: msg });
       setError(msg);
     } finally {
