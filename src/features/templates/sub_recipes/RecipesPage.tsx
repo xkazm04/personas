@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useShallow } from 'zustand/react/shallow';
 import { usePipelineStore } from '@/stores/pipelineStore';
-import { silentCatch } from '@/lib/silentCatch';
+import { toastCatch } from '@/lib/silentCatch';
 import { RECIPE_PAGE_SIZE } from '@/api/recipes/recipes';
 import { RecipesBrowseList } from './components/RecipesBrowseList';
 import { RecipeDetailPanel } from './components/RecipeDetailPanel';
@@ -43,13 +43,15 @@ export function RecipesPage() {
   // DB before the frontend renders; this fetch lands one viewport-sized
   // page into the store instead of hydrating the whole catalog (1000+)
   // just to paint 20 table rows. `isLoading` is only the cold-empty
-  // flag — a rejected fetch releases it so the empty state can appear.
+  // flag — a rejected fetch releases it so the empty state can appear, and
+  // the failure is toasted: the empty state alone reads as "no recipes
+  // match", which is a claim about a catalog that never arrived.
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   useEffect(() => {
     let cancelled = false;
     fetchRecipes({ limit: RECIPE_PAGE_SIZE, offset: 0 })
-      .catch(silentCatch('RecipesPage.fetchRecipes'))
+      .catch(toastCatch('RecipesPage.fetchRecipes'))
       .finally(() => { if (!cancelled) setIsLoading(false); });
     return () => { cancelled = true; };
   }, [fetchRecipes]);
@@ -58,7 +60,7 @@ export function RecipesPage() {
     if (isLoadingMore || !recipesHasMore) return;
     setIsLoadingMore(true);
     fetchRecipes({ limit: RECIPE_PAGE_SIZE, offset: definitions.length, append: true })
-      .catch(silentCatch('RecipesPage.fetchRecipes.more'))
+      .catch(toastCatch('RecipesPage.fetchRecipes.more'))
       .finally(() => setIsLoadingMore(false));
   }, [isLoadingMore, recipesHasMore, fetchRecipes, definitions.length]);
 
