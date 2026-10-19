@@ -117,7 +117,10 @@ export function useTeamMemories(teamId: string) {
 
   const onLoadMore = useCallback(async () => {
     const { category, search, runId } = filtersRef.current;
-    const token = listWinsRef.current.next();
+    // Peek, never mint: a page APPENDS to the list the current refresh owns.
+    // Minting here superseded that refresh's in-flight count/stats, which then
+    // dropped as stale and left `total` at the previous filter's value.
+    const token = listWinsRef.current.current();
     try {
       const next = await listTeamMemories(teamId, runId, category, search, PAGE_SIZE, memories.length);
       // A page computed against an offset the list no longer has would append
