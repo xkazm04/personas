@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useKeyedCopyFlag } from '@/hooks/utility/interaction/useKeyedCopyFlag';
 import { Cloud, Plus, Trash2, Webhook, RefreshCw } from 'lucide-react';
 import { CopyButton, Button } from '@/features/shared/components/buttons';
@@ -17,6 +17,7 @@ import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { mapWithConcurrency } from '@/lib/concurrency';
 
 
@@ -37,12 +38,12 @@ export function CloudWebhooksTab() {
   const [webhookRows, setWebhookRows] = useState<WebhookTriggerRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const fetchSeqRef = useRef(0);
   // Personas with an ACTIVE deployment: the only ones a webhook trigger can be
   // created for. The URL is /api/deployed/{slug} and this list reads triggers
   // from active deployments only, so a trigger created on an undeployed persona
   // had no URL and never appeared here.
   const [activeDeployments, setActiveDeployments] = useState<CloudDeployment[]>([]);
+  const [fetchLatest] = useState(createLatestWins);
   const { copiedKey: copiedId, copy } = useKeyedCopyFlag<string>();
 
   // Create form state
@@ -56,13 +57,13 @@ export function CloudWebhooksTab() {
   const [firingsLoading, setFiringsLoading] = useState(false);
 
   const fetchWebhookTriggers = useCallback(async () => {
-    const seq = ++fetchSeqRef.current;
+    const seq = fetchLatest.next();
     try {
       const [deployments, url] = await Promise.all([
         cloudListDeployments(),
         cloudGetBaseUrl(),
       ]);
-      if (seq !== fetchSeqRef.current) return;
+      if (!fetchLatest.isCurrent(seq)) return;
 
       const webhookEnabled = deployments.filter((d) => d.status === 'active');
       setActiveDeployments(webhookEnabled);
@@ -71,7 +72,7 @@ export function CloudWebhooksTab() {
       await mapWithConcurrency(webhookEnabled, 4, async (dep) => {
         try {
           const triggers = await cloudListTriggers(dep.personaId);
-          if (seq !== fetchSeqRef.current) return;
+          if (!fetchLatest.isCurrent(seq)) return;
           const webhookTriggers = triggers.filter((t) => t.triggerType === 'webhook');
           const persona = personas.find((p) => p.id === dep.personaId);
           const newRows: WebhookTriggerRow[] = webhookTriggers.map((trigger) => ({
@@ -91,12 +92,12 @@ export function CloudWebhooksTab() {
         } catch (err) { silentCatch("features/triggers/sub_cloud_webhooks/CloudWebhooksTab:catch1")(err); }
       });
 
-      if (seq !== fetchSeqRef.current) return;
+      if (!fetchLatest.isCurrent(seq)) return;
       setWebhookRows(collected);
     } catch (err) { silentCatch("features/triggers/sub_cloud_webhooks/CloudWebhooksTab:catch2")(err); } finally {
-      if (seq === fetchSeqRef.current) setIsLoading(false);
+      if (fetchLatest.isCurrent(seq)) setIsLoading(false);
     }
-  }, [personas]);
+  }, [personas, fetchLatest]);
 
   useEffect(() => {
     fetchWebhookTriggers();
@@ -108,14 +109,18 @@ export function CloudWebhooksTab() {
       setFirings([]);
       return;
     }
+    // Switching rows quickly must not let the previous row's slower answer
+    // paint its firings under the newly selected trigger.
+    let stale = false;
     setFiringsLoading(true);
     cloudListTriggerFirings(selectedTriggerId, 20)
-      .then(setFirings)
+      .then((rows) => { if (!stale) setFirings(rows); })
       .catch((err) => {
         silentCatch("features/triggers/sub_cloud_webhooks/CloudWebhooksTab:catch4")(err);
-        setFirings([]);
+        if (!stale) setFirings([]);
       })
-      .finally(() => setFiringsLoading(false));
+      .finally(() => { if (!stale) setFiringsLoading(false); });
+    return () => { stale = true; };
   }, [selectedTriggerId]);
 
   const handleCopy = (text: string, id: string) => copy(id, text);
