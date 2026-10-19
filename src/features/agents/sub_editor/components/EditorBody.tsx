@@ -208,7 +208,7 @@ export function EditorBody() {
                 />
                 {selectedPersona?.id && (
                   <div className="max-w-3xl 3xl:max-w-4xl 4xl:max-w-5xl mt-4">
-                    <PersonaChangeHistory personaId={selectedPersona.id} />
+                    <PersonaChangeHistory personaId={selectedPersona.id} revision={selectedPersona.updated_at} />
                   </div>
                 )}
               </EditorTabContent>

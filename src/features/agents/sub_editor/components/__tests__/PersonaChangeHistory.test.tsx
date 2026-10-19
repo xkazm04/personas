@@ -59,4 +59,27 @@ describe('PersonaChangeHistory', () => {
     expect(screen.queryByText('name')).toBeNull();
     expect(screen.getByText('max_turns')).toBeInTheDocument();
   });
+  it('re-pulls in place when a save moves the persona revision', async () => {
+    h.listPersonaChangeLog
+      .mockResolvedValueOnce([entry('e1', 'p1', 'name')])
+      .mockResolvedValueOnce([entry('e2', 'p1', 'max_turns'), entry('e1', 'p1', 'name')]);
+
+    const { rerender } = render(<PersonaChangeHistory personaId="p1" revision="r1" />);
+    await waitFor(() => expect(screen.getByText('name')).toBeInTheDocument());
+
+    rerender(<PersonaChangeHistory personaId="p1" revision="r2" />);
+    // The rows already on screen are not replaced by a loading ghost.
+    expect(screen.getByText('name')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('max_turns')).toBeInTheDocument());
+    expect(h.listPersonaChangeLog).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not re-pull when the revision is unchanged', async () => {
+    h.listPersonaChangeLog.mockResolvedValue([entry('e1', 'p1', 'name')]);
+    const { rerender } = render(<PersonaChangeHistory personaId="p1" revision="r1" />);
+    await waitFor(() => expect(screen.getByText('name')).toBeInTheDocument());
+    rerender(<PersonaChangeHistory personaId="p1" revision="r1" />);
+    await tick();
+    expect(h.listPersonaChangeLog).toHaveBeenCalledTimes(1);
+  });
 });

@@ -10,6 +10,9 @@ import type { PersonaChangeEntry } from '@/lib/bindings/PersonaChangeEntry';
 
 interface PersonaChangeHistoryProps {
   personaId: string;
+  /** The persona row's `updated_at`. Every persisted edit moves it, so a new
+   *  value means the change log grew and the list re-pulls in place. */
+  revision?: string | null;
 }
 
 const SOURCE_TONE: Record<string, string> = {
@@ -24,7 +27,7 @@ const SOURCE_TONE: Record<string, string> = {
  * model / budget / prompt, and when" trail. Read-only (no restore) — reads the
  * append-only persona_change_log via IPC and refreshes when a save lands.
  */
-export function PersonaChangeHistory({ personaId }: PersonaChangeHistoryProps) {
+export function PersonaChangeHistory({ personaId, revision }: PersonaChangeHistoryProps) {
   const { t } = useTranslation();
   const labels = t.agents.change_history;
   const [entries, setEntries] = useState<PersonaChangeEntry[]>([]);
@@ -52,8 +55,18 @@ export function PersonaChangeHistory({ personaId }: PersonaChangeHistoryProps) {
     return () => { latestWins.next(); };
   }, [load, latestWins]);
 
-  // A completed run never edits config, but saves do — re-pull when the store
-  // signals a persona changed so a fresh edit shows without a manual refresh.
+  // A completed run never edits config, but saves do. The `persona:selected`
+  // subscription below only fires on a selection, never on a save, so an edit
+  // made on this very tab used to stay out of the list until the persona was
+  // re-opened. The row's revision moves on every persisted edit: re-pull then,
+  // in place (rows already on screen stay; no loading ghost).
+  const seenRevision = useRef(revision);
+  useEffect(() => {
+    if (seenRevision.current === revision) return;
+    seenRevision.current = revision;
+    load();
+  }, [revision, load]);
+
   useEffect(() => {
     const off = storeBus.on('persona:selected', ({ personaId: pid }) => {
       if (pid === personaId) load();
