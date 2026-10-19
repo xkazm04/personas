@@ -837,7 +837,7 @@ pub fn list_tools(_pool: &McpDbPool) -> Vec<Value> {
                 "properties": {
                     "scope_type": { "type": "string", "enum": ["persona", "tool", "connector", "global"], "description": "Scope to search" },
                     "scope_id": { "type": "string", "description": "Specific tool/connector name to search within" },
-                    "limit": { "type": "number", "description": "Max results (default: 20)" }
+                    "limit": { "type": "number", "description": "Max results (default 20, max 100)" }
                 }
             }
         }),
@@ -884,7 +884,7 @@ pub fn list_tools(_pool: &McpDbPool) -> Vec<Value> {
                 "type": "object",
                 "properties": {
                     "category": { "type": "string", "description": "Filter by template category" },
-                    "limit": { "type": "number", "description": "Max results (default: 20)" }
+                    "limit": { "type": "number", "description": "Max results (default 20, max 100)" }
                 }
             }
         }),
@@ -1954,7 +1954,14 @@ fn handle_knowledge_search(args: &Value, pool: &McpDbPool) -> Result<String, Str
     let conn = pool.get()?;
     let scope_type = args.get("scope_type").and_then(|v| v.as_str());
     let scope_id = args.get("scope_id").and_then(|v| v.as_str());
-    let limit = args.get("limit").and_then(|v| v.as_i64()).unwrap_or(20);
+    // Clamped like every other list verb here: SQLite reads `LIMIT -1` (or any
+    // negative) as NO limit, so an unclamped value let one call dump the whole
+    // table to the MCP client.
+    let limit = args
+        .get("limit")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(20)
+        .clamp(1, 100);
 
     let (sql, params): (&str, Vec<Box<dyn rusqlite::types::ToSql>>) = match (scope_type, scope_id) {
         (Some(st), Some(sid)) => (
@@ -2095,7 +2102,12 @@ fn handle_health(_args: &Value, pool: &McpDbPool) -> Result<String, String> {
 fn handle_list_templates(args: &Value, pool: &McpDbPool) -> Result<String, String> {
     let conn = pool.get()?;
     let category = args.get("category").and_then(|v| v.as_str());
-    let limit = args.get("limit").and_then(|v| v.as_i64()).unwrap_or(20);
+    // Clamped: a negative LIMIT is unbounded in SQLite (see handle_knowledge_search).
+    let limit = args
+        .get("limit")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(20)
+        .clamp(1, 100);
 
     let sql = if category.is_some() {
         "SELECT id, test_case_name, instruction, status, structural_score, semantic_score, adoption_count, category
