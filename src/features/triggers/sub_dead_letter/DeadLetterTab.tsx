@@ -166,15 +166,19 @@ export function DeadLetterTab() {
   const loadEvents = useCallback(async () => {
     setLoading(true);
     try {
+      // The count is an enrichment: a refused count leaves the header on the
+      // rows on screen (queueTotal null = unknown), it never blanks the list.
       const [data, total] = await Promise.all([
         listDeadLetterEvents(DLQ_WINDOW),
-        countDeadLetterEvents().catch((err) => {
-          silentCatch('DeadLetterTab:countDeadLetterEvents')(err);
-          return null;
-        }),
+        Promise.allSettled([countDeadLetterEvents()]).then(([r]) => r),
       ]);
       setEvents(data);
-      setQueueTotal(total);
+      if (total?.status === 'fulfilled') {
+        setQueueTotal(total.value);
+      } else {
+        setQueueTotal(null);
+        silentCatch('DeadLetterTab:countDeadLetterEvents')(total?.reason);
+      }
       setLoadFailed(false);
       setSelected((prev) => {
         // Drop selections for ids that are no longer in the queue.
