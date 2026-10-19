@@ -6,6 +6,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import type { PlayStatus } from '@/lib/bindings/PlayStatus';
 import { useMediaSession } from '../hooks/useMediaSession';
+import { claimRadioLaunchDecision } from '../hooks/radioLaunch';
 import { useRadioState } from '../hooks/useRadioState';
 import { somafmSlugForStation, useSomafmMetadata } from '../hooks/useSomafmMetadata';
 import { useYouTubePlayer } from '../hooks/useYouTubePlayer';
@@ -97,12 +98,6 @@ export default function RadioFooter() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [volumeOpen, setVolumeOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
-  /**
-   * Auto-resume fires exactly once per mount, after the initial radio
-   * state has loaded. The ref prevents the effect from refiring if the
-   * deps change later (e.g. station catalog update).
-   */
-  const autoResumedRef = useRef<boolean>(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   /** Trigger wrappers: a popover treats a press inside its anchor as its own. */
@@ -445,18 +440,20 @@ export default function RadioFooter() {
 
   useEffect(() => () => cancelWatchdog(), [cancelWatchdog]);
 
-  // Auto-resume the persisted station once, on first mount after load.
-  // Only fires if (a) the user opted in via the settings toggle,
-  // (b) there's a persisted current station, and (c) it wasn't already
-  // playing (status === 'stopped' means the prior session was paused
-  // when the app closed — and "paused" carries over via persistence).
+  // The launch decision, once per app launch (see radioLaunch.ts), after the
+  // persisted state has loaded. The backend keeps `status` as it was when the
+  // app quit, so a session that quit mid-song arrives here `playing`:
+  // - setting on: resume the persisted station if it is not already live;
+  // - setting off: a persisted `playing` is silenced, never auto-started.
   useEffect(() => {
-    if (autoResumedRef.current) return;
-    if (!loaded || !autoResume || !state) return;
-    if (!state.currentStationId) return;
-    if (state.status === 'playing' || state.status === 'buffering') return;
-    autoResumedRef.current = true;
-    radioPlay().catch(silentCatch('radio:auto-resume'));
+    if (!loaded || !state) return;
+    if (!claimRadioLaunchDecision()) return;
+    const live = state.status === 'playing' || state.status === 'buffering';
+    if (autoResume) {
+      if (state.currentStationId && !live) radioPlay().catch(silentCatch('radio:auto-resume'));
+    } else if (live) {
+      radioPause().catch(silentCatch('radio:launch-quiet'));
+    }
   }, [loaded, autoResume, state]);
 
   // Reset progress bar whenever the current track or station changes.

@@ -3,6 +3,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { silentCatch } from '@/lib/silentCatch';
 import type { RadioState } from '@/lib/bindings/RadioState';
 import { radioPause, radioPlay, radioSetStation } from '@/api/radio';
+import { markRadioDriven } from './radioLaunch';
 
 export interface StationPreview {
   /** Station id currently auditioning (playing or buffering), else null. */
@@ -38,6 +39,9 @@ export function useStationPreview(state: RadioState | null): StationPreview {
 
   const preview = useCallback(
     (stationId: string) => {
+      // The footer this mounts must not read the preview's fresh `playing` as
+      // a status persisted from the last session.
+      markRadioDriven();
       if (!radioEnabled) setRadioEnabled(true);
       if (currentId === stationId && isActive) {
         radioPause().catch(silentCatch('radio:preview-pause'));
