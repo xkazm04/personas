@@ -696,11 +696,19 @@ function pushResize(m: ManagedTerminal): void {
  * (SIGWINCH; ConPTY's equivalent on Windows), and a same-size resize is a no-op
  * on both, hence the one-column wiggle. It deliberately bypasses `pushResize`'s
  * de-dupe and leaves `lastCols`/`lastRows` alone: the grid ends where it began.
+ *
+ * "Where it began" is the grid as it is WHEN the wiggle returns, read then, not
+ * the one captured before it. A fit that lands inside the 60 ms window (the
+ * grid overlay's density font change, a panel animation) pushes the new size
+ * and records it in `lastCols`; restoring the captured size afterwards left the
+ * child on the old width while the emulator drew the new one, and the de-dupe
+ * then skipped every later push of that same new size.
  */
 function nudgeRepaint(m: ManagedTerminal): void {
   const { cols, rows } = m.term;
   if (cols < 2 || rows < 1) return;
-  const back = () => resizeSession(m.sessionId, cols, rows).catch(silentCatch('fleetTerminal:repaint'));
+  const back = () =>
+    resizeSession(m.sessionId, m.term.cols, m.term.rows).catch(silentCatch('fleetTerminal:repaint'));
   resizeSession(m.sessionId, cols - 1, rows)
     .then(() => { setTimeout(back, 60); })
     .catch(silentCatch('fleetTerminal:repaint'));

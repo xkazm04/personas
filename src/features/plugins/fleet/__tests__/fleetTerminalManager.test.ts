@@ -554,6 +554,31 @@ describe('repaint nudge', () => {
     host.remove();
   });
 
+  it('settles back to the grid the emulator holds NOW when a fit lands mid-wiggle', async () => {
+    let releaseWiggle!: () => void;
+    vi.mocked(fleetApi.subscribeTerminal).mockResolvedValueOnce('');
+    // The empty ring's wiggle is the first resize this session sends (the
+    // snapshot resolves before the fit's frame): hold it open so a real fit
+    // can land inside it.
+    vi.mocked(fleetApi.resizeSession).mockImplementationOnce(
+      () => new Promise<null>((r) => (releaseWiggle = () => r(null))),
+    );
+    const host = attach('n-fit');
+    const m = registryMap().get('n-fit')!;
+    await flushFrames();
+    expect(vi.mocked(fleetApi.resizeSession).mock.calls[0]).toEqual(['n-fit', 79, 24]);
+    m.term.cols = 120;
+    configureFleetTerminals({ fontSize: 17 });
+    await flushFrames();
+    releaseWiggle();
+    await settle();
+    const calls = vi.mocked(fleetApi.resizeSession).mock.calls.filter(([id]) => id === 'n-fit');
+    // The child must end on the width the emulator draws, not the pre-fit one.
+    expect(calls[calls.length - 1]).toEqual(['n-fit', 120, 24]);
+    detachTerminal('n-fit');
+    host.remove();
+  });
+
   it('leaves a session alone when its ring already holds a frame', async () => {
     vi.mocked(fleetApi.subscribeTerminal).mockResolvedValueOnce('a frame');
     const host = attach('n2');
