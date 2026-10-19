@@ -37,7 +37,10 @@ export function NetworkAccessScopeBadge({ scope }: { scope: NetworkAccessScope }
   const [expanded, setExpanded] = useState(false);
   const { t } = useTranslation();
   const st = t.sharing;
-  const styles = SCOPE_STYLES[scope.level] ?? SCOPE_STYLES.none;
+  // Fail closed: the wire carries a bare string (ts-rs `level: string`), and a
+  // level this build does not know must never borrow the green "no network
+  // access" verdict. Show it as the broadest scope until the UI learns it.
+  const styles = SCOPE_STYLES[scope.level] ?? SCOPE_STYLES.unrestricted;
   const Icon = styles.icon;
   const config = { ...styles, label: (st as Record<string, string>)[styles.labelKey] ?? scope.level, description: (st as Record<string, string>)[styles.descKey] ?? '' };
   const hasDetails = scope.domains.length > 0 || scope.tool_integrations.length > 0 || scope.api_endpoints.length > 0;
