@@ -29596,6 +29596,88 @@
           "evidence": "src-tauri/src/engine/kb_extract.rs:309 Each extracted row receives a fresh UUID; the model's entityKey is a label, not a normalized key joining mentions into one node."
         }
       ]
+    },
+    "6b3d5224-2f4b-4f60-a8a6-3ac963ba3051/people-analytics-ethics": {
+      "context": "vault-credentials-manager",
+      "subject": "people-analytics-ethics",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-19",
+      "evaluatedTs": "2026-10-19T00:07:28.010Z",
+      "worker": "1e0f8e84-b6fb-4404-9904-fb49a8d859e3",
+      "techniques": [
+        {
+          "technique": "aggregate-vs-individual-split",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/manager/CredentialManagerViews.tsx:123 The list receives credentials; it is not an organizational or personal engineering measurement view."
+        },
+        {
+          "technique": "contribution-eligibility-floors",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/manager/useRotateAll.ts:28 Eligibility counts credentials supporting rotation, not people entering a contribution distribution."
+        },
+        {
+          "technique": "naming-population-floor",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/manager/CredentialManagerHeader.tsx:38 The published population is stored credentials, not identified contributors."
+        },
+        {
+          "technique": "private-view-separation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/manager/useCredentialManagerState.ts:96 The shell loads credential and connector inventories, not a person's work metrics."
+        },
+        {
+          "technique": "producer-enforced-suppression",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/manager/HeaderActionButtons.tsx:86 The healthcheck operates on credentials; no person-level reporting payload requires a naming floor."
+        },
+        {
+          "technique": "risk-framing-anonymization",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/manager/VaultTrustBadge.tsx:57 The gap signal concerns failed vault audit writes, not a named person's deficit or liability."
+        }
+      ]
+    },
+    "10c96ae7-a356-4555-996b-df92fc5dc8e7/people-analytics-ethics": {
+      "context": "plugins-dev-tools-skills",
+      "subject": "people-analytics-ethics",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-19",
+      "evaluatedTs": "2026-10-19T00:07:28.010Z",
+      "worker": "1e0f8e84-b6fb-4404-9904-fb49a8d859e3",
+      "techniques": [
+        {
+          "technique": "aggregate-vs-individual-split",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_skills/skillsManagerData.ts:151 The workspace/project split scopes skill usage by project, not organizational versus individual human audiences."
+        },
+        {
+          "technique": "contribution-eligibility-floors",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_skills/analytics/SkillScoreboard.tsx:53 Run outcomes are accumulated for skills, so per-person contribution eligibility does not apply."
+        },
+        {
+          "technique": "naming-population-floor",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_skills/analytics/SkillScoreboard.tsx:81 Scoreboard names come from installed skill entries, not a cohort of identified humans."
+        },
+        {
+          "technique": "private-view-separation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_skills/SkillsManagerPage.tsx:58 The surface selects an active project and does not offer a personal engineering report."
+        },
+        {
+          "technique": "producer-enforced-suppression",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_skills/skillsManagerData.ts:141 Coverage is keyed by skill; inspected usage and coverage producers do not publish human contribution rows requiring suppression."
+        },
+        {
+          "technique": "risk-framing-anonymization",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_skills/analytics/CoveragePipeline.tsx:85 Least-covered findings concern code contexts rather than named people's gaps."
+        }
+      ]
     }
   }
 }

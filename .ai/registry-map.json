@@ -26593,7 +26593,11 @@
           "revision": 3,
           "changedAt": "2026-09-30",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_skills/analytics/SkillScoreboard.tsx:76 Searches found no cohort, per_person, or employee references in this context, and its scoreboard joins outcomes by installed skill name rather than human identity.",
+          "evaluatedAt": "2026-10-19",
+          "evaluatedAgainst": "sha256-b2:cb03bdda55f3119d",
+          "evaluatedRevision": 3
         },
         {
           "subject": "quality-gates",
@@ -39652,7 +39656,11 @@
           "revision": 3,
           "changedAt": "2026-09-30",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/manager/useRotateAll.ts:47 Searches found no cohort, per_person, or employee references in this context, whose counters describe credential operations rather than identifiable people's engineering contributions.",
+          "evaluatedAt": "2026-10-19",
+          "evaluatedAgainst": "sha256-b2:cb03bdda55f3119d",
+          "evaluatedRevision": 3
         }
       ],
       "governance": "governed"
