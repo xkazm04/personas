@@ -4,6 +4,7 @@
 // autonomous moderator tick mutates it server-side.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 import {
   advanceTeamDeliberation,
   approveDeliberationAction,
@@ -67,17 +68,29 @@ export function useTeamDeliberations(teamId: string) {
     };
   }, []);
 
+  // Reads overlap (selection changes, the 6 s poll, every action's refresh), so
+  // only the newest read of each kind may land, and a detail read lands only
+  // while its deliberation is still the selected one: an earlier, slower read
+  // used to paint deliberation A under B's selection, or team A's list under B.
+  const listLatest = useRef(createLatestWins()).current;
+  const detailLatest = useRef(createLatestWins()).current;
+  const selectedRef = useRef<string | null>(null);
+  selectedRef.current = selectedId;
+
   const refreshList = useCallback(async () => {
+    const token = listLatest.next();
     try {
-      setList(await listTeamDeliberations(teamId));
+      const rows = await listTeamDeliberations(teamId);
+      if (listLatest.isCurrent(token)) setList(rows);
     } catch (e) {
       toastCatch('useTeamDeliberations.refreshList')(e);
     } finally {
-      setLoading(false);
+      if (listLatest.isCurrent(token)) setLoading(false);
     }
-  }, [teamId]);
+  }, [teamId, listLatest]);
 
   const refreshDetail = useCallback(async (id: string) => {
+    const token = detailLatest.next();
     try {
       const [d, a, t, tr] = await Promise.all([
         getTeamDeliberation(id),
@@ -85,6 +98,7 @@ export function useTeamDeliberations(teamId: string) {
         listDeliberationTurns(id),
         listDeliberationTracks(id),
       ]);
+      if (!detailLatest.isCurrent(token) || selectedRef.current !== id) return;
       setDetail(d);
       setAgenda(a);
       setTurns(t);
@@ -92,7 +106,7 @@ export function useTeamDeliberations(teamId: string) {
     } catch (e) {
       toastCatch('useTeamDeliberations.refreshDetail')(e);
     }
-  }, []);
+  }, [detailLatest]);
 
   useEffect(() => {
     runningRef.current = false;
