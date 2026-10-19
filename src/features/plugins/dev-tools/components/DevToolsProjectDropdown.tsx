@@ -7,6 +7,8 @@ import { Listbox } from '@/features/shared/components/forms/Listbox';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
+import { extractMessage } from '@/lib/silentCatch';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 
 const logger = createLogger('devtools-project-dropdown');
 
@@ -48,7 +50,9 @@ export function DevToolsProjectDropdown({
   const placeholder = placeholderProp ?? t.shared.devtools_select_project;
   const [projects, setProjects] = useState<DevProject[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Raw rejection, resolved at render: invokeWithTimeout rejects with an
+  // AppError OBJECT, so `String(err)` rendered "[object Object]" here.
+  const [error, setError] = useState<{ raw: unknown } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -66,8 +70,8 @@ export function DevToolsProjectDropdown({
         setProjects(sorted);
       } catch (err) {
         if (cancelled) return;
-        logger.error('Failed to load DevTools projects', { error: String(err) });
-        setError(String(err));
+        logger.error('Failed to load DevTools projects', { error: extractMessage(err) });
+        setError({ raw: err });
         setProjects([]);
       } finally {
         if (!cancelled) setLoading(false);
@@ -146,7 +150,7 @@ export function DevToolsProjectDropdown({
           ) : error ? (
             <div className="px-4 py-6 text-center">
               <p className="typo-body text-rose-400/80 mb-1">{t.shared.devtools_load_failed}</p>
-              <p className="typo-caption text-foreground">{error}</p>
+              <p className="typo-caption text-foreground">{resolveErrorTranslated(t, extractMessage(error.raw)).message}</p>
             </div>
           ) : projects.length === 0 ? (
             // No codebases registered → send the user straight to Connectors
