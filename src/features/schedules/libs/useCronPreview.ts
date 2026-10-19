@@ -135,7 +135,10 @@ export function useCalendarEvents(
             (d.getTime() < nowMs ? pastCron : future).push(d);
           }
           return { future, pastCron };
-        } catch {
+        } catch (err) {
+          // The trigger renders with no fires at all; leave a breadcrumb so an
+          // engine-side refusal of its expression is findable.
+          silentCatch('features/schedules/libs/useCronPreview:cronFireTimes')(err);
           return EMPTY_SLOTS;
         }
       }
