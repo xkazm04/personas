@@ -229,7 +229,16 @@ export default function RadioFooter() {
     [cancelWatchdog, reportStatus, showUnavailableToast, nowPlaying],
   );
 
+  /**
+   * The IFrame player accepts commands only after its `onReady`. The engine
+   * sync below must re-run then: the radio state usually arrives first (the
+   * IFrame API loads from the network), and without this a station that is
+   * already `playing` at that moment (resume on launch) stayed silent with no
+   * watchdog armed until some unrelated state change.
+   */
+  const [ytReady, setYtReady] = useState(false);
   const ytHandle = useYouTubePlayer(ytHostRef, {
+    onReady: () => setYtReady(true),
     onStateChange: onYtStateChange,
     onError: onYtError,
   });
@@ -285,7 +294,7 @@ export default function RadioFooter() {
 
   // YouTube engine.
   useEffect(() => {
-    const player = ytHandle.current;
+    const player = ytReady ? ytHandle.current : null;
     if (!player || !isYoutube || !nowPlaying) {
       // Switched away from YT — pause the player so audio stops.
       // The handle's `pause()` swallows errors internally for the
@@ -350,7 +359,7 @@ export default function RadioFooter() {
       player.pause();
       cancelWatchdog();
     }
-  }, [isYoutube, nowPlaying, state?.status, state?.stationCursors, state?.currentStationId, ytHandle, armWatchdog, cancelWatchdog]);
+  }, [isYoutube, nowPlaying, state?.status, state?.stationCursors, state?.currentStationId, ytHandle, ytReady, armWatchdog, cancelWatchdog]);
 
   // Volume sync (both engines). Skip the YT player path during a
   // crossfade animation so the rAF loop owns volume exclusively until
@@ -360,10 +369,10 @@ export default function RadioFooter() {
     if (audioRef.current && Math.abs(audioRef.current.volume - state.volume) > 0.01) {
       audioRef.current.volume = state.volume;
     }
-    if (!crossfadingRef.current) {
+    if (!crossfadingRef.current && ytReady) {
       ytHandle.current?.setVolume(state.volume);
     }
-  }, [state?.volume, state, ytHandle]);
+  }, [state?.volume, state, ytHandle, ytReady]);
 
   // Animate the YouTube player volume between two values over a duration.
   // Used by the end-of-track fade-out and start-of-next fade-in, so the
