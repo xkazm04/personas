@@ -117,7 +117,15 @@ export function MembershipPanel({
 }) {
   const { t, tx } = useTranslation();
   const tw = t.plugins.dev_tools.workspaces;
+  const { workspaces } = useWorkspaces();
   const memberSet = new Set(workspace.projectIds);
+  // "Already in another workspace" comes from the workspace store, the one
+  // source every move updates. `DevProject.workspace_id` (systemStore) is the
+  // snapshot from the last fetchProjects and no move refreshes it, so the hint
+  // went stale on the first move made from this very panel.
+  const elsewhere = new Set(
+    workspaces.filter((w) => w.id !== workspace.id).flatMap((w) => w.projectIds),
+  );
   const members = projects.filter((p) => memberSet.has(p.id));
   const candidates = projects.filter((p) => !memberSet.has(p.id));
 
@@ -157,7 +165,7 @@ export function MembershipPanel({
               actionIcon={<ArrowRight className="w-3.5 h-3.5" />}
               actionLabel={tw.add_to_workspace}
               onAction={() => assignProject(p.id, workspace.id)}
-              subdued={Boolean(p.workspace_id)}
+              subdued={elsewhere.has(p.id)}
             />
           ))}
         </div>
