@@ -155,6 +155,7 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
         <button
           type="button"
           onClick={onClose}
+          aria-label={t.common.close}
           className="p-2 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/80"
         >
           <X className="w-4 h-4" />
@@ -191,25 +192,29 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
         })}
       </div>
 
-      {/* Content -- lazy mount on first visit, keep mounted to preserve state */}
+      {/* Content -- lazy mount on first visit, keep mounted to preserve state.
+          A kept panel is only faded out, so `inert` is what takes it out of the
+          tab order and the accessibility tree: without it, Tab walked through
+          every invisible input, button and table cell of the panels behind the
+          active one, and a screen reader read them as present. */}
       <div className="flex-1 min-h-0 relative">
         {visited.has('chat') && (
-          <div className={`absolute inset-0 transition-opacity duration-150 ${activeTab === 'chat' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
+          <div inert={activeTab !== 'chat'} className={`absolute inset-0 transition-opacity duration-150 ${activeTab === 'chat' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
             <ChatTab credentialId={credential.id} language={queryLanguage} serviceType={credential.service_type} />
           </div>
         )}
         {visited.has('tables') && (
-          <div className={`absolute inset-0 overflow-y-auto transition-opacity duration-150 ${activeTab === 'tables' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
+          <div inert={activeTab !== 'tables'} className={`absolute inset-0 overflow-y-auto transition-opacity duration-150 ${activeTab === 'tables' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
             <TablesTab credentialId={credential.id} serviceType={credential.service_type} />
           </div>
         )}
         {visited.has('queries') && (
-          <div className={`absolute inset-0 overflow-y-auto transition-opacity duration-150 ${activeTab === 'queries' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
+          <div inert={activeTab !== 'queries'} className={`absolute inset-0 overflow-y-auto transition-opacity duration-150 ${activeTab === 'queries' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
             <QueriesTab credentialId={credential.id} language={queryLanguage} serviceType={credential.service_type} />
           </div>
         )}
         {visited.has('console') && (
-          <div className={`absolute inset-0 overflow-y-auto transition-opacity duration-150 ${activeTab === 'console' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
+          <div inert={activeTab !== 'console'} className={`absolute inset-0 overflow-y-auto transition-opacity duration-150 ${activeTab === 'console' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
             <ConsoleTab credentialId={credential.id} language={queryLanguage} serviceType={credential.service_type} />
           </div>
         )}
