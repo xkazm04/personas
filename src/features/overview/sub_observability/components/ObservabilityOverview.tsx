@@ -119,7 +119,8 @@ export function ObservabilityOverview(p: OverviewProps) {
           },
           {
             label: x.success_rate,
-            value: s ? <Numeric value={runs > 0 ? (ok / runs) * 100 : 0} unit="percent" precision={1} /> : null,
+            // A window with no runs has no success rate: "-", never a measured-looking 0.0%.
+            value: s && runs > 0 ? <Numeric value={(ok / runs) * 100} unit="percent" precision={1} /> : null,
             draw: <UnitStrip size="m" label={x.success_rate} segments={runs > 0 ? apportion([{ value: ok, tone: 'success' }, { value: failed, tone: 'error' }], runs / 20) : []} />,
           },
           {
