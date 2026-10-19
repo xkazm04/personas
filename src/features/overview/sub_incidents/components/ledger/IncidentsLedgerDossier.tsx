@@ -40,7 +40,7 @@ import {
   severityUrgencyLabel, sourceTableIcon, sourceTableLabel,
 } from '../../libs/incidentTaxonomy';
 import { useIncidentLedger, type IncidentSortKey } from '../../libs/useIncidentLedger';
-import { isClosedIncidentStatus } from '../../libs/incidentStatus';
+import { incidentRowActions, isClosedIncidentStatus } from '../../libs/incidentStatus';
 import { LedgerPager } from './LedgerPager';
 import { LEDGER_COLUMNS, isNewSince, type IncidentLedgerViewProps } from './ledgerModel';
 
@@ -137,14 +137,15 @@ export function IncidentsLedgerDossier(props: IncidentLedgerViewProps) {
       {
         ...head('actions'),
         render: (incident) => {
-          const open = incident.status === 'open';
-          const live = open || incident.status === 'acknowledged';
+          // One rule for the row, the detail modal and the `r` key: every
+          // active status (in_progress included) can be resolved or dismissed.
+          const can = incidentRowActions(incident.status);
           return (
             <TableActions>
-              {open && <TableAction icon={Check} label={t.overview.incidents.action_acknowledge} onClick={() => onAcknowledge(incident.id)} />}
-              {live && <TableAction icon={CheckCheck} label={t.overview.incidents.action_resolve} onClick={() => onResolve(incident.id)} />}
-              {live && <TableAction icon={X} label={t.overview.incidents.action_dismiss} onClick={() => onDismiss(incident.id)} />}
-              {isClosed(incident) && <TableAction icon={RotateCcw} label={t.overview.incidents.action_reopen} onClick={() => onReopen(incident.id)} />}
+              {can.acknowledge && <TableAction icon={Check} label={t.overview.incidents.action_acknowledge} onClick={() => onAcknowledge(incident.id)} />}
+              {can.resolve && <TableAction icon={CheckCheck} label={t.overview.incidents.action_resolve} onClick={() => onResolve(incident.id)} />}
+              {can.dismiss && <TableAction icon={X} label={t.overview.incidents.action_dismiss} onClick={() => onDismiss(incident.id)} />}
+              {can.reopen && <TableAction icon={RotateCcw} label={t.overview.incidents.action_reopen} onClick={() => onReopen(incident.id)} />}
             </TableActions>
           );
         },
