@@ -48,6 +48,8 @@ const TRUST_W_VOLUME: f64 = 15.0;
 
 /// Healing penalty per consecutive failure (score = 1.0 − failures × this).
 const HEALING_PENALTY_PER_FAILURE: f64 = 0.2;
+/// How many of the newest decided runs the failure streak looks at.
+const HEALING_STREAK_WINDOW: usize = 20;
 
 /// Volume bonus reaches 1.0 at this many terminal executions.
 const VOLUME_FULL_CREDIT_RUNS: f64 = 20.0;
@@ -1890,36 +1892,38 @@ fn bucket_hourly_runs(
 /// Compute a trust score (0.0–100.0) for a persona from its recent execution history.
 ///
 /// Factors:
-/// - **Success rate** (weight 0.50): percentage of completed executions in last 50
+/// - **Success rate** (weight 0.50): completed share of the last 50 DECIDED runs
 /// - **Cost discipline** (weight 0.20): 1.0 if under budget, scaled down if over
-/// - **Healing frequency** (weight 0.15): penalised by consecutive failures
+/// - **Healing frequency** (weight 0.15): penalised by consecutive unsuccessful decided runs
 /// - **Volume bonus** (weight 0.15): more executions = more confidence in the score
+///
+/// A DECIDED run is every state of `ExecutionState::TERMINAL` except
+/// `cancelled` (the operator's choice, not an outcome). `incomplete` (the
+/// process died; the zombie sweep writes it) counts as not-a-success: the
+/// old `('completed','failed')` set let a lost run vanish from the score,
+/// the defect docs/concepts/golden-paths/terminal-state-and-recovery.md
+/// measures. Queued / running rows are not outcomes and never break a streak.
 pub fn compute_trust_score(pool: &DbPool, persona_id: &str) -> Result<f64, AppError> {
     timed_query!("personas", "personas::compute_trust_score", {
         let conn = pool.conn("personas::compute_trust_score")?;
 
-        // Last 50 terminal executions
+        // Last 50 decided executions, newest first. The same window feeds the
+        // success rate and the failure streak below.
         let mut stmt = conn.prepare(
-            "SELECT status, cost_usd FROM persona_executions
-             WHERE persona_id = ?1 AND status IN ('completed', 'failed')
-             ORDER BY created_at DESC LIMIT 50",
+            "SELECT status FROM persona_executions
+             WHERE persona_id = ?1 AND status IN ('completed', 'failed', 'incomplete')
+             ORDER BY created_at DESC, id DESC LIMIT 50",
         )?;
-        let rows: Vec<(String, f64)> = stmt
-            .query_map(params![persona_id], |row| {
-                Ok((
-                    row.get::<_, String>("status")?,
-                    row.get::<_, Option<f64>>("cost_usd")?.unwrap_or(0.0),
-                ))
-            })?
-            .filter_map(|r| r.ok())
-            .collect();
+        let rows: Vec<String> = stmt
+            .query_map(params![persona_id], |row| row.get::<_, String>("status"))?
+            .collect::<Result<_, _>>()?;
 
         if rows.is_empty() {
             return Ok(0.0);
         }
 
         let total = rows.len() as f64;
-        let successes = rows.iter().filter(|(s, _)| s == "completed").count() as f64;
+        let successes = rows.iter().filter(|s| s.as_str() == "completed").count() as f64;
         let success_rate = successes / total;
 
         // Cost discipline: compare monthly spend vs budget
@@ -1944,21 +1948,14 @@ pub fn compute_trust_score(pool: &DbPool, persona_id: &str) -> Result<f64, AppEr
             _ => 1.0, // no budget set = full marks
         };
 
-        // Healing frequency: penalise consecutive failures
-        let consecutive_failures: u32 = {
-            let mut stmt2 = conn.prepare(
-                "SELECT status FROM persona_executions
-                 WHERE persona_id = ?1 ORDER BY created_at DESC LIMIT 20",
-            )?;
-            let statuses: Vec<String> = stmt2
-                .query_map(params![persona_id], |row| row.get::<_, String>("status"))?
-                .filter_map(|r| r.ok())
-                .collect();
-            statuses
-                .iter()
-                .take_while(|s| s.as_str() == "failed")
-                .count() as u32
-        };
+        // Healing frequency: penalise the streak of unsuccessful decided runs
+        // at the head of the window. A run still in flight or a cancelled one
+        // is not in `rows`, so it can no longer reset the streak to 0.
+        let consecutive_failures = rows
+            .iter()
+            .take(HEALING_STREAK_WINDOW)
+            .take_while(|s| s.as_str() != "completed")
+            .count() as u32;
         let healing_score =
             (1.0 - (consecutive_failures as f64 * HEALING_PENALTY_PER_FAILURE)).max(0.0);
 
@@ -4387,6 +4384,57 @@ mod tests {
         let narrow = get_runs_hourly_at(&pool, 0, hourly_now())?;
         assert_eq!(narrow.len(), 1);
         assert_eq!(narrow[0].buckets, vec![2]);
+        Ok(())
+    }
+
+    // ---------------------------------------------------------------
+    // compute_trust_score: the decided set
+    // ---------------------------------------------------------------
+
+    /// A run whose process died (`incomplete`, written by the zombie sweep)
+    /// is a decided run that did not succeed: it must lower the success rate
+    /// and extend the failure streak. A run still in flight, and one the
+    /// operator cancelled, decide nothing and must not mask the streak.
+    /// Before the fix the success rate read `('completed','failed')` and the
+    /// streak stopped at the first non-`failed` row, so this persona scored
+    /// 92.5 (a perfect 10/10 record) while its last two runs were lost.
+    #[test]
+    fn trust_score_counts_lost_runs_against_the_persona() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
+             VALUES ('ts_p', 'Trust', 'sp', datetime('now'), datetime('now'))",
+            [],
+        )?;
+        // Oldest first: 10 completed, then 2 lost, 1 cancelled, 1 running.
+        let mut statuses = vec!["completed"; 10];
+        statuses.extend(["incomplete", "incomplete", "cancelled", "running"]);
+        let base = chrono::Utc::now() - chrono::Duration::hours(1);
+        for (i, status) in statuses.iter().enumerate() {
+            conn.execute(
+                "INSERT INTO persona_executions (id, persona_id, status, created_at)
+                 VALUES (?1, 'ts_p', ?2, ?3)",
+                params![
+                    format!("ts_e{i:02}"),
+                    status,
+                    (base + chrono::Duration::seconds(i as i64)).to_rfc3339()
+                ],
+            )?;
+        }
+        drop(conn);
+
+        let score = compute_trust_score(&pool, "ts_p")?;
+        // success 10/12 * 50 + cost 20 + healing (1 - 2 * 0.2) * 15
+        // + volume (12 / 20) * 15
+        let expected = (10.0 / 12.0) * TRUST_W_SUCCESS
+            + TRUST_W_COST
+            + (1.0 - 2.0 * HEALING_PENALTY_PER_FAILURE) * TRUST_W_HEALING
+            + (12.0 / VOLUME_FULL_CREDIT_RUNS) * TRUST_W_VOLUME;
+        assert!(
+            (score - expected).abs() < 1e-9,
+            "trust score {score} != {expected}: lost runs must count against it"
+        );
         Ok(())
     }
 }
