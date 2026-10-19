@@ -520,7 +520,11 @@ pub async fn validate_trigger(
                 label: "Webhook listener".into(),
                 passed: webhook_alive,
                 message: if webhook_alive {
-                    format!("Active on http://localhost:9420/webhook/{}", trigger.id)
+                    format!(
+                        "Active on {}/webhook/{}",
+                        local_webhook_base_url(),
+                        trigger.id
+                    )
                 } else {
                     "Webhook server is not running -- webhook won't receive events".into()
                 },
@@ -1249,14 +1253,27 @@ pub struct WebhookStatus {
     pub base_url: String,
 }
 
+/// Base URL of the local webhook server. The port is the one the server
+/// actually binds (`engine::webhook::webhook_port`, which honours
+/// `PERSONAS_WEBHOOK_PORT`), never the default port as a literal: with a
+/// second instance on the same device, a hardcoded port made this instance
+/// report, replay into and print curl commands for the OTHER instance's
+/// server.
+fn local_webhook_base_url() -> String {
+    format!(
+        "http://localhost:{}",
+        crate::engine::webhook::webhook_port()
+    )
+}
+
 /// Get the webhook server status.
 #[tauri::command]
 pub fn get_webhook_status(state: State<'_, Arc<AppState>>) -> Result<WebhookStatus, AppError> {
     require_auth_sync(&state)?;
     Ok(WebhookStatus {
         listening: state.scheduler.is_webhook_alive(),
-        port: 9420,
-        base_url: "http://localhost:9420".into(),
+        port: crate::engine::webhook::webhook_port(),
+        base_url: local_webhook_base_url(),
     })
 }
 
@@ -1743,7 +1760,11 @@ pub async fn replay_webhook_request(
     };
 
     let body_bytes = log_entry.body.unwrap_or_default();
-    let url = format!("http://localhost:9420/webhook/{}", log_entry.trigger_id);
+    let url = format!(
+        "{}/webhook/{}",
+        local_webhook_base_url(),
+        log_entry.trigger_id
+    );
 
     let mut req = crate::SHARED_HTTP
         .post(&url)
@@ -1796,7 +1817,11 @@ pub fn webhook_request_to_curl(
     require_auth_sync(&state)?;
     let log_entry = webhook_log_repo::get_by_id(&state.db, &log_id)?;
 
-    let url = format!("http://localhost:9420/webhook/{}", log_entry.trigger_id);
+    let url = format!(
+        "{}/webhook/{}",
+        local_webhook_base_url(),
+        log_entry.trigger_id
+    );
     let mut parts = vec![format!("curl -X {} '{}'", log_entry.method, url)];
 
     // Add headers (skip content-length and host as curl handles them)
