@@ -41,4 +41,15 @@ describe('PersonaConfigPanel - load', () => {
     expect(screen.queryByText('Stale agent')).toBeNull();
     expect(screen.getByText('Fresh agent')).toBeTruthy();
   });
+
+  it('says the read failed instead of claiming there are no agents', async () => {
+    // invokeWithTimeout rejects with a serialized AppError object, not an Error.
+    listPersonas.mockRejectedValue({ error: 'database is locked', kind: 'database' });
+    render(<PersonaConfigPanel />);
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).not.toBe('');
+    expect(alert.textContent).not.toContain('[object Object]');
+    expect(screen.queryByText('No agents found')).toBeNull();
+  });
 });

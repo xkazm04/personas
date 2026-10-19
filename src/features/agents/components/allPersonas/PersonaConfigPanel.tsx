@@ -10,7 +10,8 @@ import type { EffectiveModelConfig } from '@/lib/bindings/EffectiveModelConfig';
 import type { ConfigSource } from '@/lib/bindings/ConfigSource';
 import type { ConfigField } from '@/lib/bindings/ConfigField';
 import { useTranslation } from '@/i18n/useTranslation';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 
 /**
  * Effective model-config resolution table for every persona (global → workspace
@@ -251,6 +252,9 @@ function isFresh(entry: { ts: number } | undefined): entry is { ts: number; conf
 export function PersonaConfigPanel() {
   const [rows, setRows] = useState<PersonaRow[]>([]);
   const [globalLoading, setGlobalLoading] = useState(true);
+  // The raw failure of the persona LIST read, resolved to copy at render. Kept
+  // apart from `rows` so a failed read is never painted as "No agents found".
+  const [loadFailure, setLoadFailure] = useState<{ raw: unknown } | null>(null);
   const [filter, setFilter] = useState('');
   const [overridesOnly, setOverridesOnly] = useState(false);
   const { t, tx } = useTranslation();
@@ -310,6 +314,7 @@ export function PersonaConfigPanel() {
       if (forceRefresh) clearConfigCache();
       const personas = await listPersonas();
       if (!loadLatest.isCurrent(requestId)) return;
+      setLoadFailure(null);
       const initial: PersonaRow[] = personas.map((p) => {
         const cached = configCache.get(p.id);
         if (isFresh(cached)) {
@@ -365,7 +370,9 @@ export function PersonaConfigPanel() {
       }));
     } catch (err) {
       silentCatch('PersonaConfigPanel:load')(err);
-      if (loadLatest.isCurrent(requestId)) setRows([]);
+      // A failed read is a failure, not an empty roster: keep whatever rows a
+      // previous load rendered and say the read failed (loading pattern v2).
+      if (loadLatest.isCurrent(requestId)) setLoadFailure({ raw: err });
     } finally {
       if (loadLatest.isCurrent(requestId)) setGlobalLoading(false);
     }
@@ -461,7 +468,14 @@ export function PersonaConfigPanel() {
                 </td>
               </tr>
             )}
-            {!globalLoading && rows.length === 0 && (
+            {!globalLoading && loadFailure && (
+              <tr>
+                <td colSpan={2 + FIELDS.length} className="px-3 py-6 text-center text-status-error" role="alert">
+                  {resolveErrorTranslated(t, extractMessage(loadFailure.raw)).message}
+                </td>
+              </tr>
+            )}
+            {!globalLoading && !loadFailure && rows.length === 0 && (
               <tr>
                 <td colSpan={2 + FIELDS.length} className="px-3 py-6 text-center text-foreground">
                   {s.no_agents}
