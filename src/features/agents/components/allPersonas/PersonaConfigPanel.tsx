@@ -78,7 +78,7 @@ interface CapabilityConfig {
  *  capabilities, not the persona-level config cascade. Handles camel/snake keys
  *  and both override shapes (bare model string, or a partial ModelProfile
  *  object `{ model, provider }`). */
-function capabilityConfigs(designContext: string | null): CapabilityConfig[] {
+function capabilityConfigs(designContext: string | null, untitledLabel: string): CapabilityConfig[] {
   const ucs = parseDesignContext(designContext).useCases ?? [];
   return ucs.map((uc, i) => {
     const rec = (uc ?? {}) as unknown as Record<string, unknown>;
@@ -92,7 +92,7 @@ function capabilityConfigs(designContext: string | null): CapabilityConfig[] {
       model = typeof o.model === 'string' ? o.model.trim() || null : null;
       provider = typeof o.provider === 'string' ? o.provider.trim() || null : null;
     }
-    const title = typeof rec.title === 'string' && rec.title.trim() ? rec.title : `Capability ${i + 1}`;
+    const title = typeof rec.title === 'string' && rec.title.trim() ? rec.title : `${untitledLabel} ${i + 1}`;
     const id = typeof rec.id === 'string' ? rec.id : `uc-${i}`;
     return { id, title, model, provider };
   });
@@ -287,9 +287,12 @@ export function PersonaConfigPanel() {
   // use-cases). Parsed from each persona's design_context, memoised over rows.
   const capConfigsByPersona = useMemo(() => {
     const m = new Map<string, CapabilityConfig[]>();
-    for (const row of rows) m.set(row.persona.id, capabilityConfigs(row.persona.design_context));
+    // An untitled use-case falls back to the localized noun + its ordinal; the
+    // literal English "Capability N" used to reach all 14 locales.
+    const untitled = t.agents.executions.col_capability;
+    for (const row of rows) m.set(row.persona.id, capabilityConfigs(row.persona.design_context, untitled));
     return m;
-  }, [rows]);
+  }, [rows, t.agents.executions.col_capability]);
 
   // Which persona rows are expanded to reveal their per-capability sub-rows.
   const [expanded, setExpanded] = useState<Set<string>>(new Set());

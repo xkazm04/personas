@@ -62,4 +62,23 @@ describe('PersonaConfigPanel - load', () => {
     await act(async () => { pending.resolve([persona('p-1', 'One')]); });
     await waitFor(() => expect((screen.getByRole('button', { name: /refresh/i }) as HTMLButtonElement).disabled).toBe(false));
   });
+
+  it('names an untitled capability in the app language, not hardcoded English', async () => {
+    const { useI18nStore } = await import('@/stores/i18nStore');
+    const { preloadSectionsAsync } = await import('@/i18n/useTranslation');
+    const before = useI18nStore.getState().language;
+    await preloadSectionsAsync('de', ['agents', 'settings']);
+    useI18nStore.setState({ language: 'de' });
+    try {
+      const p = { ...persona('p-cap', 'Capable'), design_context: JSON.stringify({ useCases: [{ id: 'uc-a' }] }) } as Persona;
+      listPersonas.mockResolvedValue([p]);
+      render(<PersonaConfigPanel />);
+      const expand = await screen.findByRole('button', { expanded: false });
+      act(() => { expand.click(); });
+      expect(await screen.findByText('Fähigkeit 1')).toBeTruthy();
+      expect(screen.queryByText('Capability 1')).toBeNull();
+    } finally {
+      useI18nStore.setState({ language: before });
+    }
+  });
 });
