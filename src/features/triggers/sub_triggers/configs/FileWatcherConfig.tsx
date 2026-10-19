@@ -22,6 +22,11 @@ export function FileWatcherConfig({
   validationError, setValidationError,
 }: FileWatcherConfigProps) {
   const { t } = useTranslation();
+  const eventLabels: Record<(typeof ENGINE_WATCH_EVENTS)[number], string> = {
+    create: t.triggers.file_watcher.event_create,
+    modify: t.triggers.file_watcher.event_modify,
+    delete: t.triggers.file_watcher.event_delete,
+  };
   return (
     <div className="space-y-3">
       <TriggerFieldGroup label={t.triggers.file_watcher.paths_label} error={validationError} errorId="watch-paths-error">
@@ -67,7 +72,7 @@ export function FileWatcherConfig({
                   : 'bg-secondary/30 text-foreground border-border/30 hover:bg-secondary/50'
               }`}
             >
-              {evt}
+              {eventLabels[evt]}
             </button>
           ))}
         </div>
