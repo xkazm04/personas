@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { useOverviewFilterValues } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { companionGetUsageDashboard } from '@/api/companion';
 import type { AthenaUsageDashboard } from '@/lib/bindings/AthenaUsageDashboard';
@@ -19,19 +20,28 @@ export function useAthenaUsage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
+  // One slot per hook instance: a range switched 30d -> 1d while the 30d read
+  // is still in flight must not let that slower reply land under the 1d label.
+  const [latest] = useState(createLatestWins);
+
   const load = useCallback(() => {
+    const token = latest.next();
     setLoading(true);
     companionGetUsageDashboard(effectiveDays)
       .then((d) => {
+        if (!latest.isCurrent(token)) return;
         setData(d);
         setError(false);
       })
       .catch((e) => {
         silentCatch('companion_get_usage_dashboard')(e);
+        if (!latest.isCurrent(token)) return;
         setError(true);
       })
-      .finally(() => setLoading(false));
-  }, [effectiveDays]);
+      .finally(() => {
+        if (latest.isCurrent(token)) setLoading(false);
+      });
+  }, [effectiveDays, latest]);
 
   useEffect(() => {
     load();
