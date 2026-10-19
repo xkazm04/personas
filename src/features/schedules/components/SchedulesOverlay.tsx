@@ -7,7 +7,7 @@
 // the scheduler engine switch and the active/paused counts in the header, the
 // sidebar group filter, and the week/month calendar beneath.
 
-import { silentCatch } from "@/lib/silentCatch";
+import { silentCatch, toastCatch } from "@/lib/silentCatch";
 import { useEffect, useMemo, useState, useRef, lazy, Suspense } from 'react';
 import { EventName, typedListen } from '@/lib/eventRegistry';
 import { useElementVisible } from '@/hooks/utility/useElementVisible';
@@ -159,7 +159,11 @@ export default function SchedulesOverlay() {
         ? await stopScheduler()
         : await startScheduler();
       setSchedulerStats(result);
-    } catch (err) { silentCatch("features/schedules/components/SchedulesOverlay:toggleScheduler")(err); }
+    } catch (err) {
+      // The operator pressed this to start or pause every schedule: a refusal
+      // must be seen, not only logged, or the switch reads as having worked.
+      toastCatch("features/schedules/components/SchedulesOverlay:toggleScheduler")(err);
+    }
   };
 
   return (
