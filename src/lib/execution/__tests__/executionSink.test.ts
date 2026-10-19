@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { ExecutionSink, type ExecutionOutputProjections } from "../executionSink";
 
 const MEANINGFUL_TAIL_SIZE = 30;
@@ -236,5 +236,34 @@ describe("ExecutionSink incremental projections", () => {
     const last = flushes[flushes.length - 1]!;
     expect(last.output).toEqual(["fresh line"]);
     assertProjectionsMatchOutput(last);
+  });
+});
+
+describe("ExecutionSink throttle across executions", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("a previous run's pending flush timer cannot make forceFlush() skip the next run's final lines", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
+    const { sink, flushes } = makeSink();
+    const settle = async () => { await Promise.resolve(); await Promise.resolve(); };
+
+    // Run A: first flush is immediate, the second waits on a 100 ms timer.
+    sink.append("a1"); await settle();
+    sink.append("a2"); await settle();
+
+    // 60 ms later run A ends and run B starts with A's timer still pending.
+    vi.advanceTimersByTime(60);
+    sink.reset();
+    sink.append("b1"); await settle(); // immediate (fresh throttle window)
+    sink.append("b2"); await settle(); // B's own timer, due 100 ms from now
+
+    // A's stale timer fires (t=100) while B's (t=160) is still pending.
+    vi.advanceTimersByTime(40);
+
+    // finishExecution snapshots right after forceFlush(): b2 must be in it.
+    sink.forceFlush();
+    expect(flushes[flushes.length - 1]!.output).toEqual(["b1", "b2"]);
   });
 });
