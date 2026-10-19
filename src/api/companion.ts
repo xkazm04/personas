@@ -528,6 +528,19 @@ export interface TtsSettings {
 }
 
 /**
+ * Dictation and synthesis run a local sidecar inline and resolve when it
+ * exits. The slowest caps are 120 s (`WHISPER_TIMEOUT` in
+ * `companion/stt/whisper.rs`, `POCKET_SIDECAR_TIMEOUT` in
+ * `companion/tts/pocket.rs`); Kokoro's is 90 s, a tie with the IPC default
+ * that the default always lost. At the 90 s default the wrapper rejected
+ * while the sidecar was still working and its result was discarded. The
+ * margin covers the WAV write/read around the sidecar. Pinned by
+ * `__tests__/voiceTimeoutParity.test.ts`, which reads the Rust constants.
+ */
+const VOICE_SIDECAR_CAP_MS = 120_000;
+const VOICE_IPC_TIMEOUT_MS = VOICE_SIDECAR_CAP_MS + 15_000;
+
+/**
  * Synthesize speech for the given text. `engine` defaults to `'kokoro'`
  * (the primary engine). `credentialId` is a descoped-ElevenLabs leftover:
  * accepted for call-site shape stability, ignored by the backend — pass
@@ -540,13 +553,17 @@ export async function companionTts(
   settings?: TtsSettings,
   engine: TtsEngineId = 'kokoro',
 ): Promise<TtsAudio> {
-  return invoke<TtsAudio>('companion_tts', {
-    text,
-    voiceId,
-    engine,
-    credentialId,
-    settings: settings ?? null,
-  });
+  return invoke<TtsAudio>(
+    'companion_tts',
+    {
+      text,
+      voiceId,
+      engine,
+      credentialId,
+      settings: settings ?? null,
+    },
+    { timeoutMs: VOICE_IPC_TIMEOUT_MS },
+  );
 }
 
 // ── Kokoro voice catalog + engine/model status ──────────────────────────
@@ -779,11 +796,15 @@ export async function companionSttTranscribe(
   modelId: string,
   language?: string,
 ): Promise<string> {
-  return invoke<string>('companion_stt_transcribe', {
-    audioBase64,
-    modelId,
-    language: language ?? null,
-  });
+  return invoke<string>(
+    'companion_stt_transcribe',
+    {
+      audioBase64,
+      modelId,
+      language: language ?? null,
+    },
+    { timeoutMs: VOICE_IPC_TIMEOUT_MS },
+  );
 }
 
 export async function companionSttListModels(): Promise<WhisperModelListing[]> {
