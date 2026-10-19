@@ -241,8 +241,14 @@ fn snippet_for(body: &str, query_lc: &str) -> String {
     let Some(pos) = body_lc.find(query_lc) else {
         return body.chars().take(160).collect();
     };
-    let start = pos.saturating_sub(60);
-    let end = (pos + query_lc.len() + 100).min(body.len());
+    // Snap both byte offsets to char boundaries: `pos - 60` and `pos + len +
+    // 100` land mid-character in any non-ASCII note (Czech, emoji, CJK), and
+    // slicing there panicked the search command. The MCP sidecar's mirror of
+    // this function (`mcp_server/vault.rs`) already had the fix; this copy
+    // drifted.
+    let start = crate::utils::text::floor_char_boundary(body, pos.saturating_sub(60));
+    let end =
+        crate::utils::text::ceil_char_boundary(body, (pos + query_lc.len() + 100).min(body.len()));
     let mut s = body[start..end].replace('\n', " ");
     if start > 0 {
         s.insert(0, '…');
