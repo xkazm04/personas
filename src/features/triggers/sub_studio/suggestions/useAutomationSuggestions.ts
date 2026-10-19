@@ -63,6 +63,13 @@ export function useAutomationSuggestions(onRouteCommitted?: () => void) {
   /** Wire a suggested route: create-disabled → dry-run → tag → enable. */
   const accept = (s: AutomationSuggestion) => withBusy(s.id, async () => {
     let createdId: string | null = null;
+    // Once the suggestion carries the trigger's id the trigger must outlive any
+    // later failure: deleting it would leave the accepted suggestion's tag
+    // pointing at air (accept_automation_suggestion refuses exactly that) and
+    // the suggestion, no longer proposed, could never be retried. A failed
+    // enable leaves the route paused on the ledger, where Resume re-runs the
+    // dry-run and arms it.
+    let tagged = false;
     try {
       const created = await createTrigger(suggestionToTriggerInput(s));
       createdId = created.id;
@@ -82,6 +89,7 @@ export function useAutomationSuggestions(onRouteCommitted?: () => void) {
       // Stamp the mined-route tag BEFORE arming — a live mined route without
       // its exclusion tag would let its own traffic feed future evidence.
       await acceptAutomationSuggestion(s.id, created.id);
+      tagged = true;
       await updateTrigger(created.id, s.personaId, {
         // `enabled` only. `next_trigger_at` used to be passed as null here,
         // which is a double_option — so this cleared the fire time at the same
@@ -94,13 +102,15 @@ export function useAutomationSuggestions(onRouteCommitted?: () => void) {
       await reload();
       onRouteCommitted?.();
     } catch (err) {
-      if (createdId) {
+      if (createdId && !tagged) {
         await deleteTrigger(createdId, s.personaId).catch(
           silentCatch('useAutomationSuggestions:accept:cleanup'),
         );
       }
       toastCatch('useAutomationSuggestions:accept', st.ghost_accept_failed)(err);
       await reload();
+      // The tagged route exists (disabled): put it on the ledger as paused.
+      if (tagged) onRouteCommitted?.();
     }
   });
 
