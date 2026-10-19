@@ -345,9 +345,45 @@ export default function CommandPalette() {
     return results;
   }, [stableItems, searchQuery, isCommandMode, personas, groupMap, credentials, recipes, automations, scope, settingResults]);
 
+  const sections = useMemo(() => {
+    const grouped: { kind: ResultKind; label: string; items: (PaletteItem & { globalIndex: number })[] }[] = [];
+    let idx = 0;
+    const recentAgentIds = getRecentAgentIds();
+    const addSection = (kind: ResultKind, label: string) => {
+      const sectionItems = items
+        .filter(i => i.kind === kind)
+        .map(i => ({ ...i, globalIndex: idx++ }));
+      if (sectionItems.length > 0) grouped.push({ kind, label, items: sectionItems });
+    };
+    if (isCommandMode) {
+      addSection('action', 'Commands');
+      addSection('agent-action', 'Agent Actions');
+    } else {
+      const settingsLabel = !searchQuery && scope === 'settings' ? searchT.recommended : searchT.section;
+      // Settings lead when the palette was opened focused on settings;
+      // otherwise they trail the entity/navigation results.
+      if (scope === 'settings') addSection('setting', settingsLabel);
+      addSection('agent', !searchQuery && recentAgentIds.length > 0 ? 'Recent Agents' : 'Agents');
+      addSection('credential', 'Credentials');
+      addSection('template', 'Templates');
+      addSection('automation', 'Automations');
+      addSection('navigation', 'Navigation');
+      if (scope === 'all') addSection('setting', settingsLabel);
+    }
+    return grouped;
+  }, [items, isCommandMode, searchQuery, scope, searchT]);
+
+  // The rows in the order they are PAINTED. `sections` regroups `items` by
+  // kind, so whenever ranking interleaves kinds (command mode: "Run Health
+  // Check" is an agent-action that sorts among the static actions) the two
+  // orders differ, and Enter used to run `items[selectedIndex]` - a different
+  // command from the highlighted row. Arrow keys, Enter and the clamp all walk
+  // this list; `globalIndex` is its index by construction.
+  const orderedItems = useMemo(() => sections.flatMap((s) => s.items), [sections]);
+
   useEffect(() => {
-    setSelectedIndex(i => Math.min(i, Math.max(0, items.length - 1)));
-  }, [items.length]);
+    setSelectedIndex(i => Math.min(i, Math.max(0, orderedItems.length - 1)));
+  }, [orderedItems.length]);
 
   useEffect(() => {
     const el = listRef.current?.querySelector(`[data-index="${selectedIndex}"]`);
@@ -380,50 +416,24 @@ export default function CommandPalette() {
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setSelectedIndex(i => (i + 1) % Math.max(1, items.length));
+        setSelectedIndex(i => (i + 1) % Math.max(1, orderedItems.length));
         break;
       case 'ArrowUp':
         e.preventDefault();
-        setSelectedIndex(i => (i - 1 + items.length) % Math.max(1, items.length));
+        setSelectedIndex(i => (i - 1 + orderedItems.length) % Math.max(1, orderedItems.length));
         break;
-      case 'Enter':
+      case 'Enter': {
         e.preventDefault();
-        if (items[selectedIndex]) executeItem(items[selectedIndex]);
+        const picked = orderedItems[selectedIndex];
+        if (picked) executeItem(picked);
         break;
+      }
       case 'Escape':
         e.preventDefault();
         close();
         break;
     }
   };
-
-  const sections = useMemo(() => {
-    const grouped: { kind: ResultKind; label: string; items: (PaletteItem & { globalIndex: number })[] }[] = [];
-    let idx = 0;
-    const recentAgentIds = getRecentAgentIds();
-    const addSection = (kind: ResultKind, label: string) => {
-      const sectionItems = items
-        .filter(i => i.kind === kind)
-        .map(i => ({ ...i, globalIndex: idx++ }));
-      if (sectionItems.length > 0) grouped.push({ kind, label, items: sectionItems });
-    };
-    if (isCommandMode) {
-      addSection('action', 'Commands');
-      addSection('agent-action', 'Agent Actions');
-    } else {
-      const settingsLabel = !searchQuery && scope === 'settings' ? searchT.recommended : searchT.section;
-      // Settings lead when the palette was opened focused on settings;
-      // otherwise they trail the entity/navigation results.
-      if (scope === 'settings') addSection('setting', settingsLabel);
-      addSection('agent', !searchQuery && recentAgentIds.length > 0 ? 'Recent Agents' : 'Agents');
-      addSection('credential', 'Credentials');
-      addSection('template', 'Templates');
-      addSection('automation', 'Automations');
-      addSection('navigation', 'Navigation');
-      if (scope === 'all') addSection('setting', settingsLabel);
-    }
-    return grouped;
-  }, [items, isCommandMode, searchQuery, scope, searchT]);
 
   return (
     <>
