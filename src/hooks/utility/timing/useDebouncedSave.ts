@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useToastStore } from '@/stores/toastStore';
 import { createLogger } from '@/lib/log';
+import { extractMessage } from '@/lib/silentCatch';
 
 const logger = createLogger('useDebouncedSave');
 
@@ -51,13 +52,9 @@ export function useDebouncedSave(
         await saveFnRef.current();
         setLastError(null);
       } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Save failed';
-        setLastError(msg);
-        logger.error('auto-save failed', { error: err instanceof Error ? err.message : String(err) });
-        useToastStore.getState().addToast(
-          `Auto-save failed: ${msg}. Changes will retry on next edit.`,
-          'error',
-        );
+        // invokeWithTimeout rejects with an AppError object, not an Error, so
+        // an `instanceof Error` ladder reduced every backend reason to 'Save failed'.
+        setLastError(reportPersistFailure(err));
       } finally {
         setIsSaving(false);
       }
@@ -92,4 +89,15 @@ export function useDebouncedSave(
   }, []);
 
   return { isSaving, lastError, cancel };
+}
+
+/** Log + toast one failed auto-save; returns the message shown. */
+function reportPersistFailure(err: unknown): string {
+  const msg = extractMessage(err) || 'Save failed';
+  logger.error('auto-save failed', { error: msg });
+  useToastStore.getState().addToast(
+    `Auto-save failed: ${msg}. Changes will retry on next edit.`,
+    'error',
+  );
+  return msg;
 }
