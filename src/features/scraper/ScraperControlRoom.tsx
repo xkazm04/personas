@@ -177,7 +177,13 @@ function Row({
   const status = parseStatus(config.lastStatus, datasetCount);
 
   const [testOpen, setTestOpen] = useState(false);
-  const [testRows, setTestRows] = useState<PreviewRow[] | null>(null);
+  // The dry-run result is evidence about the rules it ran, so it is cached
+  // against them. Cached unconditionally, a Test after editing the selectors
+  // re-showed the OLD rules' harvest: the row survives a save (same key), so
+  // the first result stood for every later version of the scrape.
+  const testSignature = JSON.stringify([config.urls, config.rules]);
+  const [tested, setTested] = useState<{ signature: string; rows: PreviewRow[] } | null>(null);
+  const testRows = tested?.signature === testSignature ? tested.rows : null;
   const [testing, setTesting] = useState(false);
   const [testError, setTestError] = useState<string | null>(null);
 
@@ -188,7 +194,8 @@ function Row({
       setTesting(true);
       setTestError(null);
       try {
-        setTestRows(await previewScraperExtract(config.urls, config.rules, 1));
+        const rows = await previewScraperExtract(config.urls, config.rules, 1);
+        setTested({ signature: testSignature, rows });
       } catch (e) {
         // Structured AppError envelope (`{ error, kind, … }`) — not an Error instance.
         setTestError(errMsg(e, String(e)));
