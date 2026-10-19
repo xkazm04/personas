@@ -138,3 +138,60 @@ describe('the active-workspace mirror', () => {
     await vi.waitFor(() => expect(api.mirrorActiveWorkspace).toHaveBeenLastCalledWith('w2'));
   });
 });
+
+describe('concurrent mutations and settlement re-reads', () => {
+  // Bulk "Move to workspace" fires one assign per selected project. The first
+  // write to settle re-read the server while the others were still in flight,
+  // and that read landed on top of their optimistic paints.
+  it('a settling move does not erase a sibling move that is still in flight', async () => {
+    const server = { p1: null as string | null, p2: null as string | null };
+    api.listWorkspaces.mockResolvedValue([
+      { id: 'w1', name: 'Northwind', color: '#6366f1', adopt_default_skills: false },
+      { id: 'w2', name: 'Southgate', color: '#06b6d4', adopt_default_skills: false },
+    ]);
+    api.listProjects.mockImplementation(async () => [
+      { id: 'p1', name: 'Alpha', workspace_id: server.p1 },
+      { id: 'p2', name: 'Beta', workspace_id: server.p2 },
+    ]);
+    let landP2!: () => void;
+    api.assignProjectToWorkspace.mockImplementation((projectId: string, workspaceId: string | null) => {
+      if (projectId === 'p1') { server.p1 = workspaceId; return Promise.resolve(); }
+      return new Promise<void>((r) => { landP2 = () => { server.p2 = workspaceId; r(); }; });
+    });
+    const store = await freshStore();
+    const w2 = () => store.workspacesSnapshot().workspaces.find((w) => w.id === 'w2')!.projectIds;
+    const reads = api.listProjects.mock.calls.length;
+
+    store.assignProject('p1', 'w2');
+    store.assignProject('p2', 'w2');
+    await new Promise((r) => setTimeout(r, 10)); // p1's write has settled
+
+    expect([...w2()].sort()).toEqual(['p1', 'p2']);
+
+    landP2();
+    await vi.waitFor(() => expect(api.listProjects.mock.calls.length).toBeGreaterThan(reads));
+    await vi.waitFor(() => expect([...w2()].sort()).toEqual(['p1', 'p2']));
+    // One settlement re-read for the batch, after the last write landed.
+    expect(api.listProjects.mock.calls.length - reads).toBe(1);
+  });
+
+  it('a read that was in flight when a move painted cannot publish over it', async () => {
+    serverRows(null);
+    const store = await freshStore();
+    let landRead!: () => void;
+    api.listProjects.mockImplementationOnce(() => new Promise((r) => {
+      landRead = () => r([
+        { id: 'p1', name: 'Alpha', workspace_id: null },
+        { id: 'p2', name: 'Beta', workspace_id: null },
+      ]);
+    }));
+    api.assignProjectToWorkspace.mockImplementation(() => new Promise(() => {})); // never settles
+
+    const pending = store.refreshWorkspaces();
+    store.assignProject('p1', 'w2');
+    landRead();
+    await pending;
+
+    expect(store.workspacesSnapshot().workspaces.find((w) => w.id === 'w2')!.projectIds).toEqual(['p1']);
+  });
+});
