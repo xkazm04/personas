@@ -15,23 +15,13 @@ export const CHART_COLORS = [
   '#ec4899', '#EA4335', '#4A154B', '#06b6d4',
 ];
 
-export const CHART_COLORS_PURPLE = [
-  '#6366f1', '#8b5cf6', '#a78bfa', '#c4b5fd',
-  '#818cf8', '#7c3aed', '#5b21b6', '#4f46e5',
-];
-
 function getCSSVar(name: string, fallback: string): string {
   if (typeof document === 'undefined') return fallback;
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
 }
 
-export const GRID_STROKE_FALLBACK = 'rgba(255,255,255,0.06)';
-export const AXIS_TICK_FILL_FALLBACK = 'rgba(255,255,255,0.4)';
-
-/** @deprecated Use {@link getGridStroke} for theme-responsive value */
-export const GRID_STROKE = GRID_STROKE_FALLBACK;
-/** @deprecated Use {@link getAxisTickFill} for theme-responsive value */
-export const AXIS_TICK_FILL = AXIS_TICK_FILL_FALLBACK;
+const GRID_STROKE_FALLBACK = 'rgba(255,255,255,0.06)';
+const AXIS_TICK_FILL_FALLBACK = 'rgba(255,255,255,0.4)';
 
 export function getGridStroke(): string {
   return getCSSVar('--chart-grid-stroke', GRID_STROKE_FALLBACK);
@@ -41,11 +31,9 @@ export function getAxisTickFill(): string {
   return getCSSVar('--chart-axis-fill', AXIS_TICK_FILL_FALLBACK);
 }
 
-export const CHART_HEIGHT = { sm: 160, md: 200, lg: 240 } as const;
-
 export type MetricUnit = 'count' | 'tokens' | 'usd' | 'ms' | 'percent';
 
-export const METRIC_UNITS_BY_KEY: Record<string, MetricUnit> = {
+const METRIC_UNITS_BY_KEY: Record<string, MetricUnit> = {
   cost: 'usd',
   spend: 'usd',
   p50: 'ms',
