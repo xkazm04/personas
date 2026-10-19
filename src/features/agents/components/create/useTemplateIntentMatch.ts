@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { createLatestWins } from "@/stores/util/latestWins";
 import { companionMatchTemplates, type CompanionTemplateMatch } from "@/api/companion";
 import { silentCatch } from "@/lib/silentCatch";
 
@@ -26,12 +27,14 @@ export function useTemplateIntentMatch(intent: string, limit = 5): {
 } {
   const [matches, setMatches] = useState<CompanionTemplateMatch[]>([]);
   const [loading, setLoading] = useState(false);
-  const reqIdRef = useRef(0);
+  // One latest-wins slot per hook instance: a newer keystroke's request makes
+  // every older one inert (the repo's shared guard, not a hand-rolled counter).
+  const [latest] = useState(createLatestWins);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const run = useCallback(
     async (text: string) => {
-      const requestId = ++reqIdRef.current;
+      const requestId = latest.next();
       if (text.trim().length < MIN_CHARS) {
         setMatches([]);
         setLoading(false);
@@ -40,19 +43,19 @@ export function useTemplateIntentMatch(intent: string, limit = 5): {
       setLoading(true);
       try {
         const result = await companionMatchTemplates(text.trim(), limit);
-        if (requestId !== reqIdRef.current) return; // a newer keystroke won
+        if (!latest.isCurrent(requestId)) return; // a newer keystroke won
         setMatches(result ?? []);
       } catch (err) {
         // Best-effort by contract (no surfaced error mid-type), but the swallow
         // still gets a Sentry breadcrumb so matcher outages are measurable.
         silentCatch('useTemplateIntentMatch:match')(err);
-        if (requestId !== reqIdRef.current) return;
+        if (!latest.isCurrent(requestId)) return;
         setMatches([]);
       } finally {
-        if (requestId === reqIdRef.current) setLoading(false);
+        if (latest.isCurrent(requestId)) setLoading(false);
       }
     },
-    [limit],
+    [limit, latest],
   );
 
   useEffect(() => {
