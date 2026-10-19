@@ -4,7 +4,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { labGetResultEvents } from '@/api/agents/lab';
 import type { LabResultEvent } from '@/lib/bindings/LabResultEvent';
 import type { LabResultKind } from '@/lib/bindings/LabResultKind';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, extractMessage } from '@/lib/silentCatch';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { useEndReached } from '@/hooks/utility/interaction/useEndReached';
 
 const PAGE_SIZE = 50;
@@ -39,7 +40,9 @@ export function LabEventStream({ resultId, resultKind }: LabEventStreamProps) {
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // The raw rejection, resolved at render (an IPC rejection is a serialized
+  // AppError object, so String(err) printed "[object Object]").
+  const [error, setError] = useState<unknown>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -57,7 +60,7 @@ export function LabEventStream({ resultId, resultKind }: LabEventStreamProps) {
         setEvents(rows);
         setHasMore(rows.length === PAGE_SIZE);
       })
-      .catch((err) => { silentCatch('LabEventStream:labGetResultEvents')(err); setError(err instanceof Error ? err.message : String(err)); })
+      .catch((err) => { silentCatch('LabEventStream:labGetResultEvents')(err); setError(err ?? new Error('unknown')); })
       .finally(() => setLoading(false));
   }, [open, events, loading, resultId, resultKind]);
 
@@ -99,12 +102,12 @@ export function LabEventStream({ resultId, resultKind }: LabEventStreamProps) {
             ))}
           </div>
         )}
-        {error && !loading && (
+        {error != null && !loading && (
           <div className="px-3 py-3 typo-caption text-red-400">
-            {t.agents.lab.event_stream_failed}: {error}
+            {t.agents.lab.event_stream_failed}: {resolveErrorTranslated(t, extractMessage(error)).message}
           </div>
         )}
-        {!loading && !error && events !== null && events.length === 0 && (
+        {!loading && error == null && events !== null && events.length === 0 && (
           <div className="px-3 py-3 typo-caption text-foreground">
             {t.agents.lab.event_stream_empty}
           </div>
