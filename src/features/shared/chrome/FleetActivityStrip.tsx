@@ -110,11 +110,19 @@ export default function FleetActivityStrip() {
   const { t, tx } = useTranslation();
   const prefersReducedMotion = useReducedMotion();
 
+  // Subscribe to the whole map, reduce to the pulse keyed on map identity.
+  const activeProcesses = useOverviewStore((s) => s.activeProcesses);
+  const pulse = useMemo(() => computeFleetPulse(activeProcesses), [activeProcesses]);
+  const anyRunning = pulse.running > 0;
+
   // One shared, synchronized pulse for ALL running bars — they breathe in
-  // unison instead of each drifting into its own rhythm.
+  // unison instead of each drifting into its own rhythm. Only while a bar is
+  // lit: the strip is always mounted (twice with the Monitor open), and an
+  // infinite tween on a value nothing renders still drives framer's frame
+  // loop every frame for the whole idle session.
   const pulseOpacity = useMotionValue(1);
   useEffect(() => {
-    if (prefersReducedMotion) {
+    if (prefersReducedMotion || !anyRunning) {
       pulseOpacity.set(1);
       return;
     }
@@ -124,7 +132,7 @@ export default function FleetActivityStrip() {
       ease: 'easeInOut',
     });
     return () => controls.stop();
-  }, [prefersReducedMotion, pulseOpacity]);
+  }, [prefersReducedMotion, anyRunning, pulseOpacity]);
 
   // Self-heal stale `running` entries: an execution that completed via a path
   // that never emitted `processEnded` would otherwise show "running" forever.
@@ -146,10 +154,6 @@ export default function FleetActivityStrip() {
     enabled: ownsStaleReap,
     name: 'fleetStaleReap',
   });
-
-  // Subscribe to the whole map, reduce to the pulse keyed on map identity.
-  const activeProcesses = useOverviewStore((s) => s.activeProcesses);
-  const pulse = useMemo(() => computeFleetPulse(activeProcesses), [activeProcesses]);
 
   // Capacity gauge: one bar per concurrent slot, so a full strip = the fleet is
   // at the configured `max_parallel_executions` limit. Seed the cap once from
