@@ -131,7 +131,9 @@ export function HelpSection({ stepIndex, onRequestHelp, stepHelp, isLoadingHelp 
   const [helpQuestion, setHelpQuestion] = useState('');
   const [showHelp, setShowHelp] = useState(false);
   const handleAskHelp = () => {
-    if (!helpQuestion.trim()) return;
+    // Same gate as the Ask button's `disabled`, so Enter cannot start a
+    // second help request while one is in flight.
+    if (!helpQuestion.trim() || isLoadingHelp) return;
     onRequestHelp(helpQuestion.trim());
     setHelpQuestion('');
   };
@@ -156,7 +158,7 @@ export function HelpSection({ stepIndex, onRequestHelp, stepHelp, isLoadingHelp 
             type="text"
             value={helpQuestion}
             onChange={(e) => setHelpQuestion(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleAskHelp()}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleAskHelp(); }}
             placeholder={t.vault.negotiator_extra.ask_question}
             className={`flex-1 px-3 py-1.5 bg-background/50 border border-primary/15 rounded-modal text-foreground typo-body placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 ${AI_STATUS.ring!} transition-all`}
             data-testid={`negotiator-step-${stepIndex}-help-input`}
