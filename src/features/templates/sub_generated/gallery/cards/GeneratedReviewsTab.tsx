@@ -385,8 +385,6 @@ export default function GeneratedReviewsTab({
         onViewFlows={onViewFlows}
         rebuild={rebuild}
         preview={preview}
-        recommendedTemplates={gallery.recommendedTemplates}
-        setExpandedRow={setExpandedRow}
         credentialModalTarget={actions.credentialModalTarget}
         onCredentialSave={actions.handleCredentialSave}
         onCredentialModalClose={actions.clearCredentialModal}

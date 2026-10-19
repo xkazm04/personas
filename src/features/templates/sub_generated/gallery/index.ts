@@ -13,7 +13,6 @@ export { ExpandedRowContent } from './cards/ExpandedRowContent';
 export { BackgroundBanners } from './explore/BackgroundBanners';
 export { TrendingCarousel } from './explore/TrendingCarousel';
 export { EmptyState, SearchEmptyState, AiEmptyState } from './explore/EmptyState';
-export { RecommendedModal } from './modals/RecommendedModal';
 export { ConnectorFilterDropdown } from './search/filters/ConnectorFilterDropdown';
 export { SortDropdown } from './search/filters/SortDropdown';
 export { AdminToolsDropdown } from './search/filters/AdminToolsDropdown';
