@@ -838,6 +838,8 @@
   "dead_letter_group_other": "Other errors",
   "dead_letter_no_matches": "No events match the current filters",
   "dead_letter_clear_filters_to_see": "Clear filters to see all dead-lettered events",
+  "dead_letter_load_failed_title": "Couldn't load the dead letter queue",
+  "dead_letter_load_failed_desc": "The queue could not be read, so an empty list here would be misleading. Your events are not gone - try again.",
   "marketplace": {
     "view_cards": "Cards",
     "view_cards_sub": "Original card grid",

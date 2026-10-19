@@ -21416,6 +21416,8 @@
     "dead_letter_bulk_retry_summary": "Retried {success} of {total} Ereignisse",
     "dead_letter_bulk_retry_title": "Wiederholen every selected Ereignis in a single transaction",
     "dead_letter_clear_filters_to_see": "Leeren filters to see all dead-lettered Ereignisse",
+    "dead_letter_load_failed_title": "Die Dead-Letter-Warteschlange konnte nicht geladen werden",
+    "dead_letter_load_failed_desc": "Die Warteschlange konnte nicht gelesen werden, eine leere Liste wäre hier also irreführend. Ihre Ereignisse sind nicht verloren - versuchen Sie es erneut.",
     "dead_letter_clear_selection": "Leeren",
     "dead_letter_discard": "Verwerfen",
     "dead_letter_discard_title": "Dieses Ereignis dauerhaft verwerfen",

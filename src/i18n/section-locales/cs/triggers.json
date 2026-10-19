@@ -183,6 +183,8 @@
   "dead_letter_bulk_retry_summary": "Retried {success} of {total} události",
   "dead_letter_bulk_retry_title": "Zkusit znovu every selected událost in a single transaction",
   "dead_letter_clear_filters_to_see": "Vymazat filters to see all dead-lettered události",
+  "dead_letter_load_failed_title": "Frontu nedoručených událostí se nepodařilo načíst",
+  "dead_letter_load_failed_desc": "Frontu se nepodařilo přečíst, takže prázdný seznam by zde byl zavádějící. Vaše události nezmizely - zkuste to znovu.",
   "dead_letter_clear_selection": "Vymazat",
   "dead_letter_discard": "Zahodit",
   "dead_letter_discard_title": "Trvale zahodit tuto událost",

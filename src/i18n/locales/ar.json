@@ -21416,6 +21416,8 @@
     "dead_letter_bulk_retry_summary": "Retried {success} of {total} أحداث",
     "dead_letter_bulk_retry_title": "إعادة محاولة كل الأحداث المحدّدة في معاملة واحدة",
     "dead_letter_clear_filters_to_see": "امسح عوامل التصفية لعرض كل الأحداث في قائمة الرسائل الميتة",
+    "dead_letter_load_failed_title": "تعذّر تحميل قائمة الرسائل الميتة",
+    "dead_letter_load_failed_desc": "تعذّرت قراءة القائمة، لذا فإن القائمة الفارغة هنا ستكون مضللة. أحداثك لم تُفقد - حاول مرة أخرى.",
     "dead_letter_clear_selection": "مسح",
     "dead_letter_discard": "تجاهل",
     "dead_letter_discard_title": "تجاهل هذا الحدث نهائياً",

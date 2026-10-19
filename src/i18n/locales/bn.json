@@ -21416,6 +21416,8 @@
     "dead_letter_bulk_retry_summary": "Retried {success} of {total} ইভেন্ট",
     "dead_letter_bulk_retry_title": "আবার চেষ্টা every selected ইভেন্ট in a single transaction",
     "dead_letter_clear_filters_to_see": "সাফ করুন filters to see all dead-lettered ইভেন্ট",
+    "dead_letter_load_failed_title": "ডেড লেটার সারি লোড করা যায়নি",
+    "dead_letter_load_failed_desc": "সারিটি পড়া যায়নি, তাই এখানে খালি তালিকা বিভ্রান্তিকর হবে। আপনার ইভেন্টগুলি হারায়নি - আবার চেষ্টা করুন।",
     "dead_letter_clear_selection": "সাফ করুন",
     "dead_letter_discard": "বাতিল",
     "dead_letter_discard_title": "এই ইভেন্টটি স্থায়ীভাবে বাতিল করুন",

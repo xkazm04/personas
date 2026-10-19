@@ -183,6 +183,8 @@
   "dead_letter_bulk_retry_summary": "Retried {success} of {total} 이벤트",
   "dead_letter_bulk_retry_title": "다시 시도 every selected 이벤트 in a single transaction",
   "dead_letter_clear_filters_to_see": "지우기 filters to see all dead-lettered 이벤트",
+  "dead_letter_load_failed_title": "데드 레터 대기열을 불러오지 못했습니다",
+  "dead_letter_load_failed_desc": "대기열을 읽을 수 없어 여기의 빈 목록은 오해를 일으킬 수 있습니다. 이벤트는 사라지지 않았습니다. 다시 시도하세요.",
   "dead_letter_clear_selection": "지우기",
   "dead_letter_discard": "버리기",
   "dead_letter_discard_title": "이 이벤트를 영구적으로 버리기",

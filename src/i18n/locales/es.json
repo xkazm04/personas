@@ -21416,6 +21416,8 @@
     "dead_letter_bulk_retry_summary": "Retried {success} of {total} eventoos",
     "dead_letter_bulk_retry_title": "Reintentar every selected evento in a single transaction",
     "dead_letter_clear_filters_to_see": "Borrar filters to see all dead-lettered eventoos",
+    "dead_letter_load_failed_title": "No se pudo cargar la cola de mensajes fallidos",
+    "dead_letter_load_failed_desc": "No se pudo leer la cola, así que una lista vacía aquí sería engañosa. Tus eventos no se han perdido: inténtalo de nuevo.",
     "dead_letter_clear_selection": "Borrar",
     "dead_letter_discard": "Descartar",
     "dead_letter_discard_title": "Descartar este evento permanentemente",

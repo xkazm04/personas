@@ -21416,6 +21416,8 @@
     "dead_letter_bulk_retry_summary": "Retried {success} of {total} события",
     "dead_letter_bulk_retry_title": "Повторить every selected событие in a single transaction",
     "dead_letter_clear_filters_to_see": "Очистить filters to see all dead-lettered события",
+    "dead_letter_load_failed_title": "Не удалось загрузить очередь недоставленных событий",
+    "dead_letter_load_failed_desc": "Не удалось прочитать очередь, поэтому пустой список здесь вводил бы в заблуждение. Ваши события не пропали - попробуйте ещё раз.",
     "dead_letter_clear_selection": "Очистить",
     "dead_letter_discard": "Отклонить",
     "dead_letter_discard_title": "Отклонить это событие навсегда",

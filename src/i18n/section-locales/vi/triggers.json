@@ -183,6 +183,8 @@
   "dead_letter_bulk_retry_summary": "Retried {success} of {total} sự kiện",
   "dead_letter_bulk_retry_title": "Thử lại every selected sự kiện in a single transaction",
   "dead_letter_clear_filters_to_see": "Xóa filters to see all dead-lettered sự kiện",
+  "dead_letter_load_failed_title": "Không thể tải hàng đợi thư chết",
+  "dead_letter_load_failed_desc": "Không thể đọc hàng đợi, nên danh sách trống ở đây sẽ gây hiểu nhầm. Sự kiện của bạn không bị mất - hãy thử lại.",
   "dead_letter_clear_selection": "Xóa",
   "dead_letter_discard": "Hủy bỏ",
   "dead_letter_discard_title": "Hủy bỏ sự kiện này vĩnh viễn",

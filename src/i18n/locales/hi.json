@@ -21416,6 +21416,8 @@
     "dead_letter_bulk_retry_summary": "Retried {success} of {total} इवेंट",
     "dead_letter_bulk_retry_title": "पुनः प्रयास every selected इवेंट in a single transaction",
     "dead_letter_clear_filters_to_see": "साफ़ करें filters to see all dead-lettered इवेंट",
+    "dead_letter_load_failed_title": "डेड लेटर कतार लोड नहीं हो सकी",
+    "dead_letter_load_failed_desc": "कतार पढ़ी नहीं जा सकी, इसलिए यहाँ खाली सूची भ्रामक होगी। आपके इवेंट गए नहीं हैं - फिर से प्रयास करें।",
     "dead_letter_clear_selection": "साफ़ करें",
     "dead_letter_discard": "खारिज करें",
     "dead_letter_discard_title": "इस इवेंट को स्थायी रूप से खारिज करें",

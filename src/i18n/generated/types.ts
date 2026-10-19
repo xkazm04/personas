@@ -13237,6 +13237,8 @@ export type Translations = {
     dead_letter_group_other: string;
     dead_letter_no_matches: string;
     dead_letter_clear_filters_to_see: string;
+    dead_letter_load_failed_title: string;
+    dead_letter_load_failed_desc: string;
     marketplace: {
       view_cards: string;
       view_cards_sub: string;

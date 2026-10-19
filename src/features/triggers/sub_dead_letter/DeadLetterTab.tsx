@@ -30,7 +30,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState, { NoResults } from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { EventReasonNote } from '../lib/EventReasonView';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 /**
  * First-paint default while `getDeadLetterConfig` is in flight. Matches the
@@ -130,6 +130,10 @@ export function DeadLetterTab() {
   const { t, tx } = useTranslation();
   const [events, setEvents] = useState<PersonaEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  // A failed read is not an empty queue: without this flag a refused
+  // listDeadLetterEvents rendered "No dead-lettered events / All events
+  // processed successfully" over a queue nobody had looked at.
+  const [loadFailed, setLoadFailed] = useState(false);
   const [maxManualRetries, setMaxManualRetries] = useState<number>(MAX_MANUAL_RETRIES_FALLBACK);
   const [actionsInProgress, setActionsInProgress] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -157,6 +161,7 @@ export function DeadLetterTab() {
     try {
       const data = await listDeadLetterEvents(100);
       setEvents(data);
+      setLoadFailed(false);
       setSelected((prev) => {
         // Drop selections for ids that are no longer in the queue.
         const ids = new Set(data.map((e) => e.id));
@@ -164,12 +169,13 @@ export function DeadLetterTab() {
         for (const id of prev) if (ids.has(id)) next.add(id);
         return next;
       });
-    } catch {
-      addToast('Failed to load dead letter events', 'error');
+    } catch (err) {
+      setLoadFailed(true);
+      toastCatch('DeadLetterTab:listDeadLetterEvents')(err);
     } finally {
       setLoading(false);
     }
-  }, [addToast]);
+  }, []);
 
   useEffect(() => { void loadEvents(); }, [loadEvents]);
 
@@ -324,8 +330,8 @@ export function DeadLetterTab() {
       } else {
         addToast(summary, 'success');
       }
-    } catch {
-      addToast('Bulk retry failed — please try again', 'error');
+    } catch (err) {
+      toastCatch('DeadLetterTab:bulkRetry')(err);
     } finally {
       setBulkInFlight(false);
     }
@@ -351,8 +357,8 @@ export function DeadLetterTab() {
           } else {
             addToast(summary, 'success');
           }
-        } catch {
-          addToast('Bulk discard failed — please try again', 'error');
+        } catch (err) {
+          toastCatch('DeadLetterTab:bulkDiscard')(err);
         } finally {
           setBulkInFlight(false);
         }
@@ -376,9 +382,9 @@ export function DeadLetterTab() {
     } catch (err: unknown) {
       const kind = (err as { kind?: string })?.kind;
       if (kind === 'retry_exhausted') {
-        addToast('Retry limit reached — this event cannot be retried again. Discard or investigate.', 'error');
+        addToast(t.triggers.dead_letter_retry_exhausted_title, 'error');
       } else {
-        addToast('Failed to retry event — please try again', 'error');
+        toastCatch('DeadLetterTab:retry')(err);
       }
     } finally {
       endAction(id);
@@ -405,8 +411,8 @@ export function DeadLetterTab() {
             next.delete(evt.id);
             return next;
           });
-        } catch {
-          addToast('Failed to discard event — please try again', 'error');
+        } catch (err) {
+          toastCatch('DeadLetterTab:discard')(err);
         } finally {
           endAction(evt.id);
         }
@@ -591,7 +597,17 @@ export function DeadLetterTab() {
           </div>
         )}
 
-        {!loading && totalEvents === 0 && (
+        {!loading && loadFailed && totalEvents === 0 && (
+          <EmptyState
+            icon={AlertTriangle}
+            size="md"
+            title={t.triggers.dead_letter_load_failed_title}
+            description={t.triggers.dead_letter_load_failed_desc}
+            action={{ label: t.common.retry, onClick: () => void loadEvents() }}
+          />
+        )}
+
+        {!loading && !loadFailed && totalEvents === 0 && (
           <EmptyState
             art="archive"
             size="md"

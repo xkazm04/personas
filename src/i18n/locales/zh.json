@@ -21416,6 +21416,8 @@
     "dead_letter_bulk_retry_summary": "Retried {success} of {total} 事件",
     "dead_letter_bulk_retry_title": "重试 every selected 事件 in a single transaction",
     "dead_letter_clear_filters_to_see": "清除 filters to see all dead-lettered 事件",
+    "dead_letter_load_failed_title": "无法加载死信队列",
+    "dead_letter_load_failed_desc": "无法读取队列，因此此处的空列表会产生误导。您的事件并未丢失，请重试。",
     "dead_letter_clear_selection": "清除",
     "dead_letter_discard": "丢弃",
     "dead_letter_discard_title": "永久丢弃此事件",

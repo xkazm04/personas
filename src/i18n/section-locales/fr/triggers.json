@@ -183,6 +183,8 @@
   "dead_letter_bulk_retry_summary": "Retried {success} of {total} événements",
   "dead_letter_bulk_retry_title": "Réessayer every selected événement in a single transaction",
   "dead_letter_clear_filters_to_see": "Effacer filters to see all dead-lettered événements",
+  "dead_letter_load_failed_title": "Impossible de charger la file des messages morts",
+  "dead_letter_load_failed_desc": "La file n'a pas pu être lue, une liste vide ici serait donc trompeuse. Vos événements ne sont pas perdus - réessayez.",
   "dead_letter_clear_selection": "Effacer",
   "dead_letter_discard": "Ignorer",
   "dead_letter_discard_title": "Ignorer l’événement",

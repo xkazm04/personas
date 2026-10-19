@@ -21416,6 +21416,8 @@
     "dead_letter_bulk_retry_summary": "Retried {success} of {total} peristiwa",
     "dead_letter_bulk_retry_title": "Coba lagi every selected peristiwa in a single transaction",
     "dead_letter_clear_filters_to_see": "Bersihkan filters to see all dead-lettered peristiwa",
+    "dead_letter_load_failed_title": "Tidak dapat memuat antrean dead letter",
+    "dead_letter_load_failed_desc": "Antrean tidak dapat dibaca, jadi daftar kosong di sini akan menyesatkan. Event Anda tidak hilang - coba lagi.",
     "dead_letter_clear_selection": "Bersihkan",
     "dead_letter_discard": "Buang",
     "dead_letter_discard_title": "Buang peristiwa ini secara permanen",

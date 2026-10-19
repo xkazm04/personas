@@ -21416,6 +21416,8 @@
     "dead_letter_bulk_retry_summary": "Retried {success} of {total} イベント",
     "dead_letter_bulk_retry_title": "再試行 every selected イベント in a single transaction",
     "dead_letter_clear_filters_to_see": "クリア filters to see all dead-lettered イベント",
+    "dead_letter_load_failed_title": "デッドレターキューを読み込めませんでした",
+    "dead_letter_load_failed_desc": "キューを読み取れなかったため、ここに空のリストを表示すると誤解を招きます。イベントは失われていません。もう一度お試しください。",
     "dead_letter_clear_selection": "クリア",
     "dead_letter_discard": "破棄",
     "dead_letter_discard_title": "このイベントを永久に破棄",
