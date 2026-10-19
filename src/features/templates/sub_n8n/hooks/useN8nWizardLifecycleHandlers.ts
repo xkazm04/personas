@@ -1,4 +1,4 @@
-import { silentCatch } from "@/lib/silentCatch";
+import { extractMessage, silentCatch } from "@/lib/silentCatch";
 import {
   clearN8nTransformSnapshot,
   confirmN8nPersonaDraft,
@@ -59,7 +59,7 @@ export function createLifecycleHandlers(deps: WizardDeps) {
     } catch (err) {
       dispatch({
         type: 'CONFIRM_FAILED',
-        error: err instanceof Error ? err.message : 'Failed to confirm and save persona.',
+        error: extractMessage(err) || 'Failed to confirm and save persona.',
       });
     } finally {
       confirmingRef.current = false;
@@ -74,7 +74,7 @@ export function createLifecycleHandlers(deps: WizardDeps) {
       await test.startTestStream(testId);
       await testN8nDraft(testId, stringifyDraft(state.draft));
     } catch (err) {
-      dispatch({ type: 'TEST_FAILED', error: err instanceof Error ? err.message : 'Test failed' });
+      dispatch({ type: 'TEST_FAILED', error: extractMessage(err) || 'Test failed' });
     }
   };
 

@@ -1,4 +1,4 @@
-import { silentCatch } from "@/lib/silentCatch";
+import { extractMessage, silentCatch } from "@/lib/silentCatch";
 import {
   cancelN8nTransform,
   clearN8nTransformSnapshot,
@@ -71,7 +71,7 @@ export function createTransformHandlers(deps: WizardDeps) {
       session.clearPersistedContext();
       dispatch({
         type: 'TRANSFORM_FAILED',
-        error: err instanceof Error ? err.message : 'Failed to generate transformation draft.',
+        error: extractMessage(err) || 'Failed to generate transformation draft.',
       });
     } finally {
       transformLockRef.current = false;
@@ -116,7 +116,7 @@ export function createTransformHandlers(deps: WizardDeps) {
     } catch (err) {
       dispatch({
         type: 'SET_ERROR',
-        error: err instanceof Error ? err.message : 'Failed to cancel transform. Please try again.',
+        error: extractMessage(err) || 'Failed to cancel transform. Please try again.',
       });
     }
   };
@@ -149,7 +149,7 @@ export function createTransformHandlers(deps: WizardDeps) {
       session.clearPersistedContext();
       dispatch({
         type: 'TRANSFORM_FAILED',
-        error: err instanceof Error ? err.message : 'Failed to continue transformation.',
+        error: extractMessage(err) || 'Failed to continue transformation.',
       });
     } finally {
       transformLockRef.current = false;
