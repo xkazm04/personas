@@ -47,3 +47,15 @@ describe('useKpiDetail', () => {
     expect(result.current.measurements.map((m) => m.id)).toEqual(['b1']);
   });
 });
+
+describe('useKpiDetail.recordManual', () => {
+  it('reports whether the reading was stored, so a failed write keeps the typed value', async () => {
+    const { result } = renderHook(() => useKpiDetail({ id: 'kpi-b', project_id: 'p' } as DevKpi));
+
+    state.recordKpiMeasurement.mockImplementationOnce(() => Promise.reject({ error: 'locked', kind: 'database' }));
+    await expect(result.current.recordManual(5)).resolves.toBe(false);
+
+    state.recordKpiMeasurement.mockImplementationOnce(() => Promise.resolve());
+    await expect(result.current.recordManual(5)).resolves.toBe(true);
+  });
+});

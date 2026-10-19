@@ -43,13 +43,17 @@ export function useKpiDetail(kpi: DevKpi) {
 
   const linkedGoals = useMemo(() => goals.filter((g) => g.kpi_id === kpi.id), [goals, kpi.id]);
 
+  /** Resolves true once the reading is stored. False on a refused or failed
+   *  write (already reported), so the caller keeps what the user typed. */
   const recordManual = useCallback(
-    async (value: number) => {
-      if (!Number.isFinite(value)) return;
+    async (value: number): Promise<boolean> => {
+      if (!Number.isFinite(value)) return false;
       try {
         await recordKpiMeasurement(kpi.id, value);
+        return true;
       } catch (err) {
         toastCatch('kpi measure', t.kpis.measure_failed)(err);
+        return false;
       }
     },
     [kpi.id, recordKpiMeasurement, t],
