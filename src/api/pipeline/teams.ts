@@ -127,5 +127,9 @@ export const listPipelineRuns = (teamId: string) =>
 export const suggestTopology = (query: string, teamId?: string) =>
   invoke<TopologyBlueprint>("suggest_topology", { query, teamId });
 
+/** One StructuredJson call that escalates once on rejected output: two legs of
+ *  `TEAM_BUILDER_TIMEOUT_SECS` (120 s, commands/teams/teams.rs) run inline, so
+ *  the IPC must outlive 240 s or the canvas reports a failure the backend is
+ *  about to answer. */
 export const suggestTopologyLlm = (query: string, teamId?: string) =>
-  invoke<TopologyBlueprint>("suggest_topology_llm", { query, teamId });
+  invoke<TopologyBlueprint>("suggest_topology_llm", { query, teamId }, { timeoutMs: 300_000 });

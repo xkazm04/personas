@@ -76,9 +76,11 @@ export const listTeamAssignmentsForGoal = (goalId: string) =>
 
 /** Phase B3: ask Sonnet (via subscription) to break a natural-language
  *  goal into ordered steps. Returns proposed `DecomposedStep[]`; the
- *  composer wraps them into editable rows before the user submits. */
+ *  composer wraps them into editable rows before the user submits. The CLI
+ *  runs inline under `DECOMPOSE_TIMEOUT_SECS` (120 s, commands/teams/
+ *  assignments.rs), so the IPC outlives it instead of the 90 s default. */
 export const decomposeTeamAssignmentGoal = (teamId: string, goal: string) =>
-  invoke<DecomposedStep[]>("decompose_team_assignment_goal", { teamId, goal });
+  invoke<DecomposedStep[]>("decompose_team_assignment_goal", { teamId, goal }, { timeoutMs: 150_000 });
 
 // ============================================================================
 // Templates (Phase C4)

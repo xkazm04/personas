@@ -101,9 +101,11 @@ export const resolveDeliberationEscalation = (
   );
 
 /** Decision gate (always gated): approve a resolved proposal → spawns a real
- *  team assignment via companion_assign_team. Returns the assignment id. */
+ *  team assignment via companion_assign_team. Returns the assignment id.
+ *  That path decomposes the goal inline under `DECOMPOSE_TIMEOUT_SECS` (120 s,
+ *  commands/teams/assignments.rs), so the IPC outlives it. */
 export const approveDeliberationProposal = (deliberationId: string) =>
-  invoke<CompanionAssignTeamResult>('approve_deliberation_proposal', { deliberationId });
+  invoke<CompanionAssignTeamResult>('approve_deliberation_proposal', { deliberationId }, { timeoutMs: 150_000 });
 
 export const dismissDeliberationProposal = (deliberationId: string) =>
   invoke<void>('dismiss_deliberation_proposal', { deliberationId });
