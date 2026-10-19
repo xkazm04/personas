@@ -128,6 +128,7 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
           <button
             type="button"
             onClick={handleClose}
+            aria-label={t.common.close}
             className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground transition-colors duration-snap"
           >
             <X className="w-3.5 h-3.5" />

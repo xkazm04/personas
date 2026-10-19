@@ -57,7 +57,7 @@ export function StepHeader({ step, stepIndex, isActive, isCompleted, onSelect, c
 }) {
   const { t } = useTranslation();
   return (
-    <button type="button" id={id} onClick={onSelect} className="w-full flex items-center gap-3 px-4 py-3 text-left">
+    <button type="button" id={id} onClick={onSelect} aria-expanded={isActive} className="w-full flex items-center gap-3 px-4 py-3 text-left">
       <div
         className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 typo-heading border ${
           isCompleted

@@ -40,6 +40,7 @@ export function SetupStepCard({
           onClick={onToggle}
           className="mt-0.5 shrink-0 focus-visible:outline-none"
           aria-label={t.vault.design_phases.mark_step_complete}
+          aria-pressed={isCompleted}
         >
           {isCompleted ? (
             <CheckCircle className="w-4 h-4 text-emerald-400" />
