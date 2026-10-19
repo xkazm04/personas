@@ -6,7 +6,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { cancelAutoRun, getAutoRunStatus } from '@/api/devTools/devTools';
 import type { AutoRunStatus } from '@/lib/bindings/AutoRunStatus';
 
@@ -85,9 +85,20 @@ export function AutoRunBanner({ projectId, refreshToken = 0, onRunFinished }: Au
     };
   }, [rehydrate, onRunFinished]);
 
+  // A rejected cancel used to escape as an unhandled rejection from the click
+  // handler: no busy state while it ran, no report when it failed, and the
+  // banner kept saying the wave was in flight with no hint the cancel was lost.
+  const [cancelling, setCancelling] = useState(false);
   const handleCancel = useCallback(async () => {
     if (!status?.runId) return;
-    await cancelAutoRun(status.runId);
+    setCancelling(true);
+    try {
+      await cancelAutoRun(status.runId);
+    } catch (err) {
+      toastCatch('AutoRunBanner:cancel')(err);
+    } finally {
+      setCancelling(false);
+    }
     rehydrate();
   }, [status, rehydrate]);
 
@@ -137,7 +148,7 @@ export function AutoRunBanner({ projectId, refreshToken = 0, onRunFinished }: Au
 
       <div className="ml-auto">
         {running ? (
-          <Button variant="secondary" size="sm" icon={<X className="w-3.5 h-3.5" />} onClick={handleCancel}>
+          <Button variant="secondary" size="sm" icon={<X className="w-3.5 h-3.5" />} loading={cancelling} onClick={handleCancel}>
             {dr.cancel_auto_run}
           </Button>
         ) : (
