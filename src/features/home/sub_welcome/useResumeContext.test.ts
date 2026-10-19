@@ -1,5 +1,20 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { readLastEdited, markPersonaEdited, clearLastEdited, collectRecentFailures } from './useResumeContext';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { renderHook } from '@testing-library/react';
+import { useAgentStore } from '@/stores/agentStore';
+import { useOverviewStore } from '@/stores/overviewStore';
+import {
+  readLastEdited,
+  markPersonaEdited,
+  clearLastEdited,
+  clearAckedFailures,
+  collectRecentFailures,
+  useResumeContext,
+} from './useResumeContext';
+
+// A non-English bundle, so a hard-coded English fallback cannot pass for the translated one.
+vi.mock('@/i18n/useTranslation', () => ({
+  useTranslation: () => ({ t: { overview: { dashboard: { stream_agent_fallback: 'Agent (cs)' } } } }),
+}));
 
 describe('useResumeContext localStorage helpers', () => {
   beforeEach(() => {
@@ -58,5 +73,23 @@ describe('collectRecentFailures', () => {
       now,
     );
     expect(out.map((c) => c.personaId)).toEqual(['p1', 'p3']);
+  });
+});
+
+describe('useResumeContext failure of a persona that no longer exists', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    clearAckedFailures();
+  });
+
+  it('names it with the localized generic noun, not a hard-coded English word', () => {
+    useAgentStore.setState({ personas: [], executions: [] });
+    useOverviewStore.setState({
+      homeRunsSample: [
+        { persona_id: 'gone', status: 'failed', created_at: new Date(Date.now() - 60_000).toISOString() },
+      ],
+    });
+    const { result } = renderHook(() => useResumeContext());
+    expect(result.current).toMatchObject({ kind: 'failure', personaName: 'Agent (cs)' });
   });
 });

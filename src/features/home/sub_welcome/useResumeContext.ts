@@ -272,7 +272,9 @@ export function useResumeContext(): ResumeContext | null {
     return {
       kind: 'failure',
       personaId: recentFailure.personaId,
-      personaName: persona?.name ?? 'agent',
+      // A failure can outlive its persona (deleted since): name it with the localized generic
+      // noun, never a hard-coded English 'agent' inside a translated sentence.
+      personaName: persona?.name ?? t.overview.dashboard.stream_agent_fallback,
       executionId: recentFailure.executionId,
       failureKey: recentFailure.failureKey,
     };
