@@ -436,6 +436,12 @@ async fn reconcile_watches(
             // Apply new registrations
             for (trigger_id, path_set, mode) in to_register {
                 for path in &path_set {
+                    // The one place every file_watcher trigger reaches, whatever
+                    // door created it (template, import, build, IPC).
+                    if let Some(reason) = crate::path_safety::watch_path_refusal(path) {
+                        tracing::warn!(trigger_id = %trigger_id, path = %path, "Watch refused: {reason}");
+                        continue;
+                    }
                     let p = PathBuf::from(path);
                     if p.exists() {
                         if let Err(e) = watcher.watch(&p, mode) {
