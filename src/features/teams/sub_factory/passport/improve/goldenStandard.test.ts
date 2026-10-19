@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { scoreAgainstRubric, RUBRIC } from './goldenStandard';
-import type { AppPassport, Archetype } from '../passportModel';
+import type { AppPassport, Archetype, DocsLevel, MemoryLevel } from '../passportModel';
 
 // Minimal passport factory — only the fields the rubric reads.
 function mk(over: { archetype?: Archetype; full?: boolean } = {}): AppPassport {
@@ -58,6 +58,29 @@ describe('goldenStandard rubric', () => {
     const r = scoreAgainstRubric(mk({ archetype: 'org', full: false }));
     for (let i = 1; i < r.belowTarget.length; i++) {
       expect(r.belowTarget[i]!.progress).toBeGreaterThanOrEqual(r.belowTarget[i - 1]!.progress);
+    }
+  });
+
+  // A project sitting exactly ON the rung a target names must count as met.
+  // The targets were 0.34 / 0.67 while scalePos puts readme/adhoc at 1/3 and
+  // structured/curated at 2/3, so these dims were "below target" forever.
+  it('a project on the named docs / memory rung meets that target', () => {
+    const cases: Array<[Archetype, DocsLevel, MemoryLevel]> = [
+      ['solo', 'readme', 'adhoc'],
+      ['team', 'structured', 'curated'],
+      ['org', 'synced', 'curated'],
+    ];
+    for (const [archetype, docs, memory] of cases) {
+      const base = mk({ archetype });
+      const p: AppPassport = {
+        ...base,
+        automationReadiness: { ...base.automationReadiness, artifacts: { ...base.automationReadiness.artifacts, docs, memory } },
+      };
+      const r = scoreAgainstRubric(p);
+      const dim = (k: string) => r.dims.find((d) => d.key === k)!;
+      expect({ archetype, docs: dim('docs').met, memory: dim('memory').met }).toEqual({ archetype, docs: true, memory: true });
+      expect(r.belowTarget.map((d) => d.key)).not.toContain('docs');
+      expect(r.belowTarget.map((d) => d.key)).not.toContain('memory');
     }
   });
 });
