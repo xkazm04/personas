@@ -109,6 +109,10 @@ function tick(now: number) {
   let anyActive = false;
 
   for (const [key, entry] of entries) {
+    // A non-finite entry has nothing to travel: NaN never settles (`NaN !==
+    // NaN`), so it used to count as active on every frame and keep the shared
+    // loop armed for the life of the page. `setAnimationTarget` snaps these.
+    if (!Number.isFinite(entry.target) || !Number.isFinite(entry.current)) continue;
     const displacement = entry.current - entry.target;
     const springForce = -STIFFNESS * displacement;
     const dampingForce = -DAMPING * entry.velocity;
@@ -190,7 +194,9 @@ export function setAnimationTarget(key: symbol, target: number) {
   const entry = entries.get(key);
   if (!entry) return;
   if (entry.target === target) return;
-  if (prefersReducedMotion()) {
+  // Snap rather than spring when either end is not a number: there is no
+  // distance to travel, and a spring over NaN never comes to rest.
+  if (prefersReducedMotion() || !Number.isFinite(target) || !Number.isFinite(entry.current)) {
     snapAnimation(key, target);
     return;
   }
