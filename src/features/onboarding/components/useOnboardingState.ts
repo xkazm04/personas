@@ -232,8 +232,11 @@ export function useOnboardingState() {
       if (cancelled) return;
 
       if (reviews.length > 0) {
-        // Zero-credential quick-wins first, then trim to the 3 we show.
-        setTemplates(prioritizeZeroCredential(reviews).slice(0, 3));
+        // Zero-credential quick-wins first. The WHOLE pool is kept: the picker
+        // ranks it by the desktop apps approved one step earlier and only then
+        // trims to what it shows. Trimming here first meant an app-matching
+        // template ranked 4th or lower could never be recommended.
+        setTemplates(prioritizeZeroCredential(reviews));
         setTemplateLoadState({ phase: 'loaded', source, error: null });
         countTemplateLoad('loaded', source);
         return;

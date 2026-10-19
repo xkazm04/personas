@@ -15,7 +15,7 @@ import { extractMessage } from '@/lib/silentCatch';
 import { useMemo } from 'react';
 import {
   approvedAppDisplayLabel,
-  rankTemplatesByApprovedApps,
+  pickStarterTemplates,
 } from './templateRecommendation';
 import type { TemplateLoadState } from './useOnboardingState';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
@@ -38,7 +38,7 @@ export function TemplatePickerStep({
   const { t, tx } = useTranslation();
 
   const ranked = useMemo(
-    () => rankTemplatesByApprovedApps(templates, approvedApps),
+    () => pickStarterTemplates(templates, approvedApps),
     [templates, approvedApps],
   );
   const matchedCount = useMemo(
