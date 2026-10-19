@@ -240,6 +240,10 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
         {onRate && (
           <div className="border-t border-primary/10 pt-3">
             <UserRating
+              // UserRating seeds its draft from props once. Remount it when the
+              // cell or its stored rating changes, or the panel keeps showing the
+              // previous cell's thumb and never shows a rating that loads late.
+              key={`${result.scenarioName}::${result.modelId ?? ''}::${rating ?? ''}::${ratingFeedback ?? ''}`}
               currentRating={rating}
               currentFeedback={ratingFeedback}
               onRate={onRate}
