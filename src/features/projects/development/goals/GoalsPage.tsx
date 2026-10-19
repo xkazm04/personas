@@ -7,7 +7,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { obsidianBrainPushGoals } from '@/api/obsidianBrain';
 import { LifecycleProjectPicker } from '@/features/plugins/dev-tools/sub_lifecycle/LifecycleProjectPicker';
 import { usePickerScope, inPickerScope } from '@/features/plugins/dev-tools/sub_workspaces/usePickerScope';
@@ -59,8 +59,10 @@ export default function GoalsPage() {
     try {
       const result = await obsidianBrainPushGoals(activeProjectId);
       addToast(`Goals synced to Obsidian: ${result.created} created, ${result.updated} updated`, 'success');
-    } catch {
-      addToast('Obsidian sync failed — configure vault in Obsidian Brain plugin first', 'error');
+    } catch (err) {
+      // The backend names the cause ("not configured", a folder it could not
+      // write); a fixed "configure your vault" line misdiagnosed every other one.
+      toastCatch('GoalsPage.obsidianSync')(err);
     }
   };
 
