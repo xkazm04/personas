@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { useVaultStore } from '@/stores/vaultStore';
 import { extractErrorMessage } from '../safeModeUtils';
 import type { QueryResult } from '@/api/vault/database/dbSchema';
@@ -7,8 +8,8 @@ import type { QueryResult } from '@/api/vault/database/dbSchema';
  * Shared query-execution state for database query editors (Console tab,
  * saved-query editor pane).
  *
- * Owns `executing` / `result` / `error` plus a generation-counter guard
- * (`queryGenRef`) so a slow in-flight query can never clobber state for a
+ * Owns `executing` / `result` / `error` plus a latest-wins guard
+ * (`createLatestWins`) so a slow in-flight query can never clobber state for a
  * newer run — or set state after the caller has moved on to a different
  * query/credential — once a fresher `runQuery` call has started.
  *
@@ -33,29 +34,29 @@ export function useDbQueryRunner(
   const [executing, setExecuting] = useState(false);
   const [result, setResult] = useState<QueryResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const queryGenRef = useRef(0);
+  const [runWins] = useState(createLatestWins);
   const runningExecIdRef = useRef<string | null>(null);
 
   const runQuery = useCallback(async (text: string, allowMutation: boolean) => {
-    const gen = ++queryGenRef.current;
+    const token = runWins.next();
     const execId = crypto.randomUUID();
     runningExecIdRef.current = execId;
     setExecuting(true); setError(null); setResult(null);
     try {
       const res = await executeDbQuery(credentialId, text, queryId, allowMutation, execId);
-      if (gen !== queryGenRef.current) return;
+      if (!runWins.isCurrent(token)) return;
       setResult(res);
       onSuccess?.(res, text);
     } catch (err) {
-      if (gen !== queryGenRef.current) return;
+      if (!runWins.isCurrent(token)) return;
       setError(extractErrorMessage(err));
     } finally {
       if (runningExecIdRef.current === execId) runningExecIdRef.current = null;
-      if (gen === queryGenRef.current) {
+      if (runWins.isCurrent(token)) {
         setExecuting(false);
       }
     }
-  }, [credentialId, executeDbQuery, queryId, onSuccess]);
+  }, [credentialId, executeDbQuery, queryId, onSuccess, runWins]);
 
   const cancelQuery = useCallback(() => {
     const execId = runningExecIdRef.current;
