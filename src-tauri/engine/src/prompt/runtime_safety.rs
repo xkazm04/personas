@@ -3,28 +3,49 @@
 /// Maximum length for a single variable value substituted at runtime.
 pub(super) const MAX_RUNTIME_VAR_LENGTH: usize = 2000;
 
-/// Monotonic counter mixed with process start time for boundary nonces.
-pub(super) static RUNTIME_NONCE_COUNTER: std::sync::atomic::AtomicU64 =
-    std::sync::atomic::AtomicU64::new(0);
-
-/// Generate a short random-ish nonce for XML boundary tags.
-/// Not cryptographic -- only needs to be unpredictable enough that untrusted
-/// content cannot guess the tag name ahead of time.
+/// Mint a boundary nonce: 64 bits from `rand`'s thread-local CSPRNG (ChaCha,
+/// seeded from the OS), rendered as 16 lowercase hex digits.
+///
+/// The format is load-bearing: `cloud::persona_projection::prompt_identity`
+/// strips `_[0-9a-f]{16}>` to compare two assemblies of an unchanged persona.
+///
+/// This used to be `system_time_nanos ^ counter ^ constant` - a value anyone
+/// who knows roughly when a run started can reproduce, so the tag name was a
+/// guess away from forgeable (prompt-safety, untrusted-span-fencing:
+/// "cryptographic randomness, generated at assembly time").
 pub(super) fn generate_runtime_nonce() -> String {
-    let count = RUNTIME_NONCE_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    let seed = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_nanos();
-    let mixed = (seed as u64) ^ count ^ 0x517cc1b727220a95;
-    format!("{:016x}", mixed)
+    format!("{:016x}", rand::random::<u64>())
 }
+
+/// A fence-shaped tag inside a payload: `<untrusted_…`, `</untrusted_…`, with
+/// any case and any whitespace after the `<`.
+static FORGED_BOUNDARY_RE: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| {
+    regex::Regex::new(r"(?i)<(\s*/?\s*untrusted_)").expect("static regex")
+});
 
 /// Wrap untrusted content in XML boundary tags with a random nonce.
 /// The nonce makes the tag name unpredictable, so injected content cannot close
 /// the boundary and escape into the trusted prompt.
+///
+/// This is the ONE door every fenced span passes (`wrap_untrusted_section`,
+/// the episode / input-data / correction / scratchpad sections, the resume
+/// prompt), so it does the whole job for all of them:
+///
+/// - **Neutralize what looks like a fence.** A payload that carries its own
+///   `</untrusted_input_data_…>` cannot close the real fence (wrong nonce), but
+///   a model reading it sees a region that appears to end there, followed by
+///   text in the application's voice. Every fence-shaped tag in the payload
+///   has its `<` rewritten to `&lt;`, so the only `<untrusted_` / `</untrusted_`
+///   in a wrapped span are the two this function writes. The fidelity spent:
+///   a document that legitimately quotes such a tag shows it entity-escaped.
+/// - **Mint until absent.** A nonce the payload already contains is re-minted
+///   (a 2^-64 event per draw; checking is free).
 pub(super) fn wrap_runtime_xml_boundary(label: &str, content: &str) -> String {
-    let nonce = generate_runtime_nonce();
+    let content = FORGED_BOUNDARY_RE.replace_all(content, "&lt;$1");
+    let mut nonce = generate_runtime_nonce();
+    while content.contains(nonce.as_str()) {
+        nonce = generate_runtime_nonce();
+    }
     let tag = format!("untrusted_{label}_{nonce}");
     format!("<{tag}>\n{content}\n</{tag}>")
 }
