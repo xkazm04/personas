@@ -1059,12 +1059,25 @@ export const dispatchIdeas = (
   });
 
 /**
+ * The triage turn runs inline under `cli_text_inner`'s 180 s stream cap plus a
+ * 5 s kill wait (`companion/athena_reaction.rs`), then writes the approval row.
+ * At the 90 s default the card showed an error while the backend still filed
+ * the approval, and a retry paid for a second turn. Pinned by
+ * `__tests__/athenaTriageTimeoutParity.test.ts`, which reads the Rust figures.
+ */
+const ATHENA_TRIAGE_IPC_TIMEOUT_MS = 210_000;
+
+/**
  * One headless Athena turn over up to 30 selected pending ideas. Persists the
  * verdicts as a PENDING approval and returns them for the verdict card; nothing
  * is applied until {@link applyTriageVerdicts} (or the plain Approvals card).
  */
 export const athenaTriageBatch = (ideaIds: string[]) =>
-  invoke<AthenaTriageBatch>("dev_tools_athena_triage_batch", { ideaIds });
+  invoke<AthenaTriageBatch>(
+    "dev_tools_athena_triage_batch",
+    { ideaIds },
+    { timeoutMs: ATHENA_TRIAGE_IPC_TIMEOUT_MS },
+  );
 
 /**
  * Confirm a triage batch, with per-item human overrides layered over Athena's
