@@ -61,4 +61,23 @@ describe('useEditorSave undo persistence', () => {
     expect(result.current.history.canUndo).toBe(true);
     expect(result.current.history.canRedo).toBe(false);
   });
+  it('names the backend reason when the IPC rejects with an AppError object', async () => {
+    const baseline = buildDraft({ name: 'Ada', enabled: true });
+    const draft = { ...baseline, name: 'Ada Lovelace' };
+    const { result } = renderHook(() => {
+      const save = useEditorSave({ draft, baseline, setDraft: vi.fn(), setBaseline: vi.fn(), pendingPersonaId: null });
+      const history = useEditorHistory();
+      return { save, history };
+    }, { wrapper });
+    await act(async () => { await vi.advanceTimersByTimeAsync(900); });
+
+    // invokeWithTimeout rejects with the serialized AppError, never an Error.
+    h.state.applyPersonaOp.mockRejectedValueOnce({ error: 'database is locked', kind: 'Database' });
+    await act(async () => { await result.current.history.undo(); });
+
+    expect(h.addToast).toHaveBeenCalledTimes(1);
+    const message = String(h.addToast.mock.calls[0]?.[0]);
+    expect(message).not.toContain('[object Object]');
+    expect(message).toContain('database is locked');
+  });
 });

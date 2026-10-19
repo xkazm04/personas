@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef } from 'react';
 import type { ModelProfile } from '@/lib/types/frontendTypes';
 import { useAgentStore } from "@/stores/agentStore";
-import { useToastStore } from '@/stores/toastStore';
+import { toastCatch } from '@/lib/silentCatch';
 import { capturePersonaToken } from '@/lib/personas/personaToken';
 import { type PersonaDraft, draftChanged, SETTINGS_KEYS, MODEL_KEYS } from './PersonaDraft';
 import { OLLAMA_CLOUD_BASE_URL, getOllamaPreset } from '../../sub_model_config/libs/OllamaCloudPresets';
@@ -140,10 +140,10 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
         try {
           await applyPersonaOp(personaId, buildOp(target));
         } catch (err) {
-          useToastStore.getState().addToast(
-            `Undo failed to save: ${err instanceof Error ? err.message : String(err)}`,
-            'error',
-          );
+          // Through the shared door: the IPC rejection is a serialized AppError
+          // OBJECT, never an Error, so the old `instanceof Error` ladder
+          // toasted "Undo failed to save: [object Object]".
+          toastCatch('useEditorSave:undo')(err);
           // Rethrow so the document store keeps the entry where it was. A
           // swallowed failure resolved this promise, and EditorDocument.undo()
           // then moved the entry onto the redo stack as if the restore had

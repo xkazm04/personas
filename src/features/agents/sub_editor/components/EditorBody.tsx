@@ -29,7 +29,7 @@ import { usePersonaSwitchGuard } from '../hooks/usePersonaSwitchGuard';
 import { useEditorKeyboard } from '../hooks/useEditorKeyboard';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { useTranslation } from '@/i18n/useTranslation';
-import { toastCatch } from '@/lib/silentCatch';
+import { extractMessage, toastCatch } from '@/lib/silentCatch';
 
 export function EditorBody() {
   const { t, tx } = useTranslation();
@@ -128,7 +128,8 @@ export function EditorBody() {
       }
       setShowDeleteConfirm(false);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      // deletePersona rejects with the IPC's AppError object, not an Error.
+      const msg = extractMessage(err);
       toastCatch('EditorBody:deletePersona', tx(t.agents.editor_ui.delete_failed, { message: msg }))(err);
       // Keep the delete confirmation dialog open so the user can retry
     }
