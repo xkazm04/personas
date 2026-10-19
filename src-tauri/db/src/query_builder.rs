@@ -69,8 +69,13 @@ pub struct QueryBuilder {
     sets: Vec<String>,
     params: Vec<Box<dyn ToSql>>,
     order_clause: Option<String>,
-    has_limit: bool,
-    has_offset: bool,
+    /// `?N` placeholder of the LIMIT value, fixed when [`limit`](Self::limit)
+    /// pushed it. Recorded rather than inferred from the tail of `params`, so
+    /// a condition added after `limit()` (or `offset()` called before it)
+    /// cannot rebind LIMIT to somebody else's value.
+    limit_idx: Option<usize>,
+    /// `?N` placeholder of the OFFSET value; same reasoning as `limit_idx`.
+    offset_idx: Option<usize>,
 }
 
 #[allow(dead_code)]
@@ -81,8 +86,8 @@ impl QueryBuilder {
             sets: Vec::new(),
             params: Vec::new(),
             order_clause: None,
-            has_limit: false,
-            has_offset: false,
+            limit_idx: None,
+            offset_idx: None,
         }
     }
 
@@ -298,14 +303,14 @@ impl QueryBuilder {
 
     /// `LIMIT ?N`
     pub fn limit(&mut self, n: impl ToSql + 'static) -> &mut Self {
-        self.has_limit = true;
+        self.limit_idx = Some(self.next_idx());
         self.params.push(Box::new(n));
         self
     }
 
     /// `OFFSET ?N`
     pub fn offset(&mut self, n: impl ToSql + 'static) -> &mut Self {
-        self.has_offset = true;
+        self.offset_idx = Some(self.next_idx());
         self.params.push(Box::new(n));
         self
     }
@@ -361,19 +366,19 @@ impl QueryBuilder {
             parts.push(order.clone());
         }
 
-        // LIMIT and OFFSET indices: they were pushed in order after conditions,
-        // so they occupy the last 1-2 positions in self.params.
-        let total = self.params.len();
-        if self.has_limit && self.has_offset {
-            parts.push(format!("LIMIT ?{} OFFSET ?{}", total - 1, total));
-        } else if self.has_limit {
-            parts.push(format!("LIMIT ?{total}"));
-        } else if self.has_offset {
+        // LIMIT and OFFSET bind to the placeholder each was given when it was
+        // pushed. This used to assume they were the last one or two params, so
+        // `offset()` before `limit()` swapped the two values and any
+        // condition added after `limit()` was bound as the LIMIT.
+        match (self.limit_idx, self.offset_idx) {
+            (Some(l), Some(o)) => parts.push(format!("LIMIT ?{l} OFFSET ?{o}")),
+            (Some(l), None) => parts.push(format!("LIMIT ?{l}")),
             // SQLite requires LIMIT before OFFSET; `-1` is the SQLite idiom for
             // "no limit" so offset-only callers still get a valid, fully-bound
             // clause instead of a dropped OFFSET with a dangling param (see
             // refactor-bughunt tauri-db.md #4).
-            parts.push(format!("LIMIT -1 OFFSET ?{total}"));
+            (None, Some(o)) => parts.push(format!("LIMIT -1 OFFSET ?{o}")),
+            (None, None) => {}
         }
 
         parts.join(" ")
@@ -579,6 +584,42 @@ mod tests {
         assert_eq!(p1, "?1");
         assert_eq!(p2, "?2");
         assert_eq!(qb.param_count(), 2);
+    }
+
+    /// LIMIT and OFFSET keep the placeholder they were given, whatever order
+    /// the caller builds in. Executed against SQLite, not string-compared: the
+    /// old tail-position inference rendered both of these as valid SQL that
+    /// bound the wrong values.
+    #[test]
+    fn limit_and_offset_bind_their_own_values_in_any_call_order() {
+        // No table needed: the rows 1..=20 come from a recursive CTE, so the
+        // test exercises the builder's binding and nothing else.
+        let conn = rusqlite::Connection::open_in_memory().expect("in-memory db");
+        let run = |qb: &QueryBuilder| -> Vec<i64> {
+            let sql = qb.build_select(
+                "WITH RECURSIVE s(n) AS (SELECT 1 UNION ALL SELECT n + 1 FROM s WHERE n < 20) \
+                 SELECT n FROM s",
+            );
+            let mut stmt = conn.prepare(&sql).expect("prepare");
+            let rows = stmt
+                .query_map(qb.params_ref().as_slice(), |r| r.get(0))
+                .expect("query");
+            rows.map(|r| r.expect("row")).collect()
+        };
+
+        // offset() before limit(): want 3 rows starting after the 10th.
+        let mut qb = QueryBuilder::new();
+        qb.order_by("n", "ASC");
+        qb.offset(10i64);
+        qb.limit(3i64);
+        assert_eq!(run(&qb), vec![11, 12, 13]);
+
+        // A condition added after limit(): want n >= 5, 2 rows.
+        let mut qb = QueryBuilder::new();
+        qb.order_by("n", "ASC");
+        qb.limit(2i64);
+        qb.where_gte("n", 5i64);
+        assert_eq!(run(&qb), vec![5, 6]);
     }
 
     /// The allowlisted door emits the LIST's spelling, not the caller's, and
