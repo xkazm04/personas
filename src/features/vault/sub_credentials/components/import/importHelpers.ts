@@ -188,11 +188,14 @@ export function parseEnvFile(content: string): ImportParseResult {
       continue;
     }
 
-    const key = trimmed.slice(0, eqIndex).trim();
+    // `export KEY=value` is the shell-sourceable .env form; the key is KEY.
+    const key = trimmed.slice(0, eqIndex).trim().replace(/^export\s+/, '');
     let value = trimmed.slice(eqIndex + 1).trim();
-    // Strip surrounding quotes
+    // Strip surrounding quotes; an unquoted value ends at a ` #` comment.
     if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
       value = value.slice(1, -1);
+    } else {
+      value = value.replace(/\s+#.*$/, '');
     }
 
     if (key && value) {
