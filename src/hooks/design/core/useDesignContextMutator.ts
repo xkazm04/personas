@@ -6,6 +6,7 @@ import {
   mergeCredentialLink,
 } from '@/features/agents/sub_lab/use-cases/UseCasesList';
 import type { DesignFilesSection, DesignUseCase } from '@/lib/types/frontendTypes';
+import { extractMessage } from '@/lib/silentCatch';
 
 // -- Mutation result type ------------------------------------------------
 
@@ -99,8 +100,7 @@ export function applyDesignContextMutation(
       });
       return { applied: true };
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      return { applied: false, reason: message };
+      return { applied: false, reason: extractMessage(err) };
     }
   };
 

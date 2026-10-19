@@ -9,7 +9,8 @@ vi.mock('@/api/overview/reviews', () => ({
   getTrendingTemplates: vi.fn(async () => []),
   backfillReviewCategories: vi.fn(async () => {}),
 }));
-vi.mock('@/lib/silentCatch', () => ({
+vi.mock('@/lib/silentCatch', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/silentCatch')>()),
   silentCatch: () => () => {},
   toastCatch: () => () => {},
 }));
@@ -39,6 +40,15 @@ describe('useGalleryQuery failures', () => {
     });
     await waitFor(() => expect(hook.result.current.items).toHaveLength(1));
     expect(hook.result.current.error).toBeNull();
+  });
+
+  it('resolves an IPC AppError rejection by its message, not by "[object Object]"', async () => {
+    // invokeWithTimeout rejects with the serialized AppError envelope, never an Error.
+    mockList.mockRejectedValueOnce({ error: 'Network offline: no route to host', kind: 'NetworkOffline' });
+    const hook = renderHook(() => useGalleryQuery());
+    await waitFor(() => expect(hook.result.current.isLoading).toBe(false));
+    expect(hook.result.current.error).toBe(resolveError('Network offline: no route to host').message);
+    expect(hook.result.current.error).not.toBe(resolveError('[object Object]').message);
   });
 
   it('a failed fetchMore does not skip its page: the next fetchMore asks for the same page again', async () => {

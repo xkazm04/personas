@@ -3,7 +3,7 @@ import { useCorrelatedCliStream } from '@/hooks/execution/useCorrelatedCliStream
 import { EventName } from '@/lib/eventRegistry';
 import { testN8nDraft } from '@/api/agents/tests';
 import { sendAppNotification } from '@/api/system/system';
-import { silentCatch } from "@/lib/silentCatch";
+import { extractMessage, silentCatch } from "@/lib/silentCatch";
 import { useSystemStore } from "@/stores/systemStore";
 import { useTranslation } from '@/i18n/useTranslation';
 import {
@@ -85,7 +85,7 @@ export function useBackgroundPreview(): UseBackgroundPreviewReturn {
     try {
       await testN8nDraft(testId, draftJson);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to start preview');
+      setError(extractMessage(err) || 'Failed to start preview');
       setTemplateTestActive(false);
     }
   }, [stream, setTemplateTestActive]);
@@ -102,7 +102,7 @@ export function useBackgroundPreview(): UseBackgroundPreviewReturn {
       try {
         await testN8nDraft(testId, draftJson);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to start preview');
+        setError(extractMessage(err) || 'Failed to start preview');
         setTemplateTestActive(false);
       }
     }, 50);

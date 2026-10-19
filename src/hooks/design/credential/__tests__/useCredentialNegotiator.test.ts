@@ -5,7 +5,7 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => {}) })
 vi.mock('@/i18n/useTranslation', () => ({
   getActiveTranslations: () => ({ errors: { run_superseded: 'SUPERSEDED' } }),
 }));
-vi.mock('@/lib/silentCatch', () => ({ silentCatch: () => () => {} }));
+vi.mock('@/lib/silentCatch', async (importOriginal) => ({ ...(await importOriginal<typeof import('@/lib/silentCatch')>()), silentCatch: () => () => {} }));
 vi.mock('@/api/vault/negotiator', () => ({
   startCredentialNegotiation: vi.fn(),
   cancelCredentialNegotiation: vi.fn(async () => {}),

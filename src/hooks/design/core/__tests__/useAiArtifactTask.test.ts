@@ -17,7 +17,7 @@ vi.mock('@/i18n/useTranslation', () => ({
   getActiveTranslations: () => ({ errors: { run_superseded: 'SUPERSEDED' } }),
 }));
 
-vi.mock('@/lib/silentCatch', () => ({ silentCatch: () => () => {} }));
+vi.mock('@/lib/silentCatch', async (importOriginal) => ({ ...(await importOriginal<typeof import('@/lib/silentCatch')>()), silentCatch: () => () => {} }));
 
 const mockStartNegotiation = vi.fn();
 vi.mock('@/api/vault/negotiator', () => ({
@@ -182,6 +182,18 @@ describe('useAiArtifactTask trace outcomes', () => {
     expect(traces).toHaveLength(1);
     expect(rootError(traces[0]!)).toBe('start');
     expect(traces[0]!.abandoned).toBeUndefined();
+  });
+
+  it('a backend start rejection shows the AppError message, not the generic fallback', async () => {
+    // invokeWithTimeout rejects with the serialized AppError envelope, never an Error.
+    const hook = renderTracedTask(async () => {
+      throw { error: 'Claude CLI not found on PATH', kind: 'NotFound' };
+    });
+    await act(async () => {
+      await hook.result.current.start();
+    });
+    expect(hook.result.current.errorKind).toBe('start');
+    expect(hook.result.current.error).toBe('Claude CLI not found on PATH');
   });
 
   it('a user cancel closes the trace without an error', async () => {

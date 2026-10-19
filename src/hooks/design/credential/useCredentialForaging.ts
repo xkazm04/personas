@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { createLogger } from "@/lib/log";
-import { isTauriError } from "@/lib/types/tauriError";
+import { extractMessage } from "@/lib/silentCatch";
 
 const logger = createLogger("credential-foraging");
 import {
@@ -8,18 +8,6 @@ import {
   importForagedCredential,
   type ForagingScanResult,
 } from "@/api/vault/foraging";
-
-/**
- * `scan_credential_sources` / `import_foraged_credential` migrated from
- * `Result<_, String>` to `Result<_, AppError>` -- the IPC rejection is now the
- * structured `{ error, kind, ... }` envelope rather than a plain string, so
- * `String(err)` would render `"[object Object]"`. Read `.error` first.
- */
-function describeError(err: unknown): string {
-  if (isTauriError(err)) return err.error;
-  if (err instanceof Error) return err.message;
-  return String(err);
-}
 
 export type ForagingPhase = "idle" | "scanning" | "results" | "importing" | "done" | "error";
 
@@ -65,7 +53,7 @@ export function useCredentialForaging() {
       setSelected(new Set());
       setPhase("results");
     } catch (err) {
-      setError(describeError(err));
+      setError(extractMessage(err));
       setPhase("error");
     } finally {
       scanningRef.current = false;
@@ -126,7 +114,7 @@ export function useCredentialForaging() {
             const result = await importForagedCredential(cred.id, name, cred.service_type);
             newImported.set(cred.id, { id: result.id, name: result.name });
           } catch (err) {
-            logger.error('Failed to import credential', { label: cred.label, error: describeError(err) });
+            logger.error('Failed to import credential', { label: cred.label, error: extractMessage(err) });
             hadError = true;
           }
           setImportingIds((prev) => {

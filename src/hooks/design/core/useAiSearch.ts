@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { smartSearchTemplates } from '@/api/overview/intelligence/smartSearch';
 import { getDesignReview } from '@/api/overview/reviews';
-import { silentCatchNull } from "@/lib/silentCatch";
+import { extractMessage, silentCatchNull } from "@/lib/silentCatch";
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { createLogger } from '@/lib/log';
 import { getActiveTranslations, interpolate } from '@/i18n/useTranslation';
@@ -84,8 +84,8 @@ export function useAiSearch(
         setAiSearchRationale(rationale);
       } catch (err: unknown) {
         if (searchId !== aiSearchIdRef.current) return;
-        logger.warn('AI search failed, falling back to keyword search', { err: err instanceof Error ? err.message : String(err) });
-        const errMsg = err instanceof Error ? err.message : String(err);
+        const errMsg = extractMessage(err);
+        logger.warn('AI search failed, falling back to keyword search', { err: errMsg });
         setAiSearchRationale(interpolate(getActiveTranslations().errors.ai_search_failed, { detail: errMsg }));
         setAiSearchActive(false);
       } finally {

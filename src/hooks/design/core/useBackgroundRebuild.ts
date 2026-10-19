@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { rebuildDesignReview, getRebuildSnapshot, cancelRebuild } from '@/api/overview/reviews';
 import { sendAppNotification } from '@/api/system/system';
-import { silentCatch } from "@/lib/silentCatch";
+import { extractMessage, silentCatch } from "@/lib/silentCatch";
 import { useBackgroundSnapshot } from '@/hooks/utility/data/useBackgroundSnapshot';
 import type { SnapshotLike } from '@/hooks/utility/data/useBackgroundSnapshot';
 import { useSystemStore } from "@/stores/systemStore";
@@ -122,7 +122,7 @@ export function useBackgroundRebuild(onCompleted?: () => void): UseBackgroundReb
       const result = await rebuildDesignReview(rId, userDirection?.trim() || undefined);
       setRebuildId(result.rebuild_id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(extractMessage(err));
       setPhase('failed');
       setRebuildActive(false);
     }
