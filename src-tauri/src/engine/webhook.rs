@@ -278,18 +278,15 @@ struct WebhookResponse {
     error: Option<String>,
 }
 
-/// Serialize request headers to a JSON string for logging.
+/// Serialize request headers to a JSON string for logging. The request log is
+/// plaintext, so credential-bearing values (`x-gitlab-token`, `authorization`,
+/// signatures, cookies) are redacted; names are kept.
 fn serialize_headers(headers: &HeaderMap) -> String {
-    let map: serde_json::Map<String, serde_json::Value> = headers
-        .iter()
-        .map(|(name, value)| {
-            (
-                name.as_str().to_string(),
-                serde_json::Value::String(value.to_str().unwrap_or("<binary>").to_string()),
-            )
-        })
-        .collect();
-    serde_json::Value::Object(map).to_string()
+    personas_engine::webhook_ingest::headers_for_log(
+        headers
+            .iter()
+            .map(|(name, value)| (name.as_str(), value.to_str().ok())),
+    )
 }
 
 /// POST /webhook/{trigger_id} -- receive webhook payload, validate HMAC, publish event.
