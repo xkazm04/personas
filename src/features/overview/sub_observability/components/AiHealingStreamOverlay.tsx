@@ -49,8 +49,22 @@ function phaseIndex(phase: AiHealingPhase): number {
   if (phase === 'started' || phase === 'diagnosing') return 0;
   if (phase === 'applying') return 1;
   if (phase === 'completed') return 2;
-  if (phase === 'failed') return 3;
   return -1;
+}
+
+/**
+ * The step a run had reached. A failure is not a step of its own: it happened ON the step the
+ * run was on, so that step is the failed one and the steps after it were never reached. The
+ * failed phase used to sit at index 3, past every step, which drew all three - "Completed"
+ * included - in the done tone on a run that failed.
+ */
+function useReachedStep(phase: AiHealingPhase): number {
+  const idx = phaseIndex(phase);
+  const [reached, setReached] = useState(Math.max(0, idx));
+  useEffect(() => {
+    if (idx >= 0) setReached(idx);
+  }, [idx]);
+  return idx >= 0 ? idx : reached;
 }
 
 const HEADER_STYLES: Record<string, { border: string; bg: string; iconBox: string }> = {
@@ -92,7 +106,7 @@ export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOv
   const { t } = useTranslation();
   const logRef = useRef<HTMLDivElement>(null);
   const [collapsed, setCollapsed] = useState(false);
-  const activeIdx = phaseIndex(healing.phase);
+  const activeIdx = useReachedStep(healing.phase);
   const color = phaseColor(healing.phase);
   const styles = HEADER_STYLES[color]!;
   const isFailed = healing.phase === 'failed';
@@ -164,6 +178,7 @@ export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOv
 
               let dotClass: string;
               let labelClass: string;
+              const stepState = isFailed && isActive ? 'failed' : isPast || (isDone && isActive) ? 'done' : isCurrent ? 'current' : 'pending';
               if (isFailed && isActive) {
                 dotClass = 'bg-red-500/20 border-red-500/40 text-red-400';
                 labelClass = 'text-red-400';
@@ -179,7 +194,7 @@ export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOv
               }
 
               return (
-                <div key={step.phase} className="flex items-center gap-2">
+                <div key={step.phase} className="flex items-center gap-2" data-step-state={stepState}>
                   {i > 0 && (
                     <div className={`w-6 h-px ${isPast || (isDone && i <= activeIdx) ? 'bg-emerald-500/40' : 'bg-primary/10'}`} />
                   )}
