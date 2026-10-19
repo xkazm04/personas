@@ -4,6 +4,9 @@ import type { DashboardDailyPoint } from '@/lib/bindings/DashboardDailyPoint';
 import type { DashboardCostAnomaly } from '@/lib/bindings/DashboardCostAnomaly';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+/** YYYY-MM-DD in UTC: the zone the backend buckets `daily_points` in
+ *  (`DATE(created_at)` over RFC3339 UTC rows), named rather than implied. */
+const UTC_DAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'UTC', year: 'numeric', month: '2-digit', day: '2-digit' });
 
 /** The selected window's headline figures, measured over THAT window only. */
 export interface CurrentWindowSummary {
@@ -52,7 +55,7 @@ export function summarizeCurrentWindow(
       anomalies: data.cost_anomalies,
     };
   }
-  const cutoff = new Date(now - (Math.max(1, effectiveDays) - 1) * DAY_MS).toISOString().slice(0, 10);
+  const cutoff = UTC_DAY.format(new Date(now - (Math.max(1, effectiveDays) - 1) * DAY_MS));
   const dailyPoints = data.daily_points.filter((p) => p.date >= cutoff);
   let totalExecutions = 0;
   let totalCost = 0;
