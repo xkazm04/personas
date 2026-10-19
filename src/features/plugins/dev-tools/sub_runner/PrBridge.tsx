@@ -47,7 +47,7 @@ import { SCAN_AGENTS } from '../constants/scanAgents';
 import type { DevIdea } from '@/lib/bindings/DevIdea';
 import type { DevTask } from '@/lib/bindings/DevTask';
 import type { DevProject } from '@/lib/bindings/DevProject';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 import { detectRepoProvider } from '../sub_overview/adapters';
 
 
@@ -366,7 +366,9 @@ export function PrBridge({ task }: { task: DevTask }) {
       addToast(tx(dt.pr_bridge_branch_prepared, { branch: content.branchName }), 'success');
       markDone('prepare');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      // IPC rejects with a serialised AppError object, never an Error, so the
+      // old `instanceof Error` ladder printed "[object Object]".
+      const msg = extractMessage(err);
       addToast(tx(dt.pr_bridge_branch_failed, { message: msg }), 'error');
     } finally {
       setPreparing(false);
