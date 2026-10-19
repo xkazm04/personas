@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useRef, type RefObject } from 'react';
 import { Volume1, Volume2, VolumeX } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 
 interface VolumePopoverProps {
   volume: number;
@@ -8,6 +9,8 @@ interface VolumePopoverProps {
   onChange: (volume: number) => void;
   onMuteToggle: () => void;
   onClose: () => void;
+  /** Wrapper holding the trigger that toggles this popover. */
+  anchorRef: RefObject<HTMLElement | null>;
 }
 
 export default function VolumePopover({
@@ -16,24 +19,14 @@ export default function VolumePopover({
   onChange,
   onMuteToggle,
   onClose,
+  anchorRef,
 }: VolumePopoverProps) {
   const { t } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const onDocClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('mousedown', onDocClick);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onDocClick);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [onClose]);
+  // The anchor holds the trigger: a press on it is not "outside", so the
+  // trigger's own toggle closes the popover instead of re-opening it.
+  useClickOutside([ref, anchorRef], true, onClose);
 
   const muted = volume <= 0.001;
   const Icon = muted ? VolumeX : volume < 0.5 ? Volume1 : Volume2;

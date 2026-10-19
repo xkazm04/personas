@@ -105,6 +105,10 @@ export default function RadioFooter() {
   const autoResumedRef = useRef<boolean>(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  /** Trigger wrappers: a popover treats a press inside its anchor as its own. */
+  const volumeAnchorRef = useRef<HTMLDivElement | null>(null);
+  const detailsAnchorRef = useRef<HTMLDivElement | null>(null);
+  const pickerAnchorRef = useRef<HTMLDivElement | null>(null);
   const ytHostRef = useRef<HTMLDivElement | null>(null);
   const watchdogRef = useRef<number | null>(null);
   const lastReportedRef = useRef<PlayStatus>('stopped');
@@ -645,7 +649,7 @@ export default function RadioFooter() {
         <SkipForward className="w-3.5 h-3.5" />
       </button>
 
-      <div className="relative">
+      <div ref={volumeAnchorRef} className="relative">
         <button
           type="button"
           onClick={() => setVolumeOpen((v) => !v)}
@@ -663,11 +667,12 @@ export default function RadioFooter() {
             onChange={onVolumeChange}
             onMuteToggle={onMuteToggle}
             onClose={() => setVolumeOpen(false)}
+            anchorRef={volumeAnchorRef}
           />
         )}
       </div>
 
-      <div className="relative flex items-center gap-1.5 max-w-[260px] min-w-0 ml-1">
+      <div ref={detailsAnchorRef} className="relative flex items-center gap-1.5 max-w-[260px] min-w-0 ml-1">
         <button
           type="button"
           onClick={() => setDetailsOpen((v) => !v)}
@@ -721,11 +726,12 @@ export default function RadioFooter() {
             onPrev={onPrev}
             onNext={onNext}
             onClose={() => setDetailsOpen(false)}
+            anchorRef={detailsAnchorRef}
           />
         )}
       </div>
 
-      <div className="relative">
+      <div ref={pickerAnchorRef} className="relative">
         <button
           type="button"
           onClick={() => setPickerOpen((v) => !v)}
@@ -742,6 +748,7 @@ export default function RadioFooter() {
             currentStationId={state?.currentStationId ?? null}
             onPick={pickStation}
             onClose={() => setPickerOpen(false)}
+            anchorRef={pickerAnchorRef}
           />
         )}
       </div>
