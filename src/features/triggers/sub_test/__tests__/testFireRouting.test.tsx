@@ -5,9 +5,9 @@
  * EMITS and then ignored listeners at fire time, so a test fire reported only
  * the new event's id and status - proof the bus accepted a JSON blob.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { listenersForEventType, deliveryForListener, type ListenerRow } from '../testFireRouting';
+import { listenersForEventType, deliveryForListener, canonicalEventType, type ListenerRow } from '../testFireRouting';
 import { TestFireListeners } from '../TestFireListeners';
 import type { PersonaEventSubscription } from '@/lib/bindings/PersonaEventSubscription';
 
@@ -44,10 +44,34 @@ describe('listenersForEventType', () => {
     expect(listenersForEventType(subs, 'deal.won', (et) => et === 'deal.won')).toEqual([]);
   });
 
+  it('matches separator variants the way the bus does (canonical, not exact)', () => {
+    // engine/src/bus.rs is_eligible compares canonical_event_type on both sides,
+    // so a code-review.completed listener DOES receive a code_review.completed fire.
+    const rows = listenersForEventType(
+      [sub({ id: 's9', persona_id: 'p9', event_type: 'code-review.completed' })],
+      'code_review.completed',
+      noCatalog,
+    );
+    expect(rows.map((r) => r.personaId)).toEqual(['p9']);
+  });
+
   it('keeps a disabled subscription visible - it is why nothing ran', () => {
     const rows = listenersForEventType([sub({ enabled: false })], 'deal.won', noCatalog);
     expect(rows).toHaveLength(1);
     expect(rows[0]!.enabled).toBe(false);
+  });
+});
+
+describe('canonicalEventType (mirror of engine/src/bus.rs canonical_event_type)', () => {
+  it.each([
+    ['code_review.completed', 'code.review.completed'],
+    ['code-review.completed', 'code.review.completed'],
+    ['code.review.completed', 'code.review.completed'],
+    ['ux_review.completed', 'ux.review.completed'],
+    ['  Goal__Progress. ', 'goal.progress'],
+    ['-lead', 'lead'],
+  ])('%s -> %s', (raw, canonical) => {
+    expect(canonicalEventType(raw)).toBe(canonical);
   });
 });
 
@@ -79,6 +103,13 @@ describe('deliveryForListener', () => {
 });
 
 describe('TestFireListeners', () => {
+  // The header copy lives in the code-split triggers section: without the
+  // preload the render races the chunk and the header reads ''.
+  beforeAll(async () => {
+    const { preloadSectionsAsync } = await import('@/i18n/useTranslation');
+    await preloadSectionsAsync('en', ['triggers']);
+  });
+
   const rows: ListenerRow[] = [
     { subscriptionId: 's1', personaId: 'p1', enabled: true, sourceFilter: null },
     { subscriptionId: 's2', personaId: 'p2', enabled: true, sourceFilter: 'crm' },
