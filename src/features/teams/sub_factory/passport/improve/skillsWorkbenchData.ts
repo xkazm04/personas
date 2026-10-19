@@ -12,7 +12,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { listSkills, stampSkillProvenance, syncRegistryClone, writeRegistryUsage, type SkillEntry } from '@/api/devTools/devTools';
 import { usageFileFor } from '@/features/plugins/dev-tools/sub_workspaces/registry/useRegistryLibrary';
 import { spawnExternalConsole, spawnSession, writeDispatchBrief } from '@/api/fleet/fleet';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useImproveActivityStore } from '@/stores/improveActivityStore';
@@ -49,9 +49,10 @@ async function syncBeforeDispatch(clonePath: string | null | undefined): Promise
 
 /** Surface a sync refusal with the backend's own sentence — it already names
  *  which of connectivity / mapping / local state the operator should look at,
- *  and a generic "sync failed" would throw that away. */
-function syncFailureMessage(e: unknown): string {
-  const raw = e instanceof Error ? e.message : String(e);
+ *  and a generic "sync failed" would throw that away. The rejection is an IPC
+ *  AppError OBJECT, never an Error, so `String(e)` printed "[object Object]". */
+export function syncFailureMessage(e: unknown): string {
+  const raw = extractMessage(e);
   return raw.trim() ? `Registry not synced — ${raw.split('\n')[0]}` : 'Registry not synced';
 }
 
