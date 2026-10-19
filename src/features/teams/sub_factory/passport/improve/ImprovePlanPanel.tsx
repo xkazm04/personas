@@ -8,6 +8,7 @@ import { useMemo, useState } from 'react';
 import { Rocket, ScanSearch, Plug, Sparkles, Wrench, X, Target } from 'lucide-react';
 
 import { BaseModal } from '@/lib/ui/BaseModal';
+import { toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import { useImprove } from './ImproveContext';
 import { buildImprovePlan, fleetGoldenAvg, projectedFleetGolden, type PlanItem, type PlanKind } from './improvePlan';
@@ -59,7 +60,9 @@ export function ImprovePlanPanel({ open, onClose, slug }: {
   const queueSelected = async () => {
     if (!engine || selectedItems.length === 0) return;
     setBusy(true);
-    let queued = 0;
+    const queuedKeys: string[] = [];
+    const queuedToast = () =>
+      addToast(`Queued ${queuedKeys.length} golden-standard ${queuedKeys.length === 1 ? 'task' : 'tasks'} across the fleet`, 'success');
     try {
       for (const it of selectedItems.filter((i) => i.kind === 'task' && i.action)) {
         const raw = engine.getRaw(it.projectId);
@@ -67,12 +70,23 @@ export function ImprovePlanPanel({ open, onClose, slug }: {
         const title = it.action.taskTitle?.(raw.project) ?? it.action.label;
         const prompt = it.action.prompt?.(raw.project, it.passport) ?? '';
         await engine.queueTask(it.projectId, title, prompt);
-        queued++;
+        queuedKeys.push(key(it));
       }
-      addToast(`Queued ${queued} golden-standard ${queued === 1 ? 'task' : 'tasks'} across the fleet`, 'success');
+      queuedToast();
       onClose();
-    } catch {
-      addToast('Couldn’t queue the campaign', 'error');
+    } catch (err) {
+      // The loop is sequential, so every item before the failure IS a queued
+      // task row. Say so, and drop them from the selection: the panel stays
+      // open, and a retry used to queue each of them a second time.
+      if (queuedKeys.length > 0) {
+        queuedToast();
+        setSelected((prev) => {
+          const next = new Set(prev);
+          for (const k of queuedKeys) next.delete(k);
+          return next;
+        });
+      }
+      toastCatch('ImprovePlanPanel:queueSelected')(err);
     } finally {
       setBusy(false);
     }

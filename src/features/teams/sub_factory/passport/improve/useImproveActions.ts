@@ -12,6 +12,7 @@
 import { useState } from 'react';
 
 import { mapWithConcurrency } from '@/lib/concurrency';
+import { toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import { useImproveActivityStore } from '@/stores/improveActivityStore';
 
@@ -104,10 +105,17 @@ export function useImproveActions(slug: string, rowKey: string, onDone: () => vo
       // cheap DB insert, not a live process), but still real writes against one
       // table, so a modest width avoids a burst insert storm.
       const QUEUE_BATCH_CONCURRENCY = 4;
-      await mapWithConcurrency(eligible, QUEUE_BATCH_CONCURRENCY, ({ r, p }) =>
-        engine.queueTask(r.project.id, a.taskTitle?.(r.project) ?? a.label, a.prompt?.(r.project, p) ?? ''));
-      addToast(`Queued “${a.label}” for ${eligible.length} projects`, 'success');
-      onDone();
+      // Settle per item: mapWithConcurrency rejects on the FIRST failure while
+      // the other workers keep inserting, so "Couldn't queue the batch" used to
+      // be shown over a batch that had mostly been queued.
+      let firstError: unknown = null;
+      const settled = await mapWithConcurrency(eligible, QUEUE_BATCH_CONCURRENCY, ({ r, p }) =>
+        engine.queueTask(r.project.id, a.taskTitle?.(r.project) ?? a.label, a.prompt?.(r.project, p) ?? '')
+          .then(() => true, (err: unknown) => { firstError ??= err; return false; }));
+      const queued = settled.filter(Boolean).length;
+      if (queued > 0) addToast(`Queued “${a.label}” for ${queued} projects`, 'success');
+      if (queued < eligible.length) toastCatch('useImproveActions:runBatch')(firstError);
+      if (queued > 0) onDone();
     } catch {
       addToast('Couldn’t queue the batch', 'error');
     } finally {
