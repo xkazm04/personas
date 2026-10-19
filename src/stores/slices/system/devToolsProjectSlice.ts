@@ -48,7 +48,9 @@ export interface DevToolsProjectSlice {
    *  `includeCompleted` defaults false — the Board hides Done unless toggled. */
   fetchAllGoals: (opts?: { includeCompleted?: boolean }) => Promise<void>;
   createGoal: (projectId: string, title: string, description?: string, contextId?: string, targetDate?: string, parentGoalId?: string) => Promise<DevGoal>;
+  /** Rejects on failure (state-only report; the caller toasts). */
   updateGoal: (id: string, updates: { title?: string; description?: string; status?: string; progress?: number; targetDate?: string; contextId?: string; kpiId?: string | null }) => Promise<void>;
+  /** Rejects on failure (state-only report; the caller toasts). */
   deleteGoal: (id: string) => Promise<void>;
   reorderGoals: (projectId: string, goalIds: string[]) => Promise<void>;
   recordGoalSignal: (goalId: string, signalType: string, delta?: number, message?: string, sourceId?: string) => Promise<DevGoalSignal>;
@@ -264,7 +266,11 @@ export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevTo
         error: null,
       }));
     } catch (err) {
-      reportError(err, "Failed to update goal", set);
+      // State only, then rethrow: both callers (GoalEditorModal, the progress
+      // accept in useGoalMutations) toast their own message and keep the form
+      // open. Swallowing here closed the editor and dropped the typed edits.
+      reportError(err, "Failed to update goal", set, { severity: "state" });
+      throw err;
     }
   },
 
@@ -276,7 +282,9 @@ export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevTo
         error: null,
       }));
     } catch (err) {
-      reportError(err, "Failed to delete goal", set);
+      // Same contract as updateGoal: the editor's delete toasts and stays open.
+      reportError(err, "Failed to delete goal", set, { severity: "state" });
+      throw err;
     }
   },
 

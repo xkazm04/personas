@@ -8,7 +8,14 @@ import type { DevGoal } from '@/lib/bindings/DevGoal';
 vi.mock('@/api/devTools/devTools', () => ({
   resolveGoalAcceptance: vi.fn(),
   countPendingAcceptance: vi.fn(),
+  updateGoal: vi.fn(),
+  deleteGoal: vi.fn(),
 }));
+
+// reportError emits its toast through the store bus; counting emits is how
+// these tests tell a store toast from a caller's own toastCatch.
+const busEmit = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/storeBus', () => ({ storeBus: { emit: busEmit } }));
 
 vi.mock('@/api/devTools/kpis', () => ({}));
 
@@ -17,6 +24,13 @@ import { createDevToolsProjectSlice, type DevToolsProjectSlice } from '../devToo
 
 const resolveMock = vi.mocked(devApi.resolveGoalAcceptance);
 const countMock = vi.mocked(devApi.countPendingAcceptance);
+const updateGoalMock = vi.mocked(devApi.updateGoal);
+const deleteGoalMock = vi.mocked(devApi.deleteGoal);
+
+async function storeToasts(): Promise<number> {
+  await vi.dynamicImportSettled();
+  return busEmit.mock.calls.filter(([ev]) => ev === 'toast').length;
+}
 
 function goal(over: Partial<DevGoal> = {}): DevGoal {
   return {
@@ -77,5 +91,43 @@ describe('devToolsProjectSlice — goal acceptance verdicts', () => {
 
     await expect(h.get().rejectGoal('g1', 'needs rework')).rejects.toThrow(/not awaiting acceptance/);
     expect(resolveMock).toHaveBeenCalledWith('g1', 'reject', 'needs rework');
+  });
+});
+
+describe('devToolsProjectSlice — goal edits report failure to the editor', () => {
+  // GoalEditorModal awaits updateGoal/deleteGoal and only closes on success;
+  // its catch toasts a localized message. A store action that swallowed the
+  // rejection closed the editor and dropped the typed edits on a failed save.
+  beforeEach(() => { vi.clearAllMocks(); });
+
+  it('REJECTS a failed goal update, keeps the goal, and leaves the toast to the caller', async () => {
+    const h = harness();
+    h.set({ goals: [goal({ status: 'open', title: 'Before' })] });
+    updateGoalMock.mockRejectedValueOnce({ error: 'database is locked', kind: 'database' });
+
+    await expect(h.get().updateGoal('g1', { title: 'After' })).rejects.toEqual(
+      expect.objectContaining({ error: 'database is locked' }),
+    );
+    expect(h.get().goals[0]!.title).toBe('Before');
+    expect(await storeToasts()).toBe(0);
+  });
+
+  it('REJECTS a failed goal delete and keeps the row', async () => {
+    const h = harness();
+    h.set({ goals: [goal({ status: 'open' })] });
+    deleteGoalMock.mockRejectedValueOnce(new Error('goal is linked to a running task'));
+
+    await expect(h.get().deleteGoal('g1')).rejects.toThrow(/linked to a running task/);
+    expect(h.get().goals).toHaveLength(1);
+    expect(await storeToasts()).toBe(0);
+  });
+
+  it('still applies a successful update', async () => {
+    const h = harness();
+    h.set({ goals: [goal({ status: 'open', title: 'Before' })] });
+    updateGoalMock.mockResolvedValueOnce(goal({ status: 'open', title: 'After' }));
+
+    await h.get().updateGoal('g1', { title: 'After' });
+    expect(h.get().goals[0]!.title).toBe('After');
   });
 });
