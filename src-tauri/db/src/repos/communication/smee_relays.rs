@@ -3,6 +3,7 @@ use url::Url;
 use uuid::Uuid;
 
 use crate::models::{CreateSmeeRelayInput, SmeeRelay, UpdateSmeeRelayInput};
+use crate::repos::utils::collect_rows;
 use crate::DbPool;
 use personas_core::error::AppError;
 
@@ -58,7 +59,7 @@ pub fn list(pool: &DbPool) -> Result<Vec<SmeeRelay>, AppError> {
         let conn = pool.get()?;
         let mut stmt = conn.prepare("SELECT * FROM smee_relays ORDER BY created_at DESC")?;
         let rows = stmt.query_map([], row_to_relay)?;
-        Ok(rows.filter_map(|r| r.ok()).collect())
+        Ok(collect_rows(rows, "smee_relays::list"))
     })
 }
 
@@ -202,7 +203,7 @@ pub fn list_active_urls(pool: &DbPool) -> Result<Vec<(String, String)>, AppError
                 row.get::<_, String>("channel_url")?,
             ))
         })?;
-        Ok(rows.filter_map(|r| r.ok()).collect())
+        Ok(collect_rows(rows, "smee_relays::list_active_urls"))
     })
 }
 
@@ -236,6 +237,6 @@ pub fn list_active_configs(
                 row.get::<_, Option<String>>("allowed_repos")?,
             ))
         })?;
-        Ok(rows.filter_map(|r| r.ok()).collect())
+        Ok(collect_rows(rows, "smee_relays::list_active_configs"))
     })
 }

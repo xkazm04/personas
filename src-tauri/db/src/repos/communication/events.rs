@@ -579,7 +579,7 @@ pub fn backfill_slot_times_for_source(
             })?;
 
             let mut slots: std::collections::HashSet<String> = std::collections::HashSet::new();
-            for row in rows.flatten() {
+            for row in collect_rows(rows, "events::backfill_slot_times_for_source") {
                 let (raw_payload, payload_iv) = row;
                 let plaintext = match (raw_payload, payload_iv) {
                     (Some(ct), Some(ref iv)) if !iv.is_empty() => {
@@ -1026,7 +1026,7 @@ pub fn list_processing_ids(pool: &DbPool, limit: i64) -> Result<Vec<String>, App
              LIMIT ?1",
         )?;
         let rows = stmt.query_map(params![limit], |row| row.get::<_, String>("id"))?;
-        Ok(rows.flatten().collect())
+        Ok(collect_rows(rows, "events::list_processing_ids"))
     })
 }
 

@@ -1,6 +1,7 @@
 use rusqlite::params;
 
 use crate::models::{CreateTemplateFeedbackInput, TemplateFeedback, TemplatePerformance};
+use crate::repos::utils::collect_rows;
 use crate::DbPool;
 use personas_core::error::AppError;
 
@@ -165,7 +166,7 @@ pub fn get_performance(pool: &DbPool, review_id: &str) -> Result<TemplatePerform
             let rows = stmt.query_map(params![review_id], |row| {
                 Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
             })?;
-            for row in rows.flatten() {
+            for row in collect_rows(rows, "template_feedback::get_performance") {
                 let (rating, labels_json) = row;
                 if rating == "positive" {
                     positive_count += 1;

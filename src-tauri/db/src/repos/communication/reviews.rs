@@ -5,6 +5,7 @@ use crate::models::{
     PersonaDesignReview, SmartSearchRow,
 };
 use crate::query_builder::QueryBuilder;
+use crate::repos::utils::collect_rows;
 use crate::DbPool;
 use personas_core::error::AppError;
 
@@ -690,7 +691,7 @@ pub fn get_distinct_connectors(pool: &DbPool) -> Result<Vec<ConnectorWithCount>,
 
             let mut counts: std::collections::HashMap<String, i64> =
                 std::collections::HashMap::new();
-            for json_str in rows.flatten() {
+            for json_str in collect_rows(rows, "reviews::get_distinct_connectors") {
                 if let Ok(arr) = serde_json::from_str::<Vec<String>>(&json_str) {
                     for name in arr {
                         *counts.entry(name).or_insert(0) += 1;

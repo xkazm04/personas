@@ -5,6 +5,7 @@ use crate::models::{
     CreateSharedEventSubscriptionInput, SharedEventCatalogEntry, SharedEventChange,
     SharedEventFeedActivity, SharedEventSubscription,
 };
+use crate::repos::utils::collect_rows;
 use crate::DbPool;
 use personas_core::error::AppError;
 
@@ -60,7 +61,7 @@ pub fn list_catalog(
             .map(|v| v as &dyn rusqlite::types::ToSql)
             .collect();
         let rows = stmt.query_map(params_refs.as_slice(), row_to_catalog)?;
-        Ok(rows.filter_map(|r| r.ok()).collect())
+        Ok(collect_rows(rows, "shared_events::list_catalog"))
     })
 }
 
@@ -209,7 +210,7 @@ pub fn list_firings_after(
              LIMIT ?3",
         )?;
         let rows = stmt.query_map(params![slug, after_seq, limit], row_to_firing)?;
-        Ok(rows.filter_map(|r| r.ok()).collect())
+        Ok(collect_rows(rows, "shared_events::list_firings_after"))
     })
 }
 
@@ -230,7 +231,7 @@ pub fn list_firings(
              LIMIT ?2",
         )?;
         let rows = stmt.query_map(params![slug, limit], row_to_firing)?;
-        Ok(rows.filter_map(|r| r.ok()).collect())
+        Ok(collect_rows(rows, "shared_events::list_firings"))
     })
 }
 
@@ -296,7 +297,7 @@ pub fn change_activity(pool: &DbPool) -> Result<Vec<SharedEventFeedActivity>, Ap
                 last_payload: row.get("last_payload")?,
             })
         })?;
-        Ok(rows.filter_map(|r| r.ok()).collect())
+        Ok(collect_rows(rows, "shared_events::change_activity"))
     })
 }
 
@@ -310,7 +311,7 @@ pub fn list_subscriptions(pool: &DbPool) -> Result<Vec<SharedEventSubscription>,
         let mut stmt =
             conn.prepare("SELECT * FROM shared_event_subscriptions ORDER BY created_at DESC")?;
         let rows = stmt.query_map([], row_to_subscription)?;
-        Ok(rows.filter_map(|r| r.ok()).collect())
+        Ok(collect_rows(rows, "shared_events::list_subscriptions"))
     })
 }
 
@@ -324,7 +325,10 @@ pub fn list_enabled_subscriptions(pool: &DbPool) -> Result<Vec<SharedEventSubscr
             "SELECT * FROM shared_event_subscriptions WHERE enabled = 1 ORDER BY created_at DESC",
         )?;
             let rows = stmt.query_map([], row_to_subscription)?;
-            Ok(rows.filter_map(|r| r.ok()).collect())
+            Ok(collect_rows(
+                rows,
+                "shared_events::list_enabled_subscriptions",
+            ))
         }
     )
 }
