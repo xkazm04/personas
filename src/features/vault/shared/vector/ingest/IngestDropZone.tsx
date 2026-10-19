@@ -4,6 +4,7 @@ import { kbIngestFiles } from '@/api/vault/database/vectorKb';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DropZoneGlow } from '@/features/shared/components/feedback/DropZoneGlow';
 import { KbErrorNotice } from '../KbErrorNotice';
+import { extractMessage } from '@/lib/silentCatch';
 
 interface IngestDropZoneProps {
   kbId: string;
@@ -73,7 +74,7 @@ export function IngestDropZone({ kbId, onIngestStarted, disabled = false, childr
       const jobId = await kbIngestFiles(kbId, paths);
       onIngestStarted(jobId);
     } catch (err) {
-      setDropError({ text: err instanceof Error ? err.message : String(err), localized: false });
+      setDropError({ text: extractMessage(err), localized: false });
     } finally {
       setIngesting(false);
     }

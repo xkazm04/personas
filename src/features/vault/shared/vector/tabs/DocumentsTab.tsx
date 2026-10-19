@@ -19,6 +19,7 @@ import { truncatePath, formatBytes } from './documentTabHelpers';
 import { DocToolbar } from './DocUploadArea';
 import { DocGhostRows } from './DocGhostRows';
 import { KbErrorNotice } from '../KbErrorNotice';
+import { extractMessage } from '@/lib/silentCatch';
 
 const DOC_PAGE_SIZE = 50;
 
@@ -48,7 +49,7 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
       setHasMore(docs.length === DOC_PAGE_SIZE);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(extractMessage(err));
     } finally {
       setLoading(false);
     }
