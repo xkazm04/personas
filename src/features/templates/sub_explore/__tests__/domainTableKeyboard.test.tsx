@@ -26,4 +26,14 @@ describe('DomainTable rows from the keyboard', () => {
     fireEvent.keyDown(screen.getByTestId('explore-row-recipe-r1'), { key: ' ' });
     expect(onSelectRecipe).toHaveBeenCalledWith(recipe);
   });
+
+  it('exposes the sort state on the column headers', () => {
+    render(<DomainTable templates={[item]} recipes={[recipe]} accent="#000" />);
+    const header = (name: string) => screen.getByRole('button', { name }).closest('th')!;
+    expect(header('Name').getAttribute('aria-sort')).toBe('ascending');
+    expect(header('Tools').getAttribute('aria-sort')).toBe('none');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Name' }));
+    expect(header('Name').getAttribute('aria-sort')).toBe('descending');
+  });
 });
