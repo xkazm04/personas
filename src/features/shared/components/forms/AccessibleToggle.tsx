@@ -12,6 +12,8 @@ interface AccessibleToggleProps {
   /** Inline style — used for persona-accent box-shadow glow on the active state. */
   style?: CSSProperties;
   'data-testid'?: string;
+  /** Id(s) of visible text that explains what the switch controls (a row's description). */
+  'aria-describedby'?: string;
 }
 
 export function AccessibleToggle({
@@ -23,6 +25,7 @@ export function AccessibleToggle({
   className = '',
   style,
   'data-testid': dataTestId,
+  'aria-describedby': ariaDescribedBy,
 }: AccessibleToggleProps) {
   const { t } = useTranslation();
   const handleKeyDown = useCallback(
@@ -41,6 +44,7 @@ export function AccessibleToggle({
       role="switch"
       aria-checked={checked}
       aria-label={label}
+      aria-describedby={ariaDescribedBy}
       disabled={disabled}
       onClick={onChange}
       onKeyDown={handleKeyDown}
