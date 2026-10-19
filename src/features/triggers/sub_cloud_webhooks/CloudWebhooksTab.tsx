@@ -16,7 +16,7 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { useTranslation } from '@/i18n/useTranslation';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { mapWithConcurrency } from '@/lib/concurrency';
 
 
@@ -38,6 +38,11 @@ export function CloudWebhooksTab() {
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const fetchSeqRef = useRef(0);
+  // Personas with an ACTIVE deployment: the only ones a webhook trigger can be
+  // created for. The URL is /api/deployed/{slug} and this list reads triggers
+  // from active deployments only, so a trigger created on an undeployed persona
+  // had no URL and never appeared here.
+  const [activeDeployments, setActiveDeployments] = useState<CloudDeployment[]>([]);
   const { copiedKey: copiedId, copy } = useKeyedCopyFlag<string>();
 
   // Create form state
@@ -60,6 +65,7 @@ export function CloudWebhooksTab() {
       if (seq !== fetchSeqRef.current) return;
 
       const webhookEnabled = deployments.filter((d) => d.status === 'active');
+      setActiveDeployments(webhookEnabled);
       const collected: WebhookTriggerRow[] = [];
 
       await mapWithConcurrency(webhookEnabled, 4, async (dep) => {
@@ -122,7 +128,7 @@ export function CloudWebhooksTab() {
       setShowCreate(false);
       setCreatePersonaId('');
       await fetchWebhookTriggers();
-    } catch (err) { silentCatch("features/triggers/sub_cloud_webhooks/CloudWebhooksTab:catch3")(err); } finally {
+    } catch (err) { toastCatch("features/triggers/sub_cloud_webhooks/CloudWebhooksTab:create")(err); } finally {
       setIsCreating(false);
     }
   };
@@ -132,11 +138,15 @@ export function CloudWebhooksTab() {
       await cloudDeleteTrigger(triggerId);
       setWebhookRows((prev) => prev.filter((r) => r.trigger.id !== triggerId));
       if (selectedTriggerId === triggerId) setSelectedTriggerId(null);
-    } catch (err) { silentCatch("features/triggers/sub_cloud_webhooks/CloudWebhooksTab:catch4")(err); }
+    } catch (err) { toastCatch("features/triggers/sub_cloud_webhooks/CloudWebhooksTab:delete")(err); }
   };
 
-  // Deployed personas available for webhook creation
-  const deployedPersonaIds = new Set(webhookRows.map((r) => r.deployment.personaId));
+  // Deployed personas available for webhook creation: an active deployment
+  // that does not carry a webhook trigger yet.
+  const hasWebhook = new Set(webhookRows.map((r) => r.deployment.personaId));
+  const creatablePersonaIds = new Set(
+    activeDeployments.map((d) => d.personaId).filter((id) => !hasWebhook.has(id)),
+  );
 
   // Not connected state
   if (!relay.connected && !isLoading) {
@@ -216,7 +226,7 @@ export function CloudWebhooksTab() {
               >
                 <option value="">{t.triggers.select_persona}</option>
                 {personas
-                  .filter((p) => !deployedPersonaIds.has(p.id))
+                  .filter((p) => creatablePersonaIds.has(p.id))
                   .map((p) => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
