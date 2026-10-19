@@ -13,6 +13,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
 import { StatusDot, type ConnectionState } from '@/features/shared/components/display/StatusDot';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { useRelativeTimeTick } from '@/hooks/utility/timing/relativeTimeTicker';
 import type { LiveRoadmapStatus } from './useLiveRoadmap';
 import type { ReleasesTranslation } from './i18n/useReleasesTranslation';
 
@@ -71,6 +72,12 @@ export function LiveRoadmapStatusPill({
 }: Props) {
   const { t: rawT } = useTranslation();
   const refreshLabel = rawT.common.refresh;
+  // The label is "Updated · 4 minutes ago", computed at render. Nothing else
+  // re-renders the pill between fetches (the poll is hourly and a cache answer
+  // repeats the same `fetchedAt`), so without the shared ticker the age froze
+  // at whatever it read on the last fetch: "now" for up to an hour.
+  const fetchedMs = fetchedAt ? Date.parse(fetchedAt) : NaN;
+  useRelativeTimeTick(status !== 'loading' && status !== 'unavailable' && Number.isFinite(fetchedMs) ? fetchedMs : null);
 
   if (status === 'loading') return null;
 
