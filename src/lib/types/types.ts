@@ -483,37 +483,12 @@ export type { ToolUsageSummary } from "@/lib/bindings/ToolUsageSummary";
 export type { ToolUsageOverTime } from "@/lib/bindings/ToolUsageOverTime";
 export type { PersonaUsageSummary } from "@/lib/bindings/PersonaUsageSummary";
 
-// -- Execution Output Types ---------------------------------------------
-
-export interface ExecutionOutputLine {
-  line?: string;
-  done?: boolean;
-  status?: string;
-}
-
 // -- Persona Info Mixin (shared across enriched types) ------------------
 
 export interface WithPersonaInfo {
   persona_name?: string;
   persona_icon?: string;
   persona_color?: string;
-}
-
-/** Build a persona lookup map and enrich records that have a persona_id field. */
-export function enrichWithPersona<T extends { persona_id: string }>(
-  records: T[],
-  personas: { id: string; name: string; icon: string | null; color: string | null }[],
-): (T & WithPersonaInfo)[] {
-  const personaMap = new Map(personas.map((p) => [p.id, p]));
-  return records.map((r) => {
-    const p = personaMap.get(r.persona_id);
-    return {
-      ...r,
-      persona_name: p?.name,
-      persona_icon: p?.icon ?? undefined,
-      persona_color: p?.color ?? undefined,
-    };
-  });
 }
 
 // -- Enriched Types (with persona info for global views) ----------------
