@@ -18,7 +18,7 @@ import { seedMockManualReview, gcStaleManualReviews, deleteAllManualReviews } fr
 import { isDecisionConflict, resolveReviewRow } from '@/lib/decisions/rowWrites';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { toastCatch } from '@/lib/silentCatch';
-import { FILTER_LABELS, resolveReviewQueueView, type FilterStatus, type SourceFilter } from '../libs/reviewHelpers';
+import { reviewStatusLabel, resolveReviewQueueView, type FilterStatus, type SourceFilter } from '../libs/reviewHelpers';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { useManualReviewQueue } from '../hooks/useManualReviewQueue';
 import { useFilteredCollection } from '@/hooks/utility/data/useFilteredCollection';
@@ -396,7 +396,7 @@ export default function ManualReviewList() {
       <>
       <FilterBar<FilterStatus>
         options={(['all', 'pending', 'approved', 'rejected'] as FilterStatus[]).map((id) => ({
-          id, label: FILTER_LABELS[id], badge: statusCounts[id] ?? 0,
+          id, label: reviewStatusLabel(t, id), badge: statusCounts[id] ?? 0,
         }))}
         value={filter} onChange={setFilter} badgeStyle="paren" layoutIdPrefix="review-filter"
         trailing={

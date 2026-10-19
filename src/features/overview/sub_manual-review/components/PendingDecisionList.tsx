@@ -124,7 +124,7 @@ export function PendingDecisionList({
       render: (review) => (
         <span className="flex min-w-0 items-center gap-2">
           <span className="truncate typo-body text-foreground">{review.title || review.content.slice(0, 80)}</span>
-          {review.source === 'cloud' && <TableTag icon={<Cloud className="w-3 h-3" />}>Cloud</TableTag>}
+          {review.source === 'cloud' && <TableTag icon={<Cloud className="w-3 h-3" />}>{t.overview.review.cloud_badge}</TableTag>}
           <AutoResolvedBadge review={review} />
         </span>
       ),
