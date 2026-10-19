@@ -2,9 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 
 const introspectColumns = vi.fn();
+const introspectTables = vi.fn();
 vi.mock('@/api/vault/database/dbSchema', () => ({
   introspectDbColumns: (credentialId: string, tableName: string) => introspectColumns(credentialId, tableName),
-  introspectDbTables: vi.fn(),
+  introspectDbTables: (credentialId: string, limit: number, offset: number) => introspectTables(credentialId, limit, offset),
 }));
 vi.mock('@/features/vault/sub_databases/introspectionQueries', () => ({ getConnectorFamily: () => 'postgres' }));
 
@@ -15,6 +16,7 @@ const columns = { columns: ['column_name', 'data_type'], rows: [['id', 'integer'
 beforeEach(() => {
   clearCacheForCredential('credential-cache-test');
   introspectColumns.mockReset();
+  introspectTables.mockReset();
 });
 
 describe('useTableIntrospection', () => {
@@ -47,5 +49,20 @@ describe('useTableIntrospection', () => {
     expect(result.current.columnsLoading).toBe(false);
     await act(async () => finishPending(columns));
     expect(result.current.columnsLoading).toBe(false);
+  });
+
+  it('concurrent table fetches for one credential share a single database round-trip', async () => {
+    // The auto-fetch effect and a caller's own reveal effect both fire on
+    // mount (ConnectorTableScopeRow does exactly this) before the cache fills.
+    let finish: (value: unknown) => void = () => {};
+    introspectTables.mockImplementation(() => new Promise((resolve) => { finish = resolve; }));
+    const { result } = renderHook(() => useTableIntrospection({ credentialId: 'credential-cache-test', serviceType: 'postgres' }));
+
+    act(() => { void result.current.fetchTables(); });
+    expect(introspectTables).toHaveBeenCalledTimes(1);
+    await act(async () => finish({ columns: ['table_name', 'table_type'], rows: [['users', 'BASE TABLE']], truncated: false }));
+
+    expect(result.current.tables.map((t) => t.table_name)).toEqual(['users']);
+    expect(result.current.loading).toBe(false);
   });
 });

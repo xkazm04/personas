@@ -37,6 +37,23 @@ const _tableCache = new Map<string, IntrospectedTable[]>();
 const _truncatedCache = new Map<string, boolean>();
 const _redisKeyCache = new Map<string, RedisKeyInfo[]>();
 const _columnCache = new Map<string, IntrospectedColumn[]>();
+/**
+ * First-page table requests in flight, per credential. Introspection runs a
+ * query against the user's REMOTE database, so two callers asking at once
+ * (the hook's auto-fetch plus a caller's own reveal effect, or two mounted
+ * rows for one credential) share one round-trip instead of each paying it.
+ */
+const _inflightTables = new Map<string, Promise<QueryResult>>();
+
+function introspectFirstPage(credentialId: string): Promise<QueryResult> {
+  const existing = _inflightTables.get(credentialId);
+  if (existing) return existing;
+  const request = introspectDbTables(credentialId, TABLE_PAGE_SIZE, 0).finally(() => {
+    if (_inflightTables.get(credentialId) === request) _inflightTables.delete(credentialId);
+  });
+  _inflightTables.set(credentialId, request);
+  return request;
+}
 
 /** Evict oldest entries when a Map exceeds maxSize. */
 function boundedSet<V>(map: Map<string, V>, key: string, value: V, maxSize: number) {
@@ -49,6 +66,7 @@ function boundedSet<V>(map: Map<string, V>, key: string, value: V, maxSize: numb
 
 export function clearCacheForCredential(credentialId: string) {
   _tableCache.delete(credentialId);
+  _inflightTables.delete(credentialId);
   _truncatedCache.delete(credentialId);
   _redisKeyCache.delete(credentialId);
   for (const key of _columnCache.keys()) {
@@ -179,7 +197,7 @@ export function useTableIntrospection({
     setLoading(true);
     setError(null);
     try {
-      const result = await introspectDbTables(credentialId, TABLE_PAGE_SIZE, 0);
+      const result = await introspectFirstPage(credentialId);
       if (isRedis) {
         const keys = parseRedisKeysResult(result).map((k) => ({ key: k }));
         boundedSet(_redisKeyCache, credentialId, keys, MAX_TABLE_CACHE);
