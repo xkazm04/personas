@@ -56,6 +56,22 @@ export interface DatabaseSlice {
   cancelDbQuery: (queryId: string) => Promise<void>;
 }
 
+/**
+ * Both lists hold rows for EVERY database credential (DatabaseListView counts
+ * pins and saved queries per credential across the whole list), but each fetch
+ * is scoped to one credential. Replacing the whole list with one credential's
+ * rows wiped every other database's rows, and a slow fetch for database A
+ * landing after a fast one for B emptied B's queries tab. A fetch therefore
+ * replaces only the rows of the credential it asked about.
+ */
+function replaceRowsOf<T extends { credential_id: string }>(
+  rows: T[],
+  credentialId: string,
+  fresh: T[],
+): T[] {
+  return [...rows.filter((r) => r.credential_id !== credentialId), ...fresh];
+}
+
 export const createDatabaseSlice: StateCreator<VaultStore, [], [], DatabaseSlice> = (set) => ({
   dbSchemaTables: [],
   dbSavedQueries: [],
@@ -65,7 +81,7 @@ export const createDatabaseSlice: StateCreator<VaultStore, [], [], DatabaseSlice
   fetchDbSchemaTables: async (credentialId) => {
     try {
       const tables = await dbApi.listDbSchemaTables(credentialId);
-      set({ dbSchemaTables: tables });
+      set((state) => ({ dbSchemaTables: replaceRowsOf(state.dbSchemaTables, credentialId, tables) }));
     } catch (err) {
       reportError(err, "Failed to fetch schema tables", set);
     }
@@ -109,7 +125,7 @@ export const createDatabaseSlice: StateCreator<VaultStore, [], [], DatabaseSlice
   fetchDbSavedQueries: async (credentialId) => {
     try {
       const queries = await dbApi.listDbSavedQueries(credentialId);
-      set({ dbSavedQueries: queries });
+      set((state) => ({ dbSavedQueries: replaceRowsOf(state.dbSavedQueries, credentialId, queries) }));
     } catch (err) {
       reportError(err, "Failed to fetch saved queries", set);
     }
