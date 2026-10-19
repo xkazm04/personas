@@ -39,10 +39,18 @@ const CHANNEL_STYLES: Record<string, ChannelStyle> = {
 
 const FALLBACK_STYLE: ChannelStyle = { icon: MessageSquare, tint: '#60a5fa' };
 
+/** Own-key membership, never `in`. The summary is prose, and `in` also walks
+ *  the prototype: "Notify the constructor by email" made `constructor` a
+ *  channel whose style was `Object` itself, so its icon was `undefined` and
+ *  the tile threw while rendering. */
+function isKnownChannel(type: string): boolean {
+  return Object.hasOwn(CHANNEL_STYLES, type.toLowerCase());
+}
+
 /** Recognised channel keywords inside a free-text segment, in order of first
  *  appearance, de-duplicated (`"Slack and email daily"` -> slack, email). */
 function knownChannelsIn(text: string): string[] {
-  const found = (text.toLowerCase().match(/[a-z]+/g) ?? []).filter((w) => w in CHANNEL_STYLES);
+  const found = (text.toLowerCase().match(/[a-z]+/g) ?? []).filter(isKnownChannel);
   return Array.from(new Set(found));
 }
 
@@ -65,7 +73,7 @@ export function parseChannels(summary: string | undefined): ParsedChannel[] {
     const type = (t ?? '').trim();
     if (rest.length > 0 && type.length > 0 && !/\s/.test(type)) {
       out.push({ type, description: rest.join(':').trim() });
-    } else if (rest.length === 0 && type.toLowerCase() in CHANNEL_STYLES) {
+    } else if (rest.length === 0 && isKnownChannel(type)) {
       out.push({ type, description: '' });
     } else {
       const known = knownChannelsIn(seg);
@@ -77,7 +85,7 @@ export function parseChannels(summary: string | undefined): ParsedChannel[] {
 }
 
 function channelStyle(type: string): ChannelStyle {
-  return CHANNEL_STYLES[type.toLowerCase()] ?? FALLBACK_STYLE;
+  return isKnownChannel(type) ? CHANNEL_STYLES[type.toLowerCase()]! : FALLBACK_STYLE;
 }
 
 export function channelIcon(type: string): ChannelIconComponent {

@@ -32,7 +32,7 @@ const ALL_CATALOGS = {
 };
 import { stackOffset } from '../helpers';
 import { parseChannels, channelIcon, channelTint } from '../channels';
-import { TRIGGER_ICONS, triggerIcon, triggerDetail } from '../triggers';
+import { TRIGGER_ICONS, triggerIcon, triggerDetail, prettyTriggerType } from '../triggers';
 import { TRIGGER_KINDS } from '@/lib/utils/platform/triggerConstants';
 
 describe('humanizeCron', () => {
@@ -135,6 +135,22 @@ describe('parseChannels', () => {
     expect(channelTint('Telegram')).toBe('#229ED9');
     expect(channelTint('carrier-pigeon')).toBe('#60a5fa');
   });
+
+  // `in` walks the prototype: a summary word like "constructor" became a
+  // channel whose style was `Object`, so its icon was undefined and the tile
+  // threw on render.
+  it('never treats an Object.prototype name as a channel', () => {
+    expect(parseChannels('Ping the constructor by email')).toEqual([
+      { type: 'email', description: 'Ping the constructor by email' },
+    ]);
+    expect(parseChannels('constructor')).toEqual([
+      { type: '', description: 'constructor', unstructured: true },
+    ]);
+    for (const name of ['constructor', '__proto__', 'toString']) {
+      expect(channelIcon(name), name).toBe(channelIcon('carrier-pigeon'));
+      expect(channelTint(name), name).toBe('#60a5fa');
+    }
+  });
 });
 
 describe('trigger vocabulary', () => {
@@ -152,6 +168,14 @@ describe('trigger vocabulary', () => {
 
   it('keeps the legacy `event` alias pointing at the `event_listener` icon', () => {
     expect(triggerIcon('event')).toBe(triggerIcon('event_listener'));
+  });
+
+  it('falls back for Object.prototype names instead of returning Object', () => {
+    const generic = triggerIcon('__not_a_trigger_kind__');
+    for (const name of ['constructor', 'toString', '__proto__']) {
+      expect(triggerIcon(name), name).toBe(generic);
+      expect(prettyTriggerType(en, name), name).toBe(name);
+    }
   });
 });
 

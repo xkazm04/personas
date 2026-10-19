@@ -54,8 +54,10 @@ export const TRIGGER_ICONS: Record<string, TriggerIconComponent> = {
   event: Activity,
 };
 
+/** Own-key lookup: `TRIGGER_ICONS['constructor']` is `Object`, which React
+ *  would then try to render as the icon component. */
 export function triggerIcon(type: string) {
-  return TRIGGER_ICONS[type] ?? Zap;
+  return Object.hasOwn(TRIGGER_ICONS, type) ? TRIGGER_ICONS[type]! : Zap;
 }
 
 /** Kinds whose label lives in `triggers.type_*` rather than in the glyph's
@@ -80,7 +82,9 @@ export function prettyTriggerType(t: Translations, type: string): string {
     case 'file_watcher': return c.trigger_file_watch;
     case 'app_focus': return c.trigger_app_focus;
     default: {
-      const key = CHRONOLOGY_LABEL_FALLBACK[type as keyof typeof CHRONOLOGY_LABEL_FALLBACK];
+      const key = Object.hasOwn(CHRONOLOGY_LABEL_FALLBACK, type)
+        ? CHRONOLOGY_LABEL_FALLBACK[type as keyof typeof CHRONOLOGY_LABEL_FALLBACK]
+        : undefined;
       return key ? (t.triggers[key] as string) : type;
     }
   }
