@@ -10,6 +10,7 @@ import {
   setFleetTerminalListenerNotice,
   setTerminalLiveness,
 } from './fleetTerminalManager';
+import { useFleetTerminalConfig } from './useFleetTerminalConfig';
 
 interface FleetTerminalPaneProps {
   /** Internal Fleet session id (UUID v4 minted by fleet_spawn_session). */
@@ -44,6 +45,14 @@ interface FleetTerminalPaneProps {
 export function FleetTerminalPane({ sessionId, className, autoFocus = true, live = true }: FleetTerminalPaneProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const { t } = useTranslation();
+  // The persisted font size, copy-on-select and theme reach the manager from
+  // HERE, because every terminal in the app is mounted through this pane. The
+  // hook used to be mounted only by the Fleet grid page and the dev-only grid
+  // overlay, so a pane opened elsewhere first (the monitor's terminal modal,
+  // the passport modal, the mastermind preview) ran on the manager's defaults:
+  // a dark terminal in a light app, the default font, and copy-on-select ON for
+  // an operator who had switched it off.
+  useFleetTerminalConfig();
 
   // Hand the manager the translated dead-session notice BEFORE attaching. The
   // manager is a plain module with no `t`, and a failed subscribe there used to

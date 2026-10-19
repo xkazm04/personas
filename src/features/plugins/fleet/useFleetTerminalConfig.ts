@@ -10,7 +10,11 @@ import {
  * Bridge the persisted Fleet terminal settings (font size, copy-on-select,
  * theme) into the terminal manager, and keep them live.
  *
- * Mount this once from the Fleet grid page. It:
+ * Mounted by every `FleetTerminalPane` (and by the remote mirror, which builds
+ * its own xterm from `fleetTerminalOptions`), so whichever surface opens a
+ * terminal first already has the operator's settings. Several mounts are
+ * harmless: `configureFleetTerminals` only touches terminals when a value
+ * actually changed. It:
  *   - pushes the current store config into every live terminal whenever it
  *     changes, and
  *   - when the theme is `auto`, re-resolves dark/light from the app's

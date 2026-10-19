@@ -44,6 +44,8 @@ vi.mock('../fleetTerminalManager', () => ({
   setFleetTerminalDeadNotice: vi.fn(),
   setFleetTerminalListenerNotice: vi.fn(),
   setTerminalLiveness: vi.fn(),
+  configureFleetTerminals: vi.fn(),
+  appIsLightTheme: () => false,
   onTerminalHolderLost: (container: HTMLElement, cb: () => void) => {
     holderLost.byContainer.set(container, cb);
     return () => holderLost.byContainer.delete(container);
