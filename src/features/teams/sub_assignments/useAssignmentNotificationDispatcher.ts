@@ -10,8 +10,15 @@ import type { Translations } from '@/i18n/en';
 
 /** Assignment statuses that END the work. Reaching one is news whether or not
  *  the operator is looking at the panel — which is the whole reason this
- *  listener is mounted at BackgroundServices rather than on the team page. */
-const TERMINAL_STATUSES = new Set(['completed', 'failed', 'aborted']);
+ *  listener is mounted at BackgroundServices rather than on the team page.
+ *
+ *  The vocabulary is the `team_assignments.status` CHECK
+ *  (queued|running|awaiting_review|done|failed|aborted, migration c02) and the
+ *  orchestrator's `emit_progress` calls: success is `done`. This set used to
+ *  say `completed`, a word the backend never emits, so a team that finished
+ *  cleanly never notified anyone. Pinned by the dispatcher test, which reads
+ *  the Rust vocabulary. */
+export const TERMINAL_STATUSES: ReadonlySet<string> = new Set(['done', 'failed', 'aborted']);
 
 /** Dedupe bucket for a status. One notification per assignment per bucket; the
  *  orchestrator's tick re-entries emit the same status repeatedly. */
@@ -44,7 +51,7 @@ export function describeAssignmentOutcome(
   const a = t.pipeline.assignments;
   const title = detail.assignment.title;
 
-  if (status === 'completed') {
+  if (status === 'done') {
     return {
       processType: 'team-assignment-completed',
       success: true,

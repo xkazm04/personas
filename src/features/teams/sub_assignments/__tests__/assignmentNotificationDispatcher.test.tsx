@@ -29,7 +29,9 @@ vi.mock('@/i18n/useTranslation', () => ({
   useTranslation: () => ({ t: en, tx: (s: string) => s }),
 }));
 
-import { useAssignmentNotificationDispatcher } from '../useAssignmentNotificationDispatcher';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { TERMINAL_STATUSES, useAssignmentNotificationDispatcher } from '../useAssignmentNotificationDispatcher';
 
 const detail = {
   assignment: { id: 'a1', title: 'Ship the loader' },
@@ -53,9 +55,9 @@ describe('useAssignmentNotificationDispatcher: terminal statuses are news too', 
     getTeamAssignmentDetail.mockReset().mockResolvedValue(detail);
   });
 
-  it('completed produces one success notification naming the assignment', async () => {
+  it('done (the backend success status) produces one success notification naming the assignment', async () => {
     await mount();
-    emit('completed');
+    emit('done');
     await waitFor(() => expect(notifyProcessComplete).toHaveBeenCalledTimes(1));
 
     const opts = notifyProcessComplete.mock.calls[0][0];
@@ -84,10 +86,10 @@ describe('useAssignmentNotificationDispatcher: terminal statuses are news too', 
 
   it('a duplicate tick for the same terminal status is suppressed', async () => {
     await mount();
-    emit('completed');
+    emit('done');
     await waitFor(() => expect(notifyProcessComplete).toHaveBeenCalledTimes(1));
-    emit('completed');
-    emit('completed');
+    emit('done');
+    emit('done');
     await waitFor(() => expect(getTeamAssignmentDetail).toHaveBeenCalledTimes(1));
     expect(notifyProcessComplete).toHaveBeenCalledTimes(1);
   });
@@ -103,21 +105,43 @@ describe('useAssignmentNotificationDispatcher: terminal statuses are news too', 
 
   it('an in-flight status re-arms both buckets', async () => {
     await mount();
-    emit('completed');
+    emit('done');
     await waitFor(() => expect(notifyProcessComplete).toHaveBeenCalledTimes(1));
     emit('running');
-    emit('completed');
+    emit('done');
     await waitFor(() => expect(notifyProcessComplete).toHaveBeenCalledTimes(2));
   });
 
   it('a detail fetch failure notifies nothing and does not permanently suppress', async () => {
     getTeamAssignmentDetail.mockRejectedValueOnce(new Error('ipc down'));
     await mount();
-    emit('completed');
+    emit('done');
     await waitFor(() => expect(getTeamAssignmentDetail).toHaveBeenCalledTimes(1));
     expect(notifyProcessComplete).not.toHaveBeenCalled();
 
-    emit('completed');
+    emit('done');
     await waitFor(() => expect(notifyProcessComplete).toHaveBeenCalledTimes(1));
+  });
+});
+
+describe('TERMINAL_STATUSES speaks the backend vocabulary', () => {
+  const root = resolve(__dirname, '../../../../..');
+  const migration = readFileSync(resolve(root, 'src-tauri/db/src/migrations/incremental/c02_dev_goals_and_kpis.rs'), 'utf8');
+  const orchestrator = readFileSync(resolve(root, 'src-tauri/src/engine/team_assignment_orchestrator.rs'), 'utf8');
+
+  it('every terminal status is one the team_assignments CHECK allows', () => {
+    const check = migration.match(/CHECK\(status IN \(('queued'[^)]*)\)\)/);
+    expect(check).not.toBeNull();
+    const allowed = new Set([...check![1]!.matchAll(/'([a-z_]+)'/g)].map((m) => m[1]));
+    for (const s of TERMINAL_STATUSES) expect(allowed).toContain(s);
+  });
+
+  it('the orchestrator final statuses are all terminal here', () => {
+    const finals = orchestrator.match(/let final_status = if [^{]*\{\s*"([a-z_]+)"\s*\} else \{\s*"([a-z_]+)"\s*\}/);
+    expect(finals).not.toBeNull();
+    expect(TERMINAL_STATUSES.has(finals![1]!)).toBe(true);
+    expect(TERMINAL_STATUSES.has(finals![2]!)).toBe(true);
+    expect(orchestrator).toContain('emit_progress(&app, &assignment_id, "aborted", None)');
+    expect(TERMINAL_STATUSES.has('aborted')).toBe(true);
   });
 });
