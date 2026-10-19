@@ -83,4 +83,35 @@ describe('crash persistence survives its own storage', () => {
     expect(stored[0]!.message).toBe('Persona abc was not found');
     expect(stored[0]!.message).not.toContain('[object Object]');
   });
+
+  // persistCrash falls back to sessionStorage when localStorage is full.
+  // readCrashLogs merged those entries and REMOVED them from sessionStorage, but
+  // wrote the merged list back to localStorage only when it also had to trim.
+  // Under the cap, the fallback crashes existed for exactly one read.
+  it('keeps crashes merged from the sessionStorage fallback across reads', () => {
+    localStorage.setItem(
+      CRASH_STORAGE_KEY,
+      JSON.stringify([{ timestamp: '2026-10-19T08:00:00.000Z', component: 'Local', message: 'a' }]),
+    );
+    sessionStorage.setItem(
+      CRASH_STORAGE_KEY,
+      JSON.stringify([{ timestamp: '2026-10-19T09:00:00.000Z', component: 'Session', message: 'b' }]),
+    );
+
+    expect(readCrashLogs().map((e) => e.component)).toEqual(['Session', 'Local']);
+    expect(readCrashLogs().map((e) => e.component)).toEqual(['Session', 'Local']);
+  });
+
+  it('leaves the sessionStorage fallback in place when it cannot be persisted', () => {
+    sessionStorage.setItem(
+      CRASH_STORAGE_KEY,
+      JSON.stringify([{ timestamp: '2026-10-19T09:00:00.000Z', component: 'Session', message: 'b' }]),
+    );
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('full', 'QuotaExceededError');
+    });
+
+    expect(readCrashLogs().map((e) => e.component)).toEqual(['Session']);
+    expect(sessionStorage.getItem(CRASH_STORAGE_KEY)).not.toBeNull();
+  });
 });
