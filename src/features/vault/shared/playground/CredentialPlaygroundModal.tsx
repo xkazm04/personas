@@ -13,20 +13,21 @@ import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types'
 import { PlaygroundHeader } from './PlaygroundHeader';
 import { PlaygroundTabContent } from './PlaygroundTabContent';
 import { silentCatch } from '@/lib/silentCatch';
+import { useTranslation } from '@/i18n/useTranslation';
 
 
 type PlaygroundTab = 'overview' | 'executions' | 'api-explorer' | 'mcp-tools' | 'rotation';
-interface TabDef { id: PlaygroundTab; label: string; icon: typeof Eye; }
+interface TabDef { id: PlaygroundTab; icon: typeof Eye; }
 
 function getAvailableTabs(connector: ConnectorDefinition | undefined): TabDef[] {
-  const tabs: TabDef[] = [{ id: 'overview', label: 'Overview', icon: Eye }];
-  tabs.push({ id: 'executions', label: 'Executions', icon: History });
+  const tabs: TabDef[] = [{ id: 'overview', icon: Eye }];
+  tabs.push({ id: 'executions', icon: History });
   const category = connector?.category;
   if (category === 'custom' || (category && !['mcp', 'database'].includes(category))) {
-    tabs.push({ id: 'api-explorer', label: 'API Explorer', icon: Globe });
+    tabs.push({ id: 'api-explorer', icon: Globe });
   }
-  if (category === 'mcp') tabs.push({ id: 'mcp-tools', label: 'MCP Tools', icon: Server });
-  tabs.push({ id: 'rotation', label: 'Rotation', icon: RotateCw });
+  if (category === 'mcp') tabs.push({ id: 'mcp-tools', icon: Server });
+  tabs.push({ id: 'rotation', icon: RotateCw });
   return tabs;
 }
 
@@ -38,7 +39,18 @@ interface CredentialPlaygroundModalProps {
 }
 
 export function CredentialPlaygroundModal({ credential, connector, onClose, onDelete }: CredentialPlaygroundModalProps) {
+  const { t } = useTranslation();
   const tabs = useMemo(() => getAvailableTabs(connector), [connector]);
+  // The strip was the one hardcoded-English row in a translated modal; all
+  // five labels already had keys (the audit-log tab is labelled for what it
+  // shows, the credential's history, not "Executions").
+  const tabLabel: Record<PlaygroundTab, string> = {
+    overview: t.vault.playground.tab_overview,
+    executions: t.vault.features.history,
+    'api-explorer': t.vault.playground.tab_api_explorer,
+    'mcp-tools': t.vault.playground.tab_mcp_tools,
+    rotation: t.vault.playground.tab_rotation,
+  };
   const [activeTab, setActiveTab] = useState<PlaygroundTab>('overview');
   const [editError, setEditError] = useState<string | null>(null);
   const [rotationStatus, setRotationStatus] = useState<RotationStatus | null>(null);
@@ -93,7 +105,7 @@ export function CredentialPlaygroundModal({ credential, connector, onClose, onDe
               icon={<Icon className="w-3.5 h-3.5" />}
               onClick={() => setActiveTab(tab.id)}
               className={`relative ${isActive ? 'text-foreground/90' : 'text-foreground hover:text-muted-foreground/70'}`}>
-              {tab.label}
+              {tabLabel[tab.id]}
               {isActive && <motion.div layoutId="playgroundTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary/60 rounded-full" transition={{ type: 'spring', stiffness: 500, damping: 30 }} />}
             </Button>
           );

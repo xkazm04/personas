@@ -62,14 +62,14 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
         )}
 
         {/* Test result badge */}
-        {testResult && <TestBadge result={testResult} />}
+        {testResult && <TestBadge result={testResult} skipLabel={t.common.skip} />}
 
         <button
           onClick={(e) => { e.stopPropagation(); onTry(); }}
           className="flex items-center gap-1 px-2 py-1 rounded typo-body bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors shrink-0"
         >
           <Play className="w-2.5 h-2.5" />
-          Try
+          {t.vault.playground.try_button}
         </button>
       </div>
 
@@ -98,14 +98,14 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
           {endpoint.parameters.length > 0 && (
             <div className="space-y-1">
               <span className="typo-heading uppercase text-cyan-400/70">
-                Parameters
+                {t.vault.playground.parameters}
               </span>
               <div className="space-y-0.5">
                 {endpoint.parameters.map((p) => (
                   <div key={`${p.location}-${p.name}`} className="flex items-center gap-2 typo-body">
                     <span className="font-mono text-foreground">{p.name}</span>
                     <span className="typo-body text-foreground">
-                      {p.location}{p.required ? ' · required' : ''}
+                      {p.location}{p.required ? ` · ${t.common.required}` : ''}
                     </span>
                     {p.schema_type && (
                       <span className="typo-body text-violet-400/60">{p.schema_type}</span>
@@ -128,7 +128,7 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
               </span>
               <div className="typo-body text-foreground">
                 {endpoint.request_body.content_type}
-                {endpoint.request_body.required && ' · required'}
+                {endpoint.request_body.required && ` · ${t.common.required}`}
               </div>
               {endpoint.request_body.schema_json && (
                 <pre className="typo-code text-foreground bg-secondary/20 rounded p-2 overflow-x-auto max-h-[120px]">
@@ -145,7 +145,7 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
 
 // -- Test result badge ---------------------------------------------
 
-function TestBadge({ result }: { result: EndpointTestResult }) {
+function TestBadge({ result, skipLabel }: { result: EndpointTestResult; skipLabel: string }) {
   switch (result.verdict) {
     case 'running':
       return (
@@ -183,7 +183,7 @@ function TestBadge({ result }: { result: EndpointTestResult }) {
       return (
         <span className="flex items-center gap-1 px-1.5 py-0.5 rounded typo-body text-foreground shrink-0">
           <MinusCircle className="w-3 h-3" />
-          skip
+          {skipLabel}
         </span>
       );
     default:

@@ -46,7 +46,7 @@ export function ToolInputForm({
           <div key={key} className="space-y-1">
             <div className="flex items-center gap-2">
               <label className="typo-code text-foreground">{key}</label>
-              {isRequired && <span className="typo-body text-amber-400/60">required</span>}
+              {isRequired && <span className="typo-body text-amber-400/60">{t.common.required}</span>}
               <span className="typo-body text-violet-400/50">{propType}</span>
             </div>
             {description && (

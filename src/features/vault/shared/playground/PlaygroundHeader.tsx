@@ -18,7 +18,7 @@ interface PlaygroundHeaderProps {
 }
 
 export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundHeaderProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const vt = t.vault.playground_extra;
   const [tagInput, setTagInput] = useState('');
   const [showTagInput, setShowTagInput] = useState(false);
@@ -136,7 +136,7 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
                 <button
                   onClick={() => removeTag(tag)}
                   className="hover:opacity-70 transition-opacity"
-                  title={`Remove tag "${tag}"`}
+                  aria-label={tx(t.vault.credential_card.remove_tag, { tag })}
                 >
                   <X className="w-2.5 h-2.5" />
                 </button>
@@ -179,7 +179,7 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
               className="inline-flex items-center gap-0.5 typo-caption text-foreground hover:text-muted-foreground/70 transition-colors"
               title={t.vault.shared.add_tag_title}
             >
-              <Plus className="w-2.5 h-2.5" /> tag
+              <Plus className="w-2.5 h-2.5" /> {t.vault.shared.add_tag_title}
             </button>
           )}
         </div>
