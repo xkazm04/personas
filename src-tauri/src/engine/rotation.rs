@@ -86,14 +86,6 @@ const DEFAULT_PERMANENT_FAILURE_THRESHOLD: f64 = 0.8;
 /// Default failure-rate threshold for transient errors (triggers backoff).
 const DEFAULT_TRANSIENT_FAILURE_THRESHOLD: f64 = 0.9;
 
-/// Low tolerance for production-grade credentials (alert at 5%).
-#[allow(dead_code)]
-const PRODUCTION_TOLERANCE: f64 = 0.05;
-
-/// High tolerance for development credentials (tolerate 50%).
-#[allow(dead_code)]
-const DEVELOPMENT_TOLERANCE: f64 = 0.50;
-
 // ---------------------------------------------------------------------------
 // Error classification
 // ---------------------------------------------------------------------------
@@ -294,25 +286,6 @@ pub fn compute_anomaly_score(entries: &[HealthcheckEntry], tolerance: Option<f64
         sample_count: entries.len(),
         data_stale,
     }
-}
-
-/// Determine the tolerance threshold for a credential based on metadata hints.
-/// Returns a fraction (0.0--1.0) representing the maximum acceptable failure rate.
-#[allow(dead_code)]
-pub fn resolve_tolerance(metadata: &serde_json::Value) -> f64 {
-    // Check for explicit tolerance override
-    if let Some(t) = metadata.get("anomaly_tolerance").and_then(|v| v.as_f64()) {
-        return t.clamp(0.0, 1.0);
-    }
-    // Check environment hint
-    if let Some(env) = metadata.get("environment").and_then(|v| v.as_str()) {
-        return match env {
-            "production" | "prod" => PRODUCTION_TOLERANCE,
-            "development" | "dev" | "staging" => DEVELOPMENT_TOLERANCE,
-            _ => DEFAULT_PERMANENT_FAILURE_THRESHOLD,
-        };
-    }
-    DEFAULT_PERMANENT_FAILURE_THRESHOLD
 }
 
 /// Build a `LedgerAnomalyScore` from an engine-layer `AnomalyScore`.
