@@ -12,6 +12,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 
 const listContextGroups = vi.fn();
 const silentCatch = vi.fn();
+const listSessions = vi.fn(() => Promise.resolve({ sessions: [] as unknown[] }));
 
 vi.mock('@/api/devTools/devTools', () => ({
   getSkillUsageOverview: () => Promise.resolve([]),
@@ -20,7 +21,7 @@ vi.mock('@/api/devTools/devTools', () => ({
   listSkills: () => Promise.resolve([{ name: 'perfect', description: null, category: null }]),
   memorySkillContexts: () => Promise.resolve([{ contextId: 'c1', name: 'ctx', freshNodes: 2, latestAt: null }]),
 }));
-vi.mock('@/api/fleet/fleet', () => ({ listSessions: () => Promise.resolve({ sessions: [] }) }));
+vi.mock('@/api/fleet/fleet', () => ({ listSessions: () => listSessions() }));
 vi.mock('@/lib/silentCatch', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/silentCatch')>()),
   silentCatch: (scope: string) => (e: unknown) => silentCatch(scope, e),
@@ -60,5 +61,19 @@ describe('useProjectRegistry - a failed context-group read', () => {
     await waitFor(() => expect(silentCatch).toHaveBeenCalledWith('projectRegistry load', expect.anything()));
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.skills.map((s) => s.name)).toEqual(['perfect']);
+  });
+});
+
+describe('useProjectRegistry - a live run of the skill', () => {
+  it('is running when /skill sits in a later arg (an Athena-dispatched session)', async () => {
+    listContextGroups.mockResolvedValue([]);
+    listSessions.mockResolvedValueOnce({
+      sessions: [{ args: ['--append-system-prompt', 'steward', '/perfect run'], cwd: 'C:/Repo/', state: 'running' }],
+    });
+
+    const { result } = renderHook(() => useProjectRegistry('p1'));
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.cell('perfect', result.current.columns[0]!.id).running).toBe(true);
   });
 });

@@ -31,46 +31,19 @@ import { useToastStore } from '@/stores/toastStore';
 import { isPresetSkill } from '../../constants/presetSkills';
 import { useRegistryLibrary } from '../../sub_workspaces/registry/useRegistryLibrary';
 import { useWorkspaces, workspaceOf } from '../../sub_workspaces/workspaceStore';
-import { parseSkillArg } from '../analytics/useSkillsAnalytics';
 import type { LaunchStatus, ProjectLaunchCell, SkillLaunchData } from './launchTypes';
+import { sessionRunsSkill } from '../skillSessionMatch';
 
-/** Fleet states that mean the session is still doing work (registry:45). */
-export const LIVE_STATES = new Set(['spawning', 'running', 'awaiting_input']);
+// The session matcher lives in ../skillSessionMatch so both Registry matrices
+// share it; re-exported for this module's existing importers.
+export { LIVE_STATES, argsInvokeSkill, normPath, sessionRunsSkill } from '../skillSessionMatch';
 
 /** Poll cadence for the Fleet snapshot while the tab is mounted. */
 const POLL_MS = 5000;
 
-/** Normalize a path for cwd <-> root matching (mirrors useSkillsRegistry). */
-export function normPath(p: string): string {
-  return p.replace(/\\/g, '/').toLowerCase().replace(/\/+$/, '');
-}
-
 /** Adopting-set key. */
 export function launchKey(skill: string, projectId: string): string {
   return `${skill}:${projectId}`;
-}
-
-/**
- * Does this session's arg vector invoke the skill? Primary: the first arg is
- * the `/skill ...` slash command (parseSkillArg). Secondary: ANY arg equals
- * `/skill` or contains `/skill ` — Athena-dispatched sessions carry the same
- * /skill arg shape but not necessarily in first position.
- */
-export function argsInvokeSkill(args: string[], skill: string): boolean {
-  if (parseSkillArg(args)?.skill === skill) return true;
-  const token = `/${skill}`;
-  return args.some((a) => a === token || a.includes(`${token} `));
-}
-
-/** Is this session a live run of `skill` inside `projectRoot`? */
-export function sessionRunsSkill(
-  session: { args: string[]; cwd: string; state: string },
-  skill: string,
-  projectRoot: string,
-): boolean {
-  if (!LIVE_STATES.has(session.state)) return false;
-  if (normPath(session.cwd) !== normPath(projectRoot)) return false;
-  return argsInvokeSkill(session.args, skill);
 }
 
 /** Status precedence: running > adopting > installed(ready) > needs_adopt. */

@@ -28,19 +28,14 @@ import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 
 import { PRESET_SKILLS, presetVisual } from '../../constants/presetSkills';
-import { parseSkillArg } from '../analytics/useSkillsAnalytics';
+import { normPath, skillsRunBy } from '../skillSessionMatch';
 import { cellKey, type RegistryCell, type RegistryColumn, type RegistryModel, type RegistrySkill } from './registryTypes';
 
-const LIVE_STATES = new Set(['spawning', 'running', 'awaiting_input']);
 const GROUP_LABEL: Record<string, string> = {
   technical: 'Technical', user: 'User experience', business: 'Business', mastermind: 'Mastermind',
 };
 /** Contexts with no group still have to live somewhere. */
 const UNGROUPED = '__ungrouped';
-
-function normPath(p: string): string {
-  return p.replace(/\\/g, '/').toLowerCase().replace(/\/+$/, '');
-}
 
 interface Fetched {
   loading: boolean;
@@ -113,10 +108,8 @@ export function useProjectRegistry(projectId: string | null, refreshTick = 0): R
       const root = normPath(project?.root_path ?? '');
       const runningSkills = new Set<string>();
       for (const sess of (snap as { sessions: Array<{ args: string[]; cwd: string; state: string }> }).sessions) {
-        if (!LIVE_STATES.has(sess.state)) continue;
         if (root && normPath(sess.cwd) !== root) continue;
-        const parsed = parseSkillArg(sess.args);
-        if (parsed) runningSkills.add(parsed.skill);
+        for (const skill of skillsRunBy(sess, installed.map((s) => s.name))) runningSkills.add(skill);
       }
 
       setF({ loading: false, installed, groups, contexts, coveredByKey, usageBySkill, runningSkills });
