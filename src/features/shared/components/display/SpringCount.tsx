@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
-import { useSpring, useMotionValueEvent, useReducedMotion } from 'framer-motion';
+import { useSpring, useMotionValueEvent } from 'framer-motion';
+// The app's hook, not framer's: framer reads only the OS media query and
+// misses the in-app Appearance toggle (<html data-motion="reduce">).
+import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 
 /**
