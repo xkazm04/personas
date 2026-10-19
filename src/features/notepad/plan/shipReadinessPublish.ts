@@ -123,6 +123,14 @@ export function buildReadinessPayload(roadmap: ShipMilestoneVM[]): ReadinessPayl
 // --- debounce + dedupe -------------------------------------------------------
 
 let timer: ReturnType<typeof setTimeout> | null = null;
+/** The newest derived milestones of every project published this session.
+ *  The settings key holds ONE document for the whole app, and each pane hands
+ *  in only its own project's roadmap; without this, opening a second project's
+ *  plan overwrote the first project's verdicts and the read op answered "no
+ *  verdict" for every milestone it had just lost. Keyed by `projectId`, so a
+ *  project's republish replaces its own entries (a deleted milestone drops out)
+ *  and leaves the others alone. */
+const byProject = new Map<string, ReadinessMilestone[]>();
 /** Serialized body of the last snapshot queued. `null` = nothing published yet
  *  (or the last write failed, so the next derive must retry). */
 let lastBody: string | null = null;
@@ -148,7 +156,17 @@ async function writeNow(payload: ReadinessPayload): Promise<void> {
  */
 export function publishShipReadiness(roadmap: ShipMilestoneVM[]): void {
   if (roadmap.length === 0) return;
-  const payload = buildReadinessPayload(roadmap);
+  const grouped = new Map<string, ShipMilestoneVM[]>();
+  for (const vm of roadmap) {
+    const list = grouped.get(vm.row.projectId);
+    if (list) list.push(vm);
+    else grouped.set(vm.row.projectId, [vm]);
+  }
+  for (const [projectId, vms] of grouped) byProject.set(projectId, buildReadinessPayload(vms).milestones);
+  const payload: ReadinessPayload = {
+    version: SHIP_READINESS_DOC_VERSION,
+    milestones: [...byProject.values()].flat(),
+  };
   const body = JSON.stringify(payload);
   if (body === lastBody) return;
   lastBody = body;
@@ -168,4 +186,5 @@ export function __resetShipReadinessPublisherForTests(): void {
   timer = null;
   lastBody = null;
   pending = null;
+  byProject.clear();
 }
