@@ -1,6 +1,7 @@
 import { CheckCircle, Shield } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { OAuthProgressRing, type OAuthRingPhase } from './OAuthProgressRing';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface OAuthSectionProps {
   onConsent: () => void;
@@ -15,16 +16,34 @@ interface OAuthSectionProps {
   pollingMessage?: { success: boolean; message: string } | null;
 }
 
+/**
+ * True when `message` is the active locale's `errors.oauth_consent_opened`
+ * for any provider. The polling hook builds that message from the translated
+ * template, so matching the English phrase "consent page opened" only ever
+ * worked in English: in the other 13 locales the ring never left `waiting`.
+ * Every static fragment of the template must appear in the message.
+ */
+export function isConsentOpenedMessage(message: string, consentOpenedTemplate: string): boolean {
+  const fragments = consentOpenedTemplate
+    .split(/\{provider\}/)
+    .map((f) => f.trim())
+    .filter(Boolean);
+  return fragments.length > 0 && fragments.every((f) => message.includes(f));
+}
+
 /** Derive the ring phase from OAuth state */
-function deriveRingPhase(
+export function deriveRingPhase(
   isAuthorizing: boolean,
   pollingMessage: { success: boolean; message: string } | null,
+  consentOpenedTemplate: string,
 ): OAuthRingPhase | null {
   if (!isAuthorizing && pollingMessage?.success) return 'success';
   if (!isAuthorizing) return null;
 
   // "Starting..." = waiting; once browser opens = polling
-  if (pollingMessage?.message?.includes('consent page opened')) return 'polling';
+  if (pollingMessage?.message && isConsentOpenedMessage(pollingMessage.message, consentOpenedTemplate)) {
+    return 'polling';
+  }
   return 'waiting';
 }
 
@@ -38,7 +57,8 @@ export function OAuthSection({
   isAuthorizing = false,
   pollingMessage = null,
 }: OAuthSectionProps) {
-  const ringPhase = deriveRingPhase(isAuthorizing, pollingMessage);
+  const { t } = useTranslation();
+  const ringPhase = deriveRingPhase(isAuthorizing, pollingMessage, t.errors.oauth_consent_opened);
 
   return (
     <>
