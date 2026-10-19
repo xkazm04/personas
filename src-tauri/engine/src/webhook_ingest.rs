@@ -62,6 +62,123 @@ where
 }
 
 // ---------------------------------------------------------------------------
+// SSE decoding (smee.io relay)
+// ---------------------------------------------------------------------------
+
+/// One dispatched SSE message: the joined `data:` lines and the `id:` field.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SseMessage {
+    pub id: Option<String>,
+    /// `None` when the message carried no `data:` line at all.
+    pub data: Option<String>,
+}
+
+/// Incremental SSE decoder over raw network chunks.
+///
+/// Buffers BYTES, not text: a network chunk can end inside a multi-byte
+/// UTF-8 character or between the `\r` and `\n` of one line terminator, and
+/// decoding or normalising per chunk turns the first into U+FFFD (which also
+/// breaks any HMAC over the body) and the second into a spurious blank line
+/// that dispatches half a message. Lines are decoded only once complete;
+/// `\r`, `\n` and `\r\n` all terminate a line (SSE spec).
+#[derive(Debug, Default)]
+pub struct SseDecoder {
+    buf: Vec<u8>,
+    data_lines: Vec<String>,
+    id: Option<String>,
+    saw_field: bool,
+}
+
+impl SseDecoder {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Bytes held that do not yet form a complete message: the partial line
+    /// plus the `data:` lines collected since the last dispatch. A stream
+    /// that never sends the blank line grows this, so it is what a caller
+    /// caps.
+    pub fn pending_bytes(&self) -> usize {
+        self.buf.len() + self.data_lines.iter().map(String::len).sum::<usize>()
+    }
+
+    /// Feed one network chunk; returns every message it completed.
+    pub fn push(&mut self, chunk: &[u8]) -> Vec<SseMessage> {
+        self.buf.extend_from_slice(chunk);
+        let mut out = Vec::new();
+        let mut start = 0usize;
+        let mut i = 0usize;
+        while i < self.buf.len() {
+            let b = self.buf[i];
+            if b == b'\n' || b == b'\r' {
+                // A `\r` that ends the buffer may be the first half of `\r\n`:
+                // wait for the next chunk before deciding.
+                if b == b'\r' && i + 1 == self.buf.len() {
+                    break;
+                }
+                let line = String::from_utf8_lossy(&self.buf[start..i]).into_owned();
+                let term_len = if b == b'\r' && self.buf[i + 1] == b'\n' {
+                    2
+                } else {
+                    1
+                };
+                i += term_len;
+                start = i;
+                if let Some(msg) = self.take_line(&line) {
+                    out.push(msg);
+                }
+                continue;
+            }
+            i += 1;
+        }
+        self.buf.drain(..start);
+        out
+    }
+
+    fn take_line(&mut self, line: &str) -> Option<SseMessage> {
+        if line.is_empty() {
+            if !self.saw_field {
+                return None;
+            }
+            self.saw_field = false;
+            let data = if self.data_lines.is_empty() {
+                None
+            } else {
+                Some(std::mem::take(&mut self.data_lines).join("\n"))
+            };
+            return Some(SseMessage {
+                id: self.id.take(),
+                data,
+            });
+        }
+        if line.starts_with(':') {
+            return None; // comment / keep-alive
+        }
+        let (field, value) = match line.split_once(':') {
+            Some((f, v)) => (f, v.strip_prefix(' ').unwrap_or(v)),
+            None => (line, ""),
+        };
+        match field {
+            "data" => {
+                self.saw_field = true;
+                self.data_lines.push(value.to_string());
+            }
+            "id" => {
+                self.saw_field = true;
+                let trimmed = value.trim();
+                if !trimmed.is_empty() && !trimmed.contains('\0') {
+                    self.id = Some(trimmed.to_string());
+                }
+            }
+            _ => {
+                self.saw_field = true;
+            }
+        }
+        None
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Cloud firing relay watermarks
 // ---------------------------------------------------------------------------
 
@@ -116,6 +233,70 @@ mod tests {
         assert_eq!(v["x-github-event"], "push");
         assert_eq!(v["x-github-delivery"], "d-1");
         assert_eq!(v["x-odd"], "<binary>");
+    }
+
+    fn feed(chunks: &[&[u8]]) -> Vec<SseMessage> {
+        let mut d = SseDecoder::new();
+        chunks.iter().flat_map(|c| d.push(c)).collect()
+    }
+
+    #[test]
+    fn multibyte_char_split_across_chunks_survives() {
+        let wire = "id: 7\ndata: {\"msg\":\"oprava čárky 🚀\"}\n\n".as_bytes();
+        // Split inside the 4-byte emoji and inside the 2-byte č.
+        let emoji_at = wire.windows(4).position(|w| w == "🚀".as_bytes()).unwrap();
+        let c_at = wire.windows(2).position(|w| w == "č".as_bytes()).unwrap();
+        let msgs = feed(&[
+            &wire[..c_at + 1],
+            &wire[c_at + 1..emoji_at + 2],
+            &wire[emoji_at + 2..],
+        ]);
+        assert_eq!(
+            msgs,
+            vec![SseMessage {
+                id: Some("7".into()),
+                data: Some("{\"msg\":\"oprava čárky 🚀\"}".into()),
+            }]
+        );
+    }
+
+    #[test]
+    fn crlf_split_across_chunks_is_one_terminator() {
+        // `\r` ends chunk one and `\n` starts chunk two: one line end, not two.
+        let msgs = feed(&[b"data: a\r", b"\ndata: b\r\n\r\n"]);
+        assert_eq!(msgs.len(), 1, "{msgs:?}");
+        assert_eq!(msgs[0].data.as_deref(), Some("a\nb"));
+    }
+
+    #[test]
+    fn cr_lf_and_crlf_all_terminate_and_comments_are_skipped() {
+        let msgs = feed(&[b": ping\n\ndata:x\r\rid:9\ndata: y\r\n\r\n"]);
+        assert_eq!(
+            msgs,
+            vec![
+                SseMessage {
+                    id: None,
+                    data: Some("x".into())
+                },
+                SseMessage {
+                    id: Some("9".into()),
+                    data: Some("y".into())
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn incomplete_tail_stays_pending() {
+        let mut d = SseDecoder::new();
+        assert!(d.push(b"data: {\"a\":").is_empty());
+        assert_eq!(d.pending_bytes(), 11);
+        let msgs = d.push(b"1}\n\n");
+        assert_eq!(msgs[0].data.as_deref(), Some("{\"a\":1}"));
+        assert_eq!(d.pending_bytes(), 0);
+        // Complete lines without the dispatching blank line still count.
+        assert!(d.push(b"data: abc\ndata: de\n").is_empty());
+        assert_eq!(d.pending_bytes(), 5);
     }
 
     #[test]
