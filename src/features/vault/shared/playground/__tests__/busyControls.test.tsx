@@ -14,3 +14,15 @@ describe('pressed-control busy state', () => {
     expect(send.querySelector('svg')).not.toBeNull();
   });
 });
+
+describe('RequestBuilder path parameters', () => {
+  const PARAM_EP = { method: 'GET', path: '/repos/{owner}/issues', summary: null, description: null, parameters: [], request_body: null, tags: [] } as never;
+
+  it('never sends a blank path parameter as its own name', () => {
+    const onSend = vi.fn();
+    render(<RequestBuilder endpoint={PARAM_EP} onSend={onSend} isSending={false} />);
+    const send = screen.getByRole('button', { name: /^send$/i });
+    expect((send as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.queryByText(/\/repos\/owner\/issues/)).toBeNull();
+  });
+});

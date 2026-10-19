@@ -57,8 +57,10 @@ export function RequestBuilder({ endpoint, onSend, isSending, scopedResources }:
 
   const resolvedPath = useMemo(() => {
     let resolved = path;
+    // An empty param stays `{name}`: it used to be filled with its own NAME,
+    // so a blank {owner} sent GET /repos/owner/... to a real, wrong resource.
     for (const [key, val] of Object.entries(pathParamValues)) {
-      resolved = resolved.replace(`{${key}}`, encodeURIComponent(val || key));
+      if (val.trim()) resolved = resolved.replaceAll(`{${key}}`, encodeURIComponent(val));
     }
     const validQ = queryParams.filter((q) => q.key.trim());
     if (validQ.length > 0) {
@@ -101,7 +103,7 @@ export function RequestBuilder({ endpoint, onSend, isSending, scopedResources }:
           size="md"
           icon={<Play className="w-3.5 h-3.5" />}
           onClick={handleSend}
-          disabled={!path.trim()}
+          disabled={!path.trim() || pathParams.some((p) => !pathParamValues[p]?.trim())}
           loading={isSending}
           loadingLabel={t.vault.shared.sending}
           className="shrink-0"
