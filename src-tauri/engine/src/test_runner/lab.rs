@@ -7,8 +7,8 @@ use personas_db::DbPool;
 
 use super::{
     avg_scored, await_cancel, execute_scenario, generate_scenarios, renormalized_composite,
-    score_result, spawn_cli_and_collect, verdict_status, ScoreResult, TestModelConfig,
-    TestRunStatusEvent, TestScenario, TestScores,
+    score_result, spawn_cli_and_collect, tracked_scores, verdict_status, ScoreResult,
+    TestModelConfig, TestRunStatusEvent, TestScenario, TestScores,
 };
 
 /// Call class of the lab/test/evolution tooling (scenario generation, result
@@ -110,6 +110,48 @@ pub(crate) struct LabCallbacks<'a> {
     pub(crate) record_cost: Box<dyn Fn(&str, f64) + Send + Sync + 'a>,
 }
 
+/// One score as the run-summary prompt shows it. An average with no measured
+/// cell behind it reads "not measured", never 0: the prompt asks the model to
+/// name the weakest dimension, and a printed 0 for a sandbox run's absent
+/// tool_accuracy made it name tool usage every time.
+pub(crate) fn prompt_score(v: Option<f64>) -> String {
+    match v {
+        Some(v) => format!("{v:.0}/100"),
+        None => "not measured".to_string(),
+    }
+}
+
+/// The per-variant lines of the run-summary prompt.
+#[allow(clippy::type_complexity)]
+pub(crate) fn summary_results_text(
+    tracker: &HashMap<String, Vec<(Option<i32>, Option<i32>, Option<i32>, f64, i64)>>,
+) -> String {
+    let mut results_text = String::new();
+    for (key, entries) in tracker.iter() {
+        let n = entries.len() as f64;
+        if n == 0.0 {
+            continue;
+        }
+        let avg_ta = avg_scored(entries.iter().map(|r| r.0));
+        let avg_oq = avg_scored(entries.iter().map(|r| r.1));
+        let avg_pc = avg_scored(entries.iter().map(|r| r.2));
+        let total_cost = entries.iter().map(|r| r.3).sum::<f64>();
+        // Renormalise over present sub-scores (sandbox runs omit tool_accuracy)
+        // — mirrors `verdict_status`.
+        let composite = renormalized_composite(avg_ta, avg_oq, avg_pc);
+        results_text.push_str(&format!(
+            "- {key}: composite={} (tool_accuracy={}, output_quality={}, protocol={}), cost=${:.4}, {:.0} scenarios\n",
+            prompt_score(composite),
+            prompt_score(avg_ta),
+            prompt_score(avg_oq),
+            prompt_score(avg_pc),
+            total_cost,
+            n
+        ));
+    }
+    results_text
+}
+
 /// Generate a prose LLM summary of test results. Returns the summary text, or None on failure.
 #[allow(clippy::type_complexity)]
 async fn generate_llm_run_summary(
@@ -119,29 +161,7 @@ async fn generate_llm_run_summary(
     scenario_count: usize,
     pool: &DbPool,
 ) -> Option<String> {
-    let mut results_text = String::new();
-    for (key, entries) in tracker.iter() {
-        let n = entries.len() as f64;
-        if n == 0.0 {
-            continue;
-        }
-        let avg_ta = avg_scored(entries.iter().map(|r| r.0)).unwrap_or(0.0);
-        let avg_oq = avg_scored(entries.iter().map(|r| r.1)).unwrap_or(0.0);
-        let avg_pc = avg_scored(entries.iter().map(|r| r.2)).unwrap_or(0.0);
-        let total_cost = entries.iter().map(|r| r.3).sum::<f64>();
-        // Renormalise over present sub-scores (sandbox runs omit tool_accuracy)
-        // — mirrors `verdict_status`.
-        let composite = renormalized_composite(
-            avg_scored(entries.iter().map(|r| r.0)),
-            avg_scored(entries.iter().map(|r| r.1)),
-            avg_scored(entries.iter().map(|r| r.2)),
-        )
-        .unwrap_or(0.0);
-        results_text.push_str(&format!(
-            "- {key}: composite={:.0}/100 (tool_accuracy={:.0}, output_quality={:.0}, protocol={:.0}), cost=${:.4}, {:.0} scenarios\n",
-            composite, avg_ta, avg_oq, avg_pc, total_cost, n
-        ));
-    }
+    let results_text = summary_results_text(tracker);
 
     let prompt = format!(
         r#"Write a 3-4 sentence executive summary of these test results. Be specific and actionable.
@@ -442,13 +462,11 @@ pub(crate) async fn run_lab_loop(
             } else {
                 format!("{}:{}", variant.label, model.id)
             };
-            tracker.entry(key).or_default().push((
-                scores.tool_accuracy,
-                scores.output_quality,
-                scores.protocol_compliance,
-                scores.cost_usd,
-                scores.duration_ms,
-            ));
+            let (ta, oq, pc) = tracked_scores(&status, &scores);
+            tracker
+                .entry(key)
+                .or_default()
+                .push((ta, oq, pc, scores.cost_usd, scores.duration_ms));
 
             (cb.persist_result)(pool, run_id, variant, scenario, model, &status, &scores);
             (cb.record_cost)(run_id, scores.cost_usd);

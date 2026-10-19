@@ -79,6 +79,23 @@ pub(crate) fn verdict_status(s: &ScoreResult) -> String {
     }
 }
 
+/// The sub-scores a cell contributes to the run's aggregates (summary JSON,
+/// arena ranking, prose summary). An `inconclusive` cell was scored by the
+/// heuristic fallback, whose "nothing expected = 100" sentinels and confusion
+/// veto zeros are not measurements: they already cannot make the cell pass
+/// ([`verdict_status`]), so they must not move the run's averages or pick its
+/// best model either. Its cost and duration are still real and still counted.
+pub(crate) fn tracked_scores(
+    status: &str,
+    s: &ScoreResult,
+) -> (Option<i32>, Option<i32>, Option<i32>) {
+    if status == "inconclusive" {
+        (None, None, None)
+    } else {
+        (s.tool_accuracy, s.output_quality, s.protocol_compliance)
+    }
+}
+
 /// `tool_accuracy` as a measurement, or `None` when the cell had nothing to
 /// measure it against. A sandbox cell was told not to call real tools; a cell
 /// whose scenario expects no tools is graded by the judge rubric's own N/A
@@ -252,8 +269,13 @@ pub(crate) fn best_value_model(rankings: &[serde_json::Value]) -> String {
                 .and_then(|v| v.as_bool())
                 .unwrap_or(false)
         })
-        .max_by_key(|r| r.get("value_score").and_then(|v| v.as_i64()).unwrap_or(0))
-        .and_then(|r| r.get("model_id"))
+        .filter_map(|r| {
+            r.get("value_score")
+                .and_then(|v| v.as_i64())
+                .map(|v| (v, r))
+        })
+        .max_by_key(|(v, _)| *v)
+        .and_then(|(_, r)| r.get("model_id"))
         .and_then(|v| v.as_str())
         .unwrap_or("unknown")
         .to_string()

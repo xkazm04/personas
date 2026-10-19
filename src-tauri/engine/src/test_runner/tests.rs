@@ -342,3 +342,84 @@ fn tool_accuracy_absent_when_scenario_expects_no_tools() {
     .unwrap();
     assert!((composite - 90.0).abs() < 1e-9, "got {composite}");
 }
+
+/// An inconclusive cell (judge unavailable, heuristic fallback) carries
+/// sentinel scores: they must not reach the run's averages or ranking.
+#[test]
+fn inconclusive_cell_contributes_no_scores_to_run_aggregates() {
+    let fallback = score(Some(100), Some(40), Some(100), "heuristic_fallback");
+    let status = verdict_status(&fallback);
+    assert_eq!(status, "inconclusive");
+    assert_eq!(tracked_scores(&status, &fallback), (None, None, None));
+
+    let judged = score(Some(60), Some(70), Some(80), "llm");
+    let status = verdict_status(&judged);
+    assert_eq!(
+        tracked_scores(&status, &judged),
+        (Some(60), Some(70), Some(80))
+    );
+    let failed = score(Some(10), Some(20), Some(30), "llm");
+    let status = verdict_status(&failed);
+    assert_eq!(status, "failed");
+    assert_eq!(
+        tracked_scores(&status, &failed),
+        (Some(10), Some(20), Some(30))
+    );
+}
+
+#[allow(clippy::type_complexity)]
+fn tracker_of(
+    rows: &[(&str, Option<i32>, Option<i32>, Option<i32>)],
+) -> std::collections::HashMap<String, Vec<(Option<i32>, Option<i32>, Option<i32>, f64, i64)>> {
+    let mut t = std::collections::HashMap::new();
+    for (k, ta, oq, pc) in rows {
+        t.entry(k.to_string())
+            .or_insert_with(Vec::new)
+            .push((*ta, *oq, *pc, 0.01, 1000));
+    }
+    t
+}
+
+fn model(id: &str) -> TestModelConfig {
+    serde_json::from_value(serde_json::json!({ "id": id, "provider": "anthropic" }))
+        .expect("TestModelConfig from id+provider")
+}
+
+/// A sandbox run never measures tool_accuracy: the persisted summary says
+/// null, not 0, and the composite is the renormalised one.
+#[test]
+fn keyed_summary_reports_unmeasured_dimension_as_null() {
+    let t = tracker_of(&[("v1:haiku", None, Some(80), Some(80))]);
+    let s = build_keyed_summary(&t, &[]);
+    let row = &s["v1:haiku"];
+    assert!(row["avg_tool_accuracy"].is_null(), "got {row}");
+    assert_eq!(row["avg_output_quality"], 80);
+    assert_eq!(row["composite_score"], 80);
+}
+
+/// A model whose every cell was inconclusive or errored has no composite:
+/// it ranks last and is never the best model; with nobody measured there is
+/// no winner at all.
+#[test]
+fn arena_summary_never_crowns_an_unmeasured_model() {
+    let t = tracker_of(&[("a", None, None, None), ("b", None, Some(60), Some(60))]);
+    let s = build_arena_summary(&t, &[model("a"), model("b")]);
+    assert_eq!(s["best_quality_model"], "b");
+    assert_eq!(s["best_value_model"], "b");
+    assert!(s["rankings"][1]["composite_score"].is_null());
+
+    let none = tracker_of(&[("a", None, None, None)]);
+    let s = build_arena_summary(&none, &[model("a")]);
+    assert!(s["best_quality_model"].is_null(), "got {s}");
+}
+
+/// The prose-summary prompt asks the model for the weakest dimension; an
+/// unmeasured one must not be printed as 0.
+#[test]
+fn run_summary_prompt_says_not_measured_instead_of_zero() {
+    let t = tracker_of(&[("haiku", None, Some(80), Some(90))]);
+    let text = summary_results_text(&t);
+    assert!(text.contains("tool_accuracy=not measured"), "got {text}");
+    assert!(!text.contains("tool_accuracy=0"), "got {text}");
+    assert!(text.contains("output_quality=80/100"), "got {text}");
+}
