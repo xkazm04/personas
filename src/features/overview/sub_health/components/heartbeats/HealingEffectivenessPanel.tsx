@@ -5,7 +5,9 @@ import { tokenLabel } from '@/i18n/tokenMaps';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Numeric } from '@/features/shared/components/display/Numeric';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, extractMessage } from '@/lib/silentCatch';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import {
   getHealingEffectiveness,
   listHealingAuditLog,
@@ -41,21 +43,31 @@ export function HealingEffectivenessPanel() {
   const [report, setReport] = useState<HealingEffectivenessReport | null>(null);
   const [activity, setActivity] = useState<HealingAuditEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  // A failed read is held as its raw cause and resolved at render. It used to
+  // fall through to the `no_data` copy, so "I couldn't look" read as "nothing
+  // has ever been auto-fixed".
+  const [loadError, setLoadError] = useState<{ raw: unknown } | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let alive = true;
+    setLoading(true);
     Promise.all([getHealingEffectiveness(), listHealingAuditLog(undefined, ACTIVITY_LIMIT)])
       .then(([r, a]) => {
         if (!alive) return;
         setReport(r);
         setActivity(a);
+        setLoadError(null);
       })
-      .catch(silentCatch('healing-effectiveness-load'))
+      .catch((err: unknown) => {
+        silentCatch('healing-effectiveness-load')(err);
+        if (alive) setLoadError({ raw: err });
+      })
       .finally(() => alive && setLoading(false));
     return () => {
       alive = false;
     };
-  }, []);
+  }, [attempt]);
 
   const pct = (rate: number) => `${Math.round(rate * 100)}%`;
 
@@ -71,8 +83,14 @@ export function HealingEffectivenessPanel() {
         )}
       </header>
 
-      {loading ? (
+      {loading && !report ? (
         <LoadingSpinner label={te.loading} />
+      ) : loadError && !report ? (
+        <InlineErrorBanner
+          compact
+          message={resolveErrorTranslated(t, extractMessage(loadError.raw)).message}
+          onRetry={() => setAttempt((n) => n + 1)}
+        />
       ) : !report || report.attempted === 0 ? (
         <p className="typo-caption text-foreground py-4 text-center">{te.no_data}</p>
       ) : (
