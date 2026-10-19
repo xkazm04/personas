@@ -6,7 +6,7 @@ import { previewScraperExtract, type PreviewRow } from '@/api/scraper';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
-import { errMsg } from '@/stores/storeTypes';
+import { inlineErrorCopy } from '@/features/triggers/lib/inlineErrorCopy';
 
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -121,7 +121,8 @@ export function ExtractStep({ form }: { form: ScrapeForm }) {
 export function PreviewStep({ form }: { form: ScrapeForm }) {
   const { t, tx } = useTranslation();
   const [rows, setRows] = useState<PreviewRow[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // The rejection, raw; resolved to copy at render (inlineErrorCopy).
+  const [error, setError] = useState<unknown>(null);
   const fieldNames = form.fields.map((f) => f.name.trim()).filter(Boolean);
   const disabled = form.urlList.length === 0 || form.namedFieldCount === 0;
 
@@ -135,8 +136,7 @@ export function PreviewStep({ form }: { form: ScrapeForm }) {
       // is what lets the scrape be saved armed.
       form.recordPreview(result);
     } catch (e) {
-      // Structured AppError envelope (`{ error, kind, … }`) — not an Error instance.
-      setError(errMsg(e, String(e)));
+      setError(e ?? new Error('preview failed'));
     }
   };
 
@@ -165,7 +165,7 @@ export function PreviewStep({ form }: { form: ScrapeForm }) {
         </div>
       )}
 
-      {productive === 0 && !error && (
+      {productive === 0 && error === null && (
         <div
           data-testid="scrape-preview-empty"
           className="flex items-start gap-2 rounded-interactive border border-status-warning/25 bg-status-warning/5 p-3 typo-caption text-status-warning"
@@ -175,10 +175,10 @@ export function PreviewStep({ form }: { form: ScrapeForm }) {
         </div>
       )}
 
-      {error && (
+      {error !== null && (
         <div className="flex items-start gap-2 rounded-interactive border border-status-error/25 bg-status-error/5 p-3 typo-caption text-status-error">
           <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-          <span>{error}</span>
+          <span>{inlineErrorCopy(t, error)}</span>
         </div>
       )}
 

@@ -4,7 +4,8 @@ import { Sparkles, Wand2 } from 'lucide-react';
 import { generateScraperRules, type ScrapeRuleSet } from '@/api/scraper';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
-import { errMsg } from '@/stores/storeTypes';
+import { inlineErrorCopy } from '@/features/triggers/lib/inlineErrorCopy';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /**
  * The LLM pipeline builder (Phase 1b-2). Describe what to extract in plain
@@ -20,27 +21,32 @@ interface LlmRuleBuilderProps {
   compact?: boolean;
 }
 
+const NO_FIELDS_COPY = 'No fields were generated — try describing the specific items to pull.';
+
 export function LlmRuleBuilder({ urls, hasFields, onRules, compact }: LlmRuleBuilderProps) {
   const [description, setDescription] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation();
+  // A rejection, raw (resolved to copy at render), or the empty-answer notice.
+  const [error, setError] = useState<unknown>(null);
+  const [noFields, setNoFields] = useState(false);
   const [lastCount, setLastCount] = useState<number | null>(null);
 
   const generate = async () => {
     if (!description.trim()) return;
     setError(null);
+    setNoFields(false);
     setLastCount(null);
     try {
       const rules = await generateScraperRules(description.trim(), urls[0]);
       const count = Object.keys(rules ?? {}).length;
       if (count === 0) {
-        setError('No fields were generated — try describing the specific items to pull.');
+        setNoFields(true);
         return;
       }
       onRules(rules, hasFields ? 'merge' : 'replace');
       setLastCount(count);
     } catch (e) {
-      // Structured AppError envelope (`{ error, kind, … }`) — not an Error instance.
-      setError(errMsg(e, String(e)));
+      setError(e ?? new Error('generation failed'));
     }
   };
 
@@ -88,7 +94,8 @@ export function LlmRuleBuilder({ urls, hasFields, onRules, compact }: LlmRuleBui
           Added {lastCount} field{lastCount === 1 ? '' : 's'} — review + tweak below.
         </span>
       )}
-      {error && <span className="typo-caption text-status-error">{error}</span>}
+      {noFields && <span className="typo-caption text-status-error">{NO_FIELDS_COPY}</span>}
+      {error !== null && <span className="typo-caption text-status-error">{inlineErrorCopy(t, error)}</span>}
     </div>
   );
 }

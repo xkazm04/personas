@@ -10,7 +10,6 @@ import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
 import { inlineErrorCopy } from '@/features/triggers/lib/inlineErrorCopy';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
-import { errMsg } from '@/stores/storeTypes';
 
 import { DatasetInspector } from './DatasetInspector';
 import { PreviewResults } from './PreviewResults';
@@ -185,7 +184,8 @@ function Row({
   const [tested, setTested] = useState<{ signature: string; rows: PreviewRow[] } | null>(null);
   const testRows = tested?.signature === testSignature ? tested.rows : null;
   const [testing, setTesting] = useState(false);
-  const [testError, setTestError] = useState<string | null>(null);
+  // The rejection, raw; resolved to copy at render (inlineErrorCopy).
+  const [testError, setTestError] = useState<unknown>(null);
 
   const runTest = async () => {
     const next = !testOpen;
@@ -197,8 +197,7 @@ function Row({
         const rows = await previewScraperExtract(config.urls, config.rules, 1);
         setTested({ signature: testSignature, rows });
       } catch (e) {
-        // Structured AppError envelope (`{ error, kind, … }`) — not an Error instance.
-        setTestError(errMsg(e, String(e)));
+        setTestError(e ?? new Error('test failed'));
       } finally {
         setTesting(false);
       }
@@ -279,10 +278,10 @@ function Row({
             <div className="mb-2 flex items-center gap-1.5 typo-label text-muted-foreground">
               <FlaskConical className="size-3.5" /> Test extraction — dry run, nothing saved
             </div>
-            {testError ? (
+            {testError !== null ? (
               <div className="flex items-start gap-2 typo-caption text-status-error">
                 <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-                <span>{testError}</span>
+                <span>{inlineErrorCopy(t, testError)}</span>
               </div>
             ) : testing ? (
               <span className="typo-caption text-muted-foreground">Fetching {config.urls[0]}…</span>
