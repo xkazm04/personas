@@ -17,6 +17,7 @@ export default function AppearanceTextSizeSettings() {
               type="button"
               key={scale.id}
               onClick={() => setTextScale(scale.id as TextScale)}
+              aria-pressed={isActive}
               className={`relative flex flex-col items-center gap-2 p-4 rounded-modal border transition-colors text-center ${
                 isActive
                   ? 'border-primary/30 bg-primary/5'

@@ -40,6 +40,7 @@ export default function AppearanceBrightnessSettings() {
               type="button"
               key={level.id}
               onClick={() => setBrightness(level.id as BrightnessLevel)}
+              aria-pressed={isActive}
               className={`relative flex flex-col items-center gap-2 p-4 rounded-modal border transition-colors text-center ${
                 isActive
                   ? 'border-primary/30 bg-primary/5'

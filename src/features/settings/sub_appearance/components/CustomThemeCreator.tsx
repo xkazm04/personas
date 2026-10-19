@@ -175,6 +175,7 @@ export default function CustomThemeCreator() {
                   type="button"
                   key={mode}
                   onClick={() => setBaseMode(mode)}
+                  aria-pressed={active}
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-modal border typo-caption transition-all ${
                     active ? 'border-primary/30 bg-primary/10 text-foreground/90' : 'border-primary/10 text-foreground hover:border-primary/20 hover:bg-primary/5'
                   }`}
