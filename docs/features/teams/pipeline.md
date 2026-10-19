@@ -69,7 +69,7 @@ Nothing in the Studio watches or drives a team. Where the retired modes went:
 
 Team memory is *read* in the Stream (as a lens, with the run-timeline and run-diff views) and *authored* here — the Stream is a read-only observatory by construction.
 
-> `src/features/teams/sub_assignments/` is **listener-only** (`useAssignmentProgressListener.ts` / `useGlobalAssignmentProgressListener.ts` listen to `TEAM_ASSIGNMENT_PROGRESS`; `useAssignmentNotificationDispatcher.ts` fires bell-icon notifications on `awaiting_review`).
+> `src/features/teams/sub_assignments/` is **listener-only** (`useGlobalAssignmentProgressListener.ts` listens to `TEAM_ASSIGNMENT_PROGRESS`; `useAssignmentNotificationDispatcher.ts` fires bell-icon notifications on `awaiting_review` and on the terminal statuses `done` / `failed` / `aborted`).
 
 ### Assigning work — the conversation composer
 
