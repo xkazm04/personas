@@ -41,6 +41,16 @@ interface Condition {
 
 const DEFAULT_CONDITION: Condition = { field: 'effort', op: 'lt', value: '4' };
 const isNumericField = (field: string) => ['effort', 'impact', 'risk'].includes(field);
+
+/** The stored value of one condition. The Rust evaluator matches `in` only
+ *  against a JSON ARRAY (`compare_string`, triage.rs), so the comma list the
+ *  operator types is split here; sent as one string, an `in` rule matched
+ *  nothing, ever. */
+export function conditionValue(c: Condition): number | string | string[] {
+  if (isNumericField(c.field)) return Number(c.value);
+  if (c.op === 'in') return c.value.split(',').map((v) => v.trim()).filter(Boolean);
+  return c.value;
+}
 // The same geometry as ThemedSelect beside it (px-3 py-2, typo-body, primary/15 rule), on the input radius.
 const FIELD_CLASS = 'px-3 py-2 typo-body bg-background/50 border border-primary/15 rounded-input text-foreground focus-ring';
 
@@ -56,7 +66,7 @@ export function TriageRuleForm({ projectId, onClose }: { projectId: string; onCl
     const conditionsJson = JSON.stringify(conditions.map(c => ({
       field: c.field,
       op: c.op,
-      value: isNumericField(c.field) ? Number(c.value) : c.value,
+      value: conditionValue(c),
     })));
     await createTriageRule(ruleName.trim(), conditionsJson, action, projectId);
     onClose();
