@@ -33,7 +33,7 @@ export function CopyButton({ text, className }: { text: string; className?: stri
         } ${className ?? ''}`}
       >
         {copied ? <Check className="w-2.5 h-2.5" /> : <Copy className="w-2.5 h-2.5" />}
-        {copied ? 'Copied' : 'Copy'}
+        {copied ? t.common.copied : t.common.copy}
       </button>
     </Tooltip>
   );
