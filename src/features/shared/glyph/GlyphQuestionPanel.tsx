@@ -85,7 +85,8 @@ function GlyphQuestionCard({ question, onAnswer }: GlyphQuestionCardProps) {
               type="text"
               value={freeText}
               onChange={(e) => setFreeText(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') submit(freeText); }}
+              // The Enter that confirms an IME candidate (ja/zh/ko) is not a submit.
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) submit(freeText); }}
               // A placeholder is not a label: it disappears on first keystroke
               // and is only a last-resort accessible name. The sibling composer
               // in DimensionPanel carries a real <label>; this one has no room

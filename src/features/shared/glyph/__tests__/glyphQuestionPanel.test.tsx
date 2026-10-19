@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, within } from '@testing-library/react';
+import { render, within, fireEvent } from '@testing-library/react';
 import type { BuildQuestion } from '@/lib/types/buildTypes';
 import { GlyphQuestionPanel } from '../GlyphQuestionPanel';
 import { DIM_LABEL, CELL_KEY_TO_DIM } from '../persona-sigil';
@@ -42,5 +42,29 @@ describe('GlyphQuestionPanel heading', () => {
       <GlyphQuestionPanel questions={[question('brand-new-cell')]} onAnswer={vi.fn()} />,
     );
     expect(headingOf(container, 'brand-new-cell')).toBe('brand new cell');
+  });
+});
+
+describe('GlyphQuestionPanel free-text answer', () => {
+  function typed() {
+    const onAnswer = vi.fn();
+    const { getByTestId } = render(
+      <GlyphQuestionPanel questions={[question('human-review')]} onAnswer={onAnswer} />,
+    );
+    const input = getByTestId('glyph-freetext-input');
+    fireEvent.change(input, { target: { value: '部長が承認' } });
+    return { input, onAnswer };
+  }
+
+  it('answers on Enter', () => {
+    const { input, onAnswer } = typed();
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(onAnswer).toHaveBeenCalledWith('human-review', '部長が承認');
+  });
+
+  it('does not answer on the Enter that ends an IME composition', () => {
+    const { input, onAnswer } = typed();
+    fireEvent.keyDown(input, { key: 'Enter', isComposing: true });
+    expect(onAnswer).not.toHaveBeenCalled();
   });
 });
