@@ -16,6 +16,7 @@ import {
   createCliStreamBuffer,
   type CliStreamBuffer,
 } from './cliStreamBuffer';
+import { createLatestWins } from '@/stores/util/latestWins';
 
 /**
  * Phase of a correlated CLI run.
@@ -110,6 +111,12 @@ export function useCorrelatedCliStream({
   const [earlyDroppedCount, setEarlyDroppedCount] = useState(0);
   const unlistenersRef = useRef<UnlistenFn[]>([]);
   const bufferRef = useRef<CliStreamBuffer | null>(null);
+  // Which `start()` still owns the stream. `start()` awaits two `listen()`
+  // registrations; a `cleanup()`/`reset()`/unmount or a second `start()` that
+  // lands inside that await finds nothing to unlisten yet, and the stale call
+  // used to install its listeners afterwards anyway -- live forever after an
+  // unmount, or feeding the previous run's lines into the new run's view.
+  const [ownership] = useState(createLatestWins);
 
   // Capture bufferLines in a ref so the listener closure always sees the latest
   // value without recreating the `start` callback.
@@ -128,17 +135,19 @@ export function useCorrelatedCliStream({
   onStatusEventRef.current = onStatusEvent;
 
   const cleanup = useCallback(async () => {
+    ownership.next();
     for (const unlisten of unlistenersRef.current) {
       unlisten();
     }
     unlistenersRef.current = [];
     bufferRef.current?.dispose();
     bufferRef.current = null;
-  }, []);
+  }, [ownership]);
 
   const start = useCallback(
     async (nextRunId: string) => {
       await cleanup();
+      const token = ownership.next();
       setRunId(nextRunId);
       setLines([]);
       setPhase('running');
@@ -219,11 +228,18 @@ export function useCorrelatedCliStream({
         unlistenStatusPromise,
       ]);
 
+      if (!ownership.isCurrent(token)) {
+        // Superseded while registering: this call no longer owns the stream.
+        unlistenOutput();
+        unlistenStatus();
+        buffer.dispose();
+        return;
+      }
       unlistenersRef.current = [unlistenOutput, unlistenStatus];
       // Release anything that landed while the registrations were in flight.
       buffer.arm();
     },
-    [cleanup, idField, outputEvent, statusEvent],
+    [cleanup, idField, outputEvent, statusEvent, ownership],
   );
 
   const reset = useCallback(async () => {
@@ -236,6 +252,7 @@ export function useCorrelatedCliStream({
 
   useEffect(() => {
     return () => {
+      ownership.next();
       for (const unlisten of unlistenersRef.current) {
         unlisten();
       }
@@ -243,7 +260,7 @@ export function useCorrelatedCliStream({
       bufferRef.current?.dispose();
       bufferRef.current = null;
     };
-  }, []);
+  }, [ownership]);
 
   return {
     runId,
