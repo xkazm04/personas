@@ -10,6 +10,16 @@ import type { UndispatchedIdea } from "@/lib/bindings/UndispatchedIdea";
 import * as devApi from "@/api/devTools/devTools";
 import { decideIdeaRow } from "@/lib/decisions/rowWrites";
 import { silentCatch } from "@/lib/silentCatch";
+import { createLatestWins } from "../../util/latestWins";
+
+/**
+ * One generation per first-page read of the shared triage list. A status
+ * switch (Pending -> Accepted) fires a second read while the first is in
+ * flight; whichever resolved last used to win, so a late Pending page replaced
+ * the Accepted one and its cursor. A keyset continuation observes the
+ * generation it started under and is dropped if a new list was asked for.
+ */
+const triageReadLatestWins = createLatestWins();
 
 /**
  * Server-side narrowing for a triage page. `projectId` is a separate argument
@@ -150,6 +160,7 @@ export const createDevToolsTriageSlice: StateCreator<SystemStore, [], [], DevToo
   lastTriageQuery: null,
 
   fetchTriageIdeas: async (projectId, query) => {
+    const token = triageReadLatestWins.next();
     set({ triageLoading: true, lastTriageQuery: { projectId, query } });
     try {
       const result = await devApi.triageIdeas(projectId, query?.limit, undefined, {
@@ -157,6 +168,7 @@ export const createDevToolsTriageSlice: StateCreator<SystemStore, [], [], DevToo
         origin: query?.origin,
         category: query?.category,
       });
+      if (!triageReadLatestWins.isCurrent(token)) return;
       set({
         triageItems: result.ideas,
         triageCursor: result.cursor,
@@ -165,15 +177,20 @@ export const createDevToolsTriageSlice: StateCreator<SystemStore, [], [], DevToo
         error: null,
       });
     } catch (err) {
+      if (!triageReadLatestWins.isCurrent(token)) return;
       reportError(err, "Failed to fetch triage ideas", set);
     } finally {
-      set({ triageLoading: false });
+      // Only the newest read owns the flag: a superseded one ending would
+      // clear "loading" while the list on screen is still the old answer.
+      if (triageReadLatestWins.isCurrent(token)) set({ triageLoading: false });
     }
   },
 
   fetchMoreTriageIdeas: async (projectId, query) => {
     const { triageCursor, triageLoadingMore } = get();
     if (!triageCursor || triageLoadingMore) return;
+    const generation = triageReadLatestWins.current();
+    const superseded = () => triageReadLatestWins.current() !== generation;
     set({ triageLoadingMore: true });
     try {
       const result = await devApi.triageIdeas(projectId, query?.limit, triageCursor, {
@@ -181,6 +198,8 @@ export const createDevToolsTriageSlice: StateCreator<SystemStore, [], [], DevToo
         origin: query?.origin,
         category: query?.category,
       });
+      // The cursor belongs to the list that was on screen when this started.
+      if (superseded()) return;
       set((state) => ({
         // De-dupe on id: a row inserted between two keyset reads can otherwise
         // arrive on both pages and React would see duplicate keys.
@@ -194,6 +213,7 @@ export const createDevToolsTriageSlice: StateCreator<SystemStore, [], [], DevToo
         error: null,
       }));
     } catch (err) {
+      if (superseded()) return;
       reportError(err, "Failed to fetch more triage ideas", set);
     } finally {
       set({ triageLoadingMore: false });
