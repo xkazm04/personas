@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { DiscoveredPeer } from '@/api/network/discovery';
 import type { TrustedPeer } from '@/api/network/identity';
@@ -65,6 +65,9 @@ vi.mock('@/features/shared/components/display/RelativeTime', () => ({
   RelativeTime: () => <span />,
 }));
 
+const warn = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/log', () => ({ createLogger: () => ({ warn, info: vi.fn(), error: vi.fn(), debug: vi.fn() }) }));
+
 import { PeerList } from '../PeerList';
 
 describe('PeerList trust status', () => {
@@ -86,5 +89,15 @@ describe('PeerList trust status', () => {
     await screen.findByText('status_offline');
     expect(screen.queryByText('scanning_network')).toBeNull();
     expect(container.querySelector('canvas')).toBeNull();
+  });
+});
+
+describe('PeerList connect failure log', () => {
+  it('logs the AppError message, not [object Object]', async () => {
+    // invokeWithTimeout rejects with a serialized AppError, never an Error.
+    state.connectToPeer.mockRejectedValueOnce({ error: 'handshake refused', kind: 'forbidden' });
+    render(<PeerList />);
+    fireEvent.click(await screen.findByTitle('connect'));
+    await waitFor(() => expect(warn).toHaveBeenCalledWith('Failed to connect to peer', expect.objectContaining({ error: 'handshake refused' })));
   });
 });

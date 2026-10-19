@@ -13,6 +13,7 @@ import { InlineConfirm } from './InlineConfirm';
 import { NetworkDashboard } from './NetworkDashboard';
 import { PeerList } from './PeerList';
 import { createLogger } from "@/lib/log";
+import { extractMessage } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText } from '@/i18n/DebtText';
 
@@ -265,7 +266,7 @@ export default function ExposureManager() {
       setShowAddForm(false);
       addToast(tx(st.resource_exposed_toast, { name: res.display_name || res.resource_id }), 'success');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractMessage(err);
       logger.warn('Failed to expose resource', { resource_type: input.resource_type, resource_id: input.resource_id, error: msg });
       addToast(st.expose_failed_toast, 'error');
     }
@@ -276,7 +277,7 @@ export default function ExposureManager() {
       await deleteExposedResource(id);
       addToast(st.exposure_removed_toast, 'success');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractMessage(err);
       logger.warn('Failed to remove exposure', { id, error: msg });
       addToast(st.remove_exposure_failed_toast, 'error');
     }
