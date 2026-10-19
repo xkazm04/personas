@@ -16,7 +16,7 @@ import { LazyChart, type RechartsModule } from '@/features/shared/charts/Rechart
 import { ChartFrame, Dot, Section, toneColor } from '@/features/shared/components/kit';
 import type { MetricsChartPoint } from '@/lib/bindings/MetricsChartPoint';
 import type { MetricAnomaly } from '@/lib/bindings/MetricAnomaly';
-import type { ChartAnnotationRecord } from '../libs/chartAnnotations';
+import { chartDayFormatter, type ChartAnnotationRecord } from '../libs/chartAnnotations';
 import { renderAnnotationLines, renderAnomalyMarkers } from './chartMarkers';
 import { PersonaBreakdownTable } from './PersonaBreakdownTable';
 
@@ -60,10 +60,7 @@ export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, a
   const c = t.overview.observability_charts;
   const sf = useScaledFontSize();
   const { shouldAnimate } = useMotion();
-  const dateTick = useMemo(() => {
-    const fmt = new Intl.DateTimeFormat(language, { month: 'short', day: 'numeric' });
-    return (v: string) => fmt.format(new Date(v));
-  }, [language]);
+  const dateTick = useMemo(() => chartDayFormatter(language), [language]);
   const costTick = useMemo(() => {
     const fmt = new Intl.NumberFormat(language, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
     return (v: number) => fmt.format(v);

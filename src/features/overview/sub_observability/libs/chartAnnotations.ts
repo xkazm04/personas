@@ -42,6 +42,20 @@ export function toChartDate(timestamp: string): string | null {
   return parsed.toISOString().slice(0, 10);
 }
 
+/**
+ * Formats a chart bucket's `YYYY-MM-DD` as a short day label. The buckets are UTC days (SQL
+ * `DATE(created_at)` over UTC text, and `toChartDate` above), so the label is formatted in UTC:
+ * `new Date('2026-10-19')` is UTC midnight, and formatting it in the viewer's zone labelled
+ * every bar one day early anywhere west of UTC.
+ */
+export function chartDayFormatter(language: string): (day: string) => string {
+  const fmt = new Intl.DateTimeFormat(language, { month: 'short', day: 'numeric', timeZone: 'UTC' });
+  return (day: string) => {
+    const ms = Date.parse(`${day.slice(0, 10)}T00:00:00Z`);
+    return Number.isNaN(ms) ? day : fmt.format(ms);
+  };
+}
+
 // -- Annotation Composer Hook -------------------------------------------------
 
 export interface AnnotationComposerOptions {
