@@ -174,7 +174,7 @@ describe('sanitizeIconUrl', () => {
 });
 
 // `isBlockedHostname` is the shared blocklist: `sanitizeIconUrl` uses it for
-// image sources and `variableSanitizer` for URL-type template variables. It
+// image sources (and any other host validation should reuse it). It
 // covered RFC1918 and named loopback but not 169.254.0.0/16 - IPv4 link-local,
 // and the range the cloud metadata services answer on - nor any IPv6 private
 // range beyond a literal `[::1]`.

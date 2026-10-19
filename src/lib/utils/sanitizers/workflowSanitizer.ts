@@ -4,19 +4,15 @@
  * Sanitizes untrusted data from imported n8n workflows before it is embedded
  * into AI prompts. Prevents prompt injection attacks by:
  *
- * 1. Restricting names/identifiers to an allowlist of safe characters
- * 2. Escaping special characters that could break prompt structure
- * 3. Stripping prompt injection patterns (section delimiters, role overrides)
+ * 1. Escaping special characters that could break prompt structure
+ * 2. Stripping prompt injection patterns (section delimiters, role overrides)
+ * 3. Restricting parameter keys to identifier characters
  * 4. Truncating fields to safe maximum lengths
- * 5. Validating structural integrity of workflow JSON
  */
 
 import { stripInjectionPatterns, escapeForPrompt } from './promptInjection';
 
 // -- Allowlists & Limits ----------------------------------------------
-
-/** Safe characters for workflow and node names */
-const SAFE_NAME_RE = /[^a-zA-Z0-9\s\-_.()/&+:,#@!]/g;
 
 /**
  * Maximum field lengths to prevent oversized injection payloads.
@@ -39,26 +35,9 @@ export const MAX_LENGTHS = {
 //
 // The shared pattern set (plus a non-BMP homoglyph defense this file didn't
 // previously have) and strip/escape helpers now live in `promptInjection.ts`
-// (also used by `variableSanitizer.ts`) so the two sanitizers can't drift
-// apart again.
+// so this file and every other prompt-embedding caller strip the same set.
 
 // -- Core Sanitization Functions --------------------------------------
-
-/**
- * Sanitize a workflow or node name using a character allowlist.
- * Removes any character not in [a-zA-Z0-9 \-_.()\/&+:,#@!]
- * and truncates to the specified maximum length.
- */
-export function sanitizeName(
-  name: string | undefined | null,
-  maxLen: number = MAX_LENGTHS.nodeName,
-): string {
-  if (!name || typeof name !== 'string') return '';
-  let clean = name.replace(SAFE_NAME_RE, '');
-  clean = stripInjectionPatterns(clean);
-  clean = clean.replace(/\s+/g, ' ').trim();
-  return clean.slice(0, maxLen);
-}
 
 /**
  * Sanitize a description or free-text field for prompt embedding.
@@ -118,114 +97,4 @@ export function sanitizeParamValue(value: unknown, depth = 0): unknown {
   }
 
   return null;
-}
-
-// -- JSON Sanitization ------------------------------------------------
-
-/**
- * Sanitize an entire JSON string for safe embedding in prompts.
- * Parses the JSON, sanitizes all string values, and re-serializes.
- */
-export function sanitizeJsonForPrompt(jsonStr: string, maxLen = 50_000): string {
-  if (!jsonStr || typeof jsonStr !== 'string') return '{}';
-
-  // Truncate before parsing to prevent DoS
-  const truncated = jsonStr.slice(0, maxLen);
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(truncated);
-  } catch {
-    // intentional: non-critical -- JSON parse fallback
-    return sanitizeTextField(truncated, maxLen);
-  }
-
-  const sanitized = sanitizeParamValue(parsed);
-  return JSON.stringify(sanitized);
-}
-
-// -- Workflow-Level Sanitization --------------------------------------
-
-export interface SanitizedWorkflow {
-  name: string;
-  nodes: SanitizedNode[];
-  connections: Record<string, unknown>;
-}
-
-export interface SanitizedNode {
-  type: string;
-  name: string;
-  parameters: Record<string, unknown>;
-  position?: [number, number];
-  typeVersion?: number;
-}
-
-/**
- * Sanitize an entire n8n workflow JSON object.
- * This is the main entry point -- call this on the raw parsed workflow
- * before passing it to the parser or embedding in prompts.
- */
-export function sanitizeWorkflow(raw: unknown): SanitizedWorkflow {
-  if (!raw || typeof raw !== 'object') {
-    return { name: '', nodes: [], connections: {} };
-  }
-
-  const obj = raw as Record<string, unknown>;
-
-  const name = sanitizeName(
-    typeof obj.name === 'string' ? obj.name : '',
-    MAX_LENGTHS.workflowName,
-  );
-
-  const nodes: SanitizedNode[] = [];
-  if (Array.isArray(obj.nodes)) {
-    for (const node of obj.nodes.slice(0, 200)) {
-      if (!node || typeof node !== 'object') continue;
-      const n = node as Record<string, unknown>;
-
-      if (typeof n.type !== 'string' || typeof n.name !== 'string') continue;
-
-      nodes.push({
-        type: sanitizeName(n.type, MAX_LENGTHS.nodeType),
-        name: sanitizeName(n.name, MAX_LENGTHS.nodeName),
-        parameters: sanitizeParamValue(
-          typeof n.parameters === 'object' && n.parameters !== null ? n.parameters : {},
-        ) as Record<string, unknown>,
-        position: Array.isArray(n.position) && n.position.length === 2
-          ? [Number(n.position[0]) || 0, Number(n.position[1]) || 0]
-          : undefined,
-        typeVersion: typeof n.typeVersion === 'number' ? n.typeVersion : undefined,
-      });
-    }
-  }
-
-  // Sanitize connection keys (node names used as keys)
-  const connections: Record<string, unknown> = {};
-  if (obj.connections && typeof obj.connections === 'object') {
-    for (const [key, value] of Object.entries(obj.connections as Record<string, unknown>)) {
-      const safeKey = sanitizeName(key, MAX_LENGTHS.nodeName);
-      if (safeKey) {
-        connections[safeKey] = value; // Connection structure is structural, not embedded in prompts
-      }
-    }
-  }
-
-  return { name, nodes, connections };
-}
-
-/**
- * Sanitize a workflow JSON string for embedding in a prompt.
- * This sanitizes the full JSON structure and re-serializes it.
- */
-export function sanitizeWorkflowJson(jsonStr: string): string {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(jsonStr);
-  } catch {
-    // intentional: non-critical -- JSON parse fallback
-    return '{"error": "invalid JSON"}';
-  }
-
-  const sanitized = sanitizeWorkflow(parsed);
-  return JSON.stringify(sanitized);
 }

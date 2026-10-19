@@ -1,11 +1,11 @@
 /**
  * Shared Prompt-Injection Defense Primitives
  *
- * Common structural-pattern stripping and prompt-context escaping shared by
- * `variableSanitizer.ts` and `workflowSanitizer.ts`. Both sanitize untrusted
- * text before it is embedded into AI prompts; this module is the single
- * source of truth for the union of protections either one needs, so the two
- * call sites can never drift apart again.
+ * Common structural-pattern stripping and prompt-context escaping for untrusted
+ * text embedded into AI prompts (`workflowSanitizer.ts` and the workflow
+ * parsers). It began as the union of two drifted copies - the other one,
+ * `variableSanitizer.ts`, was deleted 2026-10-19 with no caller since April -
+ * so every protection either had is kept here.
  *
  * Uses structural patterns that target prompt *structure* exploits rather
  * than a blocklist of specific injection phrases (which are trivially

@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sanitizeVariableValue } from '../variableSanitizer';
-import { sanitizeTextField, sanitizeName } from '../workflowSanitizer';
+import { sanitizeTextField } from '../workflowSanitizer';
 import { stripInjectionPatterns, escapeForPrompt, INJECTION_PATTERNS } from '../promptInjection';
 
 // Canonical injection payload corpus. Each payload exercises a protection
@@ -51,25 +50,8 @@ describe('promptInjection shared module', () => {
   });
 });
 
-describe('variableSanitizer.sanitizeVariableValue (text type) catches the full corpus', () => {
-  it('strips the non-BMP homoglyph payload', () => {
-    const result = sanitizeVariableValue(NON_BMP_HOMOGLYPH_PAYLOAD, 'text');
-    expect(result).not.toMatch(/[\u{10000}-\u{10FFFF}]/u);
-  });
-
-  it('neutralizes {{...}} template-variable payloads', () => {
-    const result = sanitizeVariableValue(TEMPLATE_VAR_PAYLOAD, 'text');
-    expect(result).not.toContain('{{system_prompt}}');
-  });
-
-  it('strips markdown-heading keyword injections (previously only workflowSanitizer caught this)', () => {
-    const result = sanitizeVariableValue(MARKDOWN_HEADING_INJECTION_PAYLOAD, 'text');
-    expect(result).not.toMatch(/#{1,6}\s+(INJECT|OVERRIDE)/);
-  });
-});
-
 describe('workflowSanitizer.sanitizeTextField catches the full corpus', () => {
-  it('strips the non-BMP homoglyph payload (previously only variableSanitizer caught this)', () => {
+  it('strips the non-BMP homoglyph payload (previously only the deleted variableSanitizer caught this)', () => {
     const result = sanitizeTextField(NON_BMP_HOMOGLYPH_PAYLOAD);
     expect(result).not.toMatch(/[\u{10000}-\u{10FFFF}]/u);
   });
@@ -84,12 +66,5 @@ describe('workflowSanitizer.sanitizeTextField catches the full corpus', () => {
     // this documents the intentional (non-dropped) behavioral difference.
     const result = sanitizeTextField(TEMPLATE_VAR_PAYLOAD);
     expect(result).toContain('{{system_prompt}}');
-  });
-});
-
-describe('workflowSanitizer.sanitizeName also picks up shared injection stripping', () => {
-  it('strips the non-BMP homoglyph payload from names', () => {
-    const result = sanitizeName('Node\u{1D400}Name');
-    expect(result).not.toMatch(/[\u{10000}-\u{10FFFF}]/u);
   });
 });

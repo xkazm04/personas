@@ -69,9 +69,8 @@ function isBlockedIpv6(hostname: string): boolean {
 
 /**
  * Check whether a hostname resolves to a private/local network address.
- * Exported so other sanitizers (e.g. `variableSanitizer.ts`'s URL-type
- * variable validation) can share this single blocklist instead of
- * maintaining their own copy.
+ * Exported so any other sanitizer that validates a host shares this single
+ * blocklist instead of maintaining its own copy.
  */
 export function isBlockedHostname(hostname: string): boolean {
   // A fully-qualified name may end in a dot (`localhost.`, `nas.local.`) and
