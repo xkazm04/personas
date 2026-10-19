@@ -141,7 +141,7 @@ export default function ScheduleCalendar({
             onClick={goToday}
             className="px-2.5 py-1 typo-caption rounded-card border border-primary/10 hover:bg-secondary/50 text-foreground transition-colors"
           >
-            Today
+            {t.schedules.today}
           </button>
           <span className="typo-heading text-foreground ml-1">
             {headerLabel}
@@ -208,6 +208,7 @@ export default function ScheduleCalendar({
           <div className="flex rounded-card border border-primary/15 overflow-hidden">
             <button
               type="button"
+              aria-pressed={view === 'week'}
               onClick={() => setView('week')}
               className={`px-2.5 py-1 typo-caption transition-colors ${
                 view === 'week'
@@ -215,10 +216,11 @@ export default function ScheduleCalendar({
                   : 'text-foreground hover:text-foreground/70'
               }`}
             >
-              Week
+              {t.schedules.week}
             </button>
             <button
               type="button"
+              aria-pressed={view === 'month'}
               onClick={() => setView('month')}
               className={`px-2.5 py-1 typo-caption transition-colors ${
                 view === 'month'
@@ -226,7 +228,7 @@ export default function ScheduleCalendar({
                   : 'text-foreground hover:text-foreground/70'
               }`}
             >
-              Month
+              {t.schedules.month}
             </button>
           </div>
         </div>
