@@ -1,13 +1,39 @@
 import { useCallback, useEffect, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import { Ban, CheckCircle2, X, AlertCircle } from 'lucide-react';
+import { Ban, CheckCircle2, X, AlertCircle, AlertTriangle } from 'lucide-react';
 import { EventName } from '@/lib/eventRegistry';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import { silentCatch } from '@/lib/silentCatch';
 import { cancelAutoRun, getAutoRunStatus } from '@/api/devTools/devTools';
 import type { AutoRunStatus } from '@/lib/bindings/AutoRunStatus';
+
+export type AutoRunOutcome = 'running' | 'completed' | 'cancelled' | 'failed' | 'interrupted';
+
+/**
+ * What the banner may claim about a run, from the durable row and the live map.
+ *
+ * `dev_auto_runs.status` is written `running` at start and only rewritten by
+ * the run's own finish/cancel/panic paths. A hard kill (app closed, crash)
+ * reaches none of them, so the row stays `running` with `live: false` and zero
+ * tallies. That row used to fall through to the success branch: a green check
+ * over "0 completed · 0 failed · 0 skipped" for a wave that never finished.
+ * Anything this table does not name is not a success either.
+ */
+export function autoRunOutcome(status: Pick<AutoRunStatus, 'status' | 'live'>): AutoRunOutcome {
+  switch (status.status) {
+    case 'running':
+      return status.live ? 'running' : 'interrupted';
+    case 'completed':
+    case 'cancelled':
+    case 'failed':
+      return status.status;
+    default:
+      return 'interrupted';
+  }
+}
 
 export interface AutoRunBannerProps {
   projectId?: string;
@@ -67,11 +93,13 @@ export function AutoRunBanner({ projectId, refreshToken = 0, onRunFinished }: Au
 
   if (!status || !status.runId) return null;
 
-  const running = status.live && status.status === 'running';
+  const outcome = autoRunOutcome(status);
+  const running = outcome === 'running';
   if (!running && dismissed) return null;
 
-  const cancelled = status.status === 'cancelled';
-  const failed = status.status === 'failed';
+  const cancelled = outcome === 'cancelled';
+  const failed = outcome === 'failed';
+  const interrupted = outcome === 'interrupted';
 
   return (
     <div className="border border-violet-500/25 rounded-card px-3 py-2 bg-violet-500/5 flex items-center gap-3 typo-caption">
@@ -81,6 +109,8 @@ export function AutoRunBanner({ projectId, refreshToken = 0, onRunFinished }: Au
         <Ban className="w-3.5 h-3.5 text-foreground" />
       ) : failed ? (
         <AlertCircle className="w-3.5 h-3.5 text-red-400" />
+      ) : interrupted ? (
+        <AlertTriangle className="w-3.5 h-3.5 text-status-warning" />
       ) : (
         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
       )}
@@ -99,7 +129,9 @@ export function AutoRunBanner({ projectId, refreshToken = 0, onRunFinished }: Au
             })}
       </span>
 
-      {!running && status.terminationReason && (
+      {interrupted ? (
+        <span className="text-status-warning">{tokenLabel(t, 'execution', 'incomplete')}</span>
+      ) : !running && status.terminationReason && (
         <span className="text-foreground">{status.terminationReason}</span>
       )}
 
