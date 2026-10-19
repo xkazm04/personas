@@ -10,6 +10,7 @@ import {
   type ObsidianVaultConfig,
 } from '@/api/obsidianBrain';
 import { useSavedVaultConfigs } from './useSavedVaultConfigs';
+import { extractMessage } from '@/lib/silentCatch';
 
 interface SavedConfigsSidebarProps {
   /** Called after a config is activated (e.g. to reload panel state). */
@@ -39,7 +40,7 @@ export default function SavedConfigsSidebar({ onSelect, emptyHint }: SavedConfig
         addToast(tx(t.plugins.obsidian_brain.vault_switched_to, { name: config.vaultName }), 'success');
         onSelect?.(config);
       } catch (e) {
-        addToast(tx(t.plugins.obsidian_brain.vault_activate_failed, { error: String(e) }), 'error');
+        addToast(tx(t.plugins.obsidian_brain.vault_activate_failed, { error: extractMessage(e) }), 'error');
       }
     },
     [addToast, onSelect, setObsidianConnected, setObsidianVaultName, setObsidianVaultPath, fetchConnectorDefinitions, t, tx],

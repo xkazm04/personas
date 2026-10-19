@@ -7,7 +7,6 @@ import { NoVaultConnected } from '../NoVaultConnected';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
 import {
   obsidianBrainListVaultFiles,
@@ -18,6 +17,9 @@ import SavedConfigsSidebar from '../SavedConfigsSidebar';
 import { openNoteInObsidian } from '../openInObsidian';
 import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
 import { parseNote } from './parseNote';
+import { extractMessage, toastCatch } from '@/lib/silentCatch';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 
 /**
  * Rows in the first viewport that play the one-shot entrance ripple when the
@@ -131,7 +133,6 @@ function TreeItem({ node, depth, onSelect, selectedPath, filter, onExpandFolder,
 
 export default function BrowsePanel() {
   const { t, tx } = useTranslation();
-  const addToast = useToastStore((s) => s.addToast);
   const connected = useSystemStore((s) => s.obsidianConnected);
   const vaultName = useSystemStore((s) => s.obsidianVaultName);
   const vaultPath = useSystemStore((s) => s.obsidianVaultPath);
@@ -141,6 +142,9 @@ export default function BrowsePanel() {
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [noteContent, setNoteContent] = useState<string | null>(null);
   const [loadingNote, setLoadingNote] = useState(false);
+  // Raw failure, resolved at render (an IPC rejection is an AppError object,
+  // not an Error, so interpolating it printed "[object Object]").
+  const [noteError, setNoteError] = useState<{ raw: unknown } | null>(null);
   const [filter, setFilter] = useState('');
   const [loadingFolders, setLoadingFolders] = useState<Set<string>>(() => new Set());
   const loadedFoldersRef = useRef(new Set<string>());
@@ -155,11 +159,11 @@ export default function BrowsePanel() {
       loadingFoldersRef.current = new Set();
       setLoadingFolders(new Set());
     } catch (e) {
-      addToast(`Failed to load vault: ${e}`, 'error');
+      toastCatch('BrowsePanel:loadTree')(e);
     } finally {
       setLoading(false);
     }
-  }, [addToast]);
+  }, []);
 
   const expandFolder = useCallback(async (path: string) => {
     if (loadedFoldersRef.current.has(path) || loadingFoldersRef.current.has(path)) return;
@@ -170,12 +174,12 @@ export default function BrowsePanel() {
       setTree((prev) => (prev ? mergeFolderChildren(prev, node.path, node.children) : node));
       loadedFoldersRef.current.add(node.path);
     } catch (e) {
-      addToast(`Failed to load vault: ${e}`, 'error');
+      toastCatch('BrowsePanel:expandFolder')(e);
     } finally {
       loadingFoldersRef.current.delete(path);
       setLoadingFolders(new Set(loadingFoldersRef.current));
     }
-  }, [addToast]);
+  }, []);
 
   useEffect(() => {
     if (connected) {
@@ -191,12 +195,13 @@ export default function BrowsePanel() {
     // different resource, not a refresh of the same one, so the stale body
     // must not linger under the new title while the fetch is in flight.
     setNoteContent(null);
+    setNoteError(null);
     setLoadingNote(true);
     try {
       const content = await obsidianBrainReadVaultNote(path);
       setNoteContent(content);
     } catch (e) {
-      setNoteContent(`Error: ${e}`);
+      setNoteError({ raw: e });
     } finally {
       setLoadingNote(false);
     }
@@ -329,6 +334,12 @@ export default function BrowsePanel() {
                  geometry as the real note. Delayed entrance means opening a
                  cached/fast note never flashes it — see NoteGhostBlock. */
               <NoteGhostBlock />
+            ) : noteError ? (
+              <InlineErrorBanner
+                compact
+                title={t.plugins.obsidian_brain.failed_to_load}
+                message={resolveErrorTranslated(t, extractMessage(noteError.raw)).message}
+              />
             ) : noteContent ? (
               <>
                 {parsed && parsed.properties.length > 0 && (

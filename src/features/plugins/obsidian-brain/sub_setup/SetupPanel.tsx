@@ -26,7 +26,7 @@ import {
 } from '@/api/obsidianBrain';
 import SavedConfigsSidebar from '../SavedConfigsSidebar';
 import { useSavedVaultConfigs } from '../useSavedVaultConfigs';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 import { DebtText } from '@/i18n/DebtText';
 
 
@@ -105,7 +105,7 @@ export default function SetupPanel() {
         }
       } catch (e) {
         setMirrorConfig(mirrorConfig); // revert on failure
-        addToast(tx(t.plugins.obsidian_brain.mirror_save_failed, { error: String(e) }), 'error');
+        addToast(tx(t.plugins.obsidian_brain.mirror_save_failed, { error: extractMessage(e) }), 'error');
       }
     },
     [mirrorConfig, addToast, t, tx],
@@ -126,7 +126,7 @@ export default function SetupPanel() {
         );
       }
     } catch (e) {
-      addToast(tx(t.plugins.obsidian_brain.detection_failed, { error: String(e) }), 'error');
+      addToast(tx(t.plugins.obsidian_brain.detection_failed, { error: extractMessage(e) }), 'error');
     } finally {
       setDetecting(false);
     }
@@ -151,7 +151,7 @@ export default function SetupPanel() {
       // test (without Save) made every consumer believe the vault was active.
       setConnectionResult(result);
     } catch (e) {
-      addToast(tx(t.plugins.obsidian_brain.connection_test_failed, { error: String(e) }), 'error');
+      addToast(tx(t.plugins.obsidian_brain.connection_test_failed, { error: extractMessage(e) }), 'error');
     } finally {
       setTesting(false);
     }
@@ -186,7 +186,7 @@ export default function SetupPanel() {
       useTourStore.getState().emitTourEvent('tour:obsidian-vault-connected');
       addToast(t.plugins.obsidian_brain.config_saved, 'success');
     } catch (e) {
-      addToast(tx(t.plugins.obsidian_brain.save_failed, { error: String(e) }), 'error');
+      addToast(tx(t.plugins.obsidian_brain.save_failed, { error: extractMessage(e) }), 'error');
     } finally {
       setSaving(false);
     }

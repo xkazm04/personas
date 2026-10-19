@@ -11,6 +11,7 @@ import RevitalizeProgress from './RevitalizeProgress';
 import RevitalizeSummaryCard from './RevitalizeSummaryCard';
 import RevitalizeHistoryTable from './RevitalizeHistoryTable';
 import { useRevitalizeJob } from './useRevitalizeJob';
+import { extractMessage } from '@/lib/silentCatch';
 
 export default function RevitalizePanel() {
   const { t, tx } = useTranslation();
@@ -46,7 +47,7 @@ export default function RevitalizePanel() {
       });
       addToast(tx(ob.revitalize_started_toast, { name: vaultName ?? '' }), 'success');
     } catch (e) {
-      addToast(tx(ob.revitalize_start_failed, { error: String(e) }), 'error');
+      addToast(tx(ob.revitalize_start_failed, { error: extractMessage(e) }), 'error');
     }
   };
 

@@ -16,7 +16,7 @@ import {
   getGoogleDriveStatus,
   type DriveSyncResult,
 } from '@/api/obsidianBrain';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 // Module-scoped flag (docs/design/overview-loading.md, law 1 / "warm-cache-
 // on-remount"). Drive connection status itself is store-backed and survives
@@ -98,7 +98,7 @@ export default function CloudSyncPanel() {
       await loginWithGoogleDrive();
       addToast('Authorizing Google Drive — finish in the browser window', 'success');
     } catch (e) {
-      addToast(`Drive connection failed: ${e}`, 'error');
+      toastCatch('CloudSyncPanel:connectDrive')(e);
     } finally {
       setConnecting(false);
     }
@@ -121,7 +121,7 @@ export default function CloudSyncPanel() {
         setDriveFileCount(s.manifestFileCount);
       }).catch(silentCatch('CloudSyncPanel:refreshStatusAfterPush'));
     } catch (e) {
-      addToast(`Drive push failed: ${e}`, 'error');
+      toastCatch('CloudSyncPanel:pushToDrive')(e);
     } finally {
       setPushing(false);
       setDriveSyncRunning(false);
@@ -140,7 +140,7 @@ export default function CloudSyncPanel() {
         result.errors.length > 0 ? 'error' : 'success',
       );
     } catch (e) {
-      addToast(`Drive pull failed: ${e}`, 'error');
+      toastCatch('CloudSyncPanel:pullFromDrive')(e);
     } finally {
       setPulling(false);
       setDriveSyncRunning(false);

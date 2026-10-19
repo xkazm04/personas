@@ -36,7 +36,7 @@ import {
 import { listen } from '@tauri-apps/api/event';
 import SavedConfigsSidebar from '../SavedConfigsSidebar';
 import { openNoteInObsidian } from '../openInObsidian';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch, toastCatch } from '@/lib/silentCatch';
 
 /**
  * The Orphans tile reads `stats.orphanCount` (every unlinked note in the vault)
@@ -96,11 +96,11 @@ export default function GraphPanel() {
       setOrphans(o);
       setMocs(m);
     } catch (e) {
-      addToast(`Failed to load vault stats: ${e}`, 'error');
+      toastCatch('GraphPanel:loadStats')(e);
     } finally {
       setStatsLoading(false);
     }
-  }, [addToast]);
+  }, []);
 
   /** Widen the sample to the whole orphan set (up to the backend's cap). */
   const expandOrphans = useCallback(async () => {
@@ -110,7 +110,7 @@ export default function GraphPanel() {
       orphanLimitRef.current = ORPHAN_MAX;
       setOrphans(all);
     } catch (e) {
-      addToast(tx(t.plugins.obsidian_brain.orphan_expand_failed, { error: String(e) }), 'error');
+      addToast(tx(t.plugins.obsidian_brain.orphan_expand_failed, { error: extractMessage(e) }), 'error');
     } finally {
       setOrphansExpanding(false);
     }
@@ -155,11 +155,11 @@ export default function GraphPanel() {
       const hits = await obsidianGraphSearch(query.trim(), 25);
       setSearchHits(hits);
     } catch (e) {
-      addToast(`Search failed: ${e}`, 'error');
+      toastCatch('GraphPanel:search')(e);
     } finally {
       setSearching(false);
     }
-  }, [query, addToast]);
+  }, [query]);
 
   const appendJournal = useCallback(async () => {
     if (!journalBody.trim()) {
@@ -180,7 +180,7 @@ export default function GraphPanel() {
       setJournalBody('');
       void loadStats();
     } catch (e) {
-      addToast(`Daily note write failed: ${e}`, 'error');
+      toastCatch('GraphPanel:appendDailyNote')(e);
     } finally {
       setJournalSaving(false);
     }
@@ -208,7 +208,7 @@ export default function GraphPanel() {
       setMeetingBody('');
       void loadStats();
     } catch (e) {
-      addToast(`Meeting note write failed: ${e}`, 'error');
+      toastCatch('GraphPanel:writeMeetingNote')(e);
     } finally {
       setMeetingSaving(false);
     }

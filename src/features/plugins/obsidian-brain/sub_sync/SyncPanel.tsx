@@ -22,7 +22,7 @@ import {
 import SavedConfigsSidebar from '../SavedConfigsSidebar';
 import SyncResultCard, { type SyncResultSummary } from './SyncResultCard';
 import ConflictDiffView from './ConflictDiffView';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 export default function SyncPanel() {
   const { t, tx } = useTranslation();
@@ -117,7 +117,7 @@ export default function SyncPanel() {
       addToast(`Push: ${result.created} created, ${result.updated} updated, ${result.skipped} skipped${result.errors.length > 0 ? `, ${result.errors.length} errors` : ''}`, result.errors.length > 0 ? 'error' : 'success');
       obsidianBrainGetSyncLog(50).then(setSyncLog).catch(silentCatch('SyncPanel:refreshSyncLogAfterPush'));
     } catch (e) {
-      addToast(`Push failed: ${e}`, 'error');
+      toastCatch('SyncPanel:push')(e);
     } finally {
       setPushing(false);
       setSyncRunning(false);
@@ -155,7 +155,7 @@ export default function SyncPanel() {
       }
       obsidianBrainGetSyncLog(50).then(setSyncLog).catch(silentCatch('SyncPanel:refreshSyncLogAfterPull'));
     } catch (e) {
-      addToast(`Pull failed: ${e}`, 'error');
+      toastCatch('SyncPanel:pull')(e);
     } finally {
       setPulling(false);
       setSyncRunning(false);
@@ -172,7 +172,7 @@ export default function SyncPanel() {
       });
       addToast(`Conflict resolved (${resolution})`, 'success');
     } catch (e) {
-      addToast(`Resolution failed: ${e}`, 'error');
+      toastCatch('SyncPanel:resolveConflict')(e);
     }
   }, [addToast, setPendingConflicts]);
 
