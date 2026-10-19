@@ -340,7 +340,9 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
     // FLEET_SESSION_STATE: patch the session row + record the transition. The
     // grid page keeps its OWN listener for the user-facing notification/toast
     // side effects — this one owns only the store mutation (no double-handling).
-    void listen<{ session_id: string; state: string; reason?: string }>(
+    const attaches: Promise<UnlistenFn>[] = [];
+
+    attaches.push(listen<{ session_id: string; state: string; reason?: string }>(
       EventName.FLEET_SESSION_STATE,
       (event) => {
         const { session_id, state, reason } = event.payload;
@@ -371,9 +373,9 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
           if (noteId) void markNoteRunning(noteId, session_id);
         }
       },
-    ).then((un) => flag.unlisten.push(un));
+    ));
 
-    void listen<{ session_id: string; exit_code: number | null }>(
+    attaches.push(listen<{ session_id: string; exit_code: number | null }>(
       EventName.FLEET_SESSION_EXITED,
       (event) => {
         // Read the cwd BEFORE the patch (the row survives, but don't depend on
@@ -387,22 +389,38 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
         get().fleetRecordTransition(event.payload.session_id, 'exited' as FleetSessionState);
         ingestOutboxForCwd(cwd).catch(silentCatch('fleet memory ingest'));
       },
-    ).then((un) => flag.unlisten.push(un));
+    ));
 
-    void listen<{ kind: 'added' | 'removed' | 'updated'; session_id: string }>(
+    attaches.push(listen<{ kind: 'added' | 'removed' | 'updated'; session_id: string }>(
       EventName.FLEET_REGISTRY_CHANGED,
       (event) => {
         if (event.payload.kind === 'removed') get().fleetRemoveSessionLocal(event.payload.session_id);
         else void get().fleetRefresh(); // added/updated → re-fetch the full row
       },
-    ).then((un) => flag.unlisten.push(un));
+    ));
 
     // FLEET_QUEUE_CHANGED: every queue mutation (enqueue, promote, reorder,
     // cancel, cap change) → one coalesced snapshot read. The payload names the
     // row and the kind, but the snapshot is the only thing that carries ranks
     // and estimates, so the store re-reads rather than patching by hand.
-    void typedListen(EventName.FLEET_QUEUE_CHANGED, () => { void get().fleetQueueRefresh(); })
-      .then((un) => flag.unlisten.push(un));
+    attaches.push(typedListen(EventName.FLEET_QUEUE_CHANGED, () => { void get().fleetQueueRefresh(); }));
+
+    // The latch is claimed before any attach resolves. If one fails (event
+    // bridge not ready at boot), detach the ones that did attach and release
+    // the latch, so the next surface that mounts re-attaches all four instead
+    // of finding a latch that says "done" for the rest of the session.
+    void Promise.allSettled(attaches).then((results) => {
+      const failure = results.find((r): r is PromiseRejectedResult => r.status === 'rejected');
+      for (const r of results) {
+        if (r.status !== 'fulfilled') continue;
+        if (failure) r.value();
+        else flag.unlisten.push(r.value);
+      }
+      if (failure) {
+        flag.started = false;
+        silentCatch('stores/slices/system/fleetSlice:attachSessionListeners')(failure.reason);
+      }
+    });
   },
 
   fleetSetActiveSession: (id) => set({ fleetActiveSessionId: id }),
