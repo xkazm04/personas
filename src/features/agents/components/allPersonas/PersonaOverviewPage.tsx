@@ -342,7 +342,7 @@ export default function PersonaOverviewPage() {
           <>
         {/* Team filter dropdown, shared by the table and the mobile card
             list. Home-team assignment lives on the batch bar. */}
-        <PersonaGroupDropRail filterId={groupFilter} onSelectFilter={setGroupFilter} />
+        <PersonaGroupDropRail filterId={groupFilter} onSelectFilter={setGroupFilter} archivedView={archivedView} />
 
         <DirectorPanel />
 

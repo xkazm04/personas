@@ -18,6 +18,13 @@ interface PersonaGroupDropRailProps {
   filterId?: string | null;
   /** Called when the user picks a dropdown option. */
   onSelectFilter?: (filterId: string | null) => void;
+  /**
+   * Whether the roster is showing its Archived view. The counts are taken over
+   * the population the roster actually lists - archived personas only in that
+   * view, never in the default one - so a team's count matches the rows its
+   * filter yields.
+   */
+  archivedView?: boolean;
 }
 
 /**
@@ -31,10 +38,15 @@ interface PersonaGroupDropRailProps {
 export function PersonaGroupDropRail({
   filterId = null,
   onSelectFilter,
+  archivedView = false,
 }: PersonaGroupDropRailProps = {}) {
   const { t } = useTranslation();
   const rail = t.agents.persona_groups_rail;
-  const personas = useAgentStore((s) => s.personas);
+  const allPersonas = useAgentStore((s) => s.personas);
+  const personas = useMemo(
+    () => allPersonas.filter((p) => (p.lifecycle === 'archived') === archivedView),
+    [allPersonas, archivedView],
+  );
   const { teams, fetchTeams } = usePipelineStore(
     useShallow((s) => ({ teams: s.teams, fetchTeams: s.fetchTeams })),
   );
