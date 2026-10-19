@@ -9,14 +9,23 @@ interface EstimatedProgressBarProps {
 
 const MILESTONE_POSITIONS = [25, 50, 75] as const;
 
-/** Returns the bar color based on progress phase */
+/**
+ * Returns the bar color based on progress phase.
+ *
+ * Every colour token here is a HEX value (`--primary: #06b6d4` and its theme
+ * overrides in globals.css), so these must be `var()` / `color-mix()`, never
+ * `hsl(var(--token))`. They were `hsl(...)`, which is invalid at computed-value
+ * time over a hex token: the browser drops the whole declaration, so the filled
+ * bar had NO background colour in every phase except overtime, and the milestone
+ * ticks had none at all.
+ */
 function getBarColor(progress: number, isOvertime: boolean, done: boolean): string {
-  if (done) return 'hsl(var(--primary))';
-  if (isOvertime) return 'hsl(38 92% 50%)'; // amber
-  // Gradient from primary toward a slightly shifted hue as progress increases
-  if (progress < 50) return 'hsl(var(--primary))';
-  if (progress < 75) return 'hsl(var(--primary) / 0.9)';
-  return 'hsl(var(--primary) / 0.85)';
+  if (done) return 'var(--primary)';
+  if (isOvertime) return 'var(--status-warning)';
+  // Gradient from primary toward a slightly lighter tint as progress increases
+  if (progress < 50) return 'var(--primary)';
+  if (progress < 75) return 'color-mix(in srgb, var(--primary) 90%, transparent)';
+  return 'color-mix(in srgb, var(--primary) 85%, transparent)';
 }
 
 /**
@@ -93,8 +102,18 @@ export function EstimatedProgressBar({
   const barColor = getBarColor(progress, isOvertime, isDone);
 
   return (
-    <div role="status" aria-live="polite" aria-label={isRunning ? `Progress: ${Math.round(progress)}%` : 'Complete'} className={`space-y-1.5 ${className ?? ''}`}>
-      <div className="relative h-2 rounded-full bg-primary/10 overflow-hidden">
+    <div className={`space-y-1.5 ${className ?? ''}`}>
+      {/* A progressbar carries its value as numbers, not as an English label.
+          The old wrapper was a polite live region whose aria-label was the
+          literal "Progress: N%" / "Complete", rewritten on every animation frame. */}
+      <div
+        role="progressbar"
+        aria-label={t.shared.sidebar_extra.progress}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(progress)}
+        className="relative h-2 rounded-full bg-primary/10 overflow-hidden"
+      >
         {/* Filled bar with color transition */}
         <div
           className="animate-fade-in h-full rounded-full"
@@ -112,8 +131,8 @@ export function EstimatedProgressBar({
             style={{
               left: `${pos}%`,
               backgroundColor: progress >= pos
-                ? 'hsl(var(--background) / 0.35)'
-                : 'hsl(var(--foreground) / 0.1)',
+                ? 'color-mix(in srgb, var(--background) 35%, transparent)'
+                : 'color-mix(in srgb, var(--foreground) 10%, transparent)',
             }}
           />
         ))}
