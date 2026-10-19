@@ -1,8 +1,8 @@
-import { useState } from 'react';
 import { Activity, Info } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { HealthcheckResultDisplay } from './HealthcheckResultDisplay';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface ConnectionTestSectionProps {
   onTest: () => void;
@@ -21,7 +21,6 @@ export function ConnectionTestSection({
 }: ConnectionTestSectionProps) {
   const { t } = useTranslation();
   const cf = t.vault.forms;
-  const [showTestHint, setShowTestHint] = useState(false);
 
   return (
     <>
@@ -51,23 +50,19 @@ export function ConnectionTestSection({
           </button>
 
           {testHint && (
-            <div
-              className="relative"
-              onMouseEnter={() => setShowTestHint(true)}
-              onMouseLeave={() => setShowTestHint(false)}
-            >
+            // The shared Tooltip opens on focus as well as hover, so the hint
+            // is reachable by keyboard; the hand-rolled popover opened on
+            // mouseenter only and the info button had no name.
+            <Tooltip content={testHint} placement="right">
               <button
                 type="button"
+                aria-label={testHint}
+                data-testid="vault-test-hint"
                 className="p-1.5 rounded-full border border-primary/15 text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors"
               >
                 <Info className="w-3.5 h-3.5" />
               </button>
-              {showTestHint && (
-                <div className="absolute left-8 top-1/2 -translate-y-1/2 w-72 px-3 py-2 rounded-modal bg-background border border-primary/20 shadow-elevation-3 typo-body text-foreground/85 z-20">
-                  {testHint}
-                </div>
-              )}
-            </div>
+            </Tooltip>
           )}
         </div>
 
