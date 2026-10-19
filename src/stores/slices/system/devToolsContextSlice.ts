@@ -35,7 +35,23 @@ export interface DevToolsContextSlice {
   deleteContextGroupRelationship: (id: string) => Promise<void>;
 }
 
-export const createDevToolsContextSlice: StateCreator<SystemStore, [], [], DevToolsContextSlice> = (set, get) => ({
+export const createDevToolsContextSlice: StateCreator<SystemStore, [], [], DevToolsContextSlice> = (set, get) => {
+  // contextMapLoading has TWO writers (fetchContextGroups, fetchContexts) that
+  // ContextMapPage fires together. Each used to clear the flag on its own
+  // settle, so the faster read ended "loading" while the other was in flight
+  // and the zero-groups empty state flashed. Count in-flight map reads; the
+  // flag is true while any is pending.
+  let mapReadsInFlight = 0;
+  const beginMapRead = () => {
+    mapReadsInFlight += 1;
+    return { contextMapLoading: true };
+  };
+  const endMapRead = () => {
+    mapReadsInFlight = Math.max(0, mapReadsInFlight - 1);
+    return { contextMapLoading: mapReadsInFlight > 0 };
+  };
+
+  return {
   // -- Context Map state -----------------------------------------------
   contextGroups: [],
   contexts: [],
@@ -45,12 +61,12 @@ export const createDevToolsContextSlice: StateCreator<SystemStore, [], [], DevTo
   activeScanId: null,
 
   fetchContextGroups: async (projectId) => {
-    set({ contextMapLoading: true });
+    set(beginMapRead());
     try {
       const contextGroups = await devApi.listContextGroups(projectId);
-      set({ contextGroups, contextMapLoading: false, error: null });
+      set({ contextGroups, ...endMapRead(), error: null });
     } catch (err) {
-      reportError(err, "Failed to fetch context groups", set, { stateUpdates: { contextMapLoading: false } });
+      reportError(err, "Failed to fetch context groups", set, { stateUpdates: endMapRead() });
     }
   },
 
@@ -102,12 +118,12 @@ export const createDevToolsContextSlice: StateCreator<SystemStore, [], [], DevTo
   },
 
   fetchContexts: async (projectId, groupId) => {
-    set({ contextMapLoading: true });
+    set(beginMapRead());
     try {
       const contexts = await devApi.listContexts(projectId, groupId);
-      set({ contexts, contextMapLoading: false, error: null });
+      set({ contexts, ...endMapRead(), error: null });
     } catch (err) {
-      reportError(err, "Failed to fetch contexts", set, { stateUpdates: { contextMapLoading: false } });
+      reportError(err, "Failed to fetch contexts", set, { stateUpdates: endMapRead() });
     }
   },
 
@@ -228,4 +244,5 @@ export const createDevToolsContextSlice: StateCreator<SystemStore, [], [], DevTo
       reportError(err, "Failed to delete context group relationship", set);
     }
   },
-});
+  };
+};
