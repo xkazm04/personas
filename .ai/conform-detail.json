@@ -29914,6 +29914,98 @@
           "evidence": "src-tauri/src/commands/recipes/recipe_generation.rs:64 The schema describes recipe form inputs, not metadata shipped with trained weights."
         }
       ]
+    },
+    "03e7f46a-3f19-47b8-98a5-398efed815b4/tenant-scoped-agent-runtime": {
+      "context": "hooks-realtime",
+      "subject": "tenant-scoped-agent-runtime",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-19",
+      "evaluatedTs": "2026-10-19T00:45:53.249Z",
+      "techniques": [
+        {
+          "technique": "fail-direction-follows-deployment-mode",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/realtime/useCloudWebhookRelay.ts:25 The relay hook holds display status and does not resolve credentials or choose credential fallback behavior."
+        },
+        {
+          "technique": "resolve-handles-at-call-time",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/agents/useExecutionAnnotations.ts:57 Annotation reads pass an explicit persona identifier to an API; this hook owns no tenant storage handle."
+        },
+        {
+          "technique": "stamp-ownership-before-the-router",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/realtime/useRunEventListener.ts:69 This filters backend run-status notifications for UI consumers, rather than handling tenant ingress before runtime routing."
+        },
+        {
+          "technique": "task-local-tenant-scope",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/useTerminalClassification.ts:61 The worker receives terminal lines and a request identifier, with no runtime configuration or credential scope."
+        },
+        {
+          "technique": "tenant-keyed-cache-evicts-loaded-code",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/agents/useRecentAgents.ts:17 The shared recent-agent state contains navigation history, not loaded tenant extensions or configuration-capturing runtime objects."
+        },
+        {
+          "technique": "written-inventory-of-what-stays-global",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/realtime/createSingletonListener.ts:8 The module documents application subscription sharing without publishing a multi-tenant runtime isolation claim."
+        }
+      ],
+      "withdrawn": {
+        "worker": "aaa1c8e4-33eb-4a1d-8a90-eb3950ca8fd2",
+        "state": "not-applicable",
+        "at": "2026-10-19T00:46:14.071510+00:00",
+        "reason": "reviewer (sonnet): The primary anchor at createSingletonListener.ts:113 is just a Tauri listen() call that buffers events, so it doesn't show tenant or runtime-config multiplexing is absent. The not-applicable rests on a grep for 'tenant' and 'AsyncLocalStorage', which are the wrong terms for a Tauri desktop app that "
+      }
+    },
+    "532bbf10-3fd3-4b57-a8ea-95a957645697/tenant-scoped-agent-runtime": {
+      "context": "stores-slices-overview",
+      "subject": "tenant-scoped-agent-runtime",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-19",
+      "evaluatedTs": "2026-10-19T00:45:53.249Z",
+      "techniques": [
+        {
+          "technique": "fail-direction-follows-deployment-mode",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/overview/homeSpineSlice.ts:21 These read-model slices do not own credential resolution or its deployment-dependent fallback."
+        },
+        {
+          "technique": "resolve-handles-at-call-time",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/overview/eventSlice.ts:95 The event slice retrieves API rows and maintains an in-memory window; it does not construct or cache tenant storage handles."
+        },
+        {
+          "technique": "stamp-ownership-before-the-router",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/processActivitySlice.ts:185 The key identifies UI process activity by domain and run, rather than a conversation lane shared by tenant ingress surfaces."
+        },
+        {
+          "technique": "task-local-tenant-scope",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/overview/memorySlice.ts:258 The slice delegates work through an API with an explicit persona identifier; it does not install execution configuration or mutate process identity."
+        },
+        {
+          "technique": "tenant-keyed-cache-evicts-loaded-code",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/pipeline/channelSlice.ts:90 This cache partitions channel query results by team and kinds; it does not load tenant-contributed executable modules."
+        },
+        {
+          "technique": "written-inventory-of-what-stays-global",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/overview/homeSpineSlice.ts:15 The documented sharing concerns UI fetch consumers, and the inspected context publishes no tenant-isolation guarantee requiring an exceptions inventory."
+        }
+      ],
+      "withdrawn": {
+        "worker": "aaa1c8e4-33eb-4a1d-8a90-eb3950ca8fd2",
+        "state": "not-applicable",
+        "at": "2026-10-19T00:46:14.202743+00:00",
+        "reason": "reviewer (sonnet): The primary anchor at homeSpineSlice.ts:13 is a doc comment about TTL caching and doesn't show the precondition is absent. The not-applicable rests on a grep for 'tenant' and 'AsyncLocalStorage', which are the wrong terms for this app, and the technique anchors only show these slices pass persona id"
+      }
     }
   }
 }
