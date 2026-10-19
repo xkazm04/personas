@@ -19,7 +19,7 @@ import { truncatePath, formatBytes } from './documentTabHelpers';
 import { DocToolbar } from './DocUploadArea';
 import { DocGhostRows } from './DocGhostRows';
 import { KbErrorNotice } from '../KbErrorNotice';
-import { extractMessage } from '@/lib/silentCatch';
+import { extractMessage, toastCatch } from '@/lib/silentCatch';
 
 const DOC_PAGE_SIZE = 50;
 
@@ -63,7 +63,7 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
       setDocuments((prev) => [...prev, ...docs]);
       setHasMore(docs.length === DOC_PAGE_SIZE);
     } catch (err) {
-      logger.error('Load more documents failed', { error: String(err) });
+      logger.error('Load more documents failed', { error: extractMessage(err) });
     } finally {
       fetchingMoreRef.current = false;
     }
@@ -80,7 +80,8 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
       setDocuments((prev) => prev.filter((d) => d.id !== docId));
       onRefresh();
     } catch (err) {
-      logger.error('Delete failed', { error: String(err) });
+      // A user action: a log line alone left the row in place with no word.
+      toastCatch('DocumentsTab:deleteDocument')(err);
     } finally {
       setDeletingId(null);
     }
@@ -93,7 +94,9 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
       const jobId = await kbIngestFiles(kb.id, paths);
       setActiveJobId(jobId);
     } catch (err) {
-      logger.error('Browse files ingestion failed', { error: String(err) });
+      // On a build without the vector store every ingest fails here; the
+      // user picked files and must hear why nothing started.
+      toastCatch('DocumentsTab:ingestFiles')(err);
     }
   }, [kb.id]);
 
