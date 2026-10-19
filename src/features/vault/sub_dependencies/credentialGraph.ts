@@ -303,7 +303,10 @@ export function simulateRevocation(
         via: edge.label ?? null,
         recentExecutions: health?.recentExecutions ?? 0,
         dailyBurnRate: health?.dailyBurnRate ?? 0,
-        grade: health?.grade ?? 'unknown',
+        // A grade is only this persona's when its success rate was measured:
+        // with no decided runs the slice scores successRate 100 ('unknown') or
+        // the fleet rate ('proxy'), so an idle agent would read as healthy.
+        grade: health?.successRateSource === 'measured' ? health.grade : 'unknown',
       });
     }
   }
