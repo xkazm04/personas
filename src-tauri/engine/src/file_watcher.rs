@@ -497,26 +497,78 @@ fn compute_stale_paths(
     stale
 }
 
-/// Simple glob matching for file name filters.
+/// Case-insensitive glob matching for the file-name filter.
+///
+/// Accepts a comma-separated list (`*.py, *.{ts,tsx}, Dockerfile`, the
+/// field's own placeholder), `{a,b}` alternation, and `*` / `?` anywhere.
 fn simple_glob_match(pattern: &str, text: &str) -> bool {
-    let pattern = pattern.to_lowercase();
-    let text = text.to_lowercase();
+    let text: Vec<char> = text.to_lowercase().chars().collect();
+    split_top_level_commas(&pattern.to_lowercase())
+        .iter()
+        .flat_map(|alt| expand_braces(alt))
+        .any(|p| wildcard_match(&p.chars().collect::<Vec<_>>(), &text))
+}
 
-    if pattern.starts_with("*.") {
-        let ext = &pattern[1..];
-        if ext.contains('{') && ext.contains('}') {
-            if let (Some(start), Some(end)) = (ext.find('{'), ext.find('}')) {
-                let prefix = &ext[..start];
-                let alternatives = &ext[start + 1..end];
-                return alternatives
-                    .split(',')
-                    .any(|alt| text.ends_with(&format!("{prefix}{}", alt.trim())));
+/// Split on commas that are not inside `{...}`; trims and drops empties.
+fn split_top_level_commas(pattern: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut depth = 0usize;
+    let mut cur = String::new();
+    for ch in pattern.chars() {
+        match ch {
+            '{' => depth += 1,
+            '}' => depth = depth.saturating_sub(1),
+            ',' if depth == 0 => {
+                out.push(std::mem::take(&mut cur));
+                continue;
             }
+            _ => {}
         }
-        return text.ends_with(ext);
+        cur.push(ch);
     }
+    out.push(cur);
+    out.into_iter()
+        .map(|p| p.trim().to_string())
+        .filter(|p| !p.is_empty())
+        .collect()
+}
 
-    pattern == text
+/// Expand the first `{a,b}` group (recursively); a pattern without one is
+/// returned as is.
+fn expand_braces(pattern: &str) -> Vec<String> {
+    let Some(open) = pattern.find('{') else {
+        return vec![pattern.to_string()];
+    };
+    let Some(close) = pattern[open..].find('}').map(|i| open + i) else {
+        return vec![pattern.to_string()];
+    };
+    let (head, tail) = (&pattern[..open], &pattern[close + 1..]);
+    pattern[open + 1..close]
+        .split(',')
+        .flat_map(|opt| expand_braces(&format!("{head}{}{tail}", opt.trim())))
+        .collect()
+}
+
+/// `*` matches any run (including empty), `?` exactly one char.
+fn wildcard_match(pattern: &[char], text: &[char]) -> bool {
+    let (mut p, mut t) = (0usize, 0usize);
+    let mut star: Option<(usize, usize)> = None;
+    while t < text.len() {
+        if p < pattern.len() && (pattern[p] == '?' || pattern[p] == text[t]) {
+            p += 1;
+            t += 1;
+        } else if p < pattern.len() && pattern[p] == '*' {
+            star = Some((p, t));
+            p += 1;
+        } else if let Some((sp, st)) = star {
+            p = sp + 1;
+            t = st + 1;
+            star = Some((sp, st + 1));
+        } else {
+            return false;
+        }
+    }
+    pattern[p..].iter().all(|&c| c == '*')
 }
 
 #[cfg(test)]
@@ -540,6 +592,34 @@ mod tests {
     fn test_simple_glob_exact() {
         assert!(simple_glob_match("Dockerfile", "Dockerfile"));
         assert!(!simple_glob_match("Dockerfile", "Makefile"));
+    }
+
+    /// The pattern field's own placeholder offers `*.py, *.{ts,tsx}, Dockerfile`,
+    /// and `*` / `test_*.py` are ordinary globs. Each of these used to fall
+    /// through to an exact-string compare and never fire.
+    #[test]
+    fn test_glob_lists_and_inner_wildcards() {
+        let cases = [
+            ("*.py, *.{ts,tsx}, Dockerfile", "App.tsx", true),
+            ("*.py, *.{ts,tsx}, Dockerfile", "Dockerfile", true),
+            ("*.py, *.{ts,tsx}, Dockerfile", "style.css", false),
+            ("*", "anything.txt", true),
+            ("test_*.py", "test_api.py", true),
+            ("test_*.py", "api_test.py", false),
+            ("report-??.csv", "report-07.csv", true),
+            ("report-??.csv", "report-7.csv", false),
+            ("{Makefile,Dockerfile}", "dockerfile", true),
+        ];
+        let wrong: Vec<_> = cases
+            .iter()
+            .filter(|(p, t, want)| simple_glob_match(p, t) != *want)
+            .collect();
+        assert!(
+            wrong.is_empty(),
+            "{} of {} wrong: {wrong:?}",
+            wrong.len(),
+            cases.len()
+        );
     }
 
     #[test]
