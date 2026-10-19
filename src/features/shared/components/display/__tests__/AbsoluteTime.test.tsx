@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { render, screen, act, fireEvent } from '@testing-library/react';
 
 const language = { current: 'cs' };
 
@@ -51,4 +51,21 @@ describe('AbsoluteTime', () => {
     expect(screen.getByText('inf')).toBeTruthy();
     expect(screen.getByText('far')).toBeTruthy();
   });
+
+  it('computes the relative tooltip when it is shown, not when the row first rendered', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(TS));
+    const { container } = render(<AbsoluteTime timestamp={TS} className="at" />);
+    // The row stays mounted (memo, same props) while two hours pass.
+    vi.setSystemTime(new Date(Date.parse(TS) + 2 * 3_600_000));
+    fireEvent.mouseEnter(container.querySelector('.at')!);
+    act(() => { vi.advanceTimersByTime(2000); });
+    const tip = screen.getByRole('tooltip', { hidden: true }).textContent ?? '';
+    // Before: frozen at first render ("now"). After: two hours.
+    expect(tip).toContain('2');
+  });
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });

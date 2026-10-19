@@ -1,6 +1,7 @@
 import { memo, useMemo } from 'react';
 import { formatRelativeTime, normalizeTimestamp } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useRelativeTimeTick } from '@/hooks/utility/timing/relativeTimeTicker';
 import { Tooltip } from './Tooltip';
 
 /**
@@ -84,5 +85,15 @@ export const AbsoluteTime = memo(function AbsoluteTime({
   const span = <span className={className}>{label}</span>;
 
   if (!showRelativeTooltip) return span;
-  return <Tooltip content={formatRelativeTime(new Date(ms).toISOString(), fallback)}>{span}</Tooltip>;
+  // An ELEMENT, not a string: the tooltip mounts it only while shown, so the
+  // "2h ago" is computed at hover time and ticks while open. A string computed
+  // here froze at the row's first render, because this component is memoised
+  // and a fixed timestamp never changes its props - a row painted an hour ago
+  // still said "now" on hover.
+  return <Tooltip content={<LiveRelative ms={ms} fallback={fallback} />}>{span}</Tooltip>;
 });
+
+function LiveRelative({ ms, fallback }: { ms: number; fallback: string }) {
+  useRelativeTimeTick(ms);
+  return <>{formatRelativeTime(new Date(ms).toISOString(), fallback)}</>;
+}
