@@ -175,7 +175,6 @@ fn cache_put(key: String, ttl_seconds: u32, items: Vec<ResourceItem>) {
 
 /// Drop every cached entry for a given credential. Called on credential
 /// delete/edit so stale picks aren't surfaced after auth fields change.
-#[allow(dead_code)]
 pub fn invalidate_credential(credential_id: &str) {
     let Ok(mut map) = CACHE.lock() else { return };
     map.retain(|k, _| !k.starts_with(&format!("{credential_id}|")));
@@ -667,4 +666,22 @@ fn map_item(raw: &serde_json::Value, mapping: &ResponseMapping) -> Option<Resour
         sublabel,
         meta,
     })
+}
+
+#[cfg(test)]
+mod invalidate_tests {
+    use super::*;
+
+    #[test]
+    fn invalidate_credential_drops_only_that_credentials_entries() {
+        let a = cache_key("cred-inv-a", "r1", &HashMap::new());
+        let b = cache_key("cred-inv-b", "r1", &HashMap::new());
+        cache_put(a.clone(), 600, Vec::new());
+        cache_put(b.clone(), 600, Vec::new());
+        assert!(cache_get(&a).is_some());
+        invalidate_credential("cred-inv-a");
+        assert!(cache_get(&a).is_none());
+        assert!(cache_get(&b).is_some());
+        invalidate_credential("cred-inv-b");
+    }
 }
