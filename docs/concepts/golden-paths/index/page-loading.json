@@ -14,10 +14,10 @@
     "E. Hand-rolled loading rows on a UnifiedTable surface",
     "F. Documentation drift that actively causes deviations"
   ],
-  "ruleIds": [],
-  "ruleIdsFrom": "none",
+  "ruleIds": ["loading-gate-hides-chrome","null-fallback-at-view-boundary"],
+  "ruleIdsFrom": "document",
   "sections": [1,2,3,4,5,6,7,8],
-  "citationCount": 104,
+  "citationCount": 105,
   "triggers": [
     "\"I'm adding a new tab/page/panel that fetches data on mount — what do I show while it loads?\"",
     "\"This list flashes an empty state for a split second before rows appear.\"",
@@ -108,6 +108,7 @@
     },
     "recipes/sub_list/components/RecipeList.tsx": {"count":1,"sections":[7],"lines":["59-65"],"contexts":["| `recipes/sub_list/components/RecipeList.tsx:59-65` | Bespoke `RecipePageFlipLoader` centred in place of the list. |"],"resolved":false},
     "scripts/docs/gen-shared-catalog.mjs": {"count":1,"sections":[8],"lines":["92-96"],"contexts":["`scripts/docs/gen-shared-catalog.mjs:92-96` — `describe()` returns"]},
+    "scripts/perf/cold-load-probe.mjs": {"count":1,"sections":[],"contexts":["measured by `scripts/perf/cold-load-probe.mjs` against the running app; the scan lens that owns both is"]},
     "shared/chrome/DesktopFooter.tsx": {
       "count": 1,
       "sections": [7],

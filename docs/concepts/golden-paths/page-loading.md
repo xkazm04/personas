@@ -177,3 +177,63 @@ Never gate a surface on a loading flag. Render the static chrome — header, fil
 > absent from that map. `LoadingSpinner` IS in `CURATED`, so adding a tag to the
 > component would appear to work and change nothing. The row was fixed at its
 > real source (the `CURATED` map) and the catalog regenerated.
+
+## Census rules (render-path, 2026-10-20)
+
+Gap 8 above ("zero automated enforcement") is now closed for two of the anti-patterns, as ratchets
+over the counts measured on a clean `git archive HEAD` export. Both favour precision over recall: every
+match was opened and read, and the misses each rule accepts are named in its description. The dynamic
+half (how long chrome and content take, blank frames, layout shift, IPC waterfall depth per surface) is
+measured by `scripts/perf/cold-load-probe.mjs` against the running app; the scan lens that owns both is
+`render-path` in the scan-sweep skill.
+
+```json
+{
+  "rules": [
+    {
+      "id": "null-fallback-at-view-boundary",
+      "goldenPath": "docs/concepts/golden-paths/page-loading.md",
+      "title": "Suspense fallback={null} around a route, tab, panel or heavy view instead of a skeleton shaped like it",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "(?<!=\\{\\s*)<Suspense\\s+fallback=\\{null\\}\\s*>(?:(?!</Suspense>|Modal|Dialog|Overlay|Toast|Popover|Inspector|Services|Watcher|Host\\b|Composer|Drawer|Sheet|Palette|Menu|Tooltip|Island|onClose=|\\sopen[\\s=/>]|\\{children\\})[\\s\\S]){1,2000}?</Suspense>",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A <Suspense fallback={null}> whose children are a view (tab panels, a page view, a drill layer) rather than an overlay: the body between the tag and its </Suspense> names no Modal/Dialog/Overlay/Toast/Popover/Drawer/Sheet/Menu/Tooltip/Host/Services/Watcher/Composer/Inspector/Island, passes no onClose= or open prop, is not {children}, and the Suspense is not itself a prop value (a slot such as queueHistory={<Suspense...>} renders inside whatever drawer owns it). While the chunk loads the region paints NOTHING, so the first frame is blank and the resolve shifts everything below it. Use RouteChunkSkeleton at a route, or a header-band / geometry-matched delayed ghost below one (page-loading.md \"fallback={null} on a full route/section\"; overview-loading.md section D). PRECISION over recall, hand-checked 2026-10-20 on a clean HEAD export: 3 of 3 matches are view boundaries (AthenaPage tab panels, curator ProcessPage view, DialView deep layer); of the 23 fallback={null} sites in src, the 20 not matched are modals, overlays, background services, a drawer slot and one view swap that passes onClose (MemoryPanel consolidation, a known miss). Lens: render-path."
+      },
+      "baseline": {
+        "files": 3,
+        "matches": 3
+      },
+      "floor": 3000
+    },
+    {
+      "id": "loading-gate-hides-chrome",
+      "goldenPath": "docs/concepts/golden-paths/page-loading.md",
+      "title": "Loading early return that hides the page chrome the main return renders",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "^[ \\t]*if\\s*\\(\\s*(?:is)?[lL]oading\\w*\\s*(?:(?:&&|\\|\\|)[^)\\n]*)?\\)\\s*(?:\\{\\s*)?return\\s*(?=<|\\(|null\\b)(?![^;]{0,800}?<(?:ContentHeader|ContentBox|SectionHeader|SectionHeading|SectionCard|PanelTabBar|SegmentedTabs|Toolbar|FilterBar|Section|Crumbs|h1|h2|[A-Z]\\w*Head(?:er|line))\\b)(?=[\\s\\S]*<(?:ContentHeader|ContentBox|SectionHeader|SectionHeading|SectionCard|PanelTabBar|SegmentedTabs|Toolbar|FilterBar|Section|Crumbs|h1|h2|[A-Z]\\w*Head(?:er|line))\\b)",
+        "flags": "gm",
+        "ignoreCommentLines": true,
+        "description": "A line-leading `if (loading|isLoading|loadingX [&& ...|| ...]) return <...>|(...)|null` in a .tsx file whose main return LATER renders chrome (ContentHeader, ContentBox, SectionHeader/SectionHeading/SectionCard, PanelTabBar, SegmentedTabs, Toolbar, FilterBar, kit Section, Crumbs, h1/h2, or any *Header/*Headline component) while the early return itself renders none of them within its statement. That is the \"chrome renders before data and is never hidden by a loading flag\" law (overview-loading.md law 1, page-loading.md anti-pattern 1): the header, tabs and controls vanish for every cold visit and the swap shifts the page. The fix is a ghost UNDER the permanent chrome, or UnifiedTable isLoading+data. `if (!loading ...)` empty-state branches and `return;` effect guards do not match. PRECISION over recall, hand-checked 2026-10-20 on a clean HEAD export: 4 of 4 matches hide chrome (three KPI variants drop EstateHeadline and the lens SegmentedTabs; CloudSyncPanel drops its SectionCards for a blank py-20 box). Of the 28 loading early returns in src, the rule leaves out the widgets that own no chrome (ListRow, ContextGroups, rails, tables) and the two that keep their header in the loading branch (ChainTraceView, AthenaHealthPanel). Lens: render-path."
+      },
+      "baseline": {
+        "files": 4,
+        "matches": 4
+      },
+      "floor": 3000
+    }
+  ]
+}
+```
