@@ -13,6 +13,7 @@
  * "user declined" from "never shown".
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { createKeyedLatestWins } from '@/stores/util/latestWins';
 import { Search, Check, RefreshCw, AlertTriangle, X } from 'lucide-react';
 
 import { BaseModal } from '@/lib/ui/BaseModal';
@@ -60,6 +61,9 @@ export function ResourcePicker({
   const [selections, setSelections] = useState<ScopedResources>(initial ?? {});
   const [search, setSearch] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  // One latest-wins slot per spec: a slow fetch for a previous parent pick must
+  // not overwrite the list of the current one.
+  const [fetchLatest] = useState(() => createKeyedLatestWins());
 
   // Order specs so dependencies resolve first.
   const orderedSpecs = useMemo(() => topoSortSpecs(specs), [specs]);
@@ -82,6 +86,7 @@ export function ResourcePicker({
         }
       }
 
+      const token = fetchLatest.next(spec.id);
       setState((s) => ({
         ...s,
         [spec.id]: { ...(s[spec.id] ?? { items: [], error: null, fetched: false }), loading: true, error: null },
@@ -94,6 +99,7 @@ export function ResourcePicker({
           if (first) ctx[dep] = first;
         }
         const items = await listConnectorResources(credentialId, spec.id, ctx, bypassCache);
+        if (!fetchLatest.isCurrent(spec.id, token)) return;
         setState((s) => ({
           ...s,
           [spec.id]: { loading: false, items, error: null, fetched: true },
@@ -101,6 +107,7 @@ export function ResourcePicker({
       } catch (e: unknown) {
         // invokeWithTimeout rejects with the AppError object, never an Error:
         // String(e) painted "[object Object]" over the provider's reason.
+        if (!fetchLatest.isCurrent(spec.id, token)) return;
         const msg = extractMessage(e);
         setState((s) => ({
           ...s,
@@ -108,7 +115,7 @@ export function ResourcePicker({
         }));
       }
     },
-    [credentialId, selections, t, tx],
+    [credentialId, fetchLatest, selections, t, tx],
   );
 
   // Fetch each spec once its dependencies are resolved.
@@ -153,6 +160,7 @@ export function ResourcePicker({
       for (const other of orderedSpecs) {
         if ((other.depends_on ?? []).includes(spec.id) && other.id in out) {
           delete out[other.id];
+          fetchLatest.next(other.id); // invalidate any in-flight fetch for the old parent
           changed = true;
         }
       }
