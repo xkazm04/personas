@@ -47,7 +47,6 @@ const KNOWN: Record<string, Reason> = {
   'fleet-smoke.spec.ts:fleet-spawn-toggle': 'drift',
   'fleet-smoke.spec.ts:fleet-decisions-page': 'drift',
   'fleet-smoke.spec.ts:fleet-decision-text': 'drift',
-  'getting-started-tour.spec.ts:capability-run-now': 'drift',
   'twin-cycle-features.spec.ts:setup-open-fields': 'drift',
 };
 
