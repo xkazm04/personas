@@ -16,7 +16,7 @@ const SERVICE_DESCRIPTION_KEYS = {
 /** Localized description for a known workspace service; falls back to the data module's English. */
 function serviceDescription(t: Translations, service: WorkspaceService): string {
   const key = SERVICE_DESCRIPTION_KEYS[service.serviceType as keyof typeof SERVICE_DESCRIPTION_KEYS];
-  return (key && t.vault.workspace_connect[key]) || service.description;
+  return (key && t.vault.workspace_panel[key]) || service.description;
 }
 
 export function ServiceCheckbox({

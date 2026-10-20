@@ -6,7 +6,7 @@ import { lazyRetry } from '@/lib/lazyRetry';
 import type { SettingsTab } from '@/lib/types/types';
 
 // Lazy-load each settings tab -- only mounted on first visit.
-const tabComponents: Record<SettingsTab, React.LazyExoticComponent<React.ComponentType>> = {
+const tabComponents: Record<SettingsTab, React.ComponentType> = {
   account: lazyRetry(() => import('@/features/settings/sub_account/components/AccountSettings')),
   appearance: lazyRetry(() => import('@/features/settings/sub_appearance/components/AppearanceSettings')),
   notifications: lazyRetry(() => import('@/features/settings/sub_notifications/components/NotificationSettings')),
