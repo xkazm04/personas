@@ -45,6 +45,26 @@ fn generate_token() -> (String, String) {
     (token, prefix)
 }
 
+/// Longest key lifetime any door may mint (10 years). Matches the operator API.
+pub const MAX_EXPIRY_DAYS: u32 = 3650;
+
+/// Turn a caller-supplied `expires_in_days` into an absolute RFC 3339 expiry.
+///
+/// `None` = never expires. `0` would mint a key dead on arrival and anything
+/// above [`MAX_EXPIRY_DAYS`] overflows chrono's date add (a panic inside the
+/// IPC handler), so both are a `Validation` error. Shared by every mint door.
+pub fn expiry_from_days(days: Option<u32>) -> Result<Option<String>, AppError> {
+    let Some(d) = days else { return Ok(None) };
+    if !(1..=MAX_EXPIRY_DAYS).contains(&d) {
+        return Err(AppError::Validation(format!(
+            "expires_in_days must be between 1 and {MAX_EXPIRY_DAYS}"
+        )));
+    }
+    Ok(Some(
+        (chrono::Utc::now() + chrono::Duration::days(i64::from(d))).to_rfc3339(),
+    ))
+}
+
 // ============================================================================
 // CRUD
 // ============================================================================
@@ -336,6 +356,16 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<(), AppError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn expiry_from_days_bounds() {
+        assert!(expiry_from_days(None).unwrap().is_none());
+        assert!(expiry_from_days(Some(1)).unwrap().is_some());
+        assert!(expiry_from_days(Some(MAX_EXPIRY_DAYS)).unwrap().is_some());
+        assert!(expiry_from_days(Some(0)).is_err());
+        assert!(expiry_from_days(Some(MAX_EXPIRY_DAYS + 1)).is_err());
+        assert!(expiry_from_days(Some(u32::MAX)).is_err());
+    }
 
     /// Deterministic pool holding exactly the `external_api_keys` table this
     /// repo owns, in its current shape (capability-token columns included).

@@ -27,8 +27,7 @@ pub fn create_external_api_key(
     // Server-authoritative expiry: the UI picks a window (7/30/90 days or
     // never); we stamp the absolute timestamp here rather than trust the client
     // clock. Origin-binding stays None until the pairing ceremony (P6).
-    let expires_at = expires_in_days
-        .map(|days| (chrono::Utc::now() + chrono::Duration::days(days as i64)).to_rfc3339());
+    let expires_at = repo::expiry_from_days(expires_in_days)?;
     let resp = repo::create(&state.db, &name, scopes, expires_at, None, None)?;
     tracing::info!(
         api_key_id = %resp.record.id,
@@ -184,8 +183,7 @@ pub(crate) fn approve_pairing_core(
         )));
     }
 
-    let expires_at = expires_in_days
-        .map(|days| (chrono::Utc::now() + chrono::Duration::days(days as i64)).to_rfc3339());
+    let expires_at = repo::expiry_from_days(expires_in_days)?;
     let label = format!("Paired: {origin}");
     let resp = repo::create(
         db,
