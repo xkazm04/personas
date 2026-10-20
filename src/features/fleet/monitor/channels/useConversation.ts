@@ -97,9 +97,12 @@ export function useConversation(teamId: string | null, focusItemId?: string | nu
     );
     const base = buildConversation(merged);
     // Pending proposals are local-only until Confirm creates the assignment, so
-    // they append at the end rather than living in the channel.
+    // they append at the end rather than living in the channel. Only THIS
+    // team's: the hook outlives a project switch, and a goal routed for one
+    // team rendered in the next one's thread, where Confirm launched it.
     for (const p of proposals) {
-      base.push({ kind: 'proposal', key: `prop:${p.goal}`, at: new Date().toISOString(), proposal: p });
+      if (p.teamId !== teamId) continue;
+      base.push({ kind: 'proposal', key: `prop:${p.goal}`, at: '', proposal: p });
     }
     // Queued prompts are the newest thing in the conversation by definition —
     // they have not been sent yet — so they sit at the very bottom, after the
@@ -112,7 +115,7 @@ export function useConversation(teamId: string | null, focusItemId?: string | nu
     const next = reconcileRows(lastRows.current, base);
     lastRows.current = next;
     return next;
-  }, [talk.items, turns.items, proposals, queue]);
+  }, [talk.items, turns.items, proposals, queue, teamId]);
 
   // DEEP LINK ONTO THE LINE. A pop-up's preset used to name a team and stop
   // there, so the reader landed in a clustered, oldest-first conversation and
@@ -208,6 +211,9 @@ export function useConversation(teamId: string | null, focusItemId?: string | nu
     const run = batch.goal
       ? decomposeTeamAssignmentGoal(teamId, batch.body).then((steps) => {
           addProposal({
+            // The team the batch was drained for, not the one open when the
+            // decomposition comes back.
+            teamId,
             goal: batch.body,
             steps: steps.map((s) => ({
               title: s.title,
@@ -231,18 +237,20 @@ export function useConversation(teamId: string | null, focusItemId?: string | nu
   }, [queue, teamId, sendChannelDirective, addProposal]);
 
   const dropProposal = useCallback(
-    (goal: string) => setProposals((ps) => ps.filter((p) => p.goal !== goal)),
-    [],
+    (goal: string) => setProposals((ps) => ps.filter((p) => p.teamId !== teamId || p.goal !== goal)),
+    [teamId],
   );
 
   /** Confirm → the proposal becomes a real, running assignment. */
   const confirmProposal = useCallback(
     async (p: AssignProposal) => {
-      if (!teamId) return;
-      setProposals((ps) => ps.map((x) => (x.goal === p.goal ? { ...x, status: 'launching' } : x)));
+      // The proposal's own team: it is the one the goal was routed for.
+      const owner = p.teamId;
+      const same = (x: AssignProposal) => x.teamId === owner && x.goal === p.goal;
+      setProposals((ps) => ps.map((x) => (same(x) ? { ...x, status: 'launching' } : x)));
       try {
         const created = await createTeamAssignment({
-          teamId,
+          teamId: owner,
           title: p.goal.slice(0, 60),
           goal: p.goal,
           matchStrategy: 'llm_eval',
@@ -263,15 +271,15 @@ export function useConversation(teamId: string | null, focusItemId?: string | nu
         if (created) {
           await startTeamAssignment(created.id);
           // The assignment now speaks for itself in the channel.
-          setProposals((ps) => ps.filter((x) => x.goal !== p.goal));
-          void refreshChannel(channelKey(teamId));
+          setProposals((ps) => ps.filter((x) => !same(x)));
+          void refreshChannel(channelKey(owner));
         }
       } catch (e) {
         toastCatch('conversation:confirm')(e);
-        setProposals((ps) => ps.map((x) => (x.goal === p.goal ? { ...x, status: 'pending' } : x)));
+        setProposals((ps) => ps.map((x) => (same(x) ? { ...x, status: 'pending' } : x)));
       }
     },
-    [teamId, refreshChannel],
+    [refreshChannel],
   );
 
   const markSeen = useCallback(() => {

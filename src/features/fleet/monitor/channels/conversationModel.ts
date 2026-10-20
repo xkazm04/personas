@@ -25,7 +25,9 @@ export type ConversationRow =
   | { kind: 'talk'; key: string; at: string; item: TeamChannelItem }
   | { kind: 'assignment'; key: string; at: string; assignmentId: string; items: TeamChannelItem[] }
   | { kind: 'deliberation'; key: string; at: string; deliberationId: string; items: TeamChannelItem[] }
-  | { kind: 'proposal'; key: string; at: string; proposal: AssignProposal }
+  // `at` is empty for the same reason as `queued` below: a proposal is
+  // local-only and is appended after the fold, never ranked by a timestamp.
+  | { kind: 'proposal'; key: string; at: ''; proposal: AssignProposal }
   // `at` is empty on purpose: a queued prompt has no timestamp anyone else
   // agrees with. Minting one from the renderer's clock would give it a position
   // in a stream ordered by the server's (census:
@@ -57,6 +59,10 @@ export function rowKeyForItem(rows: ConversationRow[], itemId: string): string |
 
 /** A decomposed goal awaiting the user's Confirm — the composer's output. */
 export interface AssignProposal {
+  /** The team the goal was routed for. A proposal belongs to ONE channel: it
+   *  renders only there, and Confirm creates the assignment on THIS team, never
+   *  on whichever conversation happens to be open when it is pressed. */
+  teamId: string;
   goal: string;
   steps: Array<{ title: string; description: string; suggestedPersonaId: string | null }>;
   status: 'pending' | 'launching' | 'launched' | 'dismissed';
