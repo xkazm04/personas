@@ -16,6 +16,7 @@ import { silentCatch } from "@/lib/silentCatch";
 import { BaseModal } from "@/features/shared/components/modals";
 import Button from "@/features/shared/components/buttons/Button";
 import { LoadingSpinner } from "@/features/shared/components/feedback/LoadingSpinner";
+import { ListSkeleton } from "@/features/shared/components/layout/ListSkeleton";
 import { getConnectorMeta, ConnectorIcon } from "@/lib/connectors/connectorMeta";
 import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
 import type { RecipeDefinition } from "@/lib/bindings/RecipeDefinition";
@@ -86,17 +87,19 @@ interface Props {
 export function RecipeAlternativeModal({ recipeId, recipeName, matchScore, onClose, onSelect }: Props) {
   const [recipe, setRecipe] = useState<RecipeDefinition | null>(null);
   const [error, setError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const { t, tx } = useTranslation();
   const ga = t.agents;
   const pct = Math.round(matchScore * 100);
 
   useEffect(() => {
     let live = true;
+    setError(false);
     getRecipe(recipeId)
       .then((r) => { if (live) setRecipe(r); })
       .catch((e) => { silentCatch("RecipeAlternativeModal.get")(e); if (live) setError(true); });
     return () => { live = false; };
-  }, [recipeId]);
+  }, [recipeId, attempt]);
 
   const connectors = recipe
     ? dedupeNames([
@@ -128,9 +131,17 @@ export function RecipeAlternativeModal({ recipeId, recipeName, matchScore, onClo
         </div>
 
         {error ? (
-          <div className="py-8 text-center typo-body text-foreground">{ga.glyph_recipe_alt_load_failed}</div>
+          <div className="py-8 flex flex-col items-center gap-3 text-center" data-testid="recipe-alternative-error">
+            <span className="typo-body text-foreground">{ga.glyph_recipe_alt_load_failed}</span>
+            <Button variant="secondary" size="sm" onClick={() => setAttempt((n) => n + 1)} data-testid="recipe-alternative-retry">
+              {t.common.retry}
+            </Button>
+          </div>
         ) : !recipe ? (
-          <div className="py-10 flex justify-center"><LoadingSpinner label={ga.glyph_recipe_alt_loading} /></div>
+          <div className="py-2" data-testid="recipe-alternative-loading">
+            <LoadingSpinner label={ga.glyph_recipe_alt_loading} />
+            <ListSkeleton rows={3} rowHeight={36} leading={false} />
+          </div>
         ) : (
           <>
             {recipe.description && <p className="typo-body text-foreground">{recipe.description}</p>}
