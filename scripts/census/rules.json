@@ -728,7 +728,7 @@
       ],
       "baseline": {
         "files": 47,
-        "matches": 641
+        "matches": 636
       },
       "floor": 1500
     },
@@ -5967,8 +5967,8 @@
         "description": "A <Suspense fallback={null}> whose children are a view (tab panels, a page view, a drill layer) rather than an overlay: the body between the tag and its </Suspense> names no Modal/Dialog/Overlay/Toast/Popover/Drawer/Sheet/Menu/Tooltip/Host/Services/Watcher/Composer/Inspector/Island, passes no onClose= or open prop, is not {children}, and the Suspense is not itself a prop value (a slot such as queueHistory={<Suspense...>} renders inside whatever drawer owns it). While the chunk loads the region paints NOTHING, so the first frame is blank and the resolve shifts everything below it. Use RouteChunkSkeleton at a route, or a header-band / geometry-matched delayed ghost below one (page-loading.md \"fallback={null} on a full route/section\"; overview-loading.md section D). PRECISION over recall, hand-checked 2026-10-20 on a clean HEAD export: 3 of 3 matches are view boundaries (AthenaPage tab panels, curator ProcessPage view, DialView deep layer); of the 23 fallback={null} sites in src, the 20 not matched are modals, overlays, background services, a drawer slot and one view swap that passes onClose (MemoryPanel consolidation, a known miss). Lens: render-path."
       },
       "baseline": {
-        "files": 2,
-        "matches": 2
+        "files": 1,
+        "matches": 1
       },
       "floor": 3000
     },
