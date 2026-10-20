@@ -2454,122 +2454,142 @@ pub fn sweep_zombie_executions(pool: &DbPool) -> Result<Vec<String>, AppError> {
         "persona_executions",
         "persona_executions::sweep_zombie_executions",
         {
-            let conn = pool.conn("executions::sweep_zombie_executions")?;
-            let now = chrono::Utc::now();
-            let threshold_secs = DEFAULT_ZOMBIE_THRESHOLD_SECS;
+            let (surface_ids, swept_personas) = {
+                let conn = pool.conn("executions::sweep_zombie_executions")?;
+                let now = chrono::Utc::now();
+                let threshold_secs = DEFAULT_ZOMBIE_THRESHOLD_SECS;
 
-            // Find running executions whose started_at is older than the threshold.
-            // Pull persona_id + created_at too so we can check "is there a newer
-            // completed run for the same persona?" before deciding whether to
-            // surface this zombie to the user.
-            let mut stmt = conn.prepare_cached(
+                // Find running executions whose started_at is older than the threshold.
+                // Pull persona_id + created_at too so we can check "is there a newer
+                // completed run for the same persona?" before deciding whether to
+                // surface this zombie to the user.
+                let mut stmt = conn.prepare_cached(
                 "SELECT id, persona_id, status, started_at, created_at FROM persona_executions WHERE status IN ('running', 'queued')",
             )?;
-            // A row that fails to map here is a zombie candidate that would
-            // never be reaped — log it (collect_rows) instead of dropping it
-            // silently.
-            let candidates: Vec<(String, String, String, Option<String>, String)> =
-                crate::repos::utils::collect_rows(
-                    stmt.query_map([], |row| {
-                        Ok((
-                            row.get::<_, String>("id")?,
-                            row.get::<_, String>("persona_id")?,
-                            row.get::<_, String>("status")?,
-                            row.get::<_, Option<String>>("started_at")?,
-                            row.get::<_, String>("created_at")?,
-                        ))
-                    })?,
-                    "persona_executions::sweep_zombie_executions",
-                );
+                // A row that fails to map here is a zombie candidate that would
+                // never be reaped — log it (collect_rows) instead of dropping it
+                // silently.
+                let candidates: Vec<(String, String, String, Option<String>, String)> =
+                    crate::repos::utils::collect_rows(
+                        stmt.query_map([], |row| {
+                            Ok((
+                                row.get::<_, String>("id")?,
+                                row.get::<_, String>("persona_id")?,
+                                row.get::<_, String>("status")?,
+                                row.get::<_, Option<String>>("started_at")?,
+                                row.get::<_, String>("created_at")?,
+                            ))
+                        })?,
+                        "persona_executions::sweep_zombie_executions",
+                    );
 
-            let mut surface_ids = Vec::new();
-            for (id, persona_id, status, started_at, created_at) in candidates {
-                let is_queued = status == "queued";
-                // Running zombies are judged by started_at; queued ones never
-                // started, so judge by created_at against the more generous
-                // queued threshold.
-                let limit_secs = if is_queued {
-                    QUEUED_ZOMBIE_THRESHOLD_SECS
-                } else {
-                    threshold_secs
-                };
-                let reference_ts: Option<&str> = if is_queued {
-                    Some(created_at.as_str())
-                } else {
-                    started_at.as_deref()
-                };
-                let is_zombie = match reference_ts {
-                    Some(ts) => match chrono::DateTime::parse_from_rfc3339(ts) {
-                        Ok(t) => (now - t.with_timezone(&chrono::Utc)).num_seconds() > limit_secs,
-                        Err(_) => true, // unparseable timestamp — treat as zombie
-                    },
-                    // Running with no started_at — shouldn't happen; treat as zombie.
-                    None => true,
-                };
+                let mut surface_ids = Vec::new();
+                let mut swept_personas: std::collections::BTreeSet<String> = Default::default();
+                for (id, persona_id, status, started_at, created_at) in candidates {
+                    let is_queued = status == "queued";
+                    // Running zombies are judged by started_at; queued ones never
+                    // started, so judge by created_at against the more generous
+                    // queued threshold.
+                    let limit_secs = if is_queued {
+                        QUEUED_ZOMBIE_THRESHOLD_SECS
+                    } else {
+                        threshold_secs
+                    };
+                    let reference_ts: Option<&str> = if is_queued {
+                        Some(created_at.as_str())
+                    } else {
+                        started_at.as_deref()
+                    };
+                    let is_zombie = match reference_ts {
+                        Some(ts) => match chrono::DateTime::parse_from_rfc3339(ts) {
+                            Ok(t) => {
+                                (now - t.with_timezone(&chrono::Utc)).num_seconds() > limit_secs
+                            }
+                            Err(_) => true, // unparseable timestamp — treat as zombie
+                        },
+                        // Running with no started_at — shouldn't happen; treat as zombie.
+                        None => true,
+                    };
 
-                if is_zombie {
-                    let elapsed_str = reference_ts.unwrap_or("unknown");
-                    // CAS on the row's CURRENT status: a queued execution that
-                    // started running (or a running one that completed) between
-                    // the read and here must not be clobbered.
-                    let mut update_stmt = conn.prepare_cached(
-                        "UPDATE persona_executions SET
+                    if is_zombie {
+                        let elapsed_str = reference_ts.unwrap_or("unknown");
+                        // CAS on the row's CURRENT status: a queued execution that
+                        // started running (or a running one that completed) between
+                        // the read and here must not be clobbered.
+                        let mut update_stmt = conn.prepare_cached(
+                            "UPDATE persona_executions SET
                     status = 'incomplete',
                     error_message = ?1,
                     completed_at = ?2
                  WHERE id = ?3 AND status = ?4",
-                    )?;
-                    let swapped = update_stmt.execute(params![
-                        format!(
-                            "Execution stalled: {} since {} (>{} min) — marked as zombie",
-                            if is_queued { "queued" } else { "running" },
-                            elapsed_str,
-                            limit_secs / 60,
-                        ),
-                        now.to_rfc3339(),
-                        id,
-                        status,
-                    ])?;
+                        )?;
+                        let swapped = update_stmt.execute(params![
+                            format!(
+                                "Execution stalled: {} since {} (>{} min) — marked as zombie",
+                                if is_queued { "queued" } else { "running" },
+                                elapsed_str,
+                                limit_secs / 60,
+                            ),
+                            now.to_rfc3339(),
+                            id,
+                            status,
+                        ])?;
 
-                    // The CAS above exists to avoid clobbering a row that moved
-                    // between the read and here — but the verdict was discarded,
-                    // so the id was pushed onto `surface_ids` regardless. An
-                    // execution that COMPLETED in the race window was correctly
-                    // left alone and then reported to the user as
-                    // "Execution stalled". Losing the CAS means there is nothing
-                    // to surface: skip it.
-                    if swapped == 0 {
-                        tracing::debug!(
-                            execution_id = %id,
-                            "zombie sweep: row moved between read and swap — not a zombie, not surfaced"
-                        );
-                        continue;
-                    }
+                        // The CAS above exists to avoid clobbering a row that moved
+                        // between the read and here — but the verdict was discarded,
+                        // so the id was pushed onto `surface_ids` regardless. An
+                        // execution that COMPLETED in the race window was correctly
+                        // left alone and then reported to the user as
+                        // "Execution stalled". Losing the CAS means there is nothing
+                        // to surface: skip it.
+                        if swapped == 0 {
+                            tracing::debug!(
+                                execution_id = %id,
+                                "zombie sweep: row moved between read and swap — not a zombie, not surfaced"
+                            );
+                            continue;
+                        }
 
-                    // Surface to user only if there's no newer completed run for
-                    // the same persona. A newer completed run means the user
-                    // already saw success — re-notifying about an old stalled
-                    // attempt is just noise.
-                    let mut superseded_stmt = conn.prepare_cached(
-                        "SELECT 1 FROM persona_executions
+                        swept_personas.insert(persona_id.clone());
+
+                        // Surface to user only if there's no newer completed run for
+                        // the same persona. A newer completed run means the user
+                        // already saw success — re-notifying about an old stalled
+                        // attempt is just noise.
+                        let mut superseded_stmt = conn.prepare_cached(
+                            "SELECT 1 FROM persona_executions
                          WHERE persona_id = ?1
                            AND status = 'completed'
                            AND created_at > ?2
                          LIMIT 1",
-                    )?;
-                    let is_superseded: bool = superseded_stmt
-                        .query_row(params![persona_id, created_at], |_| Ok(true))
-                        .unwrap_or(false);
+                        )?;
+                        let is_superseded: bool = superseded_stmt
+                            .query_row(params![persona_id, created_at], |_| Ok(true))
+                            .unwrap_or(false);
 
-                    if !is_superseded {
-                        surface_ids.push(id);
-                    } else {
-                        tracing::debug!(
-                            execution_id = %id,
-                            persona_id = %persona_id,
-                            "zombie sweep: silently transitioned superseded execution to incomplete (newer completed run exists)"
-                        );
+                        if !is_superseded {
+                            surface_ids.push(id);
+                        } else {
+                            tracing::debug!(
+                                execution_id = %id,
+                                persona_id = %persona_id,
+                                "zombie sweep: silently transitioned superseded execution to incomplete (newer completed run exists)"
+                            );
+                        }
                     }
+                }
+
+                (surface_ids, swept_personas)
+            };
+
+            // `incomplete` is a decided, not-a-success outcome in the trust
+            // score, but the refresh otherwise runs only when a run
+            // COMPLETES: a persona whose runs keep dying kept a stale score.
+            // The sweep's connection is released above (the refresh checks out its own).
+            for persona_id in swept_personas {
+                if let Err(e) = crate::repos::core::personas::refresh_trust_score(pool, &persona_id)
+                {
+                    tracing::warn!(persona_id = %persona_id, error = %e, "zombie sweep: trust score refresh failed");
                 }
             }
 
@@ -4524,6 +4544,49 @@ mod tests {
         };
         assert_eq!(bare_requested, None, "no --model means no decided model");
 
+        Ok(())
+    }
+
+    /// The sweep writes `incomplete`, which `compute_trust_score` counts as
+    /// not-a-success, but the refresh used to run only on the completion path:
+    /// a persona whose runs keep dying never completes and kept a stale score.
+    #[test]
+    fn zombie_sweep_refreshes_the_trust_score_of_the_personas_it_touched() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let persona_id = make_persona(&pool, "Dying Agent");
+        let ok = create(&pool, &persona_id, None, None, None, None)?;
+        let lost = create(&pool, &persona_id, None, None, None, None)?;
+        {
+            let conn = pool.conn("executions::test")?;
+            conn.execute(
+                "UPDATE persona_executions SET status = 'completed' WHERE id = ?1",
+                params![ok.id],
+            )?;
+            let long_ago = (chrono::Utc::now() - chrono::Duration::days(2)).to_rfc3339();
+            conn.execute(
+                "UPDATE persona_executions SET status = 'running', started_at = ?2 WHERE id = ?1",
+                params![lost.id, long_ago],
+            )?;
+        }
+        let before = personas::refresh_trust_score(&pool, &persona_id)?;
+
+        let surfaced = sweep_zombie_executions(&pool)?;
+        assert_eq!(surfaced, vec![lost.id.clone()]);
+
+        let stored: f64 = pool.conn("executions::test")?.query_row(
+            "SELECT trust_score FROM personas WHERE id = ?1",
+            params![persona_id],
+            |r| r.get("trust_score"),
+        )?;
+        let expected = personas::compute_trust_score(&pool, &persona_id)?;
+        assert!(
+            (stored - expected).abs() < 1e-9,
+            "stored {stored} vs {expected}"
+        );
+        assert!(
+            stored < before,
+            "a lost run must lower the stored score ({before} -> {stored})"
+        );
         Ok(())
     }
 }
