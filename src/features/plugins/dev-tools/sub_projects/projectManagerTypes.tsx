@@ -1,4 +1,3 @@
-import { Circle, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
 import { StatusBadge as SharedStatusBadge } from '@/features/shared/components/display/StatusBadge';
 
 // ---------------------------------------------------------------------------
@@ -25,22 +24,6 @@ export interface Project {
   standardsConfig?: string;
 }
 
-export interface Goal {
-  id: string;
-  projectId: string;
-  title: string;
-  status: 'open' | 'in-progress' | 'done' | 'blocked';
-  progress: number;
-  signals: GoalSignal[];
-}
-
-export interface GoalSignal {
-  id: string;
-  message: string;
-  timestamp: string;
-  type: 'info' | 'warning' | 'success';
-}
-
 // ---------------------------------------------------------------------------
 // Mapping helpers
 // ---------------------------------------------------------------------------
@@ -62,24 +45,6 @@ export function toProject(dp: import("@/lib/bindings/DevProject").DevProject, go
     testEnvBranch: dp.test_env_branch ?? undefined,
     mainBranch: dp.main_branch ?? undefined,
     standardsConfig: dp.standards_config ?? undefined,
-  };
-}
-
-export function toGoal(dg: import("@/lib/bindings/DevGoal").DevGoal, signals: import("@/lib/bindings/DevGoalSignal").DevGoalSignal[]): Goal {
-  return {
-    id: dg.id,
-    projectId: dg.project_id,
-    title: dg.title,
-    status: (dg.status as Goal["status"]) || "open",
-    progress: dg.progress,
-    signals: signals
-      .filter((s) => s.goal_id === dg.id)
-      .map((s) => ({
-        id: s.id,
-        message: s.message ?? s.signal_type,
-        timestamp: s.created_at,
-        type: (s.signal_type === "success" ? "success" : s.signal_type === "warning" ? "warning" : "info") as GoalSignal["type"],
-      })),
   };
 }
 
@@ -111,13 +76,6 @@ export const STATUS_STYLES: Record<string, string> = {
   'in-progress': 'bg-blue-500/15 text-blue-400 border-blue-500/25',
   done: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
   blocked: 'bg-red-500/15 text-red-400 border-red-500/25',
-};
-
-export const GOAL_ICONS: Record<string, typeof Circle> = {
-  open: Circle,
-  'in-progress': Clock,
-  done: CheckCircle2,
-  blocked: AlertCircle,
 };
 
 const STATUS_TO_VARIANT: Record<string, 'success' | 'warning' | 'error' | 'info' | 'neutral'> = {

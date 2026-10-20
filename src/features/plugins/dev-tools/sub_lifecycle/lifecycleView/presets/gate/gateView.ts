@@ -17,7 +17,6 @@ import { signalsOf, type CommandSignals } from './signals';
 export type GateSort = 'pipeline' | 'slowest' | 'least_reliable';
 export type GateFilter = 'all' | 'failing' | 'over_budget' | 'flaky';
 
-export const GATE_SORTS: readonly GateSort[] = ['pipeline', 'slowest', 'least_reliable'];
 export const GATE_FILTERS: readonly GateFilter[] = ['all', 'failing', 'over_budget', 'flaky'];
 
 export interface GateViewState {

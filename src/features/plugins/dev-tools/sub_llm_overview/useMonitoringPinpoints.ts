@@ -174,5 +174,3 @@ export function useMonitoringPinpoints() {
     reload: load,
   };
 }
-
-export type MonitoringPinpointsData = ReturnType<typeof useMonitoringPinpoints>;
