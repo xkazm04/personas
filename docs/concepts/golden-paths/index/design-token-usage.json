@@ -48,6 +48,7 @@
       "contexts": ["twelve token axes; plus full reads of `globals.css`, `typography.css`, `designTokens.ts`,"],
       "resolved": false
     },
+    "docs/design/mandate-lanes/surfaces/tokens.css": {"count":1,"sections":[],"lines":["1-11"],"contexts":["(Next.js, separate remote, no shared package — its `tokens.css:1-11` claims a shared"],"resolvedFrom":"basename","verbatim":"tokens.css"},
     "eslint-rules/no-direct-white-colors.cjs": {
       "count": 1,
       "sections": [9],
@@ -101,7 +102,7 @@
     "src/features/agents/sub_connectors/components/automation/AutomationConditionStep.tsx": {"count":1,"sections":[7],"contexts":["`ArenaResultsView.tsx` (14), `AutomationConditionStep.tsx` (12),"],"resolvedFrom":"basename","verbatim":"AutomationConditionStep.tsx"},
     "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx": {"count":1,"sections":[7],"contexts":["Worst files: `TestReportModal.tsx` (22), `ArenaPanelColosseum.tsx` (15),"],"resolvedFrom":"basename","verbatim":"ArenaPanelColosseum.tsx"},
     "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx": {"count":1,"sections":[7],"contexts":["`ArenaResultsView.tsx` (14), `AutomationConditionStep.tsx` (12),"],"resolvedFrom":"basename","verbatim":"ArenaResultsView.tsx"},
-    "src/features/agents/sub_lab/components/shared/LabResultCard.tsx": {"count":1,"sections":[6],"lines":["54,84,105"],"contexts":["**For card padding under density:** `src/features/agents/sub_lab/components/shared/LabResultCard.tsx:54,84,105`"]},
+    "src/features/agents/sub_lab/components/shared/LabResultCard.tsx": {"count":1,"sections":[6],"lines":["54,84,105"],"contexts":["**For card padding under density:** `src/features/agents/sub_lab/components/shared/LabResultCard.tsx:54,84,105`"],"resolved":false},
     "src/features/home/sub_releases/HomeReleases.tsx": {
       "count": 1,
       "sections": [7],
@@ -240,13 +241,13 @@
       "verbatim": "globals.css"
     },
     "src/styles/typography.css": {
-      "count": 10,
-      "sections": [2,3,5,6,7,9],
-      "lines": ["120-191","161-162","105-358","147-168"],
-      "contexts": ["twelve token axes; plus full reads of `globals.css`, `typography.css`, `designTokens.ts`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "typography.css"
+      "count": 2,
+      "sections": [3,6],
+      "lines": ["105-358","147-168"],
+      "contexts": [
+        "| **`src/styles/typography.css:105-358`** — 15 `typo-*` tiers | Size + weight + line-height + font-features as one decision, re-mapped under `[data-text-scale]` and per-`[data-lang]` script. **10,230…"
+      ]
     },
-    "tokens.css": {"count":1,"sections":[],"lines":["1-11"],"contexts":["(Next.js, separate remote, no shared package — its `tokens.css:1-11` claims a shared"],"resolved":false}
+    "typography.css": {"count":8,"sections":[2,5,7,9],"lines":["120-191","161-162"],"contexts":["twelve token axes; plus full reads of `globals.css`, `typography.css`, `designTokens.ts`,"],"resolved":false}
   }
 }

@@ -48,6 +48,14 @@
       ],
       "resolved": false
     },
+    "KpiProposalsPanel.tsx": {
+      "count": 1,
+      "sections": [5],
+      "contexts": [
+        "- **English composed in a verdict surface.** `KpiProposalsPanel.tsx` uses no `useTranslation` at all (≈12 hardcoded strings); `FactoryOverviewTab.tsx:450` builds `` `\"${k.name}\" ${status === 'active'…"
+      ],
+      "resolved": false
+    },
     "RejectionPatternsPanel.tsx": {
       "count": 1,
       "sections": [5],
@@ -659,14 +667,12 @@
       "verbatim": "shared/components/surface/SurfaceRenderer.tsx"
     },
     "src/features/teams/sub_factory/KpiProposalsPanel.tsx": {
-      "count": 3,
-      "sections": [5,7],
-      "lines": ["80-88"],
+      "count": 1,
+      "sections": [7],
       "contexts": [
-        "- **English composed in a verdict surface.** `KpiProposalsPanel.tsx` uses no `useTranslation` at all (≈12 hardcoded strings); `FactoryOverviewTab.tsx:450` builds `` `\"${k.name}\" ${status === 'active'…"
+        "| `src/features/teams/sub_factory/KpiProposalsPanel.tsx` | **No `useTranslation` import at all.** ≈12 hardcoded English strings on a verdict surface: \"KPI proposals\", \"to review\", \"Scan for KPIs\", \"S…"
       ],
-      "resolvedFrom": "basename",
-      "verbatim": "KpiProposalsPanel.tsx"
+      "resolved": false
     },
     "src/features/teams/sub_factory/l2/FactoryOverviewTab.tsx": {
       "count": 3,
@@ -754,6 +760,15 @@
       "lines": ["18,41-44,60-66"],
       "contexts": [
         "| `src/features/plugins/twin/sub_knowledge/KnowledgeAtelier.tsx:22,161-174,382` · `sub_brain/RejectionPatternsPanel.tsx:18,41-44,60-66` | `REJECT_PRESETS` and `presetLabel` duplicated verbatim; the s…"
+      ],
+      "resolved": false
+    },
+    "sub_factory/KpiProposalsPanel.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["80-88"],
+      "contexts": [
+        "| `src/features/teams/sub_kpis/KPIProposalsQueue.tsx:70-73` · `KPIProposalModal.tsx:43-63` · `sub_factory/KpiProposalsPanel.tsx:80-88` · `sub_factory/l2/FactoryOverviewTab.tsx:442-454` | **Four surfa…"
       ],
       "resolved": false
     }

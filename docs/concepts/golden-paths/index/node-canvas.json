@@ -113,7 +113,6 @@
     },
     "PersonaNode.tsx": {"count":2,"sections":[6,12],"contexts":["later, and its `ConnectionEdge.tsx` / `PersonaNode.tsx` land on 2026-02-19 in a commit titled"],"resolved":false},
     "ResearchProjectListCartograph.tsx": {"count":1,"sections":[7],"contexts":["`ResearchProjectListCartograph.tsx` (a categorical scatter — positions are axis-derived, **no edges"],"resolved":false},
-    "TimelinePanel.tsx": {"count":1,"sections":[7],"contexts":["`Gallery2D.tsx` (`1–5`), `DriveImageLightbox.tsx` (`1–8`), `TimelinePanel.tsx` (1-D). None in"],"resolved":false},
     "ZoomableCanvas.tsx": {
       "count": 1,
       "sections": [6],
@@ -198,6 +197,7 @@
     "src/components/flow-composer/": {"count":1,"sections":[6],"contexts":["marketing wrapper with zero drag, edge or click handlers — but its `src/components/flow-composer/` is"],"resolved":false,"isDir":true},
     "src/components/sections/team-canvas/": {"count":1,"sections":[6],"contexts":["`personas-web`'s `src/components/sections/team-canvas/` is a **name collision** — 39 lines of"],"resolved":false,"isDir":true},
     "src/features/agents/components/PersonaSelector.tsx": {"count":1,"sections":[12],"lines":["86-91"],"contexts":["`PersonaSelector.tsx:86-91`) were not re-checked here."],"resolvedFrom":"basename","verbatim":"PersonaSelector.tsx"},
+    "src/features/decision-center/blueprint/ui/timeline/TimelinePanel.tsx": {"count":1,"sections":[7],"contexts":["`Gallery2D.tsx` (`1–5`), `DriveImageLightbox.tsx` (`1–8`), `TimelinePanel.tsx` (1-D). None in"],"resolvedFrom":"basename","verbatim":"TimelinePanel.tsx"},
     "src/features/fleet/monitor/channels/map/ChannelMap.tsx": {
       "count": 2,
       "sections": [0,7],

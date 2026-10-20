@@ -36,6 +36,7 @@
     ".claude/worktrees/**": {"count":1,"sections":[],"contexts":["`src/**/*.tsx`, not estimated. `.claude/worktrees/**` excluded."],"resolved":false,"isDir":true},
     "AnnotateModal.tsx": {"count":2,"sections":[7],"lines":["49,61","55,67"],"contexts":["`AutomationTriggerStep.tsx:186` · `AnnotateModal.tsx:49,61` ·"],"resolved":false},
     "BaseModal.tsx": {"count":1,"sections":[4],"lines":["9"],"contexts":["`Z_INDEX_PORTAL_BASE = 10000` from `BaseModal.tsx:9`) are the two sanctioned"],"resolved":false},
+    "CapabilityTabBar.tsx": {"count":1,"sections":[8],"lines":["115"],"contexts":["`PanelTabBar.tsx:84`, both `DensityToggle`s, `CapabilityTabBar.tsx:115`,"],"resolved":false},
     "ChannelsAtelier.tsx": {"count":1,"sections":[7],"lines":["202,209"],"contexts":["`matrixShared.tsx:127` · `ChannelsAtelier.tsx:202,209` · `ReplyOutbox.tsx:236` ·"],"resolved":false},
     "ClusterPatternsModal.tsx": {"count":1,"sections":[7],"lines":["290"],"contexts":["`ClusterPatternsModal.tsx:290` · `CreatePlaybookModal.tsx:138` ·"],"resolved":false},
     "CompanionToolbar.tsx": {"count":1,"sections":[7],"lines":["453"],"contexts":["`DriveToolbar.tsx:447` · `CompanionToolbar.tsx:453` · `StationPicker.tsx:186`."],"resolved":false},
@@ -50,6 +51,7 @@
     },
     "CreatePlaybookModal.tsx": {"count":1,"sections":[7],"lines":["138"],"contexts":["`ClusterPatternsModal.tsx:290` · `CreatePlaybookModal.tsx:138` ·"],"resolved":false},
     "CreatePracticeModal.tsx": {"count":3,"sections":[7],"lines":["76,113","76","79"],"contexts":["`CreatePracticeModal.tsx:76,113` · `LifecycleProjectPicker.tsx:69` ·"],"resolved":false},
+    "CreateTeamForm.tsx": {"count":1,"sections":[7],"lines":["142"],"contexts":["`DataGrid.tsx:259` · `GoalsMissions.tsx:236` · `CreateTeamForm.tsx:142` ·"],"resolved":false},
     "CredentialPicker.tsx": {"count":2,"sections":[4,7],"lines":["92"],"contexts":["any ancestor scrolls or clips. `CredentialPicker.tsx` does all of this in 99"],"resolved":false},
     "DraftEditStep.tsx": {"count":1,"sections":[8],"lines":["129"],"contexts":["`ExecutionDetailTabs.tsx:89`, `DraftEditStep.tsx:129`, `SchedulesOverlay.tsx:419` (tab strip removed 2026-09-17),"],"resolved":false},
     "DriveToolbar.tsx": {"count":1,"sections":[7],"lines":["447"],"contexts":["`DriveToolbar.tsx:447` · `CompanionToolbar.tsx:453` · `StationPicker.tsx:186`."],"resolved":false},
@@ -59,6 +61,7 @@
     "GalleryPage.tsx": {"count":1,"sections":[7],"lines":["122"],"contexts":["`Gallery3D.tsx:183` · `GalleryPage.tsx:122` · `TextLane.tsx:110` · `VoiceoverButton.tsx:97` ·"],"resolved":false},
     "GoalsMissions.tsx": {"count":3,"sections":[6,7],"lines":["238","236","243"],"contexts":["`GoalsMissions.tsx:238` with a threshold of 8. Pick one."],"resolved":false},
     "KnowledgeTree.tsx": {"count":2,"sections":[4,6],"lines":["414"],"contexts":["`hideSearch={options.length < 8}` (`KnowledgeTree.tsx:414`) beats a static"],"resolved":false},
+    "KpiProposalsPanel.tsx": {"count":1,"sections":[7],"lines":["190"],"contexts":["`WebhookSubscriptionsPanel.tsx:293` · `DataGrid.tsx:465` · `KpiProposalsPanel.tsx:190` ·"],"resolved":false},
     "ModelDropdown.tsx": {"count":1,"sections":[5],"lines":["35"],"contexts":["`TimezoneSelect.tsx:64`, `ModelDropdown.tsx:35`), `rounded-md`"],"resolved":false},
     "NodeContextMenu.tsx": {"count":1,"sections":[7],"lines":["32"],"contexts":["`FactoryBreadcrumb.tsx:62` (mouse-leave only) and `NodeContextMenu.tsx:32` (no Escape)."],"resolved":false},
     "ProjectFilter.tsx": {"count":1,"sections":[7],"lines":["55"],"contexts":["`UseCaseFixtureDropdown.tsx:66` · `ProjectFilter.tsx:55` · `SortDropdown.tsx:44` ·"],"resolved":false},
@@ -94,7 +97,6 @@
       "verbatim": "no-raw-radius-classes.cjs"
     },
     "eslint.config.js": {"count":3,"sections":[9],"contexts":["plugin** in `eslint.config.js` at all, so no rule anywhere checks ARIA. And"]},
-    "forms/__tests__/ThemedSelect.test.tsx": {"count":1,"sections":[9],"contexts":["`forms/__tests__/ThemedSelect.test.tsx` asserting that `id`, `aria-invalid`,"],"resolved":false},
     "lefthook.yml": {"count":1,"sections":[9],"contexts":["affordable. They run on `pre-commit` (`lefthook.yml` `eslint-staged`,"]},
     "parameterEditing.tsx": {"count":2,"sections":[7],"lines":["212","215"],"contexts":["`parameterEditing.tsx:212` · `CreatePracticeModal.tsx:76` ·"],"resolved":false},
     "research-lab/shared/FormField.tsx": {"count":2,"sections":[5,7],"lines":["3","90"],"contexts":["(`DataGrid.tsx:475`), `rounded-card` (`research-lab/shared/FormField.tsx:3`),"],"resolved":false},
@@ -546,6 +548,7 @@
       "verbatim": "shared/components/forms/TableSelector.tsx"
     },
     "src/features/shared/components/forms/ThemedSelect.tsx": {"count":12,"sections":[3,5,6,7,8,9],"lines":["72","20","165-167","253","68","193","12"],"contexts":["- **`src/features/shared/components/forms/ThemedSelect.tsx`** (282 lines) —"]},
+    "src/features/shared/components/forms/__tests__/ThemedSelect.test.tsx": {"count":1,"sections":[9],"contexts":["`forms/__tests__/ThemedSelect.test.tsx` asserting that `id`, `aria-invalid`,"],"resolvedFrom":"suffix","verbatim":"forms/__tests__/ThemedSelect.test.tsx"},
     "src/features/shared/components/forms/useAnchoredPortalPosition.ts": {
       "count": 4,
       "sections": [3,7,9],
@@ -565,7 +568,6 @@
     },
     "src/features/shared/components/overlays/QuickEditPopover.tsx": {"count":1,"sections":[9],"contexts":["`overlays/QuickEditPopover.tsx` — overlays, not selects; they own their own"],"resolvedFrom":"suffix","verbatim":"overlays/QuickEditPopover.tsx"},
     "src/features/shared/glyph/InteractiveSigil.tsx": {"count":1,"sections":[8],"lines":["271"],"contexts":["`InteractiveSigil.tsx:271`, `IssuesList.tsx:68` — six of which already"],"resolvedFrom":"basename","verbatim":"InteractiveSigil.tsx"},
-    "src/features/shared/glyph/persona-layout/CapabilityTabBar.tsx": {"count":1,"sections":[8],"lines":["115"],"contexts":["`PanelTabBar.tsx:84`, both `DensityToggle`s, `CapabilityTabBar.tsx:115`,"],"resolvedFrom":"basename","verbatim":"CapabilityTabBar.tsx"},
     "src/features/studio/StudioTabBar.tsx": {"count":1,"sections":[7],"lines":["112"],"contexts":["instead of repositioning**, `:64-79`) · `StudioTabBar.tsx:112` (hardcodes a 256px"],"resolvedFrom":"basename","verbatim":"StudioTabBar.tsx"},
     "src/features/teams/sub_factory/AddKpiModal.tsx": {"count":2,"sections":[7],"lines":["67,75,79"],"contexts":["`AddKpiModal.tsx:67,75,79` · `addKpiPrimitives.tsx:72,79,84`."],"resolvedFrom":"basename","verbatim":"AddKpiModal.tsx"},
     "src/features/teams/sub_factory/FactoryBreadcrumb.tsx": {
@@ -575,14 +577,6 @@
       "contexts": ["`FactoryBreadcrumb.tsx:62` (mouse-leave only) and `NodeContextMenu.tsx:32` (no Escape)."],
       "resolvedFrom": "basename",
       "verbatim": "FactoryBreadcrumb.tsx"
-    },
-    "src/features/teams/sub_factory/KpiProposalsPanel.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["190"],
-      "contexts": ["`WebhookSubscriptionsPanel.tsx:293` · `DataGrid.tsx:465` · `KpiProposalsPanel.tsx:190` ·"],
-      "resolvedFrom": "basename",
-      "verbatim": "KpiProposalsPanel.tsx"
     },
     "src/features/teams/sub_factory/MeasureSetupModal.tsx": {
       "count": 1,
@@ -667,7 +661,6 @@
       "resolvedFrom": "basename",
       "verbatim": "MemoryRowDetail.tsx"
     },
-    "src/features/teams/sub_teamWorkspace/CreateTeamForm.tsx": {"count":1,"sections":[7],"lines":["142"],"contexts":["`DataGrid.tsx:259` · `GoalsMissions.tsx:236` · `CreateTeamForm.tsx:142` ·"],"resolvedFrom":"basename","verbatim":"CreateTeamForm.tsx"},
     "src/features/teams/sub_teamWorkspace/teamStudio/TeamPublishButton.tsx": {
       "count": 1,
       "sections": [7],

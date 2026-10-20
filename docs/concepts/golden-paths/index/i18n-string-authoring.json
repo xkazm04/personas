@@ -34,6 +34,7 @@
     "DocReader.tsx": {"count":1,"sections":[],"lines":["60"],"contexts":["is enumerable: `console/src/kb/kb-data.ts:42` `STATUS_LABEL`, `DocReader.tsx:60` `LIFECYCLE_COPY`,"],"resolved":false},
     "GlyphCinemaLayout.tsx": {"count":1,"sections":[7],"contexts":["`GlyphCinemaLayout.tsx`, `PersonaCoreModal.tsx`, `SensorScoreboard.tsx`, `FleetPage.tsx`,"],"resolved":false},
     "KnowledgeHealth.tsx": {"count":1,"sections":[],"lines":["50"],"contexts":["`KnowledgeHealth.tsx:50` `PILLAR_COPY`, each with a test asserting non-emptiness"],"resolved":false},
+    "PersonaCoreModal.tsx": {"count":1,"sections":[7],"contexts":["`GlyphCinemaLayout.tsx`, `PersonaCoreModal.tsx`, `SensorScoreboard.tsx`, `FleetPage.tsx`,"],"resolved":false},
     "console/app/layout.tsx": {"count":1,"sections":[],"lines":["46"],"contexts":["dir in the console; `console/app/layout.tsx:46` hardcodes `lang=\"en\"`). Its absence is"],"resolved":false},
     "console/src/kb/kb-data.ts": {"count":1,"sections":[],"lines":["42"],"contexts":["is enumerable: `console/src/kb/kb-data.ts:42` `STATUS_LABEL`, `DocReader.tsx:60` `LIFECYCLE_COPY`,"],"resolved":false},
     "constants.ts": {"count":1,"sections":[4],"contexts":["a `constants.ts`, a registry: store `labelKey: 'group_monitoring'` and resolve at the render"],"resolved":false},
@@ -53,6 +54,7 @@
         "| **`eslint-rules/no-module-scope-en-value.cjs`** | Flags reading a *value* off the `en` shim during module init. Exists because `alertSlice.ts` shipped frozen English to every locale (`:16-27`). **6…"
       ]
     },
+    "features/templates/sub_recipes/mockRecipes.ts": {"count":1,"sections":[7],"contexts":["| `hint` | 184 | | `features/templates/sub_recipes/mockRecipes.ts` | 99 |"],"resolved":false},
     "kb-data.test.ts": {"count":1,"sections":[],"lines":["119"],"contexts":["(`kb-data.test.ts:119`). **Externalizing copy pays where enumeration pays, independent of"],"resolved":false},
     "lefthook.yml": {"count":2,"sections":[7],"lines":["20"],"contexts":["The enforcement wiring, verified from `lefthook.yml` and `.github/workflows/ci.yml`:"]},
     "package.json": {"count":2,"sections":[7],"lines":["51"],"contexts":["its `package.json`. It nevertheless built, independently:"]},
@@ -73,7 +75,6 @@
     "shared-facts.json": {"count":1,"sections":[],"contexts":["`shared-facts.json` they agree with it exactly (1,135 warnings / 226 for"],"resolved":false},
     "src/": {"count":1,"sections":[1],"contexts":["`src/`** — in JSX, in a `placeholder`, in a `label:` on a constant, as the second argument to a"],"resolved":false,"isDir":true},
     "src/data/*.ts": {"count":1,"sections":[9],"contexts":["live in `src/data/*.ts` under different key names, so both signals below would score **zero** there"],"resolved":false},
-    "src/features/agents/sub_glyph/personaCore/PersonaCoreModal.tsx": {"count":1,"sections":[7],"contexts":["`GlyphCinemaLayout.tsx`, `PersonaCoreModal.tsx`, `SensorScoreboard.tsx`, `FleetPage.tsx`,"],"resolvedFrom":"basename","verbatim":"PersonaCoreModal.tsx"},
     "src/features/home/sub_welcome/HeroHeader.tsx": {
       "count": 1,
       "sections": [7],
@@ -103,13 +104,6 @@
       "verbatim": "ToastContainer.tsx"
     },
     "src/features/shared/chrome/sidebar/sidebarData.ts": {"count":2,"sections":[4,7],"contexts":["site. `src/features/shared/chrome/sidebar/sidebarData.ts` does **both** — `:235` uses"]},
-    "src/features/templates/sub_recipes/mockRecipes.ts": {
-      "count": 1,
-      "sections": [7],
-      "contexts": ["| `hint` | 184 | | `features/templates/sub_recipes/mockRecipes.ts` | 99 |"],
-      "resolvedFrom": "suffix",
-      "verbatim": "features/templates/sub_recipes/mockRecipes.ts"
-    },
     "src/features/vault/sub_catalog/components/design/phases/ErrorPhase.tsx": {"count":1,"sections":[6],"lines":["57"],"contexts":["and `src/features/vault/sub_catalog/components/design/phases/ErrorPhase.tsx:57` — the two clearest"]},
     "src/features/vault/sub_catalog/components/foraging/ForagingStatusPanels.tsx": {"count":1,"sections":[6],"lines":["124"],"contexts":["**For an error:** `src/features/vault/sub_catalog/components/foraging/ForagingStatusPanels.tsx:124`"]},
     "src/i18n/": {"count":1,"sections":[8],"contexts":["`TranslatedLabel` / `useResolvedLabels(items)` helper in `src/i18n/` that takes an array of"],"resolved":false,"isDir":true},

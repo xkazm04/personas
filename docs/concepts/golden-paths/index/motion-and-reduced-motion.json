@@ -276,7 +276,7 @@
       "resolvedFrom": "basename",
       "verbatim": "globals.css"
     },
-    "src/styles/typography.css": {"count":1,"sections":[],"contexts":["reduced-motion blocks + all 65 `@keyframes`), `typography.css`, `themeStore.ts`,"],"resolvedFrom":"basename","verbatim":"typography.css"},
+    "typography.css": {"count":1,"sections":[],"contexts":["reduced-motion blocks + all 65 `@keyframes`), `typography.css`, `themeStore.ts`,"],"resolved":false},
     "use-reduced-motion.mjs": {"count":1,"sections":[],"contexts":["`use-reduced-motion.mjs`), a scoped `npx eslint` run, and a full convergence census of the"],"resolved":false},
     "visual-element-target.mjs": {"count":1,"sections":[],"contexts":["`visual-element-target.mjs`, `keys-position.mjs`, `VisualElement.mjs`,"],"resolved":false}
   }

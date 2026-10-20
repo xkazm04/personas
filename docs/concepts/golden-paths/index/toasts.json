@@ -221,12 +221,13 @@
       "verbatim": "ImprovePlanPanel.tsx"
     },
     "src/hooks/utility/interaction/useSettingsSaveToast.ts": {
-      "count": 3,
+      "count": 2,
       "sections": [3,6],
       "lines": ["13","16-19"],
-      "contexts": ["`AlertToastContainer.tsx`, `HealingToast.tsx`, `useSettingsSaveToast.ts`, `silentCatch.ts`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "useSettingsSaveToast.ts"
+      "contexts": [
+        "| **`src/hooks/utility/interaction/useSettingsSaveToast.ts:13`** | The auto-save receipt: an inline checkmark **plus** a 2 s success toast. The right precedent for pairing a persistent inline marker…"
+      ],
+      "resolved": false
     },
     "src/hooks/utility/timing/usePolling.ts": {
       "count": 1,
@@ -330,6 +331,7 @@
         "| **Pause on hover / on hidden tab (P5)** | **LOCAL CALIBRATION — and the sibling had the parts** | Zero hover handlers and zero `visibilitychange` listeners in any of the five sibling toast files —…"
       ],
       "resolved": false
-    }
+    },
+    "useSettingsSaveToast.ts": {"count":1,"sections":[],"contexts":["`AlertToastContainer.tsx`, `HealingToast.tsx`, `useSettingsSaveToast.ts`, `silentCatch.ts`,"],"resolved":false}
   }
 }

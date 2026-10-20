@@ -129,6 +129,7 @@
       ],
       "resolved": false
     },
+    "TeamList.tsx": {"count":5,"sections":[4,5,7],"lines":["97-105","105","101"],"contexts":["same scoped credential list a third time (`TeamList.tsx:97-105`, `ProjectModal.tsx:99-107`,"],"resolved":false},
     "TeamToolbar.tsx": {"count":1,"sections":[7],"lines":["28"],"contexts":["(`useStudioComposer.ts:74`), `availablePersonas` (`TeamToolbar.tsx:28`), `deployablePersonas`"],"resolved":false},
     "TwinPicker.tsx": {"count":3,"sections":[0,12],"contexts":["(`parameterEditing.tsx`, `OllamaCloudPresets.ts`, `TwinPicker.tsx`, `eventTypeTaxonomy.ts`, plus one"],"resolved":false},
     "WhatChangedParts.tsx": {
@@ -664,14 +665,6 @@
       "verbatim": "KpiDetailModal.tsx"
     },
     "src/features/teams/sub_teamWorkspace/TeamCanvas.tsx": {"count":1,"sections":[7],"lines":["37"],"contexts":["`TeamCanvas.tsx:37` · `SlackBridgePickers.tsx:101` · `studioDraftModel.ts:90` ·"],"resolvedFrom":"basename","verbatim":"TeamCanvas.tsx"},
-    "src/features/teams/sub_teamWorkspace/TeamList.tsx": {
-      "count": 5,
-      "sections": [4,5,7],
-      "lines": ["97-105","105","101"],
-      "contexts": ["same scoped credential list a third time (`TeamList.tsx:97-105`, `ProjectModal.tsx:99-107`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "TeamList.tsx"
-    },
     "src/features/teams/sub_teamWorkspace/teamStudio/slackBridge/SlackBridgePickers.tsx": {
       "count": 6,
       "sections": [0,4,7],

@@ -40,6 +40,7 @@
     "VerdictBadge.test.tsx": {"count":1,"sections":[7],"lines":["12-16"],"contexts":["`VerdictBadge.test.tsx:12-16` is a *second* parity test in the repo and does not close the gap: it"],"resolved":false},
     "VerdictBadge.tsx": {"count":1,"sections":[7],"lines":["41"],"contexts":["asserts a **frontend** map against the catalog, while `VerdictBadge.tsx:41` falls back past that map"],"resolved":false},
     "check-i18n-coverage.mjs": {"count":2,"sections":[7],"lines":["127","8-14"],"contexts":["`personas-web` does the exact opposite — missing keys hard-fail (`check-i18n-coverage.mjs:127`)"],"resolved":false},
+    "components/IconSelector.tsx": {"count":1,"sections":[7],"contexts":["| `shared` | `personas` | 12 | `components/IconSelector.tsx` |"],"resolved":false},
     "dev_tools.rs": {"count":1,"sections":[7],"lines":["1362"],"contexts":["(`LabRunStatus.ts:3`), `dev_tasks.status` (`dev_tools.rs:1362`), `team_assignments.status`"],"resolved":false},
     "docs/tests/autonomy-eval/runs/_example-run/scorecard.json": {"count":1,"sections":[7],"contexts":["into `tokenLabel`, and the Rust side passes a `scorecard.json` string through unvalidated"],"resolvedFrom":"basename","verbatim":"scorecard.json"},
     "guide/categories.ts": {"count":1,"sections":[],"lines":["12-13"],"contexts":["| **personas-web** | 11 (`guide/categories.ts:12-13`) | 10 | **1** | silent English in 13 languages |"],"resolved":false},
@@ -168,7 +169,6 @@
       "verbatim": "templateFeedback.ts"
     },
     "src/data/guide/categories.ts": {"count":1,"sections":[],"lines":["12-13"],"contexts":["has an **11-member** category domain (`src/data/guide/categories.ts:12-13`) against a **10-arm**"],"resolved":false},
-    "src/features/agents/components/IconSelector.tsx": {"count":1,"sections":[7],"contexts":["| `shared` | `personas` | 12 | `components/IconSelector.tsx` |"],"resolvedFrom":"suffix","verbatim":"components/IconSelector.tsx"},
     "src/features/agents/sub_deployment/components/cloud/CreateTriggerForm.tsx": {
       "count": 1,
       "sections": [7],
@@ -306,15 +306,7 @@
       "resolvedFrom": "basename",
       "verbatim": "ChartErrorBoundary.tsx"
     },
-    "src/features/shared/components/feedback/ErrorBoundary.tsx": {
-      "count": 2,
-      "sections": [8,9],
-      "lines": ["33"],
-      "contexts": ["reaches for the `en` shim. The repo already solved it — `ErrorBoundary.tsx:33` is the class,"],
-      "resolvedFrom": "basename",
-      "verbatim": "ErrorBoundary.tsx"
-    },
-    "src/features/teams/sub_goals/GoalDetailDrawer.tsx": {
+    "src/features/projects/development/goals/GoalDetailDrawer.tsx": {
       "count": 1,
       "sections": [7],
       "lines": ["639"],
@@ -322,15 +314,13 @@
       "resolvedFrom": "basename",
       "verbatim": "GoalDetailDrawer.tsx"
     },
-    "src/features/teams/sub_goals/GoalTaskTable.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["97"],
-      "contexts": [
-        "| `pending`, `matching`, `done`, `skipped` | execution | `db/src/repos/orchestration/team_assignments.rs:220-223`; `engine/team_assignment_orchestrator.rs:801,:991,:336` | `teams/sub_goals/GoalTaskTa…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "teams/sub_goals/GoalTaskTable.tsx"
+    "src/features/shared/components/feedback/ErrorBoundary.tsx": {
+      "count": 2,
+      "sections": [8,9],
+      "lines": ["33"],
+      "contexts": ["reaches for the `en` shim. The repo already solved it — `ErrorBoundary.tsx:33` is the class,"],
+      "resolvedFrom": "basename",
+      "verbatim": "ErrorBoundary.tsx"
     },
     "src/features/teams/sub_kpis/KpiDetailModal.tsx": {"count":3,"sections":[7],"lines":["302","315"],"contexts":["The render is `KpiDetailModal.tsx:302` + `:320`:"],"resolvedFrom":"basename","verbatim":"KpiDetailModal.tsx"},
     "src/features/teams/sub_teamWorkspace/teamStudio/TeamPublishButton.tsx": {
@@ -472,6 +462,15 @@
     },
     "sub_editor/components/RecipeEditor.tsx": {"count":1,"sections":[7],"contexts":["| `recipes` | `events` | 14 | `sub_editor/components/RecipeEditor.tsx` |"],"resolved":false},
     "sub_patterns/KnowledgeLibrary.tsx": {"count":1,"sections":[7],"lines":["46"],"contexts":["| `plugins` | `overview` | 17 | e.g. `sub_patterns/KnowledgeLibrary.tsx:46` |"],"resolved":false},
+    "teams/sub_goals/GoalTaskTable.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["97"],
+      "contexts": [
+        "| `pending`, `matching`, `done`, `skipped` | execution | `db/src/repos/orchestration/team_assignments.rs:220-223`; `engine/team_assignment_orchestrator.rs:801,:991,:336` | `teams/sub_goals/GoalTaskTa…"
+      ],
+      "resolved": false
+    },
     "tokens.ts": {"count":1,"sections":[9],"lines":["101,117,130"],"contexts":["Measured: **25 matches / 19 files**, of which only ~6 resolve a *label* (`tokens.ts:101,117,130`,"],"resolved":false},
     "votetrack/messages.test.ts": {"count":1,"sections":[],"lines":["628-636"],"contexts":["(`votetrack/messages.test.ts:628-636` walks `PAGE_SECTIONS`) plus a runtime existence guard"],"resolved":false}
   }

@@ -75,10 +75,26 @@
       ],
       "resolved": false
     },
+    "PersonaCoreModal.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["27"],
+      "contexts": ["**Width-scale drift.** Only 78 of 129 call sites use `size=`; 49 bypass it with `maxWidthClass`. `PersonaCoreModal.tsx:27` passes both, so `size` is silently ignored."],
+      "resolved": false
+    },
     "RecipePlaygroundModal.tsx": {
       "count": 1,
       "sections": [7],
       "lines": ["35"],
+      "contexts": [
+        "**Latent flex-chain break — scrolling body with stagger still on (15).** `PersonaSelectorModal.tsx:78` · `onboarding/OnboardingOverlay.tsx:97` · `ReviewResultsModal.tsx:17` · `ProjectTeamPreviewModal…"
+      ],
+      "resolved": false
+    },
+    "RecommendedModal.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["25"],
       "contexts": [
         "**Latent flex-chain break — scrolling body with stagger still on (15).** `PersonaSelectorModal.tsx:78` · `onboarding/OnboardingOverlay.tsx:97` · `ReviewResultsModal.tsx:17` · `ProjectTeamPreviewModal…"
       ],
@@ -224,14 +240,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "agents/sub_glyph/commandPanel/composer/ComposerPickerShell.tsx"
-    },
-    "src/features/agents/sub_glyph/personaCore/PersonaCoreModal.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["27"],
-      "contexts": ["**Width-scale drift.** Only 78 of 129 call sites use `size=`; 49 bypass it with `maxWidthClass`. `PersonaCoreModal.tsx:27` passes both, so `size` is silently ignored."],
-      "resolvedFrom": "basename",
-      "verbatim": "PersonaCoreModal.tsx"
     },
     "src/features/agents/sub_lab/components/versions_table/LabVersionsTable.tsx": {
       "count": 1,
@@ -636,16 +644,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "RebuildModal.tsx"
-    },
-    "src/features/templates/sub_generated/gallery/modals/RecommendedModal.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["25"],
-      "contexts": [
-        "**Latent flex-chain break — scrolling body with stagger still on (15).** `PersonaSelectorModal.tsx:78` · `onboarding/OnboardingOverlay.tsx:97` · `ReviewResultsModal.tsx:17` · `ProjectTeamPreviewModal…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "RecommendedModal.tsx"
     },
     "src/features/templates/sub_generated/gallery/modals/TemplateDetailModal.tsx": {
       "count": 5,

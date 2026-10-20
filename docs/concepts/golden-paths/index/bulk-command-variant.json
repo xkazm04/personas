@@ -68,6 +68,15 @@
       ],
       "resolved": false
     },
+    "actions.ts": {
+      "count": 2,
+      "sections": [6],
+      "lines": ["92","123"],
+      "contexts": [
+        "| 9 | **A reusable generic per-item result type** | **SILENCE — 0 of 6** | ~14 distinct bespoke vocabularies across the cohort, none shared, none generic. ascent proves the *concurrency* half is fact…"
+      ],
+      "resolved": false
+    },
     "backlog_triage.rs": {"count":1,"sections":[7],"lines":["96-97"],"contexts":["etc.) — **reported, never swallowed**\"* (`backlog_triage.rs:96-97`). Because `accepted` counts"],"resolved":false},
     "console.rs": {
       "count": 7,
@@ -413,16 +422,6 @@
       "contexts": ["executions have run on this install, and the \"delete drafts\" button (`PersonaOverviewActions.tsx:127`)"],
       "resolvedFrom": "basename",
       "verbatim": "PersonaOverviewActions.tsx"
-    },
-    "src/features/home/sub_cockpit/briefing/actions.ts": {
-      "count": 2,
-      "sections": [6],
-      "lines": ["92","123"],
-      "contexts": [
-        "| 9 | **A reusable generic per-item result type** | **SILENCE — 0 of 6** | ~14 distinct bespoke vocabularies across the cohort, none shared, none generic. ascent proves the *concurrency* half is fact…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "actions.ts"
     },
     "src/features/overview/sub_manual-review/components/backlog/AthenaVerdictCard.tsx": {
       "count": 2,

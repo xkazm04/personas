@@ -21,6 +21,7 @@
   "citations": {
     "ChannelsAtelier.tsx": {"count":1,"sections":[7],"lines":["74"],"contexts":["| 19 | Twin channel credential select | `ChannelsAtelier.tsx:74` | store-backed, no per-control error | **none** | |"],"resolved":false},
     "CompetitionList.tsx": {"count":1,"sections":[],"lines":["59"],"contexts":["**Hand-verified precision: 12/12 on the sample opened** (`CompetitionList.tsx:59`,"],"resolved":false},
+    "KpiProposalsPanel.tsx": {"count":1,"sections":[],"lines":["45"],"contexts":["`StrategyLeaderboard.tsx:17`, `KpiProposalsPanel.tsx:45`, `useAnnotationData.ts:54` read"],"resolved":false},
     "ReauthBanner.tsx": {"count":1,"sections":[],"lines":["110"],"contexts":["in full; `ReauthBanner.tsx:110`, `CredentialTemplateForm.tsx:129`, `EventHistoryModal.tsx:33`,"],"resolved":false},
     "StrategyLeaderboard.tsx": {"count":1,"sections":[],"lines":["17"],"contexts":["`StrategyLeaderboard.tsx:17`, `KpiProposalsPanel.tsx:45`, `useAnnotationData.ts:54` read"],"resolved":false},
     "dispatchModel.ts": {
@@ -132,14 +133,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "useExportPicker.ts"
-    },
-    "src/features/teams/sub_factory/KpiProposalsPanel.tsx": {
-      "count": 1,
-      "sections": [],
-      "lines": ["45"],
-      "contexts": ["`StrategyLeaderboard.tsx:17`, `KpiProposalsPanel.tsx:45`, `useAnnotationData.ts:54` read"],
-      "resolvedFrom": "basename",
-      "verbatim": "KpiProposalsPanel.tsx"
     },
     "src/features/teams/sub_factory/passport/improve/ConnectorSection.tsx": {
       "count": 1,

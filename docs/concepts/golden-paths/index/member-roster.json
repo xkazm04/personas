@@ -36,6 +36,7 @@
     },
     "MembersPanel.tsx": {"count":1,"sections":[],"lines":["147"],"contexts":["`MembersPanel.tsx:147` keys rows `key={m.login}`. `src/lib/db/members.ts:277` sets"],"resolved":false},
     "SchemaFieldBuilder.tsx": {"count":1,"sections":[9],"contexts":["`SchemaFieldBuilder.tsx` (3), `ByomApiKeyManager.tsx` (3), `ModelRoutingSection.tsx` (3),"],"resolved":false},
+    "TeamList.tsx": {"count":3,"sections":[0,7],"lines":["443","454","455"],"contexts":["(`JudgePanel.tsx:94`, `ConversationSidebar.tsx:136`, `TeamList.tsx:443`) — so the UI simply"],"resolved":false},
     "console/src/pitch/pitch-data.ts": {"count":1,"sections":[],"lines":["144"],"contexts":["(`console/src/pitch/pitch-data.ts:144`). The nearest structural analogue is an API-token"],"resolved":false},
     "incremental.rs": {
       "count": 1,
@@ -153,14 +154,6 @@
       "resolvedFrom": "basename",
       "verbatim": "BlueprintPreview.tsx"
     },
-    "src/features/teams/sub_teamWorkspace/TeamList.tsx": {
-      "count": 4,
-      "sections": [0,7],
-      "lines": ["443","452","454","455"],
-      "contexts": ["(`JudgePanel.tsx:94`, `ConversationSidebar.tsx:136`, `TeamList.tsx:443`) — so the UI simply"],
-      "resolvedFrom": "basename",
-      "verbatim": "TeamList.tsx"
-    },
     "src/features/teams/sub_teamWorkspace/presetStudio/PresetProcessBlueprint.tsx": {
       "count": 2,
       "sections": [0,7],
@@ -246,6 +239,7 @@
       "resolvedFrom": "suffix",
       "verbatim": "stores/slices/pipeline/teamSlice.ts"
     },
-    "teams.rs": {"count":3,"sections":[2,7],"lines":["381-382","347"],"contexts":["(`persona_team_members` has no `UNIQUE(team_id, persona_id)`, and `teams.rs:381-382` says so in a"],"resolved":false}
+    "teams.rs": {"count":3,"sections":[2,7],"lines":["381-382","347"],"contexts":["(`persona_team_members` has no `UNIQUE(team_id, persona_id)`, and `teams.rs:381-382` says so in a"],"resolved":false},
+    "teams/sub_teamWorkspace/TeamList.tsx": {"count":1,"sections":[7],"lines":["452"],"contexts":["| `teams/sub_teamWorkspace/TeamList.tsx:452` | `m.id` | read-only | correct |"],"resolved":false}
   }
 }

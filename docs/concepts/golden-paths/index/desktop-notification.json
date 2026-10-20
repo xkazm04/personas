@@ -116,14 +116,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "teams/sub_assignments/useAssignmentNotificationDispatcher.ts"
     },
-    "src/features/templates/sub_generated/gallery/cards/useAdoptionCompletionNotifier.ts": {
-      "count": 5,
-      "sections": [5,7,9],
-      "lines": ["82","82,88,92"],
-      "contexts": ["`useAdoptionCompletionNotifier.ts:82` says *\"has been built. Click to review.\"*,"],
-      "resolvedFrom": "basename",
-      "verbatim": "useAdoptionCompletionNotifier.ts"
-    },
     "src/hooks/design/core/useBackgroundPreview.ts": {"count":2,"sections":[7,9],"lines":["47,50"],"contexts":["`remediationExecutor.ts:27,54,70` · `useBackgroundPreview.ts:47,50` ·"],"resolvedFrom":"basename","verbatim":"useBackgroundPreview.ts"},
     "src/hooks/design/core/useBackgroundRebuild.ts": {
       "count": 2,
@@ -184,6 +176,7 @@
       "contexts": ["`useLabEvents.ts:31,33` · `backgroundChatSlice.ts:444,459` ·"],
       "resolvedFrom": "basename",
       "verbatim": "backgroundChatSlice.ts"
-    }
+    },
+    "useAdoptionCompletionNotifier.ts": {"count":5,"sections":[5,7,9],"lines":["82","82,88,92"],"contexts":["`useAdoptionCompletionNotifier.ts:82` says *\"has been built. Click to review.\"*,"],"resolved":false}
   }
 }

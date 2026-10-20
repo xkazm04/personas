@@ -28,7 +28,6 @@
     "ImageLane.tsx": {"count":2,"sections":[7],"lines":["108"],"contexts":["`useTimelinePlayback.ts`, `BeatSidebar.tsx`, `ThreeViewer.tsx`, `ImageLane.tsx`,"],"resolved":false},
     "PlaybackControls.tsx": {"count":1,"sections":[7],"lines":["41"],"contexts":["| `PlaybackControls.tsx:41` | subscribes, local scope | compliant |"],"resolved":false},
     "ThreeViewer.tsx": {"count":2,"sections":[7],"lines":["126"],"contexts":["`useTimelinePlayback.ts`, `BeatSidebar.tsx`, `ThreeViewer.tsx`, `ImageLane.tsx`,"],"resolved":false},
-    "TimelinePanel.tsx": {"count":1,"sections":[7],"lines":["208"],"contexts":["| `TimelinePanel.tsx:208` | `engine.subscribe(apply)` — imperative DOM write | compliant, and the best of the four |"],"resolved":false},
     "artist/sub_media_studio/CompositionPreview.tsx": {
       "count": 1,
       "sections": [7],
@@ -60,6 +59,14 @@
     "src/app/api/disk/file/route.ts": {"count":1,"sections":[12],"lines":["62"],"contexts":["`src/app/api/disk/file/route.ts:62` calls `validatePathWithinAllowedRoots(fullPath,"],"resolved":false},
     "src/app/features/Context/sub_ContextPreview/components/PreviewDisplay.tsx": {"count":1,"sections":[12],"contexts":["(`src/app/features/Context/sub_ContextPreview/components/PreviewDisplay.tsx`,"],"resolved":false},
     "src/features/agents/quick-answer/triage/useUnifiedTriage.ts": {"count":1,"sections":[12],"lines":["506"],"contexts":["(`useUnifiedTriage.ts:506`, `useLayeredList.ts:126` and `:152`, on an earlier"],"resolvedFrom":"basename","verbatim":"useUnifiedTriage.ts"},
+    "src/features/decision-center/blueprint/ui/timeline/TimelinePanel.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["208"],
+      "contexts": ["| `TimelinePanel.tsx:208` | `engine.subscribe(apply)` — imperative DOM write | compliant, and the best of the four |"],
+      "resolvedFrom": "basename",
+      "verbatim": "TimelinePanel.tsx"
+    },
     "src/features/overview/sub_manual-review/components/FocusedDecisionCard.tsx": {
       "count": 1,
       "sections": [7],

@@ -50,6 +50,7 @@
     },
     "ConnectionStatusIndicator.tsx": {"count":1,"sections":[7],"lines":["33-38"],"contexts":["The same shape converges. `personas-web`'s `ConnectionStatusIndicator.tsx:33-38` reports"],"resolved":false},
     "DeckQueueRail.tsx": {"count":1,"sections":[7],"lines":["109"],"contexts":["`DeckQueueRail.tsx:109`). Only 2 carry hardcoded English (`ErrorRecoveryBanner.tsx:107`"],"resolved":false},
+    "ErrorRecoveryBanner.tsx": {"count":1,"sections":[7],"lines":["107"],"contexts":["`DeckQueueRail.tsx:109`). Only 2 carry hardcoded English (`ErrorRecoveryBanner.tsx:107`"],"resolved":false},
     "ExecuteToast.tsx": {
       "count": 1,
       "sections": [],
@@ -59,6 +60,7 @@
       ],
       "resolved": false
     },
+    "PersonaCoreModal.tsx": {"count":1,"sections":[7],"lines":["35"],"contexts":["The 6: `PersonaCoreModal.tsx:35` and `:37` (`\"Loading mentalities…\"`),"],"resolved":false},
     "SignInPrompt.tsx": {"count":2,"sections":[5,7],"lines":["60-61"],"contexts":["`SignInPrompt.tsx:60-61` — two repos, one confusion."],"resolved":false},
     "Skeleton.tsx": {
       "count": 1,
@@ -193,7 +195,6 @@
       "resolvedFrom": "basename",
       "verbatim": "ConnectorTableScopeRow.tsx"
     },
-    "src/features/agents/sub_glyph/personaCore/PersonaCoreModal.tsx": {"count":1,"sections":[7],"lines":["35"],"contexts":["The 6: `PersonaCoreModal.tsx:35` and `:37` (`\"Loading mentalities…\"`),"],"resolvedFrom":"basename","verbatim":"PersonaCoreModal.tsx"},
     "src/features/agents/sub_lab/components/shared/LabProgress.tsx": {"count":3,"sections":[5,7,9],"lines":["32","38"],"contexts":["`CharBudget.tsx:47`, `BulkRerunStrip.tsx:16`, `LabProgress.tsx:32`,"],"resolvedFrom":"basename","verbatim":"LabProgress.tsx"},
     "src/features/browser/webview/AddressBar.tsx": {
       "count": 2,
@@ -471,14 +472,6 @@
       "verbatim": "shared/components/feedback/Banner.tsx"
     },
     "src/features/shared/components/feedback/ConfirmDialog.tsx": {"count":1,"sections":[7],"lines":["79"],"contexts":["(`Button.tsx:219`, `AsyncButton.tsx:96/110`, `ConfirmDialog.tsx:79`, …), which is"],"resolvedFrom":"basename","verbatim":"ConfirmDialog.tsx"},
-    "src/features/shared/components/feedback/ErrorRecoveryBanner.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["107"],
-      "contexts": ["`DeckQueueRail.tsx:109`). Only 2 carry hardcoded English (`ErrorRecoveryBanner.tsx:107`"],
-      "resolvedFrom": "basename",
-      "verbatim": "ErrorRecoveryBanner.tsx"
-    },
     "src/features/shared/components/feedback/InlineErrorBanner.tsx": {
       "count": 2,
       "sections": [3,6],
