@@ -9,6 +9,7 @@ import {
   startTeamAssignment,
 } from '@/api/pipeline/assignments';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { useMonitorVisible } from '../monitorVisibility';
 import type { TeamDeliberation } from '@/lib/bindings/TeamDeliberation';
 import {
   buildConversation,
@@ -34,7 +35,13 @@ import {
 const DELIB_KINDS = ['deliberation'] as const;
 
 export function useConversation(teamId: string | null, focusItemId?: string | null) {
-  const ids = useMemo(() => (teamId ? [teamId] : []), [teamId]);
+  // The Monitor is hidden, not unmounted, on close (`monitorVisibility.ts`), and
+  // each subscription is a key the shared channel poll re-reads every 15s. The
+  // deliberation key has no other subscriber, so a closed Monitor parked on
+  // Conversations kept querying it for nobody. Released while hidden; the cache
+  // stays, and re-subscribing on show refetches a key older than one poll.
+  const visible = useMonitorVisible();
+  const ids = useMemo(() => (teamId && visible ? [teamId] : []), [teamId, visible]);
   useChannelSubscription(ids);
   useChannelSubscription(ids, [...DELIB_KINDS]);
 
