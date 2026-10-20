@@ -116,3 +116,34 @@ describe('useConversation proposals across a project switch', () => {
     expect(createAssignment.mock.calls[0]![0]).toMatchObject({ teamId: 'team-a', goal: GOAL });
   });
 });
+
+describe('useConversation confirm after a failed start', () => {
+  it('starts the assignment it already created instead of creating another', async () => {
+    decompose.mockResolvedValue(STEPS);
+    createAssignment.mockResolvedValue({ id: 'asg-1' });
+    startAssignment.mockRejectedValueOnce({ error: 'engine busy', kind: 'Internal' }).mockResolvedValue(undefined);
+    const hook = await mountHook('team-a');
+    act(() => {
+      hook.result.current.enqueue(GOAL, true);
+    });
+    await waitFor(() => expect(proposalRows(hook.result.current.rows)).toHaveLength(1));
+    const first = hook.result.current.rows.find((r) => r.kind === 'proposal');
+    if (!first || first.kind !== 'proposal') throw new Error('no proposal row');
+    await act(async () => {
+      await hook.result.current.confirmProposal(first.proposal);
+    });
+
+    // The failed start puts the card back; the retry is pressed on it.
+    const again = hook.result.current.rows.find((r) => r.kind === 'proposal');
+    if (!again || again.kind !== 'proposal') throw new Error('proposal not restored');
+    expect(again.proposal.status).toBe('pending');
+    await act(async () => {
+      await hook.result.current.confirmProposal(again.proposal);
+    });
+
+    expect(createAssignment).toHaveBeenCalledTimes(1);
+    expect(startAssignment).toHaveBeenCalledTimes(2);
+    expect(startAssignment).toHaveBeenLastCalledWith('asg-1');
+    expect(proposalRows(hook.result.current.rows)).toHaveLength(0);
+  });
+});

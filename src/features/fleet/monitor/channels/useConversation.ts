@@ -256,7 +256,10 @@ export function useConversation(teamId: string | null, focusItemId?: string | nu
       const same = (x: AssignProposal) => x.teamId === owner && x.goal === p.goal;
       setProposals((ps) => ps.map((x) => (same(x) ? { ...x, status: 'launching' } : x)));
       try {
-        const created = await createTeamAssignment({
+        // A retry after a failed START reuses the assignment the first press
+        // already created: creating again left one orphaned, never-started
+        // assignment per retry beside the one that finally ran.
+        const assignmentId = p.assignmentId ?? (await createTeamAssignment({
           teamId: owner,
           title: p.goal.slice(0, 60),
           goal: p.goal,
@@ -274,13 +277,13 @@ export function useConversation(teamId: string | null, focusItemId?: string | nu
             assignedUseCaseId: null,
             dependsOnIndices: null,
           })),
-        });
-        if (created) {
-          await startTeamAssignment(created.id);
-          // The assignment now speaks for itself in the channel.
-          setProposals((ps) => ps.filter((x) => !same(x)));
-          void refreshChannel(channelKey(owner));
-        }
+        })).id;
+        // Recorded before the start, so a failed start keeps it for the retry.
+        setProposals((ps) => ps.map((x) => (same(x) ? { ...x, assignmentId } : x)));
+        await startTeamAssignment(assignmentId);
+        // The assignment now speaks for itself in the channel.
+        setProposals((ps) => ps.filter((x) => !same(x)));
+        void refreshChannel(channelKey(owner));
       } catch (e) {
         toastCatch('conversation:confirm')(e);
         setProposals((ps) => ps.map((x) => (same(x) ? { ...x, status: 'pending' } : x)));
