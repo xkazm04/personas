@@ -7,6 +7,7 @@ import { silentCatch, toastCatch } from "@/lib/silentCatch";
 import { useSelectedCredentialLinks } from '@/stores/selectors/personaSelectors';
 import { mutateCredentialLink } from '@/hooks/design/core/useDesignContextMutator';
 import { useTranslation } from '@/i18n/useTranslation';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { connectorCategoryTags } from "@/lib/credentials/builtinConnectors";
 import type { ConnectorStatus, ConnectorReadiness, ConnectorTestResult } from './connectorTypes';
 import { deriveReadiness, restoreHealthcheck, isStaleResult, summarizeTestAll } from './connectorTypes';
@@ -22,6 +23,9 @@ export function useConnectorStatuses() {
   const [statuses, setStatuses] = useState<ConnectorStatus[]>([]);
   const [testingAll, setTestingAll] = useState(false);
   const inFlightTestsRef = useRef<Set<string>>(new Set());
+  // Persona epoch: bumped on every persona switch so a probe still in flight for
+  // the previous persona cannot paint its result onto the new persona's same-named row.
+  const personaEpochRef = useRef(createLatestWins());
   const lastAutoTestedCredentialRef = useRef<Map<string, string>>(new Map());
 
   const tools = useMemo(() => selectedPersona?.tools ?? [], [selectedPersona?.tools]);
@@ -124,6 +128,7 @@ export function useConnectorStatuses() {
   useEffect(() => {
     lastAutoTestedCredentialRef.current.clear();
     inFlightTestsRef.current.clear();
+    personaEpochRef.current.next();
   }, [selectedPersona?.id]);
 
   const updateStatus = useCallback((name: string, updates: Partial<ConnectorStatus>) => {
@@ -137,20 +142,23 @@ export function useConnectorStatuses() {
   const testConnector = useCallback(async (name: string, credentialId: string): Promise<ConnectorTestResult | null> => {
     if (inFlightTestsRef.current.has(name)) return null;
     inFlightTestsRef.current.add(name);
+    const epoch = personaEpochRef.current;
+    const token = epoch.current();
     updateStatus(name, { testing: true, result: null });
     try {
       const result = await healthcheckCredential(credentialId);
-      updateStatus(name, { testing: false, result });
+      if (epoch.isCurrent(token)) updateStatus(name, { testing: false, result });
       return result;
     } catch (err) {
       const result: ConnectorTestResult = {
         success: false,
         message: err instanceof Error ? err.message : t.agents.connectors.test_healthcheck_failed_default,
       };
-      updateStatus(name, { testing: false, result });
+      if (epoch.isCurrent(token)) updateStatus(name, { testing: false, result });
       return result;
     } finally {
-      inFlightTestsRef.current.delete(name);
+      // A switch already cleared the set; the name may now belong to the new persona's probe.
+      if (epoch.isCurrent(token)) inFlightTestsRef.current.delete(name);
     }
   }, [healthcheckCredential, updateStatus, t]);
 

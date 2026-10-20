@@ -124,3 +124,18 @@ describe('useConnectorStatuses link failure', () => {
     expect(reported).toHaveBeenCalledWith('useConnectorStatuses:linkCredential', expect.objectContaining({ message: 'persona gone' }));
   });
 });
+
+describe('useConnectorStatuses persona-scoped probes', () => {
+  it("a probe in flight across a persona switch does not paint the new persona's row", async () => {
+    let resolveProbe!: (r: { success: boolean; message: string }) => void;
+    healthcheckCredential.mockReturnValueOnce(new Promise((r) => { resolveProbe = r; }));
+    const { result } = renderHook(() => useConnectorStatuses());
+
+    let pending!: Promise<unknown>;
+    act(() => { pending = result.current.testConnector('github', 'cred-a'); });
+    act(() => { useAgentStore.setState({ selectedPersona: persona('persona-b', 'cred-b') } as never); });
+    await act(async () => { resolveProbe({ success: false, message: 'persona A probe' }); await pending; });
+
+    expect(result.current.statuses[0]?.result?.message).not.toBe('persona A probe');
+  });
+});
