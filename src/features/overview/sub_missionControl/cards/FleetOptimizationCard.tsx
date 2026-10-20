@@ -106,14 +106,15 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
   const personaId = rec.personaIds[0] ?? null;
   const personaName = rec.personaNames[0] ?? null;
 
-  // Jump straight into the affected agent's Lab in model-comparison mode so the
-  // user can test alternative models against the persona this rec is about.
+  // Jump straight into the affected agent's Lab so the user can test alternative
+  // models against the persona this rec is about. No Lab view reads a mode from
+  // the store (labMode only picks the finishLabRun refresh fallback), so the old
+  // setLabMode('matrix') landed nowhere and skewed that fallback; the tab is enough.
   const openLab = useCallback(() => {
     if (!personaId) return;
     useSystemStore.getState().setSidebarSection('personas');
     useAgentStore.getState().selectPersona(personaId);
     useSystemStore.getState().setEditorTab('lab');
-    useAgentStore.getState().setLabMode('matrix');
   }, [personaId]);
 
   // Forward the recommendation to Athena (companion) so she can investigate and,

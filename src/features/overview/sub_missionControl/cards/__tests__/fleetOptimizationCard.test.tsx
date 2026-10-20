@@ -1,5 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { useAgentStore } from '@/stores/agentStore';
+import { useSystemStore } from '@/stores/systemStore';
 import type { FleetRecommendation } from '@/features/overview/libs/fleetOptimizer';
 
 const rec: FleetRecommendation = {
@@ -32,5 +34,18 @@ describe('FleetOptimizationCard disclosure', () => {
     fireEvent.click(toggle);
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
     expect(screen.getByText('Review its recent errors')).toBeTruthy();
+  });
+});
+
+describe('FleetOptimizationCard open Lab', () => {
+  it('opens the Lab tab without writing a labMode nothing reads', async () => {
+    const { default: FleetOptimizationCard } = await import('../FleetOptimizationCard');
+    const before = useAgentStore.getState().labMode;
+    render(<FleetOptimizationCard />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Lab/ }));
+
+    expect(useSystemStore.getState().editorTab).toBe('lab');
+    expect(useAgentStore.getState().labMode).toBe(before);
   });
 });
