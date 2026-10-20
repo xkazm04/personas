@@ -208,7 +208,6 @@ fn set_cached_tools_with_ttl(credential_id: &str, tools: Vec<McpTool>, ttl: std:
 }
 
 /// Invalidate the cache entry for a credential (e.g. after server reconnect).
-#[allow(dead_code)]
 pub fn invalidate_tools_cache(credential_id: &str) {
     if let Ok(mut cache) = tools_list_cache().lock() {
         cache.remove(credential_id);
@@ -363,7 +362,6 @@ async fn spawn_stdio_session(
 }
 
 /// Invalidate (kill) any pooled session for a credential.
-#[allow(dead_code)]
 pub async fn invalidate_pooled_session(credential_id: &str) {
     let mut pool = stdio_session_pool().lock().await;
     if let Some(mut session) = pool.remove(credential_id) {
@@ -372,12 +370,33 @@ pub async fn invalidate_pooled_session(credential_id: &str) {
 }
 
 /// Kill all pooled sessions (e.g. on app shutdown).
-#[allow(dead_code)]
 pub async fn shutdown_stdio_pool() {
     let mut pool = stdio_session_pool().lock().await;
     for (_, mut session) in pool.drain() {
         let _ = session.child.start_kill();
     }
+}
+
+/// Forget everything MCP holds for a credential whose secret fields were edited
+/// or which was deleted: the cached `tools/list` and any warm stdio process.
+/// A pooled child keeps the env (token) it was spawned with, so without this a
+/// rotated credential would keep being used until the idle timeout.
+///
+/// Callable from the sync credential commands. The pool entry is removed
+/// in-line when the pool lock is free (so the very next call cannot take the
+/// old session); if it is momentarily held the kill is queued instead.
+pub fn evict_credential(credential_id: &str) {
+    invalidate_tools_cache(credential_id);
+    if let Ok(mut pool) = stdio_session_pool().try_lock() {
+        if let Some(mut session) = pool.remove(credential_id) {
+            let _ = session.child.start_kill();
+        }
+        return;
+    }
+    let id = credential_id.to_string();
+    tauri::async_runtime::spawn(async move {
+        invalidate_pooled_session(&id).await;
+    });
 }
 
 // ============================================================================
@@ -2988,4 +3007,61 @@ async fn probe_and_persist_member(pool: &DbPool, member_credential_id: &str) {
             HealthProbeState::Failed
         },
     );
+}
+
+#[cfg(test)]
+mod credential_eviction_tests {
+    use super::*;
+
+    fn idle_child() -> tokio::process::Child {
+        #[cfg(windows)]
+        let mut c = {
+            let mut c = tokio::process::Command::new("cmd");
+            c.args(["/C", "ping -n 60 127.0.0.1 >nul"]);
+            c
+        };
+        #[cfg(not(windows))]
+        let mut c = {
+            let mut c = tokio::process::Command::new("sleep");
+            c.arg("60");
+            c
+        };
+        c.stdin(std::process::Stdio::piped())
+            .stdout(std::process::Stdio::piped())
+            .kill_on_drop(true);
+        c.spawn().expect("spawn idle child")
+    }
+
+    /// A credential edit/delete must drop both the cached tool list and the warm
+    /// stdio process that still holds the old token in its env.
+    #[tokio::test]
+    async fn evict_credential_drops_cache_and_pooled_process() {
+        let id = "cred-evict-test";
+        let mut child = idle_child();
+        let stdin = child.stdin.take().unwrap();
+        let reader = tokio::io::BufReader::new(child.stdout.take().unwrap());
+        stdio_session_pool().lock().await.insert(
+            id.to_string(),
+            PooledStdioSession {
+                child,
+                stdin,
+                reader,
+                last_used: Instant::now(),
+                next_id: 1,
+            },
+        );
+        set_cached_tools(id, vec![]);
+        assert!(get_cached_tools(id).is_some());
+
+        evict_credential(id);
+
+        assert!(
+            get_cached_tools(id).is_none(),
+            "tools cache survived the edit"
+        );
+        assert!(
+            !stdio_session_pool().lock().await.contains_key(id),
+            "warm stdio session survived the edit"
+        );
+    }
 }
