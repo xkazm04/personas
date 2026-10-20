@@ -100,9 +100,11 @@ export function CompanionsTriptych({
               }}
             />
           ))
-        : COMPANION_IDS.map((id, index) => (
-            <CompanionColumnGhost key={id} id={id} index={index + 1} />
-          ))}
+        : !error
+          ? COMPANION_IDS.map((id, index) => (
+              <CompanionColumnGhost key={id} id={id} index={index + 1} />
+            ))
+          : null}
 
       <span className="sr-only" aria-live="polite">
         {loading && !views ? t.companions.state.loading : ''}
