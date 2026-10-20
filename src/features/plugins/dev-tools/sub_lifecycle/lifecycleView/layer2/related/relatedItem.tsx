@@ -15,10 +15,10 @@ import { createContext, Suspense, useCallback, useContext, useMemo, useState, ty
 
 import { useCategoryLabel } from '@/features/overview/sub_manual-review/components/backlog/backlogLabels';
 import { toBacklogIdea, type BacklogIdea } from '@/features/overview/sub_manual-review/components/backlog/backlogModel';
-import { resolveError } from '@/lib/errors/errorRegistry';
 import { lazyRetry } from '@/lib/lazyRetry';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
+import { errorText } from '../../system/errorText';
 
 export interface RelatedItemApi {
   /** Read the item by id and open it. */
@@ -37,7 +37,7 @@ const RelatedItemContext = createContext<RelatedItemApi | null>(null);
 const LazyBacklogDetail = lazyRetry(() => import('@/features/overview/sub_manual-review/components/backlog/BacklogDetailModal')
   .then((m) => ({ default: m.BacklogDetailModal })));
 
-const message = (err: unknown) => resolveError(err instanceof Error ? err.message : String(err)).message;
+const message = errorText;
 
 export function RelatedItemProvider({ onDecided, children }: { onDecided: () => void; children: ReactNode }) {
   const [idea, setIdea] = useState<BacklogIdea | null>(null);

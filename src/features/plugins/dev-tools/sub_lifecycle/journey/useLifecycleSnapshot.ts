@@ -19,10 +19,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { getLifecycle } from '@/api/devTools/lifecycle';
 import { createModuleCache } from '@/hooks/utility/data/useModuleSubscription';
 import type { LifecycleSnapshot } from '@/lib/bindings/LifecycleSnapshot';
-import { resolveError } from '@/lib/errors/errorRegistry';
 import { silentCatch } from '@/lib/silentCatch';
 import { createLatestWins } from '@/stores/util/latestWins';
 import { useDevToolsLiveStore } from '@/stores/devToolsLiveStore';
+import { errorText } from '../lifecycleView/system/errorText';
 
 // One entry per project read this session; the cap names the bound. The portfolio reads every
 // project at once (Lens L1), so the cap is past a real portfolio, not past one visit.
@@ -124,7 +124,7 @@ export function useLifecycleSnapshot(projectId: string | null): UseLifecycleSnap
         if (!latestWins.isCurrent(token)) return;
         silentCatch('lifecycle:getLifecycle')(err);
         // The page shows this sentence, so it goes through the product's own wording.
-        setError(resolveError(err instanceof Error ? err.message : String(err)).message);
+        setError(errorText(err));
         setLoading(false);
       });
   }, [projectId, revision, gen, latestWins]);

@@ -4,12 +4,12 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { measureLifecycle } from '@/api/devTools/lifecycle';
-import { resolveError } from '@/lib/errors/errorRegistry';
 import { silentCatch } from '@/lib/silentCatch';
 import { isTauriError } from '@/lib/types/tauriError';
 
 import { useLifecycleViewModel } from '../context';
 import { isMeasuring, useMeasureSession } from '../measure/measureSession';
+import { errorText } from '../system/errorText';
 
 /** `nothing`: the plan found no command to run, configured or detected. */
 export type MeasureRefusal = { kind: 'nothing' } | { kind: 'other'; text: string };
@@ -39,7 +39,7 @@ export function useMeasureNow(): MeasureNow {
       silentCatch('lifecycle:measure')(err);
       // `not_found` is the plan finding no command to run, configured or detected.
       if (isTauriError(err) && err.kind === 'not_found') setRefusal({ kind: 'nothing' });
-      else setRefusal({ kind: 'other', text: resolveError(isTauriError(err) ? err.error : err instanceof Error ? err.message : String(err)).message });
+      else setRefusal({ kind: 'other', text: errorText(err) });
     }
   }, [projectId, refetch]);
 

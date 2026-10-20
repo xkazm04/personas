@@ -13,10 +13,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { getLifecycleStepDetail } from '@/api/devTools/lifecycle';
 import { createModuleCache } from '@/hooks/utility/data/useModuleSubscription';
 import type { LifecycleStepDetail } from '@/lib/bindings/LifecycleStepDetail';
-import { resolveError } from '@/lib/errors/errorRegistry';
 import { silentCatch } from '@/lib/silentCatch';
 import { useDevToolsLiveStore } from '@/stores/devToolsLiveStore';
 import { createLatestWins } from '@/stores/util/latestWins';
+import { errorText } from '../system/errorText';
 
 // One entry per (project, step) opened this session; eleven steps a project, so the cap names the bound.
 const detailCache = createModuleCache<string, LifecycleStepDetail>({ maxSize: 64 });
@@ -90,7 +90,7 @@ export function useStepDetail(projectId: string | null, stepId: string | null): 
       .catch((err: unknown) => {
         if (!latestWins.isCurrent(token)) return;
         silentCatch('lifecycle:getLifecycleStepDetail')(err);
-        setError(resolveError(err instanceof Error ? err.message : String(err)).message);
+        setError(errorText(err));
         setLoading(false);
       });
   }, [projectId, stepId, key, revision, gen, latestWins]);

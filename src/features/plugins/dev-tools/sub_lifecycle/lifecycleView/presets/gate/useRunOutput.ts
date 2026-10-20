@@ -8,8 +8,8 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { getLifecycleRunOutput } from '@/api/devTools/lifecycle';
 import { createModuleCache } from '@/hooks/utility/data/useModuleSubscription';
-import { resolveError } from '@/lib/errors/errorRegistry';
 import { silentCatch } from '@/lib/silentCatch';
+import { errorText } from '../../system/errorText';
 
 /** `null` is a real answer (nothing kept), so the cache stores it boxed. */
 interface Kept { text: string | null }
@@ -46,7 +46,7 @@ export function useRunOutput(projectId: string | null, runId: string | null): { 
       })
       .catch((err: unknown) => {
         silentCatch('lifecycle:getLifecycleRunOutput')(err);
-        if (live) setState({ status: 'failed', error: resolveError(err instanceof Error ? err.message : String(err)).message });
+        if (live) setState({ status: 'failed', error: errorText(err) });
       });
     return () => { live = false; };
   }, [key, projectId, runId, gen]);

@@ -17,12 +17,12 @@ import { setLifecycleStepParams } from '@/api/devTools/lifecycle';
 import type { LifecycleGateCommand } from '@/lib/bindings/LifecycleGateCommand';
 import type { LifecycleRun } from '@/lib/bindings/LifecycleRun';
 import type { LifecycleStep } from '@/lib/bindings/LifecycleStep';
-import { resolveError } from '@/lib/errors/errorRegistry';
 import { silentCatch } from '@/lib/silentCatch';
 import { formatNumeric } from '@/lib/utils/formatters';
 
 import { useLifecycleViewModel } from '../../context';
 import { seenInRuns, type EditorResult } from '../useCommandsEditor';
+import { errorText } from '../../system/errorText';
 
 /** Seconds as typed to a budget in ms: null for empty (the kind's default), undefined when invalid. */
 export function parseBudgetSeconds(text: string): number | null | undefined {
@@ -79,7 +79,7 @@ export function useBudgetEdit(step: LifecycleStep, runs: LifecycleRun[]) {
       });
     } catch (err) {
       silentCatch('lifecycle:setBudget')(err);
-      setResult({ tone: 'error', text: resolveError(err instanceof Error ? err.message : String(err)).message });
+      setResult({ tone: 'error', text: errorText(err) });
     } finally {
       setSaving(false);
     }

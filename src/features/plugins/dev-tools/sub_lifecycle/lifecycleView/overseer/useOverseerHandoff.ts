@@ -12,8 +12,8 @@ import { useEffect, useRef, useState } from 'react';
 import { previewLifecycleSend, sendLifecycleToOverseer, setLifecycleWatch } from '@/api/devTools/lifecycle';
 import type { LifecycleSendPreview } from '@/lib/bindings/LifecycleSendPreview';
 import type { LifecycleSendResult } from '@/lib/bindings/LifecycleSendResult';
-import { resolveError } from '@/lib/errors/errorRegistry';
-import { extractMessage, silentCatch } from '@/lib/silentCatch';
+import { silentCatch } from '@/lib/silentCatch';
+import { errorText } from '../system/errorText';
 
 export type PreviewState =
   | { phase: 'loading' }
@@ -36,7 +36,7 @@ export interface OverseerHandoff {
   dismissError: () => void;
 }
 
-const message = (err: unknown) => resolveError(extractMessage(err)).message;
+const message = errorText;
 
 export function useOverseerHandoff(projectId: string | null, watchedNow: boolean): OverseerHandoff {
   const [watched, setWatched] = useState(watchedNow);

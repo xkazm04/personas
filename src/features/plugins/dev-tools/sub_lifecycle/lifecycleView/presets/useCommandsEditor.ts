@@ -14,12 +14,12 @@ import type { LifecycleGateCommand } from '@/lib/bindings/LifecycleGateCommand';
 import type { LifecycleGateKind } from '@/lib/bindings/LifecycleGateKind';
 import type { LifecycleRun } from '@/lib/bindings/LifecycleRun';
 import type { LifecycleStep } from '@/lib/bindings/LifecycleStep';
-import { resolveError } from '@/lib/errors/errorRegistry';
 import { silentCatch } from '@/lib/silentCatch';
 
 import { useLifecycleViewModel } from '../context';
 import { kindsForStep } from '../system/rules';
 import { useSnapshotRules } from '../system/useSnapshotRules';
+import { errorText } from '../system/errorText';
 
 export interface DraftCommand {
   /** React key; stable across edits. */
@@ -114,7 +114,7 @@ export function useCommandsEditor(step: LifecycleStep, runs: LifecycleRun[]) {
       setResult({ tone: 'success', text: commands ? dl.lc2_commands_saved : dl.lc2_commands_saved_auto });
     } catch (err) {
       silentCatch('lifecycle:setStepParams')(err);
-      setResult({ tone: 'error', text: resolveError(err instanceof Error ? err.message : String(err)).message });
+      setResult({ tone: 'error', text: errorText(err) });
     } finally {
       setSaving(false);
     }
