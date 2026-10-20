@@ -224,6 +224,21 @@ fn recent_channel_history(pool: &crate::db::DbPool, team_id: &str) -> String {
     lines.join("\n")
 }
 
+/// Trim the model's `addressed_to` and keep only ids that are members of the
+/// team; `None` when nothing real remains.
+fn retain_team_members(raw: Vec<String>, member_ids: &[String]) -> Option<Vec<String>> {
+    let kept: Vec<String> = raw
+        .into_iter()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty() && member_ids.iter().any(|m| m == s))
+        .collect();
+    if kept.is_empty() {
+        None
+    } else {
+        Some(kept)
+    }
+}
+
 /// Post one decided reaction to the team channel (called per verdict by
 /// [`run_athena_reaction_batch`]): audit-footer body, inject-vs-display consumer,
 /// assignment linkage, optional user escalation. Returns Ok(true) if posted.
@@ -262,19 +277,15 @@ fn post_reaction_message(
         )
     };
 
-    let addressed_to: Option<Vec<String>> = {
-        let cleaned: Vec<String> = decision
-            .addressed_to
-            .into_iter()
-            .map(|s| s.trim().to_string())
-            .filter(|s| !s.is_empty())
-            .collect();
-        if cleaned.is_empty() {
-            None
-        } else {
-            Some(cleaned)
-        }
-    };
+    // Only real members of THIS team may be addressed: an invented id would
+    // flip the message to `inject` for a persona that does not exist and hide
+    // it from the human. Unknown ids are dropped (the message then stays a
+    // visible observation).
+    let member_ids: Vec<String> =
+        crate::db::repos::resources::teams::get_members(pool, &signal.team_id)
+            .map(|ms| ms.into_iter().map(|m| m.persona_id).collect())
+            .unwrap_or_default();
+    let addressed_to = retain_team_members(decision.addressed_to, &member_ids);
     // Injected only when addressed to a persona (reaches their next step);
     // otherwise a visible observation for the human in the Collab UI.
     let consumer = if addressed_to.is_some() {
@@ -631,10 +642,24 @@ fn build_batch_prompt(pool: &crate::db::DbPool, signals: &[ReactionSignal]) -> S
                     format!("\nTeam ledger:\n{items}")
                 })
                 .unwrap_or_default();
+        let members = crate::db::repos::resources::teams::get_members(pool, &signal.team_id)
+            .map(|ms| {
+                ms.iter()
+                    .map(|m| format!("`{}` ({})", m.persona_id, m.role))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            })
+            .unwrap_or_default();
+        let members = if members.is_empty() {
+            "(none)".to_string()
+        } else {
+            members
+        };
         blocks.push_str(&format!(
-            "### Signal {n} — team \"{team}\"\n- Moment: {headline}\n- Kind: `{kind}`\n- Artifact: {title}\n- Detail: {detail}\nRecent channel activity (oldest → newest):\n{history}{ledger}\n\n",
+            "### Signal {n} — team \"{team}\"\n- Team members (valid `addressed_to` ids): {members}\n- Moment: {headline}\n- Kind: `{kind}`\n- Artifact: {title}\n- Detail: {detail}\nRecent channel activity (oldest → newest):\n{history}{ledger}\n\n",
             n = i + 1,
             team = signal.team_name,
+            members = members,
             headline = signal.headline(),
             kind = signal.kind,
             title = signal.title,
@@ -653,7 +678,7 @@ You see all pending moments at once — use cross-team patterns (the same failur
 - AWAITING-REVIEW cap-out → almost always react AND `escalate_to_user: true`: the team is stuck and only a human can unblock it. Say concisely what's blocked and what call is needed.
 - A QA bounce → usually stay silent (normal SDLC); react only on a repeating pattern the team isn't self-correcting, optionally addressing the implementer with one concrete steer.
 - A shipped goal → react only if it's a meaningful milestone worth recording; otherwise silent.
-- If you address a specific persona, put their persona id in `addressed_to` (injected into their next step). Otherwise leave it empty (visible observation for the human).
+- If you address a specific persona, put their persona id (taken ONLY from that signal's "Team members" list, never invented) in `addressed_to` (injected into their next step). Otherwise leave it empty (visible observation for the human).
 - Keep each `message` to 1–3 sentences, plain and specific. `rationale` is one short clause recorded as an audit footer.
 
 Respond with the analysis you need, then emit EXACTLY ONE line that is this JSON object and nothing else on that line — one entry per signal, ALL signals present:
@@ -1444,6 +1469,17 @@ fn parse_athena_review(blob: &str) -> Option<AthenaReviewDecision> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn addressed_to_keeps_only_team_members() {
+        let members = vec!["p1".to_string(), "p2".to_string()];
+        assert_eq!(
+            retain_team_members(vec![" p1 ".into(), "ghost".into(), "".into()], &members),
+            Some(vec!["p1".to_string()])
+        );
+        assert_eq!(retain_team_members(vec!["ghost".into()], &members), None);
+        assert_eq!(retain_team_members(vec![], &members), None);
+    }
 
     #[test]
     fn match_braces_respects_strings() {
