@@ -1369,11 +1369,15 @@ pub fn get_execution_dashboard_in_window(
             let start = std::time::Instant::now();
             let conn = pool.conn("metrics::get_execution_dashboard")?;
             let hi_clause = if window.hi.is_some() {
-                " AND e.created_at < ?2"
+                " AND datetime(e.created_at) < ?2"
             } else {
                 ""
             };
 
+            // `created_at` is RFC 3339 ('T') while the window bound is
+            // `YYYY-MM-DD HH:MM:SS`; as TEXT every row of the boundary UTC day
+            // compares >= the bound. The raw comparison stays so the index
+            // narrows the scan; `datetime()` normalises and makes it exact.
             // Single query: fetch all rows with persona name, aggregated in Rust.
             // This replaces 4 separate SQL queries that each scanned the same rows.
             let mut stmt = conn.prepare_cached(&format!(
@@ -1389,8 +1393,8 @@ pub fn get_execution_dashboard_in_window(
             e.id
          FROM persona_executions e
          LEFT JOIN personas p ON p.id = e.persona_id
-         WHERE e.created_at >= ?1{hi_clause}
-           AND e.status IN ('completed', 'failed')
+         WHERE e.created_at >= ?1 AND datetime(e.created_at) >= ?1{hi_clause}
+           AND e.status IN ('completed', 'failed', 'incomplete')
          ORDER BY DATE(e.created_at) ASC, e.cost_usd DESC",
             ))?;
 
@@ -1491,7 +1495,9 @@ pub fn get_execution_dashboard_in_window(
                 if row.status == "completed" {
                     bucket.completed += 1;
                 }
-                if row.status == "failed" {
+                // `incomplete` (a run the sweep lost) is not a success, so it
+                // counts on the failure side; cancelled stays out of the set.
+                if row.status == "failed" || row.status == "incomplete" {
                     bucket.failed += 1;
                 }
                 bucket.total_cost += row.cost_usd;
@@ -2829,6 +2835,37 @@ mod tests {
             rusqlite::params![id, persona_id, created_at],
         )
         .unwrap();
+    }
+
+    #[test]
+    fn dashboard_counts_incomplete_as_failure_and_honours_boundary_hour() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let persona = create_test_persona(&pool, "dash-persona");
+        let conn = pool.conn("execution_metrics::test")?;
+        // RFC 3339 created_at, as the executions repo writes it.
+        for (id, status, at) in [
+            ("d-early", "completed", "2026-03-10T08:00:00+00:00"), // before lo, same UTC day
+            ("d-ok", "completed", "2026-03-10T13:00:00+00:00"),
+            ("d-inc", "incomplete", "2026-03-10T14:00:00+00:00"),
+            ("d-fail", "failed", "2026-03-10T15:00:00+00:00"),
+            ("d-cancel", "cancelled", "2026-03-10T16:00:00+00:00"),
+        ] {
+            conn.execute(
+                "INSERT INTO persona_executions (id, persona_id, status, cost_usd, created_at)
+                 VALUES (?1, ?2, ?3, 1.0, ?4)",
+                rusqlite::params![id, persona, status, at],
+            )?;
+        }
+        drop(conn);
+        let w = MetricsWindow::resolve(None, Some("2026-03-10T12:00:00+00:00"), None)?;
+        let dash = get_execution_dashboard_in_window(&pool, &w)?;
+        // ok + incomplete + failed; the 08:00 row is before the bound and
+        // cancelled is not a decided outcome.
+        assert_eq!(dash.total_executions, 3);
+        assert_eq!(dash.successful_executions, 1);
+        assert_eq!(dash.failed_executions, 2);
+        assert!((dash.overall_success_rate - 1.0 / 3.0).abs() < 1e-9);
+        Ok(())
     }
 
     #[test]
