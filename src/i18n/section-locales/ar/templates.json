@@ -1307,5 +1307,20 @@
     "webhook_placeholder": "https://...",
     "webhook_url": "URL الـ webhook",
     "when_label": "متى يجب تشغيل هذا؟"
+  },
+  "bg_notify": {
+    "preview_complete_body": "انتهى اختبار القالب \"{name}\".",
+    "preview_complete_title": "اكتملت المعاينة",
+    "preview_default_name": "القالب",
+    "preview_failed_body": "فشل اختبار القالب \"{name}\".",
+    "preview_failed_title": "فشلت المعاينة",
+    "preview_start_failed": "فشل بدء المعاينة",
+    "preview_stopped_body": "اختبار القالب \"{name}\"",
+    "rebuild_cancelled": "ألغاه المستخدم",
+    "rebuild_complete_body": "اكتملت إعادة بناء القالب بنجاح.",
+    "rebuild_complete_title": "اكتملت إعادة البناء",
+    "rebuild_connection_lost": "انقطع الاتصال. قد تستمر إعادة البناء في الخلفية.",
+    "rebuild_failed_body": "واجهت إعادة بناء القالب خطأ.",
+    "rebuild_failed_title": "فشلت إعادة البناء"
   }
 }

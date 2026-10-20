@@ -452,5 +452,20 @@
   "use_template": "使用模板",
   "version_history": "版本历史",
   "view_persona": "查看智能体",
-  "warning": "警告"
+  "warning": "警告",
+  "auto_team_create_failed": "创建团队失败",
+  "auto_team_example_1": "审查此 PR 并运行测试",
+  "auto_team_example_2": "根据调研撰写博客文章",
+  "auto_team_example_3": "分析客户反馈",
+  "auto_team_example_4": "构建内容发布流水线",
+  "auto_team_no_match": "没有智能体匹配你的描述。请尝试描述得更具体。",
+  "team_color_blue": "蓝色",
+  "team_color_cyan": "青色",
+  "team_color_green": "绿色",
+  "team_color_indigo": "靛蓝",
+  "team_color_orange": "橙色",
+  "team_color_pink": "粉色",
+  "team_color_rose": "玫红",
+  "team_color_violet": "紫罗兰",
+  "team_color_yellow": "黄色"
 }

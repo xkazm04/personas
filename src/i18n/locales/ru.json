@@ -2056,7 +2056,19 @@
       "baseline_unpin_save_failed": "Не удалось открепить базовую линию. Хранилище браузера может быть недоступно.",
       "cell_failed": "ошибка",
       "cell_running": "выполняется",
-      "score_unscored": "Без оценки"
+      "score_unscored": "Без оценки",
+      "notify_complete_body": "Тест {mode} успешно завершен.",
+      "notify_complete_title": "Лаборатория: {mode} завершено",
+      "notify_failed_body": "Тест {mode} завершился с ошибкой.",
+      "notify_failed_title": "Лаборатория: {mode} не удалось",
+      "notify_mode_ab": "A/B-тест",
+      "notify_mode_arena": "Арена",
+      "notify_mode_breed": "Скрещивание",
+      "notify_mode_eval": "Оценка",
+      "notify_mode_evolve": "Эволюция",
+      "notify_mode_matrix": "Матрица",
+      "notify_mode_regression": "Регрессия",
+      "notify_mode_versions": "Версии"
     },
     "life": {
       "activity_attention_row": "Проход внимания",
@@ -3327,7 +3339,28 @@
     "glyph_recipe_alt_path": "Путь быстрее · совпадение {pct}%",
     "glyph_recipe_alt_use": "Использовать этот рецепт как отправную точку",
     "glyph_sched_days_label": "Дни",
-    "glyph_sched_time_label": "Время"
+    "glyph_sched_time_label": "Время",
+    "lifecycle_notify": {
+      "promoted_body": "Ваш агент переведен в продакшен и готов к работе.",
+      "promoted_connect_one": "Подключите 1 сервис, чтобы агент мог работать: {names}.",
+      "promoted_connect_other": "Подключите сервисы ({count}), чтобы агент мог работать: {names}.",
+      "promoted_items_one": "Не удалось настроить 1 элемент: {names}.",
+      "promoted_items_other": "Не удалось настроить элементы ({count}): {names}.",
+      "promoted_setup_title": "Агент переведен: нужна настройка",
+      "promoted_title": "Агент переведен в продакшен",
+      "promoted_unverified": "Первый проверочный запуск не принес результата. Проверьте коннекторы, прежде чем полагаться на агента.",
+      "sum_credential_issues": "проблем с учетными данными: {count}",
+      "sum_failed": "не пройдено: {count}",
+      "sum_passed": "пройдено: {count}",
+      "sum_passed_of": "пройдено {passed} из {tested}",
+      "sum_skipped": "пропущено: {count}",
+      "sum_unverified": "не проверено: {count} (не вызывались)",
+      "test_all_passed_body": "Все инструменты ({count}) прошли проверку. Можно переводить в продакшен.",
+      "test_complete_title": "Тест агента завершен",
+      "test_failed_fallback": "Не удалось запустить тесты",
+      "test_failed_title": "Тест агента не пройден",
+      "test_passed_title": "Тест агента пройден"
+    }
   },
   "alerts": {
     "error_clear_history": "Не удалось очистить историю оповещений:",
@@ -11413,7 +11446,22 @@
     "use_template": "Использовать шаблон",
     "version_history": "История версий",
     "view_persona": "Просмотреть агента",
-    "warning": "Предупреждение"
+    "warning": "Предупреждение",
+    "auto_team_create_failed": "Не удалось создать команду",
+    "auto_team_example_1": "Проверить этот PR и запустить тесты",
+    "auto_team_example_2": "Написать пост в блог с исследованием",
+    "auto_team_example_3": "Проанализировать отзывы клиентов",
+    "auto_team_example_4": "Построить конвейер публикации контента",
+    "auto_team_no_match": "Ни один агент не подошел под ваше описание. Попробуйте уточнить.",
+    "team_color_blue": "Синий",
+    "team_color_cyan": "Голубой",
+    "team_color_green": "Зеленый",
+    "team_color_indigo": "Индиго",
+    "team_color_orange": "Оранжевый",
+    "team_color_pink": "Розовый",
+    "team_color_rose": "Малиновый",
+    "team_color_violet": "Фиолетовый",
+    "team_color_yellow": "Желтый"
   },
   "planner": {
     "actions": {
@@ -18643,7 +18691,9 @@
       "color_name_violet": "Фиолетовый",
       "contrast_fail": "Низкий контраст",
       "contrast_pass": "Читаемо",
-      "contrast_preview": "Предпросмотр контраста"
+      "contrast_preview": "Предпросмотр контраста",
+      "remove_custom_icon_used_by_one": "Также используется еще {count} агентом.",
+      "remove_custom_icon_used_by_other": "Также используется еще агентами: {count}."
     },
     "general_tools": "Общие инструменты",
     "glossary_api": "Способ для двух программ автоматически общаться друг с другом.",
@@ -18758,7 +18808,11 @@
       "schedules": "Расписания",
       "teams_label": "Команды",
       "whats_new": "Что нового",
-      "whats_new_update": "Обновлено — смотрите, что нового"
+      "whats_new_update": "Обновлено — смотрите, что нового",
+      "activity_draft_in_progress": "Черновик в работе",
+      "activity_execution_queued": "Запуск в очереди",
+      "activity_lab_run_in_progress": "Идет запуск в лаборатории",
+      "activity_testing_agent": "Тестирование агента"
     },
     "sort_active_asc": "Сортировка по {label}, по возрастанию. Активируйте, чтобы сортировать по убыванию.",
     "sort_active_desc": "Сортировка по {label}, по убыванию. Активируйте, чтобы сортировать по возрастанию.",
@@ -19179,7 +19233,13 @@
     "exposure_auth_required": "Требуется авторизация",
     "exposure_open_lan": "Открыто для узлов LAN",
     "open_to_lan_hint": "Любое устройство в вашей сети, которое подключится, сможет видеть этот ресурс без подтверждения личности. Оставьте выключенным, если не доверяете всем устройствам в этой сети.",
-    "open_to_lan_label": "Открыто для неаутентифицированных узлов LAN"
+    "open_to_lan_label": "Открыто для неаутентифицированных узлов LAN",
+    "by_creator": "автор: {name}",
+    "created_on": "Создано {date}",
+    "fields_exposed_count_one": "Открыто {count} поле",
+    "fields_exposed_count_other": "Открыто полей: {count}",
+    "health_latency_ms": "{ms} мс",
+    "health_missed": "пропущено: {count}"
   },
   "ship": {
     "added_after_cut": "добавлено после среза",
@@ -21384,6 +21444,21 @@
       "webhook_placeholder": "https://...",
       "webhook_url": "URL webhook",
       "when_label": "Когда запускать?"
+    },
+    "bg_notify": {
+      "preview_complete_body": "Тест шаблона \"{name}\" завершен.",
+      "preview_complete_title": "Предпросмотр завершен",
+      "preview_default_name": "шаблон",
+      "preview_failed_body": "Тест шаблона \"{name}\" не удался.",
+      "preview_failed_title": "Предпросмотр не удался",
+      "preview_start_failed": "Не удалось запустить предпросмотр",
+      "preview_stopped_body": "Тест шаблона \"{name}\"",
+      "rebuild_cancelled": "Отменено пользователем",
+      "rebuild_complete_body": "Пересборка шаблона успешно завершена.",
+      "rebuild_complete_title": "Пересборка завершена",
+      "rebuild_connection_lost": "Соединение потеряно. Пересборка может все еще выполняться в фоне.",
+      "rebuild_failed_body": "При пересборке шаблона произошла ошибка.",
+      "rebuild_failed_title": "Пересборка не удалась"
     }
   },
   "tiers": {

@@ -4,7 +4,7 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
 import { useTranslation } from '@/i18n/useTranslation';
 
 export function EnclaveVerificationView({ result }: { result: EnclaveVerifyResult }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const st = t.sharing;
   const allValid = result.signatureValid && result.contentIntact;
 
@@ -31,7 +31,7 @@ export function EnclaveVerificationView({ result }: { result: EnclaveVerifyResul
               {result.personaName}
             </div>
             <div className="text-[10px] text-foreground">
-              by {result.creatorDisplayName}
+              {tx(st.by_creator, { name: result.creatorDisplayName })}
             </div>
           </div>
         </div>

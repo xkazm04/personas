@@ -2056,7 +2056,19 @@
       "baseline_unpin_save_failed": "تعذّر إلغاء تثبيت خط الأساس. قد يكون تخزين المتصفح غير متاح.",
       "cell_failed": "فشل",
       "cell_running": "قيد التشغيل",
-      "score_unscored": "بلا تقييم"
+      "score_unscored": "بلا تقييم",
+      "notify_complete_body": "اكتمل اختبار {mode} بنجاح.",
+      "notify_complete_title": "اكتمل {mode} في المختبر",
+      "notify_failed_body": "واجه اختبار {mode} خطأ.",
+      "notify_failed_title": "فشل {mode} في المختبر",
+      "notify_mode_ab": "اختبار A/B",
+      "notify_mode_arena": "الحلبة",
+      "notify_mode_breed": "التهجين",
+      "notify_mode_eval": "التقييم",
+      "notify_mode_evolve": "التطوير",
+      "notify_mode_matrix": "المصفوفة",
+      "notify_mode_regression": "الانحدار",
+      "notify_mode_versions": "الإصدارات"
     },
     "life": {
       "activity_attention_row": "جولة انتباه",
@@ -3327,7 +3339,28 @@
     "glyph_recipe_alt_path": "مسار أسرع · تطابق {pct}%",
     "glyph_recipe_alt_use": "استخدم هذه الوصفة كنقطة بداية",
     "glyph_sched_days_label": "الأيام",
-    "glyph_sched_time_label": "الوقت"
+    "glyph_sched_time_label": "الوقت",
+    "lifecycle_notify": {
+      "promoted_body": "تمت ترقية وكيلك إلى الإنتاج وهو جاهز للاستخدام.",
+      "promoted_connect_one": "اربط خدمة واحدة قبل أن يعمل: {names}.",
+      "promoted_connect_other": "اربط {count} خدمات قبل أن يعمل: {names}.",
+      "promoted_items_one": "تعذر إعداد عنصر واحد: {names}.",
+      "promoted_items_other": "تعذر إعداد {count} عناصر: {names}.",
+      "promoted_setup_title": "تمت ترقية الوكيل: يحتاج إلى إعداد",
+      "promoted_title": "تمت ترقية الوكيل",
+      "promoted_unverified": "تعذر على أول تشغيل فحص تقديم قيمة. راجع موصلاته قبل الاعتماد عليه.",
+      "sum_credential_issues": "{count} مشكلة في بيانات الاعتماد",
+      "sum_failed": "{count} فشل",
+      "sum_passed": "{count} نجح",
+      "sum_passed_of": "نجح {passed}/{tested}",
+      "sum_skipped": "{count} تم تخطيه",
+      "sum_unverified": "{count} غير متحقق منه (لم يُستدعَ)",
+      "test_all_passed_body": "نجحت جميع الأدوات ({count}). جاهز للترقية.",
+      "test_complete_title": "اكتمل اختبار الوكيل",
+      "test_failed_fallback": "فشل تشغيل الاختبارات",
+      "test_failed_title": "فشل اختبار الوكيل",
+      "test_passed_title": "نجح اختبار الوكيل"
+    }
   },
   "alerts": {
     "error_clear_history": "فشل مسح سجل التنبيهات:",
@@ -11413,7 +11446,22 @@
     "use_template": "استخدام القالب",
     "version_history": "سجل الإصدارات",
     "view_persona": "عرض الشخصية",
-    "warning": "تحذير"
+    "warning": "تحذير",
+    "auto_team_create_failed": "فشل إنشاء الفريق",
+    "auto_team_example_1": "راجع هذا الـ PR وشغّل الاختبارات",
+    "auto_team_example_2": "اكتب منشور مدونة مع بحث",
+    "auto_team_example_3": "حلل ملاحظات العملاء",
+    "auto_team_example_4": "أنشئ مسار نشر للمحتوى",
+    "auto_team_no_match": "لم يتطابق أي وكيل مع وصفك. حاول أن تكون أكثر تحديدًا.",
+    "team_color_blue": "أزرق",
+    "team_color_cyan": "سماوي",
+    "team_color_green": "أخضر",
+    "team_color_indigo": "نيلي",
+    "team_color_orange": "برتقالي",
+    "team_color_pink": "وردي",
+    "team_color_rose": "وردي داكن",
+    "team_color_violet": "بنفسجي",
+    "team_color_yellow": "أصفر"
   },
   "planner": {
     "actions": {
@@ -18643,7 +18691,9 @@
       "color_name_violet": "بنفسجي",
       "contrast_fail": "تباين منخفض",
       "contrast_pass": "مقروء",
-      "contrast_preview": "معاينة التباين"
+      "contrast_preview": "معاينة التباين",
+      "remove_custom_icon_used_by_one": "يستخدمها أيضًا {count} وكيل آخر.",
+      "remove_custom_icon_used_by_other": "يستخدمها أيضًا {count} وكلاء آخرين."
     },
     "general_tools": "الأدوات العامة",
     "glossary_api": "طريقة تسمح لبرنامجين بالتحدث مع بعضهما تلقائياً.",
@@ -18758,7 +18808,11 @@
       "schedules": "الجداول الزمنية",
       "teams_label": "الفِرَق",
       "whats_new": "ما الجديد",
-      "whats_new_update": "تحديث — اطّلع على الجديد"
+      "whats_new_update": "تحديث — اطّلع على الجديد",
+      "activity_draft_in_progress": "مسودة قيد الإعداد",
+      "activity_execution_queued": "التنفيذ في الانتظار",
+      "activity_lab_run_in_progress": "تشغيل المختبر قيد التنفيذ",
+      "activity_testing_agent": "اختبار الوكيل"
     },
     "sort_active_asc": "مرتب حسب {label}، تصاعديًا. فعّل الفرز تنازليًا.",
     "sort_active_desc": "مرتب حسب {label}، تنازليًا. فعّل الفرز تصاعديًا.",
@@ -19179,7 +19233,13 @@
     "exposure_auth_required": "المصادقة مطلوبة",
     "exposure_open_lan": "مفتوح لأجهزة الشبكة المحلية",
     "open_to_lan_hint": "يمكن لأي جهاز على شبكتك يتصل أن يرى هذا المورد دون إثبات هويته. اتركه معطّلًا ما لم تكن تثق بكل جهاز على هذه الشبكة.",
-    "open_to_lan_label": "مفتوح لأجهزة الشبكة المحلية غير الموثّقة"
+    "open_to_lan_label": "مفتوح لأجهزة الشبكة المحلية غير الموثّقة",
+    "by_creator": "بواسطة {name}",
+    "created_on": "أُنشئ في {date}",
+    "fields_exposed_count_one": "{count} حقل مكشوف",
+    "fields_exposed_count_other": "{count} حقول مكشوفة",
+    "health_latency_ms": "{ms} مللي ثانية",
+    "health_missed": "{count} فائت"
   },
   "ship": {
     "added_after_cut": "أُضيف بعد اعتماد النطاق",
@@ -21384,6 +21444,21 @@
       "webhook_placeholder": "https://...",
       "webhook_url": "URL الـ webhook",
       "when_label": "متى يجب تشغيل هذا؟"
+    },
+    "bg_notify": {
+      "preview_complete_body": "انتهى اختبار القالب \"{name}\".",
+      "preview_complete_title": "اكتملت المعاينة",
+      "preview_default_name": "القالب",
+      "preview_failed_body": "فشل اختبار القالب \"{name}\".",
+      "preview_failed_title": "فشلت المعاينة",
+      "preview_start_failed": "فشل بدء المعاينة",
+      "preview_stopped_body": "اختبار القالب \"{name}\"",
+      "rebuild_cancelled": "ألغاه المستخدم",
+      "rebuild_complete_body": "اكتملت إعادة بناء القالب بنجاح.",
+      "rebuild_complete_title": "اكتملت إعادة البناء",
+      "rebuild_connection_lost": "انقطع الاتصال. قد تستمر إعادة البناء في الخلفية.",
+      "rebuild_failed_body": "واجهت إعادة بناء القالب خطأ.",
+      "rebuild_failed_title": "فشلت إعادة البناء"
     }
   },
   "tiers": {

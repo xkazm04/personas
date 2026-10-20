@@ -1307,5 +1307,20 @@
     "webhook_placeholder": "https://...",
     "webhook_url": "webhook URL",
     "when_label": "何时运行？"
+  },
+  "bg_notify": {
+    "preview_complete_body": "模板测试“{name}”已完成。",
+    "preview_complete_title": "预览完成",
+    "preview_default_name": "模板",
+    "preview_failed_body": "模板测试“{name}”失败。",
+    "preview_failed_title": "预览失败",
+    "preview_start_failed": "启动预览失败",
+    "preview_stopped_body": "模板测试“{name}”",
+    "rebuild_cancelled": "已被用户取消",
+    "rebuild_complete_body": "模板重建已成功完成。",
+    "rebuild_complete_title": "重建完成",
+    "rebuild_connection_lost": "连接已断开。重建可能仍在后台运行。",
+    "rebuild_failed_body": "模板重建出错。",
+    "rebuild_failed_title": "重建失败"
   }
 }

@@ -2050,7 +2050,19 @@
     "baseline_unpin_save_failed": "No se pudo desfijar la línea base. Es posible que el almacenamiento del navegador no esté disponible.",
     "cell_failed": "fallido",
     "cell_running": "en ejecución",
-    "score_unscored": "Sin puntuar"
+    "score_unscored": "Sin puntuar",
+    "notify_complete_body": "La prueba de {mode} finalizó correctamente.",
+    "notify_complete_title": "Lab {mode} completado",
+    "notify_failed_body": "La prueba de {mode} encontró un error.",
+    "notify_failed_title": "Lab {mode} fallido",
+    "notify_mode_ab": "Prueba A/B",
+    "notify_mode_arena": "Arena",
+    "notify_mode_breed": "Cruce",
+    "notify_mode_eval": "Evaluación",
+    "notify_mode_evolve": "Evolución",
+    "notify_mode_matrix": "Matriz",
+    "notify_mode_regression": "Regresión",
+    "notify_mode_versions": "Versiones"
   },
   "life": {
     "activity_attention_row": "Pasada de atención",
@@ -3321,5 +3333,26 @@
   "glyph_recipe_alt_path": "Camino más rápido · {pct}% de coincidencia",
   "glyph_recipe_alt_use": "Usar esta receta como punto de partida",
   "glyph_sched_days_label": "Días",
-  "glyph_sched_time_label": "Hora"
+  "glyph_sched_time_label": "Hora",
+  "lifecycle_notify": {
+    "promoted_body": "Tu agente se promovió a producción y está listo para usarse.",
+    "promoted_connect_one": "Conecta 1 servicio antes de que pueda ejecutarse: {names}.",
+    "promoted_connect_other": "Conecta {count} servicios antes de que pueda ejecutarse: {names}.",
+    "promoted_items_one": "No se pudo configurar 1 elemento: {names}.",
+    "promoted_items_other": "No se pudieron configurar {count} elementos: {names}.",
+    "promoted_setup_title": "Agente promovido: requiere configuración",
+    "promoted_title": "Agente promovido",
+    "promoted_unverified": "Su primera ejecución de verificación no pudo aportar valor. Revisa sus conectores antes de confiar en él.",
+    "sum_credential_issues": "{count} problema(s) de credenciales",
+    "sum_failed": "{count} fallidas",
+    "sum_passed": "{count} superadas",
+    "sum_passed_of": "{passed}/{tested} superadas",
+    "sum_skipped": "{count} omitidas",
+    "sum_unverified": "{count} sin verificar (nunca llamadas)",
+    "test_all_passed_body": "Las {count} herramientas pasaron. Listo para promover.",
+    "test_complete_title": "Prueba del agente completada",
+    "test_failed_fallback": "No se pudieron ejecutar las pruebas",
+    "test_failed_title": "Prueba del agente fallida",
+    "test_passed_title": "Prueba del agente superada"
+  }
 }

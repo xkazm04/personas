@@ -1,20 +1,26 @@
 import { Check } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
+
+/** Catalog keys (t.pipeline.*) naming each palette colour. */
+type TeamColorKey =
+  | 'team_color_indigo' | 'team_color_violet' | 'team_color_pink' | 'team_color_rose' | 'team_color_orange'
+  | 'team_color_yellow' | 'team_color_green' | 'team_color_cyan' | 'team_color_blue';
 
 /**
  * Team identity palette. Lived in `CreateTeamForm` until team creation was
  * retired (2026-08-26 — a project now owns exactly one team, created with it);
  * moved here, its only remaining consumer.
  */
-export const TEAM_COLORS: Record<string, string> = {
-  '#6366f1': 'Indigo',
-  '#8b5cf6': 'Violet',
-  '#ec4899': 'Pink',
-  '#f43f5e': 'Rose',
-  '#f97316': 'Orange',
-  '#eab308': 'Yellow',
-  '#22c55e': 'Green',
-  '#06b6d4': 'Cyan',
-  '#3b82f6': 'Blue',
+export const TEAM_COLORS: Record<string, TeamColorKey> = {
+  '#6366f1': 'team_color_indigo',
+  '#8b5cf6': 'team_color_violet',
+  '#ec4899': 'team_color_pink',
+  '#f43f5e': 'team_color_rose',
+  '#f97316': 'team_color_orange',
+  '#eab308': 'team_color_yellow',
+  '#22c55e': 'team_color_green',
+  '#06b6d4': 'team_color_cyan',
+  '#3b82f6': 'team_color_blue',
 };
 
 interface TeamColorPickerProps {
@@ -28,9 +34,11 @@ interface TeamColorPickerProps {
  * the retired `CreateTeamForm`.
  */
 export function TeamColorPicker({ value, onChange }: TeamColorPickerProps) {
+  const { t } = useTranslation();
   return (
     <div className="flex gap-1.5 flex-wrap">
-      {Object.entries(TEAM_COLORS).map(([hex, name]) => {
+      {Object.entries(TEAM_COLORS).map(([hex, nameKey]) => {
+        const name = t.pipeline[nameKey];
         const isSelected = value === hex;
         return (
           <button

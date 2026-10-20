@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 
 const notify = vi.fn(async (_title: string, _body: string) => {});
@@ -17,6 +17,10 @@ vi.mock('@/api/overview/reviews', () => ({
 vi.mock('@/lib/silentCatch', async (importOriginal) => ({ ...(await importOriginal<typeof import('@/lib/silentCatch')>()), silentCatch: () => () => {} }));
 
 import { useBackgroundRebuild } from '../useBackgroundRebuild';
+import { getEnglishTranslationsAsync } from '@/i18n/useTranslation';
+
+// The templates section is a lazy chunk; load it so the hook's catalog copy resolves.
+beforeAll(async () => { await getEnglishTranslationsAsync(); });
 
 describe('useBackgroundRebuild', () => {
   it('ignores a failed snapshot that arrives after user cancellation', async () => {

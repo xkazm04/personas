@@ -452,5 +452,20 @@
   "use_template": "Gunakan templat",
   "version_history": "Riwayat versi",
   "view_persona": "Lihat persona",
-  "warning": "Peringatan"
+  "warning": "Peringatan",
+  "auto_team_create_failed": "Gagal membuat tim",
+  "auto_team_example_1": "Tinjau PR ini dan jalankan pengujian",
+  "auto_team_example_2": "Tulis artikel blog dengan riset",
+  "auto_team_example_3": "Analisis masukan pelanggan",
+  "auto_team_example_4": "Bangun alur penerbitan konten",
+  "auto_team_no_match": "Tidak ada agen yang cocok dengan deskripsi Anda. Coba lebih spesifik.",
+  "team_color_blue": "Biru",
+  "team_color_cyan": "Sian",
+  "team_color_green": "Hijau",
+  "team_color_indigo": "Nila",
+  "team_color_orange": "Oranye",
+  "team_color_pink": "Merah muda",
+  "team_color_rose": "Mawar",
+  "team_color_violet": "Ungu",
+  "team_color_yellow": "Kuning"
 }

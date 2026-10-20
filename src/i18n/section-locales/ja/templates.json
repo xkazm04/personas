@@ -1307,5 +1307,20 @@
     "webhook_placeholder": "https://...",
     "webhook_url": "Webhook URL",
     "when_label": "いつ実行しますか？"
+  },
+  "bg_notify": {
+    "preview_complete_body": "テンプレートテスト「{name}」が完了しました。",
+    "preview_complete_title": "プレビュー完了",
+    "preview_default_name": "テンプレート",
+    "preview_failed_body": "テンプレートテスト「{name}」に失敗しました。",
+    "preview_failed_title": "プレビュー失敗",
+    "preview_start_failed": "プレビューを開始できませんでした",
+    "preview_stopped_body": "テンプレートテスト「{name}」",
+    "rebuild_cancelled": "ユーザーによりキャンセルされました",
+    "rebuild_complete_body": "テンプレートの再構築が正常に完了しました。",
+    "rebuild_complete_title": "再構築完了",
+    "rebuild_connection_lost": "接続が切断されました。再構築はバックグラウンドで続行している可能性があります。",
+    "rebuild_failed_body": "テンプレートの再構築中にエラーが発生しました。",
+    "rebuild_failed_title": "再構築失敗"
   }
 }

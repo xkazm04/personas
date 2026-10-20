@@ -452,5 +452,20 @@
   "use_template": "Vorlage verwenden",
   "version_history": "Versionsverlauf",
   "view_persona": "Persona anzeigen",
-  "warning": "Warnung"
+  "warning": "Warnung",
+  "auto_team_create_failed": "Team konnte nicht erstellt werden",
+  "auto_team_example_1": "Diesen PR prüfen und Tests ausführen",
+  "auto_team_example_2": "Einen Blogbeitrag mit Recherche schreiben",
+  "auto_team_example_3": "Kundenfeedback analysieren",
+  "auto_team_example_4": "Eine Pipeline für Content-Veröffentlichung aufbauen",
+  "auto_team_no_match": "Kein Agent passt zu deiner Beschreibung. Versuche, genauer zu sein.",
+  "team_color_blue": "Blau",
+  "team_color_cyan": "Cyan",
+  "team_color_green": "Grün",
+  "team_color_indigo": "Indigo",
+  "team_color_orange": "Orange",
+  "team_color_pink": "Pink",
+  "team_color_rose": "Rosé",
+  "team_color_violet": "Violett",
+  "team_color_yellow": "Gelb"
 }

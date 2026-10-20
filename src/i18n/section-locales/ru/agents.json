@@ -2050,7 +2050,19 @@
     "baseline_unpin_save_failed": "Не удалось открепить базовую линию. Хранилище браузера может быть недоступно.",
     "cell_failed": "ошибка",
     "cell_running": "выполняется",
-    "score_unscored": "Без оценки"
+    "score_unscored": "Без оценки",
+    "notify_complete_body": "Тест {mode} успешно завершен.",
+    "notify_complete_title": "Лаборатория: {mode} завершено",
+    "notify_failed_body": "Тест {mode} завершился с ошибкой.",
+    "notify_failed_title": "Лаборатория: {mode} не удалось",
+    "notify_mode_ab": "A/B-тест",
+    "notify_mode_arena": "Арена",
+    "notify_mode_breed": "Скрещивание",
+    "notify_mode_eval": "Оценка",
+    "notify_mode_evolve": "Эволюция",
+    "notify_mode_matrix": "Матрица",
+    "notify_mode_regression": "Регрессия",
+    "notify_mode_versions": "Версии"
   },
   "life": {
     "activity_attention_row": "Проход внимания",
@@ -3321,5 +3333,26 @@
   "glyph_recipe_alt_path": "Путь быстрее · совпадение {pct}%",
   "glyph_recipe_alt_use": "Использовать этот рецепт как отправную точку",
   "glyph_sched_days_label": "Дни",
-  "glyph_sched_time_label": "Время"
+  "glyph_sched_time_label": "Время",
+  "lifecycle_notify": {
+    "promoted_body": "Ваш агент переведен в продакшен и готов к работе.",
+    "promoted_connect_one": "Подключите 1 сервис, чтобы агент мог работать: {names}.",
+    "promoted_connect_other": "Подключите сервисы ({count}), чтобы агент мог работать: {names}.",
+    "promoted_items_one": "Не удалось настроить 1 элемент: {names}.",
+    "promoted_items_other": "Не удалось настроить элементы ({count}): {names}.",
+    "promoted_setup_title": "Агент переведен: нужна настройка",
+    "promoted_title": "Агент переведен в продакшен",
+    "promoted_unverified": "Первый проверочный запуск не принес результата. Проверьте коннекторы, прежде чем полагаться на агента.",
+    "sum_credential_issues": "проблем с учетными данными: {count}",
+    "sum_failed": "не пройдено: {count}",
+    "sum_passed": "пройдено: {count}",
+    "sum_passed_of": "пройдено {passed} из {tested}",
+    "sum_skipped": "пропущено: {count}",
+    "sum_unverified": "не проверено: {count} (не вызывались)",
+    "test_all_passed_body": "Все инструменты ({count}) прошли проверку. Можно переводить в продакшен.",
+    "test_complete_title": "Тест агента завершен",
+    "test_failed_fallback": "Не удалось запустить тесты",
+    "test_failed_title": "Тест агента не пройден",
+    "test_passed_title": "Тест агента пройден"
+  }
 }

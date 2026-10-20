@@ -452,5 +452,20 @@
   "use_template": "Utiliser le modèle",
   "version_history": "Historique des versions",
   "view_persona": "Voir l’agent",
-  "warning": "Avertissement"
+  "warning": "Avertissement",
+  "auto_team_create_failed": "Impossible de créer l'équipe",
+  "auto_team_example_1": "Relire cette PR et lancer les tests",
+  "auto_team_example_2": "Rédiger un article de blog avec recherche",
+  "auto_team_example_3": "Analyser les retours clients",
+  "auto_team_example_4": "Créer un pipeline de publication de contenu",
+  "auto_team_no_match": "Aucun agent ne correspond à votre description. Essayez d'être plus précis.",
+  "team_color_blue": "Bleu",
+  "team_color_cyan": "Cyan",
+  "team_color_green": "Vert",
+  "team_color_indigo": "Indigo",
+  "team_color_orange": "Orange",
+  "team_color_pink": "Rose",
+  "team_color_rose": "Rose pâle",
+  "team_color_violet": "Violet",
+  "team_color_yellow": "Jaune"
 }

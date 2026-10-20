@@ -1152,7 +1152,19 @@
     "arena_summary_quality": "Output quality: {label} ({score}/100).",
     "arena_summary_tools_limited": "Tool usage was limited; the model relied more on its own knowledge than on available tools.",
     "baseline_pin_save_failed": "Failed to save baseline pin. Browser storage may be full or unavailable.",
-    "baseline_unpin_save_failed": "Failed to unpin baseline. Browser storage may be unavailable."
+    "baseline_unpin_save_failed": "Failed to unpin baseline. Browser storage may be unavailable.",
+    "notify_complete_title": "Lab {mode} Complete",
+    "notify_failed_title": "Lab {mode} Failed",
+    "notify_complete_body": "{mode} test finished successfully.",
+    "notify_failed_body": "{mode} test encountered an error.",
+    "notify_mode_arena": "Arena",
+    "notify_mode_ab": "A/B Test",
+    "notify_mode_eval": "Evaluation",
+    "notify_mode_matrix": "Matrix",
+    "notify_mode_breed": "Breed",
+    "notify_mode_evolve": "Evolution",
+    "notify_mode_versions": "Versions",
+    "notify_mode_regression": "Regression"
   },
   "design": {
     "select_agent": "Select an agent to start design analysis",
@@ -3321,5 +3333,26 @@
   "glyph_recipe_alt_connections": "Connections this recipe uses",
   "glyph_recipe_alt_dimensions": "Dimensions you can tune · {count}",
   "glyph_recipe_alt_keep": "Keep describing",
-  "glyph_recipe_alt_use": "Use this recipe as the starting point"
+  "glyph_recipe_alt_use": "Use this recipe as the starting point",
+  "lifecycle_notify": {
+    "test_passed_title": "Agent Test Passed",
+    "test_complete_title": "Agent Test Complete",
+    "test_all_passed_body": "All {count} tools passed. Ready to promote.",
+    "test_failed_title": "Agent Test Failed",
+    "test_failed_fallback": "Failed to run tests",
+    "sum_passed": "{count} passed",
+    "sum_skipped": "{count} skipped",
+    "sum_unverified": "{count} unverified (never called)",
+    "sum_passed_of": "{passed}/{tested} passed",
+    "sum_failed": "{count} failed",
+    "sum_credential_issues": "{count} credential issue(s)",
+    "promoted_title": "Agent Promoted",
+    "promoted_body": "Your agent has been promoted to production and is ready to use.",
+    "promoted_setup_title": "Agent Promoted: needs setup",
+    "promoted_connect_one": "Connect 1 service before it can run: {names}.",
+    "promoted_connect_other": "Connect {count} services before it can run: {names}.",
+    "promoted_unverified": "Its first check run could not deliver value. Review its connectors before relying on it.",
+    "promoted_items_one": "1 item couldn't be set up: {names}.",
+    "promoted_items_other": "{count} items couldn't be set up: {names}."
+  }
 }

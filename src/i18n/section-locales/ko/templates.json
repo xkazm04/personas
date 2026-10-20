@@ -1307,5 +1307,20 @@
     "webhook_placeholder": "https://...",
     "webhook_url": "웹훅 URL",
     "when_label": "언제 실행할까요?"
+  },
+  "bg_notify": {
+    "preview_complete_body": "템플릿 테스트 \"{name}\"이(가) 완료되었습니다.",
+    "preview_complete_title": "미리보기 완료",
+    "preview_default_name": "템플릿",
+    "preview_failed_body": "템플릿 테스트 \"{name}\"이(가) 실패했습니다.",
+    "preview_failed_title": "미리보기 실패",
+    "preview_start_failed": "미리보기를 시작하지 못했습니다",
+    "preview_stopped_body": "템플릿 테스트 \"{name}\"",
+    "rebuild_cancelled": "사용자가 취소했습니다",
+    "rebuild_complete_body": "템플릿 재빌드가 성공적으로 완료되었습니다.",
+    "rebuild_complete_title": "재빌드 완료",
+    "rebuild_connection_lost": "연결이 끊어졌습니다. 재빌드는 백그라운드에서 계속 실행 중일 수 있습니다.",
+    "rebuild_failed_body": "템플릿 재빌드 중 오류가 발생했습니다.",
+    "rebuild_failed_title": "재빌드 실패"
   }
 }

@@ -144,7 +144,9 @@
     "color_name_violet": "Lila",
     "contrast_fail": "Geringer Kontrast",
     "contrast_pass": "Lesbar",
-    "contrast_preview": "Kontrastvorschau"
+    "contrast_preview": "Kontrastvorschau",
+    "remove_custom_icon_used_by_one": "Wird auch von {count} weiteren Agenten verwendet.",
+    "remove_custom_icon_used_by_other": "Wird auch von {count} weiteren Agenten verwendet."
   },
   "general_tools": "Allgemeine Tools",
   "glossary_api": "Eine Möglichkeit für zwei Programme, automatisch miteinander zu kommunizieren.",
@@ -259,7 +261,11 @@
     "schedules": "Zeitpläne",
     "teams_label": "Teams",
     "whats_new": "Neuigkeiten",
-    "whats_new_update": "Aktualisiert — Neuigkeiten ansehen"
+    "whats_new_update": "Aktualisiert — Neuigkeiten ansehen",
+    "activity_draft_in_progress": "Entwurf in Arbeit",
+    "activity_execution_queued": "Ausführung in Warteschlange",
+    "activity_lab_run_in_progress": "Lab-Lauf in Arbeit",
+    "activity_testing_agent": "Agent wird getestet"
   },
   "sort_active_asc": "Sortiert nach {label}, aufsteigend. Aktivieren, um absteigend zu sortieren.",
   "sort_active_desc": "Sortiert nach {label}, absteigend. Aktivieren, um aufsteigend zu sortieren.",

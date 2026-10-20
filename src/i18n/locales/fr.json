@@ -2056,7 +2056,19 @@
       "baseline_unpin_save_failed": "Échec du désépinglage de la référence. Le stockage du navigateur est peut-être indisponible.",
       "cell_failed": "échec",
       "cell_running": "en cours",
-      "score_unscored": "Non noté"
+      "score_unscored": "Non noté",
+      "notify_complete_body": "Le test {mode} s'est terminé avec succès.",
+      "notify_complete_title": "Lab {mode} terminé",
+      "notify_failed_body": "Le test {mode} a rencontré une erreur.",
+      "notify_failed_title": "Échec du Lab {mode}",
+      "notify_mode_ab": "Test A/B",
+      "notify_mode_arena": "Arène",
+      "notify_mode_breed": "Croisement",
+      "notify_mode_eval": "Évaluation",
+      "notify_mode_evolve": "Évolution",
+      "notify_mode_matrix": "Matrice",
+      "notify_mode_regression": "Régression",
+      "notify_mode_versions": "Versions"
     },
     "life": {
       "activity_attention_row": "Passe d'attention",
@@ -3327,7 +3339,28 @@
     "glyph_recipe_alt_path": "Voie plus rapide · {pct} % de correspondance",
     "glyph_recipe_alt_use": "Utiliser cette recette comme point de départ",
     "glyph_sched_days_label": "Jours",
-    "glyph_sched_time_label": "Heure"
+    "glyph_sched_time_label": "Heure",
+    "lifecycle_notify": {
+      "promoted_body": "Votre agent a été promu en production et est prêt à l'emploi.",
+      "promoted_connect_one": "Connectez 1 service avant de l'exécuter : {names}.",
+      "promoted_connect_other": "Connectez {count} services avant de l'exécuter : {names}.",
+      "promoted_items_one": "1 élément n'a pas pu être configuré : {names}.",
+      "promoted_items_other": "{count} éléments n'ont pas pu être configurés : {names}.",
+      "promoted_setup_title": "Agent promu : configuration requise",
+      "promoted_title": "Agent promu",
+      "promoted_unverified": "Sa première exécution de vérification n'a produit aucun résultat utile. Vérifiez ses connecteurs avant de vous y fier.",
+      "sum_credential_issues": "{count} problème(s) d'identifiants",
+      "sum_failed": "{count} en échec",
+      "sum_passed": "{count} réussi(s)",
+      "sum_passed_of": "{passed}/{tested} réussi(s)",
+      "sum_skipped": "{count} ignoré(s)",
+      "sum_unverified": "{count} non vérifié(s) (jamais appelé)",
+      "test_all_passed_body": "Les {count} outils ont réussi. Prêt à être promu.",
+      "test_complete_title": "Test de l'agent terminé",
+      "test_failed_fallback": "Impossible d'exécuter les tests",
+      "test_failed_title": "Échec du test de l'agent",
+      "test_passed_title": "Test de l'agent réussi"
+    }
   },
   "alerts": {
     "error_clear_history": "Échec de l’effacement de l’historique des alertes :",
@@ -11413,7 +11446,22 @@
     "use_template": "Utiliser le modèle",
     "version_history": "Historique des versions",
     "view_persona": "Voir l’agent",
-    "warning": "Avertissement"
+    "warning": "Avertissement",
+    "auto_team_create_failed": "Impossible de créer l'équipe",
+    "auto_team_example_1": "Relire cette PR et lancer les tests",
+    "auto_team_example_2": "Rédiger un article de blog avec recherche",
+    "auto_team_example_3": "Analyser les retours clients",
+    "auto_team_example_4": "Créer un pipeline de publication de contenu",
+    "auto_team_no_match": "Aucun agent ne correspond à votre description. Essayez d'être plus précis.",
+    "team_color_blue": "Bleu",
+    "team_color_cyan": "Cyan",
+    "team_color_green": "Vert",
+    "team_color_indigo": "Indigo",
+    "team_color_orange": "Orange",
+    "team_color_pink": "Rose",
+    "team_color_rose": "Rose pâle",
+    "team_color_violet": "Violet",
+    "team_color_yellow": "Jaune"
   },
   "planner": {
     "actions": {
@@ -18643,7 +18691,9 @@
       "color_name_violet": "Violet",
       "contrast_fail": "Contraste faible",
       "contrast_pass": "Lisible",
-      "contrast_preview": "Aperçu du contraste"
+      "contrast_preview": "Aperçu du contraste",
+      "remove_custom_icon_used_by_one": "Également utilisée par {count} autre agent.",
+      "remove_custom_icon_used_by_other": "Également utilisée par {count} autres agents."
     },
     "general_tools": "Outils généraux",
     "glossary_api": "Un moyen pour deux programmes de communiquer automatiquement.",
@@ -18758,7 +18808,11 @@
       "schedules": "Planifications",
       "teams_label": "Équipes",
       "whats_new": "Nouveautés",
-      "whats_new_update": "Mis à jour — voir les nouveautés"
+      "whats_new_update": "Mis à jour — voir les nouveautés",
+      "activity_draft_in_progress": "Brouillon en cours",
+      "activity_execution_queued": "Exécution en file d'attente",
+      "activity_lab_run_in_progress": "Exécution du Lab en cours",
+      "activity_testing_agent": "Test de l'agent"
     },
     "sort_active_asc": "Trié par {label}, ordre croissant. Activez pour trier par ordre décroissant.",
     "sort_active_desc": "Trié par {label}, ordre décroissant. Activez pour trier par ordre croissant.",
@@ -19179,7 +19233,13 @@
     "exposure_auth_required": "Authentification requise",
     "exposure_open_lan": "Ouvert aux pairs du réseau local",
     "open_to_lan_hint": "Tout appareil de votre réseau qui se connecte peut voir cette ressource sans prouver son identité. Laissez désactivé, sauf si vous faites confiance à tous les appareils de ce réseau.",
-    "open_to_lan_label": "Ouvert aux pairs du réseau local non authentifiés"
+    "open_to_lan_label": "Ouvert aux pairs du réseau local non authentifiés",
+    "by_creator": "par {name}",
+    "created_on": "Créé le {date}",
+    "fields_exposed_count_one": "{count} champ exposé",
+    "fields_exposed_count_other": "{count} champs exposés",
+    "health_latency_ms": "{ms} ms",
+    "health_missed": "{count} manqué(s)"
   },
   "ship": {
     "added_after_cut": "ajouté après la coupe",
@@ -21384,6 +21444,21 @@
       "webhook_placeholder": "https://...",
       "webhook_url": "URL webhook",
       "when_label": "Quand doit-il s’exécuter ?"
+    },
+    "bg_notify": {
+      "preview_complete_body": "Le test du modèle « {name} » est terminé.",
+      "preview_complete_title": "Aperçu terminé",
+      "preview_default_name": "modèle",
+      "preview_failed_body": "Le test du modèle « {name} » a échoué.",
+      "preview_failed_title": "Échec de l'aperçu",
+      "preview_start_failed": "Impossible de démarrer l'aperçu",
+      "preview_stopped_body": "Test du modèle « {name} »",
+      "rebuild_cancelled": "Annulé par l'utilisateur",
+      "rebuild_complete_body": "La reconstruction du modèle s'est terminée avec succès.",
+      "rebuild_complete_title": "Reconstruction terminée",
+      "rebuild_connection_lost": "Connexion perdue. La reconstruction peut encore s'exécuter en arrière-plan.",
+      "rebuild_failed_body": "La reconstruction du modèle a rencontré une erreur.",
+      "rebuild_failed_title": "Échec de la reconstruction"
     }
   },
   "tiers": {

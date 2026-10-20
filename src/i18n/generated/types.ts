@@ -4185,6 +4185,18 @@ export type Translations = {
       arena_summary_tools_limited: string;
       baseline_pin_save_failed: string;
       baseline_unpin_save_failed: string;
+      notify_complete_title: string;
+      notify_failed_title: string;
+      notify_complete_body: string;
+      notify_failed_body: string;
+      notify_mode_arena: string;
+      notify_mode_ab: string;
+      notify_mode_eval: string;
+      notify_mode_matrix: string;
+      notify_mode_breed: string;
+      notify_mode_evolve: string;
+      notify_mode_versions: string;
+      notify_mode_regression: string;
     };
     design: {
       select_agent: string;
@@ -6354,6 +6366,27 @@ export type Translations = {
     glyph_recipe_alt_dimensions: string;
     glyph_recipe_alt_keep: string;
     glyph_recipe_alt_use: string;
+    lifecycle_notify: {
+      test_passed_title: string;
+      test_complete_title: string;
+      test_all_passed_body: string;
+      test_failed_title: string;
+      test_failed_fallback: string;
+      sum_passed: string;
+      sum_skipped: string;
+      sum_unverified: string;
+      sum_passed_of: string;
+      sum_failed: string;
+      sum_credential_issues: string;
+      promoted_title: string;
+      promoted_body: string;
+      promoted_setup_title: string;
+      promoted_connect_one: string;
+      promoted_connect_other: string;
+      promoted_unverified: string;
+      promoted_items_one: string;
+      promoted_items_other: string;
+    };
   };
   director: {
     panel_title: string;
@@ -9091,6 +9124,12 @@ export type Translations = {
     open_to_lan_hint: string;
     exposure_auth_required: string;
     exposure_open_lan: string;
+    created_on: string;
+    fields_exposed_count_one: string;
+    fields_exposed_count_other: string;
+    by_creator: string;
+    health_missed: string;
+    health_latency_ms: string;
   };
   overview: {
     dc_pending_lead: string;
@@ -12609,6 +12648,21 @@ export type Translations = {
       advanced: string;
       minuteShort: string;
       minuteSetup: string;
+    };
+    bg_notify: {
+      rebuild_complete_title: string;
+      rebuild_complete_body: string;
+      rebuild_failed_title: string;
+      rebuild_failed_body: string;
+      rebuild_connection_lost: string;
+      rebuild_cancelled: string;
+      preview_complete_title: string;
+      preview_complete_body: string;
+      preview_failed_title: string;
+      preview_failed_body: string;
+      preview_stopped_body: string;
+      preview_default_name: string;
+      preview_start_failed: string;
     };
   };
   triggers: {
@@ -22826,6 +22880,21 @@ export type Translations = {
     relay_no_memories: string;
     clear_all_filters: string;
     diff_legend: string;
+    auto_team_no_match: string;
+    auto_team_create_failed: string;
+    auto_team_example_1: string;
+    auto_team_example_2: string;
+    auto_team_example_3: string;
+    auto_team_example_4: string;
+    team_color_indigo: string;
+    team_color_violet: string;
+    team_color_pink: string;
+    team_color_rose: string;
+    team_color_orange: string;
+    team_color_yellow: string;
+    team_color_green: string;
+    team_color_cyan: string;
+    team_color_blue: string;
   };
   shared: {
     group_today: string;
@@ -22965,6 +23034,8 @@ export type Translations = {
       contrast_pass: string;
       contrast_fail: string;
       contrast_preview: string;
+      remove_custom_icon_used_by_one: string;
+      remove_custom_icon_used_by_other: string;
     };
     reasoning_trace: {
       system_init: string;
@@ -23015,6 +23086,10 @@ export type Translations = {
       draft_needs_answers_one: string;
       draft_needs_answers_other: string;
       draft_switch_title: string;
+      activity_testing_agent: string;
+      activity_draft_in_progress: string;
+      activity_execution_queued: string;
+      activity_lab_run_in_progress: string;
     };
     execution_detail: {
       copy: string;

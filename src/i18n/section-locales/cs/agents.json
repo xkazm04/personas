@@ -2050,7 +2050,19 @@
     "baseline_unpin_save_failed": "Odepnutí základní hodnoty se nepodařilo. Úložiště prohlížeče může být nedostupné.",
     "cell_failed": "selhalo",
     "cell_running": "běží",
-    "score_unscored": "Nehodnoceno"
+    "score_unscored": "Nehodnoceno",
+    "notify_complete_body": "Test ({mode}) byl úspěšně dokončen.",
+    "notify_complete_title": "Lab: {mode} dokončeno",
+    "notify_failed_body": "Test ({mode}) skončil chybou.",
+    "notify_failed_title": "Lab: {mode} selhalo",
+    "notify_mode_ab": "A/B test",
+    "notify_mode_arena": "Aréna",
+    "notify_mode_breed": "Křížení",
+    "notify_mode_eval": "Vyhodnocení",
+    "notify_mode_evolve": "Evoluce",
+    "notify_mode_matrix": "Matice",
+    "notify_mode_regression": "Regrese",
+    "notify_mode_versions": "Verze"
   },
   "life": {
     "activity_attention_row": "Průchod pozornosti",
@@ -3321,5 +3333,26 @@
   "glyph_recipe_alt_path": "Rychlejší cesta · shoda {pct} %",
   "glyph_recipe_alt_use": "Použít tento recept jako výchozí bod",
   "glyph_sched_days_label": "Dny",
-  "glyph_sched_time_label": "Čas"
+  "glyph_sched_time_label": "Čas",
+  "lifecycle_notify": {
+    "promoted_body": "Váš agent byl povýšen do produkce a je připraven k použití.",
+    "promoted_connect_one": "Před spuštěním připojte 1 službu: {names}.",
+    "promoted_connect_other": "Před spuštěním připojte služby ({count}): {names}.",
+    "promoted_items_one": "1 položku se nepodařilo nastavit: {names}.",
+    "promoted_items_other": "Položky se nepodařilo nastavit ({count}): {names}.",
+    "promoted_setup_title": "Agent povýšen: vyžaduje nastavení",
+    "promoted_title": "Agent povýšen",
+    "promoted_unverified": "První kontrolní běh nepřinesl žádnou hodnotu. Před použitím zkontrolujte konektory agenta.",
+    "sum_credential_issues": "Problémy s přihlašovacími údaji: {count}",
+    "sum_failed": "Selhalo: {count}",
+    "sum_passed": "Prošlo: {count}",
+    "sum_passed_of": "Prošlo {passed}/{tested}",
+    "sum_skipped": "Přeskočeno: {count}",
+    "sum_unverified": "Neověřeno: {count} (nikdy nezavoláno)",
+    "test_all_passed_body": "Všechny nástroje ({count}) prošly. Připraveno k povýšení.",
+    "test_complete_title": "Test agenta dokončen",
+    "test_failed_fallback": "Testy se nepodařilo spustit",
+    "test_failed_title": "Test agenta selhal",
+    "test_passed_title": "Test agenta prošel"
+  }
 }

@@ -1307,5 +1307,20 @@
     "advanced": "Advanced",
     "minuteShort": "~{minutes}m",
     "minuteSetup": "~{minutes} min setup"
+  },
+  "bg_notify": {
+    "rebuild_complete_title": "Rebuild Complete",
+    "rebuild_complete_body": "Template rebuild finished successfully.",
+    "rebuild_failed_title": "Rebuild Failed",
+    "rebuild_failed_body": "Template rebuild encountered an error.",
+    "rebuild_connection_lost": "Connection lost. The rebuild may still be running in the background.",
+    "rebuild_cancelled": "Cancelled by user",
+    "preview_complete_title": "Preview Complete",
+    "preview_complete_body": "Template test \"{name}\" finished.",
+    "preview_failed_title": "Preview Failed",
+    "preview_failed_body": "Template test \"{name}\" failed.",
+    "preview_stopped_body": "Template test \"{name}\"",
+    "preview_default_name": "template",
+    "preview_start_failed": "Failed to start preview"
   }
 }

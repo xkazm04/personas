@@ -4329,5 +4329,21 @@
   "fr:mastermind.dim_label_support",
   "hi:mastermind.dim_label_auth",
   "id:status_tokens.event.dead_letter",
-  "id:mastermind.dim_label_hosting"
+  "id:mastermind.dim_label_hosting",
+  "cs:pipeline.team_color_indigo",
+  "de:agents.lab.notify_mode_arena",
+  "de:agents.lab.notify_mode_matrix",
+  "de:agents.lab.notify_mode_evolve",
+  "de:agents.lab.notify_mode_regression",
+  "de:pipeline.team_color_indigo",
+  "de:pipeline.team_color_pink",
+  "de:pipeline.team_color_orange",
+  "de:pipeline.team_color_cyan",
+  "es:agents.lab.notify_mode_arena",
+  "fr:agents.lab.notify_mode_versions",
+  "fr:pipeline.team_color_indigo",
+  "fr:pipeline.team_color_violet",
+  "fr:pipeline.team_color_orange",
+  "fr:pipeline.team_color_cyan",
+  "id:agents.lab.notify_mode_arena"
 ]

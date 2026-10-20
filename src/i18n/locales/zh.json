@@ -2056,7 +2056,19 @@
       "baseline_unpin_save_failed": "取消固定基线失败。浏览器存储可能不可用。",
       "cell_failed": "失败",
       "cell_running": "运行中",
-      "score_unscored": "未评分"
+      "score_unscored": "未评分",
+      "notify_complete_body": "{mode}测试已成功完成。",
+      "notify_complete_title": "实验室{mode}已完成",
+      "notify_failed_body": "{mode}测试出错。",
+      "notify_failed_title": "实验室{mode}失败",
+      "notify_mode_ab": "A/B 测试",
+      "notify_mode_arena": "竞技场",
+      "notify_mode_breed": "繁育",
+      "notify_mode_eval": "评估",
+      "notify_mode_evolve": "进化",
+      "notify_mode_matrix": "矩阵",
+      "notify_mode_regression": "回归",
+      "notify_mode_versions": "版本"
     },
     "life": {
       "activity_attention_row": "注意力巡检",
@@ -3327,7 +3339,28 @@
     "glyph_recipe_alt_path": "更快的路径 · 匹配度 {pct}%",
     "glyph_recipe_alt_use": "以此配方作为起点",
     "glyph_sched_days_label": "日期",
-    "glyph_sched_time_label": "时间"
+    "glyph_sched_time_label": "时间",
+    "lifecycle_notify": {
+      "promoted_body": "你的智能体已升级到生产环境，可以使用了。",
+      "promoted_connect_one": "运行前需连接 1 项服务：{names}。",
+      "promoted_connect_other": "运行前需连接 {count} 项服务：{names}。",
+      "promoted_items_one": "1 项无法设置：{names}。",
+      "promoted_items_other": "{count} 项无法设置：{names}。",
+      "promoted_setup_title": "智能体已升级：需要设置",
+      "promoted_title": "智能体已升级",
+      "promoted_unverified": "首次检查运行未能产生价值。依赖它之前请检查其连接器。",
+      "sum_credential_issues": "{count} 个凭据问题",
+      "sum_failed": "{count} 个失败",
+      "sum_passed": "{count} 个通过",
+      "sum_passed_of": "{passed}/{tested} 通过",
+      "sum_skipped": "{count} 个已跳过",
+      "sum_unverified": "{count} 个未验证（从未调用）",
+      "test_all_passed_body": "全部 {count} 个工具均已通过。可以升级。",
+      "test_complete_title": "智能体测试完成",
+      "test_failed_fallback": "运行测试失败",
+      "test_failed_title": "智能体测试失败",
+      "test_passed_title": "智能体测试通过"
+    }
   },
   "alerts": {
     "error_clear_history": "清除告警历史失败：",
@@ -11413,7 +11446,22 @@
     "use_template": "使用模板",
     "version_history": "版本历史",
     "view_persona": "查看智能体",
-    "warning": "警告"
+    "warning": "警告",
+    "auto_team_create_failed": "创建团队失败",
+    "auto_team_example_1": "审查此 PR 并运行测试",
+    "auto_team_example_2": "根据调研撰写博客文章",
+    "auto_team_example_3": "分析客户反馈",
+    "auto_team_example_4": "构建内容发布流水线",
+    "auto_team_no_match": "没有智能体匹配你的描述。请尝试描述得更具体。",
+    "team_color_blue": "蓝色",
+    "team_color_cyan": "青色",
+    "team_color_green": "绿色",
+    "team_color_indigo": "靛蓝",
+    "team_color_orange": "橙色",
+    "team_color_pink": "粉色",
+    "team_color_rose": "玫红",
+    "team_color_violet": "紫罗兰",
+    "team_color_yellow": "黄色"
   },
   "planner": {
     "actions": {
@@ -18643,7 +18691,9 @@
       "color_name_violet": "紫罗兰",
       "contrast_fail": "对比度不足",
       "contrast_pass": "清晰可读",
-      "contrast_preview": "对比度预览"
+      "contrast_preview": "对比度预览",
+      "remove_custom_icon_used_by_one": "另有 {count} 个智能体也在使用。",
+      "remove_custom_icon_used_by_other": "另有 {count} 个智能体也在使用。"
     },
     "general_tools": "通用工具",
     "glossary_api": "两个程序自动相互通信的方式。",
@@ -18758,7 +18808,11 @@
       "schedules": "计划",
       "teams_label": "团队",
       "whats_new": "新功能",
-      "whats_new_update": "已更新 — 查看新内容"
+      "whats_new_update": "已更新 — 查看新内容",
+      "activity_draft_in_progress": "草稿进行中",
+      "activity_execution_queued": "执行已排队",
+      "activity_lab_run_in_progress": "实验室运行中",
+      "activity_testing_agent": "正在测试智能体"
     },
     "sort_active_asc": "已按{label}升序排序，点击可切换为降序。",
     "sort_active_desc": "已按{label}降序排序，点击可切换为升序。",
@@ -19179,7 +19233,13 @@
     "exposure_auth_required": "需要身份验证",
     "exposure_open_lan": "对局域网对等端开放",
     "open_to_lan_hint": "网络中任何连接的设备都可以在不证明身份的情况下查看此资源。除非你信任此网络中的每台设备，否则请保持关闭。",
-    "open_to_lan_label": "对未经身份验证的局域网对等端开放"
+    "open_to_lan_label": "对未经身份验证的局域网对等端开放",
+    "by_creator": "作者：{name}",
+    "created_on": "创建于 {date}",
+    "fields_exposed_count_one": "已公开 {count} 个字段",
+    "fields_exposed_count_other": "已公开 {count} 个字段",
+    "health_latency_ms": "{ms}毫秒",
+    "health_missed": "{count} 次错过"
   },
   "ship": {
     "added_after_cut": "在定案后添加",
@@ -21384,6 +21444,21 @@
       "webhook_placeholder": "https://...",
       "webhook_url": "webhook URL",
       "when_label": "何时运行？"
+    },
+    "bg_notify": {
+      "preview_complete_body": "模板测试“{name}”已完成。",
+      "preview_complete_title": "预览完成",
+      "preview_default_name": "模板",
+      "preview_failed_body": "模板测试“{name}”失败。",
+      "preview_failed_title": "预览失败",
+      "preview_start_failed": "启动预览失败",
+      "preview_stopped_body": "模板测试“{name}”",
+      "rebuild_cancelled": "已被用户取消",
+      "rebuild_complete_body": "模板重建已成功完成。",
+      "rebuild_complete_title": "重建完成",
+      "rebuild_connection_lost": "连接已断开。重建可能仍在后台运行。",
+      "rebuild_failed_body": "模板重建出错。",
+      "rebuild_failed_title": "重建失败"
     }
   },
   "tiers": {

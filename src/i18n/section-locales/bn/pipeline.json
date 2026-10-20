@@ -452,5 +452,20 @@
   "use_template": "টেমপ্লেট ব্যবহার করুন",
   "version_history": "সংস্করণ ইতিহাস",
   "view_persona": "পার্সোনা দেখুন",
-  "warning": "সতর্কতা"
+  "warning": "সতর্কতা",
+  "auto_team_create_failed": "টিম তৈরি করা যায়নি",
+  "auto_team_example_1": "এই PR রিভিউ করুন এবং টেস্ট চালান",
+  "auto_team_example_2": "গবেষণাসহ একটি ব্লগ পোস্ট লিখুন",
+  "auto_team_example_3": "গ্রাহকের মতামত বিশ্লেষণ করুন",
+  "auto_team_example_4": "একটি কনটেন্ট প্রকাশনা পাইপলাইন তৈরি করুন",
+  "auto_team_no_match": "আপনার বিবরণের সাথে কোনো এজেন্ট মেলেনি। আরও নির্দিষ্ট করে লিখুন।",
+  "team_color_blue": "নীল",
+  "team_color_cyan": "সায়ান",
+  "team_color_green": "সবুজ",
+  "team_color_indigo": "ইন্ডিগো",
+  "team_color_orange": "কমলা",
+  "team_color_pink": "গোলাপি",
+  "team_color_rose": "রোজ",
+  "team_color_violet": "বেগুনি",
+  "team_color_yellow": "হলুদ"
 }

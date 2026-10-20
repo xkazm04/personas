@@ -36,3 +36,21 @@ describe('PersonaIconPickerModal custom icon delete', () => {
     expect(deletePersonaIcon).not.toHaveBeenCalled();
   });
 });
+
+describe('PersonaIconPickerModal delete confirm usage count', () => {
+  it('names how many OTHER personas use the icon, excluding the one being edited', async () => {
+    const { useAgentStore } = await import('@/stores/agentStore');
+    useAgentStore.setState({
+      personas: [
+        { id: 'me', icon: 'custom-icon:asset-1' },
+        { id: 'p2', icon: 'custom-icon:asset-1' },
+        { id: 'p3', icon: 'custom-icon:asset-1' },
+        { id: 'p4', icon: 'custom-icon:other' },
+      ],
+    } as never);
+    render(<PersonaIconPickerModal isOpen value="custom-icon:asset-1" personaId="me" onChange={vi.fn()} onClose={vi.fn()} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove icon' }));
+    expect(await screen.findByText(/Also used by 2 other agents\./)).toBeTruthy();
+    useAgentStore.setState({ personas: [] } as never);
+  });
+});

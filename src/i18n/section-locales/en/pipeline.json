@@ -452,5 +452,20 @@
   "relay_shared_memory": "Shared memory",
   "relay_no_memories": "No shared memories yet.",
   "clear_all_filters": "Clear all filters",
-  "diff_legend": "Green entries are new in the newer run; red entries are gone since the older run."
+  "diff_legend": "Green entries are new in the newer run; red entries are gone since the older run.",
+  "auto_team_no_match": "No agents matched your description. Try being more specific.",
+  "auto_team_create_failed": "Failed to create team",
+  "auto_team_example_1": "Review this PR and run tests",
+  "auto_team_example_2": "Write a blog post with research",
+  "auto_team_example_3": "Analyze customer feedback",
+  "auto_team_example_4": "Build a content publishing pipeline",
+  "team_color_indigo": "Indigo",
+  "team_color_violet": "Violet",
+  "team_color_pink": "Pink",
+  "team_color_rose": "Rose",
+  "team_color_orange": "Orange",
+  "team_color_yellow": "Yellow",
+  "team_color_green": "Green",
+  "team_color_cyan": "Cyan",
+  "team_color_blue": "Blue"
 }

@@ -1307,5 +1307,20 @@
     "webhook_placeholder": "https://...",
     "webhook_url": "URL webhook",
     "when_label": "Когда запускать?"
+  },
+  "bg_notify": {
+    "preview_complete_body": "Тест шаблона \"{name}\" завершен.",
+    "preview_complete_title": "Предпросмотр завершен",
+    "preview_default_name": "шаблон",
+    "preview_failed_body": "Тест шаблона \"{name}\" не удался.",
+    "preview_failed_title": "Предпросмотр не удался",
+    "preview_start_failed": "Не удалось запустить предпросмотр",
+    "preview_stopped_body": "Тест шаблона \"{name}\"",
+    "rebuild_cancelled": "Отменено пользователем",
+    "rebuild_complete_body": "Пересборка шаблона успешно завершена.",
+    "rebuild_complete_title": "Пересборка завершена",
+    "rebuild_connection_lost": "Соединение потеряно. Пересборка может все еще выполняться в фоне.",
+    "rebuild_failed_body": "При пересборке шаблона произошла ошибка.",
+    "rebuild_failed_title": "Пересборка не удалась"
   }
 }

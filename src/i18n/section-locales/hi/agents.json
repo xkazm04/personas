@@ -2050,7 +2050,19 @@
     "baseline_unpin_save_failed": "बेसलाइन अनपिन करने में विफल। ब्राउज़र स्टोरेज अनुपलब्ध हो सकता है।",
     "cell_failed": "विफल",
     "cell_running": "चल रहा है",
-    "score_unscored": "अंक नहीं मिला"
+    "score_unscored": "अंक नहीं मिला",
+    "notify_complete_body": "{mode} परीक्षण सफलतापूर्वक पूरा हुआ।",
+    "notify_complete_title": "लैब {mode} पूर्ण",
+    "notify_failed_body": "{mode} परीक्षण में त्रुटि हुई।",
+    "notify_failed_title": "लैब {mode} विफल",
+    "notify_mode_ab": "A/B परीक्षण",
+    "notify_mode_arena": "एरेना",
+    "notify_mode_breed": "ब्रीड",
+    "notify_mode_eval": "मूल्यांकन",
+    "notify_mode_evolve": "विकास",
+    "notify_mode_matrix": "मैट्रिक्स",
+    "notify_mode_regression": "रिग्रेशन",
+    "notify_mode_versions": "संस्करण"
   },
   "life": {
     "activity_attention_row": "अटेंशन दौर",
@@ -3321,5 +3333,26 @@
   "glyph_recipe_alt_path": "तेज़ रास्ता · {pct}% मेल",
   "glyph_recipe_alt_use": "इस रेसिपी को शुरुआती बिंदु बनाएँ",
   "glyph_sched_days_label": "दिन",
-  "glyph_sched_time_label": "समय"
+  "glyph_sched_time_label": "समय",
+  "lifecycle_notify": {
+    "promoted_body": "आपका एजेंट प्रोडक्शन में प्रमोट हो गया है और उपयोग के लिए तैयार है।",
+    "promoted_connect_one": "चलने से पहले 1 सेवा कनेक्ट करें: {names}।",
+    "promoted_connect_other": "चलने से पहले {count} सेवाएं कनेक्ट करें: {names}।",
+    "promoted_items_one": "1 आइटम सेट अप नहीं हो सका: {names}।",
+    "promoted_items_other": "{count} आइटम सेट अप नहीं हो सके: {names}।",
+    "promoted_setup_title": "एजेंट प्रमोट हुआ: सेटअप आवश्यक",
+    "promoted_title": "एजेंट प्रमोट हुआ",
+    "promoted_unverified": "इसकी पहली जांच मूल्य नहीं दे सकी। भरोसा करने से पहले इसके कनेक्टर जांचें।",
+    "sum_credential_issues": "{count} क्रेडेंशियल समस्या(एं)",
+    "sum_failed": "{count} विफल",
+    "sum_passed": "{count} सफल",
+    "sum_passed_of": "{passed}/{tested} सफल",
+    "sum_skipped": "{count} छोड़े गए",
+    "sum_unverified": "{count} असत्यापित (कभी कॉल नहीं हुए)",
+    "test_all_passed_body": "सभी {count} टूल सफल रहे। प्रमोट करने के लिए तैयार।",
+    "test_complete_title": "एजेंट परीक्षण पूर्ण",
+    "test_failed_fallback": "परीक्षण चलाने में विफल",
+    "test_failed_title": "एजेंट परीक्षण विफल",
+    "test_passed_title": "एजेंट परीक्षण सफल"
+  }
 }

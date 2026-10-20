@@ -1307,5 +1307,20 @@
     "webhook_placeholder": "https://...",
     "webhook_url": "URL Webhook",
     "when_label": "Kapan ini harus dijalankan?"
+  },
+  "bg_notify": {
+    "preview_complete_body": "Pengujian templat \"{name}\" selesai.",
+    "preview_complete_title": "Pratinjau Selesai",
+    "preview_default_name": "templat",
+    "preview_failed_body": "Pengujian templat \"{name}\" gagal.",
+    "preview_failed_title": "Pratinjau Gagal",
+    "preview_start_failed": "Gagal memulai pratinjau",
+    "preview_stopped_body": "Pengujian templat \"{name}\"",
+    "rebuild_cancelled": "Dibatalkan oleh pengguna",
+    "rebuild_complete_body": "Pembangunan ulang templat berhasil diselesaikan.",
+    "rebuild_complete_title": "Pembangunan Ulang Selesai",
+    "rebuild_connection_lost": "Koneksi terputus. Pembangunan ulang mungkin masih berjalan di latar belakang.",
+    "rebuild_failed_body": "Pembangunan ulang templat mengalami kesalahan.",
+    "rebuild_failed_title": "Pembangunan Ulang Gagal"
   }
 }

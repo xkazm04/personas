@@ -452,5 +452,20 @@
   "use_template": "Использовать шаблон",
   "version_history": "История версий",
   "view_persona": "Просмотреть агента",
-  "warning": "Предупреждение"
+  "warning": "Предупреждение",
+  "auto_team_create_failed": "Не удалось создать команду",
+  "auto_team_example_1": "Проверить этот PR и запустить тесты",
+  "auto_team_example_2": "Написать пост в блог с исследованием",
+  "auto_team_example_3": "Проанализировать отзывы клиентов",
+  "auto_team_example_4": "Построить конвейер публикации контента",
+  "auto_team_no_match": "Ни один агент не подошел под ваше описание. Попробуйте уточнить.",
+  "team_color_blue": "Синий",
+  "team_color_cyan": "Голубой",
+  "team_color_green": "Зеленый",
+  "team_color_indigo": "Индиго",
+  "team_color_orange": "Оранжевый",
+  "team_color_pink": "Розовый",
+  "team_color_rose": "Малиновый",
+  "team_color_violet": "Фиолетовый",
+  "team_color_yellow": "Желтый"
 }

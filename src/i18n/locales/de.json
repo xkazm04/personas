@@ -2056,7 +2056,19 @@
       "baseline_unpin_save_failed": "Baseline konnte nicht gelöst werden. Der Browserspeicher ist möglicherweise nicht verfügbar.",
       "cell_failed": "fehlgeschlagen",
       "cell_running": "läuft",
-      "score_unscored": "Nicht bewertet"
+      "score_unscored": "Nicht bewertet",
+      "notify_complete_body": "{mode}-Test erfolgreich abgeschlossen.",
+      "notify_complete_title": "Lab {mode} abgeschlossen",
+      "notify_failed_body": "Beim {mode}-Test ist ein Fehler aufgetreten.",
+      "notify_failed_title": "Lab {mode} fehlgeschlagen",
+      "notify_mode_ab": "A/B-Test",
+      "notify_mode_arena": "Arena",
+      "notify_mode_breed": "Zucht",
+      "notify_mode_eval": "Auswertung",
+      "notify_mode_evolve": "Evolution",
+      "notify_mode_matrix": "Matrix",
+      "notify_mode_regression": "Regression",
+      "notify_mode_versions": "Versionen"
     },
     "life": {
       "activity_attention_row": "Aufmerksamkeitsdurchlauf",
@@ -3327,7 +3339,28 @@
     "glyph_recipe_alt_path": "Schnellerer Weg · {pct} % Übereinstimmung",
     "glyph_recipe_alt_use": "Dieses Rezept als Ausgangspunkt verwenden",
     "glyph_sched_days_label": "Tage",
-    "glyph_sched_time_label": "Uhrzeit"
+    "glyph_sched_time_label": "Uhrzeit",
+    "lifecycle_notify": {
+      "promoted_body": "Dein Agent wurde in die Produktion übernommen und ist einsatzbereit.",
+      "promoted_connect_one": "Verbinde 1 Dienst, bevor er laufen kann: {names}.",
+      "promoted_connect_other": "Verbinde {count} Dienste, bevor er laufen kann: {names}.",
+      "promoted_items_one": "1 Element konnte nicht eingerichtet werden: {names}.",
+      "promoted_items_other": "{count} Elemente konnten nicht eingerichtet werden: {names}.",
+      "promoted_setup_title": "Agent übernommen: Einrichtung nötig",
+      "promoted_title": "Agent übernommen",
+      "promoted_unverified": "Der erste Prüflauf konnte keinen Nutzen liefern. Prüfe die Konnektoren, bevor du dich darauf verlässt.",
+      "sum_credential_issues": "{count} Zugangsdatenproblem(e)",
+      "sum_failed": "{count} fehlgeschlagen",
+      "sum_passed": "{count} bestanden",
+      "sum_passed_of": "{passed}/{tested} bestanden",
+      "sum_skipped": "{count} übersprungen",
+      "sum_unverified": "{count} nicht verifiziert (nie aufgerufen)",
+      "test_all_passed_body": "Alle {count} Tools bestanden. Bereit zur Übernahme.",
+      "test_complete_title": "Agententest abgeschlossen",
+      "test_failed_fallback": "Tests konnten nicht ausgeführt werden",
+      "test_failed_title": "Agententest fehlgeschlagen",
+      "test_passed_title": "Agententest bestanden"
+    }
   },
   "alerts": {
     "error_clear_history": "Alarmverlauf konnte nicht gelöscht werden:",
@@ -11413,7 +11446,22 @@
     "use_template": "Vorlage verwenden",
     "version_history": "Versionsverlauf",
     "view_persona": "Persona anzeigen",
-    "warning": "Warnung"
+    "warning": "Warnung",
+    "auto_team_create_failed": "Team konnte nicht erstellt werden",
+    "auto_team_example_1": "Diesen PR prüfen und Tests ausführen",
+    "auto_team_example_2": "Einen Blogbeitrag mit Recherche schreiben",
+    "auto_team_example_3": "Kundenfeedback analysieren",
+    "auto_team_example_4": "Eine Pipeline für Content-Veröffentlichung aufbauen",
+    "auto_team_no_match": "Kein Agent passt zu deiner Beschreibung. Versuche, genauer zu sein.",
+    "team_color_blue": "Blau",
+    "team_color_cyan": "Cyan",
+    "team_color_green": "Grün",
+    "team_color_indigo": "Indigo",
+    "team_color_orange": "Orange",
+    "team_color_pink": "Pink",
+    "team_color_rose": "Rosé",
+    "team_color_violet": "Violett",
+    "team_color_yellow": "Gelb"
   },
   "planner": {
     "actions": {
@@ -18643,7 +18691,9 @@
       "color_name_violet": "Lila",
       "contrast_fail": "Geringer Kontrast",
       "contrast_pass": "Lesbar",
-      "contrast_preview": "Kontrastvorschau"
+      "contrast_preview": "Kontrastvorschau",
+      "remove_custom_icon_used_by_one": "Wird auch von {count} weiteren Agenten verwendet.",
+      "remove_custom_icon_used_by_other": "Wird auch von {count} weiteren Agenten verwendet."
     },
     "general_tools": "Allgemeine Tools",
     "glossary_api": "Eine Möglichkeit für zwei Programme, automatisch miteinander zu kommunizieren.",
@@ -18758,7 +18808,11 @@
       "schedules": "Zeitpläne",
       "teams_label": "Teams",
       "whats_new": "Neuigkeiten",
-      "whats_new_update": "Aktualisiert — Neuigkeiten ansehen"
+      "whats_new_update": "Aktualisiert — Neuigkeiten ansehen",
+      "activity_draft_in_progress": "Entwurf in Arbeit",
+      "activity_execution_queued": "Ausführung in Warteschlange",
+      "activity_lab_run_in_progress": "Lab-Lauf in Arbeit",
+      "activity_testing_agent": "Agent wird getestet"
     },
     "sort_active_asc": "Sortiert nach {label}, aufsteigend. Aktivieren, um absteigend zu sortieren.",
     "sort_active_desc": "Sortiert nach {label}, absteigend. Aktivieren, um aufsteigend zu sortieren.",
@@ -19179,7 +19233,13 @@
     "exposure_auth_required": "Authentifizierung erforderlich",
     "exposure_open_lan": "Offen für LAN-Peers",
     "open_to_lan_hint": "Jedes Gerät in Ihrem Netzwerk, das sich verbindet, kann diese Ressource sehen, ohne seine Identität nachzuweisen. Lassen Sie die Option deaktiviert, sofern Sie nicht jedem Gerät in diesem Netzwerk vertrauen.",
-    "open_to_lan_label": "Offen für nicht authentifizierte LAN-Peers"
+    "open_to_lan_label": "Offen für nicht authentifizierte LAN-Peers",
+    "by_creator": "von {name}",
+    "created_on": "Erstellt am {date}",
+    "fields_exposed_count_one": "{count} Feld freigegeben",
+    "fields_exposed_count_other": "{count} Felder freigegeben",
+    "health_latency_ms": "{ms} ms",
+    "health_missed": "{count} verpasst"
   },
   "ship": {
     "added_after_cut": "nach dem Zuschnitt hinzugefügt",
@@ -21384,6 +21444,21 @@
       "webhook_placeholder": "https://...",
       "webhook_url": "Webhook-URL",
       "when_label": "Wann soll dies ausgeführt werden?"
+    },
+    "bg_notify": {
+      "preview_complete_body": "Vorlagentest \"{name}\" abgeschlossen.",
+      "preview_complete_title": "Vorschau abgeschlossen",
+      "preview_default_name": "Vorlage",
+      "preview_failed_body": "Vorlagentest \"{name}\" fehlgeschlagen.",
+      "preview_failed_title": "Vorschau fehlgeschlagen",
+      "preview_start_failed": "Vorschau konnte nicht gestartet werden",
+      "preview_stopped_body": "Vorlagentest \"{name}\"",
+      "rebuild_cancelled": "Vom Benutzer abgebrochen",
+      "rebuild_complete_body": "Neuaufbau der Vorlage erfolgreich abgeschlossen.",
+      "rebuild_complete_title": "Neuaufbau abgeschlossen",
+      "rebuild_connection_lost": "Verbindung verloren. Der Neuaufbau läuft möglicherweise im Hintergrund weiter.",
+      "rebuild_failed_body": "Beim Neuaufbau der Vorlage ist ein Fehler aufgetreten.",
+      "rebuild_failed_title": "Neuaufbau fehlgeschlagen"
     }
   },
   "tiers": {

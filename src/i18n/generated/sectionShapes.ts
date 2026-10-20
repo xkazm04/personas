@@ -165,7 +165,8 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "assertions": {},
     "brain": {},
     "responsibilities": {},
-    "promote_preview": {}
+    "promote_preview": {},
+    "lifecycle_notify": {}
   },
   "director": {},
   "vault": {
@@ -456,7 +457,8 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "trigger_edit": {},
     "preset_edit": {},
     "test_report": {},
-    "complexity": {}
+    "complexity": {},
+    "bg_notify": {}
   },
   "triggers": {
     "builder": {},

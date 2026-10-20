@@ -7,6 +7,7 @@ import type { TopologyBlueprint } from '@/lib/bindings/TopologyBlueprint';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import { silentCatch } from '@/lib/silentCatch';
 import { classifyUnknownErrorFull } from '@/lib/errors/errorPipeline';
+import { useTranslation } from '@/i18n/useTranslation';
 
 
 export type AutoTeamPhase =
@@ -42,6 +43,7 @@ export interface AutoTeamState {
 
 export function useAutoTeam(): AutoTeamState {
   const createTeam = usePipelineStore((s) => s.createTeam);
+  const { t } = useTranslation();
   const fetchTeams = usePipelineStore((s) => s.fetchTeams);
   const selectTeam = usePipelineStore((s) => s.selectTeam);
 
@@ -78,7 +80,7 @@ export function useAutoTeam(): AutoTeamState {
       if (cancelledRef.current) return;
 
       if (bp.members.length === 0) {
-        setError('No agents matched your description. Try being more specific.');
+        setError(t.pipeline.auto_team_no_match);
         setPhase('error');
         return;
       }
@@ -91,7 +93,7 @@ export function useAutoTeam(): AutoTeamState {
       setError(classifyUnknownErrorFull(err).friendly.message);
       setPhase('error');
     }
-  }, [query]);
+  }, [query, t]);
 
   const apply = useCallback(async () => {
     if (!blueprint) return;
@@ -116,7 +118,7 @@ export function useAutoTeam(): AutoTeamState {
 
       if (!team) {
         if (cancelledRef.current) return;
-        setError('Failed to create team');
+        setError(t.pipeline.auto_team_create_failed);
         setPhase('error');
         return;
       }
@@ -245,7 +247,7 @@ export function useAutoTeam(): AutoTeamState {
     } finally {
       applyingRef.current = false;
     }
-  }, [blueprint, query, createTeam, fetchTeams, selectTeam]);
+  }, [blueprint, query, createTeam, fetchTeams, selectTeam, t]);
 
   const removeMember = useCallback((index: number) => {
     setBlueprint((bp) => {

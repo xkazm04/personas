@@ -2050,7 +2050,19 @@
     "baseline_unpin_save_failed": "Không bỏ ghim được đường cơ sở. Bộ nhớ trình duyệt có thể không khả dụng.",
     "cell_failed": "thất bại",
     "cell_running": "đang chạy",
-    "score_unscored": "Chưa chấm điểm"
+    "score_unscored": "Chưa chấm điểm",
+    "notify_complete_body": "Bài kiểm tra {mode} đã hoàn tất thành công.",
+    "notify_complete_title": "Lab {mode} hoàn tất",
+    "notify_failed_body": "Bài kiểm tra {mode} gặp lỗi.",
+    "notify_failed_title": "Lab {mode} thất bại",
+    "notify_mode_ab": "Kiểm tra A/B",
+    "notify_mode_arena": "Đấu trường",
+    "notify_mode_breed": "Lai tạo",
+    "notify_mode_eval": "Đánh giá",
+    "notify_mode_evolve": "Tiến hóa",
+    "notify_mode_matrix": "Ma trận",
+    "notify_mode_regression": "Hồi quy",
+    "notify_mode_versions": "Phiên bản"
   },
   "life": {
     "activity_attention_row": "Lượt chú ý",
@@ -3321,5 +3333,26 @@
   "glyph_recipe_alt_path": "Lối nhanh hơn · khớp {pct}%",
   "glyph_recipe_alt_use": "Dùng công thức này làm điểm xuất phát",
   "glyph_sched_days_label": "Ngày",
-  "glyph_sched_time_label": "Giờ"
+  "glyph_sched_time_label": "Giờ",
+  "lifecycle_notify": {
+    "promoted_body": "Agent của bạn đã được đưa lên môi trường production và sẵn sàng sử dụng.",
+    "promoted_connect_one": "Kết nối 1 dịch vụ trước khi chạy: {names}.",
+    "promoted_connect_other": "Kết nối {count} dịch vụ trước khi chạy: {names}.",
+    "promoted_items_one": "1 mục không thể thiết lập: {names}.",
+    "promoted_items_other": "{count} mục không thể thiết lập: {names}.",
+    "promoted_setup_title": "Agent đã được nâng cấp: cần thiết lập",
+    "promoted_title": "Agent đã được nâng cấp",
+    "promoted_unverified": "Lần chạy kiểm tra đầu tiên chưa mang lại giá trị. Hãy xem lại các trình kết nối trước khi dùng.",
+    "sum_credential_issues": "{count} sự cố thông tin xác thực",
+    "sum_failed": "{count} thất bại",
+    "sum_passed": "{count} đạt",
+    "sum_passed_of": "{passed}/{tested} đạt",
+    "sum_skipped": "{count} bỏ qua",
+    "sum_unverified": "{count} chưa xác minh (chưa từng được gọi)",
+    "test_all_passed_body": "Cả {count} công cụ đều đạt. Sẵn sàng nâng cấp.",
+    "test_complete_title": "Kiểm tra agent hoàn tất",
+    "test_failed_fallback": "Không thể chạy kiểm tra",
+    "test_failed_title": "Kiểm tra agent thất bại",
+    "test_passed_title": "Kiểm tra agent đạt"
+  }
 }

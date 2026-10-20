@@ -77,7 +77,7 @@ function ResourceExposureCard({
           </span>
           {parsedFields.length > 0 && (
             <span className="text-[10px] text-foreground">
-              {parsedFields.length} field{parsedFields.length !== 1 ? 's' : ''} exposed
+              {tx(parsedFields.length === 1 ? t.sharing.fields_exposed_count_one : t.sharing.fields_exposed_count_other, { count: parsedFields.length })}
             </span>
           )}
         </div>

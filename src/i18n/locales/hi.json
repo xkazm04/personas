@@ -2056,7 +2056,19 @@
       "baseline_unpin_save_failed": "बेसलाइन अनपिन करने में विफल। ब्राउज़र स्टोरेज अनुपलब्ध हो सकता है।",
       "cell_failed": "विफल",
       "cell_running": "चल रहा है",
-      "score_unscored": "अंक नहीं मिला"
+      "score_unscored": "अंक नहीं मिला",
+      "notify_complete_body": "{mode} परीक्षण सफलतापूर्वक पूरा हुआ।",
+      "notify_complete_title": "लैब {mode} पूर्ण",
+      "notify_failed_body": "{mode} परीक्षण में त्रुटि हुई।",
+      "notify_failed_title": "लैब {mode} विफल",
+      "notify_mode_ab": "A/B परीक्षण",
+      "notify_mode_arena": "एरेना",
+      "notify_mode_breed": "ब्रीड",
+      "notify_mode_eval": "मूल्यांकन",
+      "notify_mode_evolve": "विकास",
+      "notify_mode_matrix": "मैट्रिक्स",
+      "notify_mode_regression": "रिग्रेशन",
+      "notify_mode_versions": "संस्करण"
     },
     "life": {
       "activity_attention_row": "अटेंशन दौर",
@@ -3327,7 +3339,28 @@
     "glyph_recipe_alt_path": "तेज़ रास्ता · {pct}% मेल",
     "glyph_recipe_alt_use": "इस रेसिपी को शुरुआती बिंदु बनाएँ",
     "glyph_sched_days_label": "दिन",
-    "glyph_sched_time_label": "समय"
+    "glyph_sched_time_label": "समय",
+    "lifecycle_notify": {
+      "promoted_body": "आपका एजेंट प्रोडक्शन में प्रमोट हो गया है और उपयोग के लिए तैयार है।",
+      "promoted_connect_one": "चलने से पहले 1 सेवा कनेक्ट करें: {names}।",
+      "promoted_connect_other": "चलने से पहले {count} सेवाएं कनेक्ट करें: {names}।",
+      "promoted_items_one": "1 आइटम सेट अप नहीं हो सका: {names}।",
+      "promoted_items_other": "{count} आइटम सेट अप नहीं हो सके: {names}।",
+      "promoted_setup_title": "एजेंट प्रमोट हुआ: सेटअप आवश्यक",
+      "promoted_title": "एजेंट प्रमोट हुआ",
+      "promoted_unverified": "इसकी पहली जांच मूल्य नहीं दे सकी। भरोसा करने से पहले इसके कनेक्टर जांचें।",
+      "sum_credential_issues": "{count} क्रेडेंशियल समस्या(एं)",
+      "sum_failed": "{count} विफल",
+      "sum_passed": "{count} सफल",
+      "sum_passed_of": "{passed}/{tested} सफल",
+      "sum_skipped": "{count} छोड़े गए",
+      "sum_unverified": "{count} असत्यापित (कभी कॉल नहीं हुए)",
+      "test_all_passed_body": "सभी {count} टूल सफल रहे। प्रमोट करने के लिए तैयार।",
+      "test_complete_title": "एजेंट परीक्षण पूर्ण",
+      "test_failed_fallback": "परीक्षण चलाने में विफल",
+      "test_failed_title": "एजेंट परीक्षण विफल",
+      "test_passed_title": "एजेंट परीक्षण सफल"
+    }
   },
   "alerts": {
     "error_clear_history": "अलर्ट इतिहास साफ़ करने में विफल:",
@@ -11413,7 +11446,22 @@
     "use_template": "टेम्पलेट उपयोग करें",
     "version_history": "संस्करण इतिहास",
     "view_persona": "पर्सोना देखें",
-    "warning": "चेतावनी"
+    "warning": "चेतावनी",
+    "auto_team_create_failed": "टीम बनाने में विफल",
+    "auto_team_example_1": "इस PR की समीक्षा करें और परीक्षण चलाएं",
+    "auto_team_example_2": "शोध के साथ एक ब्लॉग पोस्ट लिखें",
+    "auto_team_example_3": "ग्राहक फीडबैक का विश्लेषण करें",
+    "auto_team_example_4": "कंटेंट पब्लिशिंग पाइपलाइन बनाएं",
+    "auto_team_no_match": "कोई एजेंट आपके विवरण से मेल नहीं खाया। अधिक स्पष्ट लिखकर देखें।",
+    "team_color_blue": "नीला",
+    "team_color_cyan": "सियान",
+    "team_color_green": "हरा",
+    "team_color_indigo": "नील",
+    "team_color_orange": "नारंगी",
+    "team_color_pink": "गुलाबी",
+    "team_color_rose": "रोज़",
+    "team_color_violet": "बैंगनी",
+    "team_color_yellow": "पीला"
   },
   "planner": {
     "actions": {
@@ -18643,7 +18691,9 @@
       "color_name_violet": "वायलेट",
       "contrast_fail": "कम कंट्रास्ट",
       "contrast_pass": "पठनीय",
-      "contrast_preview": "कंट्रास्ट पूर्वावलोकन"
+      "contrast_preview": "कंट्रास्ट पूर्वावलोकन",
+      "remove_custom_icon_used_by_one": "इसका उपयोग {count} अन्य एजेंट भी करता है।",
+      "remove_custom_icon_used_by_other": "इसका उपयोग {count} अन्य एजेंट भी करते हैं।"
     },
     "general_tools": "सामान्य टूल्स",
     "glossary_api": "दो प्रोग्रामों के स्वचालित रूप से एक-दूसरे से बात करने का तरीका।",
@@ -18758,7 +18808,11 @@
       "schedules": "शेड्यूल",
       "teams_label": "टीमें",
       "whats_new": "नया क्या है",
-      "whats_new_update": "अपडेट — देखें क्या नया है"
+      "whats_new_update": "अपडेट — देखें क्या नया है",
+      "activity_draft_in_progress": "ड्राफ्ट जारी है",
+      "activity_execution_queued": "निष्पादन कतार में",
+      "activity_lab_run_in_progress": "लैब रन जारी है",
+      "activity_testing_agent": "एजेंट का परीक्षण हो रहा है"
     },
     "sort_active_asc": "{label} के अनुसार क्रमबद्ध, आरोही। अवरोही क्रम में क्रमबद्ध करने के लिए सक्रिय करें।",
     "sort_active_desc": "{label} के अनुसार क्रमबद्ध, अवरोही। आरोही क्रम में क्रमबद्ध करने के लिए सक्रिय करें।",
@@ -19179,7 +19233,13 @@
     "exposure_auth_required": "प्रमाणीकरण आवश्यक",
     "exposure_open_lan": "LAN पीयर के लिए खुला",
     "open_to_lan_hint": "आपके नेटवर्क का कोई भी डिवाइस जो कनेक्ट करता है, अपनी पहचान साबित किए बिना यह संसाधन देख सकता है। जब तक आप इस नेटवर्क के हर डिवाइस पर भरोसा न करें, इसे बंद रखें।",
-    "open_to_lan_label": "बिना प्रमाणीकरण वाले LAN पीयर के लिए खुला"
+    "open_to_lan_label": "बिना प्रमाणीकरण वाले LAN पीयर के लिए खुला",
+    "by_creator": "{name} द्वारा",
+    "created_on": "बनाया गया {date}",
+    "fields_exposed_count_one": "{count} फ़ील्ड उजागर",
+    "fields_exposed_count_other": "{count} फ़ील्ड उजागर",
+    "health_latency_ms": "{ms}ms",
+    "health_missed": "{count} छूटे"
   },
   "ship": {
     "added_after_cut": "कट के बाद जोड़ा गया",
@@ -21384,6 +21444,21 @@
       "webhook_placeholder": "https://...",
       "webhook_url": "Webhook URL",
       "when_label": "यह कब चलना चाहिए?"
+    },
+    "bg_notify": {
+      "preview_complete_body": "टेम्पलेट परीक्षण \"{name}\" पूरा हुआ।",
+      "preview_complete_title": "पूर्वावलोकन पूर्ण",
+      "preview_default_name": "टेम्पलेट",
+      "preview_failed_body": "टेम्पलेट परीक्षण \"{name}\" विफल रहा।",
+      "preview_failed_title": "पूर्वावलोकन विफल",
+      "preview_start_failed": "पूर्वावलोकन शुरू करने में विफल",
+      "preview_stopped_body": "टेम्पलेट परीक्षण \"{name}\"",
+      "rebuild_cancelled": "उपयोगकर्ता द्वारा रद्द किया गया",
+      "rebuild_complete_body": "टेम्पलेट रीबिल्ड सफलतापूर्वक पूरा हुआ।",
+      "rebuild_complete_title": "रीबिल्ड पूर्ण",
+      "rebuild_connection_lost": "कनेक्शन टूट गया। रीबिल्ड अब भी बैकग्राउंड में चल रहा हो सकता है।",
+      "rebuild_failed_body": "टेम्पलेट रीबिल्ड में त्रुटि हुई।",
+      "rebuild_failed_title": "रीबिल्ड विफल"
     }
   },
   "tiers": {

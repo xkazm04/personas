@@ -2056,7 +2056,19 @@
       "baseline_unpin_save_failed": "ベースラインのピン留めを解除できませんでした。ブラウザのストレージが利用できない可能性があります。",
       "cell_failed": "失敗",
       "cell_running": "実行中",
-      "score_unscored": "未採点"
+      "score_unscored": "未採点",
+      "notify_complete_body": "{mode}テストが正常に完了しました。",
+      "notify_complete_title": "ラボ {mode} 完了",
+      "notify_failed_body": "{mode}テストでエラーが発生しました。",
+      "notify_failed_title": "ラボ {mode} 失敗",
+      "notify_mode_ab": "A/Bテスト",
+      "notify_mode_arena": "アリーナ",
+      "notify_mode_breed": "交配",
+      "notify_mode_eval": "評価",
+      "notify_mode_evolve": "進化",
+      "notify_mode_matrix": "マトリックス",
+      "notify_mode_regression": "回帰",
+      "notify_mode_versions": "バージョン"
     },
     "life": {
       "activity_attention_row": "アテンションパス",
@@ -3327,7 +3339,28 @@
     "glyph_recipe_alt_path": "より速い方法 · {pct}% 一致",
     "glyph_recipe_alt_use": "このレシピを出発点にする",
     "glyph_sched_days_label": "曜日",
-    "glyph_sched_time_label": "時刻"
+    "glyph_sched_time_label": "時刻",
+    "lifecycle_notify": {
+      "promoted_body": "エージェントが本番環境に昇格し、使用できる状態になりました。",
+      "promoted_connect_one": "実行する前に1つのサービスを接続してください: {names}。",
+      "promoted_connect_other": "実行する前に{count}個のサービスを接続してください: {names}。",
+      "promoted_items_one": "1件をセットアップできませんでした: {names}。",
+      "promoted_items_other": "{count}件をセットアップできませんでした: {names}。",
+      "promoted_setup_title": "エージェント昇格: セットアップが必要",
+      "promoted_title": "エージェント昇格",
+      "promoted_unverified": "最初のチェック実行で価値を提供できませんでした。利用前にコネクターを確認してください。",
+      "sum_credential_issues": "認証情報の問題 {count}件",
+      "sum_failed": "{count}件失敗",
+      "sum_passed": "{count}件合格",
+      "sum_passed_of": "{passed}/{tested}件合格",
+      "sum_skipped": "{count}件スキップ",
+      "sum_unverified": "{count}件未検証（未呼び出し）",
+      "test_all_passed_body": "全{count}個のツールが合格しました。昇格できます。",
+      "test_complete_title": "エージェントテスト完了",
+      "test_failed_fallback": "テストを実行できませんでした",
+      "test_failed_title": "エージェントテスト失敗",
+      "test_passed_title": "エージェントテスト合格"
+    }
   },
   "alerts": {
     "error_clear_history": "アラート履歴のクリアに失敗しました:",
@@ -11413,7 +11446,22 @@
     "use_template": "テンプレートを使用",
     "version_history": "バージョン履歴",
     "view_persona": "ペルソナを表示",
-    "warning": "警告"
+    "warning": "警告",
+    "auto_team_create_failed": "チームを作成できませんでした",
+    "auto_team_example_1": "このPRをレビューしてテストを実行する",
+    "auto_team_example_2": "調査を踏まえてブログ記事を書く",
+    "auto_team_example_3": "顧客フィードバックを分析する",
+    "auto_team_example_4": "コンテンツ公開パイプラインを構築する",
+    "auto_team_no_match": "説明に一致するエージェントがありません。もう少し具体的に入力してください。",
+    "team_color_blue": "ブルー",
+    "team_color_cyan": "シアン",
+    "team_color_green": "グリーン",
+    "team_color_indigo": "インディゴ",
+    "team_color_orange": "オレンジ",
+    "team_color_pink": "ピンク",
+    "team_color_rose": "ローズ",
+    "team_color_violet": "バイオレット",
+    "team_color_yellow": "イエロー"
   },
   "planner": {
     "actions": {
@@ -18643,7 +18691,9 @@
       "color_name_violet": "バイオレット",
       "contrast_fail": "コントラスト不足",
       "contrast_pass": "読みやすい",
-      "contrast_preview": "コントラストのプレビュー"
+      "contrast_preview": "コントラストのプレビュー",
+      "remove_custom_icon_used_by_one": "他の{count}個のエージェントでも使用されています。",
+      "remove_custom_icon_used_by_other": "他の{count}個のエージェントでも使用されています。"
     },
     "general_tools": "一般ツール",
     "glossary_api": "2つのプログラムが自動的に通信する方法。",
@@ -18758,7 +18808,11 @@
       "schedules": "スケジュール",
       "teams_label": "チーム",
       "whats_new": "新着情報",
-      "whats_new_update": "更新されました — 新機能を確認"
+      "whats_new_update": "更新されました — 新機能を確認",
+      "activity_draft_in_progress": "下書き作成中",
+      "activity_execution_queued": "実行待ち",
+      "activity_lab_run_in_progress": "ラボ実行中",
+      "activity_testing_agent": "エージェントをテスト中"
     },
     "sort_active_asc": "{label}で昇順に並べ替え中です。選択すると降順になります。",
     "sort_active_desc": "{label}で降順に並べ替え中です。選択すると昇順になります。",
@@ -19179,7 +19233,13 @@
     "exposure_auth_required": "認証が必要",
     "exposure_open_lan": "LANピアに公開",
     "open_to_lan_hint": "ネットワーク上で接続してきたデバイスは、身元を証明せずにこのリソースを閲覧できます。このネットワーク上のすべてのデバイスを信頼できる場合以外は、オフのままにしてください。",
-    "open_to_lan_label": "未認証のLANピアに公開"
+    "open_to_lan_label": "未認証のLANピアに公開",
+    "by_creator": "作成者: {name}",
+    "created_on": "作成日: {date}",
+    "fields_exposed_count_one": "{count}個のフィールドを公開",
+    "fields_exposed_count_other": "{count}個のフィールドを公開",
+    "health_latency_ms": "{ms}ms",
+    "health_missed": "{count}回失敗"
   },
   "ship": {
     "added_after_cut": "カット後に追加",
@@ -21384,6 +21444,21 @@
       "webhook_placeholder": "https://...",
       "webhook_url": "Webhook URL",
       "when_label": "いつ実行しますか？"
+    },
+    "bg_notify": {
+      "preview_complete_body": "テンプレートテスト「{name}」が完了しました。",
+      "preview_complete_title": "プレビュー完了",
+      "preview_default_name": "テンプレート",
+      "preview_failed_body": "テンプレートテスト「{name}」に失敗しました。",
+      "preview_failed_title": "プレビュー失敗",
+      "preview_start_failed": "プレビューを開始できませんでした",
+      "preview_stopped_body": "テンプレートテスト「{name}」",
+      "rebuild_cancelled": "ユーザーによりキャンセルされました",
+      "rebuild_complete_body": "テンプレートの再構築が正常に完了しました。",
+      "rebuild_complete_title": "再構築完了",
+      "rebuild_connection_lost": "接続が切断されました。再構築はバックグラウンドで続行している可能性があります。",
+      "rebuild_failed_body": "テンプレートの再構築中にエラーが発生しました。",
+      "rebuild_failed_title": "再構築失敗"
     }
   },
   "tiers": {

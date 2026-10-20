@@ -326,5 +326,11 @@
   "exposure_auth_required": "Authentifizierung erforderlich",
   "exposure_open_lan": "Offen für LAN-Peers",
   "open_to_lan_hint": "Jedes Gerät in Ihrem Netzwerk, das sich verbindet, kann diese Ressource sehen, ohne seine Identität nachzuweisen. Lassen Sie die Option deaktiviert, sofern Sie nicht jedem Gerät in diesem Netzwerk vertrauen.",
-  "open_to_lan_label": "Offen für nicht authentifizierte LAN-Peers"
+  "open_to_lan_label": "Offen für nicht authentifizierte LAN-Peers",
+  "by_creator": "von {name}",
+  "created_on": "Erstellt am {date}",
+  "fields_exposed_count_one": "{count} Feld freigegeben",
+  "fields_exposed_count_other": "{count} Felder freigegeben",
+  "health_latency_ms": "{ms} ms",
+  "health_missed": "{count} verpasst"
 }

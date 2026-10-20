@@ -1307,5 +1307,20 @@
     "webhook_placeholder": "https://...",
     "webhook_url": "Webhook-URL",
     "when_label": "Wann soll dies ausgeführt werden?"
+  },
+  "bg_notify": {
+    "preview_complete_body": "Vorlagentest \"{name}\" abgeschlossen.",
+    "preview_complete_title": "Vorschau abgeschlossen",
+    "preview_default_name": "Vorlage",
+    "preview_failed_body": "Vorlagentest \"{name}\" fehlgeschlagen.",
+    "preview_failed_title": "Vorschau fehlgeschlagen",
+    "preview_start_failed": "Vorschau konnte nicht gestartet werden",
+    "preview_stopped_body": "Vorlagentest \"{name}\"",
+    "rebuild_cancelled": "Vom Benutzer abgebrochen",
+    "rebuild_complete_body": "Neuaufbau der Vorlage erfolgreich abgeschlossen.",
+    "rebuild_complete_title": "Neuaufbau abgeschlossen",
+    "rebuild_connection_lost": "Verbindung verloren. Der Neuaufbau läuft möglicherweise im Hintergrund weiter.",
+    "rebuild_failed_body": "Beim Neuaufbau der Vorlage ist ein Fehler aufgetreten.",
+    "rebuild_failed_title": "Neuaufbau fehlgeschlagen"
   }
 }

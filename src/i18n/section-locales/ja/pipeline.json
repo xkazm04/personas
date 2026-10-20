@@ -452,5 +452,20 @@
   "use_template": "テンプレートを使用",
   "version_history": "バージョン履歴",
   "view_persona": "ペルソナを表示",
-  "warning": "警告"
+  "warning": "警告",
+  "auto_team_create_failed": "チームを作成できませんでした",
+  "auto_team_example_1": "このPRをレビューしてテストを実行する",
+  "auto_team_example_2": "調査を踏まえてブログ記事を書く",
+  "auto_team_example_3": "顧客フィードバックを分析する",
+  "auto_team_example_4": "コンテンツ公開パイプラインを構築する",
+  "auto_team_no_match": "説明に一致するエージェントがありません。もう少し具体的に入力してください。",
+  "team_color_blue": "ブルー",
+  "team_color_cyan": "シアン",
+  "team_color_green": "グリーン",
+  "team_color_indigo": "インディゴ",
+  "team_color_orange": "オレンジ",
+  "team_color_pink": "ピンク",
+  "team_color_rose": "ローズ",
+  "team_color_violet": "バイオレット",
+  "team_color_yellow": "イエロー"
 }

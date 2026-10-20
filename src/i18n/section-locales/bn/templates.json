@@ -1307,5 +1307,20 @@
     "webhook_placeholder": "https://...",
     "webhook_url": "Webhook URL",
     "when_label": "কখন চলবে?"
+  },
+  "bg_notify": {
+    "preview_complete_body": "টেমপ্লেট পরীক্ষা \"{name}\" শেষ হয়েছে।",
+    "preview_complete_title": "প্রিভিউ সম্পন্ন",
+    "preview_default_name": "টেমপ্লেট",
+    "preview_failed_body": "টেমপ্লেট পরীক্ষা \"{name}\" ব্যর্থ হয়েছে।",
+    "preview_failed_title": "প্রিভিউ ব্যর্থ",
+    "preview_start_failed": "প্রিভিউ শুরু করা যায়নি",
+    "preview_stopped_body": "টেমপ্লেট পরীক্ষা \"{name}\"",
+    "rebuild_cancelled": "ব্যবহারকারী বাতিল করেছেন",
+    "rebuild_complete_body": "টেমপ্লেট রিবিল্ড সফলভাবে শেষ হয়েছে।",
+    "rebuild_complete_title": "রিবিল্ড সম্পন্ন",
+    "rebuild_connection_lost": "সংযোগ বিচ্ছিন্ন হয়েছে। রিবিল্ড হয়তো ব্যাকগ্রাউন্ডে এখনও চলছে।",
+    "rebuild_failed_body": "টেমপ্লেট রিবিল্ডে একটি ত্রুটি ঘটেছে।",
+    "rebuild_failed_title": "রিবিল্ড ব্যর্থ"
   }
 }

@@ -7,7 +7,8 @@ import {
 } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import { usePolling } from '@/hooks/utility/timing/usePolling';
-import { useTranslation } from '@/i18n/useTranslation';
+import { useTranslation, interpolate } from '@/i18n/useTranslation';
+import type { Translations } from '@/i18n/generated/types';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import type {
   ConnectionHealth,
@@ -26,12 +27,12 @@ function healthColor(health: ConnectionHealth | null): string {
   return 'var(--status-error)';
 }
 
-function healthLabel(health: ConnectionHealth | null): string | null {
+function healthLabel(health: ConnectionHealth | null, st: Translations['sharing']): string | null {
   if (!health || health.connectedCount === 0) return null;
-  if (health.missedPingCount > 0) return `${health.missedPingCount} missed`;
+  if (health.missedPingCount > 0) return interpolate(st.health_missed, { count: health.missedPingCount });
   const avg = health.avgLatencyMs;
   if (avg === null) return null;
-  return `${Math.round(avg)}ms`;
+  return interpolate(st.health_latency_ms, { ms: Math.round(avg) });
 }
 
 function StatCard({
@@ -254,7 +255,7 @@ export function NetworkDashboard() {
   const st = t.sharing;
   const isRunning = networkStatus?.is_running ?? false;
   const color = healthColor(health);
-  const label = healthLabel(health);
+  const label = healthLabel(health, st);
 
   return (
     <section>

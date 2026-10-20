@@ -2056,7 +2056,19 @@
       "baseline_unpin_save_failed": "Không bỏ ghim được đường cơ sở. Bộ nhớ trình duyệt có thể không khả dụng.",
       "cell_failed": "thất bại",
       "cell_running": "đang chạy",
-      "score_unscored": "Chưa chấm điểm"
+      "score_unscored": "Chưa chấm điểm",
+      "notify_complete_body": "Bài kiểm tra {mode} đã hoàn tất thành công.",
+      "notify_complete_title": "Lab {mode} hoàn tất",
+      "notify_failed_body": "Bài kiểm tra {mode} gặp lỗi.",
+      "notify_failed_title": "Lab {mode} thất bại",
+      "notify_mode_ab": "Kiểm tra A/B",
+      "notify_mode_arena": "Đấu trường",
+      "notify_mode_breed": "Lai tạo",
+      "notify_mode_eval": "Đánh giá",
+      "notify_mode_evolve": "Tiến hóa",
+      "notify_mode_matrix": "Ma trận",
+      "notify_mode_regression": "Hồi quy",
+      "notify_mode_versions": "Phiên bản"
     },
     "life": {
       "activity_attention_row": "Lượt chú ý",
@@ -3327,7 +3339,28 @@
     "glyph_recipe_alt_path": "Lối nhanh hơn · khớp {pct}%",
     "glyph_recipe_alt_use": "Dùng công thức này làm điểm xuất phát",
     "glyph_sched_days_label": "Ngày",
-    "glyph_sched_time_label": "Giờ"
+    "glyph_sched_time_label": "Giờ",
+    "lifecycle_notify": {
+      "promoted_body": "Agent của bạn đã được đưa lên môi trường production và sẵn sàng sử dụng.",
+      "promoted_connect_one": "Kết nối 1 dịch vụ trước khi chạy: {names}.",
+      "promoted_connect_other": "Kết nối {count} dịch vụ trước khi chạy: {names}.",
+      "promoted_items_one": "1 mục không thể thiết lập: {names}.",
+      "promoted_items_other": "{count} mục không thể thiết lập: {names}.",
+      "promoted_setup_title": "Agent đã được nâng cấp: cần thiết lập",
+      "promoted_title": "Agent đã được nâng cấp",
+      "promoted_unverified": "Lần chạy kiểm tra đầu tiên chưa mang lại giá trị. Hãy xem lại các trình kết nối trước khi dùng.",
+      "sum_credential_issues": "{count} sự cố thông tin xác thực",
+      "sum_failed": "{count} thất bại",
+      "sum_passed": "{count} đạt",
+      "sum_passed_of": "{passed}/{tested} đạt",
+      "sum_skipped": "{count} bỏ qua",
+      "sum_unverified": "{count} chưa xác minh (chưa từng được gọi)",
+      "test_all_passed_body": "Cả {count} công cụ đều đạt. Sẵn sàng nâng cấp.",
+      "test_complete_title": "Kiểm tra agent hoàn tất",
+      "test_failed_fallback": "Không thể chạy kiểm tra",
+      "test_failed_title": "Kiểm tra agent thất bại",
+      "test_passed_title": "Kiểm tra agent đạt"
+    }
   },
   "alerts": {
     "error_clear_history": "Xóa lịch sử cảnh báo thất bại:",
@@ -11413,7 +11446,22 @@
     "use_template": "Dùng mẫu",
     "version_history": "Lịch sử phiên bản",
     "view_persona": "Xem tác nhân",
-    "warning": "Cảnh báo"
+    "warning": "Cảnh báo",
+    "auto_team_create_failed": "Không thể tạo nhóm",
+    "auto_team_example_1": "Xem xét PR này và chạy kiểm tra",
+    "auto_team_example_2": "Viết bài blog kèm nghiên cứu",
+    "auto_team_example_3": "Phân tích phản hồi của khách hàng",
+    "auto_team_example_4": "Xây dựng quy trình xuất bản nội dung",
+    "auto_team_no_match": "Không có agent nào khớp với mô tả của bạn. Hãy thử mô tả cụ thể hơn.",
+    "team_color_blue": "Xanh dương",
+    "team_color_cyan": "Xanh lơ",
+    "team_color_green": "Xanh lá",
+    "team_color_indigo": "Chàm",
+    "team_color_orange": "Cam",
+    "team_color_pink": "Hồng",
+    "team_color_rose": "Hồng đậm",
+    "team_color_violet": "Tím",
+    "team_color_yellow": "Vàng"
   },
   "planner": {
     "actions": {
@@ -18643,7 +18691,9 @@
       "color_name_violet": "Tím violet",
       "contrast_fail": "Độ tương phản thấp",
       "contrast_pass": "Dễ đọc",
-      "contrast_preview": "Xem trước độ tương phản"
+      "contrast_preview": "Xem trước độ tương phản",
+      "remove_custom_icon_used_by_one": "Cũng được dùng bởi {count} agent khác.",
+      "remove_custom_icon_used_by_other": "Cũng được dùng bởi {count} agent khác."
     },
     "general_tools": "Công cụ chung",
     "glossary_api": "Cách hai chương trình giao tiếp với nhau tự động.",
@@ -18758,7 +18808,11 @@
       "schedules": "Lịch trình",
       "teams_label": "Nhóm",
       "whats_new": "Có gì mới",
-      "whats_new_update": "Đã cập nhật — xem có gì mới"
+      "whats_new_update": "Đã cập nhật — xem có gì mới",
+      "activity_draft_in_progress": "Đang soạn bản nháp",
+      "activity_execution_queued": "Lần chạy đang chờ",
+      "activity_lab_run_in_progress": "Lab đang chạy",
+      "activity_testing_agent": "Đang kiểm tra agent"
     },
     "sort_active_asc": "Đã sắp xếp theo {label}, tăng dần. Kích hoạt để sắp xếp giảm dần.",
     "sort_active_desc": "Đã sắp xếp theo {label}, giảm dần. Kích hoạt để sắp xếp tăng dần.",
@@ -19179,7 +19233,13 @@
     "exposure_auth_required": "Yêu cầu xác thực",
     "exposure_open_lan": "Mở cho các thiết bị LAN",
     "open_to_lan_hint": "Mọi thiết bị trong mạng của bạn khi kết nối đều có thể xem tài nguyên này mà không cần chứng minh danh tính. Hãy để tắt trừ khi bạn tin tưởng mọi thiết bị trong mạng này.",
-    "open_to_lan_label": "Mở cho các thiết bị LAN chưa xác thực"
+    "open_to_lan_label": "Mở cho các thiết bị LAN chưa xác thực",
+    "by_creator": "bởi {name}",
+    "created_on": "Tạo ngày {date}",
+    "fields_exposed_count_one": "{count} trường được hiển thị",
+    "fields_exposed_count_other": "{count} trường được hiển thị",
+    "health_latency_ms": "{ms}ms",
+    "health_missed": "{count} bị bỏ lỡ"
   },
   "ship": {
     "added_after_cut": "được thêm sau the cut",
@@ -21384,6 +21444,21 @@
       "webhook_placeholder": "https://...",
       "webhook_url": "URL webhook",
       "when_label": "Khi nào nên chạy?"
+    },
+    "bg_notify": {
+      "preview_complete_body": "Bài kiểm tra mẫu \"{name}\" đã hoàn tất.",
+      "preview_complete_title": "Xem trước hoàn tất",
+      "preview_default_name": "mẫu",
+      "preview_failed_body": "Bài kiểm tra mẫu \"{name}\" thất bại.",
+      "preview_failed_title": "Xem trước thất bại",
+      "preview_start_failed": "Không thể bắt đầu xem trước",
+      "preview_stopped_body": "Bài kiểm tra mẫu \"{name}\"",
+      "rebuild_cancelled": "Đã bị người dùng hủy",
+      "rebuild_complete_body": "Việc dựng lại mẫu đã hoàn tất thành công.",
+      "rebuild_complete_title": "Dựng lại hoàn tất",
+      "rebuild_connection_lost": "Mất kết nối. Việc dựng lại có thể vẫn đang chạy ngầm.",
+      "rebuild_failed_body": "Việc dựng lại mẫu gặp lỗi.",
+      "rebuild_failed_title": "Dựng lại thất bại"
     }
   },
   "tiers": {

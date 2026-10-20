@@ -2050,7 +2050,19 @@
     "baseline_unpin_save_failed": "বেসলাইন আনপিন করা যায়নি। ব্রাউজার স্টোরেজ অনুপলব্ধ হতে পারে।",
     "cell_failed": "ব্যর্থ",
     "cell_running": "চলছে",
-    "score_unscored": "স্কোর নেই"
+    "score_unscored": "স্কোর নেই",
+    "notify_complete_body": "{mode} পরীক্ষা সফলভাবে শেষ হয়েছে।",
+    "notify_complete_title": "ল্যাব {mode} সম্পন্ন",
+    "notify_failed_body": "{mode} পরীক্ষায় একটি ত্রুটি ঘটেছে।",
+    "notify_failed_title": "ল্যাব {mode} ব্যর্থ",
+    "notify_mode_ab": "A/B পরীক্ষা",
+    "notify_mode_arena": "অ্যারেনা",
+    "notify_mode_breed": "ব্রিড",
+    "notify_mode_eval": "মূল্যায়ন",
+    "notify_mode_evolve": "বিবর্তন",
+    "notify_mode_matrix": "ম্যাট্রিক্স",
+    "notify_mode_regression": "রিগ্রেশন",
+    "notify_mode_versions": "সংস্করণ"
   },
   "life": {
     "activity_attention_row": "অ্যাটেনশন পর্ব",
@@ -3321,5 +3333,26 @@
   "glyph_recipe_alt_path": "দ্রুততর পথ · {pct}% মিল",
   "glyph_recipe_alt_use": "এই রেসিপিটি শুরুর বিন্দু হিসেবে ব্যবহার করুন",
   "glyph_sched_days_label": "দিন",
-  "glyph_sched_time_label": "সময়"
+  "glyph_sched_time_label": "সময়",
+  "lifecycle_notify": {
+    "promoted_body": "আপনার এজেন্ট প্রোডাকশনে উন্নীত হয়েছে এবং ব্যবহারের জন্য প্রস্তুত।",
+    "promoted_connect_one": "চালানোর আগে ১টি সার্ভিস সংযুক্ত করুন: {names}।",
+    "promoted_connect_other": "চালানোর আগে {count}টি সার্ভিস সংযুক্ত করুন: {names}।",
+    "promoted_items_one": "১টি আইটেম সেট আপ করা যায়নি: {names}।",
+    "promoted_items_other": "{count}টি আইটেম সেট আপ করা যায়নি: {names}।",
+    "promoted_setup_title": "এজেন্ট উন্নীত: সেটআপ প্রয়োজন",
+    "promoted_title": "এজেন্ট উন্নীত",
+    "promoted_unverified": "এর প্রথম পরীক্ষামূলক রান কোনো ফল দিতে পারেনি। নির্ভর করার আগে এর কানেক্টর যাচাই করুন।",
+    "sum_credential_issues": "{count}টি ক্রেডেনশিয়াল সমস্যা",
+    "sum_failed": "{count}টি ব্যর্থ",
+    "sum_passed": "{count}টি উত্তীর্ণ",
+    "sum_passed_of": "{passed}/{tested} উত্তীর্ণ",
+    "sum_skipped": "{count}টি বাদ",
+    "sum_unverified": "{count}টি অযাচাইকৃত (কখনো কল হয়নি)",
+    "test_all_passed_body": "সব {count}টি টুল উত্তীর্ণ। উন্নীত করার জন্য প্রস্তুত।",
+    "test_complete_title": "এজেন্ট পরীক্ষা সম্পন্ন",
+    "test_failed_fallback": "পরীক্ষা চালানো যায়নি",
+    "test_failed_title": "এজেন্ট পরীক্ষা ব্যর্থ",
+    "test_passed_title": "এজেন্ট পরীক্ষা উত্তীর্ণ"
+  }
 }

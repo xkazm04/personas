@@ -2050,7 +2050,19 @@
     "baseline_unpin_save_failed": "取消固定基线失败。浏览器存储可能不可用。",
     "cell_failed": "失败",
     "cell_running": "运行中",
-    "score_unscored": "未评分"
+    "score_unscored": "未评分",
+    "notify_complete_body": "{mode}测试已成功完成。",
+    "notify_complete_title": "实验室{mode}已完成",
+    "notify_failed_body": "{mode}测试出错。",
+    "notify_failed_title": "实验室{mode}失败",
+    "notify_mode_ab": "A/B 测试",
+    "notify_mode_arena": "竞技场",
+    "notify_mode_breed": "繁育",
+    "notify_mode_eval": "评估",
+    "notify_mode_evolve": "进化",
+    "notify_mode_matrix": "矩阵",
+    "notify_mode_regression": "回归",
+    "notify_mode_versions": "版本"
   },
   "life": {
     "activity_attention_row": "注意力巡检",
@@ -3321,5 +3333,26 @@
   "glyph_recipe_alt_path": "更快的路径 · 匹配度 {pct}%",
   "glyph_recipe_alt_use": "以此配方作为起点",
   "glyph_sched_days_label": "日期",
-  "glyph_sched_time_label": "时间"
+  "glyph_sched_time_label": "时间",
+  "lifecycle_notify": {
+    "promoted_body": "你的智能体已升级到生产环境，可以使用了。",
+    "promoted_connect_one": "运行前需连接 1 项服务：{names}。",
+    "promoted_connect_other": "运行前需连接 {count} 项服务：{names}。",
+    "promoted_items_one": "1 项无法设置：{names}。",
+    "promoted_items_other": "{count} 项无法设置：{names}。",
+    "promoted_setup_title": "智能体已升级：需要设置",
+    "promoted_title": "智能体已升级",
+    "promoted_unverified": "首次检查运行未能产生价值。依赖它之前请检查其连接器。",
+    "sum_credential_issues": "{count} 个凭据问题",
+    "sum_failed": "{count} 个失败",
+    "sum_passed": "{count} 个通过",
+    "sum_passed_of": "{passed}/{tested} 通过",
+    "sum_skipped": "{count} 个已跳过",
+    "sum_unverified": "{count} 个未验证（从未调用）",
+    "test_all_passed_body": "全部 {count} 个工具均已通过。可以升级。",
+    "test_complete_title": "智能体测试完成",
+    "test_failed_fallback": "运行测试失败",
+    "test_failed_title": "智能体测试失败",
+    "test_passed_title": "智能体测试通过"
+  }
 }

@@ -1307,5 +1307,20 @@
     "webhook_placeholder": "https://...",
     "webhook_url": "URL webhook",
     "when_label": "Khi nào nên chạy?"
+  },
+  "bg_notify": {
+    "preview_complete_body": "Bài kiểm tra mẫu \"{name}\" đã hoàn tất.",
+    "preview_complete_title": "Xem trước hoàn tất",
+    "preview_default_name": "mẫu",
+    "preview_failed_body": "Bài kiểm tra mẫu \"{name}\" thất bại.",
+    "preview_failed_title": "Xem trước thất bại",
+    "preview_start_failed": "Không thể bắt đầu xem trước",
+    "preview_stopped_body": "Bài kiểm tra mẫu \"{name}\"",
+    "rebuild_cancelled": "Đã bị người dùng hủy",
+    "rebuild_complete_body": "Việc dựng lại mẫu đã hoàn tất thành công.",
+    "rebuild_complete_title": "Dựng lại hoàn tất",
+    "rebuild_connection_lost": "Mất kết nối. Việc dựng lại có thể vẫn đang chạy ngầm.",
+    "rebuild_failed_body": "Việc dựng lại mẫu gặp lỗi.",
+    "rebuild_failed_title": "Dựng lại thất bại"
   }
 }

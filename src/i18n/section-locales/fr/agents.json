@@ -2050,7 +2050,19 @@
     "baseline_unpin_save_failed": "Échec du désépinglage de la référence. Le stockage du navigateur est peut-être indisponible.",
     "cell_failed": "échec",
     "cell_running": "en cours",
-    "score_unscored": "Non noté"
+    "score_unscored": "Non noté",
+    "notify_complete_body": "Le test {mode} s'est terminé avec succès.",
+    "notify_complete_title": "Lab {mode} terminé",
+    "notify_failed_body": "Le test {mode} a rencontré une erreur.",
+    "notify_failed_title": "Échec du Lab {mode}",
+    "notify_mode_ab": "Test A/B",
+    "notify_mode_arena": "Arène",
+    "notify_mode_breed": "Croisement",
+    "notify_mode_eval": "Évaluation",
+    "notify_mode_evolve": "Évolution",
+    "notify_mode_matrix": "Matrice",
+    "notify_mode_regression": "Régression",
+    "notify_mode_versions": "Versions"
   },
   "life": {
     "activity_attention_row": "Passe d'attention",
@@ -3321,5 +3333,26 @@
   "glyph_recipe_alt_path": "Voie plus rapide · {pct} % de correspondance",
   "glyph_recipe_alt_use": "Utiliser cette recette comme point de départ",
   "glyph_sched_days_label": "Jours",
-  "glyph_sched_time_label": "Heure"
+  "glyph_sched_time_label": "Heure",
+  "lifecycle_notify": {
+    "promoted_body": "Votre agent a été promu en production et est prêt à l'emploi.",
+    "promoted_connect_one": "Connectez 1 service avant de l'exécuter : {names}.",
+    "promoted_connect_other": "Connectez {count} services avant de l'exécuter : {names}.",
+    "promoted_items_one": "1 élément n'a pas pu être configuré : {names}.",
+    "promoted_items_other": "{count} éléments n'ont pas pu être configurés : {names}.",
+    "promoted_setup_title": "Agent promu : configuration requise",
+    "promoted_title": "Agent promu",
+    "promoted_unverified": "Sa première exécution de vérification n'a produit aucun résultat utile. Vérifiez ses connecteurs avant de vous y fier.",
+    "sum_credential_issues": "{count} problème(s) d'identifiants",
+    "sum_failed": "{count} en échec",
+    "sum_passed": "{count} réussi(s)",
+    "sum_passed_of": "{passed}/{tested} réussi(s)",
+    "sum_skipped": "{count} ignoré(s)",
+    "sum_unverified": "{count} non vérifié(s) (jamais appelé)",
+    "test_all_passed_body": "Les {count} outils ont réussi. Prêt à être promu.",
+    "test_complete_title": "Test de l'agent terminé",
+    "test_failed_fallback": "Impossible d'exécuter les tests",
+    "test_failed_title": "Échec du test de l'agent",
+    "test_passed_title": "Test de l'agent réussi"
+  }
 }

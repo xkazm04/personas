@@ -326,5 +326,11 @@
   "exposure_auth_required": "Yêu cầu xác thực",
   "exposure_open_lan": "Mở cho các thiết bị LAN",
   "open_to_lan_hint": "Mọi thiết bị trong mạng của bạn khi kết nối đều có thể xem tài nguyên này mà không cần chứng minh danh tính. Hãy để tắt trừ khi bạn tin tưởng mọi thiết bị trong mạng này.",
-  "open_to_lan_label": "Mở cho các thiết bị LAN chưa xác thực"
+  "open_to_lan_label": "Mở cho các thiết bị LAN chưa xác thực",
+  "by_creator": "bởi {name}",
+  "created_on": "Tạo ngày {date}",
+  "fields_exposed_count_one": "{count} trường được hiển thị",
+  "fields_exposed_count_other": "{count} trường được hiển thị",
+  "health_latency_ms": "{ms}ms",
+  "health_missed": "{count} bị bỏ lỡ"
 }

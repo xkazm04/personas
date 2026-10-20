@@ -2050,7 +2050,19 @@
     "baseline_unpin_save_failed": "تعذّر إلغاء تثبيت خط الأساس. قد يكون تخزين المتصفح غير متاح.",
     "cell_failed": "فشل",
     "cell_running": "قيد التشغيل",
-    "score_unscored": "بلا تقييم"
+    "score_unscored": "بلا تقييم",
+    "notify_complete_body": "اكتمل اختبار {mode} بنجاح.",
+    "notify_complete_title": "اكتمل {mode} في المختبر",
+    "notify_failed_body": "واجه اختبار {mode} خطأ.",
+    "notify_failed_title": "فشل {mode} في المختبر",
+    "notify_mode_ab": "اختبار A/B",
+    "notify_mode_arena": "الحلبة",
+    "notify_mode_breed": "التهجين",
+    "notify_mode_eval": "التقييم",
+    "notify_mode_evolve": "التطوير",
+    "notify_mode_matrix": "المصفوفة",
+    "notify_mode_regression": "الانحدار",
+    "notify_mode_versions": "الإصدارات"
   },
   "life": {
     "activity_attention_row": "جولة انتباه",
@@ -3321,5 +3333,26 @@
   "glyph_recipe_alt_path": "مسار أسرع · تطابق {pct}%",
   "glyph_recipe_alt_use": "استخدم هذه الوصفة كنقطة بداية",
   "glyph_sched_days_label": "الأيام",
-  "glyph_sched_time_label": "الوقت"
+  "glyph_sched_time_label": "الوقت",
+  "lifecycle_notify": {
+    "promoted_body": "تمت ترقية وكيلك إلى الإنتاج وهو جاهز للاستخدام.",
+    "promoted_connect_one": "اربط خدمة واحدة قبل أن يعمل: {names}.",
+    "promoted_connect_other": "اربط {count} خدمات قبل أن يعمل: {names}.",
+    "promoted_items_one": "تعذر إعداد عنصر واحد: {names}.",
+    "promoted_items_other": "تعذر إعداد {count} عناصر: {names}.",
+    "promoted_setup_title": "تمت ترقية الوكيل: يحتاج إلى إعداد",
+    "promoted_title": "تمت ترقية الوكيل",
+    "promoted_unverified": "تعذر على أول تشغيل فحص تقديم قيمة. راجع موصلاته قبل الاعتماد عليه.",
+    "sum_credential_issues": "{count} مشكلة في بيانات الاعتماد",
+    "sum_failed": "{count} فشل",
+    "sum_passed": "{count} نجح",
+    "sum_passed_of": "نجح {passed}/{tested}",
+    "sum_skipped": "{count} تم تخطيه",
+    "sum_unverified": "{count} غير متحقق منه (لم يُستدعَ)",
+    "test_all_passed_body": "نجحت جميع الأدوات ({count}). جاهز للترقية.",
+    "test_complete_title": "اكتمل اختبار الوكيل",
+    "test_failed_fallback": "فشل تشغيل الاختبارات",
+    "test_failed_title": "فشل اختبار الوكيل",
+    "test_passed_title": "نجح اختبار الوكيل"
+  }
 }

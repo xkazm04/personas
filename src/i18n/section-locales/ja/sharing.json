@@ -326,5 +326,11 @@
   "exposure_auth_required": "認証が必要",
   "exposure_open_lan": "LANピアに公開",
   "open_to_lan_hint": "ネットワーク上で接続してきたデバイスは、身元を証明せずにこのリソースを閲覧できます。このネットワーク上のすべてのデバイスを信頼できる場合以外は、オフのままにしてください。",
-  "open_to_lan_label": "未認証のLANピアに公開"
+  "open_to_lan_label": "未認証のLANピアに公開",
+  "by_creator": "作成者: {name}",
+  "created_on": "作成日: {date}",
+  "fields_exposed_count_one": "{count}個のフィールドを公開",
+  "fields_exposed_count_other": "{count}個のフィールドを公開",
+  "health_latency_ms": "{ms}ms",
+  "health_missed": "{count}回失敗"
 }

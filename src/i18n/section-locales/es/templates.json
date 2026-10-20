@@ -1307,5 +1307,20 @@
     "webhook_placeholder": "https://...",
     "webhook_url": "URL de webhook",
     "when_label": "¿Cuándo debe ejecutarse?"
+  },
+  "bg_notify": {
+    "preview_complete_body": "La prueba de la plantilla \"{name}\" finalizó.",
+    "preview_complete_title": "Vista previa completada",
+    "preview_default_name": "plantilla",
+    "preview_failed_body": "La prueba de la plantilla \"{name}\" falló.",
+    "preview_failed_title": "Vista previa fallida",
+    "preview_start_failed": "No se pudo iniciar la vista previa",
+    "preview_stopped_body": "Prueba de la plantilla \"{name}\"",
+    "rebuild_cancelled": "Cancelado por el usuario",
+    "rebuild_complete_body": "La reconstrucción de la plantilla finalizó correctamente.",
+    "rebuild_complete_title": "Reconstrucción completada",
+    "rebuild_connection_lost": "Conexión perdida. La reconstrucción podría seguir ejecutándose en segundo plano.",
+    "rebuild_failed_body": "La reconstrucción de la plantilla encontró un error.",
+    "rebuild_failed_title": "Reconstrucción fallida"
   }
 }

@@ -326,5 +326,11 @@
   "exposure_auth_required": "प्रमाणीकरण आवश्यक",
   "exposure_open_lan": "LAN पीयर के लिए खुला",
   "open_to_lan_hint": "आपके नेटवर्क का कोई भी डिवाइस जो कनेक्ट करता है, अपनी पहचान साबित किए बिना यह संसाधन देख सकता है। जब तक आप इस नेटवर्क के हर डिवाइस पर भरोसा न करें, इसे बंद रखें।",
-  "open_to_lan_label": "बिना प्रमाणीकरण वाले LAN पीयर के लिए खुला"
+  "open_to_lan_label": "बिना प्रमाणीकरण वाले LAN पीयर के लिए खुला",
+  "by_creator": "{name} द्वारा",
+  "created_on": "बनाया गया {date}",
+  "fields_exposed_count_one": "{count} फ़ील्ड उजागर",
+  "fields_exposed_count_other": "{count} फ़ील्ड उजागर",
+  "health_latency_ms": "{ms}ms",
+  "health_missed": "{count} छूटे"
 }

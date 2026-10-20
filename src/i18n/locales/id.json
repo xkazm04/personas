@@ -2056,7 +2056,19 @@
       "baseline_unpin_save_failed": "Gagal melepas pin baseline. Penyimpanan browser mungkin tidak tersedia.",
       "cell_failed": "gagal",
       "cell_running": "berjalan",
-      "score_unscored": "Belum dinilai"
+      "score_unscored": "Belum dinilai",
+      "notify_complete_body": "Pengujian {mode} berhasil diselesaikan.",
+      "notify_complete_title": "Lab {mode} Selesai",
+      "notify_failed_body": "Pengujian {mode} mengalami kesalahan.",
+      "notify_failed_title": "Lab {mode} Gagal",
+      "notify_mode_ab": "Uji A/B",
+      "notify_mode_arena": "Arena",
+      "notify_mode_breed": "Persilangan",
+      "notify_mode_eval": "Evaluasi",
+      "notify_mode_evolve": "Evolusi",
+      "notify_mode_matrix": "Matriks",
+      "notify_mode_regression": "Regresi",
+      "notify_mode_versions": "Versi"
     },
     "life": {
       "activity_attention_row": "Putaran atensi",
@@ -3327,7 +3339,28 @@
     "glyph_recipe_alt_path": "Jalur lebih cepat · kecocokan {pct}%",
     "glyph_recipe_alt_use": "Gunakan resep ini sebagai titik awal",
     "glyph_sched_days_label": "Hari",
-    "glyph_sched_time_label": "Waktu"
+    "glyph_sched_time_label": "Waktu",
+    "lifecycle_notify": {
+      "promoted_body": "Agen Anda telah dipromosikan ke produksi dan siap digunakan.",
+      "promoted_connect_one": "Hubungkan 1 layanan sebelum dapat berjalan: {names}.",
+      "promoted_connect_other": "Hubungkan {count} layanan sebelum dapat berjalan: {names}.",
+      "promoted_items_one": "1 item tidak dapat disiapkan: {names}.",
+      "promoted_items_other": "{count} item tidak dapat disiapkan: {names}.",
+      "promoted_setup_title": "Agen Dipromosikan: perlu penyiapan",
+      "promoted_title": "Agen Dipromosikan",
+      "promoted_unverified": "Pemeriksaan pertamanya tidak dapat memberikan hasil. Tinjau konektornya sebelum mengandalkannya.",
+      "sum_credential_issues": "{count} masalah kredensial",
+      "sum_failed": "{count} gagal",
+      "sum_passed": "{count} lulus",
+      "sum_passed_of": "{passed}/{tested} lulus",
+      "sum_skipped": "{count} dilewati",
+      "sum_unverified": "{count} belum terverifikasi (tidak pernah dipanggil)",
+      "test_all_passed_body": "Semua {count} alat lulus. Siap dipromosikan.",
+      "test_complete_title": "Pengujian Agen Selesai",
+      "test_failed_fallback": "Gagal menjalankan pengujian",
+      "test_failed_title": "Pengujian Agen Gagal",
+      "test_passed_title": "Pengujian Agen Lulus"
+    }
   },
   "alerts": {
     "error_clear_history": "Gagal menghapus riwayat peringatan:",
@@ -11413,7 +11446,22 @@
     "use_template": "Gunakan templat",
     "version_history": "Riwayat versi",
     "view_persona": "Lihat persona",
-    "warning": "Peringatan"
+    "warning": "Peringatan",
+    "auto_team_create_failed": "Gagal membuat tim",
+    "auto_team_example_1": "Tinjau PR ini dan jalankan pengujian",
+    "auto_team_example_2": "Tulis artikel blog dengan riset",
+    "auto_team_example_3": "Analisis masukan pelanggan",
+    "auto_team_example_4": "Bangun alur penerbitan konten",
+    "auto_team_no_match": "Tidak ada agen yang cocok dengan deskripsi Anda. Coba lebih spesifik.",
+    "team_color_blue": "Biru",
+    "team_color_cyan": "Sian",
+    "team_color_green": "Hijau",
+    "team_color_indigo": "Nila",
+    "team_color_orange": "Oranye",
+    "team_color_pink": "Merah muda",
+    "team_color_rose": "Mawar",
+    "team_color_violet": "Ungu",
+    "team_color_yellow": "Kuning"
   },
   "planner": {
     "actions": {
@@ -18643,7 +18691,9 @@
       "color_name_violet": "Violet",
       "contrast_fail": "Kontras rendah",
       "contrast_pass": "Terbaca",
-      "contrast_preview": "Pratinjau kontras"
+      "contrast_preview": "Pratinjau kontras",
+      "remove_custom_icon_used_by_one": "Juga digunakan oleh {count} agen lain.",
+      "remove_custom_icon_used_by_other": "Juga digunakan oleh {count} agen lain."
     },
     "general_tools": "Alat umum",
     "glossary_api": "Cara dua program untuk berkomunikasi satu sama lain secara otomatis.",
@@ -18758,7 +18808,11 @@
       "schedules": "Jadwal",
       "teams_label": "Tim",
       "whats_new": "Yang baru",
-      "whats_new_update": "Diperbarui — lihat apa yang baru"
+      "whats_new_update": "Diperbarui — lihat apa yang baru",
+      "activity_draft_in_progress": "Draf sedang dikerjakan",
+      "activity_execution_queued": "Eksekusi dalam antrean",
+      "activity_lab_run_in_progress": "Proses lab sedang berjalan",
+      "activity_testing_agent": "Menguji agen"
     },
     "sort_active_asc": "Diurutkan berdasarkan {label}, menaik. Aktifkan untuk mengurutkan menurun.",
     "sort_active_desc": "Diurutkan berdasarkan {label}, menurun. Aktifkan untuk mengurutkan menaik.",
@@ -19179,7 +19233,13 @@
     "exposure_auth_required": "Perlu autentikasi",
     "exposure_open_lan": "Terbuka untuk peer LAN",
     "open_to_lan_hint": "Perangkat apa pun di jaringan Anda yang terhubung dapat melihat sumber daya ini tanpa membuktikan identitasnya. Biarkan nonaktif kecuali Anda memercayai setiap perangkat di jaringan ini.",
-    "open_to_lan_label": "Terbuka untuk peer LAN tanpa autentikasi"
+    "open_to_lan_label": "Terbuka untuk peer LAN tanpa autentikasi",
+    "by_creator": "oleh {name}",
+    "created_on": "Dibuat {date}",
+    "fields_exposed_count_one": "{count} bidang diekspos",
+    "fields_exposed_count_other": "{count} bidang diekspos",
+    "health_latency_ms": "{ms}ms",
+    "health_missed": "{count} terlewat"
   },
   "ship": {
     "added_after_cut": "ditambahkan setelah the cut",
@@ -21384,6 +21444,21 @@
       "webhook_placeholder": "https://...",
       "webhook_url": "URL Webhook",
       "when_label": "Kapan ini harus dijalankan?"
+    },
+    "bg_notify": {
+      "preview_complete_body": "Pengujian templat \"{name}\" selesai.",
+      "preview_complete_title": "Pratinjau Selesai",
+      "preview_default_name": "templat",
+      "preview_failed_body": "Pengujian templat \"{name}\" gagal.",
+      "preview_failed_title": "Pratinjau Gagal",
+      "preview_start_failed": "Gagal memulai pratinjau",
+      "preview_stopped_body": "Pengujian templat \"{name}\"",
+      "rebuild_cancelled": "Dibatalkan oleh pengguna",
+      "rebuild_complete_body": "Pembangunan ulang templat berhasil diselesaikan.",
+      "rebuild_complete_title": "Pembangunan Ulang Selesai",
+      "rebuild_connection_lost": "Koneksi terputus. Pembangunan ulang mungkin masih berjalan di latar belakang.",
+      "rebuild_failed_body": "Pembangunan ulang templat mengalami kesalahan.",
+      "rebuild_failed_title": "Pembangunan Ulang Gagal"
     }
   },
   "tiers": {

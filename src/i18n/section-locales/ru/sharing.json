@@ -326,5 +326,11 @@
   "exposure_auth_required": "Требуется авторизация",
   "exposure_open_lan": "Открыто для узлов LAN",
   "open_to_lan_hint": "Любое устройство в вашей сети, которое подключится, сможет видеть этот ресурс без подтверждения личности. Оставьте выключенным, если не доверяете всем устройствам в этой сети.",
-  "open_to_lan_label": "Открыто для неаутентифицированных узлов LAN"
+  "open_to_lan_label": "Открыто для неаутентифицированных узлов LAN",
+  "by_creator": "автор: {name}",
+  "created_on": "Создано {date}",
+  "fields_exposed_count_one": "Открыто {count} поле",
+  "fields_exposed_count_other": "Открыто полей: {count}",
+  "health_latency_ms": "{ms} мс",
+  "health_missed": "пропущено: {count}"
 }

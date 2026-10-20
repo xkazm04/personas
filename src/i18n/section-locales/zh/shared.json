@@ -144,7 +144,9 @@
     "color_name_violet": "紫罗兰",
     "contrast_fail": "对比度不足",
     "contrast_pass": "清晰可读",
-    "contrast_preview": "对比度预览"
+    "contrast_preview": "对比度预览",
+    "remove_custom_icon_used_by_one": "另有 {count} 个智能体也在使用。",
+    "remove_custom_icon_used_by_other": "另有 {count} 个智能体也在使用。"
   },
   "general_tools": "通用工具",
   "glossary_api": "两个程序自动相互通信的方式。",
@@ -259,7 +261,11 @@
     "schedules": "计划",
     "teams_label": "团队",
     "whats_new": "新功能",
-    "whats_new_update": "已更新 — 查看新内容"
+    "whats_new_update": "已更新 — 查看新内容",
+    "activity_draft_in_progress": "草稿进行中",
+    "activity_execution_queued": "执行已排队",
+    "activity_lab_run_in_progress": "实验室运行中",
+    "activity_testing_agent": "正在测试智能体"
   },
   "sort_active_asc": "已按{label}升序排序，点击可切换为降序。",
   "sort_active_desc": "已按{label}降序排序，点击可切换为升序。",

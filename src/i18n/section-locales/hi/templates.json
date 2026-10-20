@@ -1307,5 +1307,20 @@
     "webhook_placeholder": "https://...",
     "webhook_url": "Webhook URL",
     "when_label": "यह कब चलना चाहिए?"
+  },
+  "bg_notify": {
+    "preview_complete_body": "टेम्पलेट परीक्षण \"{name}\" पूरा हुआ।",
+    "preview_complete_title": "पूर्वावलोकन पूर्ण",
+    "preview_default_name": "टेम्पलेट",
+    "preview_failed_body": "टेम्पलेट परीक्षण \"{name}\" विफल रहा।",
+    "preview_failed_title": "पूर्वावलोकन विफल",
+    "preview_start_failed": "पूर्वावलोकन शुरू करने में विफल",
+    "preview_stopped_body": "टेम्पलेट परीक्षण \"{name}\"",
+    "rebuild_cancelled": "उपयोगकर्ता द्वारा रद्द किया गया",
+    "rebuild_complete_body": "टेम्पलेट रीबिल्ड सफलतापूर्वक पूरा हुआ।",
+    "rebuild_complete_title": "रीबिल्ड पूर्ण",
+    "rebuild_connection_lost": "कनेक्शन टूट गया। रीबिल्ड अब भी बैकग्राउंड में चल रहा हो सकता है।",
+    "rebuild_failed_body": "टेम्पलेट रीबिल्ड में त्रुटि हुई।",
+    "rebuild_failed_title": "रीबिल्ड विफल"
   }
 }

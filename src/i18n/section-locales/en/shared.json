@@ -135,7 +135,9 @@
     "color_name_purple": "Purple",
     "contrast_pass": "Readable",
     "contrast_fail": "Low contrast",
-    "contrast_preview": "Contrast preview"
+    "contrast_preview": "Contrast preview",
+    "remove_custom_icon_used_by_one": "Also used by {count} other agent.",
+    "remove_custom_icon_used_by_other": "Also used by {count} other agents."
   },
   "reasoning_trace": {
     "system_init": "System Init",
@@ -185,7 +187,11 @@
     "draft_agent_fallback": "Draft agent",
     "draft_needs_answers_one": "{name} — needs 1 answer",
     "draft_needs_answers_other": "{name} — needs {count} answers",
-    "draft_switch_title": "Switch to draft: {name} ({phase})"
+    "draft_switch_title": "Switch to draft: {name} ({phase})",
+    "activity_testing_agent": "Testing agent",
+    "activity_draft_in_progress": "Draft in progress",
+    "activity_execution_queued": "Execution queued",
+    "activity_lab_run_in_progress": "Lab run in progress"
   },
   "execution_detail": {
     "copy": "Copy",

@@ -2050,7 +2050,19 @@
     "baseline_unpin_save_failed": "기준선 고정을 해제하지 못했습니다. 브라우저 저장소를 사용할 수 없을 수 있습니다.",
     "cell_failed": "실패",
     "cell_running": "실행 중",
-    "score_unscored": "점수 없음"
+    "score_unscored": "점수 없음",
+    "notify_complete_body": "{mode} 테스트가 성공적으로 완료되었습니다.",
+    "notify_complete_title": "랩 {mode} 완료",
+    "notify_failed_body": "{mode} 테스트 중 오류가 발생했습니다.",
+    "notify_failed_title": "랩 {mode} 실패",
+    "notify_mode_ab": "A/B 테스트",
+    "notify_mode_arena": "아레나",
+    "notify_mode_breed": "교배",
+    "notify_mode_eval": "평가",
+    "notify_mode_evolve": "진화",
+    "notify_mode_matrix": "매트릭스",
+    "notify_mode_regression": "회귀",
+    "notify_mode_versions": "버전"
   },
   "life": {
     "activity_attention_row": "어텐션 패스",
@@ -3321,5 +3333,26 @@
   "glyph_recipe_alt_path": "더 빠른 경로 · {pct}% 일치",
   "glyph_recipe_alt_use": "이 레시피를 시작점으로 사용",
   "glyph_sched_days_label": "요일",
-  "glyph_sched_time_label": "시간"
+  "glyph_sched_time_label": "시간",
+  "lifecycle_notify": {
+    "promoted_body": "에이전트가 프로덕션으로 승격되어 사용할 준비가 되었습니다.",
+    "promoted_connect_one": "실행하려면 서비스 1개를 연결해야 합니다: {names}.",
+    "promoted_connect_other": "실행하려면 서비스 {count}개를 연결해야 합니다: {names}.",
+    "promoted_items_one": "항목 1개를 설정하지 못했습니다: {names}.",
+    "promoted_items_other": "항목 {count}개를 설정하지 못했습니다: {names}.",
+    "promoted_setup_title": "에이전트 승격됨: 설정 필요",
+    "promoted_title": "에이전트 승격됨",
+    "promoted_unverified": "첫 점검 실행에서 가치를 제공하지 못했습니다. 사용하기 전에 커넥터를 검토하세요.",
+    "sum_credential_issues": "자격 증명 문제 {count}건",
+    "sum_failed": "{count}개 실패",
+    "sum_passed": "{count}개 통과",
+    "sum_passed_of": "{passed}/{tested} 통과",
+    "sum_skipped": "{count}개 건너뜀",
+    "sum_unverified": "{count}개 미검증 (호출된 적 없음)",
+    "test_all_passed_body": "도구 {count}개가 모두 통과했습니다. 승격할 준비가 되었습니다.",
+    "test_complete_title": "에이전트 테스트 완료",
+    "test_failed_fallback": "테스트를 실행하지 못했습니다",
+    "test_failed_title": "에이전트 테스트 실패",
+    "test_passed_title": "에이전트 테스트 통과"
+  }
 }

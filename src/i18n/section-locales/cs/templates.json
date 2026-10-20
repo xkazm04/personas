@@ -1307,5 +1307,20 @@
     "webhook_placeholder": "https://...",
     "webhook_url": "URL webhooku",
     "when_label": "Kdy se to má spouštět?"
+  },
+  "bg_notify": {
+    "preview_complete_body": "Test šablony „{name}“ byl dokončen.",
+    "preview_complete_title": "Náhled dokončen",
+    "preview_default_name": "šablona",
+    "preview_failed_body": "Test šablony „{name}“ selhal.",
+    "preview_failed_title": "Náhled selhal",
+    "preview_start_failed": "Náhled se nepodařilo spustit",
+    "preview_stopped_body": "Test šablony „{name}“",
+    "rebuild_cancelled": "Zrušeno uživatelem",
+    "rebuild_complete_body": "Přestavba šablony byla úspěšně dokončena.",
+    "rebuild_complete_title": "Přestavba dokončena",
+    "rebuild_connection_lost": "Spojení bylo ztraceno. Přestavba může stále běžet na pozadí.",
+    "rebuild_failed_body": "Při přestavbě šablony došlo k chybě.",
+    "rebuild_failed_title": "Přestavba selhala"
   }
 }

@@ -2050,7 +2050,19 @@
     "baseline_unpin_save_failed": "ベースラインのピン留めを解除できませんでした。ブラウザのストレージが利用できない可能性があります。",
     "cell_failed": "失敗",
     "cell_running": "実行中",
-    "score_unscored": "未採点"
+    "score_unscored": "未採点",
+    "notify_complete_body": "{mode}テストが正常に完了しました。",
+    "notify_complete_title": "ラボ {mode} 完了",
+    "notify_failed_body": "{mode}テストでエラーが発生しました。",
+    "notify_failed_title": "ラボ {mode} 失敗",
+    "notify_mode_ab": "A/Bテスト",
+    "notify_mode_arena": "アリーナ",
+    "notify_mode_breed": "交配",
+    "notify_mode_eval": "評価",
+    "notify_mode_evolve": "進化",
+    "notify_mode_matrix": "マトリックス",
+    "notify_mode_regression": "回帰",
+    "notify_mode_versions": "バージョン"
   },
   "life": {
     "activity_attention_row": "アテンションパス",
@@ -3321,5 +3333,26 @@
   "glyph_recipe_alt_path": "より速い方法 · {pct}% 一致",
   "glyph_recipe_alt_use": "このレシピを出発点にする",
   "glyph_sched_days_label": "曜日",
-  "glyph_sched_time_label": "時刻"
+  "glyph_sched_time_label": "時刻",
+  "lifecycle_notify": {
+    "promoted_body": "エージェントが本番環境に昇格し、使用できる状態になりました。",
+    "promoted_connect_one": "実行する前に1つのサービスを接続してください: {names}。",
+    "promoted_connect_other": "実行する前に{count}個のサービスを接続してください: {names}。",
+    "promoted_items_one": "1件をセットアップできませんでした: {names}。",
+    "promoted_items_other": "{count}件をセットアップできませんでした: {names}。",
+    "promoted_setup_title": "エージェント昇格: セットアップが必要",
+    "promoted_title": "エージェント昇格",
+    "promoted_unverified": "最初のチェック実行で価値を提供できませんでした。利用前にコネクターを確認してください。",
+    "sum_credential_issues": "認証情報の問題 {count}件",
+    "sum_failed": "{count}件失敗",
+    "sum_passed": "{count}件合格",
+    "sum_passed_of": "{passed}/{tested}件合格",
+    "sum_skipped": "{count}件スキップ",
+    "sum_unverified": "{count}件未検証（未呼び出し）",
+    "test_all_passed_body": "全{count}個のツールが合格しました。昇格できます。",
+    "test_complete_title": "エージェントテスト完了",
+    "test_failed_fallback": "テストを実行できませんでした",
+    "test_failed_title": "エージェントテスト失敗",
+    "test_passed_title": "エージェントテスト合格"
+  }
 }

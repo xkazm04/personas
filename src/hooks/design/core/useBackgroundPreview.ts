@@ -26,7 +26,7 @@ export interface UseBackgroundPreviewReturn {
 }
 
 export function useBackgroundPreview(): UseBackgroundPreviewReturn {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [error, setError] = useState<string | null>(null);
   const [reviewId, setReviewId] = useState<string | null>(null);
   const [reviewName, setReviewName] = useState<string | null>(null);
@@ -54,12 +54,13 @@ export function useBackgroundPreview(): UseBackgroundPreviewReturn {
     if (!isCliRunActive(prev) || !isCliRunSettled(stream.phase)) return;
 
     setTemplateTestActive(false);
-    const name = reviewName ?? 'template';
+    const copy = t.templates.bg_notify;
+    const name = reviewName ?? copy.preview_default_name;
 
     if (stream.phase === 'completed') {
-      sendAppNotification('Preview Complete', `Template test "${name}" finished.`).catch(silentCatch("backgroundPreview:notifyComplete"));
+      sendAppNotification(copy.preview_complete_title, tx(copy.preview_complete_body, { name })).catch(silentCatch("backgroundPreview:notifyComplete"));
     } else if (stream.phase === 'failed') {
-      sendAppNotification('Preview Failed', `Template test "${name}" failed.`).catch(silentCatch("backgroundPreview:notifyFailed"));
+      sendAppNotification(copy.preview_failed_title, tx(copy.preview_failed_body, { name })).catch(silentCatch("backgroundPreview:notifyFailed"));
     } else {
       // Cancelled / incomplete / unknown. The title comes from the app's own
       // status vocabulary rather than an English literal -- an OS notification
@@ -68,9 +69,9 @@ export function useBackgroundPreview(): UseBackgroundPreviewReturn {
         stream.phase === 'cancelled'
           ? t.monitor.status_cancelled
           : t.agents.executions.stopped_while_running;
-      sendAppNotification(title, `Template test "${name}"`).catch(silentCatch("backgroundPreview:notifyStopped"));
+      sendAppNotification(title, tx(copy.preview_stopped_body, { name })).catch(silentCatch("backgroundPreview:notifyStopped"));
     }
-  }, [stream.phase, reviewName, setTemplateTestActive, t]);
+  }, [stream.phase, reviewName, setTemplateTestActive, t, tx]);
 
   const startPreview = useCallback(async (rId: string, rName: string, draftJson: string) => {
     setError(null);
@@ -85,10 +86,10 @@ export function useBackgroundPreview(): UseBackgroundPreviewReturn {
     try {
       await testN8nDraft(testId, draftJson);
     } catch (err) {
-      setError(extractMessage(err) || 'Failed to start preview');
+      setError(extractMessage(err) || t.templates.bg_notify.preview_start_failed);
       setTemplateTestActive(false);
     }
-  }, [stream, setTemplateTestActive]);
+  }, [stream, setTemplateTestActive, t]);
 
   const retryPreview = useCallback(async (draftJson: string) => {
     await stream.reset();
@@ -102,11 +103,11 @@ export function useBackgroundPreview(): UseBackgroundPreviewReturn {
       try {
         await testN8nDraft(testId, draftJson);
       } catch (err) {
-        setError(extractMessage(err) || 'Failed to start preview');
+        setError(extractMessage(err) || t.templates.bg_notify.preview_start_failed);
         setTemplateTestActive(false);
       }
     }, 50);
-  }, [stream, setTemplateTestActive]);
+  }, [stream, setTemplateTestActive, t]);
 
   const resetPreview = useCallback(() => {
     stream.reset();

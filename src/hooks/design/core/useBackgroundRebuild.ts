@@ -5,6 +5,7 @@ import { extractMessage, silentCatch } from "@/lib/silentCatch";
 import { useBackgroundSnapshot } from '@/hooks/utility/data/useBackgroundSnapshot';
 import type { SnapshotLike } from '@/hooks/utility/data/useBackgroundSnapshot';
 import { useSystemStore } from "@/stores/systemStore";
+import { useTranslation } from '@/i18n/useTranslation';
 
 export type RebuildPhase = 'idle' | 'input' | 'processing' | 'completed' | 'failed';
 
@@ -32,6 +33,11 @@ export function useBackgroundRebuild(onCompleted?: () => void): UseBackgroundReb
   const [reviewId, setReviewId] = useState<string | null>(null);
   const [reviewName, setReviewName] = useState<string | null>(null);
   const cancelledRef = useRef(false);
+  // An OS notification leaves the app for good, so its copy is resolved at send
+  // time from the latest catalog: handlers read it through a ref and stay stable.
+  const { t } = useTranslation();
+  const copyRef = useRef(t.templates.bg_notify);
+  copyRef.current = t.templates.bg_notify;
 
   const setRebuildActive = useSystemStore((s) => s.setRebuildActive);
 
@@ -59,7 +65,7 @@ export function useBackgroundRebuild(onCompleted?: () => void): UseBackgroundReb
     if (p === 'completed') {
       setPhase('completed');
       setRebuildActive(false);
-      sendAppNotification('Rebuild Complete', 'Template rebuild finished successfully.').catch(silentCatch("backgroundRebuild:notifyComplete"));
+      sendAppNotification(copyRef.current.rebuild_complete_title, copyRef.current.rebuild_complete_body).catch(silentCatch("backgroundRebuild:notifyComplete"));
       onCompleted?.();
     } else if (p === 'failed') {
       setPhase('failed');
@@ -72,20 +78,20 @@ export function useBackgroundRebuild(onCompleted?: () => void): UseBackgroundReb
     setError(err);
     setPhase('failed');
     setRebuildActive(false);
-    sendAppNotification('Rebuild Failed', 'Template rebuild encountered an error.').catch(silentCatch("backgroundRebuild:notifyFailed"));
+    sendAppNotification(copyRef.current.rebuild_failed_title, copyRef.current.rebuild_failed_body).catch(silentCatch("backgroundRebuild:notifyFailed"));
   }, [setRebuildActive]);
 
   const handleCompletedNoDraft = useCallback(() => {
     if (cancelledRef.current) return;
     setPhase('completed');
     setRebuildActive(false);
-    sendAppNotification('Rebuild Complete', 'Template rebuild finished successfully.').catch(silentCatch("backgroundRebuild:notifyCompletedNoDraft"));
+    sendAppNotification(copyRef.current.rebuild_complete_title, copyRef.current.rebuild_complete_body).catch(silentCatch("backgroundRebuild:notifyCompletedNoDraft"));
     onCompleted?.();
   }, [setRebuildActive, onCompleted]);
 
   const handleSessionLost = useCallback(() => {
     if (cancelledRef.current) return;
-    setError('Connection lost -- the rebuild may still be running in the background.');
+    setError(copyRef.current.rebuild_connection_lost);
     setPhase('failed');
     setRebuildActive(false);
   }, [setRebuildActive]);
@@ -94,7 +100,7 @@ export function useBackgroundRebuild(onCompleted?: () => void): UseBackgroundReb
     if (cancelledRef.current) return;
     setPhase('completed');
     setRebuildActive(false);
-    sendAppNotification('Rebuild Complete', 'Template rebuild finished successfully.').catch(silentCatch("backgroundRebuild:notifyDraftComplete"));
+    sendAppNotification(copyRef.current.rebuild_complete_title, copyRef.current.rebuild_complete_body).catch(silentCatch("backgroundRebuild:notifyDraftComplete"));
     onCompleted?.();
   }, [setRebuildActive, onCompleted]);
 
@@ -137,7 +143,7 @@ export function useBackgroundRebuild(onCompleted?: () => void): UseBackgroundReb
       } catch (err) { silentCatch("hooks/design/core/useBackgroundRebuild:catch1")(err); }
     }
     setPhase('failed');
-    setError('Cancelled by user');
+    setError(copyRef.current.rebuild_cancelled);
     setRebuildActive(false);
   }, [rebuildId, setRebuildActive]);
 

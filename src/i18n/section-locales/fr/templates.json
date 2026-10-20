@@ -1307,5 +1307,20 @@
     "webhook_placeholder": "https://...",
     "webhook_url": "URL webhook",
     "when_label": "Quand doit-il s’exécuter ?"
+  },
+  "bg_notify": {
+    "preview_complete_body": "Le test du modèle « {name} » est terminé.",
+    "preview_complete_title": "Aperçu terminé",
+    "preview_default_name": "modèle",
+    "preview_failed_body": "Le test du modèle « {name} » a échoué.",
+    "preview_failed_title": "Échec de l'aperçu",
+    "preview_start_failed": "Impossible de démarrer l'aperçu",
+    "preview_stopped_body": "Test du modèle « {name} »",
+    "rebuild_cancelled": "Annulé par l'utilisateur",
+    "rebuild_complete_body": "La reconstruction du modèle s'est terminée avec succès.",
+    "rebuild_complete_title": "Reconstruction terminée",
+    "rebuild_connection_lost": "Connexion perdue. La reconstruction peut encore s'exécuter en arrière-plan.",
+    "rebuild_failed_body": "La reconstruction du modèle a rencontré une erreur.",
+    "rebuild_failed_title": "Échec de la reconstruction"
   }
 }

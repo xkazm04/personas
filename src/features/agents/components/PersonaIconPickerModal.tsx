@@ -24,6 +24,7 @@ import type { IconGenSpendSummary } from '@/lib/bindings/IconGenSpendSummary';
 import { toastCatch } from '@/lib/silentCatch';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useAgentStore } from '@/stores/agentStore';
 
 interface PersonaIconPickerModalProps {
   isOpen: boolean;
@@ -34,6 +35,8 @@ interface PersonaIconPickerModalProps {
   personaName?: string;
   /** Persona description — seeds the AI-generation prompt. */
   personaDescription?: string | null;
+  /** The persona being edited; excluded from the "also used by" count in the delete confirm. */
+  personaId?: string;
 }
 
 /** Native dialog extension filter for uploadable persona icons. */
@@ -63,8 +66,10 @@ export function PersonaIconPickerModal({
   onClose,
   personaName,
   personaDescription,
+  personaId,
 }: PersonaIconPickerModalProps) {
   const { t, tx } = useTranslation();
+  const personas = useAgentStore((s) => s.personas);
   const [customIcons, setCustomIcons] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [genCreds, setGenCreds] = useState<ImageGenCredential[]>([]);
@@ -135,6 +140,13 @@ export function PersonaIconPickerModal({
   // first, anchored to the trash button that was pressed.
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const deleteAnchorRef = useRef<HTMLElement | null>(null);
+  // The stored file is shared: tell the user how many OTHER personas lose it.
+  const pendingUsers = pendingDeleteId === null
+    ? 0
+    : personas.filter((p) => p.id !== personaId && p.icon === toCustomIconValue(pendingDeleteId)).length;
+  const deleteDetail = pendingUsers > 0
+    ? `${tx(pendingUsers === 1 ? t.shared.forms_extra.remove_custom_icon_used_by_one : t.shared.forms_extra.remove_custom_icon_used_by_other, { count: pendingUsers })} ${t.common.confirm_destructive_cannot_undo}`
+    : t.common.confirm_destructive_cannot_undo;
 
   const handleDeleteCustom = useCallback(async (assetId: string) => {
     try {
@@ -385,7 +397,7 @@ export function PersonaIconPickerModal({
         anchorRef={deleteAnchorRef}
         tone="danger"
         title={t.shared.forms_extra.remove_custom_icon}
-        detail={t.common.confirm_destructive_cannot_undo}
+        detail={deleteDetail}
         confirmLabel={t.common.delete}
         confirmIcon={<Trash2 className="w-3.5 h-3.5" />}
         onConfirm={() => pendingDeleteId && handleDeleteCustom(pendingDeleteId)}

@@ -2050,7 +2050,19 @@
     "baseline_unpin_save_failed": "Gagal melepas pin baseline. Penyimpanan browser mungkin tidak tersedia.",
     "cell_failed": "gagal",
     "cell_running": "berjalan",
-    "score_unscored": "Belum dinilai"
+    "score_unscored": "Belum dinilai",
+    "notify_complete_body": "Pengujian {mode} berhasil diselesaikan.",
+    "notify_complete_title": "Lab {mode} Selesai",
+    "notify_failed_body": "Pengujian {mode} mengalami kesalahan.",
+    "notify_failed_title": "Lab {mode} Gagal",
+    "notify_mode_ab": "Uji A/B",
+    "notify_mode_arena": "Arena",
+    "notify_mode_breed": "Persilangan",
+    "notify_mode_eval": "Evaluasi",
+    "notify_mode_evolve": "Evolusi",
+    "notify_mode_matrix": "Matriks",
+    "notify_mode_regression": "Regresi",
+    "notify_mode_versions": "Versi"
   },
   "life": {
     "activity_attention_row": "Putaran atensi",
@@ -3321,5 +3333,26 @@
   "glyph_recipe_alt_path": "Jalur lebih cepat · kecocokan {pct}%",
   "glyph_recipe_alt_use": "Gunakan resep ini sebagai titik awal",
   "glyph_sched_days_label": "Hari",
-  "glyph_sched_time_label": "Waktu"
+  "glyph_sched_time_label": "Waktu",
+  "lifecycle_notify": {
+    "promoted_body": "Agen Anda telah dipromosikan ke produksi dan siap digunakan.",
+    "promoted_connect_one": "Hubungkan 1 layanan sebelum dapat berjalan: {names}.",
+    "promoted_connect_other": "Hubungkan {count} layanan sebelum dapat berjalan: {names}.",
+    "promoted_items_one": "1 item tidak dapat disiapkan: {names}.",
+    "promoted_items_other": "{count} item tidak dapat disiapkan: {names}.",
+    "promoted_setup_title": "Agen Dipromosikan: perlu penyiapan",
+    "promoted_title": "Agen Dipromosikan",
+    "promoted_unverified": "Pemeriksaan pertamanya tidak dapat memberikan hasil. Tinjau konektornya sebelum mengandalkannya.",
+    "sum_credential_issues": "{count} masalah kredensial",
+    "sum_failed": "{count} gagal",
+    "sum_passed": "{count} lulus",
+    "sum_passed_of": "{passed}/{tested} lulus",
+    "sum_skipped": "{count} dilewati",
+    "sum_unverified": "{count} belum terverifikasi (tidak pernah dipanggil)",
+    "test_all_passed_body": "Semua {count} alat lulus. Siap dipromosikan.",
+    "test_complete_title": "Pengujian Agen Selesai",
+    "test_failed_fallback": "Gagal menjalankan pengujian",
+    "test_failed_title": "Pengujian Agen Gagal",
+    "test_passed_title": "Pengujian Agen Lulus"
+  }
 }

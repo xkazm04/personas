@@ -2050,7 +2050,19 @@
     "baseline_unpin_save_failed": "Baseline konnte nicht gelöst werden. Der Browserspeicher ist möglicherweise nicht verfügbar.",
     "cell_failed": "fehlgeschlagen",
     "cell_running": "läuft",
-    "score_unscored": "Nicht bewertet"
+    "score_unscored": "Nicht bewertet",
+    "notify_complete_body": "{mode}-Test erfolgreich abgeschlossen.",
+    "notify_complete_title": "Lab {mode} abgeschlossen",
+    "notify_failed_body": "Beim {mode}-Test ist ein Fehler aufgetreten.",
+    "notify_failed_title": "Lab {mode} fehlgeschlagen",
+    "notify_mode_ab": "A/B-Test",
+    "notify_mode_arena": "Arena",
+    "notify_mode_breed": "Zucht",
+    "notify_mode_eval": "Auswertung",
+    "notify_mode_evolve": "Evolution",
+    "notify_mode_matrix": "Matrix",
+    "notify_mode_regression": "Regression",
+    "notify_mode_versions": "Versionen"
   },
   "life": {
     "activity_attention_row": "Aufmerksamkeitsdurchlauf",
@@ -3321,5 +3333,26 @@
   "glyph_recipe_alt_path": "Schnellerer Weg · {pct} % Übereinstimmung",
   "glyph_recipe_alt_use": "Dieses Rezept als Ausgangspunkt verwenden",
   "glyph_sched_days_label": "Tage",
-  "glyph_sched_time_label": "Uhrzeit"
+  "glyph_sched_time_label": "Uhrzeit",
+  "lifecycle_notify": {
+    "promoted_body": "Dein Agent wurde in die Produktion übernommen und ist einsatzbereit.",
+    "promoted_connect_one": "Verbinde 1 Dienst, bevor er laufen kann: {names}.",
+    "promoted_connect_other": "Verbinde {count} Dienste, bevor er laufen kann: {names}.",
+    "promoted_items_one": "1 Element konnte nicht eingerichtet werden: {names}.",
+    "promoted_items_other": "{count} Elemente konnten nicht eingerichtet werden: {names}.",
+    "promoted_setup_title": "Agent übernommen: Einrichtung nötig",
+    "promoted_title": "Agent übernommen",
+    "promoted_unverified": "Der erste Prüflauf konnte keinen Nutzen liefern. Prüfe die Konnektoren, bevor du dich darauf verlässt.",
+    "sum_credential_issues": "{count} Zugangsdatenproblem(e)",
+    "sum_failed": "{count} fehlgeschlagen",
+    "sum_passed": "{count} bestanden",
+    "sum_passed_of": "{passed}/{tested} bestanden",
+    "sum_skipped": "{count} übersprungen",
+    "sum_unverified": "{count} nicht verifiziert (nie aufgerufen)",
+    "test_all_passed_body": "Alle {count} Tools bestanden. Bereit zur Übernahme.",
+    "test_complete_title": "Agententest abgeschlossen",
+    "test_failed_fallback": "Tests konnten nicht ausgeführt werden",
+    "test_failed_title": "Agententest fehlgeschlagen",
+    "test_passed_title": "Agententest bestanden"
+  }
 }
