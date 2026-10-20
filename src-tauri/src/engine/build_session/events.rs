@@ -56,13 +56,36 @@ pub(super) fn update_phase(
     // Telemetry (build-orchestration Phase 0): stamp a per-phase timestamp so
     // build-bench can reconstruct per-phase wall-clock. Best-effort — never
     // fail a phase transition on a timing write.
-    let _ = build_session_repo::append_phase_timing(
+    log_phase_write(session_id, phase.as_str(), &res);
+    stamp_phase_timing(pool, session_id, phase.as_str());
+    res
+}
+
+/// A phase write that fails leaves the session in its previous (often
+/// non-terminal) phase, which is how a failed build read `analyzing` to a
+/// poller for 24 h. Callers discard this Result (`let _ =`), so the failure is
+/// recorded here, where the session id is known.
+fn log_phase_write(session_id: &str, phase: &str, res: &Result<(), AppError>) {
+    if let Err(e) = res {
+        tracing::warn!(
+            session_id = %session_id,
+            phase = %phase,
+            error = %e,
+            "build session: phase write failed, the row keeps its previous phase"
+        );
+    }
+}
+
+/// Best-effort per-phase timestamp; a failed write is logged, never returned.
+fn stamp_phase_timing(pool: &DbPool, session_id: &str, phase: &str) {
+    if let Err(e) = build_session_repo::append_phase_timing(
         pool,
         session_id,
-        phase.as_str(),
+        phase,
         &chrono::Utc::now().to_rfc3339(),
-    );
-    res
+    ) {
+        tracing::warn!(session_id = %session_id, phase = %phase, error = %e, "build session: phase timing write failed");
+    }
 }
 
 /// Update the session phase to Failed and store the error message.
@@ -81,12 +104,8 @@ pub(super) fn update_phase_with_error(
             ..Default::default()
         },
     );
-    let _ = build_session_repo::append_phase_timing(
-        pool,
-        session_id,
-        BuildPhase::Failed.as_str(),
-        &chrono::Utc::now().to_rfc3339(),
-    );
+    log_phase_write(session_id, BuildPhase::Failed.as_str(), &res);
+    stamp_phase_timing(pool, session_id, BuildPhase::Failed.as_str());
     res
 }
 
@@ -101,7 +120,7 @@ pub(super) fn record_build_usage(
     output_tokens: i64,
     num_turns: i64,
 ) {
-    let _ = build_session_repo::update(
+    if let Err(e) = build_session_repo::update(
         pool,
         session_id,
         &UpdateBuildSession {
@@ -111,7 +130,9 @@ pub(super) fn record_build_usage(
             num_turns: Some(Some(num_turns)),
             ..Default::default()
         },
-    );
+    ) {
+        tracing::warn!(session_id = %session_id, error = %e, "build session: usage write failed");
+    }
 }
 
 // =============================================================================

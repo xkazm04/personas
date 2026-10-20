@@ -638,14 +638,16 @@ async fn run_test_pass(
     // even if this attempt later fails (every report up to the final one
     // is overwritten — by design, the modal only ever shows the latest).
     if let Ok(report_json) = serde_json::to_string(&report) {
-        let _ = persona_repo::update(
+        if let Err(e) = persona_repo::update(
             &state.db,
             persona_id,
             crate::db::models::UpdatePersonaInput {
                 last_test_report: Some(Some(report_json)),
                 ..Default::default()
             },
-        );
+        ) {
+            tracing::warn!(session_id = %session_id, persona_id = %persona_id, error = %e, "build one-shot: last_test_report write failed");
+        }
     }
 
     match evaluate_promote_gate(&report) {
@@ -781,22 +783,9 @@ async fn update_phase(
     session_id: &str,
     phase: BuildPhase,
 ) -> Result<(), AppError> {
-    let res = build_session_repo::update(
-        &state.db,
-        session_id,
-        &UpdateBuildSession {
-            phase: Some(phase.as_str().to_string()),
-            ..Default::default()
-        },
-    );
-    // Telemetry (build-orchestration Phase 0): per-phase timestamp, best-effort.
-    let _ = build_session_repo::append_phase_timing(
-        &state.db,
-        session_id,
-        phase.as_str(),
-        &chrono::Utc::now().to_rfc3339(),
-    );
-    res
+    // One implementation: events::update_phase writes the phase, stamps the
+    // timing and logs a failed write.
+    super::events::update_phase(&state.db, session_id, phase)
 }
 
 async fn finalize_promoted(

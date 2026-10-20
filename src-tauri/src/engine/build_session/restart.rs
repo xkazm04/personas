@@ -77,7 +77,7 @@ pub(crate) fn recover_after_restart(state: &Arc<AppState>, app: &tauri::AppHandl
                         // The row was reset and claimed; a runner that cannot
                         // start must not leave it looking in flight.
                         tracing::error!(session_id = %id, error = %e, "restart recovery: resume failed to start");
-                        let _ = build_session_repo::update(
+                        if let Err(write_err) = build_session_repo::update(
                             &pool,
                             &id,
                             &crate::db::models::UpdateBuildSession {
@@ -88,7 +88,9 @@ pub(crate) fn recover_after_restart(state: &Arc<AppState>, app: &tauri::AppHandl
                                 ))),
                                 ..Default::default()
                             },
-                        );
+                        ) {
+                            tracing::warn!(session_id = %id, error = %write_err, "restart recovery: could not mark the unstartable resume failed");
+                        }
                     }
                 }
             }
