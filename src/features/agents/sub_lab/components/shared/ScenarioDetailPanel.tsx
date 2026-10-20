@@ -41,7 +41,7 @@ interface ScenarioDetailPanelProps {
   onClose: () => void;
   rating?: number;
   ratingFeedback?: string;
-  onRate?: (rating: number, feedback?: string) => void;
+  onRate?: (rating: number, feedback?: string) => void | boolean | Promise<void | boolean>;
   /** When provided alongside `resultKind`, renders the captured CLI event stream
    *  for this scenario. Forward-only — older results have no events to render. */
   resultId?: string;

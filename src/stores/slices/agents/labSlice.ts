@@ -365,7 +365,8 @@ export interface LabSlice {
   // User Ratings
   userRatings: Record<string, LabUserRating[]>;
   fetchUserRatings: (runId: string) => Promise<void>;
-  rateResult: (runId: string, resultId: string | null, scenarioName: string, rating: number, feedback?: string) => Promise<void>;
+  /** Resolves true only when the rating was persisted; false when the write failed (already reported). */
+  rateResult: (runId: string, resultId: string | null, scenarioName: string, rating: number, feedback?: string) => Promise<boolean>;
 
   // Versions
   promptVersions: PersonaPromptVersion[];
@@ -570,8 +571,10 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
             userRatings: { ...state.userRatings, [runId]: [...filtered, created] },
           };
         });
+        return true;
       } catch (err) {
         reportError(err, "Failed to rate result", set, { action: "lab.rateResult" });
+        return false;
       }
     },
 

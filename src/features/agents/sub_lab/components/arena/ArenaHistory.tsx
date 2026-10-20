@@ -133,7 +133,7 @@ export function ArenaHistory({ runs, resultsMap, expandedRunId, onToggleExpand, 
       const match = activeResults.find(
         (r) => r.scenarioName === scenarioName && r.modelId === modelId,
       );
-      void rateResult(activeRunId, match?.id ?? null, scenarioName, rating, feedback);
+      return rateResult(activeRunId, match?.id ?? null, scenarioName, rating, feedback);
     };
   }, [activeRunId, activeResults, rateResult]);
 

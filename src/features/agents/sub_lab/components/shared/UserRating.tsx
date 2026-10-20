@@ -30,7 +30,8 @@ interface UserRatingProps {
   currentRating?: number;
   currentFeedback?: string;
   /** Emits the 1..5 score, never the thumb position. */
-  onRate: (rating: number, feedback?: string) => void;
+  /** Resolve (or return) `false` when the write did not land; the widget then stays unsaved. */
+  onRate: (rating: number, feedback?: string) => void | boolean | Promise<void | boolean>;
   compact?: boolean;               // smaller variant for table rows
 }
 
@@ -57,10 +58,11 @@ export function UserRating({ currentRating, currentFeedback, onRate, compact }: 
     }
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (selected === undefined) return;
-    onRate(thumbToScore(selected), selected === -1 && feedback.trim() ? feedback.trim() : undefined);
-    setSaved(true);
+    const written = await onRate(thumbToScore(selected), selected === -1 && feedback.trim() ? feedback.trim() : undefined);
+    // "Saved" means persisted: a failed write leaves Save on offer.
+    if (written !== false) setSaved(true);
   }
 
   return (
@@ -94,7 +96,7 @@ export function UserRating({ currentRating, currentFeedback, onRate, compact }: 
         {selected !== undefined && !saved && (
           <button
             type="button"
-            onClick={handleSave}
+            onClick={() => { void handleSave(); }}
             className="ml-1 flex items-center gap-1 px-2 py-1 rounded-card typo-caption bg-primary/15 text-primary border border-primary/20 hover:bg-primary/25 transition-colors"
           >
             <Send className="w-3 h-3" />

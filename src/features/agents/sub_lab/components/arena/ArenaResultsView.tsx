@@ -24,7 +24,7 @@ interface Props {
   runId?: string;
   llmSummary?: string;
   userRatings?: Record<string, UserRatingEntry>;
-  onRate?: (scenarioName: string, modelId: string, rating: number, feedback?: string) => void;
+  onRate?: (scenarioName: string, modelId: string, rating: number, feedback?: string) => void | boolean | Promise<void | boolean>;
   /** Results fetch is still in flight — show the shape-matched skeleton instead of the empty line. */
   loading?: boolean;
 }
