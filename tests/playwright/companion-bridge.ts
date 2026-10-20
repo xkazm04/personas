@@ -185,8 +185,14 @@ export class CompanionBridge {
   // ── Companion-specific helpers ─────────────────────────────────────
 
   /**
-   * Open the chat panel via the footer icon. Idempotent — returns once
-   * `companionInspect` reports `panelVisible: true`.
+   * Open the chat panel. Idempotent — returns once `companionInspect`
+   * reports `panelVisible: true`.
+   *
+   * Opens through the bridge's `openCompanion` (sets the lifecycle state to
+   * 'open'), not by clicking `footer-companion`: with the floating orb on
+   * (`athenaOrbEnabled`, default true) that button only toggles the orb
+   * minimized <-> collapsed and never opens the chat, so every spec that
+   * opened the panel in `beforeEach` died there on a default app.
    *
    * NOTE: we deliberately do NOT use `/wait` here — its visibility check
    * is `offsetParent !== null`, which is always null for `position: fixed`
@@ -197,7 +203,7 @@ export class CompanionBridge {
     const initial = await this.snapshotPanel();
     if (initial.panelVisible) return;
 
-    await this.clickTestId('footer-companion');
+    await this.bridgeExec('openCompanion', {}, 10);
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
       const state = await this.snapshotPanel();
