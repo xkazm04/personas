@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import { listCredentials } from '@/api/vault/credentials';
 import { silentCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 import {
   fetchSentryStats,
@@ -69,8 +70,13 @@ export function useMonitoringPinpoints() {
   const warmForProject = !!activeProjectId && activeProjectId === cachedProjectId && cachedStats !== null;
   const [state, setState] = useState<MonConnState>(warmForProject ? 'connected' : 'loading');
   const [stats, setStats] = useState<MonitoringStats | null>(warmForProject ? cachedStats : null);
-  const [error, setError] = useState<string | null>(null);
+  // The raw rejection, resolved at render (an IPC failure is an AppError object, not an Error).
+  const [error, setError] = useState<unknown>(null);
   const [cred, setCred] = useState<PersonaCredential | null>(warmForProject ? cachedCred : null);
+  // A reply for an earlier project must not land over a later one.
+  const latestWins = useRef(createLatestWins()).current;
+  // Whose stats are on screen: a project switch never shows the previous project's tiles as this one's.
+  const statsFor = useRef<string | null>(warmForProject ? activeProjectId : null);
 
   useEffect(() => {
     listCredentials()
@@ -90,7 +96,12 @@ export function useMonitoringPinpoints() {
     if (!activeProject || !credLoaded) return;
     const credId = activeProject.monitoring_credential_id;
     const slug = activeProject.monitoring_project_slug;
+    const token = latestWins.next();
     setError(null);
+    if (statsFor.current !== activeProject.id) {
+      setStats(null);
+      statsFor.current = null;
+    }
 
     if (!credId) {
       setState(monCreds.length > 0 ? 'unmapped' : 'empty');
@@ -123,6 +134,7 @@ export function useMonitoringPinpoints() {
       const projectSlug = storedProject ?? slug;
       if (!orgSlug) {
         const orgs = await fetchSentryOrgs(credId);
+        if (!latestWins.isCurrent(token)) return;
         if (orgs.length === 1 && orgs[0]) {
           orgSlug = orgs[0].slug;
         } else {
@@ -131,16 +143,20 @@ export function useMonitoringPinpoints() {
         }
       }
       const s = await fetchSentryStats(credId, orgSlug, projectSlug);
+      if (!latestWins.isCurrent(token)) return;
+      statsFor.current = activeProject.id;
       setStats(s);
       setState('connected');
       cachedProjectId = activeProjectId;
       cachedStats = s;
       cachedCred = c;
     } catch (e) {
+      if (!latestWins.isCurrent(token)) return;
+      silentCatch('useMonitoringPinpoints:fetch')(e);
       setState('error');
-      setError(e instanceof Error ? e.message : String(e));
+      setError(e);
     }
-  }, [activeProject, activeProjectId, credentials, credLoaded, monCreds.length]);
+  }, [activeProject, activeProjectId, credentials, credLoaded, monCreds.length, latestWins]);
 
   useEffect(() => {
     load();

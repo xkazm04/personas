@@ -15,6 +15,7 @@ import { Shield, RefreshCw, Plug, AlertCircle, Bug, Activity, BarChart3 } from '
 import { useSystemStore } from '@/stores/systemStore';
 import { updateProject } from '@/api/devTools/devTools';
 import { toastCatch } from '@/lib/silentCatch';
+import { inlineErrorCopy } from '@/features/triggers/lib/inlineErrorCopy';
 import { useTranslation } from '@/i18n/useTranslation';
 import { StatCard } from '@/features/shared/components/display/StatCard';
 import { SentryProjectPicker } from '../sub_overview/OverviewParts';
@@ -161,7 +162,7 @@ export default function MonitoringSection() {
         state === 'loading' && !stats ? (
           <MonitoringStatsGhost />
         ) : state === 'error' && !stats ? (
-          <StateMessage icon={<AlertCircle className="w-8 h-8 text-red-400/70" />} title={dt.mon_error_title} subtitle={error ?? dt.mon_unknown_error} />
+          <StateMessage icon={<AlertCircle className="w-8 h-8 text-red-400/70" />} title={dt.mon_error_title} subtitle={inlineErrorCopy(t, error, dt.mon_unknown_error)} />
         ) : stats ? (
           <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
             <StatCard label={po.unresolved_issues} value={stats.unresolvedIssues ?? '—'} icon={Bug} tone={stats.unresolvedIssues === null ? 'warning' : stats.unresolvedIssues === 0 ? 'success' : stats.unresolvedIssues > 5 ? 'danger' : 'warning'} />

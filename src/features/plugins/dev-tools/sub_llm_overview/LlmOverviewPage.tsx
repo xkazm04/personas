@@ -28,6 +28,7 @@ import type { EmptyArtMotif } from '@/features/shared/components/display/emptyAr
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { toastCatch } from '@/lib/silentCatch';
+import { inlineErrorCopy } from '@/features/triggers/lib/inlineErrorCopy';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useLlmPinpoints, type LlmPinpointsData } from './useLlmPinpoints';
 import type { LlmPinpoint, LlmWindow } from './llmTracingAdapters';
@@ -476,7 +477,7 @@ export default function LlmOverviewPage() {
           <StateMessage
             icon={<AlertCircle className="w-8 h-8 text-red-400/70" />}
             title={dt.llm_error_title}
-            subtitle={error ?? dt.llm_unknown_error}
+            subtitle={inlineErrorCopy(t, error, dt.llm_unknown_error)}
           />
         ) : visiblePinpoints.length === 0 ? (
           /* An empty FILTER is still the empty-calls state, not a blank table:

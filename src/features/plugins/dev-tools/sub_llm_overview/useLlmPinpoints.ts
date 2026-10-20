@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import { listCredentials } from '@/api/vault/credentials';
 import { silentCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 import {
   fetchLlmPinpointsPaged,
@@ -75,8 +76,13 @@ export function useLlmPinpoints() {
   const [pinpoints, setPinpoints] = useState<LlmPinpoint[]>(warmForProject ? cachedPinpoints : []);
   // The page cap cut the window short: these rows are a FLOOR, not the bill.
   const [truncated, setTruncated] = useState(warmForProject ? cachedTruncated : false);
-  const [error, setError] = useState<string | null>(null);
+  // The raw rejection, resolved at render (an IPC failure is an AppError object, not an Error).
+  const [error, setError] = useState<unknown>(null);
   const [cred, setCred] = useState<PersonaCredential | null>(warmForProject ? cachedCred : null);
+  // A reply for an earlier project or window must not land over a later one.
+  const latestWins = useRef(createLatestWins()).current;
+  // Whose rows are on screen: a project switch never shows the previous project's table as this one's.
+  const rowsFor = useRef<string | null>(warmForProject ? activeProjectId : null);
 
   useEffect(() => {
     listCredentials()
@@ -95,8 +101,14 @@ export function useLlmPinpoints() {
   const load = useCallback(async () => {
     if (!activeProject || !credLoaded) return;
 
+    const token = latestWins.next();
     const credId = activeProject.llm_tracking_credential_id;
     setError(null);
+    if (rowsFor.current !== activeProject.id) {
+      setPinpoints([]);
+      setTruncated(false);
+      rowsFor.current = null;
+    }
 
     if (!credId) {
       setState(llmCreds.length > 0 ? 'unmapped' : 'empty');
@@ -120,6 +132,8 @@ export function useLlmPinpoints() {
     setState('loading');
     try {
       const page = await fetchLlmPinpointsPaged(serviceType, c.id, timeWindow);
+      if (!latestWins.isCurrent(token)) return;
+      rowsFor.current = activeProject.id;
       setPinpoints(page.rows);
       setTruncated(page.truncated);
       setState('connected');
@@ -129,10 +143,12 @@ export function useLlmPinpoints() {
       cachedTruncated = page.truncated;
       cachedCred = c;
     } catch (e) {
+      if (!latestWins.isCurrent(token)) return;
+      silentCatch('useLlmPinpoints:fetch')(e);
       setState('error');
-      setError(e instanceof Error ? e.message : String(e));
+      setError(e);
     }
-  }, [activeProject, activeProjectId, credentials, credLoaded, llmCreds.length, timeWindow]);
+  }, [activeProject, activeProjectId, credentials, credLoaded, llmCreds.length, timeWindow, latestWins]);
 
   useEffect(() => {
     load();
