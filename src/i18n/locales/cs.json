@@ -23872,7 +23872,7 @@
       "severity_high": "Vysoké riziko",
       "severity_low": "Nízké riziko",
       "severity_medium": "Střední riziko",
-      "sim_high": "Zrušení {credentialName} by ovlivnilo {personas} personu v rámci tvého pracovního prostoru.",
+      "sim_high": "Zrušení {credentialName} by ovlivnilo persony v rámci tvého pracovního prostoru (počet: {personas}).",
       "sim_low": "Na těchto údajích nezávisí persony ani workflow. Bezpečné k odvolání.",
       "sim_medium": "Zrušení {credentialName} má omezený dopad.",
       "simulate_revocation": "Simulovat zneplatnění",

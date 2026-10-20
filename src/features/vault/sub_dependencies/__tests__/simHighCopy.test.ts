@@ -25,3 +25,17 @@ describe('vault.dependencies.sim_high', () => {
     expect(copy).not.toContain('{personaPlural}');
   });
 });
+
+/**
+ * The sentence renders only for 3+ personas. Czech and Russian pick the noun
+ * form from the count (3-4 vs 5+), so a fixed singular/paucal noun glued to
+ * `{personas}` is wrong for most counts. The count must stand apart from the
+ * noun (colon form), never directly precede an inflected noun.
+ */
+describe('vault.dependencies.sim_high (Slavic plural agreement)', () => {
+  it.each(['cs.json', 'ru.json'])('%s does not inflect a noun directly after the count', (file) => {
+    const catalog = JSON.parse(readFileSync(resolve(LOCALES_DIR, file), 'utf8'));
+    const copy: string = catalog.vault.dependencies.sim_high;
+    expect(copy).not.toMatch(/\{personas\}\s+\p{L}/u);
+  });
+});
