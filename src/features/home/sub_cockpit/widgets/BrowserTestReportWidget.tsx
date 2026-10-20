@@ -6,6 +6,7 @@ import { toastCatch, silentCatch } from '@/lib/silentCatch';
 import { safeLocalGet, safeLocalSet } from '@/lib/safeLocalStorage';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CockpitWidgetProps } from '../widgetRegistry';
+import { recordsOf, textOf } from './narrow';
 import { BrowserReportSections, type ReportDefect, type ReportStep } from './BrowserReportSections';
 
 /**
@@ -25,8 +26,17 @@ export function BrowserTestReportWidget({ config, title, span, actions, footer }
   const url = typeof config?.url === 'string' ? config.url : '';
   const projectName =
     typeof config?.project_name === 'string' ? config.project_name : '';
-  const steps = (Array.isArray(config?.steps) ? config.steps : []) as ReportStep[];
-  const defects = (Array.isArray(config?.defects) ? config.defects : []) as ReportDefect[];
+  const steps: ReportStep[] = recordsOf(config?.steps).map((r) => ({
+    label: textOf(r.label),
+    result: textOf(r.result),
+    evidence: textOf(r.evidence),
+  }));
+  const defects: ReportDefect[] = recordsOf(config?.defects).map((r) => ({
+    title: textOf(r.title),
+    severity: textOf(r.severity),
+    detail: textOf(r.detail),
+    fix: textOf(r.fix),
+  }));
   const consoleErrors = (
     Array.isArray(config?.console_errors) ? config.console_errors : []
   ).map((e) => (typeof e === 'string' ? e : JSON.stringify(e)));

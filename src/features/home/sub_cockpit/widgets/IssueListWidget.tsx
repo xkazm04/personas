@@ -7,6 +7,7 @@ import { toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CockpitWidgetProps } from '../widgetRegistry';
 import { intentTone, toneLabel } from './intentColors';
+import { oneOf, recordsOf, textOf } from './narrow';
 import { Cell, WidgetTable, nameCell, type TableColumn } from './widgetTable';
 
 /**
@@ -54,14 +55,32 @@ interface IssueItem {
 }
 
 const ISSUE_CAP = 6;
+const SEVERITIES = ['info', 'good', 'warn', 'bad'] as const;
+
+/** Narrow the composed `items` once: an item without a text title is dropped, the rest keep only renderable fields. */
+function issuesOf(raw: unknown): IssueItem[] {
+  const out: IssueItem[] = [];
+  recordsOf(raw).forEach((r, i) => {
+    const title = textOf(r.title);
+    if (!title) return;
+    out.push({
+      id: textOf(r.id) ?? `issue-${i}`,
+      title,
+      sublabel: textOf(r.sublabel),
+      severity: oneOf(r.severity, SEVERITIES),
+      href: textOf(r.href),
+    });
+  });
+  return out;
+}
 
 /** Worst first: the tile's rail says the loudest thing its rows say. */
 const SEVERITY_RANK: Tone[] = ['error', 'warning', 'info', 'success', 'neutral'];
 
 export function IssueListWidget({ config, title, span, actions, footer }: CockpitWidgetProps) {
   const { t } = useTranslation();
-  const items = Array.isArray(config?.items) ? (config.items as IssueItem[]) : [];
-  const emptyLabel = (config?.empty_label as string | undefined) ?? t.overview.cockpit.widget_empty;
+  const items = issuesOf(config?.items);
+  const emptyLabel = textOf(config?.empty_label) ?? t.overview.cockpit.widget_empty;
   const c = t.overview.cockpit;
   const detailed = items.some((i) => i.sublabel);
   const columns = useMemo<TableColumn<IssueItem>[]>(() => {

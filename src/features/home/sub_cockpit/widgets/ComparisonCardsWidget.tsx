@@ -2,6 +2,7 @@ import { ContextCard, ContextCards, Dot, Tile } from '@/features/shared/componen
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CockpitWidgetProps } from '../widgetRegistry';
 import { intentTone, toneLabel } from './intentColors';
+import { oneOf, recordsOf, stringsOf, textOf } from './narrow';
 
 /**
  * `comparison_cards` — the decision's options side-by-side with pros,
@@ -38,6 +39,26 @@ interface ComparisonOption {
   intent?: 'good' | 'warn' | 'bad' | 'info';
 }
 
+const INTENTS = ['good', 'warn', 'bad', 'info'] as const;
+
+/** Narrow the composed `options` once: an option without a text label is dropped; pros/cons keep only strings. */
+function optionsOf(raw: unknown): ComparisonOption[] {
+  const out: ComparisonOption[] = [];
+  for (const r of recordsOf(raw)) {
+    const label = textOf(r.label);
+    if (!label) continue;
+    out.push({
+      label,
+      summary: textOf(r.summary),
+      pros: stringsOf(r.pros),
+      cons: stringsOf(r.cons),
+      recommended: r.recommended === true,
+      intent: oneOf(r.intent, INTENTS),
+    });
+  }
+  return out;
+}
+
 function Points({ items, side, tone }: { items?: string[]; side: string; tone: 'success' | 'warning' }) {
   if (!items?.length) return null;
   return (
@@ -55,7 +76,7 @@ function Points({ items, side, tone }: { items?: string[]; side: string; tone: '
 export function ComparisonCardsWidget({ config, title, span, actions, footer }: CockpitWidgetProps) {
   const { t } = useTranslation();
   const c = t.overview.cockpit;
-  const options = Array.isArray(config?.options) ? (config.options as ComparisonOption[]) : [];
+  const options = optionsOf(config?.options);
   return (
     <Tile
       span={span}

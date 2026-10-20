@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Check, Pin } from 'lucide-react';
 import { cockpitWidgetRegistry } from '@/features/home/sub_cockpit/widgetRegistry';
+import { WidgetBoundary } from '@/features/home/sub_cockpit/panel/WidgetBoundary';
 import { KitButton, KitHost, Tile } from '@/features/shared/components/kit';
 import { companionPinWidgetToCockpit, type ChatCard } from '@/api/companion';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -144,7 +145,9 @@ export function InlineChatCard({ card }: { card: ChatCard }) {
 
   return (
     <KitHost compact>
-      <Component title={card.title} config={card.config} actions={pin} />
+      <WidgetBoundary kind={card.kind} resetKey={card.config}>
+        <Component title={card.title} config={card.config} actions={pin} />
+      </WidgetBoundary>
     </KitHost>
   );
 }

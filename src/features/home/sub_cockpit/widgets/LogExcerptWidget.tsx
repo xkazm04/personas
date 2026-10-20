@@ -2,6 +2,7 @@ import { Stack, Tile } from '@/features/shared/components/kit';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CockpitWidgetProps } from '../widgetRegistry';
 import { intentTone, toneLabel } from './intentColors';
+import { stringsOf, textOf } from './narrow';
 
 /**
  * `log_excerpt` — the evidence widget: a short monospace excerpt (log
@@ -25,11 +26,16 @@ import { intentTone, toneLabel } from './intentColors';
  */
 export function LogExcerptWidget({ config, title, span, actions, footer }: CockpitWidgetProps) {
   const { t } = useTranslation();
-  const lines = Array.isArray(config?.lines) ? (config.lines as string[]) : [];
-  const highlights = new Set(Array.isArray(config?.highlight_lines) ? (config.highlight_lines as number[]) : []);
+  // A blank line is a real line of a log, so keep '' (stringsOf drops it): narrow per element.
+  const lines = Array.isArray(config?.lines)
+    ? config.lines.map((l) => (typeof l === 'string' ? l : (textOf(l) ?? '')))
+    : stringsOf(config?.lines);
+  const highlights = new Set(
+    Array.isArray(config?.highlight_lines) ? config.highlight_lines.filter((n): n is number => typeof n === 'number') : [],
+  );
   const tone = intentTone(config?.highlight_intent, 'warning');
-  const caption = config?.caption as string | undefined;
-  const source = config?.source as string | undefined;
+  const caption = textOf(config?.caption);
+  const source = textOf(config?.source);
   return (
     <Tile
       span={span}
