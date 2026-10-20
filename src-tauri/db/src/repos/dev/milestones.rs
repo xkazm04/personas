@@ -2,7 +2,7 @@ use super::kpis::row_to_kpi;
 use crate::models::{DevKpi, DevMilestone, DevMilestoneItem, DevProjectWallSummary};
 use crate::DbPool;
 use personas_core::error::AppError;
-use rusqlite::{params, Row};
+use rusqlite::{params, OptionalExtension, Row};
 use std::collections::HashMap;
 
 // ============================================================================
@@ -643,6 +643,17 @@ pub fn list_milestone_items(
     })
 }
 
+/// A shipped milestone is a record: its scope must not drift after the ship,
+/// whichever door (UI, Athena op, CLI) is writing.
+fn refuse_if_shipped(status: &str) -> Result<(), AppError> {
+    if status == "shipped" {
+        return Err(AppError::Validation(
+            "A shipped milestone's scope is frozen; it cannot be changed".into(),
+        ));
+    }
+    Ok(())
+}
+
 /// Upsert a scope member. `added_after_cut` is derived here, not passed in:
 /// a NEW membership created while the milestone is already 'active' (cut) is
 /// scope creep by definition; re-bucketing an existing member keeps its flag.
@@ -685,11 +696,11 @@ pub fn set_milestone_item(
     timed_query!("dev_milestones", "dev_milestones::set_item", {
         let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;
-        let after_cut: bool = conn
+        let (after_cut, status): (bool, String) = conn
             .query_row(
-                "SELECT cut_at IS NOT NULL FROM dev_milestones WHERE id = ?1",
+                "SELECT cut_at IS NOT NULL, status FROM dev_milestones WHERE id = ?1",
                 params![milestone_id],
-                |row| row.get(0),
+                |row| Ok((row.get(0)?, row.get(1)?)),
             )
             .map_err(|e| match e {
                 rusqlite::Error::QueryReturnedNoRows => {
@@ -697,6 +708,7 @@ pub fn set_milestone_item(
                 }
                 other => AppError::Database(other),
             })?;
+        refuse_if_shipped(&status)?;
         // The conflict arm updates `bucket` unconditionally and the two new
         // columns ONLY when the caller sent them — an omitted field must not
         // be written back as NULL. `added_after_cut` is never in the SET, so
@@ -746,6 +758,18 @@ pub fn remove_milestone_item(
     item_id: &str,
 ) -> Result<(), AppError> {
     let conn = pool.get()?;
+    // A missing milestone is not an error here (the delete is idempotent);
+    // only a SHIPPED one is protected.
+    let status: Option<String> = conn
+        .query_row(
+            "SELECT status FROM dev_milestones WHERE id = ?1",
+            params![milestone_id],
+            |row| row.get(0),
+        )
+        .optional()?;
+    if let Some(status) = status {
+        refuse_if_shipped(&status)?;
+    }
     conn.execute(
         "DELETE FROM dev_milestone_items
          WHERE milestone_id = ?1 AND item_kind = ?2 AND item_id = ?3",
@@ -805,6 +829,32 @@ mod milestone_tests {
         assert!(m.shipped_at.is_some());
         delete_milestone(&pool, &m.id).unwrap();
         assert!(list_milestone_items(&pool, &m.id).unwrap().is_empty());
+    }
+
+    #[test]
+    fn shipped_milestone_scope_is_frozen() {
+        let pool = crate::init_test_db().unwrap();
+        let project = create_project(&pool, "P", "/tmp/mp3", None, None, None, None, None).unwrap();
+        let m =
+            create_milestone(&pool, &project.id, "M", None, None, Some("active"), None).unwrap();
+        set_milestone_item(&pool, &m.id, "goal", "g-1", "core", None, None).unwrap();
+        update_milestone(&pool, &m.id, None, None, None, Some("shipped"), None, None).unwrap();
+
+        assert!(matches!(
+            set_milestone_item(&pool, &m.id, "goal", "g-2", "core", None, None),
+            Err(AppError::Validation(_))
+        ));
+        assert!(matches!(
+            set_milestone_item(&pool, &m.id, "goal", "g-1", "later", None, None),
+            Err(AppError::Validation(_))
+        ));
+        assert!(matches!(
+            remove_milestone_item(&pool, &m.id, "goal", "g-1"),
+            Err(AppError::Validation(_))
+        ));
+        let items = list_milestone_items(&pool, &m.id).unwrap();
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].bucket, "core");
     }
 
     #[test]
