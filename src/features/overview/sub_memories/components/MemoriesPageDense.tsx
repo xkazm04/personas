@@ -18,7 +18,7 @@ import { tokenLabel } from '@/i18n/tokenMaps';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
-import { deleteAllMemories } from '@/api/overview/memories';
+import { countDeletableMemories, deleteAllMemories } from '@/api/overview/memories';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { Button } from '@/features/shared/components/buttons';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -99,6 +99,8 @@ export default function MemoriesPageDense() {
    *  reads below stay readable. */
   const mui = t.overview.memories_ui;
   const [confirmingDeleteAll, setConfirmingDeleteAll] = useState(false);
+  // Unfiltered count of what `delete_all_memories` removes (all agents, all non-core tiers).
+  const [deleteAllCount, setDeleteAllCount] = useState(0);
   const personas = useAgentStore((s) => s.personas);
   const {
     memories, memoriesTotal, memoriesLoading, memoriesError, memoryStats, fetchMemories, deleteMemory, reviewMemories, reflectMemories,
@@ -386,7 +388,11 @@ export default function MemoriesPageDense() {
               {t.common.add}
             </button>
             {memories.length > 0 && (
-              <button type="button" onClick={() => setConfirmingDeleteAll(true)} className="flex items-center gap-1.5 px-2.5 py-1.5 typo-heading rounded-modal border transition-all bg-red-500/15 text-red-400 border-red-500/30 hover:bg-red-500/25" title={t.overview.memories.delete_all}>
+              <button type="button" onClick={() => {
+                countDeletableMemories()
+                  .then((n) => { setDeleteAllCount(n); setConfirmingDeleteAll(true); })
+                  .catch(toastCatch('MemoriesPageDense:deleteAllCount', mui.delete_all_error));
+              }} className="flex items-center gap-1.5 px-2.5 py-1.5 typo-heading rounded-modal border transition-all bg-red-500/15 text-red-400 border-red-500/30 hover:bg-red-500/25" title={t.overview.memories.delete_all}>
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
             )}
@@ -595,12 +601,13 @@ export default function MemoriesPageDense() {
         // memory in the database. Counting the page understated the blast radius
         // by the whole pagination factor — "This permanently deletes all 100
         // memories" in front of a 3,000-row store. `memoriesTotal` is the
-        // server-side count for the current filter, so it is the largest honest
-        // number this surface holds.
+        // server-side count for the CURRENT FILTER, which is still not what the
+        // delete takes (it ignores persona/tier/search), so the dialog counts the
+        // unfiltered non-core total via `countDeletableMemories`.
         <ConfirmDialog
           danger
           title={t.overview.memories.delete_all_confirm_title}
-          body={tx(t.overview.memories.delete_all_confirm_body, { count: memoriesTotal })}
+          body={tx(t.overview.memories.delete_all_confirm_body, { count: deleteAllCount })}
           confirmLabel={t.overview.memories.delete_all_confirm_cta}
           onConfirm={async () => {
             try {

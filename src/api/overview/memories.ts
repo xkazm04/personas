@@ -72,12 +72,30 @@ export const createMemory = (input: CreatePersonaMemoryInput) => {
   return invoke<PersonaMemory>("create_memory", { input });
 };
 
-export const getMemoryCount = (personaId?: string, category?: string, search?: string) =>
+export const getMemoryCount = (personaId?: string, category?: string, search?: string, tier?: MemoryTierFilter) =>
   invoke<number>("get_memory_count", {
     personaId: personaId,
     category: category,
     search: search,
+    tier: tier,
   });
+
+/**
+ * How many memories `deleteAllMemories()` will remove: every agent's, every
+ * non-core tier, unfiltered. The count command's general listing hides
+ * working-tier `context` telemetry rows (a category-less count omits them)
+ * that the delete still takes, so those are counted by an explicit
+ * `category=context` read and added; core rows are never counted.
+ */
+export const countDeletableMemories = async (): Promise<number> => {
+  const [active, working, archive, workingContext] = await Promise.all([
+    getMemoryCount(undefined, undefined, undefined, "active"),
+    getMemoryCount(undefined, undefined, undefined, "working"),
+    getMemoryCount(undefined, undefined, undefined, "archive"),
+    getMemoryCount(undefined, "context", undefined, "working"),
+  ]);
+  return active + working + archive + workingContext;
+};
 
 export interface MemoryStats {
   total: number;
