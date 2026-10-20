@@ -496,7 +496,7 @@ mod reaper_coverage_tests {
     /// columns were dropped), so a failed child write must fail the whole
     /// result write and leave no parent row behind.
     #[test]
-    fn a_failed_tool_call_write_rolls_back_the_result() {
+    fn a_failed_tool_call_write_rolls_back_the_result() -> Result<(), Box<dyn std::error::Error>> {
         use crate::models::{CreateArenaResultInput, CreateLabResultBaseInput, CreatePersonaInput};
         let pool = crate::init_test_db().unwrap();
         let persona = crate::repos::core::personas::create(
@@ -522,13 +522,10 @@ mod reaper_coverage_tests {
         )
         .unwrap();
         let run = super::arena::create_run(&pool, &persona.id, "[]", None, None, None).unwrap();
-        pool.get()
-            .unwrap()
-            .execute_batch(
-                "CREATE TRIGGER fail_tool_call_insert BEFORE INSERT ON lab_tool_calls
+        pool.get()?.execute_batch(
+            "CREATE TRIGGER fail_tool_call_insert BEFORE INSERT ON lab_tool_calls
                  BEGIN SELECT RAISE(ABORT, 'injected'); END;",
-            )
-            .unwrap();
+        )?;
 
         let input = CreateArenaResultInput {
             run_id: run.id.clone(),
@@ -556,14 +553,15 @@ mod reaper_coverage_tests {
             },
         };
         assert!(super::arena::create_result(&pool, &input).is_err());
-        let rows: i64 = pool
-            .get()
-            .unwrap()
-            .query_row("SELECT COUNT(*) FROM lab_arena_results", [], |r| r.get(0))
-            .unwrap();
+        let rows: i64 =
+            pool.get()?
+                .query_row("SELECT COUNT(*) AS n FROM lab_arena_results", [], |r| {
+                    r.get("n")
+                })?;
         assert_eq!(
             rows, 0,
             "parent row must roll back with the failed child write"
         );
+        Ok(())
     }
 }
