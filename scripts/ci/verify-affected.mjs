@@ -50,7 +50,15 @@ const git = (...a) => execFileSync("git", a, { cwd: root, encoding: "utf8" }).sp
 
 let files;
 if (opt("--files")) {
-  files = opt("--files").split(",").map((s) => s.trim().replace(/\\/g, "/")).filter(Boolean);
+  // Comma-separated, or space-separated up to the next flag: CLAUDE.md spells
+  // it `--files <your files>`, and reading only args[i + 1] silently gated the
+  // first file of a space-separated list and nothing else.
+  const after = args.slice(args.indexOf("--files") + 1);
+  const end = after.findIndex((a) => a.startsWith("--"));
+  files = (end < 0 ? after : after.slice(0, end))
+    .flatMap((a) => a.split(","))
+    .map((s) => s.trim().replace(/\\/g, "/"))
+    .filter(Boolean);
 } else {
   files = [...new Set([...git("diff", "--name-only", "--no-renames", base), ...git("ls-files", "--others", "--exclude-standard")])];
 }
