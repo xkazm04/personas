@@ -116,6 +116,19 @@ describe('buildMonitorModel — execState', () => {
     expect(find(m, 'a').execState).toBe('failed');
   });
 
+  // `incomplete` is the engine's word for a run whose process DIED (the
+  // TERMINAL set in core/src/types.rs): not a success, and the tile used to
+  // paint it calm idle-grey because only the literal 'failed' counted.
+  it('failed when the last run died incomplete', () => {
+    const m = buildMonitorModel(personas, [], [], {}, { a: mkHealth({ recentStatuses: ['incomplete', 'completed'] }) });
+    expect(find(m, 'a').execState).toBe('failed');
+  });
+
+  it('a cancelled last run is not a failure', () => {
+    const m = buildMonitorModel(personas, [], [], {}, { a: mkHealth({ recentStatuses: ['cancelled', 'failed'] }) });
+    expect(find(m, 'a').execState).toBe('idle');
+  });
+
   it('attention when pending work but no run/failure', () => {
     const m = buildMonitorModel(personas, [mkReview('a', 'info')], [], {}, { a: mkHealth({ recentStatuses: ['completed'] }) });
     expect(find(m, 'a').execState).toBe('attention');

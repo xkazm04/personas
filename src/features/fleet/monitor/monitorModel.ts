@@ -350,7 +350,9 @@ export function buildMonitorModel(
     const attentionCount = reviewCount + messageCount;
     const hasAttention = attentionCount > 0 || queued > 0 || inputRequired > 0 || draftReady > 0;
     const recentStatuses = health?.recentStatuses ?? [];
-    const lastFailed = recentStatuses[0] === 'failed';
+    // `incomplete` is a run whose process died - not a success, and not one
+    // the operator chose to stop (that is `cancelled`, which stays calm).
+    const lastFailed = recentStatuses[0] === 'failed' || recentStatuses[0] === 'incomplete';
     const execState: ExecState =
       running > 0 ? 'running'
         : lastFailed ? 'failed'
