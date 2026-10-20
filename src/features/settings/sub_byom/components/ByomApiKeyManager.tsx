@@ -6,6 +6,7 @@ import { PasswordToggleField } from '@/features/shared/components/forms/Password
 import { useKeyedCopyFlag } from '@/hooks/utility/interaction/useKeyedCopyFlag';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
 import { silentCatch } from '@/lib/silentCatch';
@@ -312,6 +313,7 @@ function QwenKeyRow() {
   }, []);
 
   const showEditor = editing || !configured;
+  const [confirmingRemove, setConfirmingRemove] = useState(false);
 
   return (
     <div className="rounded-card border border-primary/10 bg-secondary/20 p-3 space-y-2">
@@ -329,7 +331,7 @@ function QwenKeyRow() {
         {configured && !editing && (
           <button
             type="button"
-            onClick={() => void remove()}
+            onClick={() => setConfirmingRemove(true)}
             disabled={busy}
             className="typo-caption p-1.5 rounded-input text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-50"
             title={s.remove_key}
@@ -374,6 +376,19 @@ function QwenKeyRow() {
           </div>
         </div>
       )}
+      {confirmingRemove && (
+        <ConfirmDialog
+          danger
+          title={s.remove_key}
+          body={t.common.confirm_destructive_cannot_undo}
+          confirmLabel={s.remove_key}
+          onConfirm={async () => {
+            await remove();
+            setConfirmingRemove(false);
+          }}
+          onCancel={() => setConfirmingRemove(false)}
+        />
+      )}
     </div>
   );
 }
@@ -398,7 +413,7 @@ function KeyEntryRow({
   onChange: (value: string) => void;
   onSave: () => void;
   onCancel: () => void;
-  onDelete: () => void;
+  onDelete: () => void | Promise<void>;
   onTest: () => void;
 }) {
   const hasValue = !!entry.savedValue;
@@ -406,6 +421,7 @@ function KeyEntryRow({
   const isDirty = entry.value !== entry.savedValue;
   const { t } = useTranslation();
   const s = t.settings.byom;
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   return (
     <div className="rounded-card border border-primary/10 bg-secondary/20 p-3 space-y-2">
@@ -437,7 +453,7 @@ function KeyEntryRow({
           {hasValue && !entry.editing && (
             <button
               type="button"
-              onClick={onDelete}
+              onClick={() => setConfirmingDelete(true)}
               className="typo-caption p-1.5 rounded-input text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-all"
               title={s.remove_key}
             >
@@ -546,6 +562,19 @@ function KeyEntryRow({
             </button>
           )}
         </div>
+      )}
+      {confirmingDelete && (
+        <ConfirmDialog
+          danger
+          title={s.remove_key}
+          body={t.common.confirm_destructive_cannot_undo}
+          confirmLabel={s.remove_key}
+          onConfirm={async () => {
+            await onDelete();
+            setConfirmingDelete(false);
+          }}
+          onCancel={() => setConfirmingDelete(false)}
+        />
       )}
     </div>
   );
