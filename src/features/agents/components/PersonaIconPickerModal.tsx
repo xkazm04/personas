@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { X, Upload, Trash2, Loader2, Sparkles } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { BaseModal } from '@/lib/ui/BaseModal';
+import { ConfirmPopover } from '@/features/shared/components/feedback/ConfirmPopover';
 import { AGENT_ICONS, toAgentIconValue } from '@/lib/icons/agentIconCatalog';
 import {
   toCustomIconValue,
@@ -130,16 +131,25 @@ export function PersonaIconPickerModal({
     }
   }, [handlePick]);
 
-  const handleDeleteCustom = useCallback((assetId: string) => {
-    deletePersonaIcon(assetId)
-      .then(() => {
-        setCustomIcons((prev) => prev.filter((id) => id !== assetId));
-        // If the persona currently uses the deleted icon, drop the reference.
-        if (isCustomIcon(value) && parseCustomIconId(value) === assetId) {
-          onChange('');
-        }
-      })
-      .catch(toastCatch('PersonaIconPickerModal:deletePersonaIcon'));
+  // Deleting removes the stored file for EVERY persona that uses it, so it asks
+  // first, anchored to the trash button that was pressed.
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const deleteAnchorRef = useRef<HTMLElement | null>(null);
+
+  const handleDeleteCustom = useCallback(async (assetId: string) => {
+    try {
+      await deletePersonaIcon(assetId);
+    } catch (e) {
+      toastCatch('PersonaIconPickerModal:deletePersonaIcon')(e);
+      return;
+    } finally {
+      setPendingDeleteId(null);
+    }
+    setCustomIcons((prev) => prev.filter((id) => id !== assetId));
+    // If the persona currently uses the deleted icon, drop the reference.
+    if (isCustomIcon(value) && parseCustomIconId(value) === assetId) {
+      onChange('');
+    }
   }, [value, onChange]);
 
   const handleGenerate = useCallback(async () => {
@@ -273,7 +283,7 @@ export function PersonaIconPickerModal({
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleDeleteCustom(assetId)}
+                        onClick={(e) => { deleteAnchorRef.current = e.currentTarget; setPendingDeleteId(assetId); }}
                         aria-label={t.shared.forms_extra.remove_custom_icon}
                         title={t.shared.forms_extra.remove_custom_icon}
                         className="absolute top-1 right-1 p-1 rounded-card bg-background/80 text-foreground opacity-0 group-hover:opacity-100 hover:text-status-error hover:bg-secondary transition-all cursor-pointer"
@@ -370,6 +380,17 @@ export function PersonaIconPickerModal({
           </footer>
         )}
       </div>
+      <ConfirmPopover
+        open={pendingDeleteId !== null}
+        anchorRef={deleteAnchorRef}
+        tone="danger"
+        title={t.shared.forms_extra.remove_custom_icon}
+        detail={t.common.confirm_destructive_cannot_undo}
+        confirmLabel={t.common.delete}
+        confirmIcon={<Trash2 className="w-3.5 h-3.5" />}
+        onConfirm={() => pendingDeleteId && handleDeleteCustom(pendingDeleteId)}
+        onCancel={() => setPendingDeleteId(null)}
+      />
     </BaseModal>
   );
 }
