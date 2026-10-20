@@ -28,7 +28,7 @@ use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
-use super::cli_process::{read_line_limited, CliProcessDriver};
+use super::cli_process::{read_line_within_capped_oob, CliProcessDriver, Clip, LineRead};
 use super::event_registry::event_name;
 
 use crate::db::models::{EpisodeExcerpt, Persona, PersonaResponsibility, PersonaToolDefinition};
@@ -61,6 +61,34 @@ use self::stages::RunnerStage;
 /// personas' generic "timed out after 600s" fires. See
 /// `.planning/handoffs/2026-04-17-claude-cli-2-1-111-adapter-drift.md` T6.
 pub(crate) const DEFAULT_EXECUTION_TIMEOUT_MS: u64 = 660_000;
+
+/// Per-line cap for the persona runner's stdout. A stream-json `user`
+/// tool_result or `assistant` envelope carries a whole reply on one line, so
+/// the shared 64 KB default clipped real records (7 of 13,355 logged lines).
+/// Same 4 MB the build session took for the same reason.
+const RUNNER_STDOUT_MAX_LINE_BYTES: usize = 4 * 1024 * 1024;
+
+/// Silence window per stdout read (same 300 s the shared reader uses).
+const RUNNER_STDOUT_SILENCE: std::time::Duration = std::time::Duration::from_secs(300);
+
+/// Read one stdout line, reporting a size/silence clip OUT OF BAND.
+///
+/// The runner feeds a parsing sink: a clipped prefix with an in-band
+/// `...[truncated]` marker used to reach `parse_stream_line` as a mutant that
+/// classified `Unknown` with no display, so the record vanished. The clip now
+/// travels beside the bytes and the caller surfaces it
+/// (`parser::parse_stream_line_bounded`). EOF and silence both end the loop
+/// (`None`), as `read_line_limited` did.
+async fn read_stdout_line<R: tokio::io::AsyncBufRead + Unpin>(
+    reader: &mut R,
+) -> std::io::Result<Option<(String, Option<Clip>)>> {
+    match read_line_within_capped_oob(reader, RUNNER_STDOUT_SILENCE, RUNNER_STDOUT_MAX_LINE_BYTES)
+        .await?
+    {
+        (LineRead::Line(line), clip) => Ok(Some((line, clip))),
+        (LineRead::Eof | LineRead::Silence, _) => Ok(None),
+    }
+}
 
 /// Input key under which a dispatcher records the authoring worktree it
 /// prepared for this run. Mirrors
@@ -2661,7 +2689,7 @@ pub async fn run_execution(
         }
     }
 
-    // Read stdout line by line (with per-line 64KB cap and 30s watchdog)
+    // Read stdout line by line (per-line cap RUNNER_STDOUT_MAX_LINE_BYTES, 300s silence watchdog)
     let Some(mut stdout_reader) = driver.take_stdout_reader() else {
         let error_msg = "Failed to capture stdout pipe from child process".to_string();
         trace.end_span_error(&stream_output_stage, &error_msg);
@@ -2848,9 +2876,9 @@ pub async fn run_execution(
             tokio::select! {
                 biased;  // prefer line reads over heartbeat
 
-                line_result = read_line_limited(&mut stdout_reader) => {
+                line_result = read_stdout_line(&mut stdout_reader) => {
                     match line_result {
-                        Ok(Some(raw_line)) => {
+                        Ok(Some((raw_line, line_clip))) => {
                             last_activity = std::time::Instant::now();
                             stdout_line_seen = true;
 
@@ -2887,8 +2915,29 @@ pub async fn run_execution(
                                 continue;
                             }
 
-                            // Per-line truncation is now handled by read_line_limited (64KB cap).
+                            // The reader reports a clip beside the bytes (see
+                            // `read_stdout_line`); a clipped prefix is never parsed.
                             let line = raw_line;
+
+                            if let Some(clip) = line_clip {
+                                logger.log(&format!(
+                                    "[STDOUT] {}{}",
+                                    line.trim(),
+                                    clip.in_band_marker()
+                                ));
+                                let (_, display) = parser::parse_stream_line_bounded(&line, Some(clip));
+                                if let Some(display_text) = display {
+                                    emit_to(
+                                        &*emitter,
+                                        event_name::EXECUTION_OUTPUT,
+                                        &ExecutionOutputEvent {
+                                            execution_id: exec_id_for_stream.clone(),
+                                            line: display_text,
+                                        },
+                                    );
+                                }
+                                continue;
+                            }
 
                             logger.log(&format!("[STDOUT] {}", line.trim()));
 
@@ -4806,5 +4855,53 @@ mod exec_dir_lane_tests {
             pick_exec_dir_lane(None, None, None, None),
             ExecDirLane::Scratch
         );
+    }
+}
+
+#[cfg(test)]
+mod stdout_line_clip_tests {
+    use super::*;
+    use tokio::io::{AsyncWriteExt, BufReader};
+
+    async fn read_one(payload: Vec<u8>) -> Option<(String, Option<Clip>)> {
+        let (client, mut server) = tokio::io::duplex(16 * 1024);
+        tokio::spawn(async move {
+            let _ = server.write_all(&payload).await;
+            let _ = server
+                .write_all(
+                    b"
+",
+                )
+                .await;
+            let _ = server.flush().await;
+            std::future::pending::<()>().await;
+        });
+        let mut reader = BufReader::new(client);
+        read_stdout_line(&mut reader).await.unwrap()
+    }
+
+    #[tokio::test]
+    async fn a_record_over_the_old_64k_cap_arrives_whole() {
+        let body = "x".repeat(100 * 1024);
+        let line = format!(r#"{{"type":"user","message":{{"content":"{body}"}}}}"#);
+        let (got, clip) = read_one(line.clone().into_bytes()).await.expect("a line");
+        assert!(clip.is_none(), "a 100 KB record was clipped");
+        assert_eq!(got, line);
+    }
+
+    #[tokio::test]
+    async fn a_record_over_the_cap_is_reported_out_of_band_without_a_marker() {
+        let line = format!(
+            r#"{{"type":"user","pad":"{}"}}"#,
+            "y".repeat(RUNNER_STDOUT_MAX_LINE_BYTES)
+        );
+        let (got, clip) = read_one(line.into_bytes()).await.expect("a line");
+        let clip = clip.expect("over-cap line must report a clip");
+        assert!(!got.ends_with("[truncated]"), "marker must not be in-band");
+        assert_eq!(got.len(), clip.at_bytes());
+        let (_, display) = parser::parse_stream_line_bounded(&got, Some(clip));
+        assert!(display
+            .expect("clip surfaces a line")
+            .contains("[clipped] a `user` record"));
     }
 }
