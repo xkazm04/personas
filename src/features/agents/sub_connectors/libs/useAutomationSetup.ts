@@ -79,13 +79,33 @@ export function pickPlatformCredentialId(
   return offered[0]!.id;
 }
 
+/**
+ * The automation an Edit click targets. The persona editor lists
+ * `selectedPersona.automations` (persona detail), while the vault slice's list
+ * stays empty until something is deployed this session, so the persona's own
+ * list is the source of truth and the vault list is only a fallback.
+ */
+export function findEditAutomation<T extends { id: string }>(
+  personaAutomations: ReadonlyArray<T> | undefined,
+  vaultAutomations: ReadonlyArray<T>,
+  editAutomationId: string | null | undefined,
+): T | null {
+  if (!editAutomationId) return null;
+  return (
+    personaAutomations?.find((a) => a.id === editAutomationId) ??
+    vaultAutomations.find((a) => a.id === editAutomationId) ??
+    null
+  );
+}
+
 export function useAutomationSetup(personaId: string, editAutomationId?: string | null) {
   const { t } = useTranslation();
   const design = useAutomationDesign();
   const automations = useVaultStore((s) => s.automations);
-  const editAutomation = editAutomationId
-    ? automations.find((a) => a.id === editAutomationId) ?? null
-    : null;
+  const personaAutomations = useAgentStore((s) =>
+    s.selectedPersona?.id === personaId ? s.selectedPersona.automations : undefined,
+  );
+  const editAutomation = findEditAutomation(personaAutomations, automations, editAutomationId);
   const [description, setDescription] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [name, setName] = useState('');
