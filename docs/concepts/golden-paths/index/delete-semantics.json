@@ -1039,16 +1039,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "teams/sub_factory/passport/actionConfirmCatalog.ts"
     },
-    "src/features/teams/sub_goals/GoalDetailDrawer.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["281"],
-      "contexts": [
-        "| `plugins/artist/sub_blender/ReferenceBoard.tsx:104` · `teams/sub_goals/GoalDetailDrawer.tsx:281` · `plugins/twin/sub_tone/{ToneConsole.tsx:78,ToneBaseline.tsx:75,ToneAtelier.tsx:115}` | **5 survivi…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "teams/sub_goals/GoalDetailDrawer.tsx"
-    },
     "src/features/teams/sub_kpis/KpiDetailModal.tsx": {
       "count": 2,
       "sections": [5,7],
@@ -1058,16 +1048,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "KpiDetailModal.tsx"
-    },
-    "src/features/teams/sub_teamWorkspace/TeamList.tsx": {
-      "count": 2,
-      "sections": [6,7],
-      "lines": ["62,264,266","76"],
-      "contexts": [
-        "- `overview/sub_memories/components/MemoryCard.tsx:96-102` — the only ad-hoc arm-timer site that disarms on entity change; `teams/sub_teamWorkspace/TeamList.tsx:62,264,266` — the only ad-hoc site tha…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "teams/sub_teamWorkspace/TeamList.tsx"
     },
     "src/features/teams/sub_teamWorkspace/teamStudio/TeamWorkspacePane.tsx": {
       "count": 1,
@@ -1298,6 +1278,24 @@
       "lines": ["320-323","329","315"],
       "contexts": [
         "- **A bare `parent_id TEXT NOT NULL` with no `REFERENCES`.** 224 FK-shaped columns repo-wide are in this state and 113 of them name a real table — 44 of those carry an unconstrained `persona_id`, aga…"
+      ],
+      "resolved": false
+    },
+    "teams/sub_goals/GoalDetailDrawer.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["281"],
+      "contexts": [
+        "| `plugins/artist/sub_blender/ReferenceBoard.tsx:104` · `teams/sub_goals/GoalDetailDrawer.tsx:281` · `plugins/twin/sub_tone/{ToneConsole.tsx:78,ToneBaseline.tsx:75,ToneAtelier.tsx:115}` | **5 survivi…"
+      ],
+      "resolved": false
+    },
+    "teams/sub_teamWorkspace/TeamList.tsx": {
+      "count": 2,
+      "sections": [6,7],
+      "lines": ["62,264,266","76"],
+      "contexts": [
+        "- `overview/sub_memories/components/MemoryCard.tsx:96-102` — the only ad-hoc arm-timer site that disarms on entity change; `teams/sub_teamWorkspace/TeamList.tsx:62,264,266` — the only ad-hoc site tha…"
       ],
       "resolved": false
     }

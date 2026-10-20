@@ -179,14 +179,6 @@
     "src/features/vault/shared/playground/tabs/McpToolsTab.tsx": {"count":2,"sections":[5,7],"lines":["53"],"contexts":["`inputData` when it does not parse; `McpToolsTab.tsx:53` does it per argument —"],"resolvedFrom":"basename","verbatim":"McpToolsTab.tsx"},
     "src/features/vault/sub_databases/SqlEditor.tsx": {"count":1,"sections":[7],"contexts":["`POST`/`PUT`/`PATCH` bodies. `SqlEditor.tsx` has **no validation, no error"],"resolvedFrom":"basename","verbatim":"SqlEditor.tsx"},
     "src/features/vault/sub_databases/sqlTokenizers.ts": {"count":1,"sections":[3],"lines":["238"],"contexts":["(`sqlTokenizers.ts:238`), so it *looks* right — and it has **no validation of any"],"resolvedFrom":"basename","verbatim":"sqlTokenizers.ts"},
-    "src/lib/utils/sanitizers/variableSanitizer.ts": {
-      "count": 1,
-      "sections": [5],
-      "lines": ["164"],
-      "contexts": ["`variableSanitizer.ts:164`). Failure mode: two verdicts that can disagree, and a"],
-      "resolvedFrom": "basename",
-      "verbatim": "variableSanitizer.ts"
-    },
     "sub_tool_runner/ToolInvocationCard.tsx": {"count":1,"sections":[7],"lines":["126"],"contexts":["| 7 | `sub_tool_runner/ToolInvocationCard.tsx:126` | in render | **blocks** run | re-parsed |"],"resolved":false},
     "templates/draft-editor/DraftJsonTab.tsx": {
       "count": 1,
@@ -196,6 +188,7 @@
       "resolved": false
     },
     "useWizardReducer.ts": {"count":2,"sections":[5,7],"lines":["76","75-77"],"contexts":["is opt-in and fine. `draftUpdated` at `useWizardReducer.ts:76` is not: any edit"],"resolved":false},
+    "variableSanitizer.ts": {"count":1,"sections":[5],"lines":["164"],"contexts":["`variableSanitizer.ts:164`). Failure mode: two verdicts that can disagree, and a"],"resolved":false},
     "wB-private-rules.json": {"count":1,"sections":[9],"contexts":["composer (`wB-private-rules.json`) and run with"],"resolved":false}
   }
 }

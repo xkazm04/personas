@@ -60,6 +60,7 @@
     },
     "eslint-rules/no-noop-busy-state.cjs": {"count":1,"sections":[9],"contexts":["One rule file, `eslint-rules/no-noop-busy-state.cjs`, registered in"],"resolved":false},
     "eslint.config.js": {"count":2,"sections":[9],"contexts":["`eslint.config.js` beside its 21 peers, with three `messageId`s:"]},
+    "hooks/utility/interaction/useAsyncAction.ts": {"count":1,"sections":[7],"contexts":["`hooks/utility/interaction/useAsyncAction.ts` — **zero adopters** in the entire"],"resolved":false},
     "overview/sub_director/components/StaleSweepButton.tsx": {
       "count": 1,
       "sections": [6],
@@ -720,13 +721,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "vault/sub_credentials/components/picker/ResourcePicker.tsx"
-    },
-    "src/hooks/utility/interaction/useAsyncAction.ts": {
-      "count": 1,
-      "sections": [7],
-      "contexts": ["`hooks/utility/interaction/useAsyncAction.ts` — **zero adopters** in the entire"],
-      "resolvedFrom": "suffix",
-      "verbatim": "hooks/utility/interaction/useAsyncAction.ts"
     },
     "src/hooks/utility/interaction/useKeyedCopyFlag.ts": {
       "count": 1,

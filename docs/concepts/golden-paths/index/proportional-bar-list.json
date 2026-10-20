@@ -280,6 +280,14 @@
       "resolvedFrom": "basename",
       "verbatim": "MonitorRow.tsx"
     },
+    "src/features/projects/development/goals/progressShared.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["252"],
+      "contexts": ["| `TaskCard.tsx:196`, `SystemLoadFooterIcon.tsx:98`, `progressShared.tsx:252` | 0% | Correct — these are `Math.max(0, …)` clamps, not floors |"],
+      "resolvedFrom": "basename",
+      "verbatim": "progressShared.tsx"
+    },
     "src/features/shared/chrome/SystemLoadFooterIcon.tsx": {
       "count": 1,
       "sections": [7],
@@ -341,14 +349,6 @@
       "verbatim": "QuickDispatchLedger.tsx"
     },
     "src/features/teams/sub_factory/passport/passportWidgets.tsx": {"count":1,"sections":[7],"lines":["91"],"contexts":["| `passportWidgets.tsx:91` | 3% | |"],"resolvedFrom":"basename","verbatim":"passportWidgets.tsx"},
-    "src/features/teams/sub_goals/progressShared.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["252"],
-      "contexts": ["| `TaskCard.tsx:196`, `SystemLoadFooterIcon.tsx:98`, `progressShared.tsx:252` | 0% | Correct — these are `Math.max(0, …)` clamps, not floors |"],
-      "resolvedFrom": "basename",
-      "verbatim": "progressShared.tsx"
-    },
     "src/features/templates/sub_generated/generation/runner/DesignReviewRunner.tsx": {
       "count": 1,
       "sections": [3],

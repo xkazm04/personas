@@ -33,6 +33,7 @@
   ],
   "citations": {
     ".github/workflows/ci.yml": {"count":1,"sections":[9],"contexts":["(`lefthook.yml`, `golden-path-census`). Per the brief's calibration, `ci.yml` is red on pre-existing"],"resolvedFrom":"basename","verbatim":"ci.yml"},
+    "ConfigureStep.tsx": {"count":2,"sections":[5],"contexts":["`QuestionnaireFormGridParts.tsx`, `ConfigureStep.tsx`, `PresetQuestionnaireForm.tsx`,"],"resolved":false},
     "CreateVisual.tsx": {"count":1,"sections":[],"lines":["12"],"contexts":["descriptor arrays (`CreateVisual.tsx:12`, `TileValue.tsx:84`) render `<div>`s and `<span>`s, not"],"resolved":false},
     "PropsControl.tsx": {"count":2,"sections":[9,12],"lines":["43"],"contexts":["ending `return null` (`PropsControl.tsx:43`) and a `default: return false`"],"resolved":false},
     "RecipeEditor.tsx": {"count":1,"sections":[],"contexts":["`RecipeInputSection.tsx`, `RecipeEditor.tsx`, `SchemaFieldBuilder.tsx`, `parameterCoverage.ts`,"],"resolved":false},
@@ -163,7 +164,6 @@
       "resolved": false,
       "isDir": true
     },
-    "src/features/templates/components/ConfigureStep.tsx": {"count":2,"sections":[5],"contexts":["`QuestionnaireFormGridParts.tsx`, `ConfigureStep.tsx`, `PresetQuestionnaireForm.tsx`,"],"resolvedFrom":"basename","verbatim":"ConfigureStep.tsx"},
     "src/features/templates/components/ConfigureStep.tsx:90,:104,": {
       "count": 1,
       "sections": [7],

@@ -52,6 +52,15 @@
       "contexts": ["| ~~`agents/sub_glyph/GlyphCinemaLayout.tsx:414-425`~~ (deleted 2026-09-23 with the legacy build layouts) | Infinite framer-motion shimmer sweep. |"],
       "resolved": false
     },
+    "agents/sub_glyph/personaCore/PersonaCoreModal.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["34"],
+      "contexts": [
+        "`plugins/dev-tools/sub_runner/RunDeskPage.tsx:215` · `settings/sub_portability/components/ExportSelectionModal.tsx:240` · `plugins/dev-tools/sub_projects/CrossProjectMetadataModal.tsx:344` · `overvie…"
+      ],
+      "resolved": false
+    },
     "agents/sub_model_config/components/EffectiveConfigPanel.tsx": {
       "count": 1,
       "sections": [7],
@@ -69,6 +78,15 @@
       "resolved": false
     },
     "overview/sub_health/components/PersonaHealthDashboard.tsx": {"count":1,"sections":[7],"lines":["149"],"contexts":["| `overview/sub_health/components/PersonaHealthDashboard.tsx:149` | Centred `py-16` text block. |"],"resolved":false},
+    "overview/sub_usage/components/LazyChart.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["47"],
+      "contexts": [
+        "| `agents/sub_editor/components/QuickStatsBar.tsx:26` · `agents/sub_editor/components/PersonaChangeHistory.tsx:73` · `agents/components/allPersonas/PersonaConfigPanel.tsx:508` · `overview/sub_usage/c…"
+      ],
+      "resolved": false
+    },
     "plugins/companion/BrainViewer.tsx": {"count":2,"sections":[6,7],"lines":["400-425","632"],"contexts":["- `plugins/companion/BrainViewer.tsx:400-425` — clean local ghost; cascade at `:356-361`."],"resolved":false},
     "plugins/companion/sub_voice/voiceEngineShared.tsx": {
       "count": 1,
@@ -219,16 +237,6 @@
       "contexts": ["| `agents/sub_executions/replay/ReplaySandbox.tsx:123` | Fixed `h-64` centred `Loader2`; drops transport controls. |"],
       "resolvedFrom": "suffix",
       "verbatim": "agents/sub_executions/replay/ReplaySandbox.tsx"
-    },
-    "src/features/agents/sub_glyph/personaCore/PersonaCoreModal.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["34"],
-      "contexts": [
-        "`plugins/dev-tools/sub_runner/RunDeskPage.tsx:215` · `settings/sub_portability/components/ExportSelectionModal.tsx:240` · `plugins/dev-tools/sub_projects/CrossProjectMetadataModal.tsx:344` · `overvie…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "agents/sub_glyph/personaCore/PersonaCoreModal.tsx"
     },
     "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx": {
       "count": 1,
@@ -382,16 +390,6 @@
       "contexts": ["| `overview/sub_observability/components/HealingTimeline.tsx:267-273` | Centred spinner + label wipes the timeline. |"],
       "resolvedFrom": "suffix",
       "verbatim": "overview/sub_observability/components/HealingTimeline.tsx"
-    },
-    "src/features/overview/sub_usage/components/LazyChart.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["47"],
-      "contexts": [
-        "| `agents/sub_editor/components/QuickStatsBar.tsx:26` · `agents/sub_editor/components/PersonaChangeHistory.tsx:73` · `agents/components/allPersonas/PersonaConfigPanel.tsx:508` · `overview/sub_usage/c…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "overview/sub_usage/components/LazyChart.tsx"
     },
     "src/features/personas/sub_foundry/CreatePersonaEntry.tsx": {
       "count": 1,

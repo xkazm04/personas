@@ -11,6 +11,7 @@ use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
 use personas_core::types::CliArgs;
+use personas_core::validation::{require_at_least_one, require_max_count};
 use serde::de::DeserializeOwned;
 
 use crate::commands::contest::node::manifest_registry_local;
@@ -46,12 +47,8 @@ pub(super) fn is_safe_token(s: &str) -> bool {
 
 /// 1..=200 ids, each a safe token.
 pub(super) fn validate_ids(ids: &[String]) -> Result<(), AppError> {
-    if ids.is_empty() || ids.len() > MAX_IDS {
-        return Err(AppError::Validation(format!(
-            "name 1 to {MAX_IDS} ids (got {})",
-            ids.len()
-        )));
-    }
+    require_at_least_one("ids", ids)?;
+    require_max_count("ids", ids, MAX_IDS)?;
     if let Some(bad) = ids.iter().find(|id| !is_safe_token(id)) {
         return Err(AppError::Validation(format!(
             "id {bad:?} must match [A-Za-z0-9._:-]+ and not start with '-'"

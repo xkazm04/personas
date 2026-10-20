@@ -51,6 +51,15 @@
       ],
       "resolved": false
     },
+    "KnowledgeMotif.tsx": {
+      "count": 1,
+      "sections": [9],
+      "lines": ["24"],
+      "contexts": [
+        "| false positive — the index **is** the identity | 8 | `ProfilesAtelier.tsx:674,703`, `LabResultsSkeleton.tsx:108`, `decorations.tsx:105`, `KnowledgeAtelier.tsx:213`, `ProjectsLayer.tsx:210`, `Knowle…"
+      ],
+      "resolved": false
+    },
     "MatrixGrid.tsx": {
       "count": 1,
       "sections": [],
@@ -163,16 +172,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "ComparisonCardsWidget.tsx"
-    },
-    "src/features/overview/shared/emptyStatePrototype/motifs/KnowledgeMotif.tsx": {
-      "count": 1,
-      "sections": [9],
-      "lines": ["24"],
-      "contexts": [
-        "| false positive — the index **is** the identity | 8 | `ProfilesAtelier.tsx:674,703`, `LabResultsSkeleton.tsx:108`, `decorations.tsx:105`, `KnowledgeAtelier.tsx:213`, `ProjectsLayer.tsx:210`, `Knowle…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "KnowledgeMotif.tsx"
     },
     "src/features/overview/sub_analytics/components/ExecutionHeatmap.tsx": {
       "count": 6,
@@ -299,6 +298,16 @@
       "resolvedFrom": "basename",
       "verbatim": "ProfilesAtelier.tsx"
     },
+    "src/features/projects/development/goals/GoalsPage.tsx": {
+      "count": 1,
+      "sections": [9],
+      "lines": ["347"],
+      "contexts": [
+        "| **false positive — the matcher fired on the COMPLIANT form** | 5 | `GoalsPage.tsx:347` (`key={lane}`), `CreativeStudioPanel.tsx:376` (`key={example}`), `JudgePanel.tsx:43` (`key={label}`), `SLADash…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "GoalsPage.tsx"
+    },
     "src/features/schedules/components/MonthView.tsx": {"count":2,"sections":[7],"lines":["42"],"contexts":["| `schedules/components/MonthView.tsx` | — | — |"],"resolvedFrom":"suffix","verbatim":"schedules/components/MonthView.tsx"},
     "src/features/schedules/components/WeekView.tsx": {"count":1,"sections":[7],"contexts":["| `schedules/components/WeekView.tsx` | — | — |"],"resolvedFrom":"suffix","verbatim":"schedules/components/WeekView.tsx"},
     "src/features/shared/chrome/FleetActivityStrip.tsx": {
@@ -395,16 +404,6 @@
       "contexts": ["| `teams/sub_factory/passport/WallCompareTable.tsx` | — | — |"],
       "resolvedFrom": "suffix",
       "verbatim": "teams/sub_factory/passport/WallCompareTable.tsx"
-    },
-    "src/features/teams/sub_goals/GoalsPage.tsx": {
-      "count": 1,
-      "sections": [9],
-      "lines": ["347"],
-      "contexts": [
-        "| **false positive — the matcher fired on the COMPLIANT form** | 5 | `GoalsPage.tsx:347` (`key={lane}`), `CreativeStudioPanel.tsx:376` (`key={example}`), `JudgePanel.tsx:43` (`key={label}`), `SLADash…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "GoalsPage.tsx"
     },
     "src/features/teams/sub_teamWorkspace/teamStudio/boardShared.tsx": {
       "count": 1,

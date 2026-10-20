@@ -105,16 +105,6 @@
       "resolvedFrom": "basename",
       "verbatim": "BudgetRecoveryCard.tsx"
     },
-    "src/features/companions/curator/council/galaxy/engine/theme.ts": {
-      "count": 1,
-      "sections": [],
-      "lines": ["14"],
-      "contexts": [
-        "| **Multi-theme via `[data-theme]` + CSS custom properties, light tier first-class** | 11 themes, 8+3 | **11 themes, 8+3**, full ~26-declaration token block per light theme | **declined outright** —…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "theme.ts"
-    },
     "src/features/settings/sub_appearance/components/CustomThemeCreator.tsx": {
       "count": 2,
       "sections": [7],
@@ -180,6 +170,15 @@
       "contexts": ["pass); full reads of `globals.css` (5,553 lines), `themeStore.ts`, `contrastRatio.ts`,"],
       "resolvedFrom": "basename",
       "verbatim": "globals.css"
+    },
+    "theme.ts": {
+      "count": 1,
+      "sections": [],
+      "lines": ["14"],
+      "contexts": [
+        "| **Multi-theme via `[data-theme]` + CSS custom properties, light tier first-class** | 11 themes, 8+3 | **11 themes, 8+3**, full ~26-declaration token block per light theme | **declined outright** —…"
+      ],
+      "resolved": false
     }
   }
 }

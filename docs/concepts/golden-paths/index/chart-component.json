@@ -78,6 +78,7 @@
       ],
       "resolved": false
     },
+    "MetricChart.tsx": {"count":1,"sections":[7],"lines":["3"],"contexts":["`IntersectionObserver` wrapper). Both are exported. `MetricChart.tsx:3` imports the"],"resolved":false},
     "MetricsCharts.tsx": {"count":1,"sections":[4],"lines":["15-16"],"contexts":["`shouldComponentUpdate`. `MetricsCharts.tsx:15-16` states this in a comment and"],"resolved":false},
     "Pie.js": {
       "count": 2,
@@ -165,6 +166,15 @@
       "lines": ["38"],
       "contexts": [
         "| **`overview/sub_director/directorScore.ts` → `sparklinePoints(scores, w, h, pad)`** (`:38`) | **The exemplar for hand-rolled plots.** Projects a series onto an SVG box anchored to a *fixed* `SCORE_…"
+      ],
+      "resolved": false
+    },
+    "overview/sub_usage/components/LazyChart.tsx": {"count":2,"sections":[3,7],"lines":["14"],"contexts":["- **`overview/sub_usage/components/LazyChart.tsx`** — a *different component with"],"resolved":false},
+    "overview/sub_usage/components/MetricChart.tsx": {
+      "count": 1,
+      "sections": [3],
+      "contexts": [
+        "| **`overview/sub_usage/components/MetricChart.tsx` → `MetricChart`** (`:39`) | The full chart panel: title, optional icon + `insight`, `ChartErrorBoundary`, `LazyChart`, and `ResponsiveContainer` —…"
       ],
       "resolved": false
     },
@@ -263,24 +273,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "overview/sub_usage/components/ChartGradientDefs.tsx"
-    },
-    "src/features/overview/sub_usage/components/LazyChart.tsx": {
-      "count": 2,
-      "sections": [3,7],
-      "lines": ["14"],
-      "contexts": ["- **`overview/sub_usage/components/LazyChart.tsx`** — a *different component with"],
-      "resolvedFrom": "suffix",
-      "verbatim": "overview/sub_usage/components/LazyChart.tsx"
-    },
-    "src/features/overview/sub_usage/components/MetricChart.tsx": {
-      "count": 2,
-      "sections": [3,7],
-      "lines": ["3"],
-      "contexts": [
-        "| **`overview/sub_usage/components/MetricChart.tsx` → `MetricChart`** (`:39`) | The full chart panel: title, optional icon + `insight`, `ChartErrorBoundary`, `LazyChart`, and `ResponsiveContainer` —…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "overview/sub_usage/components/MetricChart.tsx"
     },
     "src/features/overview/sub_usage/libs/chartConstants.ts": {
       "count": 4,

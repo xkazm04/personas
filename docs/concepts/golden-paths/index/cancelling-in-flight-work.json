@@ -717,6 +717,26 @@
         "- **`src/features/plugins/fleet/FleetDebugLogFooterPill.tsx:22-51`** — the Stop *button*. `busy` state, re-entrancy guard, `disabled={busy}`, and label/`title`/`aria-label` all from `t.*`. 2 of 26 St…"
       ]
     },
+    "src/features/projects/development/goals/GoalDetailDrawer.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["187"],
+      "contexts": [
+        "**C1 — 26 Stop affordances, 4 designs, 1 correct.** Await + re-read backend truth: **5** (`AutoRunBanner.tsx:62`, `RunDeskPage.tsx:96`, `GoalDetailDrawer.tsx:187`, `useUseCases.ts:125`, `useN8nWizard…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "GoalDetailDrawer.tsx"
+    },
+    "src/features/projects/development/goals/GoalHandoffPanel.tsx": {
+      "count": 2,
+      "sections": [7],
+      "lines": ["63-66"],
+      "contexts": [
+        "**C4 — 24 of 26 Stop buttons have no busy state.** Only `FleetDebugLogFooterPill.tsx:22-32` and `GoalHandoffPanel.tsx:63-66`. `TerminalHeader.tsx:104-112` — the main execution Stop, rendered for ever…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "GoalHandoffPanel.tsx"
+    },
     "src/features/shared/components/feedback/ConfirmDialog.tsx": {
       "count": 1,
       "sections": [7],
@@ -745,26 +765,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "StudioChatInput.tsx"
-    },
-    "src/features/teams/sub_goals/GoalDetailDrawer.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["187"],
-      "contexts": [
-        "**C1 — 26 Stop affordances, 4 designs, 1 correct.** Await + re-read backend truth: **5** (`AutoRunBanner.tsx:62`, `RunDeskPage.tsx:96`, `GoalDetailDrawer.tsx:187`, `useUseCases.ts:125`, `useN8nWizard…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "GoalDetailDrawer.tsx"
-    },
-    "src/features/teams/sub_goals/GoalHandoffPanel.tsx": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["63-66"],
-      "contexts": [
-        "**C4 — 24 of 26 Stop buttons have no busy state.** Only `FleetDebugLogFooterPill.tsx:22-32` and `GoalHandoffPanel.tsx:63-66`. `TerminalHeader.tsx:104-112` — the main execution Stop, rendered for ever…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "GoalHandoffPanel.tsx"
     },
     "src/features/templates/sub_n8n/hooks/useN8nTest.ts": {
       "count": 2,

@@ -253,7 +253,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | Component | What it's for |
 |---|---|
 | `ContentLoader` | _(add a `@catalog` tag)_ |
-| `EstimatedProgressBar` | if (progress < 75) return 'hsl(var(primary) / 0. |
+| `EstimatedProgressBar` | Returns the bar color based on progress phase. |
 
 ## surface
 

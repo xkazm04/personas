@@ -238,7 +238,7 @@ fn project_at(pool: &DbPool, root: &Path, name: &str) -> String {
 }
 
 #[test]
-fn products_list_every_enabled_code_project_with_a_store() {
+fn products_list_every_enabled_code_project_with_a_store() -> Result<(), AppError> {
     let pool = crate::init_test_db().unwrap();
     // pof-like: v3 with a pack awaiting triage, an accepted item, an open release
     let a = product_dir("pa");
@@ -307,8 +307,7 @@ fn products_list_every_enabled_code_project_with_a_store() {
     let id_e = project_at(&pool, e.path(), "Epsilon");
     let id_f = project_at(&pool, f.path(), "Zeta");
     set_enabled(&pool, &id_e, false).unwrap();
-    pool.get()
-        .unwrap()
+    pool.get()?
         .execute(
             "UPDATE dev_projects SET kind = 'registry' WHERE id = ?1",
             params![id_f],
@@ -352,6 +351,7 @@ fn products_list_every_enabled_code_project_with_a_store() {
         "a store that will not open is listed with the reason"
     );
     assert_eq!(gamma.store_version, 0);
+    Ok(())
 }
 
 fn measure(conn: &Connection, id: i64, feature: &str, lens: &str, metric: &str) {

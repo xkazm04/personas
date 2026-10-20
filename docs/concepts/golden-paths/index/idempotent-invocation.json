@@ -77,6 +77,7 @@
     "eslint.config.js": {"count":2,"sections":[0,7],"lines":["80"],"contexts":["`eslint.config.js:80` — the message every developer sees when they reach for raw"]},
     "executions.rs": {"count":1,"sections":[],"lines":["394"],"contexts":["*forced* `executions.rs:394` to read `status`; the function simply gave it"],"resolved":false},
     "fixtures/bank/memories/gold.yaml": {"count":1,"sections":[6],"contexts":["template-generated payments-domain lines in `fixtures/bank/memories/gold.yaml` —"],"resolved":false},
+    "fleet/monitor/channels/ReviewsRail.tsx": {"count":1,"sections":[7],"lines":["139"],"contexts":["`fleet/monitor/channels/ReviewsRail.tsx:139` · `plugins/companion/fleet/AthenaFleetPlanCard.tsx:149` ·"],"resolved":false},
     "github/checks.ts": {"count":2,"sections":[6,8],"lines":["201-206"],"contexts":["(`github/checks.ts:201-206`) because GitHub issued **two delivery ids for one"],"resolved":false},
     "governance.rs": {
       "count": 1,
@@ -246,14 +247,6 @@
       "resolved": false
     },
     "src/features/companions/athena/sendNonceLedger.ts": {"count":2,"sections":[8,12],"contexts":["`sendNonceLedger.ts` is a correct restart-surviving nonce ledger in"],"resolvedFrom":"basename","verbatim":"sendNonceLedger.ts"},
-    "src/features/fleet/monitor/channels/ReviewsRail.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["139"],
-      "contexts": ["`fleet/monitor/channels/ReviewsRail.tsx:139` · `plugins/companion/fleet/AthenaFleetPlanCard.tsx:149` ·"],
-      "resolvedFrom": "suffix",
-      "verbatim": "fleet/monitor/channels/ReviewsRail.tsx"
-    },
     "src/features/notepad/plan/ShipDispatch.tsx": {"count":1,"sections":[7],"lines":["136"],"contexts":["`src/features/notepad/plan/ShipDispatch.tsx:136` ·"]},
     "src/features/plugins/companion/sendNonceLedger.ts": {
       "count": 1,

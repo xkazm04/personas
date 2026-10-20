@@ -49,6 +49,15 @@
       ],
       "resolved": false
     },
+    "GoalKanban.tsx": {
+      "count": 1,
+      "sections": [10],
+      "lines": ["127-130"],
+      "contexts": [
+        "| `KanbanBoard.onItemMove(itemId: string, targetStatus: string)` | **Yes** — `GoalKanban.tsx:127-130` passes `visibleGoals`, a filtered subset | **1 of 1 correct.** The move cannot express a position…"
+      ],
+      "resolved": false
+    },
     "GroupLayer.tsx": {"count":3,"sections":[5,7],"lines":["139-140,152-153"],"contexts":["an intent. `GroupLayer.tsx:139-140,152-153` does exactly this."],"resolved":false},
     "NoteLayer.tsx": {"count":1,"sections":[7],"contexts":["| `NoteLayer.tsx` | yes | yes | yes |"],"resolved":false},
     "ReferenceBoard.tsx": {
@@ -130,26 +139,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "shared/components/kanban/KanbanBoard.tsx"
     },
-    "src/features/teams/sub_goals/GoalKanban.tsx": {
-      "count": 1,
-      "sections": [10],
-      "lines": ["127-130"],
-      "contexts": [
-        "| `KanbanBoard.onItemMove(itemId: string, targetStatus: string)` | **Yes** — `GoalKanban.tsx:127-130` passes `visibleGoals`, a filtered subset | **1 of 1 correct.** The move cannot express a position…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "GoalKanban.tsx"
-    },
-    "src/features/teams/sub_goals/__tests__/GoalKanban.test.tsx": {
-      "count": 1,
-      "sections": [6],
-      "lines": ["113-176"],
-      "contexts": [
-        "| `teams/sub_goals/__tests__/GoalKanban.test.tsx:113-176` | The only drag test in the repo: asserts `draggable=\"true\"`, synthesises a `DataTransfer`, and checks the opacity treatment. A model for tes…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "teams/sub_goals/__tests__/GoalKanban.test.tsx"
-    },
     "src/features/teams/sub_mastermind/lib/": {"count":1,"sections":[7],"contexts":["`src/features/teams/sub_mastermind/lib/` contains **five** independent"],"resolved":false,"isDir":true},
     "src/features/vault/shared/vector/ingest/IngestDropZone.tsx": {"count":1,"sections":[7],"contexts":["- **`IngestDropZone.tsx` and `DriveToolbar.tsx` call `preventDefault()` in"],"resolvedFrom":"basename","verbatim":"IngestDropZone.tsx"},
     "src/stores/slices/system/devToolsContextSlice.ts": {
@@ -182,6 +171,15 @@
       "contexts": ["| `shared/components/feedback/DropZoneGlow` | Dashed marching border + label for a drop *target* region. Reduced-motion handled in `globals.css:1512-1516`. |"],
       "resolvedFrom": "basename",
       "verbatim": "globals.css"
+    },
+    "teams/sub_goals/__tests__/GoalKanban.test.tsx": {
+      "count": 1,
+      "sections": [6],
+      "lines": ["113-176"],
+      "contexts": [
+        "| `teams/sub_goals/__tests__/GoalKanban.test.tsx:113-176` | The only drag test in the repo: asserts `draggable=\"true\"`, synthesises a `DataTransfer`, and checks the opacity treatment. A model for tes…"
+      ],
+      "resolved": false
     },
     "teams/sub_mastermind/lib/NoteLayer.tsx": {
       "count": 1,

@@ -464,14 +464,6 @@
     "src/hooks/useAttention.ts": {"count":2,"sections":[3],"contexts":["`hooks/useAttention.ts`, `hooks/sidebar/useBadgeCounts.ts`, `eventSlice.ts`, `alertSlice.ts`,"],"resolvedFrom":"suffix","verbatim":"hooks/useAttention.ts"},
     "src/i18n/locales/en.json": {"count":4,"sections":[0,7],"contexts":["classified for count-shape. All **19,112** `en.json` leaf keys scanned for `N of M` strings"],"resolvedFrom":"basename","verbatim":"en.json"},
     "src/lib/": {"count":1,"sections":[4],"contexts":["`.length` renders does **not** meet Q3: there is no shared numeric wrapper in `src/lib/`, and"],"resolved":false,"isDir":true},
-    "src/lib/analytics/summary.ts": {
-      "count": 1,
-      "sections": [9],
-      "lines": ["26"],
-      "contexts": ["`networkSlice.ts:619` (circuit-breaker control flow), `summary.ts:26` (`(counts[key] ?? 0) > 0` as a"],
-      "resolvedFrom": "basename",
-      "verbatim": "summary.ts"
-    },
     "src/lib/attention/registry.ts": {
       "count": 7,
       "sections": [0,3,6,7],
@@ -551,6 +543,7 @@
       "contexts": ["| `stores/slices/overview/messageSlice.ts:41-56` | **The page and both counts in one `Promise.all`.** The list, its total and its unread badge cannot disagree unless the database does. |"],
       "resolved": false
     },
+    "summary.ts": {"count":1,"sections":[9],"lines":["26"],"contexts":["`networkSlice.ts:619` (circuit-breaker control flow), `summary.ts:26` (`(counts[key] ?? 0) > 0` as a"],"resolved":false},
     "templates/page.tsx": {
       "count": 1,
       "sections": [6],

@@ -449,16 +449,6 @@
       "resolvedFrom": "basename",
       "verbatim": "GeneratedReviewsTab.tsx"
     },
-    "src/features/templates/sub_generated/gallery/cards/useAdoptionCompletionNotifier.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["10"],
-      "contexts": [
-        "- **2 duplicate literals across files** — `'personas.channel.draft.'` (`ConversationComposer.tsx:29` / `useTeamChannel.ts:26`) and `'template-adopt-context-v1'` (`useAdoptionCompletionNotifier.ts:10`…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "useAdoptionCompletionNotifier.ts"
-    },
     "src/features/templates/sub_n8n/hooks/useN8nSession.ts": {
       "count": 1,
       "sections": [5],
@@ -697,6 +687,15 @@
       ]
     },
     "storage-baseline.json": {"count":1,"sections":[9],"contexts":["- **A missing or unparseable `storage-baseline.json` is `exit 1`,** not \"nothing to compare against\"."],"resolved":false},
+    "useAdoptionCompletionNotifier.ts": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["10"],
+      "contexts": [
+        "- **2 duplicate literals across files** — `'personas.channel.draft.'` (`ConversationComposer.tsx:29` / `useTeamChannel.ts:26`) and `'template-adopt-context-v1'` (`useAdoptionCompletionNotifier.ts:10`…"
+      ],
+      "resolved": false
+    },
     "useDeckControls.tsx": {
       "count": 1,
       "sections": [5],

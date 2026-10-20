@@ -273,9 +273,9 @@ mod tests {
 
     #[test]
     fn engine_dir_uses_personas_home_override() {
-        std::env::set_var("PERSONAS_HOME", "C:\\test-home");
+        // The shared lock, not a bare set_var: PERSONAS_HOME is process-global.
+        let _home = crate::companion::brain::test_home::TestHome::new("whisper-dir");
         let dir = engine_dir().unwrap();
-        std::env::remove_var("PERSONAS_HOME");
         // Component-wise, not string-wise: the backslash literal only matched
         // on Windows and failed the Linux CI leg. See the same note in
         // `companion::stt::downloader`.
@@ -290,16 +290,11 @@ mod tests {
 
     #[test]
     fn engine_status_reports_expected_path() {
-        let tmp =
-            std::env::temp_dir().join(format!("personas-whisper-status-{}", std::process::id()));
-        let _ = std::fs::create_dir_all(&tmp);
-        std::env::set_var("PERSONAS_HOME", &tmp);
+        let _home = crate::companion::brain::test_home::TestHome::new("whisper-status");
         std::env::remove_var("PERSONAS_WHISPER_BIN");
         let status = engine_status().unwrap();
         assert!(status.expected_path.contains("companion-stt"));
         assert_eq!(status.expected_filename, EXPECTED_FILENAME);
-        std::env::remove_var("PERSONAS_HOME");
-        let _ = std::fs::remove_dir_all(&tmp);
     }
 
     #[test]

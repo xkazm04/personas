@@ -3,8 +3,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { translateHealthcheckMessage } from '@/features/vault/sub_catalog/components/design/CredentialDesignHelpers';
 import type { CredentialMetadata } from '@/lib/types/types';
 import type { ConnectorStatus, ConnectorTestResult } from '../../libs/connectorTypes';
-import { isStaleResult, STATUS_CONFIG, credentialMatchesConnector } from '../../libs/connectorTypes';
-import { resolveProbeOutcome } from '@/lib/credentials/healthState';
+import { isStaleResult, isUnreachable, STATUS_CONFIG, credentialMatchesConnector } from '../../libs/connectorTypes';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 
 interface LinkPickerProps {
@@ -145,9 +144,9 @@ export function StatusResult({ status, onClearLinkError, onRetest }: StatusResul
   // now too.
   const unverifiable = status.result?.state === 'unverifiable';
   // `unreachable` arrives with success === false, so it used to fall into the
-  // red failure branch below. The probe never reached the service: neutral
-  // panel, the vault's wording, the raw obstacle as detail.
-  const unreachable = status.result !== null && resolveProbeOutcome(status.result) === 'unreachable';
+  // red failure branch below. The probe never reached the service: its own
+  // panel, a hint that this is no verdict, the raw obstacle as detail.
+  const unreachable = isUnreachable(status.result);
 
   return (
     <>
@@ -173,8 +172,9 @@ export function StatusResult({ status, onClearLinkError, onRetest }: StatusResul
           <div className="space-y-1">
             <div className="flex items-center gap-1.5">
               <WifiOff className="w-3 h-3 flex-shrink-0" />
-              <span>{t.vault.shared.health_unreachable}</span>
+              <span>{t.agents.connectors.status_unreachable}</span>
             </div>
+            <p className="typo-body text-foreground pl-4.5">{t.agents.connectors.unreachable_hint}</p>
             {status.result.message && <p className="typo-body pl-4.5 break-all">{status.result.message}</p>}
             <LastCheckedNote result={status.result} onRetest={onRetest} />
           </div>
