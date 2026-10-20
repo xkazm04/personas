@@ -60,7 +60,7 @@ export function ChannelMap({
   /** Node click — open the Timeline scoped to this speaker. */
   onDrillIn: (teamId: string, personaId: string) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const reducedMotion = useReducedMotion() ?? false;
   const [activeId, setActiveId] = useState<string | null>(null);
   useEffect(() => {
@@ -71,18 +71,27 @@ export function ChannelMap({
   // Roster topology — roles + directed connections, fetched per team.
   const [members, setMembers] = useState<PersonaTeamMember[]>([]);
   const [connections, setConnections] = useState<PersonaTeamConnection[]>([]);
+  // Where the roster read stands. An empty roster is only "no members" once the
+  // read ANSWERED: while it is in flight, or after it failed, the map said
+  // "No members in this project yet" about a team that has them.
+  const [topology, setTopology] = useState<'loading' | 'ready' | 'failed'>('loading');
   useEffect(() => {
     if (!activeId) return;
     let stale = false;
     setMembers([]);
     setConnections([]);
+    setTopology('loading');
     Promise.all([listTeamMembers(activeId), listTeamConnections(activeId)])
       .then(([m, c]) => {
         if (stale) return;
         setMembers(m);
         setConnections(c);
+        setTopology('ready');
       })
-      .catch(silentCatch('channelMap:topology'));
+      .catch((err: unknown) => {
+        if (!stale) setTopology('failed');
+        silentCatch('channelMap:topology')(err);
+      });
     return () => {
       stale = true;
     };
@@ -178,8 +187,14 @@ export function ChannelMap({
 
       <div className="relative flex-1 min-h-0">
         {nodes.length === 0 ? (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="hud-empty typo-label text-foreground opacity-60">{t.monitor.map_empty}</span>
+          <div className="absolute inset-0 flex items-center justify-center" data-testid="channel-map-blank">
+            {topology === 'failed' ? (
+              <span className="typo-label text-status-warning">
+                {tx(t.monitor.dc_hub_peek_failed, { label: team ? cleanName(team.teamName) : '' })}
+              </span>
+            ) : topology === 'ready' || !activeId ? (
+              <span className="hud-empty typo-label text-foreground opacity-60">{t.monitor.map_empty}</span>
+            ) : null}
           </div>
         ) : (
           <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} preserveAspectRatio="xMidYMid meet" className="absolute inset-0 w-full h-full">
