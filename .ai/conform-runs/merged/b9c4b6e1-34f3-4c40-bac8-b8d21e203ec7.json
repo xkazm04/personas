@@ -1,0 +1,35 @@
+{
+  "schema": "conform-run/1",
+  "worker": "b9c4b6e1-34f3-4c40-bac8-b8d21e203ec7",
+  "subject": "docs-content-model",
+  "evaluatedAt": "2026-10-20T21:28:42.952853+00:00",
+  "provider": "codex",
+  "model": "gpt-6.1-sol",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "docs-content-model",
+      "context": "plugins-twin-training",
+      "reason": "withdrawn after review: reviewer (sonnet): TwinHero.tsx:47 does hold the literal external URL https://personas.dev/guide/twin, but the repo has no documentation catalog and no other reference to that /guide/ path, so I could not confirm that any catalog or published-docs set exists for the link to be checked against, or that docs changes cou"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-20T21:28:42.952853+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "docs-content-model"
+      ],
+      "techniques": [
+        "catalog-referential-invariants",
+        "derived-navigation-projection",
+        "draft-visibility-gating",
+        "per-topic-freshness-metadata"
+      ],
+      "deviations": 1,
+      "context": "plugins-twin-training",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    }
+  ]
+}

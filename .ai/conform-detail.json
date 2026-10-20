@@ -30233,6 +30233,42 @@
           "evidence": "src/features/home/sub_learning/powerMoves/powerMovesStore.ts:49 Unmount cancels observation of detection results; it leaves no durable processing claim requiring reclamation."
         }
       ]
+    },
+    "3a377c10-3b0f-4674-87f9-aae9cb267c99/docs-content-model": {
+      "context": "plugins-twin-training",
+      "subject": "docs-content-model",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-20",
+      "evaluatedTs": "2026-10-20T21:28:42.952Z",
+      "techniques": [
+        {
+          "technique": "catalog-referential-invariants",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/twin/sub_training/topicPresets.ts:4 These records identify interview presets, rather than documentation pages with separately registered bodies."
+        },
+        {
+          "technique": "derived-navigation-projection",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/twin/sub_training/NextMovesPanel.tsx:18 Recommendations start training sessions; they do not project a documentation catalog into navigation."
+        },
+        {
+          "technique": "draft-visibility-gating",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/twin/sub_profiles/TwinHero.tsx:47 The standard explicitly requires checking inbound product links against catalog existence, category, and production visibility; searches found this literal link but no corresponding validation."
+        },
+        {
+          "technique": "per-topic-freshness-metadata",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/twin/sub_training/useTrainingMomentum.ts:18 This timestamp measures interview activity, rather than review freshness of published documentation topics."
+        }
+      ],
+      "withdrawn": {
+        "worker": "b9c4b6e1-34f3-4c40-bac8-b8d21e203ec7",
+        "state": "deviation",
+        "at": "2026-10-20T21:28:58.600194+00:00",
+        "reason": "reviewer (sonnet): TwinHero.tsx:47 does hold the literal external URL https://personas.dev/guide/twin, but the repo has no documentation catalog and no other reference to that /guide/ path, so I could not confirm that any catalog or published-docs set exists for the link to be checked against, or that docs changes cou"
+      }
     }
   }
 }
