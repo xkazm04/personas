@@ -9,6 +9,7 @@ import { FleetStateSparkline } from './FleetStateSparkline';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { debtText } from '@/i18n/DebtText';
 import { useTranslation } from '@/i18n/useTranslation';
+import { FleetKillConfirm } from './FleetKillConfirm';
 import { formatAgo } from './relativeAgo';
 import { canHibernateState, isTombstoneState } from './fleetStateMeta';
 
@@ -89,17 +90,29 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
     if (!editing) onActivate(session.id);
   }, [session.id, onActivate, editing]);
 
+  const [confirmKill, setConfirmKill] = useState(false);
+
+  const doKill = useCallback(async () => {
+    setConfirmKill(false);
+    try {
+      await killSession(session.id);
+    } catch (err) {
+      toastCatch('FleetSessionCard:close', 'Failed to close session')(err);
+    }
+  }, [session.id]);
+
   const handleClose = useCallback(
     async (e: React.MouseEvent) => {
       e.stopPropagation();
+      if (!isTombstoneState(session.state)) {
+        // Ending a live process is irreversible: ask first (hibernate parks it).
+        setConfirmKill(true);
+        return;
+      }
       try {
-        if (isTombstoneState(session.state)) {
-          // No live process — just drop the row (the placeholder).
-          await removeSession(session.id);
-          onRemovedLocal(session.id);
-        } else {
-          await killSession(session.id);
-        }
+        // No live process: just drop the row (the placeholder), one click.
+        await removeSession(session.id);
+        onRemovedLocal(session.id);
       } catch (err) {
         toastCatch('FleetSessionCard:close', 'Failed to close session')(err);
       }
@@ -156,6 +169,7 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
   }, [draft, session.id, session.name, patchSession]);
 
   return (
+    <>
     <button
       type="button"
       onClick={handleOpen}
@@ -285,6 +299,14 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
         </>
       )}
     </button>
+    {confirmKill && (
+      <FleetKillConfirm
+        label={session.name ?? session.projectLabel}
+        onConfirm={doKill}
+        onCancel={() => setConfirmKill(false)}
+      />
+    )}
+    </>
   );
 }
 

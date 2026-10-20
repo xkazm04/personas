@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Trash2, BarChart3, MoonStar, Terminal as TerminalIcon } from 'lucide-react';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -10,6 +10,7 @@ import { FleetStatusDots } from './FleetStatusDots';
 import { FleetTileAthenaBar } from './FleetTileAthenaBar';
 import { sessionAttention, attentionClass, type FleetTileApproval } from './fleetAttention';
 import { isTombstoneState } from './fleetStateMeta';
+import { FleetKillConfirm } from './FleetKillConfirm';
 
 interface Props {
   session: FleetSession;
@@ -42,6 +43,7 @@ export function FleetOverlayTile({
   approvals, asking, onApprove, onReject, onAsk,
 }: Props) {
   const { t } = useTranslation();
+  const [confirmKill, setConfirmKill] = useState(false);
   // Attention border wins over the base/active border when set.
   const attn = attentionClass(sessionAttention(s));
   const borderCls = attn || (isActive ? 'border-primary/50' : 'border-primary/10 hover:border-primary/25');
@@ -60,6 +62,7 @@ export function FleetOverlayTile({
   }, [isActive, showsTerminal, s.id]);
 
   return (
+    <>
     <div
       data-testid={`fleet-overlay-tile-${s.id}`}
       onMouseDown={() => onSelect(s.id)}
@@ -104,7 +107,7 @@ export function FleetOverlayTile({
           aria-label={tombstone ? t.plugins.fleet.dismiss_session : t.plugins.fleet.kill_session}
           title={tombstone ? t.plugins.fleet.dismiss_session : t.plugins.fleet.kill_session}
           onMouseDown={(e) => e.stopPropagation()}
-          onClick={() => onKill(s.id)}
+          onClick={() => (tombstone ? onKill(s.id) : setConfirmKill(true))}
           className="shrink-0 p-0.5 rounded text-foreground hover:bg-red-400/20 hover:text-red-300 transition-colors"
         >
           <Trash2 className="w-3 h-3" />
@@ -133,5 +136,13 @@ export function FleetOverlayTile({
         onAsk={onAsk}
       />
     </div>
+    {confirmKill && (
+      <FleetKillConfirm
+        label={s.name ?? s.projectLabel}
+        onConfirm={() => { setConfirmKill(false); onKill(s.id); }}
+        onCancel={() => setConfirmKill(false)}
+      />
+    )}
+    </>
   );
 }

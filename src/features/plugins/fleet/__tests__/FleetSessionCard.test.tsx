@@ -9,7 +9,7 @@
  * process to free does not offer it at all.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 
 (globalThis as Record<string, unknown>).__IPC_TOKEN = 'test-token';
@@ -70,6 +70,9 @@ describe('FleetSessionCard hibernate', () => {
   it('leaves the X as the kill control on a live row', async () => {
     renderCard(session());
     fireEvent.click(screen.getByTestId('fleet-session-close-s1'));
+    // One click must not end a live process: it only asks.
+    expect(killSession).not.toHaveBeenCalled();
+    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Kill session' }));
     await waitFor(() => expect(killSession).toHaveBeenCalledWith('s1'));
     expect(hibernateSession).not.toHaveBeenCalled();
   });
