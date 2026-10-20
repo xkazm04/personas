@@ -6,6 +6,7 @@ import { getExecution } from '@/api/agents/executions';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import { useOverviewFilterValues } from '@/features/overview/components/dashboard/OverviewFilterContext';
+import { isInFlightExecutionStatus, matchesStatusFilter } from '@/features/agents/sub_executions/libs/executionStatus';
 import type { GlobalExecutionListItem } from '@/lib/bindings/GlobalExecutionListItem';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 
@@ -69,7 +70,7 @@ export function useGlobalExecutionFeed() {
 
   const rows = useMemo(() => s.rows.filter((e) => {
     if (selectedPersonaId && e.personaId !== selectedPersonaId) return false;
-    if (filter === 'running' ? e.status !== 'running' && e.status !== 'pending' : filter !== 'all' && e.status !== filter) return false;
+    if (!matchesStatusFilter(e.status, filter)) return false;
     return modelFilter === 'all' || e.modelUsed === modelFilter;
   }), [s.rows, selectedPersonaId, filter, modelFilter]);
 
@@ -114,7 +115,7 @@ export function useGlobalExecutionFeed() {
     void fetchRows(true, statusParam).catch(silentCatch('GlobalExecutionList:focusFetch'));
   }, [pendingFocus, s.rows, fetchRows, setPendingFocus, statusParam, openExecution]);
 
-  const hasRunning = useMemo(() => s.rows.some((e) => e.status === 'running' || e.status === 'pending'), [s.rows]);
+  const hasRunning = useMemo(() => s.rows.some((e) => isInFlightExecutionStatus(e.status)), [s.rows]);
   const pollFetch = useCallback(async () => {
     await fetchRows(true, statusParam);
     await fetchCounts(personaParam);
