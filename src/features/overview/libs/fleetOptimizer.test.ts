@@ -261,3 +261,25 @@ describe('generateFleetRecommendation — cost-spike attribution', () => {
     expect(rec!.personaIds).toEqual(['p-0', 'p-1', 'p-2']);
   });
 });
+
+describe('generateFleetRecommendation - measured per-agent reliability', () => {
+  const costlyPersona = topPersona({ avg_cost_per_exec: 0.2, total_executions: 20, total_cost: 4.0 });
+
+  it('flags an agent with failed runs but no open healing issue', () => {
+    const rec = generateFleetRecommendation(
+      dashboard({ top_personas: [costlyPersona] }),
+      [],
+      [{ personaId: 'p-1', successRate: 50, successRateSource: 'measured' }],
+    );
+    expect(rec!.type).toBe('investigate_failures');
+  });
+
+  it('ignores proxy-tagged rates and keeps the open-issue estimate', () => {
+    const rec = generateFleetRecommendation(
+      dashboard({ top_personas: [costlyPersona] }),
+      [],
+      [{ personaId: 'p-1', successRate: 10, successRateSource: 'proxy' }],
+    );
+    expect(rec!.type).toBe('downgrade_model');
+  });
+});

@@ -237,14 +237,15 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
 
 export default function FleetOptimizationCard() {
   const { t } = useTranslation();
-  const { executionDashboard, healingIssues } = useOverviewStore(useShallow((s) => ({
+  const { executionDashboard, healingIssues, healthSignals } = useOverviewStore(useShallow((s) => ({
     executionDashboard: s.executionDashboard,
     healingIssues: s.healingIssues,
+    healthSignals: s.healthSignals,
   })));
 
   const recommendation = useMemo(
-    () => generateFleetRecommendation(executionDashboard, healingIssues),
-    [executionDashboard, healingIssues],
+    () => generateFleetRecommendation(executionDashboard, healingIssues, healthSignals),
+    [executionDashboard, healingIssues, healthSignals],
   );
 
   // Don't render anything if there's no recommendation or not enough data
