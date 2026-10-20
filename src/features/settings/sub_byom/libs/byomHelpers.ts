@@ -94,6 +94,17 @@ export function validateByomPolicy(policy: ByomPolicy): PolicyWarning[] {
   // Check compliance rules
   for (const [i, rule] of policy.compliance_rules.entries()) {
     if (!rule.enabled) continue;
+    // Partial-coverage guard, mirrors ByomPolicy::validate() in src-tauri/db/src/byom.rs:
+    // a rule matches on the persona's template category, so personas without one
+    // are not restricted and the control fails OPEN for them.
+    if (rule.workflow_tags.length > 0) {
+      warnings.push({
+        severity: 'warning',
+        ruleType: 'compliance',
+        ruleIndex: i,
+        message: `Compliance rule '${rule.name}' matches on a persona's template category, so it only restricts personas that have one. Personas without a category (manually created or legacy) are NOT restricted and can use any allowed provider - the control fails open for them.`,
+      });
+    }
     for (const provider of rule.allowed_providers) {
       if (!KNOWN_PROVIDERS.has(provider)) {
         warnings.push({
