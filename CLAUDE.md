@@ -1,5 +1,39 @@
 # Project Guidance
 
+**Repo law lives in [`.claude/CLAUDE.md`](.claude/CLAUDE.md)** (the canonical source): commands, the
+done and pre-push gates (stated once, in the generated block under "Commands" below), the git
+policy for a checkout other sessions commit to, and the conventions. [`AGENTS.md`](AGENTS.md) is the
+harness-neutral index into the same law. This file is a projection: the block below is generated
+by Personas' context scan and is overwritten on every scan; this paragraph sits outside its
+markers so the scan keeps it. The canonical source is also declared in `.ai/manifest.yaml`
+(`guidance.canonical`).
+
+## Commands
+
+Generated from `.ai/manifest.yaml`; change a command there, then run
+`node .ai/project-commands.mjs --write`. Like the paragraph above, it sits outside the
+context-map markers, so a context scan keeps it.
+
+<!-- ai:commands:begin -->
+<!-- GENERATED from .ai/manifest.yaml (capabilities, guidance.doneGate, guidance.prePushGate) by node .ai/project-commands.mjs --write. Edit the manifest, not this block: --check, and src/__tests__/structural/guidanceCommands.test.ts, fail when it is stale. -->
+
+| Capability | Command |
+|---|---|
+| build | `npm run build` |
+| test | `npm test` |
+| lint | `npm run lint` |
+| typecheck | `npx tsc --noEmit` |
+| scan-secrets | `node scripts/secret-scan.mjs` |
+| evals | `npm run test:evals` |
+
+Before you report done: `npm run gate -- --cold`.
+
+Before you push: `npm run check` (the full pre-push chain; it is not part of done).
+
+- **test**: the Vitest suite. The Rust suites are separate lanes (`npm run test:rust` for app_lib with `--features desktop`, `npm run test:rust:crates` for the extracted crates), listed under Common Commands in `.claude/CLAUDE.md`.
+- **typecheck**: the portable form, run through `npx` because `tsc` is not on PATH on Windows. `npm run check` and `npm run build` typecheck through `npm run typecheck:native` (the TS 7 native compiler, same tsconfig), and `npm run gate` answers tsc from a warm daemon. All three are the same typecheck, not three different ones.
+<!-- ai:commands:end -->
+
 <!-- personas:context-map:start -->
 ## Project Context Map
 

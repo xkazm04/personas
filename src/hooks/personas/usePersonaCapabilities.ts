@@ -3,7 +3,7 @@ import { useAgentStore } from '@/stores/agentStore';
 import type { PersonaResponsibility } from '@/lib/bindings/PersonaResponsibility';
 import { listPersonaResponsibilities } from '@/api/agents/responsibilities';
 import { responsibilitiesCache } from '@/features/agents/sub_life/lifeCache';
-import { parseDesignContext } from '@/features/agents/sub_lab/use-cases/UseCasesList';
+import { parseDesignContext } from '@/features/agents/shared/designContext';
 import { resolvePersonaCapabilities, type PersonaCapability } from '@/lib/personas/capabilities';
 import { silentCatch } from '@/lib/silentCatch';
 

@@ -411,6 +411,23 @@ Nothing in the rule list, the config, or the docs reveals which is which.
 > and it will matter for the next rule someone writes. Do not fix the three
 > shallow rules for the backlog; fix them so the shared helper has one shape.
 
+> **Done for the design-token family, 2026-10-09.** `eslint-rules/_classname-strings.cjs`
+> is the shared reader: `extractClassStrings` walks literals, template quasis,
+> `cn`/`clsx`/`twMerge`/`classNames`/`cx` arguments, `[..].join(' ')`, both arms of
+> a ternary and both sides of `&&`/`||`/`??` — the last shape none of the nine
+> copies read, though `cond && "class"` is the commonest `cn()` argument.
+> `createRawClassRule({ pattern, messageId, message, exemptPaths, raw, ignore })`
+> builds a whole rule from a declaration, so `no-raw-radius-classes`,
+> `no-raw-shadow-classes` and `no-raw-spacing-classes` are now ~20-line
+> declarations and the next token family is one more. `no-raw-text-classes` keeps
+> its typo-token logic and imports the reader. The rule IDs did not change. The
+> depth is pinned by `src/test/eslint-rules/classNameStrings.test.ts`. So the
+> table above now reads **4 of the 9 share one reader**; the other five
+> (among them `no-direct-white-colors` and `no-low-contrast-text-classes`, which
+> hold deep copies of the same walk) still carry their own, and adopting the
+> shared reader there is the next step. "Zero cross-rule `require()` calls" is no longer
+> true: four rules require `_classname-strings.cjs`.
+
 ### G. The rule files are not covered by the main gate
 
 `npm run check` runs `eslint src/` (`package.json:51`). `eslint-rules/` is

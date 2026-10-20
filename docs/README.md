@@ -8,6 +8,7 @@ This directory is the source of truth for the current Personas Desktop product, 
 | --- | --- |
 | Current product behavior | [features/](features/README.md) |
 | System architecture | [architecture/](architecture/README.md) |
+| Why something is the way it is (every recorded decision, one index) | [decisions.md](decisions.md) |
 | Codebase feature map | [architecture/codebase-map.md](architecture/codebase-map.md) |
 | Local development, build, test, release | [development/](development/README.md) |
 | Operational guides (publishing, troubleshooting, error reporting) | [devops/](devops/) |

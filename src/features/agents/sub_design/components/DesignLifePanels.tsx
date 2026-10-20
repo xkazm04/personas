@@ -2,6 +2,7 @@ import { useAgentStore } from '@/stores/agentStore';
 import { ManifestTab } from '@/features/agents/sub_manifest';
 import { ResponsibilitiesTab } from '@/features/agents/sub_responsibilities';
 import { BrainSection } from '@/features/agents/sub_life/BrainSection';
+import { BrainDashboard } from '@/features/agents/sub_brain/BrainDashboard';
 import { KpRequirementsPanel } from './KpRequirementsPanel';
 
 /**
@@ -61,5 +62,11 @@ export function DesignResponsibilitiesPanel() {
 export function DesignBrainPanel() {
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   if (!selectedPersona) return null;
-  return <BrainSection personaId={selectedPersona.id} />;
+  const personaId = selectedPersona.id;
+  return (
+    <BrainSection
+      personaId={personaId}
+      renderDashboard={(epoch) => <BrainDashboard key={epoch} personaId={personaId} />}
+    />
+  );
 }
