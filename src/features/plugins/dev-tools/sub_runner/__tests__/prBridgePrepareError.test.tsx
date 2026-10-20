@@ -10,10 +10,11 @@ import type { DevTask } from '@/lib/bindings/DevTask';
 
 const createBranch = vi.hoisted(() => vi.fn());
 const commitChanges = vi.hoisted(() => vi.fn());
+const getGitStatus = vi.hoisted(() => vi.fn());
 const addToast = vi.hoisted(() => vi.fn());
 
 vi.mock('../../hooks/useDevToolsActions', () => ({
-  useDevToolsActions: () => ({ createBranch, commitChanges }),
+  useDevToolsActions: () => ({ createBranch, commitChanges, getGitStatus }),
 }));
 vi.mock('@/stores/toastStore', () => ({
   useToastStore: (sel: (s: { addToast: typeof addToast }) => unknown) => sel({ addToast }),
@@ -32,7 +33,10 @@ import { PrBridge } from '../PrBridge';
 beforeAll(async () => {
   await preloadSectionsAsync('en', ['plugins']);
 });
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  getGitStatus.mockResolvedValue({ changedFiles: [] });
+});
 
 const task = {
   id: 'task-1234567', title: 'Fix login', description: null, status: 'completed', source_idea_id: null,
@@ -51,6 +55,37 @@ describe('PrBridge prepare failure', () => {
     expect(kind).toBe('error');
     expect(message).toContain('already exists');
     expect(message).not.toContain('[object Object]');
+    expect(commitChanges).not.toHaveBeenCalled();
+  });
+});
+
+describe('PrBridge prepare consent', () => {
+  it('lists the dirty files and commits nothing until the operator confirms', async () => {
+    getGitStatus.mockResolvedValue({ changedFiles: [' M src/a.ts', '?? notes.txt'] });
+    createBranch.mockResolvedValue({ success: true });
+    commitChanges.mockResolvedValue({ success: true });
+    render(<PrBridge task={task} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /ship as draft pr/i }));
+    fireEvent.click(screen.getByRole('button', { name: /prepare branch/i }));
+
+    expect(await screen.findByText(/src\/a\.ts/)).toBeTruthy();
+    expect(createBranch).not.toHaveBeenCalled();
+    expect(commitChanges).not.toHaveBeenCalled();
+
+    // The dialog's confirm button carries the same label; it is the last one in the DOM.
+    fireEvent.click(screen.getAllByRole('button', { name: /prepare branch/i }).at(-1)!);
+    await waitFor(() => expect(commitChanges).toHaveBeenCalledWith('p1', expect.any(String), true));
+  });
+
+  it('cancel leaves the project root untouched', async () => {
+    getGitStatus.mockResolvedValue({ changedFiles: [' M src/a.ts'] });
+    render(<PrBridge task={task} />);
+    fireEvent.click(screen.getByRole('button', { name: /ship as draft pr/i }));
+    fireEvent.click(screen.getByRole('button', { name: /prepare branch/i }));
+    await screen.findByText(/src\/a\.ts/);
+    fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
+    expect(createBranch).not.toHaveBeenCalled();
     expect(commitChanges).not.toHaveBeenCalled();
   });
 });

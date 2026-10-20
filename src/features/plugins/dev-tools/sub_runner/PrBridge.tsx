@@ -38,6 +38,7 @@ function writeDoneSteps(taskId: string, steps: Set<PrStep>): void {
   } catch (err) { silentCatch("features/plugins/dev-tools/sub_runner/PrBridge:catch1")(err); }
 }
 import { Button } from '@/features/shared/components/buttons';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { useSystemStore } from '@/stores/systemStore';
 import { openProjectManager } from '@/features/companions/athena/guidance/appActions';
 import { useToastStore } from '@/stores/toastStore';
@@ -250,11 +251,13 @@ export function PrBridge({ task }: { task: DevTask }) {
   const dt = t.plugins.dev_tools;
   const project = useActiveProject();
   const idea = useSourceIdea(task);
-  const { createBranch, commitChanges } = useDevToolsActions();
+  const { createBranch, commitChanges, getGitStatus } = useDevToolsActions();
   const addToast = useToastStore((s) => s.addToast);
 
   const [expanded, setExpanded] = useState(false);
   const [preparing, setPreparing] = useState(false);
+  // Files `git status` reports in the project root; non-null while the consent dialog is open.
+  const [pendingFiles, setPendingFiles] = useState<string[] | null>(null);
   const [opening, setOpening] = useState(false);
   const [doneSteps, setDoneSteps] = useState<Set<PrStep>>(() => readDoneSteps(task.id));
   // Re-read when the surfaced task id changes (different completed task expanded).
@@ -328,7 +331,8 @@ export function PrBridge({ task }: { task: DevTask }) {
     const lines: string[] = [
       `# Branch + commit for "${content.prTitle.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`,
       `git checkout -b ${content.branchName}`,
-      `git add -A`,
+      `# Stage ONLY the files that belong to this task (git status --short lists what is dirty):`,
+      `# git add -- <path> <path> ...`,
       `git commit -m "$(cat <<'COMMIT_EOF'`,
       content.commitMessage,
       `COMMIT_EOF`,
@@ -357,7 +361,28 @@ export function PrBridge({ task }: { task: DevTask }) {
     }
   };
 
+  // Step 1: show what is dirty in the project root. The commit stages every
+  // file `git status` lists (the backend can only stage all or nothing), so the
+  // operator confirms exactly that list before anything is branched or staged.
   const handlePrepareBranch = async () => {
+    if (!project) return;
+    setPreparing(true);
+    try {
+      const status = await getGitStatus(project.id);
+      if (status.changedFiles.length === 0) {
+        await runPrepare();
+      } else {
+        setPendingFiles(status.changedFiles);
+      }
+    } catch (err) {
+      addToast(tx(dt.pr_bridge_branch_failed, { message: extractMessage(err) }), 'error');
+    } finally {
+      setPreparing(false);
+    }
+  };
+
+  // Step 2: runs only after the operator confirmed the listed files.
+  const runPrepare = async () => {
     if (!project) return;
     setPreparing(true);
     try {
@@ -393,6 +418,18 @@ export function PrBridge({ task }: { task: DevTask }) {
 
   return (
     <div className="border-t border-primary/10 bg-primary/3">
+      {pendingFiles && (
+        <ConfirmDialog
+          title={dt.pr_bridge_prepare}
+          body={pendingFiles.join(' · ')}
+          confirmLabel={dt.pr_bridge_prepare}
+          onConfirm={async () => {
+            setPendingFiles(null);
+            await runPrepare();
+          }}
+          onCancel={() => setPendingFiles(null)}
+        />
+      )}
       {/* Collapsible header */}
       <button
         type="button"
