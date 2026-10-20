@@ -114,8 +114,12 @@ export default function GeneratedReviewsTab({
   const rebuild = useBackgroundRebuild(() => gallery.refresh());
   const preview = useBackgroundPreview();
 
-  const handleResetRebuild = useCallback(() => { rebuild.resetRebuild(); }, [rebuild]);
-  const handleResetPreview = useCallback(() => { preview.resetPreview(); }, [preview]);
+  // Both hooks return a fresh object every render; depend on their stable
+  // reset callbacks, or every gallery render hands the memoized rows new props.
+  const { resetRebuild } = rebuild;
+  const { resetPreview } = preview;
+  const handleResetRebuild = useCallback(() => { resetRebuild(); }, [resetRebuild]);
+  const handleResetPreview = useCallback(() => { resetPreview(); }, [resetPreview]);
 
   const actions = useGalleryActions(
     gallery.allItems, gallery.total, gallery.sortBy,

@@ -49,4 +49,12 @@ describe('gallery admin actions report failures', () => {
     expect(toastHandler).toHaveBeenCalledWith(IPC_REJECTION);
     expect(result.current.isCleaningUp).toBe(false);
   });
+
+  it('keeps handleDeleteReview stable across renders (it is a memoized row prop)', () => {
+    const refresh = vi.fn();
+    const { result, rerender } = renderHook(() => useGalleryActions([], 0, 'recent', [], [], refresh));
+    const first = result.current.handleDeleteReview;
+    rerender();
+    expect(result.current.handleDeleteReview).toBe(first);
+  });
 });

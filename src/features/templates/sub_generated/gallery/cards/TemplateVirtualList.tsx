@@ -201,7 +201,7 @@ export function TemplateVirtualList({
                       review={review}
                       searchQuery={searchQuery}
                       isAiResult={isAiResult}
-                      modals={modals}
+                      openModal={modals.open}
                       credentialServiceTypes={credentialServiceTypes}
                     />
                   ) : (
@@ -212,7 +212,7 @@ export function TemplateVirtualList({
                       isAiResult={isAiResult}
                       credentialServiceTypes={credentialServiceTypes}
                       connectorReadiness={connectorReadiness}
-                      modals={modals}
+                      openModal={modals.open}
                       onToggleExpand={onToggleExpand}
                       onViewFlows={onViewFlows}
                       onDeleteReview={onDeleteReview}

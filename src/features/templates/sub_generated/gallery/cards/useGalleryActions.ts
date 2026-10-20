@@ -201,10 +201,11 @@ export function useGalleryActions(
   const [isBackfillingPipeline, setIsBackfillingPipeline] = useState(false);
   const [isBackfillingTools, setIsBackfillingTools] = useState(false);
 
-  const handleDeleteReview = async (id: string) => {
+  // Stable: it is a prop of every memoized gallery row.
+  const handleDeleteReview = useCallback(async (id: string) => {
     try { await deleteDesignReview(id); refresh(); }
     catch (err) { toastCatch('gallery:delete_template')(err); }
-  };
+  }, [refresh]);
 
   const handleCleanupDuplicates = async () => {
     setIsCleaningUp(true);

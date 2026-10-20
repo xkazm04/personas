@@ -8,13 +8,12 @@ import { deriveArchCategories, userHasCategoryCredential } from '../../shared/ar
 import { TemplateCategoryPills } from './TemplateCategoryPills';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { TemplateModal } from './reviewParseCache';
-import type { ModalStackActions } from '../modals/useModalStack';
 
 interface CompactRowProps {
   review: PersonaDesignReview;
   searchQuery: string;
   isAiResult: boolean;
-  modals: ModalStackActions<TemplateModal>;
+  openModal: (entry: TemplateModal) => void;
   credentialServiceTypes: Set<string>;
 }
 
@@ -22,7 +21,7 @@ export function CompactRow({
   review,
   searchQuery,
   isAiResult,
-  modals,
+  openModal,
   credentialServiceTypes,
 }: CompactRowProps) {
   const { connectors } = getCachedLightFields(review);
@@ -30,7 +29,7 @@ export function CompactRow({
 
   return (
     <div
-      onClick={() => modals.open({ type: 'detail', review })}
+      onClick={() => openModal({ type: 'detail', review })}
       className="group flex items-center border-b border-primary/5 hover:bg-secondary/30 cursor-pointer transition-colors px-4 py-1.5"
       data-testid={`template-row-${review.id}`}
     >

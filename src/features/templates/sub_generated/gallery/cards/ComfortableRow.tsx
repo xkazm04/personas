@@ -20,7 +20,6 @@ import { ExpandedRowContent } from './ExpandedRowContent';
 import { getCachedLightFields, getCachedDesignResult } from './reviewParseCache';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { TemplateModal } from './reviewParseCache';
-import type { ModalStackActions } from '../modals/useModalStack';
 
 interface ComfortableRowProps {
   review: PersonaDesignReview;
@@ -30,7 +29,9 @@ interface ComfortableRowProps {
   credentialServiceTypes: Set<string>;
   /** Authoritative per-connector verdicts, resolved once for the whole gallery. */
   connectorReadiness: ConnectorReadinessMap;
-  modals: ModalStackActions<TemplateModal>;
+  /** `modals.open` itself (stable), not the stack object, which is a new
+   *  object on every gallery render and would defeat the row memo. */
+  openModal: (entry: TemplateModal) => void;
   // Takes (id, currentIsExpanded) so parents can pass a stable reference
   // without per-row closures. The row itself constructs the call inside
   // a memoized handler.
@@ -56,7 +57,7 @@ function ComfortableRowImpl({
   isAiResult,
   credentialServiceTypes,
   connectorReadiness,
-  modals,
+  openModal,
   onToggleExpand,
   onViewFlows,
   onDeleteReview,
@@ -193,12 +194,12 @@ function ComfortableRowImpl({
             <RowActionMenu
               reviewId={review.id}
               onDelete={onDeleteReview}
-              onViewDetails={() => modals.open({ type: 'detail', review })}
+              onViewDetails={() => openModal({ type: 'detail', review })}
               onRebuild={() => {
                 if (rebuildReviewId !== review.id || rebuildPhase === 'completed' || rebuildPhase === 'failed') {
                   onResetRebuild();
                 }
-                modals.open({ type: 'rebuild', review });
+                openModal({ type: 'rebuild', review });
               }}
             />
           </div>
@@ -213,12 +214,12 @@ function ComfortableRowImpl({
             allConnectorsReady={allConnectorsReady}
             readinessStatuses={readinessStatuses}
             credentialServiceTypes={credentialServiceTypes}
-            onAdopt={() => modals.open({ type: 'adopt', review })}
+            onAdopt={() => openModal({ type: 'adopt', review })}
             onTryIt={() => {
               if (previewReviewId !== review.id || isCliRunSettled(previewPhase)) {
                 onResetPreview();
               }
-              modals.open({ type: 'preview', review });
+              openModal({ type: 'preview', review });
             }}
             onAddCredential={(name) => onAddCredential(name, review)}
             onViewFlows={onViewFlows}

@@ -47,34 +47,40 @@ const galleryState = {
 vi.mock('@/hooks/design/template/useTemplateGallery', () => ({
   useTemplateGallery: () => galleryState,
 }));
-vi.mock('../useGalleryActions', () => ({
-  useGalleryActions: () => ({
-    displayItems: [],
-    connectorReadiness: {},
-    credentialServiceTypes: new Set<string>(),
-    coverageCounts: { all: 0, ready: 0, partial: 0 },
-    availableComponents: [],
-    handleDeleteReview: vi.fn(),
-    handleAddCredential: vi.fn(),
-    handleCredentialSave: vi.fn(),
-    clearCredentialModal: vi.fn(),
-    credentialModalTarget: null,
-  }),
-}));
+// Stable across renders, like the real hook's memoized values and callbacks.
+const galleryActions = {
+  displayItems: [],
+  connectorReadiness: {},
+  credentialServiceTypes: new Set<string>(),
+  coverageCounts: { all: 0, ready: 0, partial: 0 },
+  availableComponents: [],
+  handleDeleteReview: vi.fn(),
+  handleAddCredential: vi.fn(),
+  handleCredentialSave: vi.fn(),
+  clearCredentialModal: vi.fn(),
+  credentialModalTarget: null,
+};
+vi.mock('../useGalleryActions', () => ({ useGalleryActions: () => galleryActions }));
 vi.mock('@/stores/systemStore', () => ({
   useSystemStore: (sel: (s: unknown) => unknown) =>
     sel({ templateAdoptActive: false, adoptionDraft: null, setAdoptionDraft: vi.fn() }),
 }));
+// Like the real hooks: a fresh object each render around stable callbacks.
+const resetRebuild = vi.fn();
+const resetPreview = vi.fn();
 vi.mock('@/hooks/design/core/useBackgroundRebuild', () => ({
-  useBackgroundRebuild: () => ({ reviewId: null, phase: 'idle', isActive: false, resetRebuild: vi.fn() }),
+  useBackgroundRebuild: () => ({ reviewId: null, phase: 'idle', isActive: false, resetRebuild }),
 }));
 vi.mock('@/hooks/design/core/useBackgroundPreview', () => ({
-  useBackgroundPreview: () => ({ reviewId: null, phase: 'idle', isActive: false, reviewName: null, resetPreview: vi.fn() }),
+  useBackgroundPreview: () => ({ reviewId: null, phase: 'idle', isActive: false, reviewName: null, resetPreview }),
 }));
 
 // Heavy children stubbed: this test is about which SHELVES mount.
 vi.mock('../../search/TemplateSearchBar', () => ({ TemplateSearchBar: () => null }));
-vi.mock('../TemplateVirtualList', () => ({ TemplateVirtualList: () => null }));
+const listProps: Array<Record<string, unknown>> = [];
+vi.mock('../TemplateVirtualList', () => ({
+  TemplateVirtualList: (p: Record<string, unknown>) => { listProps.push(p); return null; },
+}));
 vi.mock('../../modals/TemplateModals', () => ({ TemplateModals: () => null }));
 vi.mock('../../modals/TemplateDetailModal', () => ({ TemplateDetailModal: () => null }));
 vi.mock('../../modals/CompareModal', () => ({ CompareModal: () => null }));
@@ -125,5 +131,22 @@ describe('gallery explore shelves', () => {
     renderTab();
     expect(screen.getByTestId('trending-shelf')).toBeTruthy();
     expect(screen.queryByText('Recommended B')).toBeNull();
+  });
+
+  it('hands the memoized rows the same callbacks on a re-render', () => {
+    galleryState.trendingTemplates = [];
+    galleryState.recommendedTemplates = [];
+    galleryState.search = '';
+    listProps.length = 0;
+    const onViewFlows = vi.fn();
+    const { rerender } = render(<GeneratedReviewsTab onViewFlows={onViewFlows} />);
+    rerender(<GeneratedReviewsTab onViewFlows={onViewFlows} />);
+    expect(listProps.length).toBeGreaterThanOrEqual(2);
+    const [first, last] = [listProps[0]!, listProps[listProps.length - 1]!];
+    const modalsOpen = (p: Record<string, unknown>) => (p.modals as { open: unknown }).open;
+    expect(last.onResetRebuild).toBe(first.onResetRebuild);
+    expect(last.onResetPreview).toBe(first.onResetPreview);
+    expect(last.onToggleExpand).toBe(first.onToggleExpand);
+    expect(modalsOpen(last)).toBe(modalsOpen(first));
   });
 });
