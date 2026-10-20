@@ -109,9 +109,17 @@ export function usePersonaActions({
     );
     const count = ids.length;
     if (count === 0) return;
+    // Same guard the single delete carries: what depends on these agents, and a
+    // typed confirmation (the name for one, the count for several).
+    const fetchBlastRadius = () =>
+      Promise.all(ids.map((id) => getPersonaBlastRadius(id))).then((groups) => groups.flat());
     confirm({
       title: tx(t.agents.overview_actions.delete_agents, { count }),
       message: tx(t.agents.overview_actions.delete_agents_message, { count }),
+      blastRadius: <BlastRadiusPanelLazy fetcher={fetchBlastRadius} />,
+      requireTypedConfirmation: count === 1
+        ? (personas.find((p) => p.id === ids[0])?.name ?? String(count))
+        : String(count),
       onConfirm: async () => {
         setSelectedIds(new Set());
         await runBulkDelete(ids);
