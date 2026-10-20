@@ -34,6 +34,14 @@ export type {
   TwinPendingMemoryStatus,
 } from "@/api/enums";
 
+/**
+ * Every other `TwinCall::legacy` command (bio, simulate answer, draft reply,
+ * compile/audit wiki, reflect) shares the same 300 s backend deadline. Three of
+ * them persist their result, so a wrapper that gave up at the 90 s default
+ * rejected while the write still landed and a retry ran the call twice.
+ */
+const TWIN_LLM_TIMEOUT_MS = 330_000;
+
 // ============================================================================
 // Twin Profiles (P0)
 //
@@ -294,7 +302,7 @@ export const generateBio = (
   keywords: string,
   existingBio?: string,
 ) =>
-  invoke<string>("twin_generate_bio", { name, role, keywords, existingBio });
+  invoke<string>("twin_generate_bio", { name, role, keywords, existingBio }, { timeoutMs: TWIN_LLM_TIMEOUT_MS });
 
 /**
  * Training Studio — draft an interview answer *as the twin*, grounded in the
@@ -308,7 +316,7 @@ export const simulateAnswer = (
   question: string,
   directions?: string,
 ) =>
-  invoke<string>("twin_simulate_answer", { twinId, question, directions });
+  invoke<string>("twin_simulate_answer", { twinId, question, directions }, { timeoutMs: TWIN_LLM_TIMEOUT_MS });
 
 /**
  * Channels outbox — draft a channel-appropriate REPLY to a specific contact,
@@ -337,7 +345,7 @@ export const draftReply = (
     inboundMessage,
     directions,
     toneChannel,
-  });
+  }, { timeoutMs: TWIN_LLM_TIMEOUT_MS });
 
 export type { TwinPageContext } from "@/lib/bindings/TwinPageContext";
 export type { TwinPageDraft } from "@/lib/bindings/TwinPageDraft";
@@ -351,7 +359,7 @@ export type { TwinSteer } from "@/lib/bindings/TwinSteer";
  * wrapper waits past the backend so the backend's own timeout is the one the
  * user reads.
  */
-const PAGE_DRAFT_TIMEOUT_MS = 330_000;
+const PAGE_DRAFT_TIMEOUT_MS = TWIN_LLM_TIMEOUT_MS;
 
 /**
  * Browser webview — draft a comment AS the twin for the box the user picked
@@ -461,7 +469,7 @@ export const ingestDoctrineDocs = (twinId: string) =>
  * them without any caller bookkeeping).
  */
 export const compileWiki = (twinId: string, outputDir?: string) =>
-  invoke<TwinWikiCompileResult>("twin_compile_wiki", { twinId, outputDir });
+  invoke<TwinWikiCompileResult>("twin_compile_wiki", { twinId, outputDir }, { timeoutMs: TWIN_LLM_TIMEOUT_MS });
 
 /**
  * AI-audit a compiled wiki for gaps and contradictions. Returns a pending
@@ -469,7 +477,7 @@ export const compileWiki = (twinId: string, outputDir?: string) =>
  * surfaces in the Knowledge inbox).
  */
 export const auditWiki = (twinId: string, wikiDir?: string) =>
-  invoke<TwinPendingMemory>("twin_audit_wiki", { twinId, wikiDir });
+  invoke<TwinPendingMemory>("twin_audit_wiki", { twinId, wikiDir }, { timeoutMs: TWIN_LLM_TIMEOUT_MS });
 
 /**
  * Non-mutating freshness query — returns `{ exists, fileCount, lastCompiledAt,
@@ -541,7 +549,7 @@ export const listTwinReflections = (twinId: string) =>
  * cached list rather than refetch.
  */
 export const reflectOnTwin = (twinId: string, promptSeed: string) =>
-  invoke<TwinReflection>("twin_reflect", { twinId, promptSeed });
+  invoke<TwinReflection>("twin_reflect", { twinId, promptSeed }, { timeoutMs: TWIN_LLM_TIMEOUT_MS });
 
 export const deleteTwinReflection = (id: string) =>
   invoke<boolean>("twin_delete_reflection", { id });
