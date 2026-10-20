@@ -66,8 +66,8 @@
         }
       ],
       "baseline": {
-        "files": 62,
-        "matches": 156
+        "files": 61,
+        "matches": 154
       },
       "floor": 4000
     },
@@ -866,8 +866,8 @@
         }
       ],
       "baseline": {
-        "files": 2,
-        "matches": 5
+        "files": 1,
+        "matches": 4
       },
       "floor": 4000
     },
@@ -1426,8 +1426,8 @@
         "description": "the native `title` attribute on a lowercase DOM element. PROXY FOR the stack-free condition: explanatory text is attached to a control through a channel the user agent alone renders, so it appears only on mouse hover - it is never reachable by keyboard, never appears on a touch device, cannot be dismissed, is not reliably announced by assistive technology, and is not routed through the application's own translation layer. PRECONDITION (must be re-derived per repo): this repo renders to a DOM where `title` has that user-agent behaviour AND owns a shared Tooltip primitive that is the alternative; a repo with no primitive would find this rule fires on 100% of its tooltip sites and should read that as the finding, not baseline it. Measured precision 1109/1109 (zero false positives) and recall 99.7% against a JSX-parser ground truth of 1112 on the 2026-08-14 corpus; the 3 misses are opening tags whose attribute region exceeds 1200 characters before `title=`. `iframe` is deliberately absent from the tag list: `title` on an iframe is a REQUIRED accessible name (WCAG 4.1.2), not a tooltip, so including it would gate a correct construct."
       },
       "baseline": {
-        "files": 370,
-        "matches": 678
+        "files": 366,
+        "matches": 673
       },
       "floor": 2000
     },
@@ -1856,8 +1856,8 @@
         }
       ],
       "baseline": {
-        "files": 49,
-        "matches": 74
+        "files": 47,
+        "matches": 71
       },
       "floor": 4000
     },
@@ -5116,8 +5116,8 @@
         }
       ],
       "baseline": {
-        "files": 6,
-        "matches": 18
+        "files": 5,
+        "matches": 15
       },
       "floor": 4000
     },
@@ -5246,8 +5246,8 @@
         }
       ],
       "baseline": {
-        "files": 9,
-        "matches": 11
+        "files": 8,
+        "matches": 10
       },
       "floor": 4000
     },
@@ -5745,8 +5745,8 @@
         }
       ],
       "baseline": {
-        "files": 806,
-        "matches": 3755
+        "files": 805,
+        "matches": 3752
       },
       "floor": 5000
     },
@@ -5861,8 +5861,8 @@
         }
       ],
       "baseline": {
-        "files": 930,
-        "matches": 2071
+        "files": 929,
+        "matches": 2070
       },
       "floor": 2200
     },
@@ -5936,7 +5936,7 @@
       ],
       "baseline": {
         "files": 670,
-        "matches": 1634
+        "matches": 1633
       },
       "floor": 5000
     }
