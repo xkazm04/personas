@@ -131,9 +131,7 @@ export interface UiSlice {
   error: string | null;
   n8nTransformActive: boolean;
   templateAdoptActive: boolean;
-  showDesignNudge: boolean;
   isCreatingPersona: boolean;
-  autoStartDesignInstruction: string | null;
   rebuildActive: boolean;
   templateTestActive: boolean;
   connectorTestActive: boolean;
@@ -184,10 +182,6 @@ export interface UiSlice {
    *  menu handing off to Factory). FactoryShell owns its nav state locally, so
    *  this is the only way to land it on a specific project from outside. */
   pendingFactoryFocus: { projectId: string; l2Tab: FactoryL2Tab } | null;
-
-  // Canvas <-> Live Stream cross-linking
-  canvasEdgeFocus: { edgeId: string; eventType: string; sourceFilter: string | null } | null;
-  liveStreamHighlightEventId: string | null;
 
   /**
    * Which header overlay is currently open — the mutually-exclusive controller
@@ -273,9 +267,6 @@ export interface UiSlice {
   setHeaderOverlay: (overlay: HeaderOverlay) => void;
   /** Back-compat shim — maps to `setHeaderOverlay('monitor' | 'none')`. */
   setMonitorOpen: (open: boolean) => void;
-  setMonitorGroupBy: (mode: 'none' | 'group') => void;
-  toggleMonitorGroupCollapsed: (groupId: string) => void;
-  setMonitorLiveMode: (on: boolean) => void;
   toggleMonitorLiveMode: () => void;
   setMonitorInitialView: (view: 'fleet' | 'channels' | 'conversations' | null) => void;
   setMonitorChannelPreset: (
@@ -302,9 +293,7 @@ export interface UiSlice {
   setError: (error: string | null) => void;
   setN8nTransformActive: (active: boolean) => void;
   setTemplateAdoptActive: (active: boolean) => void;
-  setShowDesignNudge: (show: boolean) => void;
   setIsCreatingPersona: (creating: boolean) => void;
-  setAutoStartDesignInstruction: (instruction: string | null) => void;
   setRebuildActive: (active: boolean) => void;
   setTemplateTestActive: (active: boolean) => void;
   setConnectorTestActive: (active: boolean) => void;
@@ -323,17 +312,9 @@ export interface UiSlice {
   setPendingCouncilSubjectId: (id: string | null) => void;
   setPendingLlmContextFilter: (filter: { contextId: string; contextName: string } | null) => void;
   setPendingFactoryFocus: (focus: { projectId: string; l2Tab: FactoryL2Tab } | null) => void;
-  setCanvasEdgeFocus: (focus: { edgeId: string; eventType: string; sourceFilter: string | null } | null) => void;
-  setLiveStreamHighlightEventId: (id: string | null) => void;
   // Plugin enable/disable
   enabledPlugins: Set<PluginTab>;
   togglePlugin: (plugin: PluginTab) => void;
-
-  // Feedback-driven persona improvement
-  feedbackImprovementPersonaId: string | null;
-  feedbackImprovementComplete: boolean;
-  setFeedbackImprovementPersonaId: (id: string | null) => void;
-  setFeedbackImprovementComplete: (complete: boolean) => void;
 
   /** Transient contextual cockpit overlay — see {@link ContextualCockpit}. */
   contextualCockpit: ContextualCockpit | null;
@@ -451,9 +432,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   error: null,
   n8nTransformActive: false,
   templateAdoptActive: false,
-  showDesignNudge: false,
   isCreatingPersona: false,
-  autoStartDesignInstruction: null,
   rebuildActive: false,
   templateTestActive: false,
   connectorTestActive: false,
@@ -474,8 +453,6 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   pendingCouncilSubjectId: null,
   pendingLlmContextFilter: null,
   pendingFactoryFocus: null,
-  canvasEdgeFocus: null,
-  liveStreamHighlightEventId: null,
 
   // Opening a header overlay (Monitor / Notifications) while the Schedules
   // route is active also leaves Schedules — the overlay fully covers the page,
@@ -498,8 +475,6 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
       ? ('home' as SidebarSection)
       : state.sidebarSection,
   })),
-  setMonitorGroupBy: (mode) => set({ monitorGroupBy: mode }),
-  setMonitorLiveMode: (on) => set({ monitorLiveMode: on }),
   toggleMonitorLiveMode: () => set((state) => ({ monitorLiveMode: !state.monitorLiveMode })),
   setMonitorInitialView: (view) => set({ monitorInitialView: view }),
   setMonitorChannelPreset: (preset) => set({ monitorChannelPreset: preset }),
@@ -512,13 +487,6 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
         : { homeHiddenSections: [...state.homeHiddenSections, sectionId] };
     }),
   resetHomeSections: () => set({ homeHiddenSections: [] }),
-  toggleMonitorGroupCollapsed: (groupId) =>
-    set((state) => {
-      const idx = state.monitorCollapsedGroups.indexOf(groupId);
-      return idx >= 0
-        ? { monitorCollapsedGroups: state.monitorCollapsedGroups.filter((_, i) => i !== idx) }
-        : { monitorCollapsedGroups: [...state.monitorCollapsedGroups, groupId] };
-    }),
 
   setSidebarSection: (section) => startTransition(() => set((state) => {
     // Navigating any route dismisses an open header overlay (Monitor /
@@ -573,9 +541,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   setError: (error) => set({ error }),
   setN8nTransformActive: (active) => set({ n8nTransformActive: active }),
   setTemplateAdoptActive: (active) => set({ templateAdoptActive: active }),
-  setShowDesignNudge: (show) => set({ showDesignNudge: show }),
   setIsCreatingPersona: (creating) => set({ isCreatingPersona: creating }),
-  setAutoStartDesignInstruction: (instruction) => set({ autoStartDesignInstruction: instruction }),
   setRebuildActive: (active) => set({ rebuildActive: active }),
   setTemplateTestActive: (active) => set({ templateTestActive: active }),
   setConnectorTestActive: (active) => set({ connectorTestActive: active }),
@@ -594,8 +560,6 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   setPendingCouncilSubjectId: (id) => set({ pendingCouncilSubjectId: id }),
   setPendingLlmContextFilter: (filter) => set({ pendingLlmContextFilter: filter }),
   setPendingFactoryFocus: (focus) => set({ pendingFactoryFocus: focus }),
-  setCanvasEdgeFocus: (focus) => set({ canvasEdgeFocus: focus }),
-  setLiveStreamHighlightEventId: (id) => set({ liveStreamHighlightEventId: id }),
   enabledPlugins: new Set<PluginTab>([
     'dev-tools', 'obsidian-brain', 'drive', 'twin', 'scraper',
   ]),
@@ -610,10 +574,6 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
     }
     return { enabledPlugins: next };
   }),
-  feedbackImprovementPersonaId: null,
-  feedbackImprovementComplete: false,
-  setFeedbackImprovementPersonaId: (id) => set({ feedbackImprovementPersonaId: id }),
-  setFeedbackImprovementComplete: (complete) => set({ feedbackImprovementComplete: complete }),
 
   contextualCockpit: null,
   setContextualCockpit: (contextualCockpit) => set({ contextualCockpit }),

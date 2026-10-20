@@ -35,15 +35,11 @@ export interface DevToolsScannerSlice {
   // -- Scanner ---------------------------------------------------------
   scanAgentSelection: string[];
   scanPhase: "idle" | "running" | "complete" | "error";
-  scanResults: DevIdea[];
   currentScanId: string | null;
   scans: DevScan[];
-  scansLoading: boolean;
 
   setScanAgentSelection: (keys: string[]) => void;
-  toggleScanAgent: (key: string) => void;
   runScan: (projectId: string, opts?: { contextId?: string; contextIds?: string[]; targetCount?: number }) => Promise<void>;
-  fetchScan: (id: string) => Promise<DevScan>;
   fetchScans: (projectId?: string, limit?: number) => Promise<DevScan[]>;
 
   // -- Ideas -----------------------------------------------------------
@@ -61,29 +57,16 @@ export const createDevToolsScannerSlice: StateCreator<SystemStore, [], [], DevTo
   // -- Scanner state ---------------------------------------------------
   scanAgentSelection: [],
   scanPhase: "idle",
-  scanResults: [],
   currentScanId: null,
   scans: [],
-  scansLoading: false,
 
   setScanAgentSelection: (keys) => {
     set({ scanAgentSelection: keys });
   },
 
-  toggleScanAgent: (key) => {
-    set((state) => {
-      const exists = state.scanAgentSelection.includes(key);
-      return {
-        scanAgentSelection: exists
-          ? state.scanAgentSelection.filter((k) => k !== key)
-          : [...state.scanAgentSelection, key],
-      };
-    });
-  },
-
   runScan: async (projectId, opts) => {
     const { scanAgentSelection } = get();
-    set({ scanPhase: "running", scanResults: [], currentScanId: null });
+    set({ scanPhase: "running", currentScanId: null });
     try {
       const result = await devApi.runScan(projectId, scanAgentSelection, opts);
       // The scan runs asynchronously via CLI — scan_id returned immediately.
@@ -95,24 +78,12 @@ export const createDevToolsScannerSlice: StateCreator<SystemStore, [], [], DevTo
     }
   },
 
-  fetchScan: async (id) => {
-    try {
-      const scan = await devApi.getScan(id);
-      return scan;
-    } catch (err) {
-      reportError(err, "Failed to fetch scan", set);
-      throw err;
-    }
-  },
-
   fetchScans: async (projectId, limit) => {
-    set({ scansLoading: true });
     try {
       const scans = await devApi.listScans(projectId, limit);
-      set({ scans, scansLoading: false });
+      set({ scans });
       return scans;
     } catch (err) {
-      set({ scansLoading: false });
       reportError(err, "Failed to fetch scans", set);
       throw err;
     }
