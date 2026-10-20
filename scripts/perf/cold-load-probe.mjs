@@ -11,8 +11,9 @@
  *   contentMs       first frame with >= 40 visible chars (or a >= 48 px figure)
  *                   outside chrome, ghosts and aria-hidden
  *   blankFrames     frames after the old page left with no content and no ghost;
- *                   `blankFramesBeyondGrace` counts those after the 150 ms window
- *                   the delay-hidden ghosts (RouteChunkSkeleton) are allowed
+ *                   `blankMsBeyondGrace` is blank time past the 150 ms window the
+ *                   delay-hidden ghosts (RouteChunkSkeleton) are allowed, counted
+ *                   from the first blank frame
  *   cls             PerformanceObserver('layout-shift') sum over the load window
  *   scriptRequests  module/script/style requests the visit triggered (0 = the
  *                   chunk was already loaded or prefetched: a WARM module)
@@ -43,6 +44,7 @@ import {
   parseNavCatalog,
   deriveSurfaces,
   sequentialDepth,
+  finalizeRun,
   renderScorecard,
   rankRows,
   PROPOSED_BAR,
@@ -90,7 +92,7 @@ async function main() {
   const args = parseArgs(process.argv);
   if (args.render) {
     const run = JSON.parse(fs.readFileSync(args.render, 'utf8'));
-    process.stdout.write(renderScorecard(run));
+    process.stdout.write(renderScorecard(finalizeRun(run)));
     return;
   }
   const { surfaces: all, unreachedDimensions } = loadSurfaces();
@@ -139,7 +141,7 @@ async function main() {
     'Measured on a DEV build (Vite dev server, React development mode): absolute ms overstate a production build; the ranking and the blank/CLS/waterfall SHAPE transfer. Re-run against `tauri:dev:test` built with `--release`-like settings before treating a ms number as a regression.',
     '"Cold" = first visit in this page load. The probe never reloads the shared webview, and the shell idle-prefetches section chunks (navPrefetch.ts), so `scripts = 0` marks a module that was already warm; its chrome/content timings then measure render + data, not chunk fetch.',
     'Chrome and content are DOM heuristics (first new h1/h2/tablist/content-header; >= 40 visible chars or a >= 48 px figure outside chrome, ghosts and aria-hidden). A surface with no heading reports chrome n/a, which never fails the bar on its own.',
-    'IPC depth is an UPPER bound on the fetch waterfall: two unrelated calls that ran back to back also chain. Calls that bypass invokeWithTimeout (raw invoke) are invisible to ipcMetrics.',
+    'IPC depth is an UPPER bound on the fetch waterfall: two unrelated calls that ran back to back also chain. The bar uses the depth EXCLUDING commands already seen while parked (pollers, the park page); `ipcSequentialDepthRaw` keeps everything. A surface that genuinely re-fetches a command the park page also used is undercounted. Run-level pollers (commands already firing while parked before >= 25% of surfaces, listed in `ipcPollers`) are excluded from every chain. Calls that bypass invokeWithTimeout (raw invoke) are invisible to ipcMetrics.',
   ];
   if (!version.ipcMetrics) caveats.push(`IPC waterfall depth UNMEASURABLE in this build: the ipcMetrics module could not be imported by path (${version.ipcMetricsError ?? 'not a dev build'}); IPC counts come from window.__PERF__ when present.`);
 
@@ -156,6 +158,7 @@ async function main() {
         maxMs: args.maxMs,
         settleMs: args.settleMs,
         graceMs: PROPOSED_BAR.graceMs,
+        frameTolMs: PROPOSED_BAR.frameTolMs,
         skipWarm: !args.warm,
       };
       const budgetMs = 2 * (args.maxMs + args.parkMs + 1000) + 5000;
@@ -169,16 +172,20 @@ async function main() {
       for (const phase of [row.cold, row.warm]) {
         if (!phase?.ok) continue;
         if (Array.isArray(phase.ipcCalls)) {
-          const d = sequentialDepth(phase.ipcCalls);
-          phase.ipcSequentialDepth = d.depth;
-          phase.ipcChain = d.chain;
+          const raw = sequentialDepth(phase.ipcCalls);
+          phase.ipcSequentialDepthRaw = raw.depth;
+          phase.ipcChainRaw = raw.chain;
+          const bg = new Set(phase.ipcBackground ?? []);
+          const own = sequentialDepth(phase.ipcCalls.filter((x) => !bg.has(x.command)));
+          phase.ipcSequentialDepth = own.depth;
+          phase.ipcChain = own.chain;
         } else {
           phase.ipcSequentialDepth = null;
         }
       }
       rows.push(row);
       const c = row.cold;
-      console.log(`[cold-load] ${String(i + 1).padStart(3)}/${surfaces.length} ${s.id.padEnd(40)} ${c?.ok ? `chrome=${fmt(c.chromeMs)} content=${fmt(c.contentMs)} blank=${c.blankFramesBeyondGrace} cls=${c.cls} scripts=${c.scriptRequests} ipc=${c.ipcCount}/${c.ipcSequentialDepth} warm=${fmt(row.warm?.contentMs)}` : `SKIP ${c?.reason ?? c?.error}`}`);
+      console.log(`[cold-load] ${String(i + 1).padStart(3)}/${surfaces.length} ${s.id.padEnd(40)} ${c?.ok ? `chrome=${fmt(c.chromeMs)} content=${fmt(c.contentMs)} blank=${fmt(c.blankMsBeyondGrace)} cls=${c.cls} scripts=${c.scriptRequests} ipc=${c.ipcCount}/${c.ipcSequentialDepth} warm=${fmt(row.warm?.contentMs)}` : `SKIP ${c?.reason ?? c?.error}`}`);
       await new Promise((r) => setTimeout(r, args.gapMs));
     }
   } finally {
@@ -198,6 +205,7 @@ async function main() {
     caveats,
     rows,
   };
+  finalizeRun(run);
   fs.mkdirSync(args.out, { recursive: true });
   const day = startedAt.slice(0, 10);
   const jsonPath = path.join(args.out, `cold-load-${day}.json`);

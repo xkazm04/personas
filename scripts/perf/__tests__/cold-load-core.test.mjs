@@ -10,6 +10,9 @@ import {
   deriveSurfaces,
   sequentialDepth,
   evaluateBar,
+  blankBeyondGrace,
+  pollerCommands,
+  finalizeRun,
   rankRows,
   renderScorecard,
 } from '../lib/cold-load-core.mjs';
@@ -90,16 +93,19 @@ test('sequential depth: parallel calls are depth 1, a parent-then-child chain is
 });
 
 test('bar: unmeasured metrics never fail, measured ones do, rank puts more failures first', () => {
-  const good = { id: 'a', cold: { ok: true, chromeMs: 20, contentMs: 300, blankFramesBeyondGrace: 0, cls: 0, ipcSequentialDepth: 1 }, warm: { contentMs: 30 } };
-  const bad = { id: 'b', cold: { ok: true, chromeMs: 400, contentMs: 2000, blankFramesBeyondGrace: 3, cls: 0.2, ipcSequentialDepth: null }, warm: null };
+  const good = { id: 'a', cold: { ok: true, chromeMs: 20, contentMs: 300, graceBase: 'first-blank-frame', blankMsBeyondGrace: 0, cls: 0, ipcSequentialDepth: 1 }, warm: { contentMs: 30 } };
+  const bad = { id: 'b', cold: { ok: true, chromeMs: 400, contentMs: 2000, blankMs: 250, cls: 0.2, ipcSequentialDepth: null }, warm: null };
   assert.deepEqual(evaluateBar(good).fails, []);
   const v = evaluateBar(bad);
+  assert.equal(v.transferable.length, 4, 'no scripts fetched: every miss transfers');
+  assert.equal(evaluateBar({ ...bad, cold: { ...bad.cold, scriptRequests: 3 } }).transferable.length, 2, 'chrome and content ms on a dev fetch are confounded');
   assert.equal(v.fails.length, 4);
   assert.ok(v.unmeasured.includes('ipcSequentialDepth'));
   assert.ok(v.unmeasured.includes('warmContentMs'));
   const skipped = { id: 'c', cold: { ok: false, reason: 'navigate refused' } };
   assert.deepEqual(rankRows([good, skipped, bad]).map((r) => r.id), ['b', 'a', 'c']);
   const md = renderScorecard({ startedAt: '2026-10-20T00:00:00Z', port: 17320, buildMode: 'dev build', rows: [good, bad, skipped], caveats: ['x'] });
+  assert.match(md, /transfer to a production build[^*]*\*\*1 of 2\*\*/);
   assert.match(md, /PROPOSAL/);
   assert.match(md, /failing the proposed bar: \*\*1 of 2\*\*/);
   assert.match(md, /`c`: navigate refused/);
@@ -111,4 +117,26 @@ test('the page instrument stringifies to self-contained JS (no imports, no TS)',
   assert.doesNotThrow(() => new Function(`(${src})`));
   assert.ok(!/\bimport\s+[\w{]/.test(src), 'static import inside the injected function');
   for (const m of ['coldProbeVersion', 'coldProbeCapture', 'coldProbeRestore', 'coldProbeMeasure']) assert.ok(src.includes(`T.${m} = function ${m}(`), m);
+});
+
+test('blank past grace: recorded value wins, legacy runs derive it from total blank ms', () => {
+  assert.equal(blankBeyondGrace({ graceBase: 'first-blank-frame', blankMsBeyondGrace: 12, blankMs: 400 }), 12);
+  assert.equal(blankBeyondGrace({ blankMs: 210 }), 0, 'a 210 ms blank is inside 150 ms + two sampler frames');
+  assert.equal(blankBeyondGrace({ blankMs: 250 }), 33);
+  assert.equal(blankBeyondGrace({}), null);
+});
+
+test('pollers seen while parked before a quarter of surfaces leave every chain', () => {
+  const call = (command, startMs, endMs) => ({ command, startMs, endMs });
+  const rows = [
+    { id: 'a', cold: { ok: true, ipcBackground: ['metrics'], ipcCalls: [call('list', 0, 10), call('metrics', 20, 30), call('detail', 40, 50)] } },
+    { id: 'b', cold: { ok: true, ipcBackground: ['metrics'], ipcCalls: [call('x', 0, 10)] } },
+    { id: 'c', cold: { ok: true, ipcBackground: [], ipcCalls: [call('y', 0, 10)] } },
+    { id: 'd', cold: { ok: false } },
+  ];
+  assert.deepEqual(pollerCommands(rows), ['metrics']);
+  const run = finalizeRun({ rows });
+  assert.equal(run.rows[0].cold.ipcSequentialDepthRaw, 3);
+  assert.equal(run.rows[0].cold.ipcSequentialDepth, 2);
+  assert.deepEqual(run.rows[0].cold.ipcChain, ['list', 'detail']);
 });

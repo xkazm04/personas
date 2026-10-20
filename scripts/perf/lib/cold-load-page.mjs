@@ -123,6 +123,7 @@ export function installColdProbe() {
   function measureOnce(spec, phase) {
     var main0 = document.getElementById('main-content');
     var notes = [];
+    var parkWall = Date.now();
     var park = T.navigate(spec.park);
     if (!park || !park.success) return Promise.resolve({ ok: false, phase: phase, reason: 'park refused: ' + (park && park.error) });
     return sleep(spec.parkMs).then(function () {
@@ -147,14 +148,25 @@ export function installColdProbe() {
           stale.add(all[i]);
           if (oldMarkers.length < 40 && all[i].childElementCount === 0 && all[i].textContent && all[i].textContent.trim() && visible(all[i])) oldMarkers.push(all[i]);
         }
-        var shifts = { cls: 0, count: 0 };
+        var shifts = { cls: 0, count: 0, sources: [] };
         var scripts = [];
         var lsObs = null, resObs = null, mutObs = null;
         var lastMutation = 0;
         var t0;
         try {
           lsObs = new PerformanceObserver(function (list) {
-            list.getEntries().forEach(function (e) { if (!e.hadRecentInput && e.startTime >= t0) { shifts.cls += e.value; shifts.count++; } });
+            list.getEntries().forEach(function (e) {
+              if (e.hadRecentInput || e.startTime < t0) return;
+              shifts.cls += e.value; shifts.count++;
+              // Which element moved: the card that fixes a shift needs its name.
+              (e.sources || []).forEach(function (s) {
+                var n = s.node;
+                if (!n || n.nodeType !== 1) return;
+                var tid = n.getAttribute('data-testid');
+                var cls = typeof n.className === 'string' ? n.className.trim().split(/\s+/).slice(0, 3).join('.') : '';
+                shifts.sources.push({ at: Math.round(e.startTime - t0), value: Math.round(e.value * 10000) / 10000, node: n.tagName.toLowerCase() + (tid ? '[data-testid=' + tid + ']' : '') + (cls ? '.' + cls : '') });
+              });
+            });
           });
           lsObs.observe({ type: 'layout-shift', buffered: false });
         } catch (e) { shifts = null; notes.push('layout-shift entry type unsupported'); }
@@ -181,7 +193,12 @@ export function installColdProbe() {
           lsObs && lsObs.disconnect(); resObs && resObs.disconnect(); mutObs.disconnect();
           return { ok: false, phase: phase, reason: 'navigate refused: ' + (nav && nav.error) };
         }
-        var r = { ok: true, phase: phase, chromeMs: null, contentMs: null, ghostFirstMs: null, blankFrames: 0, blankFramesBeyondGrace: 0, blankMs: 0, frames: 0, rafFrames: 0 };
+        var r = { ok: true, phase: phase, chromeMs: null, contentMs: null, ghostFirstMs: null, blankFrames: 0, blankFramesBeyondGrace: 0, blankMs: 0, blankMsBeyondGrace: 0, graceBase: 'first-blank-frame', frames: 0, rafFrames: 0 };
+        // Grace runs from the first blank frame (the old page left), not from t0:
+        // a Suspense fallback mounts when React commits, tens of ms after t0, and
+        // its 150 ms delay is counted from there. Two sampler frames of slack
+        // (spec.frameTolMs): each edge is only seen on the next sample.
+        var firstBlankAt = null;
         var lastIpc = ipcBefore, lastIpcChange = t0, lastTs = t0;
         function loop() {
           return nextFrame().then(function (f) {
@@ -197,7 +214,8 @@ export function installColdProbe() {
               else if (!c.oldVisible && !c.ghost) {
                 r.blankFrames++;
                 r.blankMs += now - lastTs;
-                if (el > spec.graceMs) r.blankFramesBeyondGrace++;
+                if (firstBlankAt == null) firstBlankAt = el;
+                if (el - firstBlankAt > spec.graceMs + spec.frameTolMs) { r.blankFramesBeyondGrace++; r.blankMsBeyondGrace += now - lastTs; }
               }
             }
             lastTs = now;
@@ -218,6 +236,7 @@ export function installColdProbe() {
           if (r.chromeMs == null) notes.push('no new heading or tab strip appeared in #main-content');
           r.cls = shifts ? Math.round(shifts.cls * 10000) / 10000 : null;
           r.shiftCount = shifts ? shifts.count : null;
+          r.shiftSources = shifts ? shifts.sources.sort(function (a, b) { return b.value - a.value; }).slice(0, 6) : null;
           r.scriptRequests = scripts ? scripts.length : null;
           r.scriptSample = scripts ? scripts.slice(0, 25) : null;
           var ipcAfter = ipcTotal();
@@ -228,6 +247,14 @@ export function installColdProbe() {
             r.ipcCalls = ipcMod.getIpcRecords()
               .map(function (x) { return { command: x.command, startMs: x.timestamp - x.durationMs - t0Wall, endMs: x.timestamp - t0Wall, ok: x.ok }; })
               .filter(function (x) { return x.startMs >= -5 && x.startMs + t0Wall <= horizon; });
+            // Commands already firing while parked (pollers, the park page's
+            // own load) are background, not this surface's waterfall.
+            var bg = {};
+            ipcMod.getIpcRecords().forEach(function (x) {
+              var st = x.timestamp - x.durationMs;
+              if (st >= parkWall && st < t0Wall) bg[x.command] = true;
+            });
+            r.ipcBackground = Object.keys(bg);
           }
           lsObs && lsObs.disconnect(); resObs && resObs.disconnect(); mutObs.disconnect();
           r.notes = notes;

@@ -172,18 +172,78 @@ export function sequentialDepth(records) {
 }
 
 /**
+ * Commands that were already firing while parked before at least `share` of
+ * the measured surfaces: app-wide pollers (get_system_metrics and friends).
+ * A per-surface park window is too short to catch a poller with a long
+ * period, so the run-level view is what keeps them out of every chain.
+ */
+export function pollerCommands(rows, share = 0.25) {
+  const seen = new Map();
+  let n = 0;
+  for (const r of rows) {
+    if (!r.cold?.ok || !Array.isArray(r.cold.ipcBackground)) continue;
+    n++;
+    for (const c of new Set(r.cold.ipcBackground)) seen.set(c, (seen.get(c) ?? 0) + 1);
+  }
+  if (n === 0) return [];
+  return [...seen].filter(([, k]) => k / n >= share).map(([c]) => c).sort();
+}
+
+/**
+ * (Re)compute IPC depth for every phase from its recorded calls: raw, and
+ * excluding that phase's park-window background plus the run's pollers.
+ * Idempotent, so `--render` of an older run applies the current rule.
+ */
+export function finalizeRun(run) {
+  const pollers = pollerCommands(run.rows);
+  run.ipcPollers = pollers;
+  for (const row of run.rows) {
+    for (const phase of [row.cold, row.warm]) {
+      if (!phase?.ok) continue;
+      if (!Array.isArray(phase.ipcCalls)) {
+        phase.ipcSequentialDepth = null;
+        continue;
+      }
+      const raw = sequentialDepth(phase.ipcCalls);
+      phase.ipcSequentialDepthRaw = raw.depth;
+      phase.ipcChainRaw = raw.chain;
+      const bg = new Set([...(phase.ipcBackground ?? []), ...pollers]);
+      const own = sequentialDepth(phase.ipcCalls.filter((x) => !bg.has(x.command)));
+      phase.ipcSequentialDepth = own.depth;
+      phase.ipcChain = own.chain;
+    }
+  }
+  return run;
+}
+
+/**
  * The PROPOSED bar. Stated in the scorecard header as a proposal, not law.
  * `null` metrics (unmeasured) never fail a check; they are counted apart.
  */
 export const PROPOSED_BAR = {
   chromeMs: 100,
   contentMs: 1000,
-  blankFramesBeyondGrace: 0,
+  blankMsBeyondGrace: 0,
   graceMs: 150,
+  // Two sampler frames (~32 ms each): one where the old page leaves, one where
+  // the ghost becomes visible - both edges are only seen on the next sample.
+  frameTolMs: 67,
   cls: 0.05,
   ipcSequentialDepth: 2,
   warmContentMs: 100,
 };
+
+/**
+ * Blank-body time past the delay-hidden ghost window. Runs recorded with
+ * `graceBase: 'first-blank-frame'` carry it; older runs (grace counted from t0)
+ * get it DERIVED from total blank ms, which assumes the blank run was
+ * contiguous - true of every section load seen so far.
+ */
+export function blankBeyondGrace(c, bar = PROPOSED_BAR) {
+  if (c.graceBase === 'first-blank-frame') return Math.round(c.blankMsBeyondGrace);
+  if (c.blankMs == null) return null;
+  return Math.max(0, Math.round(c.blankMs - bar.graceMs - bar.frameTolMs));
+}
 
 export function evaluateBar(row, bar = PROPOSED_BAR) {
   const fails = [];
@@ -199,18 +259,24 @@ export function evaluateBar(row, bar = PROPOSED_BAR) {
   const w = row.warm ?? {};
   check('chromeMs', c.chromeMs, bar.chromeMs, (v) => `chrome ${Math.round(v)} ms > ${bar.chromeMs}`);
   check('contentMs', c.contentMs, bar.contentMs, (v) => `content ${Math.round(v)} ms > ${bar.contentMs}`);
-  check('blankFramesBeyondGrace', c.blankFramesBeyondGrace, bar.blankFramesBeyondGrace, (v) => `${v} blank frame(s) after ${bar.graceMs} ms`);
+  check('blankMsBeyondGrace', blankBeyondGrace(c, bar), bar.blankMsBeyondGrace, (v) => `blank ${Math.round(v)} ms past the ${bar.graceMs} ms ghost window`);
   check('cls', c.cls, bar.cls, (v) => `CLS ${v.toFixed(3)} > ${bar.cls}`);
   check('ipcSequentialDepth', c.ipcSequentialDepth, bar.ipcSequentialDepth, (v) => `IPC depth ${v} > ${bar.ipcSequentialDepth}`);
   check('warmContentMs', w.contentMs, bar.warmContentMs, (v) => `warm revisit ${Math.round(v)} ms > ${bar.warmContentMs}`);
   if (c.contentMs == null && c.ok) fails.push('no real content detected before the cap');
-  return { fails, unmeasured };
+  // A chrome/content ms miss on a visit that fetched modules is confounded by
+  // the dev server's first-request transform; everything else (blank frames,
+  // CLS, IPC depth, warm revisit, timing on an already-loaded module) is shape
+  // and transfers to a production build.
+  const devFetched = (c.scriptRequests ?? 0) > 0;
+  const transferable = fails.filter((f) => !(devFetched && /^(chrome|content) \d/.test(f)));
+  return { fails, unmeasured, transferable };
 }
 
 /** Worst first: more bar failures, then slower first content, then id. */
 export function rankRows(rows) {
   return rows
-    .map((r) => ({ ...r, verdict: r.cold?.ok ? evaluateBar(r) : { fails: [], unmeasured: [] } }))
+    .map((r) => ({ ...r, verdict: r.cold?.ok ? evaluateBar(r) : { fails: [], unmeasured: [], transferable: [] } }))
     .sort((a, b) => {
       const okA = a.cold?.ok ? 1 : 0;
       const okB = b.cold?.ok ? 1 : 0;
@@ -240,7 +306,7 @@ export function renderScorecard(run, bar = PROPOSED_BAR) {
   lines.push('');
   lines.push(`- chrome (first new heading or tab strip in \`#main-content\`) <= ${bar.chromeMs} ms`);
   lines.push(`- first real content (>= 40 visible chars or a >= 48 px figure outside chrome and ghosts) <= ${bar.contentMs} ms`);
-  lines.push(`- zero blank-body frames after the ${bar.graceMs} ms delay-hidden ghost window`);
+  lines.push(`- no blank body (old page gone, no content, no visible ghost) longer than the ${bar.graceMs} ms delay-hidden ghost window, counted from the first blank frame, plus ${bar.frameTolMs} ms (two sampler frames)`);
   lines.push(`- CLS < ${bar.cls} over the load window`);
   lines.push(`- sequential IPC depth <= ${bar.ipcSequentialDepth} (upper bound on the fetch waterfall)`);
   lines.push(`- warm revisit first content <= ${bar.warmContentMs} ms`);
@@ -249,6 +315,8 @@ export function renderScorecard(run, bar = PROPOSED_BAR) {
   lines.push('');
   lines.push(`- surfaces derived: ${run.rows.length}; measured: ${measured.length}; skipped or refused: ${skipped.length}`);
   lines.push(`- failing the proposed bar: **${failing.length} of ${measured.length}**`);
+  const shape = measured.filter((r) => r.verdict.transferable.length > 0);
+  lines.push(`- failing on checks that transfer to a production build (blank frames, CLS, IPC depth, warm revisit, no content, or chrome/content on an already-loaded module): **${shape.length} of ${measured.length}**`);
   const counts = {};
   for (const r of failing) for (const f of r.verdict.fails) {
     const k = f.split(/\s\d|\s>/)[0].replace(/^\d+\s/, '').trim();
@@ -265,11 +333,11 @@ export function renderScorecard(run, bar = PROPOSED_BAR) {
   }
   lines.push('## Surfaces, worst first');
   lines.push('');
-  lines.push('| # | surface | chrome ms | content ms | blank (>grace) | CLS | scripts | IPC | IPC depth | warm ms | fails |');
+  lines.push('| # | surface | chrome ms | content ms | blank ms (past grace) | CLS | scripts | IPC | IPC depth | warm ms | fails |');
   lines.push('|---|---|---|---|---|---|---|---|---|---|---|');
   measured.forEach((r, i) => {
     const c = r.cold;
-    lines.push(`| ${i + 1} | \`${r.id}\` | ${fmt(c.chromeMs)} | ${fmt(c.contentMs)} | ${fmt(c.blankFrames)} (${fmt(c.blankFramesBeyondGrace)}) | ${fmt(c.cls, 3)} | ${fmt(c.scriptRequests)} | ${fmt(c.ipcCount)} | ${fmt(c.ipcSequentialDepth)} | ${fmt(r.warm?.contentMs)} | ${r.verdict.fails.join('; ') || 'pass'} |`);
+    lines.push(`| ${i + 1} | \`${r.id}\` | ${fmt(c.chromeMs)} | ${fmt(c.contentMs)} | ${fmt(c.blankMs)} (${fmt(blankBeyondGrace(c, bar))}) | ${fmt(c.cls, 3)} | ${fmt(c.scriptRequests)} | ${fmt(c.ipcCount)} | ${fmt(c.ipcSequentialDepth)} | ${fmt(r.warm?.contentMs)} | ${r.verdict.fails.join('; ') || 'pass'} |`);
   });
   if (skipped.length) {
     lines.push('');
