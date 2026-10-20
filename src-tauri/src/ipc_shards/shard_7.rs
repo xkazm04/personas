@@ -119,8 +119,6 @@ pub(super) fn shard(
         #[cfg(feature = "p2p")]
         commands::network::owned_devices::list_owned_devices,
         #[cfg(feature = "p2p")]
-        commands::network::owned_devices::register_owned_device,
-        #[cfg(feature = "p2p")]
         commands::network::owned_devices::forget_owned_device,
         #[cfg(feature = "p2p")]
         commands::network::owned_devices::set_device_home,

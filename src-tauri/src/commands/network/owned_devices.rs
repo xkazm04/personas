@@ -26,30 +26,10 @@ pub fn list_owned_devices(state: State<'_, Arc<AppState>>) -> Result<Vec<OwnedDe
     owned_devices_repo::list_owned_devices(&state.db)
 }
 
-/// Register a peer as one of the user's own devices.
-#[tauri::command]
-pub fn register_owned_device(
-    state: State<'_, Arc<AppState>>,
-    peer_id: String,
-    device_group_id: String,
-    display_name: String,
-) -> Result<OwnedDevice, AppError> {
-    require_auth_sync(&state)?;
-    // Guard against pairing yourself as your own remote device.
-    if let Some(local) = crate::db::repos::resources::identity::get_local_identity(&state.db)? {
-        if local.peer_id == peer_id {
-            return Err(AppError::Validation(
-                "Cannot register this device as its own remote device".into(),
-            ));
-        }
-    }
-    owned_devices_repo::register_owned_device(
-        &state.db,
-        peer_id.trim(),
-        device_group_id.trim(),
-        display_name.trim(),
-    )
-}
+// `register_owned_device` was retired as an IPC: it wrote an owned_devices row
+// (the sole input to remote-job trust) for any peer_id with no fingerprint
+// ceremony and no public key, and had zero callers. Rows come from the pairing
+// ceremony (`device_pairing.rs`); the repo fn stays for in-process callers.
 
 /// Nominate (or un-nominate) a paired device as the user's home machine.
 /// At most one device is home at a time — promoting one demotes the rest.

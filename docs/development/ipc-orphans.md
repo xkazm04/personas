@@ -147,7 +147,7 @@ any of these.
 | `execute_desktop_bridge`, `execute_desktop_plan`, `get_desktop_runtime_status`, `get_desktop_plan_result` | `commands/credentials/desktop_bridges.rs` | `desktop` — bridge-execution half of the same cluster |
 | `bridge_manifest_list_all`, `bridge_manifest_describe`, `bridge_manifest_dispatch` | `commands/infrastructure/bridge_manifest.rs` | `desktop`; added 2026-05-09, `BridgeManifestSummary` binding already generated |
 | `get_connection_status`, `get_connection_health`, `send_agent_message`, `get_received_messages`, `set_network_config` | `commands/network/discovery.rs` | `p2p`; 8 siblings used |
-| `get_device_group_id`, `list_owned_devices`, `register_owned_device`, `forget_owned_device` | `commands/network/owned_devices.rs` | `p2p`; added 2026-05-24, `OwnedDevice` binding exists |
+| `get_device_group_id`, `list_owned_devices`, `forget_owned_device` | `commands/network/owned_devices.rs` | `p2p`; added 2026-05-24, `OwnedDevice` binding exists |
 | `get_exposure_manifest`, `get_resource_provenance` | `commands/network/exposure.rs` | `p2p` |
 | `verify_bundle`, `resolve_share_deep_link` | `commands/network/bundle.rs` | `p2p`; 9 siblings used |
 | `reinitialize_identity` | `commands/network/identity.rs` | `p2p`; recovery path documented at `engine/identity.rs:256` |
