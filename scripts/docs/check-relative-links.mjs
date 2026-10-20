@@ -80,9 +80,13 @@ export function headingSlugs(markdown) {
   for (const line of stripCode(markdown, { inline: false }).split('\n')) {
     const m = /^\s{0,3}#{1,6}\s+(.*?)\s*#*\s*$/.exec(line);
     if (!m) continue;
-    const base = m[1]
-      .toLowerCase()
-      .replace(/<[^>]*>/g, '')
+    // Strip tags to a fixpoint: one pass can leave a new tag behind (`<<b>script>`).
+    let heading = m[1].toLowerCase();
+    for (let prev = ''; prev !== heading; ) {
+      prev = heading;
+      heading = heading.replace(/<[^>]*>/g, '');
+    }
+    const base = heading
       .replace(/[^\p{L}\p{N}\s_-]/gu, '')
       .replace(/ /g, '-');
     const n = seen.get(base) ?? 0;
