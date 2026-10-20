@@ -42,6 +42,7 @@ vi.mock('@/lib/notifications/checkHumanReviews', () => ({
 
 import { useAgentStore } from '@/stores/agentStore';
 import { checkNewHumanReviews } from '@/lib/notifications/checkHumanReviews';
+import { addMiddleware } from '@/lib/execution/pipeline';
 import { executionSink } from '@/lib/execution/executionSink';
 import { usePersonaExecution } from '../usePersonaExecution';
 
@@ -353,5 +354,45 @@ describe('final output chunk', () => {
     expect(snapshot).toBeDefined();
     expect(snapshot).toContain('final line');
     expect(snapshot).toContain('[ERROR] boom');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 5. A background run's terminal event reaches the post-run middleware
+// ---------------------------------------------------------------------------
+
+describe('background run completion', () => {
+  it('runs finalize_status and frontend_complete once for a background lane', async () => {
+    getExecutionLogLinesMock.mockResolvedValue([]);
+    const finalized: unknown[] = [];
+    const completed: unknown[] = [];
+    addMiddleware('finalize_status', 'test-bg-finalize', (_s, p) => { finalized.push(p); return p; });
+    addMiddleware('frontend_complete', 'test-bg-complete', (_s, p) => { completed.push(p); return p; });
+    useAgentStore.setState({
+      backgroundExecutions: [{
+        executionId: 'exec-bg', personaId: 'p-9', personaName: 'Bg', personaColor: '#000',
+        status: 'running', startedAt: new Date().toISOString(),
+      }],
+    });
+
+    renderHook(() => usePersonaExecution());
+    await waitFor(() => {
+      expect(registered.some((h) => h.name === EventName.EXECUTION_STATUS)).toBe(true);
+    });
+    const terminal = { execution_id: 'exec-bg', status: 'completed', duration_ms: 1200, cost_usd: 0.5 };
+    await act(async () => {
+      emitTo(EventName.EXECUTION_STATUS, terminal);
+      await Promise.resolve();
+    });
+    // A repeated terminal event must not re-run the middleware.
+    await act(async () => {
+      emitTo(EventName.EXECUTION_STATUS, terminal);
+      await Promise.resolve();
+    });
+
+    await waitFor(() => { expect(completed).toHaveLength(1); });
+    expect(finalized).toHaveLength(1);
+    expect(finalized[0]).toMatchObject({ executionId: 'exec-bg', status: 'completed', durationMs: 1200, costUsd: 0.5 });
+    expect(completed[0]).toMatchObject({ executionId: 'exec-bg', personaId: 'p-9', finalStatus: 'completed' });
   });
 });
