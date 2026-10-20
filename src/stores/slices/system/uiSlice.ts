@@ -131,6 +131,8 @@ export interface UiSlice {
   error: string | null;
   n8nTransformActive: boolean;
   templateAdoptActive: boolean;
+  /** Review id of the adoption running right now (null when none), so the gallery banner can reopen it. */
+  activeAdoptionReviewId: string | null;
   isCreatingPersona: boolean;
   rebuildActive: boolean;
   templateTestActive: boolean;
@@ -292,7 +294,7 @@ export interface UiSlice {
   setRerunInputData: (data: string | null) => void;
   setError: (error: string | null) => void;
   setN8nTransformActive: (active: boolean) => void;
-  setTemplateAdoptActive: (active: boolean) => void;
+  setTemplateAdoptActive: (active: boolean, reviewId?: string) => void;
   setIsCreatingPersona: (creating: boolean) => void;
   setRebuildActive: (active: boolean) => void;
   setTemplateTestActive: (active: boolean) => void;
@@ -432,6 +434,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   error: null,
   n8nTransformActive: false,
   templateAdoptActive: false,
+  activeAdoptionReviewId: null,
   isCreatingPersona: false,
   rebuildActive: false,
   templateTestActive: false,
@@ -540,7 +543,8 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   setRerunInputData: (data) => set({ rerunInputData: data }),
   setError: (error) => set({ error }),
   setN8nTransformActive: (active) => set({ n8nTransformActive: active }),
-  setTemplateAdoptActive: (active) => set({ templateAdoptActive: active }),
+  setTemplateAdoptActive: (active, reviewId) =>
+    set({ templateAdoptActive: active, activeAdoptionReviewId: active ? (reviewId ?? null) : null }),
   setIsCreatingPersona: (creating) => set({ isCreatingPersona: creating }),
   setRebuildActive: (active) => set({ rebuildActive: active }),
   setTemplateTestActive: (active) => set({ templateTestActive: active }),

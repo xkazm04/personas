@@ -1145,7 +1145,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
         } catch (err) { silentCatch("features/templates/sub_generated/adoption/ChronologyAdoptionView:catch3")(err); }
 
         // Show progress dot on design-reviews sidebar
-        useSystemStore.getState().setTemplateAdoptActive(true);
+        useSystemStore.getState().setTemplateAdoptActive(true, review.id);
 
         setSeeded(true);
         seedDone.current = true;
