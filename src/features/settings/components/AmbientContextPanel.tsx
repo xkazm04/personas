@@ -10,7 +10,9 @@ import type { ContextRule } from '@/lib/bindings/ContextRule';
 import type { ContextAction } from '@/lib/bindings/ContextAction';
 import { DEFAULT_SENSORY_POLICY } from '@/stores/slices/system/ambientContextSlice';
 import { useTranslation } from '@/i18n/useTranslation';
-import { toastCatch } from '@/lib/silentCatch';
+import { toastCatch, extractMessage } from '@/lib/silentCatch';
+import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
+import { resolveError } from '@/lib/errors/errorRegistry';
 
 const SOURCE_ICONS: Record<string, typeof Clipboard> = {
   clipboard: Clipboard,
@@ -31,6 +33,7 @@ export function AmbientContextPanel() {
   const ambientSnapshot = useSystemStore((s) => s.ambientSnapshot);
   const ambientEnabled = useSystemStore((s) => s.ambientEnabled);
   const ambientPolicy = useSystemStore((s) => s.ambientPolicy);
+  const ambientPolicyError = useSystemStore((s) => s.ambientPolicyError);
   const fetchAmbientSnapshot = useSystemStore((s) => s.fetchAmbientSnapshot);
   const toggleAmbientEnabled = useSystemStore((s) => s.toggleAmbientEnabled);
   const fetchSensoryPolicy = useSystemStore((s) => s.fetchSensoryPolicy);
@@ -262,8 +265,15 @@ export function AmbientContextPanel() {
         </div>
       )}
 
-      {/* Sensory Policy */}
-      {ambientEnabled && (
+      {/* Sensory Policy: a failed read is shown as failed, never as defaults */}
+      {ambientEnabled && ambientPolicy === null && ambientPolicyError != null && selectedPersonaId && (
+        <ErrorBanner
+          variant="inline"
+          message={resolveError(extractMessage(ambientPolicyError)).message}
+          onRetry={() => void fetchSensoryPolicy(selectedPersonaId)}
+        />
+      )}
+      {ambientEnabled && !(ambientPolicy === null && ambientPolicyError != null) && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="typo-caption text-foreground">{s.sensory_policy}</span>
