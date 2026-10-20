@@ -40,26 +40,31 @@ export interface WhatsNewIndicator {
 }
 
 export function useWhatsNewIndicator(): WhatsNewIndicator {
+  // One visibility rule with the tab: the What's New (`roadmap`) Home tab is
+  // `devOnly`, so a production dot would point nowhere. Shipping the releases
+  // surface to production is the alternative; until then dot and tab agree.
+  const enabled = import.meta.env.DEV;
   const seenVersion = useSystemStore((s) => s.whatsNewSeenVersion);
   const markWhatsNewSeen = useSystemStore((s) => s.markWhatsNewSeen);
   const [appVersion, setAppVersion] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!enabled) return;
     let cancelled = false;
     loadAppVersion()
       .then((v) => { if (!cancelled) setAppVersion(v); })
       .catch(silentCatch('useWhatsNewIndicator:getVersion'));
     return () => { cancelled = true; };
-  }, []);
+  }, [enabled]);
 
   // First-ever launch: record a baseline silently so a future update — not
   // the install itself — is what lights the dot.
   useEffect(() => {
-    if (appVersion && seenVersion === null) markWhatsNewSeen(appVersion);
-  }, [appVersion, seenVersion, markWhatsNewSeen]);
+    if (enabled && appVersion && seenVersion === null) markWhatsNewSeen(appVersion);
+  }, [enabled, appVersion, seenVersion, markWhatsNewSeen]);
 
   const hasUpdate =
-    appVersion !== null && seenVersion !== null && seenVersion !== appVersion;
+    enabled && appVersion !== null && seenVersion !== null && seenVersion !== appVersion;
 
   const dismiss = useCallback(() => {
     if (appVersion) markWhatsNewSeen(appVersion);
