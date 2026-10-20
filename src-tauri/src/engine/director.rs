@@ -1370,6 +1370,29 @@ fn director_disposition_tally(pool: &DbPool, persona_id: &str) -> (usize, usize)
     run().unwrap_or((0, 0))
 }
 
+/// Fold execution statuses into (succeeded, failed). The decided set is
+/// `ExecutionState::TERMINAL` minus `cancelled`: `completed` succeeds, while
+/// `failed` and `incomplete` (the process died) both count as failures.
+/// Cancelled and still-active runs are neither.
+fn tally_outcomes<'a>(statuses: impl Iterator<Item = &'a str>) -> (usize, usize) {
+    statuses.fold((0usize, 0usize), |(s, f), status| match status {
+        "completed" => (s + 1, f),
+        "failed" | "incomplete" => (s, f + 1),
+        _ => (s, f),
+    })
+}
+
+#[cfg(test)]
+mod tally_outcomes_tests {
+    use super::tally_outcomes;
+
+    #[test]
+    fn incomplete_runs_count_as_failures() {
+        let statuses = ["completed", "failed", "incomplete", "cancelled", "running"];
+        assert_eq!(tally_outcomes(statuses.into_iter()), (1, 2));
+    }
+}
+
 /// Assemble the evaluation context for a single target persona.
 pub fn gather_context(
     pool: &DbPool,
@@ -1380,14 +1403,7 @@ pub fn gather_context(
         executions::get_by_persona_id(pool, target_persona_id, Some(CONTEXT_EXECUTION_WINDOW))?;
 
     let total_executions = recent.len();
-    let (success_count, failure_count) = recent.iter().fold((0usize, 0usize), |(s, f), e| match e
-        .status
-        .as_str()
-    {
-        "completed" | "success" | "succeeded" => (s + 1, f),
-        "failed" | "error" | "timeout" => (s, f + 1),
-        _ => (s, f),
-    });
+    let (success_count, failure_count) = tally_outcomes(recent.iter().map(|e| e.status.as_str()));
 
     let latest_execution_id = recent.first().map(|e| e.id.clone());
 
