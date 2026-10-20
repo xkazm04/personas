@@ -34,6 +34,11 @@ use personas_db::repos::resources::owned_devices as owned_devices_repo;
 use personas_db::repos::resources::remote_jobs as remote_jobs_repo;
 use personas_db::DbPool;
 
+/// Inbound handshakes allowed in flight at once (pre-auth memory bound).
+const MAX_PENDING_HANDSHAKES: usize = 32;
+/// Wall-clock ceiling for one inbound handshake, including stream accept.
+const HANDSHAKE_DEADLINE: Duration = Duration::from_secs(45);
+
 use self::connection::ConnectionManager;
 use self::device_pairing::DevicePairing;
 use self::manifest_sync::ManifestSync;
@@ -443,6 +448,9 @@ impl NetworkService {
         remote_jobs: Arc<RemoteJobs>,
         cancel: CancellationToken,
     ) {
+        // Bound unauthenticated work: each pending handshake holds a permit
+        // until `handle_incoming` returns (it returns once the handshake is done).
+        let handshakes = Arc::new(tokio::sync::Semaphore::new(MAX_PENDING_HANDSHAKES));
         loop {
             tokio::select! {
                 _ = cancel.cancelled() => {
@@ -457,18 +465,24 @@ impl NetworkService {
                             let messages = messages.clone();
                             let pairing = pairing.clone();
                             let remote_jobs = remote_jobs.clone();
+                            let Ok(permit) = handshakes.clone().try_acquire_owned() else {
+                                tracing::warn!("Too many pending handshakes, dropping inbound connection");
+                                conn.close(quinn::VarInt::from_u32(4), b"capacity exceeded");
+                                continue;
+                            };
                             tokio::spawn(async move {
-                                if let Err(e) = connections
-                                    .handle_incoming(
-                                        conn,
-                                        manifest_sync,
-                                        messages,
-                                        pairing,
-                                        remote_jobs,
-                                    )
-                                    .await
-                                {
-                                    tracing::warn!("Incoming connection failed: {}", e);
+                                let _permit = permit;
+                                let handshake = connections.handle_incoming(
+                                    conn,
+                                    manifest_sync,
+                                    messages,
+                                    pairing,
+                                    remote_jobs,
+                                );
+                                match tokio::time::timeout(HANDSHAKE_DEADLINE, handshake).await {
+                                    Ok(Ok(())) => {}
+                                    Ok(Err(e)) => tracing::warn!("Incoming connection failed: {}", e),
+                                    Err(_) => tracing::warn!("Incoming handshake exceeded its deadline"),
                                 }
                             });
                         }
