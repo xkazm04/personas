@@ -336,13 +336,39 @@ export function parseConnectorDefinition(raw: RawConnectorDefinition): Connector
     fields: safeJsonParse(raw.fields, []),
     healthcheck_config: raw.healthcheck_config ? safeJsonParse(raw.healthcheck_config, null) : null,
     services: safeJsonParse(raw.services, []),
-    events: safeJsonParse(raw.events, []),
+    events: normalizeTemplateEvents(safeJsonParse<unknown>(raw.events, [])),
     metadata: raw.metadata ? safeJsonParse(raw.metadata, null) : null,
     resources: raw.resources ? safeJsonParse(raw.resources, []) : undefined,
     is_builtin: raw.is_builtin,
     created_at: raw.created_at,
     updated_at: raw.updated_at,
   };
+}
+
+/**
+ * Seed events are authored in two shapes: `{id,name,description}` (what readers
+ * key on) and the legacy `{eventType,label}` (local-messaging). Map the legacy
+ * shape onto the canonical one so the Events panel never keys a card by
+ * undefined; entries with neither an id nor an eventType are dropped.
+ */
+export function normalizeTemplateEvents(parsed: unknown): CredentialTemplateEvent[] {
+  if (!Array.isArray(parsed)) return [];
+  const out: CredentialTemplateEvent[] = [];
+  for (const raw of parsed) {
+    if (!raw || typeof raw !== 'object') continue;
+    // Invariant: seed JSON is an untyped object; every field is read through typeof checks below.
+    const e = raw as Record<string, unknown>;
+    const id = typeof e.id === 'string' ? e.id : typeof e.eventType === 'string' ? e.eventType : null;
+    if (!id) continue;
+    const name = typeof e.name === 'string' ? e.name : typeof e.label === 'string' ? e.label : id;
+    out.push({
+      ...(e as Partial<CredentialTemplateEvent>),
+      id,
+      name,
+      description: typeof e.description === 'string' ? e.description : '',
+    });
+  }
+  return out;
 }
 
 function safeJsonParse<T>(json: string, fallback: T): T {
