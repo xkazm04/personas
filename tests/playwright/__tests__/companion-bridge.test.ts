@@ -80,4 +80,24 @@ describe('CompanionBridge against the app it drives', () => {
       expect(state.panelVisible).toBe(true);
     });
   });
+
+  describe('hasSendErrorChip', () => {
+
+    it('sees a chip whose translated message names neither "failed" nor "timed out"', async () => {
+      // resolveErrorTranslated maps an unclassified error to the generic copy.
+      const app = fakeApp({ orbEnabled: false, sendError: 'Something went wrong.' });
+      vi.stubGlobal('fetch', app.fetchImpl);
+      const bridge = new CompanionBridge('http://127.0.0.1:1');
+      await bridge.openChatPanel(400);
+      expect(await bridge.hasSendErrorChip()).toBe(true);
+    });
+
+    it('reports no chip when none is rendered', async () => {
+      const app = fakeApp({ orbEnabled: false, sendError: null });
+      vi.stubGlobal('fetch', app.fetchImpl);
+      const bridge = new CompanionBridge('http://127.0.0.1:1');
+      await bridge.openChatPanel(400);
+      expect(await bridge.hasSendErrorChip()).toBe(false);
+    });
+  });
 });
