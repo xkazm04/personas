@@ -54,7 +54,7 @@ export function RowActionMenu({
               type="button"
               onClick={close}
               className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/95"
-              aria-label="Close"
+              aria-label={t.common.close}
             >
               <X className="w-4 h-4" />
             </button>

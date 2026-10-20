@@ -3,6 +3,8 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { highlightMatch } from '@/lib/ui/highlightMatch';
+import { useTranslation } from '@/i18n/useTranslation';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { getCachedLightFields } from './reviewParseCache';
 import { deriveArchCategories, userHasCategoryCredential } from '../../shared/architecturalCategories';
 import { TemplateCategoryPills } from './TemplateCategoryPills';
@@ -24,6 +26,7 @@ export function CompactRow({
   openModal,
   credentialServiceTypes,
 }: CompactRowProps) {
+  const { t } = useTranslation();
   const { connectors } = getCachedLightFields(review);
   const archCategories = deriveArchCategories(connectors);
 
@@ -56,16 +59,16 @@ export function CompactRow({
           const hasIt = userHasCategoryCredential(cat.key, credentialServiceTypes);
           const CatIcon = cat.icon;
           return (
-            <div
-              key={cat.key}
-              className={`w-5.5 h-5.5 rounded flex items-center justify-center flex-shrink-0 ${
-                hasIt ? '' : 'grayscale opacity-50'
-              }`}
-              style={{ backgroundColor: `${cat.color}15` }}
-              title={`${cat.label}${hasIt ? ' (ready)' : ''}`}
-            >
-              <CatIcon className="w-3 h-3" style={{ color: cat.color }} />
-            </div>
+            <Tooltip key={cat.key} content={hasIt ? `${cat.label} · ${t.templates.connector_readiness.ready}` : cat.label}>
+              <div
+                className={`w-5.5 h-5.5 rounded flex items-center justify-center flex-shrink-0 ${
+                  hasIt ? '' : 'grayscale opacity-50'
+                }`}
+                style={{ backgroundColor: `${cat.color}15` }}
+              >
+                <CatIcon className="w-3 h-3" style={{ color: cat.color }} />
+              </div>
+            </Tooltip>
           );
         })}
         {archCategories.length > 4 && (
