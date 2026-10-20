@@ -105,13 +105,11 @@ export function useUseCases(projectId: string | null): UseCasesState {
   const scan = useCallback(async () => {
     if (!projectId || scanning) return;
     setError(null);
-    try {
-      const { scan_id } = await api.scanUseCases(projectId);
-      scanIdRef.current = scan_id;
-      setScanning(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    }
+    // A start failure rejects: `error` has no reader on either surface, so the
+    // old catch-and-store left the Scan button and Factory's toastCatch silent.
+    const { scan_id } = await api.scanUseCases(projectId);
+    scanIdRef.current = scan_id;
+    setScanning(true);
   }, [projectId, scanning]);
 
   const cancelScan = useCallback(async () => {
