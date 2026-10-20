@@ -4,10 +4,7 @@ import type { SharedEventCatalogEntry } from '@/lib/bindings/SharedEventCatalogE
 import type { SharedEventSubscription } from '@/lib/bindings/SharedEventSubscription';
 import type { SharedEventFeedActivity } from '@/lib/bindings/SharedEventFeedActivity';
 import { useDebounce } from '@/hooks/utility/timing/useDebounce';
-import { silentCatch } from '@/lib/silentCatch';
-import { createLogger } from '@/lib/log';
-
-const logger = createLogger('shared-events');
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 /**
  * Shared data + mutation logic for the Marketplace, so the card baseline and the
@@ -75,7 +72,9 @@ export function useSharedEvents() {
     try {
       await api.refreshCatalog();
     } catch (err) {
-      silentCatch('features/triggers/sub_shared/useSharedEvents:refresh')(err);
+      // Refresh, Watch and Unwatch are user presses: a failure is owed to the
+      // user. They used to log only, so a failed toggle just snapped back.
+      toastCatch('features/triggers/sub_shared/useSharedEvents:refresh')(err);
       return;
     }
     await load();
@@ -86,7 +85,7 @@ export function useSharedEvents() {
       const sub = await api.subscribeFeed(entryId);
       setSubscriptions((prev) => [sub, ...prev]);
     } catch (e) {
-      logger.error('Subscribe failed', { entryId, error: String(e) });
+      toastCatch('features/triggers/sub_shared/useSharedEvents:subscribe')(e);
     }
   }, []);
 
@@ -95,7 +94,7 @@ export function useSharedEvents() {
       await api.unsubscribeFeed(subId);
       setSubscriptions((prev) => prev.filter((s) => s.id !== subId));
     } catch (e) {
-      logger.error('Unsubscribe failed', { subId, error: String(e) });
+      toastCatch('features/triggers/sub_shared/useSharedEvents:unsubscribe')(e);
     }
   }, []);
 
