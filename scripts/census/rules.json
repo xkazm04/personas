@@ -155,8 +155,8 @@
         "description": "a chunk boundary declared with raw React.lazy(); lazyRetry() is the drop-in that survives a failed chunk fetch instead of caching the rejection forever (2026-06-07 incident). Proxy for: a dynamic-import boundary with no recovery path."
       },
       "baseline": {
-        "files": 14,
-        "matches": 53
+        "files": 13,
+        "matches": 40
       },
       "floor": 4000
     },
@@ -287,8 +287,8 @@
         "description": "ONE object literal that holds BOTH an English `label:` string AND a colour utility class. PROXY FOR the stack-free condition \"the human-readable name of a closed-vocabulary member is authored at the same site as its presentation, so it can never be translated and the vocabulary has no single home\". PRECONDITION (measured, must be re-derived per repo): this repo writes badge/status config as flat single-level object entries on one line, with the key spelled `label` and colours as Tailwind utilities. Where a repo formats those entries across lines with nested objects, or names the key `title`/`text`, or uses CSS-in-JS, this pattern scores ZERO while the condition is present at full scale — the same failure the portability test measured for `tables.md` and `form-field-and-validation.md`. Sibling evidence that the CONDITION is universal but the SHAPE is not: personas-web's shared badge is `label: \"Queued\"` beside `bgColor` at StatusBadge.tsx:11 (would match), brainiac's is a separate `STATUS_LABEL` table with the colour resolved through band() at kb-data.ts:42 (would NOT match, same defect). Legal destinations: `tokenLabel(t, category, token)` for the label + `STATUS_PALETTE` / `StatusBadge variant` for the colour."
       },
       "baseline": {
-        "files": 31,
-        "matches": 187
+        "files": 29,
+        "matches": 176
       },
       "floor": 4000
     },
@@ -727,8 +727,8 @@
         }
       ],
       "baseline": {
-        "files": 48,
-        "matches": 645
+        "files": 47,
+        "matches": 641
       },
       "floor": 1500
     },
@@ -838,7 +838,7 @@
       },
       "baseline": {
         "files": 6,
-        "matches": 129
+        "matches": 128
       },
       "floor": 500
     },
@@ -1926,8 +1926,8 @@
         "description": "an emptiness test on a value whose guard consequent constructs an AppError::Validation - i.e. `require_non_empty(field, value)?` open-coded at the call site, with its own hand-written sentence. PROXY FOR the stack-free condition: a codebase owns a shared input-validation vocabulary and its call sites re-implement the vocabulary's most basic rule inline, so the rule's identity (which field, which rule id) is destroyed at the moment it is applied and only an English sentence survives. MEASURED CONSEQUENCE IN THIS REPO: 305 open-coded emptiness refusals across 135 files, against 31 real `require_non_empty(` call sites confined to 4 files (all of them on the import/export path) - a 9.8x ratio. The helper is one line, returns the identical AppError::Validation, and predates almost all 305. Each open-coded site also loses the {field, rule, message} triple that `ValidationError::new` would have produced, which is why `contract::check` reaches only 3 of 1,661 commands and why `src/lib/bindings/ValidationError.ts` has zero importers: there is nothing structured left to send. COUNTS PRODUCED TWICE, as the contract requires, by deliberately different methods: this bounded-span regex over RAW whole-file content through the real census engine reports 305 matches / 135 files / 950 walked; an independent comment-and-string-MASKED walk that pairs each emptiness test with its own guard consequent (the `{...}` block or the expression up to `;`) reports 301 / 129. The 1.3% gap is the regex's known bridging behaviour and is documented in the golden path. A FIRST attempt at the second implementation returned 17 - it split `if cond {` away from its own block, so the test and the refusal never co-occurred in one unit; recorded because that is precisely the failure the contract warns about, and the fix was to make the guard-with-its-consequent the unit rather than the statement. PRECISION audited on a systematic every-9th-file sample of 15 sites: 14/15 genuine; the one miss is src-tauri/src/commands/companion/browser_test.rs:92, where the span bridges `if x.is_empty() { return Ok(0); }` into a following, unrelated length check. PRECONDITION, which an adopting repo must re-derive: this repo spells emptiness as `.is_empty()` / `.trim().is_empty()` and spells refusal as `AppError::Validation(..)`. A repo that refuses with a schema (`zod .min(1)`), a typed extractor, or a `NonEmptyString` newtype scores zero here while being strictly MORE correct - the sibling sweep found exactly that: personas-cloud expresses the same rule declaratively in 20 zod schemas and brainiac's REST half gets it from `Path<Uuid>` with no code at all. LEGAL DESTINATION, in order of preference: (1) make it unrepresentable - a parameter newtype whose Deserialize refuses the empty case, so the command body never runs; (2) `personas_core::validation::require_non_empty(field, value)?`; (3) `ValidationError::new(field, \"required\", msg)` collected and passed to `contract::check`, which is the only form that preserves the field/rule identifiers the frontend binding was built to consume."
       },
       "baseline": {
-        "files": 138,
-        "matches": 276
+        "files": 139,
+        "matches": 277
       },
       "floor": 400,
       "exclude": [
@@ -3139,8 +3139,8 @@
         "description": "A rendering component under src/features imports an irreversible IPC door from @/api (deleteX / removeX / revokeX / purgeX / wipeX / clearAllX) and the whole file contains NO confirmation affordance of any kind. PROXY FOR the stack-free condition: an operation the user cannot undo is reachable from the UI without them being asked. Measured 2026-08-16 at 4f5621830: the anchor (an irreversible @/api import in a feature .tsx) matches 18 files; 12 have no consent step, 6 do — the positive control partitions the anchor exactly, 12 + 6 = 18. PRECISION 12/12 hand-read (each reaches a live delete_/revoke_ Tauri command from a click path with no dialog: LifecyclePage.tsx:120 deletes every trigger on a project in a loop; FleetPairDevice.tsx:75 un-pairs a device; ByomApiKeyManager.tsx:180 deletes a stored provider key). SCOPE is deliberately src/features/**.tsx: store slices, hooks and lib helpers legitimately carry no dialog, and including them took precision from 12/12 to 13/62. ignoreCommentLines is FALSE on purpose — the match is file-scoped and anchored at index 0, so the comment filter would look at line 1 and drop the count for any file that grows a JSDoc header. DO NOT key on the verb at the call site instead: an onClick-anchored variant of this rule scored ~3/17 because removeChip / removeRow / removeField edit unsaved form state. CORRECT END STATE is 0, at which point DELETE this rule rather than baselining it at zero. PRECONDITION (re-derive per repo, do NOT port): this repo spells irreversibility as a named import from a generated Tauri command wrapper. In a Next.js app it is fetch(..., {method:'DELETE'}) or a useDeleteMutation hook; in a Rust TUI it is a repo call; this pattern scores ZERO on all of them."
       },
       "baseline": {
-        "files": 9,
-        "matches": 9
+        "files": 8,
+        "matches": 8
       },
       "floor": 1500
     },
@@ -5126,8 +5126,8 @@
         }
       ],
       "baseline": {
-        "files": 5,
-        "matches": 15
+        "files": 4,
+        "matches": 13
       },
       "floor": 4000
     },
@@ -5756,7 +5756,7 @@
       ],
       "baseline": {
         "files": 805,
-        "matches": 3752
+        "matches": 3753
       },
       "floor": 5000
     },
@@ -5794,8 +5794,8 @@
         }
       ],
       "baseline": {
-        "files": 265,
-        "matches": 555
+        "files": 264,
+        "matches": 554
       },
       "floor": 5000
     },
@@ -5967,8 +5967,8 @@
         "description": "A <Suspense fallback={null}> whose children are a view (tab panels, a page view, a drill layer) rather than an overlay: the body between the tag and its </Suspense> names no Modal/Dialog/Overlay/Toast/Popover/Drawer/Sheet/Menu/Tooltip/Host/Services/Watcher/Composer/Inspector/Island, passes no onClose= or open prop, is not {children}, and the Suspense is not itself a prop value (a slot such as queueHistory={<Suspense...>} renders inside whatever drawer owns it). While the chunk loads the region paints NOTHING, so the first frame is blank and the resolve shifts everything below it. Use RouteChunkSkeleton at a route, or a header-band / geometry-matched delayed ghost below one (page-loading.md \"fallback={null} on a full route/section\"; overview-loading.md section D). PRECISION over recall, hand-checked 2026-10-20 on a clean HEAD export: 3 of 3 matches are view boundaries (AthenaPage tab panels, curator ProcessPage view, DialView deep layer); of the 23 fallback={null} sites in src, the 20 not matched are modals, overlays, background services, a drawer slot and one view swap that passes onClose (MemoryPanel consolidation, a known miss). Lens: render-path."
       },
       "baseline": {
-        "files": 3,
-        "matches": 3
+        "files": 2,
+        "matches": 2
       },
       "floor": 3000
     },
@@ -5989,8 +5989,8 @@
         "description": "A line-leading `if (loading|isLoading|loadingX [&& ...|| ...]) return <...>|(...)|null` in a .tsx file whose main return LATER renders chrome (ContentHeader, ContentBox, SectionHeader/SectionHeading/SectionCard, PanelTabBar, SegmentedTabs, Toolbar, FilterBar, kit Section, Crumbs, h1/h2, or any *Header/*Headline component) while the early return itself renders none of them within its statement. That is the \"chrome renders before data and is never hidden by a loading flag\" law (overview-loading.md law 1, page-loading.md anti-pattern 1): the header, tabs and controls vanish for every cold visit and the swap shifts the page. The fix is a ghost UNDER the permanent chrome, or UnifiedTable isLoading+data. `if (!loading ...)` empty-state branches and `return;` effect guards do not match. PRECISION over recall, hand-checked 2026-10-20 on a clean HEAD export: 4 of 4 matches hide chrome (three KPI variants drop EstateHeadline and the lens SegmentedTabs; CloudSyncPanel drops its SectionCards for a blank py-20 box). Of the 28 loading early returns in src, the rule leaves out the widgets that own no chrome (ListRow, ContextGroups, rails, tables) and the two that keep their header in the loading branch (ChainTraceView, AthenaHealthPanel). Lens: render-path."
       },
       "baseline": {
-        "files": 4,
-        "matches": 4
+        "files": 1,
+        "matches": 1
       },
       "floor": 3000
     }

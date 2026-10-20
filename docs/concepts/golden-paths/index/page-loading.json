@@ -158,7 +158,7 @@
       "sections": [7],
       "lines": ["102"],
       "contexts": [
-        "| `home/sub_welcome/WelcomeLayout.tsx:65` · `agents/sub_editor/components/EditorBody.tsx:182` · `agents/sub_design/DesignHub.tsx:102` · `plugins/fleet/FleetPage.tsx:88` · `settings/components/Setting…"
+        "| `home/sub_welcome/WelcomeLayout.tsx:65` · `agents/sub_editor/components/EditorBody.tsx:182` · `agents/sub_design/DesignHub.tsx:102` · `plugins/fleet/FleetPage.tsx:88` (`settings/components/Settings…"
       ],
       "resolvedFrom": "suffix",
       "verbatim": "agents/sub_design/DesignHub.tsx"
@@ -168,7 +168,7 @@
       "sections": [7],
       "lines": ["182"],
       "contexts": [
-        "| `home/sub_welcome/WelcomeLayout.tsx:65` · `agents/sub_editor/components/EditorBody.tsx:182` · `agents/sub_design/DesignHub.tsx:102` · `plugins/fleet/FleetPage.tsx:88` · `settings/components/Setting…"
+        "| `home/sub_welcome/WelcomeLayout.tsx:65` · `agents/sub_editor/components/EditorBody.tsx:182` · `agents/sub_design/DesignHub.tsx:102` · `plugins/fleet/FleetPage.tsx:88` (`settings/components/Settings…"
       ],
       "resolvedFrom": "suffix",
       "verbatim": "agents/sub_editor/components/EditorBody.tsx"
@@ -289,7 +289,7 @@
       "sections": [7],
       "lines": ["65"],
       "contexts": [
-        "| `home/sub_welcome/WelcomeLayout.tsx:65` · `agents/sub_editor/components/EditorBody.tsx:182` · `agents/sub_design/DesignHub.tsx:102` · `plugins/fleet/FleetPage.tsx:88` · `settings/components/Setting…"
+        "| `home/sub_welcome/WelcomeLayout.tsx:65` · `agents/sub_editor/components/EditorBody.tsx:182` · `agents/sub_design/DesignHub.tsx:102` · `plugins/fleet/FleetPage.tsx:88` (`settings/components/Settings…"
       ],
       "resolvedFrom": "suffix",
       "verbatim": "home/sub_welcome/WelcomeLayout.tsx"
@@ -479,7 +479,7 @@
       "sections": [7],
       "lines": ["88"],
       "contexts": [
-        "| `home/sub_welcome/WelcomeLayout.tsx:65` · `agents/sub_editor/components/EditorBody.tsx:182` · `agents/sub_design/DesignHub.tsx:102` · `plugins/fleet/FleetPage.tsx:88` · `settings/components/Setting…"
+        "| `home/sub_welcome/WelcomeLayout.tsx:65` · `agents/sub_editor/components/EditorBody.tsx:182` · `agents/sub_design/DesignHub.tsx:102` · `plugins/fleet/FleetPage.tsx:88` (`settings/components/Settings…"
       ],
       "resolvedFrom": "suffix",
       "verbatim": "plugins/fleet/FleetPage.tsx"
@@ -551,9 +551,8 @@
     "src/features/settings/components/SettingsPage.tsx": {
       "count": 1,
       "sections": [7],
-      "lines": ["84"],
       "contexts": [
-        "| `home/sub_welcome/WelcomeLayout.tsx:65` · `agents/sub_editor/components/EditorBody.tsx:182` · `agents/sub_design/DesignHub.tsx:102` · `plugins/fleet/FleetPage.tsx:88` · `settings/components/Setting…"
+        "| `home/sub_welcome/WelcomeLayout.tsx:65` · `agents/sub_editor/components/EditorBody.tsx:182` · `agents/sub_design/DesignHub.tsx:102` · `plugins/fleet/FleetPage.tsx:88` (`settings/components/Settings…"
       ],
       "resolvedFrom": "suffix",
       "verbatim": "settings/components/SettingsPage.tsx"
