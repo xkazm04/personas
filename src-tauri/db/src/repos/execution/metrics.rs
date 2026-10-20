@@ -401,6 +401,97 @@ fn persona_filter_qb(date_filter: String, persona_id: Option<&str>) -> QueryBuil
     qb
 }
 
+/// The time window a dashboard query covers, as SQLite-comparable UTC strings
+/// (`YYYY-MM-DD HH:MM:SS`, the shape `datetime('now')` stamps `created_at` in).
+///
+/// `days` keeps its old meaning (the last N days up to now, open above); an
+/// explicit `start`/`end` (RFC 3339) bounds the window instead:
+/// `start <= created_at < end`, either side optional.
+#[derive(Debug, Clone)]
+pub struct MetricsWindow {
+    lo: String,
+    hi: Option<String>,
+    period_days: i64,
+}
+
+const WINDOW_FMT: &str = "%Y-%m-%d %H:%M:%S";
+
+impl MetricsWindow {
+    /// Window length in whole days (a partial day rounds up).
+    pub fn period_days(&self) -> i64 {
+        self.period_days
+    }
+
+    /// The last `days` days (clamped 1..=365), open above.
+    pub fn last_days(days: i64) -> Self {
+        let days = days.clamp(1, 365);
+        let lo = (chrono::Utc::now() - chrono::Duration::days(days))
+            .format(WINDOW_FMT)
+            .to_string();
+        Self {
+            lo,
+            hi: None,
+            period_days: days,
+        }
+    }
+
+    /// Resolve a command's arguments: when `start` or `end` is present the
+    /// explicit bounds win; otherwise `days` (default 30). With only `end`,
+    /// the window is `days` long, ending there.
+    pub fn resolve(
+        days: Option<i64>,
+        start: Option<&str>,
+        end: Option<&str>,
+    ) -> Result<Self, AppError> {
+        let parse = |label: &str, raw: &str| -> Result<chrono::DateTime<chrono::Utc>, AppError> {
+            chrono::DateTime::parse_from_rfc3339(raw.trim())
+                .map(|d| d.with_timezone(&chrono::Utc))
+                .map_err(|e| {
+                    AppError::Validation(format!("{label} must be an ISO 8601 timestamp: {e}"))
+                })
+        };
+        let start = start.map(|s| parse("start", s)).transpose()?;
+        let end = end.map(|s| parse("end", s)).transpose()?;
+        if start.is_none() && end.is_none() {
+            return Ok(Self::last_days(days.unwrap_or(30)));
+        }
+        let lo = match (start, end) {
+            (Some(s), _) => s,
+            (None, e) => {
+                e.unwrap_or_else(chrono::Utc::now)
+                    - chrono::Duration::days(days.unwrap_or(30).clamp(1, 365))
+            }
+        };
+        if end.is_some_and(|hi| hi <= lo) {
+            return Err(AppError::Validation("end must be after start".into()));
+        }
+        let span = end.unwrap_or_else(chrono::Utc::now) - lo;
+        // A partial day rounds up so a 12-hour window reports 1, never 0.
+        let period_days = ((span.num_seconds() + 86_399) / 86_400).max(1);
+        Ok(Self {
+            lo: lo.format(WINDOW_FMT).to_string(),
+            hi: end.map(|d| d.format(WINDOW_FMT).to_string()),
+            period_days,
+        })
+    }
+}
+
+/// Like [`persona_filter_qb`] but for a [`MetricsWindow`]: the lower bound is
+/// `?1` (use `created_at >= ?1`), the upper bound is returned as a ready
+/// ` AND created_at < ?N` fragment (empty when open above).
+fn window_filter_qb(window: &MetricsWindow, persona_id: Option<&str>) -> (QueryBuilder, String) {
+    let mut qb = QueryBuilder::new();
+    qb.push_param(window.lo.clone());
+    let hi_clause = match &window.hi {
+        Some(hi) => format!(" AND created_at < {}", qb.push_param(hi.clone())),
+        None => String::new(),
+    };
+    if let Some(pid) = persona_id {
+        qb.where_eq("persona_id", pid.to_string());
+    }
+    (qb, hi_clause)
+}
+
 // ============================================================================
 // Live summary from persona_executions
 // ============================================================================
@@ -433,7 +524,15 @@ pub fn get_summary_with_conn(
     days: i64,
     persona_id: Option<&str>,
 ) -> Result<crate::models::MetricsSummary, AppError> {
-    let qb = persona_filter_qb(format!("-{days} days"), persona_id);
+    get_summary_in_window(conn, &MetricsWindow::last_days(days), persona_id)
+}
+
+pub fn get_summary_in_window(
+    conn: &Connection,
+    window: &MetricsWindow,
+    persona_id: Option<&str>,
+) -> Result<crate::models::MetricsSummary, AppError> {
+    let (qb, hi_clause) = window_filter_qb(window, persona_id);
     let pid_clause = if qb.has_conditions() {
         format!(" AND {}", qb.where_clause().trim_start_matches("WHERE "))
     } else {
@@ -448,7 +547,7 @@ pub fn get_summary_with_conn(
             COALESCE(SUM(cost_usd), 0.0) as total_cost,
             COUNT(DISTINCT persona_id) as active_personas
          FROM persona_executions
-         WHERE created_at >= datetime('now', ?1){pid_clause}"
+         WHERE created_at >= ?1{hi_clause}{pid_clause}"
     );
 
     conn.query_row(&sql, qb.params_ref().as_slice(), |row| {
@@ -458,7 +557,7 @@ pub fn get_summary_with_conn(
             failed_executions: row.get(2)?,
             total_cost_usd: row.get(3)?,
             active_personas: row.get(4)?,
-            period_days: days,
+            period_days: window.period_days,
         })
     })
     .map_err(AppError::from)
@@ -830,7 +929,15 @@ pub fn get_chart_data_with_conn(
     days: i64,
     persona_id: Option<&str>,
 ) -> Result<MetricsChartData, AppError> {
-    let qb = persona_filter_qb(format!("-{days} days"), persona_id);
+    get_chart_data_in_window(conn, &MetricsWindow::last_days(days), persona_id)
+}
+
+pub fn get_chart_data_in_window(
+    conn: &Connection,
+    window: &MetricsWindow,
+    persona_id: Option<&str>,
+) -> Result<MetricsChartData, AppError> {
+    let (qb, hi_clause) = window_filter_qb(window, persona_id);
     let pid_clause = if qb.has_conditions() {
         format!(" AND {}", qb.where_clause().trim_start_matches("WHERE "))
     } else {
@@ -848,7 +955,7 @@ pub fn get_chart_data_with_conn(
             COALESCE(SUM(input_tokens), 0) + COALESCE(SUM(output_tokens), 0) as tokens,
             COUNT(DISTINCT persona_id) as active_personas
          FROM persona_executions
-         WHERE created_at >= datetime('now', ?1){pid_clause}
+         WHERE created_at >= ?1{hi_clause}{pid_clause}
          GROUP BY DATE(created_at)
          ORDER BY date ASC"
     );
@@ -885,7 +992,7 @@ pub fn get_chart_data_with_conn(
             COUNT(*) as executions,
             COALESCE(SUM(cost_usd), 0.0) as cost
          FROM persona_executions
-         WHERE created_at >= datetime('now', ?1){pid_clause}
+         WHERE created_at >= ?1{hi_clause}{pid_clause}
          GROUP BY persona_id
          HAVING executions > 0"
     );
@@ -1247,18 +1354,29 @@ pub fn get_execution_dashboard(
     pool: &DbPool,
     days: i64,
 ) -> Result<ExecutionDashboardData, AppError> {
+    get_execution_dashboard_in_window(pool, &MetricsWindow::last_days(days))
+}
+
+/// [`get_execution_dashboard`] over an explicit [`MetricsWindow`].
+pub fn get_execution_dashboard_in_window(
+    pool: &DbPool,
+    window: &MetricsWindow,
+) -> Result<ExecutionDashboardData, AppError> {
     timed_query!(
         "execution_metrics",
         "execution_metrics::get_execution_dashboard",
         {
             let start = std::time::Instant::now();
-            let days = days.clamp(1, 365);
             let conn = pool.conn("metrics::get_execution_dashboard")?;
-            let date_filter = format!("-{days} days");
+            let hi_clause = if window.hi.is_some() {
+                " AND e.created_at < ?2"
+            } else {
+                ""
+            };
 
             // Single query: fetch all rows with persona name, aggregated in Rust.
             // This replaces 4 separate SQL queries that each scanned the same rows.
-            let mut stmt = conn.prepare_cached(
+            let mut stmt = conn.prepare_cached(&format!(
                 "SELECT
             DATE(e.created_at) as date,
             e.persona_id,
@@ -1271,10 +1389,10 @@ pub fn get_execution_dashboard(
             e.id
          FROM persona_executions e
          LEFT JOIN personas p ON p.id = e.persona_id
-         WHERE e.created_at >= datetime('now', ?1)
+         WHERE e.created_at >= ?1{hi_clause}
            AND e.status IN ('completed', 'failed')
          ORDER BY DATE(e.created_at) ASC, e.cost_usd DESC",
-            )?;
+            ))?;
 
             struct RawRow {
                 date: String,
@@ -1288,8 +1406,12 @@ pub fn get_execution_dashboard(
                 exec_id: String,
             }
 
+            let bounds: Vec<&dyn rusqlite::ToSql> = match &window.hi {
+                Some(hi) => vec![&window.lo, hi],
+                None => vec![&window.lo],
+            };
             let rows: Vec<RawRow> = stmt
-                .query_map(params![date_filter], |row| {
+                .query_map(bounds.as_slice(), |row| {
                     Ok(RawRow {
                         date: row.get(0)?,
                         persona_id: row.get(1)?,
@@ -2696,5 +2818,102 @@ mod tests {
             still_null.is_none(),
             "reading the breakdown must never write a class back"
         );
+    }
+    // ── explicit start/end window (L4-20 backend) ─────────────────────────
+
+    fn insert_run_at(pool: &DbPool, id: &str, persona_id: &str, created_at: &str) {
+        let conn = pool.conn("execution_metrics::test").unwrap();
+        conn.execute(
+            "INSERT INTO persona_executions (id, persona_id, status, cost_usd, created_at)
+             VALUES (?1, ?2, 'completed', 1.0, ?3)",
+            rusqlite::params![id, persona_id, created_at],
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn explicit_start_end_bound_the_window_and_days_still_works_without_them() {
+        let pool = init_test_db().unwrap();
+        let persona = create_test_persona(&pool, "window-persona");
+        let now = chrono::Utc::now();
+        let at = |d: i64| {
+            (now - chrono::Duration::days(d))
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string()
+        };
+        insert_run_at(&pool, "w-1", &persona, &at(1));
+        insert_run_at(&pool, "w-10", &persona, &at(10));
+        insert_run_at(&pool, "w-20", &persona, &at(20));
+        let iso = |d: i64| (now - chrono::Duration::days(d)).to_rfc3339();
+
+        // days only: the old behaviour, open above.
+        let w = MetricsWindow::resolve(Some(15), None, None).unwrap();
+        let conn = pool.conn("execution_metrics::test").unwrap();
+        assert_eq!(
+            get_summary_in_window(&conn, &w, None)
+                .unwrap()
+                .total_executions,
+            2
+        );
+        assert_eq!(
+            get_summary_in_window(&conn, &w, None).unwrap().period_days,
+            15
+        );
+
+        // start/end present: they bound the window and `days` is ignored.
+        let w = MetricsWindow::resolve(Some(1), Some(&iso(15)), Some(&iso(5))).unwrap();
+        let s = get_summary_in_window(&conn, &w, None).unwrap();
+        assert_eq!(
+            s.total_executions, 1,
+            "only the 10-day-old run is inside [15d, 5d)"
+        );
+        assert_eq!(s.period_days, 10);
+        let chart = get_chart_data_in_window(&conn, &w, None).unwrap();
+        assert_eq!(chart.chart_points.len(), 1);
+        drop(conn);
+        let dash = get_execution_dashboard_in_window(&pool, &w).unwrap();
+        assert_eq!(dash.total_executions, 1);
+
+        // Persona filter composes with an upper bound (param numbering).
+        let conn = pool.conn("execution_metrics::test").unwrap();
+        assert_eq!(
+            get_summary_in_window(&conn, &w, Some(&persona))
+                .unwrap()
+                .total_executions,
+            1
+        );
+        assert_eq!(
+            get_summary_in_window(&conn, &w, Some("nobody"))
+                .unwrap()
+                .total_executions,
+            0
+        );
+
+        // start only: open above.
+        let w = MetricsWindow::resolve(None, Some(&iso(15)), None).unwrap();
+        assert_eq!(
+            get_summary_in_window(&conn, &w, None)
+                .unwrap()
+                .total_executions,
+            2
+        );
+    }
+
+    #[test]
+    fn a_malformed_or_inverted_window_is_a_validation_error() {
+        assert!(MetricsWindow::resolve(None, Some("yesterday"), None).is_err());
+        assert!(MetricsWindow::resolve(
+            None,
+            Some("2026-10-02T00:00:00Z"),
+            Some("2026-10-01T00:00:00Z")
+        )
+        .is_err());
+        let w = MetricsWindow::resolve(
+            None,
+            Some("2026-10-01T00:00:00Z"),
+            Some("2026-10-01T12:00:00Z"),
+        )
+        .unwrap();
+        assert_eq!(w.period_days(), 1, "a partial day rounds up");
     }
 }

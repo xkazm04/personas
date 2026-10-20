@@ -136,22 +136,28 @@ pub fn get_all_monthly_spend(
 }
 
 #[tauri::command]
-#[instrument(skip(state), fields(days, persona_id, utc_offset_minutes))]
+#[instrument(skip(state), fields(days, persona_id, utc_offset_minutes, start, end))]
 pub fn get_overview_bundle(
     state: State<'_, Arc<AppState>>,
     days: Option<i64>,
     persona_id: Option<String>,
     utc_offset_minutes: Option<i32>,
+    start: Option<String>,
+    end: Option<String>,
 ) -> Result<OverviewBundle, AppError> {
     require_auth_sync(&state)?;
-    let start = std::time::Instant::now();
-    let days = days.unwrap_or(30).clamp(1, 365);
+    let started = std::time::Instant::now();
+    let window = repo::MetricsWindow::resolve(days, start.as_deref(), end.as_deref())?;
     let conn = state.db.get()?;
     conn.execute_batch("BEGIN DEFERRED")?;
     let result = (|| -> Result<OverviewBundle, AppError> {
         Ok(OverviewBundle {
-            metrics_summary: repo::get_summary_with_conn(&conn, days, persona_id.as_deref())?,
-            metrics_chart_data: repo::get_chart_data_with_conn(&conn, days, persona_id.as_deref())?,
+            metrics_summary: repo::get_summary_in_window(&conn, &window, persona_id.as_deref())?,
+            metrics_chart_data: repo::get_chart_data_in_window(
+                &conn,
+                &window,
+                persona_id.as_deref(),
+            )?,
             monthly_spend: get_all_monthly_spend_with_conn(&conn, utc_offset_minutes)?,
         })
     })();
@@ -160,8 +166,8 @@ pub fn get_overview_bundle(
         Ok(bundle) => {
             conn.execute_batch("COMMIT")?;
             info!(
-                duration_ms = start.elapsed().as_millis() as u64,
-                days,
+                duration_ms = started.elapsed().as_millis() as u64,
+                days = window.period_days(),
                 persona_id = persona_id.as_deref().unwrap_or(""),
                 monthly_rows = bundle.monthly_spend.items.len(),
                 "cmd::get_overview_bundle"
@@ -412,13 +418,16 @@ pub fn get_prompt_performance(
 /// including daily time-series, latency percentiles, top-5 personas by cost,
 /// and cost anomaly detection.
 #[tauri::command]
-#[instrument(skip(state), fields(days))]
+#[instrument(skip(state), fields(days, start, end))]
 pub fn get_execution_dashboard(
     state: State<'_, Arc<AppState>>,
     days: Option<i64>,
+    start: Option<String>,
+    end: Option<String>,
 ) -> Result<ExecutionDashboardData, AppError> {
     require_auth_sync(&state)?;
-    repo::get_execution_dashboard(&state.db, days.unwrap_or(30).clamp(1, 365))
+    let window = repo::MetricsWindow::resolve(days, start.as_deref(), end.as_deref())?;
+    repo::get_execution_dashboard_in_window(&state.db, &window)
 }
 
 /// Returns daily execution counts + cost for the last `days` days (default 365),
