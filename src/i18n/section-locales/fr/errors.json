@@ -34,5 +34,12 @@
   "oauth_unknown_error": "erreur inconnue",
   "ai_search_no_results": "Aucun modèle correspondant trouvé.",
   "ai_search_coverage": " ({searched} modèles sur {total} analysés)",
-  "ai_search_failed": "Échec de la recherche IA : {detail}"
+  "ai_search_failed": "Échec de la recherche IA : {detail}",
+  "run_timed_out": "L'exécution a expiré après {minutes} minutes. L'opération est peut-être bloquée.",
+  "startup_failed": "Échec du démarrage : impossible de charger {sources}.",
+  "startup_source_credentials": "les identifiants",
+  "startup_source_personas": "les personas",
+  "startup_source_recipes": "les recettes",
+  "startup_source_teams": "les équipes",
+  "startup_source_tools": "les outils"
 }

@@ -62,21 +62,36 @@ export function deltaColor(pct: number, lowerIsBetter = true): string {
  * straight back into it, so the import has to name the pure module.
  */
 
-/** Generate "what changed" summary between two executions. */
-export function generateWhatChanged(left: PersonaExecution, right: PersonaExecution): string[] {
-  const changes: string[] = [];
-  const rightLabel = right.retry_count > 0 ? `retry #${right.retry_count}` : 'original';
+/**
+ * One line of the "what changed" summary as a typed token. The helper stays
+ * language-free (it is a `.ts` module the JSX lint cannot see); the component
+ * renders each token through `t.agents.executions.what_changed_<kind>`.
+ * `retry` is the right run's retry count (0 = the original run); status and
+ * model values are raw machine tokens the renderer maps to display labels.
+ */
+export type WhatChangedKind =
+  | 'tokens_fewer' | 'tokens_more' | 'cost_less' | 'cost_more'
+  | 'slower' | 'faster' | 'status' | 'tool_order' | 'tool_calls' | 'model' | 'none';
+
+export interface WhatChangedItem {
+  kind: WhatChangedKind;
+  retry: number;
+  vars: Record<string, string | number>;
+}
+
+/** Generate "what changed" tokens between two executions. */
+export function generateWhatChanged(left: PersonaExecution, right: PersonaExecution): WhatChangedItem[] {
+  const changes: WhatChangedItem[] = [];
+  const retry = right.retry_count > 0 ? right.retry_count : 0;
+  const push = (kind: WhatChangedKind, vars: Record<string, string | number> = {}) =>
+    changes.push({ kind, retry, vars });
 
   const totalLeft = left.input_tokens + left.output_tokens;
   const totalRight = right.input_tokens + right.output_tokens;
   if (totalLeft > 0 && totalRight > 0) {
     const tokenPct = pctChange(totalLeft, totalRight);
     if (Math.abs(tokenPct) >= 10) {
-      changes.push(
-        tokenPct < 0
-          ? `Right (${rightLabel}) used ${Math.abs(tokenPct).toFixed(0)}% fewer tokens`
-          : `Right (${rightLabel}) used ${tokenPct.toFixed(0)}% more tokens`
-      );
+      push(tokenPct < 0 ? 'tokens_fewer' : 'tokens_more', { pct: Math.abs(tokenPct).toFixed(0) });
     }
   }
 
@@ -86,11 +101,7 @@ export function generateWhatChanged(left: PersonaExecution, right: PersonaExecut
   if (left.cost_usd != null && right.cost_usd != null && left.cost_usd > 0 && right.cost_usd > 0) {
     const costPct = pctChange(left.cost_usd, right.cost_usd);
     if (Math.abs(costPct) >= 10) {
-      changes.push(
-        costPct < 0
-          ? `Right (${rightLabel}) cost ${Math.abs(costPct).toFixed(0)}% less`
-          : `Right (${rightLabel}) cost ${costPct.toFixed(0)}% more`
-      );
+      push(costPct < 0 ? 'cost_less' : 'cost_more', { pct: Math.abs(costPct).toFixed(0) });
     }
   }
 
@@ -100,16 +111,12 @@ export function generateWhatChanged(left: PersonaExecution, right: PersonaExecut
     const durPct = pctChange(durL, durR);
     if (Math.abs(durPct) >= 20) {
       const ratio = durR / durL;
-      changes.push(
-        durPct > 0
-          ? `Right (${rightLabel}) took ${ratio.toFixed(1)}x longer`
-          : `Right (${rightLabel}) was ${(1 / ratio).toFixed(1)}x faster`
-      );
+      push(durPct > 0 ? 'slower' : 'faster', { ratio: (durPct > 0 ? ratio : 1 / ratio).toFixed(1) });
     }
   }
 
   if (left.status !== right.status) {
-    changes.push(`Status changed: ${left.status} -> ${right.status}`);
+    push('status', { from: left.status, to: right.status });
   }
 
   const stepsL = parseToolSteps(left.tool_steps);
@@ -117,18 +124,18 @@ export function generateWhatChanged(left: PersonaExecution, right: PersonaExecut
   const orderL = stepsL.map(s => s.tool_name).join(',');
   const orderR = stepsR.map(s => s.tool_name).join(',');
   if (orderL && orderR && orderL !== orderR) {
-    changes.push('Different tool call order');
+    push('tool_order');
   }
   if (stepsL.length !== stepsR.length && (stepsL.length > 0 || stepsR.length > 0)) {
-    changes.push(`Tool calls: ${stepsL.length} -> ${stepsR.length}`);
+    push('tool_calls', { from: stepsL.length, to: stepsR.length });
   }
 
   if (left.model_used && right.model_used && left.model_used !== right.model_used) {
-    changes.push(`Model changed: ${left.model_used} -> ${right.model_used}`);
+    push('model', { from: left.model_used, to: right.model_used });
   }
 
   if (changes.length === 0) {
-    changes.push('No significant differences detected');
+    push('none');
   }
 
   return changes;

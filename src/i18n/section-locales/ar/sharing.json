@@ -322,5 +322,9 @@
   "conn_state_connecting": "جارٍ الاتصال...",
   "conn_state_failed": "فشل",
   "conn_state_disconnected": "غير متصل",
-  "resources_synced": "تمت مزامنة {count}"
+  "resources_synced": "تمت مزامنة {count}",
+  "exposure_auth_required": "المصادقة مطلوبة",
+  "exposure_open_lan": "مفتوح لأجهزة الشبكة المحلية",
+  "open_to_lan_hint": "يمكن لأي جهاز على شبكتك يتصل أن يرى هذا المورد دون إثبات هويته. اتركه معطّلًا ما لم تكن تثق بكل جهاز على هذه الشبكة.",
+  "open_to_lan_label": "مفتوح لأجهزة الشبكة المحلية غير الموثّقة"
 }

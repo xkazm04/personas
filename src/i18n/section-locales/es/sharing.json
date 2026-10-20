@@ -322,5 +322,9 @@
   "conn_state_connecting": "Conectando...",
   "conn_state_failed": "Error",
   "conn_state_disconnected": "Desconectado",
-  "resources_synced": "{count} sincronizados"
+  "resources_synced": "{count} sincronizados",
+  "exposure_auth_required": "Requiere autenticación",
+  "exposure_open_lan": "Abierto a pares de la LAN",
+  "open_to_lan_hint": "Cualquier dispositivo de tu red que se conecte puede ver este recurso sin demostrar su identidad. Déjalo desactivado salvo que confíes en todos los dispositivos de esta red.",
+  "open_to_lan_label": "Abierto a pares de la LAN sin autenticar"
 }

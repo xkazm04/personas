@@ -34,5 +34,12 @@
   "oauth_unknown_error": "अज्ञात त्रुटि",
   "ai_search_no_results": "कोई मेल खाता टेम्पलेट नहीं मिला।",
   "ai_search_coverage": " ({total} में से {searched} टेम्पलेट खोजे गए)",
-  "ai_search_failed": "AI खोज विफल रही: {detail}"
+  "ai_search_failed": "AI खोज विफल रही: {detail}",
+  "run_timed_out": "रन {minutes} मिनट बाद टाइमआउट हो गया। संभव है कि ऑपरेशन अटक गया हो।",
+  "startup_failed": "स्टार्टअप विफल: {sources} लोड नहीं हो सके।",
+  "startup_source_credentials": "क्रेडेंशियल",
+  "startup_source_personas": "पर्सोना",
+  "startup_source_recipes": "रेसिपी",
+  "startup_source_teams": "टीमें",
+  "startup_source_tools": "टूल"
 }

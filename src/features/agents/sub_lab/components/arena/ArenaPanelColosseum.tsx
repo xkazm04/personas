@@ -392,13 +392,13 @@ export function ArenaPanelColosseum({
       <section className="space-y-3">
         <SectionHeader
           icon={Feather}
-          eyebrow="Act II"
+          eyebrow={t.agents.lab.arena_act_two}
           title={debtText("auto_match_blueprint_68403c7c")}
-          subtitle="what enters the arena"
+          subtitle={t.agents.lab.arena_act_two_sub}
         />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Contenders */}
-          <ParchmentCard title="Contenders" meta={`${contenderCount} selected`} icon={Swords}>
+          <ParchmentCard title={t.agents.lab.arena_contenders} meta={tx(t.agents.lab.arena_selected_count, { count: contenderCount })} icon={Swords}>
             {contenderCount === 0 ? (
               <EmptyLine><DebtText k="auto_no_contenders_drawn_60288d55" /></EmptyLine>
             ) : (
@@ -416,8 +416,8 @@ export function ArenaPanelColosseum({
                         <span className="flex-1 min-w-0 typo-body-lg text-foreground truncate">
                           {m.label}
                         </span>
-                        <StatPips label="cost" level={h.cost} icon={Coins} />
-                        <StatPips label="speed" level={h.speed} icon={Zap} />
+                        <StatPips label={t.agents.lab.arena_stat_cost} level={h.cost} icon={Coins} />
+                        <StatPips label={t.agents.lab.arena_stat_speed} level={h.speed} icon={Zap} />
                       </li>
                     );
                   })}
@@ -427,8 +427,8 @@ export function ArenaPanelColosseum({
 
           {/* Arena (use cases summary) */}
           <ParchmentCard
-            title="Arena"
-            meta={`${scenarioCount} scenario${scenarioCount === 1 ? '' : 's'}`}
+            title={t.agents.lab.arena_title}
+            meta={tx(scenarioCount === 1 ? t.agents.lab.arena_scenarios_one : t.agents.lab.arena_scenarios_other, { count: scenarioCount })}
             icon={Scroll}
           >
             <div className="space-y-2">
@@ -463,9 +463,9 @@ export function ArenaPanelColosseum({
             modelLabel={championModel.option.label}
             heraldry={championModel.heraldry}
             sourceLabel={
-              effectiveModel.source === 'override' ? 'from use-case override' :
-              effectiveModel.source === 'persona'  ? 'from persona profile' :
-              'arena default'
+              effectiveModel.source === 'override' ? t.agents.lab.arena_source_override :
+              effectiveModel.source === 'persona'  ? t.agents.lab.arena_source_persona :
+              t.agents.lab.arena_source_default
             }
             personaName={selectedPersona?.name ?? null}
             iconToken={selectedPersona?.icon ?? null}
@@ -490,9 +490,9 @@ export function ArenaPanelColosseum({
       <section className="space-y-3">
         <SectionHeader
           icon={Scroll}
-          eyebrow="Act III"
+          eyebrow={t.agents.lab.arena_act_three}
           title={debtText("auto_the_chronicle_8f082ce5")}
-          subtitle="what the matches remember"
+          subtitle={t.agents.lab.arena_act_three_sub}
         />
         <StandingChampionBanner champion={champion} totalRuns={arenaRuns.length} />
         <ArenaHistory
@@ -602,6 +602,7 @@ function UseCasePopover({
   onSelect: (id: string | null) => void;
   allLabel: string;
 }) {
+  const { t } = useTranslation();
   const label = selectedUseCase?.title ?? allLabel;
   const options = useMemo(
     () => [{ value: '__all__', label: allLabel }, ...useCases.map((uc) => ({ value: uc.id, label: uc.title }))],
@@ -616,7 +617,7 @@ function UseCasePopover({
         const opt = options[idx];
         if (opt) onSelect(opt.value === '__all__' ? null : opt.value);
       }}
-      ariaLabel="Select use case"
+      ariaLabel={t.agents.lab.arena_select_use_case}
       renderTrigger={({ isOpen, toggle }) => (
         <button
           type="button"
@@ -794,6 +795,7 @@ function ModelRowCard({
   heraldry: ModelHeraldry;
   onToggle: () => void;
 }) {
+  const { t } = useTranslation();
   const Sigil = heraldry.sigil;
   return (
     <button
@@ -833,9 +835,9 @@ function ModelRowCard({
 
       {/* Stats — N icons indicate level */}
       <div className="relative mt-2.5 flex items-center gap-2.5">
-        <IconLevel level={heraldry.cost}  icon={DollarSign} active={selected} title="cost"  />
+        <IconLevel level={heraldry.cost}  icon={DollarSign} active={selected} title={t.agents.lab.arena_stat_cost} />
         <span className={`h-4 w-px ${selected ? 'bg-primary/45' : 'bg-foreground/20'}`} aria-hidden />
-        <IconLevel level={heraldry.speed} icon={Zap}        active={selected} title="speed" />
+        <IconLevel level={heraldry.speed} icon={Zap}        active={selected} title={t.agents.lab.arena_stat_speed} />
       </div>
     </button>
   );
@@ -872,21 +874,23 @@ function ConditionsList({
   trustLevel: string;
   scenarioCount: number;
 }) {
+  const { t, tx } = useTranslation();
+  const lab = t.agents.lab;
   return (
     <aside className="rounded-card border border-primary/20 bg-background/50 backdrop-blur-sm self-start">
       <div className="px-3 py-2 border-b border-primary/15">
-        <span className="typo-label text-primary/80">Conditions</span>
+        <span className="typo-label text-primary/80">{lab.arena_conditions}</span>
       </div>
       <ul className="p-2 space-y-1">
-        <ConditionRow tone={hasPrompt ? 'ok' : 'warn'} label={hasPrompt ? 'Battle plan drawn' : 'No battle plan'} />
+        <ConditionRow tone={hasPrompt ? 'ok' : 'warn'} label={hasPrompt ? lab.arena_cond_plan_drawn : lab.arena_cond_no_plan} />
         <ConditionRow
           tone={hasTools ? 'ok' : 'warn'}
-          label={hasTools ? `${toolCount} tool${toolCount === 1 ? '' : 's'} equipped` : 'Unarmed'}
+          label={hasTools ? tx(toolCount === 1 ? lab.arena_cond_tools_one : lab.arena_cond_tools_other, { count: toolCount }) : lab.arena_cond_unarmed}
         />
-        <ConditionRow tone="neutral" label={`Trust ${formatTrustScore(trustScore)} · ${trustLevel}`} />
+        <ConditionRow tone="neutral" label={tx(lab.arena_cond_trust, { score: formatTrustScore(trustScore), level: trustLevel })} />
         <ConditionRow
           tone={scenarioCount > 0 ? 'ok' : 'warn'}
-          label={scenarioCount > 0 ? `${scenarioCount} scenario${scenarioCount === 1 ? '' : 's'} ready` : 'No scenarios'}
+          label={scenarioCount > 0 ? tx(scenarioCount === 1 ? lab.arena_cond_ready_one : lab.arena_cond_ready_other, { count: scenarioCount }) : lab.arena_cond_no_scenarios}
         />
       </ul>
     </aside>
@@ -913,13 +917,15 @@ function ConditionRow({ tone, label }: { tone: 'ok' | 'warn' | 'neutral'; label:
 /* ================================================================== */
 
 function MatchFormula({ contenders, scenarios, duels }: { contenders: number; scenarios: number; duels: number }) {
+  const { t } = useTranslation();
+  const lab = t.agents.lab;
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <FormulaToken n={contenders} label={`contender${contenders === 1 ? '' : 's'}`} icon={Swords} />
+      <FormulaToken n={contenders} label={contenders === 1 ? lab.arena_unit_contender_one : lab.arena_unit_contender_other} icon={Swords} />
       <Times />
-      <FormulaToken n={scenarios} label={`scenario${scenarios === 1 ? '' : 's'}`} icon={Scroll} />
+      <FormulaToken n={scenarios} label={scenarios === 1 ? lab.arena_unit_scenario_one : lab.arena_unit_scenario_other} icon={Scroll} />
       <Equals />
-      <FormulaToken n={duels} label={`duel${duels === 1 ? '' : 's'}`} icon={Flame} tone="primary" />
+      <FormulaToken n={duels} label={duels === 1 ? lab.arena_unit_duel_one : lab.arena_unit_duel_other} icon={Flame} tone="primary" />
     </div>
   );
 }
@@ -1060,9 +1066,10 @@ function ChampionCard({
   iconToken: string | null;
   color: string | null;
 }) {
+  const { t } = useTranslation();
   const Sigil = heraldry.sigil;
   return (
-    <ParchmentCard title="Champion" meta={heraldry.houseName} icon={Shield}>
+    <ParchmentCard title={t.agents.lab.arena_champion} meta={heraldry.houseName} icon={Shield}>
       <div className="space-y-3">
         <div className="flex items-center gap-3">
           <div className="flex items-center justify-center w-12 h-12 rounded-full border-2 border-primary/40 bg-gradient-to-br from-primary/25 to-accent/15 shadow-elevation-2">
@@ -1076,7 +1083,7 @@ function ChampionCard({
         <div className="flex items-center gap-3 pt-2 border-t border-primary/10">
           <PersonaIcon icon={iconToken} color={color} size="w-5 h-5" />
           <div className="flex-1 min-w-0">
-            <p className="typo-label text-primary/70">Defender</p>
+            <p className="typo-label text-primary/70">{t.agents.lab.arena_defender}</p>
             <p className="typo-body-lg text-foreground truncate">{personaName ?? '—'}</p>
           </div>
         </div>
@@ -1096,6 +1103,7 @@ function ChampionCard({
 function StandingChampionBanner({
   champion, totalRuns,
 }: { champion: { model: string; wins: number; total: number } | null; totalRuns: number }) {
+  const { t, tx } = useTranslation();
   if (!champion) {
     return (
       <div className="rounded-modal border border-primary/15 bg-secondary/30 px-4 py-3 flex items-center gap-3">
@@ -1124,7 +1132,7 @@ function StandingChampionBanner({
             {champion.model}
           </p>
           <p className="typo-body text-foreground/90">
-            {champion.wins} victory{champion.wins === 1 ? '' : 'ies'} of {champion.total} <DebtText k="auto_judged_match_80f46ff7" />{champion.total === 1 ? '' : 'es'} · {totalRuns} run{totalRuns === 1 ? '' : 's'} logged
+            {tx(t.agents.lab.arena_champion_record, { wins: champion.wins, total: champion.total, runs: totalRuns })}
           </p>
         </div>
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/60 border border-primary/25 typo-body-lg text-foreground">

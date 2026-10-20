@@ -34,5 +34,12 @@
   "oauth_unknown_error": "error desconocido",
   "ai_search_no_results": "No se encontraron plantillas coincidentes.",
   "ai_search_coverage": " (se buscó en {searched} de {total} plantillas)",
-  "ai_search_failed": "Falló la búsqueda con IA: {detail}"
+  "ai_search_failed": "Falló la búsqueda con IA: {detail}",
+  "run_timed_out": "La ejecución agotó el tiempo tras {minutes} minutos. Puede que la operación se haya bloqueado.",
+  "startup_failed": "Error de inicio: no se pudo cargar {sources}.",
+  "startup_source_credentials": "credenciales",
+  "startup_source_personas": "personas",
+  "startup_source_recipes": "recetas",
+  "startup_source_teams": "equipos",
+  "startup_source_tools": "herramientas"
 }

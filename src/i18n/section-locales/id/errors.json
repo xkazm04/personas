@@ -34,5 +34,12 @@
   "oauth_unknown_error": "kesalahan tidak diketahui",
   "ai_search_no_results": "Tidak ada templat yang cocok ditemukan.",
   "ai_search_coverage": " ({searched} dari {total} templat dicari)",
-  "ai_search_failed": "Pencarian AI gagal: {detail}"
+  "ai_search_failed": "Pencarian AI gagal: {detail}",
+  "run_timed_out": "Eksekusi habis waktu setelah {minutes} menit. Operasi mungkin macet.",
+  "startup_failed": "Startup gagal: {sources} tidak dapat dimuat.",
+  "startup_source_credentials": "kredensial",
+  "startup_source_personas": "persona",
+  "startup_source_recipes": "resep",
+  "startup_source_teams": "tim",
+  "startup_source_tools": "alat"
 }

@@ -10,6 +10,7 @@ import type { ExposedResource, CreateExposedResourceInput, AccessLevel, Resource
 import { buildCreateExposureInput } from './exposureInput';
 import { BundleExportDialog } from './BundleExportDialog';
 import { IdentitySettings } from './IdentitySettings';
+import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { InlineConfirm } from './InlineConfirm';
 import { NetworkDashboard } from './NetworkDashboard';
 import { PeerList } from './PeerList';
@@ -66,6 +67,14 @@ function ResourceExposureCard({
             <AccessIcon className="w-3 h-3" />
             {resource.access_level}
           </span>
+          <span
+            data-testid="exposure-auth-state"
+            className={`typo-caption px-1.5 py-0.5 rounded-full ${
+              resource.requires_auth ? 'text-status-success bg-secondary/40' : 'text-status-warning bg-secondary/40'
+            }`}
+          >
+            {resource.requires_auth ? t.sharing.exposure_auth_required : t.sharing.exposure_open_lan}
+          </span>
           {parsedFields.length > 0 && (
             <span className="text-[10px] text-foreground">
               {parsedFields.length} field{parsedFields.length !== 1 ? 's' : ''} exposed
@@ -115,6 +124,8 @@ function AddExposureForm({
   const [resourceId, setResourceId] = useState('');
   const [accessLevel, setAccessLevel] = useState<AccessLevel>('read');
   const [tags, setTags] = useState('');
+  // Security: default off. Opening to unauthenticated LAN peers is an explicit choice.
+  const [openToLan, setOpenToLan] = useState(false);
 
   const selectedPersona = personas.find((p) => p.id === resourceId);
 
@@ -129,6 +140,7 @@ function AddExposureForm({
       displayName,
       accessLevel,
       tags,
+      openToUnauthenticatedPeers: openToLan,
     }));
   };
 
@@ -191,6 +203,21 @@ function AddExposureForm({
           onChange={(e) => setTags(e.target.value)}
           placeholder={st.tags_placeholder}
           className="w-full px-2 py-1.5 typo-body rounded-card border border-border bg-background focus-ring"
+        />
+      </div>
+
+      <div className="flex items-start justify-between gap-3 rounded-card border border-border p-2.5">
+        <div className="min-w-0">
+          <span id="exposure-open-lan-label" className="typo-caption text-foreground block">{st.open_to_lan_label}</span>
+          <span id="exposure-open-lan-hint" className="typo-caption text-foreground block mt-0.5">{st.open_to_lan_hint}</span>
+        </div>
+        <AccessibleToggle
+          checked={openToLan}
+          onChange={() => setOpenToLan((v) => !v)}
+          label={st.open_to_lan_label}
+          size="sm"
+          aria-describedby="exposure-open-lan-hint"
+          data-testid="exposure-open-lan-toggle"
         />
       </div>
 

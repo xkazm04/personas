@@ -34,5 +34,12 @@
   "oauth_unknown_error": "خطأ غير معروف",
   "ai_search_no_results": "لم يتم العثور على قوالب مطابقة.",
   "ai_search_coverage": " (تم البحث في {searched} من أصل {total} قالب)",
-  "ai_search_failed": "فشل البحث بالذكاء الاصطناعي: {detail}"
+  "ai_search_failed": "فشل البحث بالذكاء الاصطناعي: {detail}",
+  "run_timed_out": "انتهت مهلة التشغيل بعد {minutes} دقيقة. ربما توقفت العملية.",
+  "startup_failed": "فشل بدء التشغيل: تعذّر تحميل {sources}.",
+  "startup_source_credentials": "بيانات الاعتماد",
+  "startup_source_personas": "الشخصيات",
+  "startup_source_recipes": "الوصفات",
+  "startup_source_teams": "الفرق",
+  "startup_source_tools": "الأدوات"
 }

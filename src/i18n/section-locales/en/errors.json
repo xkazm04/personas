@@ -34,5 +34,12 @@
   "oauth_unknown_error": "unknown error",
   "ai_search_no_results": "No matching templates found.",
   "ai_search_coverage": " (searched {searched} of {total} templates)",
-  "ai_search_failed": "AI search failed: {detail}"
+  "ai_search_failed": "AI search failed: {detail}",
+  "startup_failed": "Startup failed: {sources} could not be loaded.",
+  "startup_source_personas": "personas",
+  "startup_source_tools": "tools",
+  "startup_source_credentials": "credentials",
+  "startup_source_recipes": "recipes",
+  "startup_source_teams": "teams",
+  "run_timed_out": "Run timed out after {minutes} minutes. The operation may have stalled."
 }

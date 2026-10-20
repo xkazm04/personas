@@ -19,6 +19,7 @@ import type { ModelTestConfig } from "@/api/agents/tests";
 import * as api from "@/api/agents/lab";
 import { createRunLifecycle } from "./runLifecycle";
 import { useToastStore } from "@/stores/toastStore";
+import { getActiveTranslations } from "@/i18n/useTranslation";
 import * as Sentry from "@sentry/react";
 import { createLatestWins } from "../../util/latestWins";
 
@@ -736,7 +737,7 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
       // success badge that disappears on next reload.
       if (!saveBaselines(all)) {
         useToastStore.getState().addToast(
-          'Failed to save baseline pin. Browser storage may be full or unavailable.',
+          getActiveTranslations().agents.lab.baseline_pin_save_failed,
           'error',
           5000,
         );
@@ -755,7 +756,7 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
       delete all[personaId];
       if (!saveBaselines(all)) {
         useToastStore.getState().addToast(
-          'Failed to unpin baseline. Browser storage may be unavailable.',
+          getActiveTranslations().agents.lab.baseline_unpin_save_failed,
           'error',
           5000,
         );

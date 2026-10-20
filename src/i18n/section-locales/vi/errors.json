@@ -34,5 +34,12 @@
   "oauth_unknown_error": "lỗi không xác định",
   "ai_search_no_results": "Không tìm thấy mẫu phù hợp.",
   "ai_search_coverage": " (đã tìm trong {searched}/{total} mẫu)",
-  "ai_search_failed": "Tìm kiếm bằng AI thất bại: {detail}"
+  "ai_search_failed": "Tìm kiếm bằng AI thất bại: {detail}",
+  "run_timed_out": "Lượt chạy hết thời gian sau {minutes} phút. Thao tác có thể đã bị treo.",
+  "startup_failed": "Khởi động thất bại: không tải được {sources}.",
+  "startup_source_credentials": "thông tin xác thực",
+  "startup_source_personas": "persona",
+  "startup_source_recipes": "công thức",
+  "startup_source_teams": "nhóm",
+  "startup_source_tools": "công cụ"
 }

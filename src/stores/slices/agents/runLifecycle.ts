@@ -13,6 +13,7 @@
  * fields (runs arrays, results maps, etc.) in the slice itself.
  */
 import { createLogger } from "@/lib/log";
+import { getActiveTranslations, interpolate } from "@/i18n/useTranslation";
 import { runLifecycleFSM, type RunLifecycleState } from "@/lib/fsm";
 
 const logger = createLogger("run-lifecycle");
@@ -87,7 +88,7 @@ export function createRunLifecycle<
       set({
         [isRunningKey]: false,
         [progressKey]: null,
-        error: `Run timed out after ${RUN_MAX_DURATION_MS / 60_000} minutes. The operation may have stalled.`,
+        error: interpolate(getActiveTranslations().errors.run_timed_out, { minutes: RUN_MAX_DURATION_MS / 60_000 }),
       });
     });
   }

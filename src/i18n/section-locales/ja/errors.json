@@ -34,5 +34,12 @@
   "oauth_unknown_error": "不明なエラー",
   "ai_search_no_results": "一致するテンプレートが見つかりませんでした。",
   "ai_search_coverage": " ({total} 件中 {searched} 件のテンプレートを検索)",
-  "ai_search_failed": "AI 検索に失敗しました: {detail}"
+  "ai_search_failed": "AI 検索に失敗しました: {detail}",
+  "run_timed_out": "実行が {minutes} 分でタイムアウトしました。処理が停止した可能性があります。",
+  "startup_failed": "起動に失敗しました: {sources} を読み込めませんでした。",
+  "startup_source_credentials": "認証情報",
+  "startup_source_personas": "ペルソナ",
+  "startup_source_recipes": "レシピ",
+  "startup_source_teams": "チーム",
+  "startup_source_tools": "ツール"
 }

@@ -322,5 +322,9 @@
   "conn_state_connecting": "कनेक्ट हो रहा है...",
   "conn_state_failed": "विफल",
   "conn_state_disconnected": "डिस्कनेक्टेड",
-  "resources_synced": "{count} सिंक हुए"
+  "resources_synced": "{count} सिंक हुए",
+  "exposure_auth_required": "प्रमाणीकरण आवश्यक",
+  "exposure_open_lan": "LAN पीयर के लिए खुला",
+  "open_to_lan_hint": "आपके नेटवर्क का कोई भी डिवाइस जो कनेक्ट करता है, अपनी पहचान साबित किए बिना यह संसाधन देख सकता है। जब तक आप इस नेटवर्क के हर डिवाइस पर भरोसा न करें, इसे बंद रखें।",
+  "open_to_lan_label": "बिना प्रमाणीकरण वाले LAN पीयर के लिए खुला"
 }

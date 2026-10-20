@@ -4302,5 +4302,17 @@
   "id:decisionCenter.blueprint.lg_status",
   "fr:decisionCenter.blueprint.started_sessions",
   "fr:decisionCenter.blueprint.agents_f_sessions",
-  "fr:decisionCenter.blueprint.console_started_state"
+  "fr:decisionCenter.blueprint.console_started_state",
+  "de:agents.lab.arena_title",
+  "de:agents.lab.arena_champion",
+  "es:agents.executions.what_changed_side_original",
+  "es:agents.lab.arena_title",
+  "es:errors.startup_source_personas",
+  "fr:agents.executions.what_changed_side_original",
+  "fr:agents.lab.arena_champion",
+  "fr:agents.lab.arena_conditions",
+  "fr:agents.lab.arena_unit_duel_one",
+  "fr:agents.lab.arena_unit_duel_other",
+  "id:agents.lab.arena_title",
+  "id:agents.lab.arena_unit_duel_one"
 ]

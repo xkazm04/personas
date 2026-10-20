@@ -34,5 +34,12 @@
   "oauth_unknown_error": "неизвестная ошибка",
   "ai_search_no_results": "Подходящие шаблоны не найдены.",
   "ai_search_coverage": " (просмотрено шаблонов: {searched} из {total})",
-  "ai_search_failed": "Ошибка ИИ-поиска: {detail}"
+  "ai_search_failed": "Ошибка ИИ-поиска: {detail}",
+  "run_timed_out": "Время выполнения истекло через {minutes} мин. Возможно, операция зависла.",
+  "startup_failed": "Сбой запуска: не удалось загрузить {sources}.",
+  "startup_source_credentials": "учётные данные",
+  "startup_source_personas": "персоны",
+  "startup_source_recipes": "рецепты",
+  "startup_source_teams": "команды",
+  "startup_source_tools": "инструменты"
 }

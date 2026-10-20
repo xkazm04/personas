@@ -322,5 +322,9 @@
   "conn_state_connecting": "সংযোগ হচ্ছে...",
   "conn_state_failed": "ব্যর্থ",
   "conn_state_disconnected": "সংযোগ বিচ্ছিন্ন",
-  "resources_synced": "{count}টি সিঙ্ক হয়েছে"
+  "resources_synced": "{count}টি সিঙ্ক হয়েছে",
+  "exposure_auth_required": "অথ প্রয়োজন",
+  "exposure_open_lan": "LAN পিয়ারদের জন্য উন্মুক্ত",
+  "open_to_lan_hint": "আপনার নেটওয়ার্কের যেকোনো ডিভাইস সংযোগ করলে পরিচয় প্রমাণ না করেই এই রিসোর্স দেখতে পাবে। এই নেটওয়ার্কের প্রতিটি ডিভাইসকে বিশ্বাস না করলে এটি বন্ধ রাখুন।",
+  "open_to_lan_label": "অপ্রমাণীকৃত LAN পিয়ারদের জন্য উন্মুক্ত"
 }

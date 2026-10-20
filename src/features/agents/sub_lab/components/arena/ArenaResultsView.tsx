@@ -6,7 +6,9 @@ import { VirtualizedTableBody } from '../shared/VirtualizedTableBody';
 import { ScenarioDetailPanel } from '../shared/ScenarioDetailPanel';
 import { aggregateArenaResults, type ArenaModelAggregate } from '../../libs/labAggregation';
 import { LabResultsSkeleton } from '../shared/LabResultsSkeleton';
-import { useTranslation } from '@/i18n/useTranslation';
+import { useTranslation, type interpolate } from '@/i18n/useTranslation';
+import type { Translations } from '@/i18n/generated/types';
+import { scoreLabel } from '../shared/scoreLabel';
 import { sanitizeRichSummary } from '@/lib/utils/sanitizers/sanitizeHtml';
 import { DebtText } from '@/i18n/DebtText';
 import { Numeric } from '@/features/shared/components/display/Numeric';
@@ -25,14 +27,6 @@ interface Props {
   onRate?: (scenarioName: string, modelId: string, rating: number, feedback?: string) => void;
   /** Results fetch is still in flight — show the shape-matched skeleton instead of the empty line. */
   loading?: boolean;
-}
-
-function scoreLabel(score: number): string {
-  if (score >= 80) return 'Excellent';
-  if (score >= 60) return 'Good';
-  if (score >= 40) return 'Fair';
-  if (score >= 20) return 'Weak';
-  return 'Poor';
 }
 
 function scoreBg(score: number): string {
@@ -72,25 +66,28 @@ function ScoreBar({ value, label, icon: Icon }: { value: number | null; label: s
   );
 }
 
-function buildSummary(aggregates: ArenaModelAggregate[], _bestModelId: string | null, scenarios: string[]): string {
+function buildSummary(
+  t: Translations,
+  tx: typeof interpolate,
+  aggregates: ArenaModelAggregate[],
+  scenarios: string[],
+): string {
   if (aggregates.length === 0) return '';
   const best = aggregates[0];
   if (!best) return '';
   const worst = aggregates[aggregates.length - 1]!;
   const gap = best.compositeScore - worst.compositeScore;
 
-  let summary = `**${best.modelId}** achieved the highest composite score of **${best.compositeScore}/100** across ${scenarios.length} test scenarios`;
-
-  if (aggregates.length > 1 && gap > 0) {
-    summary += `, outperforming ${worst.modelId} by ${gap} points`;
-  }
-  summary += '.';
+  const vars = { model: best.modelId, score: best.compositeScore, count: scenarios.length, worst: worst.modelId, gap };
+  let summary = aggregates.length > 1 && gap > 0
+    ? tx(t.agents.lab.arena_summary_best_gap, vars)
+    : tx(t.agents.lab.arena_summary_best, vars);
 
   if (best.avgOutputQuality >= 60) {
-    summary += ` Output quality was ${scoreLabel(best.avgOutputQuality).toLowerCase()} (${best.avgOutputQuality}/100).`;
+    summary += ` ${tx(t.agents.lab.arena_summary_quality, { label: scoreLabel(t, best.avgOutputQuality), score: best.avgOutputQuality })}`;
   }
   if (best.toolAccuracyScored && best.avgToolAccuracy < 30 && best.avgOutputQuality > 40) {
-    summary += ' Tool usage was limited — the model relied more on its own knowledge than available tools.';
+    summary += ` ${t.agents.lab.arena_summary_tools_limited}`;
   }
   return summary;
 }
@@ -129,14 +126,14 @@ function collectTopSuggestions(results: LabArenaResult[], limit = 3): string[] {
 }
 
 export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatings, onRate, loading }: Props) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const { models, scenarios, matrix, aggregates, bestModelId } = useMemo(
     () => aggregateArenaResults(results),
     [results],
   );
   const [selectedCell, setSelectedCell] = useState<{ scenario: string; model: string } | null>(null);
 
-  const summary = useMemo(() => buildSummary(aggregates, bestModelId, scenarios), [aggregates, bestModelId, scenarios]);
+  const summary = useMemo(() => buildSummary(t, tx, aggregates, scenarios), [t, tx, aggregates, scenarios]);
   const topRationale = useMemo(() => collectTopRationale(results), [results]);
   const topSuggestions = useMemo(() => collectTopSuggestions(results), [results]);
 
@@ -212,7 +209,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
                   <div className={`flex items-center gap-3 p-3 rounded-card bg-gradient-to-r ${scoreBg(agg.compositeScore)}`}>
                     <span className={`typo-hero ${scoreColor(agg.compositeScore)}`}>{agg.compositeScore}</span>
                     <div className="flex-1 min-w-0">
-                      <span className={`typo-caption ${scoreColor(agg.compositeScore)}`}>{scoreLabel(agg.compositeScore)}</span>
+                      <span className={`typo-caption ${scoreColor(agg.compositeScore)}`}>{scoreLabel(t, agg.compositeScore)}</span>
                       <p className="text-[10px] text-foreground"><DebtText k="auto_composite_score_b7a389bd" /></p>
                     </div>
                     {idx > 0 && aggregates[0] && (
@@ -301,7 +298,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
           <table className="w-full typo-body">
             <thead>
               <tr className="border-b border-primary/10 bg-secondary/20">
-                <th className="text-left px-3 py-2.5 typo-caption font-mono uppercase tracking-widest text-foreground">Scenario</th>
+                <th className="text-left px-3 py-2.5 typo-caption font-mono uppercase tracking-widest text-foreground">{t.agents.lab.scenario_column}</th>
                 {models.map((mid) => (
                   <th key={mid} className={`text-center px-3 py-2.5 typo-caption font-mono uppercase tracking-widest ${mid === bestModelId ? 'text-primary/80' : 'text-foreground'}`}>
                     <span className="inline-flex items-center justify-center gap-1">
@@ -341,11 +338,11 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
                         >
                           {r.status === 'running' || r.status === 'queued' || r.status === 'pending' ? (
                             <span className="flex items-center gap-1 typo-caption text-foreground">
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" /> running
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" /> {t.agents.lab.cell_running}
                             </span>
                           ) : r.status === 'failed' || r.status === 'error' ? (
                             <span className="flex items-center gap-1 typo-caption text-status-error">
-                              <AlertTriangle className="w-3.5 h-3.5" /> failed
+                              <AlertTriangle className="w-3.5 h-3.5" /> {t.agents.lab.cell_failed}
                             </span>
                           ) : (
                             <>

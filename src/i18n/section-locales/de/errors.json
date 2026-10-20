@@ -34,5 +34,12 @@
   "oauth_unknown_error": "unbekannter Fehler",
   "ai_search_no_results": "Keine passenden Vorlagen gefunden.",
   "ai_search_coverage": " ({searched} von {total} Vorlagen durchsucht)",
-  "ai_search_failed": "KI-Suche fehlgeschlagen: {detail}"
+  "ai_search_failed": "KI-Suche fehlgeschlagen: {detail}",
+  "run_timed_out": "Zeitüberschreitung des Laufs nach {minutes} Minuten. Der Vorgang hängt möglicherweise.",
+  "startup_failed": "Start fehlgeschlagen: {sources} konnten nicht geladen werden.",
+  "startup_source_credentials": "Zugangsdaten",
+  "startup_source_personas": "Personas",
+  "startup_source_recipes": "Rezepte",
+  "startup_source_teams": "Teams",
+  "startup_source_tools": "Tools"
 }
