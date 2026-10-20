@@ -26,16 +26,12 @@ import { CompareModal } from '../modals/CompareModal';
 import { buildComparison } from './buildComparison';
 import { useGalleryActions } from './useGalleryActions';
 import { getDesignReview } from '@/api/overview/reviews';
-import { getCachedLightFields, getCachedDesignResult } from './reviewParseCache';
 import type { TemplateModal } from './reviewParseCache';
 import type { Density } from '../search/filters/DensityToggle';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { silentCatch } from '@/lib/silentCatch';
 
-
-// Re-export for barrel compatibility
-export { getCachedLightFields, getCachedDesignResult };
 
 interface Props {
   credentials?: CredentialMetadata[];

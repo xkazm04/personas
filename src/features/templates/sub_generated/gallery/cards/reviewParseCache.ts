@@ -79,11 +79,8 @@ export function getCachedReadinessScore(
   return cached.readinessScore;
 }
 
-export type { TemplateViewMode as ViewMode } from '@/lib/constants/uiModes';
-
 export type TemplateModal =
   | { type: 'adopt'; review: PersonaDesignReview }
   | { type: 'detail'; review: PersonaDesignReview }
   | { type: 'rebuild'; review: PersonaDesignReview }
-  | { type: 'preview'; review: PersonaDesignReview }
-  | { type: 'recommended' };
+  | { type: 'preview'; review: PersonaDesignReview };
