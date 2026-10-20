@@ -7,7 +7,7 @@
  * leave the list. One predicate now decides it for every surface.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import { FLEET_STATE_META, canHibernateState, isTombstoneState } from '../fleetStateMeta';
@@ -92,6 +92,9 @@ describe('FleetSessionCard on an expired row', () => {
   it('still kills a live row', async () => {
     renderCard(session({ state: 'running' }));
     fireEvent.click(screen.getByTestId('fleet-session-close-s1'));
+    // A live row's kill asks first (a70ab0ac58); the confirm ends it.
+    expect(killSession).not.toHaveBeenCalled();
+    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Kill session' }));
     await waitFor(() => expect(killSession).toHaveBeenCalledWith('s1'));
     expect(removeSession).not.toHaveBeenCalled();
   });
