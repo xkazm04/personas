@@ -371,6 +371,21 @@ export function groupByService(
   return groups;
 }
 
+/** One service group of an import: its design result, parsed values and the secret ids it covers. */
+export interface ImportBatch {
+  result: CredentialDesignResult;
+  /** Field key -> parsed value. Only for the preview form's initialValues. */
+  values: Record<string, string>;
+  secretIds: string[];
+}
+
+/** Field-key -> value map for a group; keys match `buildDesignResultFromImport`'s field keys. */
+export function buildImportValues(secrets: ImportedSecret[]): Record<string, string> {
+  const values: Record<string, string> = {};
+  for (const s of secrets) values[s.key] = s.value;
+  return values;
+}
+
 /** Build a CredentialDesignResult from imported secrets for a given service */
 export function buildDesignResultFromImport(
   serviceName: string,

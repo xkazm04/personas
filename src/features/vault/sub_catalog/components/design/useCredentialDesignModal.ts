@@ -118,14 +118,20 @@ export function useCredentialDesignModal({ open, initialInstruction, onClose, on
   };
 
   const handleImportComplete = () => {
-    const results = importFlow.buildResults();
-    if (results.length === 0) return;
-    const first = results[0]!;
-    orch.loadTemplate(first);
-    orch.setInstruction(tx(t.vault.design_modal.instruction_imported, { label: first.connector.label }));
+    const batches = importFlow.buildBatches();
+    if (batches.length === 0) return;
+    const first = batches[0]!;
+    orch.loadTemplate(first.result, first.values);
+    orch.setInstruction(tx(t.vault.design_modal.instruction_imported, { label: first.result.connector.label }));
     orch.invalidateHealth();
     setShowImport(false);
-    importFlow.reset();
+    if (batches.length === 1) {
+      importFlow.reset();
+    } else {
+      // The other service groups stay selected: reopening Import offers them
+      // next instead of dropping them.
+      importFlow.deselectIds(first.secretIds);
+    }
   };
 
   return {

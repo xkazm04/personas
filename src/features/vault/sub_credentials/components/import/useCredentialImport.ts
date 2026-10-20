@@ -4,7 +4,9 @@ import {
   parseImportInput,
   buildMappings,
   buildDesignResultFromImport,
+  buildImportValues,
   groupByService,
+  type ImportBatch,
   type ImportSourceId,
   type ImportParseResult,
   type SecretServiceMapping,
@@ -35,6 +37,14 @@ export interface CredentialImportActions {
   setSyncConfig: (config: SyncConfig | null) => void;
   /** Build design results from selected secrets, grouped by detected service */
   buildResults: () => CredentialDesignResult[];
+  /**
+   * Like `buildResults`, but each batch also carries the parsed secret values
+   * (keyed by field) and the ids it consumed. The values are for the preview
+   * form's initialValues only - never put them in a log, event or telemetry.
+   */
+  buildBatches: () => ImportBatch[];
+  /** Drop secrets from the selection once their group has been taken. */
+  deselectIds: (ids: string[]) => void;
   goBack: () => void;
   reset: () => void;
 }
@@ -98,7 +108,7 @@ export function useCredentialImport(): CredentialImportState & CredentialImportA
     setSelectedKeys(new Set());
   }, []);
 
-  const buildResults = useCallback((): CredentialDesignResult[] => {
+  const buildBatches = useCallback((): ImportBatch[] => {
     if (!parseResult) return [];
 
     const selected = parseResult.secrets.filter((s) => selectedKeys.has(s.id));
@@ -107,16 +117,33 @@ export function useCredentialImport(): CredentialImportState & CredentialImportA
       return mappings[idx]!;
     });
     const groups = groupByService(selected, selectedMappings);
-    const results: CredentialDesignResult[] = [];
+    const batches: ImportBatch[] = [];
 
     for (const [service, groupSecrets] of groups) {
       const mapping = selectedMappings.find((m) => m.detectedService === service);
       const connectorName = mapping?.connectorName ?? service.toLowerCase().replace(/\s+/g, '_');
-      results.push(buildDesignResultFromImport(service, connectorName, groupSecrets));
+      batches.push({
+        result: buildDesignResultFromImport(service, connectorName, groupSecrets),
+        values: buildImportValues(groupSecrets),
+        secretIds: groupSecrets.map((s) => s.id),
+      });
     }
 
-    return results;
+    return batches;
   }, [parseResult, selectedKeys, mappings]);
+
+  const buildResults = useCallback(
+    (): CredentialDesignResult[] => buildBatches().map((b) => b.result),
+    [buildBatches],
+  );
+
+  const deselectIds = useCallback((ids: string[]) => {
+    setSelectedKeys((prev) => {
+      const next = new Set(prev);
+      for (const id of ids) next.delete(id);
+      return next;
+    });
+  }, []);
 
   const goBack = useCallback(() => {
     switch (phase) {
@@ -161,6 +188,8 @@ export function useCredentialImport(): CredentialImportState & CredentialImportA
     deselectAll,
     setSyncConfig,
     buildResults,
+    buildBatches,
+    deselectIds,
     goBack,
     reset,
   };

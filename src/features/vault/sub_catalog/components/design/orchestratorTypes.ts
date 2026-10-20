@@ -29,6 +29,10 @@ export interface CredentialDesignOrchestrator {
   refinementCount: number;
 
   // Template support
-  loadTemplate: (template: import('@/hooks/design/credential/useCredentialDesign').CredentialDesignResult) => void;
+  /** `initialValues` pre-fill the preview form (imported secrets); omitted for catalog templates. */
+  loadTemplate: (
+    template: import('@/hooks/design/credential/useCredentialDesign').CredentialDesignResult,
+    initialValues?: Record<string, string>,
+  ) => void;
   invalidateHealth: () => void;
 }

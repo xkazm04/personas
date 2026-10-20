@@ -236,6 +236,17 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
     setPrefetchedAuthDetections(undefined);
   }, [design, oauth, universalOAuth, health]);
 
+  const loadTemplate = useCallback(
+    (template: CredentialDesignResult, initialValues?: Record<string, string>) => {
+      design.loadTemplate(template);
+      // Same slot the negotiator's captured values use: it feeds the preview
+      // form's initialValues and the required-field check, so an import's
+      // values land in the form instead of being retyped.
+      setNegotiatorValues(initialValues ?? {});
+    },
+    [design],
+  );
+
   // -- Context value --
   const contextValue: CredentialDesignContextValue | null = design.result
     ? buildContextValue({
@@ -284,7 +295,7 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
     resetAll,
     startRefinement,
     refinementCount,
-    loadTemplate: design.loadTemplate,
+    loadTemplate,
     invalidateHealth: health.invalidate,
   };
 }
