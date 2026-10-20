@@ -186,12 +186,27 @@ pub fn create_cycle(
             let now = chrono::Utc::now().to_rfc3339();
 
             let conn = pool.get()?;
-            conn.execute(
+            // One cycle per policy at a time. `should_evolve` counts runs
+            // since the last cycle ENDED, so every success during a running
+            // cycle would otherwise spawn another (parallel CLI spend). The
+            // guard is part of the INSERT so two racing callers cannot both
+            // pass a separate pre-check; a crash leftover is cleared by the
+            // boot reaper, not by this guard.
+            let inserted = conn.execute(
                 "INSERT INTO evolution_cycles
                 (id, policy_id, persona_id, status, started_at)
-             VALUES (?1, ?2, ?3, 'breeding', ?4)",
+             SELECT ?1, ?2, ?3, 'breeding', ?4
+              WHERE NOT EXISTS (
+                SELECT 1 FROM evolution_cycles
+                 WHERE policy_id = ?2
+                   AND status IN ('breeding', 'evaluating', 'promoting'))",
                 params![id, policy_id, persona_id, now],
             )?;
+            if inserted == 0 {
+                return Err(AppError::Validation(
+                    "An evolution cycle is already running for this persona".into(),
+                ));
+            }
             get_cycle_by_id(pool, &id)
         }
     )
@@ -387,4 +402,83 @@ pub fn mark_cycle_attempted(pool: &DbPool, policy_id: &str) -> Result<(), AppErr
             Ok(())
         }
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::init_test_db;
+    use crate::models::CreatePersonaInput;
+    use crate::repos::core::personas;
+
+    fn make_persona(pool: &DbPool, name: &str) -> Result<String, AppError> {
+        Ok(personas::create(
+            pool,
+            CreatePersonaInput {
+                name: name.into(),
+                system_prompt: "You are a test agent.".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )?
+        .id)
+    }
+
+    fn policy_for(pool: &DbPool, persona_id: &str) -> Result<EvolutionPolicy, AppError> {
+        upsert_policy(
+            pool,
+            &UpsertEvolutionPolicyInput {
+                persona_id: persona_id.into(),
+                enabled: Some(true),
+                fitness_objective: None,
+                mutation_rate: None,
+                variants_per_cycle: None,
+                improvement_threshold: None,
+                min_executions_between: None,
+                mutation_strategy: None,
+            },
+        )
+    }
+
+    #[test]
+    fn a_second_cycle_is_refused_until_the_first_ends() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let persona = make_persona(&pool, "Evolving")?;
+        let policy = policy_for(&pool, &persona)?;
+
+        let first = create_cycle(&pool, &policy.id, &persona)?;
+        let second = create_cycle(&pool, &policy.id, &persona);
+        assert!(
+            matches!(second, Err(AppError::Validation(_))),
+            "an in-flight cycle must block another: {second:?}"
+        );
+        for status in [
+            EvolutionCycleStatus::Evaluating,
+            EvolutionCycleStatus::Promoting,
+        ] {
+            update_cycle_status(&pool, &first.id, status, None)?;
+            assert!(create_cycle(&pool, &policy.id, &persona).is_err());
+        }
+
+        update_cycle_status(&pool, &first.id, EvolutionCycleStatus::Completed, None)?;
+        let third = create_cycle(&pool, &policy.id, &persona)?;
+        assert_ne!(third.id, first.id);
+
+        // A failed cycle also frees the slot.
+        update_cycle_status(&pool, &third.id, EvolutionCycleStatus::Failed, Some("boom"))?;
+        create_cycle(&pool, &policy.id, &persona)?;
+        Ok(())
+    }
 }
