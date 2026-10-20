@@ -467,36 +467,6 @@ export function primaryDrawerSection(card: PersonaCardModel): DrawerSection {
   return 'activity';
 }
 
-/** Tone of a single recent-run outcome token, for the health micro-bar. */
-export type HealthTone = 'success' | 'fail' | 'other' | 'none';
-
-export function healthTone(status: string | undefined): HealthTone {
-  if (!status) return 'none';
-  if (status === 'completed') return 'success';
-  if (status === 'failed') return 'fail';
-  if (status === 'cancelled') return 'other';
-  return 'other';
-}
-
-export const HEALTH_TONE_CLASS: Record<HealthTone, string> = {
-  success: 'bg-emerald-400/80',
-  fail: 'bg-red-400/80',
-  other: 'bg-amber-400/70',
-  none: 'bg-foreground/15',
-};
-
-/**
- * Build the health micro-bar segments for a card: a fixed-length array
- * (oldest→newest, left→right for natural reading) padded with `none` so every
- * card's bar is the same width. `recentStatuses` arrives newest-first, so we
- * take the first `length`, reverse to oldest-first, then left-pad.
- */
-export function healthSegments(card: PersonaCardModel, length: number): HealthTone[] {
-  const recent = card.recentStatuses.slice(0, length).map(healthTone).reverse();
-  const pad = length - recent.length;
-  return pad > 0 ? [...Array<HealthTone>(pad).fill('none'), ...recent] : recent;
-}
-
 // --- small helpers ----------------------------------------------------------
 
 function groupBy<T>(items: T[], keyOf: (x: T) => string): Map<string, T[]> {

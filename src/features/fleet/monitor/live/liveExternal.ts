@@ -1,8 +1,7 @@
 // External feeds into the live corner stack — messages that are NOT team-channel
 // items (today: Notepad thread entries).
 //
-// Same shape as `liveDevHarness.ts`'s mock injection: a module-level pub/sub the
-// overlay subscribes to, so the feeding feature pushes a render-ready
+// A module-level pub/sub the overlay subscribes to, so the feeding feature pushes a render-ready
 // `LiveMessage` and the fleet code never imports that feature. The one thing a
 // feed adds beyond a message is its VERBS — inline actions, where a body click
 // goes, what acknowledging it means — registered here under the message's

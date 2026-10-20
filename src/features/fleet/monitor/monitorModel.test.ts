@@ -8,8 +8,6 @@ import {
   buildMonitorModel,
   pillarStateKey,
   primaryDrawerSection,
-  healthTone,
-  healthSegments,
   processStatusMeta,
   processStatusLabel,
   severityBucket,
@@ -225,29 +223,6 @@ describe('primaryDrawerSection', () => {
     expect(primaryDrawerSection(baseCard({ running: 1, execState: 'running' }))).toBe('activity');
   });
 });
-
-describe('healthTone / healthSegments', () => {
-  it('maps outcome tokens to tones', () => {
-    expect(healthTone('completed')).toBe('success');
-    expect(healthTone('failed')).toBe('fail');
-    expect(healthTone('cancelled')).toBe('other');
-    expect(healthTone('weird')).toBe('other');
-    expect(healthTone(undefined)).toBe('none');
-  });
-
-  it('pads to a fixed length and orders oldest→newest (left→right)', () => {
-    // recentStatuses is newest-first; "completed" is newest, "failed" oldest.
-    const c = baseCard({ recentStatuses: ['completed', 'failed'] });
-    expect(healthSegments(c, 5)).toEqual(['none', 'none', 'none', 'fail', 'success']);
-  });
-
-  it('truncates to length when there is more history than slots', () => {
-    const c = baseCard({ recentStatuses: ['completed', 'completed', 'failed', 'completed'] });
-    expect(healthSegments(c, 2)).toEqual(['success', 'success']); // newest 2, reversed
-  });
-});
-
-// --- process status vocabulary ----------------------------------------------
 
 describe('processStatusMeta / processStatusLabel', () => {
   it('resolves every status the store can hold', () => {

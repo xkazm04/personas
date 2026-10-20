@@ -1,11 +1,10 @@
 // The Activity destination: the fleet board with the persona drawer and the
 // remote-session drawer layered over it.
 
-import { Suspense, useCallback } from 'react';
+import { Suspense } from 'react';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import { lazyRetry } from '@/lib/lazyRetry';
-import { toastCatch } from '@/lib/silentCatch';
 import type { MonitorData } from '../useMonitorData';
 import { MonitorDrawerShell } from '../MonitorDrawerShell';
 import { FleetGridView } from '../grid/FleetGridView';
@@ -30,29 +29,9 @@ export function ActivityBody({ data, cards, personas, teams, feedTeams, selectio
   now: number;
   onOpenSpeaker: (teamId: string, personaId: string) => void;
 }) {
-  const {
-    loading, isProcessing, isReviewInFlight, refreshAttention,
-    handleReviewAction, handleDispatchAction, handleMarkRead,
-  } = data;
-
-  // Stable drawer callbacks — these were inline arrows, so every render of
-  // the Monitor (including each 1s tick) handed MonitorDrawer fresh function
-  // identities. The drawer legitimately re-renders on `now` while something
-  // runs, but when the fleet is idle these were the only unstable props left.
-  // Both writers RETURN the promise (they used to `void` it): the drawer's
-  // AsyncButton awaits it to keep the pressed control busy, and the `.catch`
-  // is what turns a rejected write into a toast rather than a silent no-op.
-  const onReviewAction = useCallback(
-    (id: string, status: Parameters<typeof handleReviewAction>[1], notes?: string) =>
-      handleReviewAction(id, status, notes).catch(toastCatch('PersonaMonitor:handleReviewAction')),
-    [handleReviewAction],
-  );
-  const onDispatchAction = useCallback(
-    (id: string, action: string) =>
-      handleDispatchAction(id, action).catch(toastCatch('PersonaMonitor:handleDispatchAction')),
-    [handleDispatchAction],
-  );
-  const onMarkRead = useCallback((id: string) => void handleMarkRead(id), [handleMarkRead]);
+  // The drawer owns its own review/message writes (`drawer/useDrawerData`),
+  // so the Monitor hands it only the busy hint and the badge refresh.
+  const { loading, isProcessing, refreshAttention } = data;
 
   return (
     <div className="relative z-10 flex-1 min-h-0 overflow-hidden">
@@ -100,11 +79,7 @@ export function ActivityBody({ data, cards, personas, teams, feedTeams, selectio
               initialSection={s.selection.section}
               designContext={s.selectedPersona?.design_context ?? null}
               isProcessing={isProcessing}
-              isReviewInFlight={isReviewInFlight}
               now={now}
-              onReviewAction={onReviewAction}
-              onDispatchAction={onDispatchAction}
-              onMarkRead={onMarkRead}
               onAttentionChanged={refreshAttention}
               onClose={s.closeDrawer}
             />
