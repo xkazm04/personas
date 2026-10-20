@@ -45,8 +45,16 @@ export const kbPickDirectory = () =>
 export const kbIngestFiles = (kbId: string, filePaths: string[]) =>
   invoke<string>('kb_ingest_files', { kbId, filePaths });
 
+/**
+ * `kb_ingest_text` chunks and embeds the whole paste inline (no job id, no
+ * backend cap), so on a CPU embedder a large paste outlives the 90 s IPC
+ * default: the UI reported failure while the document was still being written
+ * and a retry raced it. The wrapper waits well past that.
+ */
+export const KB_INGEST_TEXT_TIMEOUT_MS = 600_000;
+
 export const kbIngestText = (kbId: string, title: string, text: string) =>
-  invoke<number>('kb_ingest_text', { kbId, title, text });
+  invoke<number>('kb_ingest_text', { kbId, title, text }, { timeoutMs: KB_INGEST_TEXT_TIMEOUT_MS });
 
 export const kbIngestDirectory = (kbId: string, dirPath: string, patterns: string[] = []) =>
   invoke<string>('kb_ingest_directory', { kbId, dirPath, patterns });
