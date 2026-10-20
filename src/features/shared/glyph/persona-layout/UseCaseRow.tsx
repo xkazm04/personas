@@ -20,7 +20,8 @@ interface UseCaseRowProps {
   uc: PersonaCapability;
   isPendingToggle: boolean;
   onOpen: () => void;
-  onToggle: () => void;
+  /** Pause / activate. Omit when the host has no such action: the power button is then not drawn rather than drawn inert. */
+  onToggle?: () => void;
   /** Optional — when omitted the run button is hidden (adoption / scratch
    *  pre-build don't have a runnable persona yet). */
   onRun?: () => void;
@@ -85,7 +86,7 @@ export function UseCaseRow({
 
   const handleToggleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (isPendingToggle) return;
+    if (isPendingToggle || !onToggle) return;
     onToggle();
   };
 
@@ -243,7 +244,7 @@ export function UseCaseRow({
               </button>
             </Tooltip>
           )}
-          <Tooltip
+          {onToggle && <Tooltip
             content={
               isDisabled
                 ? t.agents.use_cases.activate_capability
@@ -263,7 +264,7 @@ export function UseCaseRow({
             >
               <Power className="w-3.5 h-3.5" />
             </button>
-          </Tooltip>
+          </Tooltip>}
         </div>
       </div>
     </div>

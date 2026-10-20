@@ -444,9 +444,6 @@ export function PersonaLayoutBuild({
         onRowOpen={() => {
           // Row editing during build is a follow-up — clicks are no-op here.
         }}
-        onRowToggle={() => {
-          // Same.
-        }}
         onHeroPetalClick={handlePetalClick}
         heroActiveDim={activeQuestionDim}
         heroPetalStatesOverride={petalStates}

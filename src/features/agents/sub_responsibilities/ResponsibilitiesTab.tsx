@@ -136,7 +136,6 @@ export function ResponsibilitiesTab() {
             setActiveId(cap.id);
             setSelectedId(cap.id);
           }}
-          onRowToggle={(cap) => setActiveId(cap.id)}
           renderRowPolicySlot={(cap) => (
             <CharterFocusButton charterId={cap.id} onFocus={() => setActiveId(cap.id)} />
           )}

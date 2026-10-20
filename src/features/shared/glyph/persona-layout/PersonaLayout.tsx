@@ -39,7 +39,8 @@ interface PersonaLayoutProps {
    *  pre-build modes there's no runnable persona, so the row hides its
    *  run button. */
   onRowOpen: (uc: PersonaCapability) => void;
-  onRowToggle: (uc: PersonaCapability) => void;
+  /** Optional: a host with no pause action omits it and the row draws no power button. */
+  onRowToggle?: (uc: PersonaCapability) => void;
   onRowRun?: (uc: PersonaCapability) => void;
 
   /** Forwarded to PersonaHero.petalStatesOverride. Adoption supplies its
@@ -259,7 +260,7 @@ export function PersonaLayout({
                               uc={uc}
                               isPendingToggle={false}
                               onOpen={() => onRowOpen(uc)}
-                              onToggle={() => onRowToggle(uc)}
+                              onToggle={onRowToggle ? () => onRowToggle(uc) : undefined}
                               onRun={onRowRun ? () => onRowRun(uc) : undefined}
                               policySlot={renderRowPolicySlot?.(uc)}
                             />

@@ -65,3 +65,13 @@ describe('UseCaseRow colours', () => {
     expect(screen.getByText('Draft the weekly digest').className).not.toContain('text-muted-foreground');
   });
 });
+
+describe('UseCaseRow power button', () => {
+  it('is not drawn when the host supplies no onToggle', () => {
+    const withToggle = render(<UseCaseRow uc={uc()} isPendingToggle={false} onOpen={noop} onToggle={noop} />);
+    const drawn = withToggle.container.querySelectorAll('button').length;
+    withToggle.unmount();
+    const { container } = render(<UseCaseRow uc={uc()} isPendingToggle={false} onOpen={noop} />);
+    expect(container.querySelectorAll('button').length).toBe(drawn - 1);
+  });
+});
