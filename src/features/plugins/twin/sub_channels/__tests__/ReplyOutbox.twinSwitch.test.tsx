@@ -20,6 +20,7 @@ vi.mock('@/api/twin/twin', () => ({
 const mockState = {
   activeTwinId: 'twin-a' as string | null,
   twinReplyDraft: null as string | null,
+  twinReplyDraftContext: null as { twinId: string; channel: string; contactHandle: string } | null,
   twinReplyDrafting: false,
   twinTones: [] as unknown[],
   twinCommunications: [] as unknown[],
@@ -57,11 +58,13 @@ describe('ReplyOutbox twin attribution', () => {
   beforeEach(() => {
     mockState.activeTwinId = 'twin-a';
     mockState.twinReplyDraft = null;
+    mockState.twinReplyDraftContext = null;
     mockState.draftTwinReply.mockReset();
     mockState.clearTwinReplyDraft.mockReset();
     mockState.recordTwinInteraction.mockClear();
     mockState.draftTwinReply.mockImplementation(async () => {
       mockState.twinReplyDraft = 'Hi from twin A';
+      mockState.twinReplyDraftContext = { twinId: 'twin-a', channel: 'discord', contactHandle: '' };
       return 'Hi from twin A';
     });
   });
@@ -112,5 +115,21 @@ describe('ReplyOutbox twin attribution', () => {
     mockState.activeTwinId = 'twin-b';
     view.rerender(<ReplyOutbox channels={CHANNELS} />);
     expect(mockState.clearTwinReplyDraft).toHaveBeenCalledTimes(1);
+  });
+
+  it('Approve still records after the panel remounts with a staged draft', async () => {
+    // The draft and its frozen target live in the store; a fresh mount must read both.
+    mockState.twinReplyDraft = 'Hi from twin A';
+    mockState.twinReplyDraftContext = { twinId: 'twin-a', channel: 'discord', contactHandle: 'bob' };
+    render(<ReplyOutbox channels={CHANNELS} />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /approve & log/i }));
+    });
+    const confirm = screen.getAllByRole('button', { name: /approve & log/i });
+    await act(async () => {
+      fireEvent.click(confirm[confirm.length - 1]!);
+    });
+    expect(mockState.recordTwinInteraction).toHaveBeenCalledTimes(1);
+    expect(mockState.recordTwinInteraction.mock.calls[0]!.slice(0, 5)).toEqual(['twin-a', 'discord', 'out', 'Hi from twin A', 'bob']);
   });
 });

@@ -36,6 +36,8 @@ export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[
   const tc = tFull.twin.channels;
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const replyDraft = useSystemStore((s) => s.twinReplyDraft);
+  // Frozen target of the draft; held in the slice so it survives a remount.
+  const draftContext = useSystemStore((s) => s.twinReplyDraftContext);
   const drafting = useSystemStore((s) => s.twinReplyDrafting);
   const draftReply = useSystemStore((s) => s.draftTwinReply);
   const setDraft = useSystemStore((s) => s.setTwinReplyDraft);
@@ -58,12 +60,6 @@ export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[
   const [approving, setApproving] = useState(false);
   const [confirmSend, setConfirmSend] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
-  // The twin + channel + contact the current draft was generated for. Approve
-  // logs against THIS frozen tuple, not the live selectors, so changing the
-  // dropdowns (or the footer's active twin) after generating can't
-  // mis-attribute the recorded send (bug-hunt 2026-06-07 twin #3).
-  const [draftContext, setDraftContext] = useState<{ twinId: string; channel: TwinChannelKind; contactHandle: string } | null>(null);
-
   // Default the channel selector to the first active channel.
   useEffect(() => {
     if (!channelType && activeChannels.length > 0) {
@@ -82,17 +78,10 @@ export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[
       .catch(silentCatch('features/plugins/twin/sub_channels/ReplyOutbox:contacts'));
   }, [activeTwinId]);
 
-  // Drop the frozen context whenever the draft is cleared (Discard / Approve)
-  // so a stale tuple can't apply to a future draft.
-  useEffect(() => {
-    if (replyDraft === null) setDraftContext(null);
-  }, [replyDraft]);
-
   // A draft is written in one twin's voice: when the active twin changes under
   // it, drop it rather than show (and let Approve log) twin A's reply as twin B's.
   useEffect(() => {
     if (draftContext && draftContext.twinId !== activeTwinId) {
-      setDraftContext(null);
       clearDraft();
     }
   }, [activeTwinId, draftContext, clearDraft]);
@@ -110,8 +99,7 @@ export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[
     const ch = reuseRequest.channel as TwinChannelKind;
     setChannelType(ch);
     setContactHandle(reuseRequest.contactHandle);
-    setDraft(reuseRequest.content);
-    setDraftContext({ twinId: activeTwinId, channel: ch, contactHandle: reuseRequest.contactHandle });
+    setDraft(reuseRequest.content, { twinId: activeTwinId, channel: ch, contactHandle: reuseRequest.contactHandle });
     rootRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, [reuseRequest, setDraft, activeTwinId]);
 
@@ -162,8 +150,6 @@ export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[
         (dirOverride ?? directions).trim() || undefined,
         toneChannel === 'auto' ? undefined : toneChannel,
       );
-      // Freeze the channel + contact this draft was generated for.
-      setDraftContext({ twinId, channel: channelType, contactHandle: contactHandle.trim() });
     } catch (err) {
       setLocalError(err instanceof Error ? err.message : typeof err === 'string' ? err : 'Failed to draft reply');
     }

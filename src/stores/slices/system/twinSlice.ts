@@ -27,6 +27,12 @@ import type {
 // profiles (per-channel voice directives).
 // ============================================================================
 
+export interface TwinReplyDraftContext {
+  twinId: string;
+  channel: TwinChannelKind;
+  contactHandle: string;
+}
+
 // Dedupe state for fetchTwinProfiles — TwinPage and its sub-panels each
 // fetch on mount (×2 under StrictMode), which stacked 3-4 identical
 // `twin_list_profiles` IPCs per twin-tab visit. Module-level because the
@@ -58,6 +64,8 @@ export interface TwinSlice {
   twinProfiles: TwinProfile[];
   activeTwinId: string | null;
   twinProfilesLoading: boolean;
+  /** Raw rejection of the last roster read (resolved at render); null when the last read succeeded. */
+  twinProfilesError: unknown;
   twinTab: TwinTab;
 
   // -- Tone state (P1) ------------------------------------------------
@@ -88,6 +96,9 @@ export interface TwinSlice {
   //    outbox panel can show it in an editable textarea. Cleared on discard
   //    or after the draft is approved (recorded as an outbound communication).
   twinReplyDraft: string | null;
+  /** The twin + channel + contact the staged draft was generated for. Lives beside
+   *  the draft so Approve still knows its target after the panel remounts. */
+  twinReplyDraftContext: TwinReplyDraftContext | null;
   twinReplyDrafting: boolean;
 
   // -- Cross-tab handoff slot used by Reflections → Training "Dig deeper".
@@ -225,7 +236,7 @@ export interface TwinSlice {
     toneChannel?: string,
   ) => Promise<string>;
   /** Overwrite the staged draft (used while the operator edits the textarea). */
-  setTwinReplyDraft: (draft: string | null) => void;
+  setTwinReplyDraft: (draft: string | null, context?: TwinReplyDraftContext) => void;
   /** Discard the staged draft without sending/recording. */
   clearTwinReplyDraft: () => void;
 }
@@ -234,6 +245,7 @@ export const createTwinSlice: StateCreator<SystemStore, [], [], TwinSlice> = (se
   twinProfiles: [],
   activeTwinId: null,
   twinProfilesLoading: false,
+  twinProfilesError: null,
   twinTab: "profiles" as TwinTab,
   twinTones: [],
   twinTonesLoading: false,
@@ -247,6 +259,7 @@ export const createTwinSlice: StateCreator<SystemStore, [], [], TwinSlice> = (se
   twinChannels: [],
   twinChannelsLoading: false,
   twinReplyDraft: null,
+  twinReplyDraftContext: null,
   twinReplyDrafting: false,
   pendingTrainingQuestions: null,
   studioJobActive: false,
@@ -355,11 +368,12 @@ export const createTwinSlice: StateCreator<SystemStore, [], [], TwinSlice> = (se
           twinProfiles,
           activeTwinId: active?.id ?? null,
           twinProfilesLoading: false,
+          twinProfilesError: null,
           error: null,
         });
       } catch (err) {
         reportError(err, "Failed to fetch twin profiles", set, {
-          stateUpdates: { twinProfilesLoading: false },
+          stateUpdates: { twinProfilesLoading: false, twinProfilesError: err },
         });
       } finally {
         twinProfilesInflight = null;
@@ -689,7 +703,12 @@ export const createTwinSlice: StateCreator<SystemStore, [], [], TwinSlice> = (se
     set({ twinReplyDrafting: true });
     try {
       const draft = await twinApi.draftReply(twinId, channel, contactHandle, inboundMessage, directions, toneChannel);
-      set({ twinReplyDraft: draft, twinReplyDrafting: false, error: null });
+      set({
+        twinReplyDraft: draft,
+        twinReplyDraftContext: { twinId, channel, contactHandle: contactHandle?.trim() ?? '' },
+        twinReplyDrafting: false,
+        error: null,
+      });
       return draft;
     } catch (err) {
       reportError(err, "Failed to draft reply", set, {
@@ -699,7 +718,12 @@ export const createTwinSlice: StateCreator<SystemStore, [], [], TwinSlice> = (se
     }
   },
 
-  setTwinReplyDraft: (draft) => set({ twinReplyDraft: draft }),
+  setTwinReplyDraft: (draft, context) =>
+    set((state) => ({
+      twinReplyDraft: draft,
+      // A cleared draft takes its target with it; an edit keeps the frozen one.
+      twinReplyDraftContext: draft === null ? null : (context ?? state.twinReplyDraftContext),
+    })),
 
-  clearTwinReplyDraft: () => set({ twinReplyDraft: null }),
+  clearTwinReplyDraft: () => set({ twinReplyDraft: null, twinReplyDraftContext: null }),
 });
