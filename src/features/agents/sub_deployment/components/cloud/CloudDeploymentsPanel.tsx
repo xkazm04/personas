@@ -32,7 +32,7 @@ interface Props {
   onPause: (id: string) => Promise<void>;
   onResume: (id: string) => Promise<void>;
   onRemove: (id: string) => Promise<void>;
-  onRefresh: () => Promise<void>;
+  onRefresh: () => Promise<unknown>;
 }
 
 const DEPLOYMENT_CASCADE_ROWS = 14;

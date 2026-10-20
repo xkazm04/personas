@@ -85,7 +85,8 @@ export interface GitLabSlice {
     projectId: number,
     variableKeys: string[],
   ) => Promise<number>;
-  gitlabFetchAgents: (projectId: number) => Promise<void>;
+  /** Resolves true when the agent list was read, false when it failed (`gitlabError` carries the reason). */
+  gitlabFetchAgents: (projectId: number) => Promise<boolean>;
   gitlabUndeployAgent: (projectId: number, agentId: string) => Promise<void>;
   gitlabRedeployAgent: (agentName: string) => Promise<GitLabDeployResult>;
   gitlabClearError: () => void;
@@ -330,8 +331,10 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
         }),
       ]);
       set({ gitlabAgents: agents, gitlabDeploymentStatuses: statuses, gitlabError: null });
+      return true;
     } catch (err) {
       set({ gitlabError: translateGitLabError(err) });
+      return false;
     }
   },
 

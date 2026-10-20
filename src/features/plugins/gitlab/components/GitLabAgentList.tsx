@@ -11,7 +11,7 @@ import { pipelineForAgent } from './pipelineHelpers';
 interface GitLabAgentListProps {
   projectId: number | null;
   agents: GitLabAgent[];
-  onFetchAgents: (projectId: number) => Promise<void>;
+  onFetchAgents: (projectId: number) => Promise<unknown>;
   onUndeploy: (projectId: number, agentId: string) => Promise<void>;
   onRedeploy: (agentName: string) => Promise<unknown>;
   redeployingAgentId: string | null;

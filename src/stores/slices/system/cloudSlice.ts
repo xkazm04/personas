@@ -116,7 +116,8 @@ export interface CloudSlice {
   /** Reset reconnect state (called when reconnection succeeds or user manually acts). */
   cloudClearReconnect: () => void;
   // Deployment actions
-  cloudFetchDeployments: () => Promise<void>;
+  /** Resolves true when the list was read, false when it failed (`cloudError` carries the reason). */
+  cloudFetchDeployments: () => Promise<boolean>;
   /**
    * Reconcile server-side deployments against the local audit trail and surface
    * any orphans (running remotely with no local record). READ-ONLY — never
@@ -342,8 +343,10 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
         cloudGetBaseUrl(),
       ]);
       set({ cloudDeployments: deployments, cloudBaseUrl: baseUrl });
+      return true;
     } catch (err) {
       set({ cloudError: translateCloudError(err) });
+      return false;
     }
   },
 
