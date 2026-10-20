@@ -1431,11 +1431,12 @@ export const getGitStatus = (projectId: string) =>
     { projectId },
   );
 
-export const commitChanges = (projectId: string, message: string, stageAll?: boolean) =>
+/** `paths` (project-relative) stages and commits exactly those files; omit to stage all. */
+export const commitChanges = (projectId: string, message: string, stageAll?: boolean, paths?: string[]) =>
   safeInvoke<GitOperationResult>(
     { success: false, message: 'Command not available' },
     "dev_tools_commit_changes",
-    { projectId, message, stageAll },
+    { projectId, message, stageAll, paths },
   );
 
 // ============================================================================

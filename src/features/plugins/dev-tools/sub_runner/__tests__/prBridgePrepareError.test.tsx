@@ -75,7 +75,7 @@ describe('PrBridge prepare consent', () => {
 
     // The dialog's confirm button carries the same label; it is the last one in the DOM.
     fireEvent.click(screen.getAllByRole('button', { name: /prepare branch/i }).at(-1)!);
-    await waitFor(() => expect(commitChanges).toHaveBeenCalledWith('p1', expect.any(String), true));
+    await waitFor(() => expect(commitChanges).toHaveBeenCalledWith('p1', expect.any(String), true, ['src/a.ts', 'notes.txt']));
   });
 
   it('cancel leaves the project root untouched', async () => {

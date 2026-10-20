@@ -3,6 +3,7 @@ use crate::db::repos::dev_tools as repo;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
+use personas_core::validation::require_non_empty;
 use serde::Serialize;
 use std::sync::Arc;
 use tauri::State;
@@ -367,20 +368,76 @@ pub async fn dev_tools_get_git_status(
     })
 }
 
-/// Commit staged/all changes in a project.
+/// Validate caller-supplied paths for a path-scoped commit. Each must be a
+/// plain relative path that stays inside the project root: no absolute or
+/// drive-prefixed form, no `..`, no NUL, not empty. Returns them as `/`-joined
+/// strings ready for `git ... -- <paths>`. The list itself must be non-empty:
+/// an empty list is a caller mistake, never "stage everything".
+fn validate_commit_paths(paths: &[String]) -> Result<Vec<String>, AppError> {
+    use std::path::{Component, Path};
+    let [_, ..] = paths else {
+        return Err(AppError::Validation(
+            "commit paths must not be an empty list; omit `paths` to stage everything".into(),
+        ));
+    };
+    let mut out = Vec::with_capacity(paths.len());
+    for raw in paths {
+        require_non_empty("commit path", raw)?;
+        if raw.contains('\0') {
+            return Err(AppError::Validation(format!(
+                "commit path must be a plain relative path, got {raw:?}"
+            )));
+        }
+        let mut parts: Vec<String> = Vec::new();
+        for component in Path::new(raw).components() {
+            match component {
+                Component::Normal(part) => parts.push(part.to_string_lossy().into_owned()),
+                Component::CurDir => {}
+                _ => {
+                    return Err(AppError::Validation(format!(
+                        "commit path must stay inside the project root, got {raw:?}"
+                    )))
+                }
+            }
+        }
+        let [_, ..] = parts.as_slice() else {
+            return Err(AppError::Validation(format!(
+                "commit path must name a file or directory inside the project, got {raw:?}"
+            )));
+        };
+        out.push(parts.join("/"));
+    }
+    Ok(out)
+}
+
+/// Commit changes in a project.
+///
+/// `paths` (optional) stages and commits exactly those project-relative paths;
+/// it takes precedence over `stage_all`. Without it, behaviour is unchanged:
+/// `git add -A` (unless `stage_all` is false) then commit the index.
 #[tauri::command]
 pub async fn dev_tools_commit_changes(
     state: State<'_, Arc<AppState>>,
     project_id: String,
     message: String,
     stage_all: Option<bool>,
+    paths: Option<Vec<String>>,
 ) -> Result<GitOperationResult, AppError> {
     require_auth_sync(&state)?;
     let project = repo::get_project_by_id(&state.db, &project_id)?;
+    let scoped_paths = paths.as_deref().map(validate_commit_paths).transpose()?;
 
-    if stage_all.unwrap_or(true) {
-        let add_output = tokio::process::Command::new("git")
-            .args(["add", "-A"])
+    if scoped_paths.is_some() || stage_all.unwrap_or(true) {
+        let mut add = tokio::process::Command::new("git");
+        match &scoped_paths {
+            // `--literal-pathspecs`: a name containing `*`, `?` or `:(...)` is a
+            // file name, never a pattern that could widen the stage.
+            Some(scoped) => add
+                .args(["--literal-pathspecs", "add", "-A", "--"])
+                .args(scoped),
+            None => add.args(["add", "-A"]),
+        };
+        let add_output = add
             .current_dir(&project.root_path)
             .output()
             .await
@@ -399,8 +456,24 @@ pub async fn dev_tools_commit_changes(
         }
     }
 
-    let output = tokio::process::Command::new("git")
-        .args(["commit", "-m", &message])
+    let mut commit = tokio::process::Command::new("git");
+    if let Some(scoped) = &scoped_paths {
+        // `--only -- <paths>` commits just those paths even if the index
+        // already held other staged files.
+        commit
+            .args([
+                "--literal-pathspecs",
+                "commit",
+                "-m",
+                &message,
+                "--only",
+                "--",
+            ])
+            .args(scoped);
+    } else {
+        commit.args(["commit", "-m", &message]);
+    }
+    let output = commit
         .current_dir(&project.root_path)
         .output()
         .await
@@ -435,4 +508,33 @@ pub async fn dev_tools_commit_changes(
         commit_hash,
         files_changed,
     })
+}
+
+#[cfg(test)]
+mod commit_path_tests {
+    use super::validate_commit_paths;
+
+    fn v(p: &[&str]) -> Result<Vec<String>, crate::error::AppError> {
+        validate_commit_paths(&p.iter().map(|s| s.to_string()).collect::<Vec<_>>())
+    }
+
+    #[test]
+    fn accepts_plain_relative_paths_and_normalises_dot_segments() {
+        assert_eq!(
+            v(&["src/a.rs", "./docs/b.md", "dir/"]).unwrap(),
+            vec!["src/a.rs", "docs/b.md", "dir"]
+        );
+    }
+
+    #[test]
+    fn rejects_escapes_absolute_and_empty() {
+        assert!(v(&["../outside"]).is_err());
+        assert!(v(&["a/../../outside"]).is_err());
+        assert!(v(&["/etc/passwd"]).is_err());
+        assert!(v(&["C:/Windows/x"]).is_err());
+        assert!(v(&[""]).is_err());
+        assert!(v(&["."]).is_err());
+        assert!(v(&["a\0b"]).is_err());
+        assert!(v(&[]).is_err(), "empty list is never stage-all");
+    }
 }

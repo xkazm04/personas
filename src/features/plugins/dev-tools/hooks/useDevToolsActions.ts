@@ -66,8 +66,8 @@ export function useDevToolsActions() {
 
     createBranch: (projectId: string, branchName: string, baseBranch?: string) =>
       devApi.createBranch(projectId, branchName, baseBranch),
-    commitChanges: (projectId: string, message: string, stageAll?: boolean) =>
-      devApi.commitChanges(projectId, message, stageAll),
+    commitChanges: (projectId: string, message: string, stageAll?: boolean, paths?: string[]) =>
+      devApi.commitChanges(projectId, message, stageAll, paths),
     getGitStatus: (projectId: string) => devApi.getGitStatus(projectId),
 
     // -- Portfolio Intelligence (PortfolioStrip) -----------------------------

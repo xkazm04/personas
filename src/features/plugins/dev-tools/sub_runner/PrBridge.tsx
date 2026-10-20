@@ -38,6 +38,7 @@ function writeDoneSteps(taskId: string, steps: Set<PrStep>): void {
   } catch (err) { silentCatch("features/plugins/dev-tools/sub_runner/PrBridge:catch1")(err); }
 }
 import { Button } from '@/features/shared/components/buttons';
+import { porcelainPaths } from './porcelainPaths';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { useSystemStore } from '@/stores/systemStore';
 import { openProjectManager } from '@/features/companions/athena/guidance/appActions';
@@ -361,16 +362,16 @@ export function PrBridge({ task }: { task: DevTask }) {
     }
   };
 
-  // Step 1: show what is dirty in the project root. The commit stages every
-  // file `git status` lists (the backend can only stage all or nothing), so the
-  // operator confirms exactly that list before anything is branched or staged.
+  // Step 1: show what is dirty in the project root. The commit stages exactly
+  // the files `git status` lists (paths passed to the backend), so the operator
+  // confirms that list before anything is branched or staged.
   const handlePrepareBranch = async () => {
     if (!project) return;
     setPreparing(true);
     try {
       const status = await getGitStatus(project.id);
       if (status.changedFiles.length === 0) {
-        await runPrepare();
+        await runPrepare([]);
       } else {
         setPendingFiles(status.changedFiles);
       }
@@ -382,12 +383,13 @@ export function PrBridge({ task }: { task: DevTask }) {
   };
 
   // Step 2: runs only after the operator confirmed the listed files.
-  const runPrepare = async () => {
+  const runPrepare = async (paths: string[]) => {
     if (!project) return;
     setPreparing(true);
     try {
       await createBranch(project.id, content.branchName);
-      await commitChanges(project.id, content.commitMessage, true);
+      // Exactly the confirmed files; with none listed, the old stage-all (a no-op commit).
+      await commitChanges(project.id, content.commitMessage, true, paths.length ? paths : undefined);
       addToast(tx(dt.pr_bridge_branch_prepared, { branch: content.branchName }), 'success');
       markDone('prepare');
     } catch (err) {
@@ -424,8 +426,9 @@ export function PrBridge({ task }: { task: DevTask }) {
           body={pendingFiles.join(' · ')}
           confirmLabel={dt.pr_bridge_prepare}
           onConfirm={async () => {
+            const confirmed = porcelainPaths(pendingFiles);
             setPendingFiles(null);
-            await runPrepare();
+            await runPrepare(confirmed);
           }}
           onCancel={() => setPendingFiles(null)}
         />
