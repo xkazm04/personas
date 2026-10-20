@@ -218,3 +218,23 @@ describe('FleetPairDevice — copy confirmation is earned', () => {
     expect(copyBtn).not.toHaveAccessibleName(/copied/i);
   });
 });
+
+describe('FleetPairDevice - a failed device read is not "nothing paired"', () => {
+  it('shows an error with Retry instead of the empty state, and recovers', async () => {
+    vi.mocked(fleetApi.companionDevices).mockReset().mockRejectedValueOnce(new Error('db locked')).mockResolvedValue(STATUS);
+    const user = userEvent.setup();
+
+    render(<FleetPairDevice />);
+    await user.click(await screen.findByRole('button', { name: /retry/i }));
+
+    expect(await screen.findByTestId('fleet-pair-devices')).toBeTruthy();
+    expect(screen.queryByText(/no devices paired/i)).toBeNull();
+  });
+
+  it('does not claim the list is empty while the read has failed', async () => {
+    vi.mocked(fleetApi.companionDevices).mockReset().mockRejectedValue(new Error('db locked'));
+    render(<FleetPairDevice />);
+    await screen.findByRole('button', { name: /retry/i });
+    expect(screen.queryByText(/no devices paired/i)).toBeNull();
+  });
+});
