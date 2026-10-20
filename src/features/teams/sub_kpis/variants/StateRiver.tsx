@@ -78,7 +78,15 @@ export default function StateRiver({ overview, loading, onFocus }: KpiVariantPro
     }));
   }, [estate, altitude.project, trends]);
 
-  if (loading && overview.length === 0) return <RiverGhost />;
+  // Chrome first (overview-loading.md law 1): the headline stays, the ghost sits under it.
+  if (loading && overview.length === 0) {
+    return (
+      <div className="space-y-4" data-testid="kpi-river">
+        <EstateHeadline estate={estate} project={altitude.project} onClimb={altitude.climb} loading />
+        <RiverGhost />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4" data-testid="kpi-river">
@@ -138,7 +146,6 @@ export default function StateRiver({ overview, loading, onFocus }: KpiVariantPro
 function RiverGhost() {
   return (
     <div className="space-y-3" data-testid="kpi-river-ghost" aria-hidden="true">
-      <span className="block h-8 w-72 rounded bg-primary/[0.06] animate-fade-in" style={{ animationDelay: '150ms' }} />
       <span
         className="block rounded-card bg-primary/[0.06] animate-fade-in"
         style={{ height: MAIN_HEIGHT, animationDelay: '185ms' }}

@@ -71,7 +71,28 @@ export default function StrategicMap({ overview, loading, onFocus, onOpen }: Kpi
     return null;
   }, [hovered, estate]);
 
-  if (loading && overview.length === 0) return <MapGhost />;
+  // Chrome first (overview-loading.md law 1): the headline and the lens strip
+  // stay, the ghost sits under them.
+  if (loading && overview.length === 0) {
+    return (
+      <div className="space-y-3" data-testid="kpi-map">
+        <EstateHeadline estate={estate} project={altitude.project} onClimb={altitude.climb} loading />
+        <SegmentedTabs<MapLens>
+          tabs={[
+            { id: 'state', label: o.map_lens_state, testId: 'kpi-map-lens-state' },
+            { id: 'freshness', label: o.map_lens_freshness, testId: 'kpi-map-lens-freshness' },
+          ]}
+          activeTab={lens}
+          onTabChange={setLens}
+          ariaLabel={o.map_lens_aria}
+          idPrefix="kpi-map-lens"
+          size="sm"
+          fullWidth={false}
+        />
+        <MapGhost />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3" data-testid="kpi-map">
@@ -169,7 +190,6 @@ export default function StrategicMap({ overview, loading, onFocus, onOpen }: Kpi
 function MapGhost() {
   return (
     <div className="space-y-3" data-testid="kpi-map-ghost" aria-hidden="true">
-      <span className="block h-8 w-64 rounded bg-primary/[0.06] animate-fade-in" style={{ animationDelay: '150ms' }} />
       <span
         className="block rounded-card bg-primary/[0.06] animate-fade-in"
         style={{ height: CANVAS_HEIGHT, animationDelay: '185ms' }}
