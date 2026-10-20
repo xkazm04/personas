@@ -45,10 +45,16 @@ export function useConnectorStatuses() {
   // even when a perfectly viable candidate sat in the vault.
   const credentialsByServiceType = useMemo(() => {
     const map = new Map<string, (typeof credentials)[number]>();
+    // Newest wins, matching the runner (`get_by_service_type ... ORDER BY
+    // created_at DESC`, then `.first()`). Taking the first in store order made the
+    // row name and auto-test a credential the run never injects whenever the
+    // store list was not newest-first (an optimistic create appends).
+    const newer = (a: (typeof credentials)[number] | undefined, b: (typeof credentials)[number]) =>
+      !a || (b.created_at ?? '') > (a.created_at ?? '');
     for (const cred of credentials) {
-      if (!map.has(cred.service_type)) map.set(cred.service_type, cred);
+      if (newer(map.get(cred.service_type), cred)) map.set(cred.service_type, cred);
       for (const tag of connectorCategoryTags(cred.service_type)) {
-        if (!map.has(tag)) map.set(tag, cred);
+        if (newer(map.get(tag), cred)) map.set(tag, cred);
       }
     }
     return map;

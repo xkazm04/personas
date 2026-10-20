@@ -27,11 +27,11 @@ vi.mock('@/lib/silentCatch', async (importOriginal) => ({
 import { mutateCredentialLink } from '@/hooks/design/core/useDesignContextMutator';
 import { useConnectorStatuses } from '../useConnectorStatuses';
 
-function cred(id: string, name: string): CredentialMetadata {
+function cred(id: string, name: string, created_at?: string): CredentialMetadata {
   // Only the fields the hook reads. A probed credential restores its result,
   // so no auto-test fires and healthcheckCredential stays untouched.
   const fields: Partial<CredentialMetadata> = {
-    id, name, service_type: 'github',
+    id, name, service_type: 'github', created_at,
     healthcheck_last_success: true, healthcheck_last_message: 'ok',
     healthcheck_last_state: 'verified', healthcheck_last_tested_at: '2026-10-18T00:00:00Z',
   };
@@ -90,6 +90,23 @@ describe('useConnectorStatuses row identity', () => {
     });
     expect(result.current.statuses[0]?.credentialId).toBe('cred-a');
     expect(healthcheckCredential).not.toHaveBeenCalled();
+  });
+});
+
+describe('useConnectorStatuses unlinked auto-match', () => {
+  it('names the newest credential, the one the runner injects, whatever the list order', () => {
+    act(() => {
+      useVaultStore.setState({
+        // Oldest first: the opposite of the backend's `ORDER BY created_at DESC`.
+        credentials: [
+          cred('cred-old', 'Old GitHub', '2026-01-01T00:00:00Z'),
+          cred('cred-new', 'New GitHub', '2026-09-01T00:00:00Z'),
+        ],
+      } as never);
+      useAgentStore.setState({ selectedPersona: persona('persona-u', 'nothing-linked') } as never);
+    });
+    const { result } = renderHook(() => useConnectorStatuses());
+    expect(result.current.statuses[0]?.credentialId).toBe('cred-new');
   });
 });
 
