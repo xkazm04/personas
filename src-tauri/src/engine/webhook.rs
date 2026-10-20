@@ -336,6 +336,42 @@ fn no_headers() -> HeaderMap {
     HeaderMap::new()
 }
 
+/// Max failed-authentication responses per trigger per window before the
+/// sender is answered 429 instead of 401. Separate from the authenticated
+/// bucket so unsigned floods can never consume a real delivery's allowance.
+const WEBHOOK_AUTH_FAIL_MAX: usize = 30;
+
+/// Response for a request that failed HMAC verification. Counts the failure
+/// in a per-trigger "failed auth" bucket (never consulted before HMAC, so a
+/// signed delivery is unaffected) and degrades 401 to 429 once it is spent.
+fn auth_failure_response(
+    state: &WebhookState,
+    trigger_id: &str,
+    message: &str,
+) -> (StatusCode, HeaderMap, WebhookResponse) {
+    let key = format!("webhook-auth-fail:{}", trigger_id);
+    let (status, error) =
+        match state
+            .rate_limiter
+            .check(&key, WEBHOOK_AUTH_FAIL_MAX, WEBHOOK_TRIGGER_WINDOW)
+        {
+            Ok(()) => (StatusCode::UNAUTHORIZED, message.to_string()),
+            Err(retry_after) => (
+                StatusCode::TOO_MANY_REQUESTS,
+                format!("Too many failed authentications. Retry after {retry_after}s"),
+            ),
+        };
+    (
+        status,
+        no_headers(),
+        WebhookResponse {
+            accepted: false,
+            event_id: None,
+            error: Some(error),
+        },
+    )
+}
+
 /// Core webhook processing logic, separated for clean logging.
 async fn process_webhook(
     state: &WebhookState,
@@ -384,7 +420,65 @@ async fn process_webhook(
         );
     }
 
-    // 2b. Rate limit: max webhook calls per trigger per minute (tier-aware)
+    // 3. Parse config once -- typed access replaces manual JSON extraction
+    let cfg = trigger.parse_config();
+    let (webhook_secret, cfg_event_type) = match &cfg {
+        crate::db::models::TriggerConfig::Webhook {
+            webhook_secret,
+            event_type,
+            ..
+        } => (webhook_secret.clone(), event_type.clone()),
+        _ => (None, None),
+    };
+
+    // HMAC validation is mandatory. Webhook triggers must have a non-empty
+    // secret (enforced at creation time). Reject unsigned or secretless requests.
+    match webhook_secret {
+        Some(ref secret) if !secret.is_empty() => {
+            let signature = headers
+                .get("x-hub-signature-256") // GitHub
+                .or_else(|| headers.get("x-signature-256")) // Generic
+                .or_else(|| headers.get("x-webhook-signature")) // Custom
+                .and_then(|v| v.to_str().ok());
+
+            match signature {
+                Some(sig) => {
+                    if !verify_hmac_sha256(secret, body, sig) {
+                        return auth_failure_response(state, trigger_id, "Invalid HMAC signature");
+                    }
+                }
+                None => {
+                    return auth_failure_response(
+                        state,
+                        trigger_id,
+                        "Missing signature header (x-hub-signature-256, x-signature-256, or x-webhook-signature)",
+                    );
+                }
+            }
+        }
+        _ => {
+            // No secret configured or empty -- reject as misconfigured.
+            tracing::warn!(
+                trigger_id = %trigger_id,
+                "Webhook trigger has no HMAC secret configured -- rejecting request",
+            );
+            return (
+                StatusCode::FORBIDDEN,
+                no_headers(),
+                WebhookResponse {
+                    accepted: false,
+                    event_id: None,
+                    error: Some("Webhook trigger has no HMAC secret configured".into()),
+                },
+            );
+        }
+    }
+
+    // 2b. Rate limit: max webhook calls per trigger per minute (tier-aware).
+    // Runs AFTER the HMAC check on purpose: the trigger id is the URL path, so
+    // anyone who knows it could otherwise burn the bucket with unsigned POSTs
+    // and starve the real sender. Unsigned traffic has its own bucket
+    // (`auth_failure_response`).
     let webhook_trigger_max = state
         .tier_config
         .lock()
@@ -413,74 +507,6 @@ async fn process_webhook(
                 )),
             },
         );
-    }
-
-    // 3. Parse config once -- typed access replaces manual JSON extraction
-    let cfg = trigger.parse_config();
-    let (webhook_secret, cfg_event_type) = match &cfg {
-        crate::db::models::TriggerConfig::Webhook {
-            webhook_secret,
-            event_type,
-            ..
-        } => (webhook_secret.clone(), event_type.clone()),
-        _ => (None, None),
-    };
-
-    // HMAC validation is mandatory. Webhook triggers must have a non-empty
-    // secret (enforced at creation time). Reject unsigned or secretless requests.
-    match webhook_secret {
-        Some(ref secret) if !secret.is_empty() => {
-            let signature = headers
-                .get("x-hub-signature-256") // GitHub
-                .or_else(|| headers.get("x-signature-256")) // Generic
-                .or_else(|| headers.get("x-webhook-signature")) // Custom
-                .and_then(|v| v.to_str().ok());
-
-            match signature {
-                Some(sig) => {
-                    if !verify_hmac_sha256(secret, body, sig) {
-                        return (
-                            StatusCode::UNAUTHORIZED,
-                            no_headers(),
-                            WebhookResponse {
-                                accepted: false,
-                                event_id: None,
-                                error: Some("Invalid HMAC signature".into()),
-                            },
-                        );
-                    }
-                }
-                None => {
-                    return (
-                        StatusCode::UNAUTHORIZED,
-                        no_headers(),
-                        WebhookResponse {
-                            accepted: false,
-                            event_id: None,
-                            error: Some(
-                                "Missing signature header (x-hub-signature-256, x-signature-256, or x-webhook-signature)".into(),
-                            ),
-                        },
-                    );
-                }
-            }
-        }
-        _ => {
-            // No secret configured or empty -- reject as misconfigured.
-            tracing::warn!(
-                trigger_id = %trigger_id,
-                "Webhook trigger has no HMAC secret configured -- rejecting request",
-            );
-            return (
-                StatusCode::FORBIDDEN,
-                no_headers(),
-                WebhookResponse {
-                    accepted: false,
-                    event_id: None,
-                    error: Some("Webhook trigger has no HMAC secret configured".into()),
-                },
-            );
-        }
     }
 
     // 3b. Active window gate — return 422 so webhook senders know to retry
@@ -733,6 +759,90 @@ mod tests {
         assert_eq!(body["status"], "ok");
         assert_eq!(body["service"], "personas-webhook");
         assert_eq!(body["timestamp"], 1_767_323_045_000_i64);
+    }
+
+    fn rate_limited_state(max: usize) -> (WebhookState, String) {
+        use crate::db::models::CreateTriggerInput;
+        let pool = crate::db::init_test_db().unwrap();
+        let persona_id = crate::db::repos::core::personas::create(
+            &pool,
+            crate::db::models::CreatePersonaInput {
+                name: "wh".into(),
+                system_prompt: "prompt".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )
+        .unwrap()
+        .id;
+        let trigger = trigger_repo::create(
+            &pool,
+            CreateTriggerInput {
+                persona_id,
+                trigger_type: "webhook".into(),
+                config: Some(r#"{"webhook_secret":"s3cret","event_type":"x"}"#.into()),
+                enabled: Some(true),
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+        let mut tier = TierConfig::free();
+        tier.webhook_trigger_max = max;
+        (
+            WebhookState {
+                pool,
+                rate_limiter: Arc::new(RateLimiter::new()),
+                tier_config: Arc::new(std::sync::Mutex::new(tier)),
+            },
+            trigger.id,
+        )
+    }
+
+    /// Unsigned POSTs to a known trigger id must not spend the allowance of
+    /// signed deliveries (rate limit used to run before HMAC).
+    #[tokio::test]
+    async fn unsigned_flood_does_not_starve_signed_delivery() {
+        let (state, id) = rate_limited_state(3);
+        let body = Bytes::from_static(b"{}");
+        for _ in 0..10 {
+            let (status, _, _) = process_webhook(&state, &id, &HeaderMap::new(), &body).await;
+            assert_ne!(status, StatusCode::TOO_MANY_REQUESTS);
+            assert_eq!(status, StatusCode::UNAUTHORIZED);
+        }
+        let mut mac = HmacSha256::new_from_slice(b"s3cret").unwrap();
+        mac.update(&body);
+        let sig = format!("sha256={}", hex::encode(mac.finalize().into_bytes()));
+        let mut headers = HeaderMap::new();
+        headers.insert("x-hub-signature-256", HeaderValue::from_str(&sig).unwrap());
+        let (status, _, resp) = process_webhook(&state, &id, &headers, &body).await;
+        assert_ne!(status, StatusCode::TOO_MANY_REQUESTS, "{:?}", resp.error);
+        assert_ne!(status, StatusCode::UNAUTHORIZED, "{:?}", resp.error);
+    }
+
+    /// The failed-auth bucket still bounds an unsigned flood.
+    #[tokio::test]
+    async fn unsigned_flood_is_itself_throttled() {
+        let (state, id) = rate_limited_state(3);
+        let body = Bytes::from_static(b"{}");
+        let mut last = StatusCode::OK;
+        for _ in 0..(WEBHOOK_AUTH_FAIL_MAX + 1) {
+            last = process_webhook(&state, &id, &HeaderMap::new(), &body)
+                .await
+                .0;
+        }
+        assert_eq!(last, StatusCode::TOO_MANY_REQUESTS);
     }
 
     #[test]
