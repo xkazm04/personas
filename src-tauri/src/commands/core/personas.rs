@@ -349,8 +349,8 @@ pub fn sync_capability_parameters(
                 .and_then(|recipe| {
                     serde_json::from_str::<serde_json::Value>(&recipe.prompt_template).ok()
                 })
-                .and_then(|tpl| tpl.get("input_schema").cloned())
-                .filter(|s| s.is_array())
+                .and_then(|tpl| rp::input_schema_of(&tpl).cloned())
+                .map(serde_json::Value::Array)
                 .or_else(|| uc.get("input_schema").cloned().filter(|s| s.is_array()))?;
             Some(serde_json::json!({ "title": title, "input_schema": schema }))
         })
