@@ -703,7 +703,12 @@ impl TriggerConfig {
 
         match trigger_type {
             "schedule" => TriggerConfig::Schedule {
-                cron: val.get("cron").and_then(|v| v.as_str()).map(String::from),
+                // `cron_expression` is the alias every validator accepts.
+                cron: val
+                    .get("cron")
+                    .or_else(|| val.get("cron_expression"))
+                    .and_then(|v| v.as_str())
+                    .map(String::from),
                 interval_seconds: val.get("interval_seconds").and_then(|v| v.as_u64()),
                 timezone: val
                     .get("timezone")
@@ -864,6 +869,28 @@ mod tests {
             use_case_id: None,
             responsibility_id: None,
             unattended_mode: "auto".into(),
+        }
+    }
+
+    /// The validators accept `cron_expression` as an alias of `cron`; the
+    /// engine's reader must too, or the born-dead guard refuses a config the
+    /// door accepted and blames the expression.
+    #[test]
+    fn schedule_from_raw_reads_the_cron_expression_alias() {
+        let cfg = TriggerConfig::from_raw("schedule", Some(r#"{"cron_expression":"0 * * * *"}"#));
+        match cfg {
+            TriggerConfig::Schedule { cron, .. } => {
+                assert_eq!(cron.as_deref(), Some("0 * * * *"))
+            }
+            other => panic!("expected Schedule, got {other:?}"),
+        }
+        let both = TriggerConfig::from_raw(
+            "schedule",
+            Some(r#"{"cron":"5 * * * *","cron_expression":"0 * * * *"}"#),
+        );
+        match both {
+            TriggerConfig::Schedule { cron, .. } => assert_eq!(cron.as_deref(), Some("5 * * * *")),
+            other => panic!("expected Schedule, got {other:?}"),
         }
     }
 
