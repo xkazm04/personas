@@ -385,11 +385,13 @@ export const draftForPage = (
 // Style studio (spark twin-presets)
 //
 // Roll and materialize are PROPOSALS: neither writes. Both are one Claude CLI
-// call (materialize writes every channel at once), so they get 150 s rather
+// call (materialize writes every channel at once), so they get two legacy budgets rather
 // than the 90 s default. Only `applyTwinStyle` writes, after the user accepted.
 // ============================================================================
 
-const STYLE_LLM_TIMEOUT_MS = 150_000;
+// generate_with_repair runs up to TWO legacy CLI calls (first try + one repair), so the
+// wrapper must outlive 2 x LEGACY_TIMEOUT; 150 s rejected while the backend kept spending.
+const STYLE_LLM_TIMEOUT_MS = 2 * TWIN_LLM_TIMEOUT_MS;
 
 /** Roll 3 contrasting candidate styles. Pinned dimensions hold in all three;
  *  `avoid` lists dimension vectors already seen this session. */

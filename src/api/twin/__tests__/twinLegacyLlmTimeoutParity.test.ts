@@ -17,7 +17,8 @@ vi.mock('@/lib/tauriInvoke', () => ({
 }));
 
 import {
-  auditWiki, compileWiki, draftReply, generateBio, reflectOnTwin, simulateAnswer,
+  auditWiki, compileWiki, draftReply, generateBio, materializeTwinStyle, reflectOnTwin, rollTwinStyles,
+  simulateAnswer,
 } from '@/api/twin/twin';
 
 function rust(path: string): string {
@@ -55,5 +56,23 @@ describe('twin legacy LLM wrappers outlive the backend CLI deadline', () => {
     const opts = calls[0]![2] as { timeoutMs?: number } | undefined;
     expect(opts?.timeoutMs, 'no explicit timeout: the 90 s default applies').toBeDefined();
     expect(opts!.timeoutMs!).toBeGreaterThan(legacyBudgetMs());
+  });
+});
+
+describe('twin style wrappers outlive the repair retry (two legacy calls)', () => {
+  beforeEach(() => {
+    calls.length = 0;
+  });
+
+  it.each([
+    ['twin_style_roll', () => rollTwinStyles('t', {} as never, [])],
+    ['twin_style_materialize', () => materializeTwinStyle('t', {} as never, [])],
+  ] as Array<[string, () => Promise<unknown>]>)('%s timeout exceeds 2 x LEGACY_TIMEOUT', async (cmd, run) => {
+    const src = rust('src-tauri/src/commands/infrastructure/twin_style.rs');
+    expect(src).toContain('TwinCall::legacy(site)');
+    await run();
+    expect(calls[0]![0]).toBe(cmd);
+    const opts = calls[0]![2] as { timeoutMs?: number } | undefined;
+    expect(opts!.timeoutMs!).toBeGreaterThan(2 * legacyBudgetMs());
   });
 });
