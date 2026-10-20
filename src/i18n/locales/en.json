@@ -3299,7 +3299,8 @@
       "design_wizard_banner": "Customize this template with the AI Design Wizard",
       "try_design_wizard": "Try Design Wizard",
       "cloud_banner_connect": "Connect to the cloud to run your agents remotely",
-      "cloud_banner_signin": "Sign in to unlock cloud features and remote execution"
+      "cloud_banner_signin": "Sign in to unlock cloud features and remote execution",
+      "model_profile_corrupt": "Model config couldn't be parsed ({bytes} bytes) - fields reset to defaults. Auto-save is paused for model fields. Pick a model to repair, or restore from a backup."
     },
     "header": {
       "toggle_failed": "Failed to toggle persona -- check your connection",
@@ -4997,7 +4998,12 @@
       "health_watch_enable": "Enable continuous health monitoring",
       "speak_as": "Speak as",
       "no_twins_configured": "No twins configured. Open the Twin plugin to create one — this persona will then be able to adopt it.",
-      "twin_profile_aria": "Twin profile this persona speaks as"
+      "twin_profile_aria": "Twin profile this persona speaks as",
+      "max_concurrent_hint": "Maximum parallel executions for this persona. Limits how many runs can happen at the same time to prevent API rate limits.",
+      "timeout_hint": "How long a single execution can run before being cancelled. The engine hard ceiling is {seconds} seconds ({minutes} min) - values above this are rejected.",
+      "timeout_range": "{min}-{max} seconds",
+      "retention_hint": "How long execution history is kept before automatic cleanup. Older executions are deleted to save disk space.",
+      "retention_range": "1-24 months"
     },
     "tool_runner": {
       "no_tools": "No tools assigned to this persona.",
@@ -5176,7 +5182,15 @@
       "persona_count_one": "{count} persona",
       "persona_count_other": "{count} personas",
       "persona_count_filtered_one": "{shown} of {total} persona",
-      "persona_count_filtered_other": "{shown} of {total} personas"
+      "persona_count_filtered_other": "{shown} of {total} personas",
+      "delete_done": "Deleted.",
+      "delete_force_stopped_one": "{count} running execution was force-stopped.",
+      "delete_force_stopped_other": "{count} running executions were force-stopped.",
+      "delete_cancel_failed_one": "{count} execution could not be cancelled.",
+      "delete_cancel_failed_other": "{count} executions could not be cancelled.",
+      "delete_drain_timeout": "Drain timeout was reached.",
+      "execution_still_running": "Execution still running for the previous agent. Switch back to monitor it.",
+      "execution_still_queued": "Execution still queued for the previous agent. Switch back to monitor it."
     },
     "life": {
       "sub_core": "Core",
@@ -8656,7 +8670,9 @@
       "label_next_trigger": "Next trigger:",
       "label_cron": "Cron:",
       "loading_firings": "Loading...",
-      "firings_load_failed": "Couldn't load recent firings."
+      "firings_load_failed": "Couldn't load recent firings.",
+      "triggers_load_failed_one": "Couldn't load triggers for {count} persona.",
+      "triggers_load_failed_other": "Couldn't load triggers for {count} personas."
     },
     "dashboard": {
       "title": "Deployments",
@@ -11993,7 +12009,21 @@
       "connector_status_ready": "Ready",
       "connector_status_ambiguous": "Pick one of {count}",
       "connector_status_missing": "No credential",
-      "connector_open_vault": "Open Vault"
+      "connector_open_vault": "Open Vault",
+      "err_transform_invalid": "Transform output was invalid. Please retry or refine your request.",
+      "err_transform_no_draft": "Transform completed but no draft was generated. Please try again.",
+      "err_transform_session_lost": "Transform session lost. The backend may have restarted. Please try again.",
+      "err_draft_malformed": "Draft JSON is malformed: {detail}",
+      "err_parse_fallback": "parse error",
+      "err_draft_invalid": "Draft JSON is invalid. Please fix draft fields.",
+      "err_confirm_failed": "Failed to confirm and save persona.",
+      "err_test_failed": "Test failed",
+      "err_generate_failed": "Failed to generate transformation draft.",
+      "err_cancel_unconfirmed": "Unable to confirm transform cancellation. Please wait and try again.",
+      "err_cancel_failed": "Failed to cancel transform. Please try again.",
+      "err_session_missing": "Transform session is missing. Please restart the import flow.",
+      "err_continue_failed": "Failed to continue transformation.",
+      "test_fix_adjustment": "Fix: The test execution failed with: {message}. Please adjust the persona to fix this issue."
     },
     "diagram": {
       "no_flow_data": "No flow data available",
@@ -12410,7 +12440,9 @@
       "edges_count": "{count} edges",
       "connectors_count": "{count} connector(s)",
       "decisions_count": "{count} decision(s)",
-      "close_dialog": "Close dialog"
+      "close_dialog": "Close dialog",
+      "flows_count_one": "{count} use case flow",
+      "flows_count_other": "{count} use case flows"
     },
     "generation": {
       "run_design_review": "Run Design Review",
@@ -16714,7 +16746,8 @@
       "skills_applied": "Applied to {sent} of {total} waiting sessions",
       "_comment_skills_applied_partial": "Partial toast after the fan-out; the button now retries the misses",
       "skills_applied_partial": "Applied to {sent} of {total} — retry the rest from the drawer",
-      "state_queued": "Queued"
+      "state_queued": "Queued",
+      "pair_load_failed": "Could not load paired devices"
     },
     "title": "Plugins",
     "subtitle": "Extend your workspace with plugins. Toggle to show or hide from the sidebar.",
@@ -24697,7 +24730,13 @@
     "stat_unpaced_hint": "not steerable yet",
     "pace_unpaced": "Measured, but with no target date there is nothing to fall behind. Add one so the system can steer this.",
     "pace_unpaced_no_target": "Measured, but no target is set, so there is nothing to steer toward yet.",
-    "headline_count": "{count} headline"
+    "headline_count": "{count} headline",
+    "scan_note_complete": "KPI scan complete. Fresh proposals on the contexts",
+    "scan_note_cancelled": "KPI scan cancelled",
+    "scan_note_failed": "KPI scan failed",
+    "ctx_scan_process_title": "Context scan: {name}",
+    "ctx_scan_note_complete": "Scan complete: {groups} groups · {contexts} contexts · {files} files mapped",
+    "ctx_scan_note_failed": "Scan failed"
   },
   "planner": {
     "nav_label": "Plan",
@@ -26214,7 +26253,8 @@
       "remove_failed": "Could not remove this site",
       "open_failed": "Could not open this site",
       "save_failed": "Could not save this site",
-      "pattern_chip": "pattern"
+      "pattern_chip": "pattern",
+      "remove_body": "{origin} will be removed, along with this site's overrides and its credential binding."
     },
     "servers": {
       "title": "Server control",

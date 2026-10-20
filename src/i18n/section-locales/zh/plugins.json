@@ -3111,7 +3111,8 @@
     "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
     "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many",
     "state_queued": "排队中",
-    "state_expired": "等待超时"
+    "state_expired": "等待超时",
+    "pair_load_failed": "无法加载已配对设备"
   },
   "obsidian_brain_desc": "连接 Obsidian 保险库以进行知识检索、笔记浏览和同步。",
   "obsidian_brain_label": "Obsidian 大脑",

@@ -980,7 +980,8 @@
       },
       "try_design_wizard": "Probar asistente de diseño",
       "unsaved_changes": "Cambios sin guardar: {sections}",
-      "unsaved_changes_generic": "Cambios sin guardar"
+      "unsaved_changes_generic": "Cambios sin guardar",
+      "model_profile_corrupt": "No se pudo analizar la configuración del modelo ({bytes} bytes); los campos se restablecieron a sus valores por defecto. El guardado automático está en pausa para los campos del modelo. Elige un modelo para repararla o restaura una copia de seguridad."
     },
     "events_panel": {
       "choose_agent": "Elige un agente para ver sus eventos",
@@ -2517,7 +2518,15 @@
       "persona_count_one": "{count} persona",
       "persona_count_other": "{count} personas",
       "persona_count_filtered_one": "{shown} de {total} persona",
-      "persona_count_filtered_other": "{shown} de {total} personas"
+      "persona_count_filtered_other": "{shown} de {total} personas",
+      "delete_cancel_failed_one": "No se pudo cancelar {count} ejecución.",
+      "delete_cancel_failed_other": "No se pudieron cancelar {count} ejecuciones.",
+      "delete_done": "Eliminado.",
+      "delete_drain_timeout": "Se agotó el tiempo de espera del vaciado.",
+      "delete_force_stopped_one": "Se detuvo a la fuerza {count} ejecución en curso.",
+      "delete_force_stopped_other": "Se detuvieron a la fuerza {count} ejecuciones en curso.",
+      "execution_still_queued": "La ejecución del agente anterior sigue en cola. Vuelve a él para supervisarla.",
+      "execution_still_running": "La ejecución del agente anterior sigue en curso. Vuelve a él para supervisarla."
     },
     "persona_overview": {
       "click_to_copy": "Haz clic para copiar",
@@ -2732,7 +2741,12 @@
       "sensitive_preview_desc": "Ocultar detalles de vista previa hasta que se revelen.",
       "speak_as": "Hablar como",
       "timeout_sec": "Tiempo de espera (seg)",
-      "twin_profile_aria": "Perfil gemelo que esta persona adopta"
+      "twin_profile_aria": "Perfil gemelo que esta persona adopta",
+      "max_concurrent_hint": "Máximo de ejecuciones en paralelo para esta persona. Limita cuántas ejecuciones pueden ocurrir a la vez para evitar los límites de tasa de la API.",
+      "retention_hint": "Cuánto tiempo se conserva el historial de ejecuciones antes de la limpieza automática. Las ejecuciones más antiguas se eliminan para ahorrar espacio en disco.",
+      "retention_range": "1-24 meses",
+      "timeout_hint": "Cuánto tiempo puede ejecutarse una sola ejecución antes de cancelarse. El límite máximo del motor es de {seconds} segundos ({minutes} min); los valores superiores se rechazan.",
+      "timeout_range": "{min}-{max} segundos"
     },
     "share": {
       "button": "Compartir",
@@ -4698,7 +4712,9 @@
       "loading_firings": "Cargando…",
       "no_firings": "Sin activaciones recientes",
       "recent_firings": "Activaciones recientes",
-      "firings_load_failed": "No se pudieron cargar los disparos recientes."
+      "firings_load_failed": "No se pudieron cargar los disparos recientes.",
+      "triggers_load_failed_one": "No se pudieron cargar los disparadores de {count} persona.",
+      "triggers_load_failed_other": "No se pudieron cargar los disparadores de {count} personas."
     },
     "sr_connecting": "Conectando al orquestador en la nube…",
     "sr_deploying": "Desplegando agente en la nube",
@@ -6095,7 +6111,13 @@
       "layer_col_pace": "Ritmo",
       "stat_observed": "Observados"
     },
-    "steering_create_goal": "Crear objetivo"
+    "steering_create_goal": "Crear objetivo",
+    "ctx_scan_note_complete": "Análisis completado: {groups} grupos · {contexts} contextos · {files} archivos mapeados",
+    "ctx_scan_note_failed": "El análisis falló",
+    "ctx_scan_process_title": "Análisis de contexto: {name}",
+    "scan_note_cancelled": "Análisis de KPI cancelado",
+    "scan_note_complete": "Análisis de KPI completado. Nuevas propuestas en los contextos",
+    "scan_note_failed": "El análisis de KPI falló"
   },
   "mastermind": {
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
@@ -14577,7 +14599,8 @@
       "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
       "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many",
       "state_queued": "En cola",
-      "state_expired": "Expirado"
+      "state_expired": "Expirado",
+      "pair_load_failed": "No se pudieron cargar los dispositivos emparejados"
     },
     "obsidian_brain_desc": "Conecte su vault de Obsidian para recuperación de conocimiento, exploración de notas y sincronización.",
     "obsidian_brain_label": "Obsidian Brain",
@@ -20610,7 +20633,9 @@
       "decisions_count": "{count} decisión(es)",
       "edges_count": "{count} conexiones",
       "no_flow_data": "Sin datos de flujo disponibles",
-      "nodes_count": "{count} nodos"
+      "nodes_count": "{count} nodos",
+      "flows_count_one": "{count} flujo de caso de uso",
+      "flows_count_other": "{count} flujos de casos de uso"
     },
     "empty": {
       "clear_search": "Limpiar búsqueda",
@@ -20934,7 +20959,21 @@
       "_comment_ledger_noun_step": "Plural of the Zapier element word used in the ledger",
       "_comment_ledger_represented": "Ledger line: how many of those became tools or triggers",
       "_comment_ledger_title": "Heading of the import loss ledger on the analyze step",
-      "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for"
+      "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for",
+      "err_cancel_failed": "No se pudo cancelar la transformación. Inténtalo de nuevo.",
+      "err_cancel_unconfirmed": "No se pudo confirmar la cancelación de la transformación. Espera e inténtalo de nuevo.",
+      "err_confirm_failed": "No se pudo confirmar y guardar la persona.",
+      "err_continue_failed": "No se pudo continuar la transformación.",
+      "err_draft_invalid": "El JSON del borrador no es válido. Corrige los campos del borrador.",
+      "err_draft_malformed": "El JSON del borrador está mal formado: {detail}",
+      "err_generate_failed": "No se pudo generar el borrador de la transformación.",
+      "err_parse_fallback": "error de análisis",
+      "err_session_missing": "Falta la sesión de transformación. Reinicia el flujo de importación.",
+      "err_test_failed": "La prueba falló",
+      "err_transform_invalid": "El resultado de la transformación no era válido. Reintenta o afina tu solicitud.",
+      "err_transform_no_draft": "La transformación terminó, pero no se generó ningún borrador. Inténtalo de nuevo.",
+      "err_transform_session_lost": "Se perdió la sesión de transformación. Es posible que el backend se haya reiniciado. Inténtalo de nuevo.",
+      "test_fix_adjustment": "Corrección: la ejecución de prueba falló con: {message}. Ajusta la persona para resolver este problema."
     },
     "opportunities": {
       "add_connector": "Agregar",
@@ -25487,7 +25526,8 @@
       "toggle_failed": "No se pudo cambiar si este sitio está permitido",
       "writes_ask": "{count} preguntan primero",
       "writes_none": "La página decide",
-      "pattern_chip": "patrón"
+      "pattern_chip": "patrón",
+      "remove_body": "Se quitará {origin}, junto con los ajustes personalizados de este sitio y su vínculo de credenciales."
     },
     "add_site": {
       "cancel": "Cancelar",

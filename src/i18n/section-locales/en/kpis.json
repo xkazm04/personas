@@ -378,5 +378,11 @@
   "stat_unpaced_hint": "not steerable yet",
   "pace_unpaced": "Measured, but with no target date there is nothing to fall behind. Add one so the system can steer this.",
   "pace_unpaced_no_target": "Measured, but no target is set, so there is nothing to steer toward yet.",
-  "headline_count": "{count} headline"
+  "headline_count": "{count} headline",
+  "scan_note_complete": "KPI scan complete. Fresh proposals on the contexts",
+  "scan_note_cancelled": "KPI scan cancelled",
+  "scan_note_failed": "KPI scan failed",
+  "ctx_scan_process_title": "Context scan: {name}",
+  "ctx_scan_note_complete": "Scan complete: {groups} groups · {contexts} contexts · {files} files mapped",
+  "ctx_scan_note_failed": "Scan failed"
 }

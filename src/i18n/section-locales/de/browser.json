@@ -64,7 +64,8 @@
     "toggle_failed": "Konnte nicht ändern, ob diese Website erlaubt ist",
     "writes_ask": "{count} fragen zuerst",
     "writes_none": "Seite entscheidet",
-    "pattern_chip": "Muster"
+    "pattern_chip": "Muster",
+    "remove_body": "{origin} wird entfernt, zusammen mit den Überschreibungen dieser Website und ihrer Zugangsdatenbindung."
   },
   "add_site": {
     "cancel": "Abbrechen",

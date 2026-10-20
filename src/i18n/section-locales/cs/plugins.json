@@ -3111,7 +3111,8 @@
     "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
     "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many",
     "state_queued": "Ve frontě",
-    "state_expired": "Vypršelo"
+    "state_expired": "Vypršelo",
+    "pair_load_failed": "Nepodařilo se načíst spárovaná zařízení"
   },
   "obsidian_brain_desc": "Propoj svůj Obsidian vault pro získávání znalostí, procházení poznámek a synchronizaci.",
   "obsidian_brain_label": "Obsidian Brain",

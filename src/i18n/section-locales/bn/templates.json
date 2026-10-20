@@ -556,7 +556,9 @@
     "decisions_count": "{count}টি সিদ্ধান্ত",
     "edges_count": "{count}টি প্রান্ত",
     "no_flow_data": "কোনো প্রবাহ ডেটা পাওয়া যাচ্ছে না",
-    "nodes_count": "{count}টি নোড"
+    "nodes_count": "{count}টি নোড",
+    "flows_count_one": "{count}টি ইউজ কেস ফ্লো",
+    "flows_count_other": "{count}টি ইউজ কেস ফ্লো"
   },
   "empty": {
     "clear_search": "সার্চ সাফ করুন",
@@ -880,7 +882,21 @@
     "_comment_ledger_noun_step": "Plural of the Zapier element word used in the ledger",
     "_comment_ledger_represented": "Ledger line: how many of those became tools or triggers",
     "_comment_ledger_title": "Heading of the import loss ledger on the analyze step",
-    "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for"
+    "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for",
+    "err_cancel_failed": "ট্রান্সফর্ম বাতিল করা যায়নি। আবার চেষ্টা করুন।",
+    "err_cancel_unconfirmed": "ট্রান্সফর্ম বাতিল হয়েছে কি না নিশ্চিত করা যায়নি। একটু অপেক্ষা করে আবার চেষ্টা করুন।",
+    "err_confirm_failed": "পারসোনা নিশ্চিত ও সংরক্ষণ করা যায়নি।",
+    "err_continue_failed": "ট্রান্সফর্মেশন চালিয়ে যাওয়া যায়নি।",
+    "err_draft_invalid": "ড্রাফট JSON অবৈধ। ড্রাফটের ফিল্ডগুলো ঠিক করুন।",
+    "err_draft_malformed": "ড্রাফট JSON ত্রুটিপূর্ণ: {detail}",
+    "err_generate_failed": "ট্রান্সফর্মেশন ড্রাফট তৈরি করা যায়নি।",
+    "err_parse_fallback": "পার্স ত্রুটি",
+    "err_session_missing": "ট্রান্সফর্ম সেশন পাওয়া যাচ্ছে না। ইমপোর্ট প্রক্রিয়াটি আবার শুরু করুন।",
+    "err_test_failed": "পরীক্ষা ব্যর্থ হয়েছে",
+    "err_transform_invalid": "ট্রান্সফর্মের আউটপুট অবৈধ ছিল। আবার চেষ্টা করুন বা অনুরোধটি পরিমার্জন করুন।",
+    "err_transform_no_draft": "ট্রান্সফর্ম সম্পন্ন হয়েছে কিন্তু কোনো ড্রাফট তৈরি হয়নি। আবার চেষ্টা করুন।",
+    "err_transform_session_lost": "ট্রান্সফর্ম সেশন হারিয়ে গেছে। ব্যাকএন্ড হয়তো রিস্টার্ট হয়েছে। আবার চেষ্টা করুন।",
+    "test_fix_adjustment": "ঠিক করুন: পরীক্ষামূলক এক্সিকিউশন এই ত্রুটিতে ব্যর্থ হয়েছে: {message}। এই সমস্যা সমাধানে পারসোনাটি সামঞ্জস্য করুন।"
   },
   "opportunities": {
     "add_connector": "যোগ করুন",

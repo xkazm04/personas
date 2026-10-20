@@ -980,7 +980,8 @@
       },
       "try_design_wizard": "Vyzkoušet průvodce",
       "unsaved_changes": "Neuložené změny: {sections}",
-      "unsaved_changes_generic": "Neuložené změny"
+      "unsaved_changes_generic": "Neuložené změny",
+      "model_profile_corrupt": "Konfiguraci modelu se nepodařilo zpracovat ({bytes} bajtů) - pole byla obnovena na výchozí hodnoty. Automatické ukládání polí modelu je pozastaveno. Opravíte to výběrem modelu nebo obnovou ze zálohy."
     },
     "events_panel": {
       "choose_agent": "Vyberte agenta, abyste viděli jeho události",
@@ -2517,7 +2518,15 @@
       "persona_count_one": "{count} persona",
       "persona_count_other": "{count} person",
       "persona_count_filtered_one": "{shown} z {total} persony",
-      "persona_count_filtered_other": "{shown} z {total} person"
+      "persona_count_filtered_other": "{shown} z {total} person",
+      "delete_cancel_failed_one": "{count} spuštění se nepodařilo zrušit.",
+      "delete_cancel_failed_other": "{count} spuštění se nepodařilo zrušit.",
+      "delete_done": "Smazáno.",
+      "delete_drain_timeout": "Byl dosažen časový limit vyprázdnění.",
+      "delete_force_stopped_one": "{count} běžící spuštění bylo násilně zastaveno.",
+      "delete_force_stopped_other": "{count} běžících spuštění bylo násilně zastaveno.",
+      "execution_still_queued": "Spuštění předchozího agenta je stále ve frontě. Přepněte se zpět a sledujte ho.",
+      "execution_still_running": "Spuštění předchozího agenta stále běží. Přepněte se zpět a sledujte ho."
     },
     "persona_overview": {
       "click_to_copy": "Kliknutím zkopírujete",
@@ -2732,7 +2741,12 @@
       "sensitive_preview_desc": "Skrýt detaily náhledu, dokud nebudou odhaleny.",
       "speak_as": "Mluvit jako",
       "timeout_sec": "Časový limit (s)",
-      "twin_profile_aria": "Twin profil, za který tato persona mluví"
+      "twin_profile_aria": "Twin profil, za který tato persona mluví",
+      "max_concurrent_hint": "Maximální počet paralelních spuštění této persony. Omezuje, kolik běhů může probíhat současně, aby se předešlo limitům rychlosti API.",
+      "retention_hint": "Jak dlouho se uchovává historie spuštění před automatickým úklidem. Starší spuštění se mažou, aby se ušetřilo místo na disku.",
+      "retention_range": "1-24 měsíců",
+      "timeout_hint": "Jak dlouho může jedno spuštění běžet, než bude zrušeno. Pevný strop enginu je {seconds} sekund ({minutes} min) - vyšší hodnoty jsou odmítnuty.",
+      "timeout_range": "{min}-{max} sekund"
     },
     "share": {
       "button": "Sdílet",
@@ -4698,7 +4712,9 @@
       "loading_firings": "Načítání…",
       "no_firings": "Žádná nedávná spuštění",
       "recent_firings": "Nedávná spuštění",
-      "firings_load_failed": "Poslední aktivace se nepodařilo načíst."
+      "firings_load_failed": "Poslední aktivace se nepodařilo načíst.",
+      "triggers_load_failed_one": "Nepodařilo se načíst spouštěče pro {count} personu.",
+      "triggers_load_failed_other": "Nepodařilo se načíst spouštěče pro {count} person."
     },
     "sr_connecting": "Připojování ke cloudovému orchestrátoru…",
     "sr_deploying": "Nasazování persony do cloudu",
@@ -6095,7 +6111,13 @@
       "layer_col_pace": "Tempo",
       "stat_observed": "Změřeno"
     },
-    "steering_create_goal": "Vytvořit cíl"
+    "steering_create_goal": "Vytvořit cíl",
+    "ctx_scan_note_complete": "Skenování dokončeno: {groups} skupin · {contexts} kontextů · {files} souborů zmapováno",
+    "ctx_scan_note_failed": "Skenování selhalo",
+    "ctx_scan_process_title": "Skenování kontextu: {name}",
+    "scan_note_cancelled": "Skenování KPI zrušeno",
+    "scan_note_complete": "Skenování KPI dokončeno. Nové návrhy v kontextech",
+    "scan_note_failed": "Skenování KPI selhalo"
   },
   "mastermind": {
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
@@ -14577,7 +14599,8 @@
       "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
       "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many",
       "state_queued": "Ve frontě",
-      "state_expired": "Vypršelo"
+      "state_expired": "Vypršelo",
+      "pair_load_failed": "Nepodařilo se načíst spárovaná zařízení"
     },
     "obsidian_brain_desc": "Propoj svůj Obsidian vault pro získávání znalostí, procházení poznámek a synchronizaci.",
     "obsidian_brain_label": "Obsidian Brain",
@@ -20610,7 +20633,9 @@
       "decisions_count": "{count} rozhodnutí",
       "edges_count": "{count} hran",
       "no_flow_data": "Žádná data toku nejsou k dispozici",
-      "nodes_count": "{count} uzlů"
+      "nodes_count": "{count} uzlů",
+      "flows_count_one": "{count} tok případu užití",
+      "flows_count_other": "{count} toků případů užití"
     },
     "empty": {
       "clear_search": "Vymazat vyhledávání",
@@ -20934,7 +20959,21 @@
       "_comment_ledger_noun_step": "Plural of the Zapier element word used in the ledger",
       "_comment_ledger_represented": "Ledger line: how many of those became tools or triggers",
       "_comment_ledger_title": "Heading of the import loss ledger on the analyze step",
-      "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for"
+      "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for",
+      "err_cancel_failed": "Zrušení transformace se nezdařilo. Zkuste to prosím znovu.",
+      "err_cancel_unconfirmed": "Zrušení transformace se nepodařilo potvrdit. Chvíli počkejte a zkuste to znovu.",
+      "err_confirm_failed": "Potvrzení a uložení persony se nezdařilo.",
+      "err_continue_failed": "Pokračování v transformaci se nezdařilo.",
+      "err_draft_invalid": "JSON konceptu je neplatný. Opravte prosím pole konceptu.",
+      "err_draft_malformed": "JSON konceptu je poškozený: {detail}",
+      "err_generate_failed": "Vygenerování konceptu transformace se nezdařilo.",
+      "err_parse_fallback": "chyba zpracování",
+      "err_session_missing": "Relace transformace chybí. Spusťte prosím import znovu.",
+      "err_test_failed": "Test selhal",
+      "err_transform_invalid": "Výstup transformace byl neplatný. Zkuste to znovu nebo upřesněte zadání.",
+      "err_transform_no_draft": "Transformace skončila, ale nebyl vygenerován žádný koncept. Zkuste to prosím znovu.",
+      "err_transform_session_lost": "Relace transformace byla ztracena. Backend se mohl restartovat. Zkuste to prosím znovu.",
+      "test_fix_adjustment": "Oprava: Testovací spuštění selhalo s chybou: {message}. Upravte prosím personu, aby se tento problém vyřešil."
     },
     "opportunities": {
       "add_connector": "Přidat",
@@ -25487,7 +25526,8 @@
       "toggle_failed": "Nepodařilo se změnit, zda je tento web povolen",
       "writes_ask": "{count} nejdřív se zeptá",
       "writes_none": "Rozhoduje stránka",
-      "pattern_chip": "vzor"
+      "pattern_chip": "vzor",
+      "remove_body": "Web {origin} bude odebrán spolu s jeho přepsáními a vazbou na přihlašovací údaje."
     },
     "add_site": {
       "cancel": "Zrušit",

@@ -980,7 +980,8 @@
       },
       "try_design_wizard": "Coba wizard desain",
       "unsaved_changes": "Perubahan belum disimpan: {sections}",
-      "unsaved_changes_generic": "Perubahan belum disimpan"
+      "unsaved_changes_generic": "Perubahan belum disimpan",
+      "model_profile_corrupt": "Konfigurasi model tidak dapat diurai ({bytes} byte) - kolom direset ke default. Simpan otomatis dijeda untuk kolom model. Pilih model untuk memperbaiki, atau pulihkan dari cadangan."
     },
     "events_panel": {
       "choose_agent": "Pilih agen untuk melihat acaranya",
@@ -2517,7 +2518,15 @@
       "persona_count_one": "{count} persona",
       "persona_count_other": "{count} persona",
       "persona_count_filtered_one": "{shown} dari {total} persona",
-      "persona_count_filtered_other": "{shown} dari {total} persona"
+      "persona_count_filtered_other": "{shown} dari {total} persona",
+      "delete_cancel_failed_one": "{count} eksekusi tidak dapat dibatalkan.",
+      "delete_cancel_failed_other": "{count} eksekusi tidak dapat dibatalkan.",
+      "delete_done": "Dihapus.",
+      "delete_drain_timeout": "Batas waktu pengosongan tercapai.",
+      "delete_force_stopped_one": "{count} eksekusi yang berjalan dihentikan paksa.",
+      "delete_force_stopped_other": "{count} eksekusi yang berjalan dihentikan paksa.",
+      "execution_still_queued": "Eksekusi masih mengantre untuk agen sebelumnya. Kembali untuk memantaunya.",
+      "execution_still_running": "Eksekusi masih berjalan untuk agen sebelumnya. Kembali untuk memantaunya."
     },
     "persona_overview": {
       "click_to_copy": "Klik untuk menyalin",
@@ -2732,7 +2741,12 @@
       "sensitive_preview_desc": "Sembunyikan detail pratinjau hover hingga ditampilkan.",
       "speak_as": "Bicara sebagai",
       "timeout_sec": "Waktu Habis (dtk)",
-      "twin_profile_aria": "Profil kembaran yang digunakan persona ini untuk berbicara"
+      "twin_profile_aria": "Profil kembaran yang digunakan persona ini untuk berbicara",
+      "max_concurrent_hint": "Jumlah maksimum eksekusi paralel untuk persona ini. Membatasi berapa banyak proses yang berjalan bersamaan agar tidak terkena batas laju API.",
+      "retention_hint": "Berapa lama riwayat eksekusi disimpan sebelum dibersihkan otomatis. Eksekusi lama dihapus untuk menghemat ruang disk.",
+      "retention_range": "1-24 bulan",
+      "timeout_hint": "Berapa lama satu eksekusi dapat berjalan sebelum dibatalkan. Batas keras mesin adalah {seconds} detik ({minutes} mnt) - nilai di atas ini ditolak.",
+      "timeout_range": "{min}-{max} detik"
     },
     "share": {
       "button": "Bagikan",
@@ -4698,7 +4712,9 @@
       "loading_firings": "Memuat data pemicuan…",
       "no_firings": "Tidak ada pemicuan terbaru",
       "recent_firings": "Pemicuan terbaru",
-      "firings_load_failed": "Tidak dapat memuat pemicuan terbaru."
+      "firings_load_failed": "Tidak dapat memuat pemicuan terbaru.",
+      "triggers_load_failed_one": "Tidak dapat memuat pemicu untuk {count} persona.",
+      "triggers_load_failed_other": "Tidak dapat memuat pemicu untuk {count} persona."
     },
     "sr_connecting": "Menghubungkan ke orkestrator cloud…",
     "sr_deploying": "Men-deploy persona ke cloud",
@@ -6095,7 +6111,13 @@
       "layer_col_pace": "Laju",
       "stat_observed": "Teramati"
     },
-    "steering_create_goal": "Buat sasaran"
+    "steering_create_goal": "Buat sasaran",
+    "ctx_scan_note_complete": "Pindai selesai: {groups} grup · {contexts} konteks · {files} file terpetakan",
+    "ctx_scan_note_failed": "Pindai gagal",
+    "ctx_scan_process_title": "Pindai konteks: {name}",
+    "scan_note_cancelled": "Pindai KPI dibatalkan",
+    "scan_note_complete": "Pindai KPI selesai. Usulan baru pada konteks",
+    "scan_note_failed": "Pindai KPI gagal"
   },
   "mastermind": {
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
@@ -14577,7 +14599,8 @@
       "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
       "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many",
       "state_queued": "Mengantre",
-      "state_expired": "Waktu tunggu habis"
+      "state_expired": "Waktu tunggu habis",
+      "pair_load_failed": "Tidak dapat memuat perangkat yang dipasangkan"
     },
     "obsidian_brain_desc": "Hubungkan brankas Obsidian Anda untuk pengambilan pengetahuan, penelusuran catatan, dan sinkronisasi.",
     "obsidian_brain_label": "Obsidian Brain",
@@ -20610,7 +20633,9 @@
       "decisions_count": "{count} keputusan",
       "edges_count": "{count} tepi",
       "no_flow_data": "Tidak ada data aliran yang tersedia",
-      "nodes_count": "{count} simpul"
+      "nodes_count": "{count} simpul",
+      "flows_count_one": "{count} alur kasus penggunaan",
+      "flows_count_other": "{count} alur kasus penggunaan"
     },
     "empty": {
       "clear_search": "Hapus pencarian",
@@ -20934,7 +20959,21 @@
       "_comment_ledger_noun_step": "Plural of the Zapier element word used in the ledger",
       "_comment_ledger_represented": "Ledger line: how many of those became tools or triggers",
       "_comment_ledger_title": "Heading of the import loss ledger on the analyze step",
-      "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for"
+      "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for",
+      "err_cancel_failed": "Gagal membatalkan transformasi. Silakan coba lagi.",
+      "err_cancel_unconfirmed": "Tidak dapat memastikan pembatalan transformasi. Harap tunggu dan coba lagi.",
+      "err_confirm_failed": "Gagal mengonfirmasi dan menyimpan persona.",
+      "err_continue_failed": "Gagal melanjutkan transformasi.",
+      "err_draft_invalid": "JSON draf tidak valid. Harap perbaiki kolom draf.",
+      "err_draft_malformed": "JSON draf rusak: {detail}",
+      "err_generate_failed": "Gagal membuat draf transformasi.",
+      "err_parse_fallback": "kesalahan penguraian",
+      "err_session_missing": "Sesi transformasi tidak ditemukan. Silakan mulai ulang alur impor.",
+      "err_test_failed": "Pengujian gagal",
+      "err_transform_invalid": "Keluaran transformasi tidak valid. Silakan coba lagi atau perjelas permintaan Anda.",
+      "err_transform_no_draft": "Transformasi selesai tetapi tidak ada draf yang dibuat. Silakan coba lagi.",
+      "err_transform_session_lost": "Sesi transformasi hilang. Backend mungkin telah dimulai ulang. Silakan coba lagi.",
+      "test_fix_adjustment": "Perbaikan: Eksekusi pengujian gagal dengan: {message}. Harap sesuaikan persona untuk memperbaiki masalah ini."
     },
     "opportunities": {
       "add_connector": "Tambah",
@@ -25487,7 +25526,8 @@
       "toggle_failed": "Status izin situs ini gagal diubah",
       "writes_ask": "{count} tanya dulu",
       "writes_none": "Halaman yang menentukan",
-      "pattern_chip": "pola"
+      "pattern_chip": "pola",
+      "remove_body": "{origin} akan dihapus, beserta penimpaan situs ini dan pengikatan kredensialnya."
     },
     "add_site": {
       "cancel": "Batal",

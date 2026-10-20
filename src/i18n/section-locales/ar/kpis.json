@@ -378,5 +378,11 @@
     "layer_col_pace": "إيقاع",
     "stat_observed": "مقيس"
   },
-  "steering_create_goal": "إنشاء هدف"
+  "steering_create_goal": "إنشاء هدف",
+  "ctx_scan_note_complete": "اكتمل الفحص: {groups} مجموعات · {contexts} سياقات · {files} ملفات تمت مطابقتها",
+  "ctx_scan_note_failed": "فشل الفحص",
+  "ctx_scan_process_title": "فحص السياق: {name}",
+  "scan_note_cancelled": "تم إلغاء فحص KPI",
+  "scan_note_complete": "اكتمل فحص KPI. مقترحات جديدة على السياقات",
+  "scan_note_failed": "فشل فحص KPI"
 }

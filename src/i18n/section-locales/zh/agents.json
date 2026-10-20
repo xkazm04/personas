@@ -974,7 +974,8 @@
     },
     "try_design_wizard": "试用设计向导",
     "unsaved_changes": "未保存的更改：{sections}",
-    "unsaved_changes_generic": "有未保存的更改"
+    "unsaved_changes_generic": "有未保存的更改",
+    "model_profile_corrupt": "无法解析模型配置（{bytes} 字节），字段已重置为默认值。模型字段的自动保存已暂停。请选择一个模型进行修复，或从备份恢复。"
   },
   "events_panel": {
     "choose_agent": "选择智能体以查看其事件",
@@ -2511,7 +2512,15 @@
     "persona_count_one": "{count} 个智能体",
     "persona_count_other": "{count} 个智能体",
     "persona_count_filtered_one": "{total} 个智能体中的 {shown} 个",
-    "persona_count_filtered_other": "{total} 个智能体中的 {shown} 个"
+    "persona_count_filtered_other": "{total} 个智能体中的 {shown} 个",
+    "delete_cancel_failed_one": "有 {count} 个执行无法取消。",
+    "delete_cancel_failed_other": "有 {count} 个执行无法取消。",
+    "delete_done": "已删除。",
+    "delete_drain_timeout": "已达到排空超时时间。",
+    "delete_force_stopped_one": "有 {count} 个运行中的执行被强制停止。",
+    "delete_force_stopped_other": "有 {count} 个运行中的执行被强制停止。",
+    "execution_still_queued": "上一个智能体的执行仍在排队。切换回去即可查看。",
+    "execution_still_running": "上一个智能体的执行仍在运行。切换回去即可查看。"
   },
   "persona_overview": {
     "click_to_copy": "点击复制",
@@ -2726,7 +2735,12 @@
     "sensitive_preview_desc": "在揭示前遮盖悬停预览详情。",
     "speak_as": "以……身份发言",
     "timeout_sec": "超时（秒）",
-    "twin_profile_aria": "此智能体以哪个孪生配置文件发言"
+    "twin_profile_aria": "此智能体以哪个孪生配置文件发言",
+    "max_concurrent_hint": "此 persona 的最大并行执行数。限制同时运行的数量，以避免触发 API 速率限制。",
+    "retention_hint": "执行历史在自动清理前的保留时长。较早的执行会被删除以节省磁盘空间。",
+    "retention_range": "1-24 个月",
+    "timeout_hint": "单次执行在被取消前可运行的时长。引擎硬性上限为 {seconds} 秒（{minutes} 分钟），超出此值的设置会被拒绝。",
+    "timeout_range": "{min}-{max} 秒"
   },
   "share": {
     "button": "分享",

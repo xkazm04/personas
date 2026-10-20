@@ -378,5 +378,11 @@
     "layer_col_pace": "Nhịp độ",
     "stat_observed": "Đã đo"
   },
-  "steering_create_goal": "Tạo mục tiêu"
+  "steering_create_goal": "Tạo mục tiêu",
+  "ctx_scan_note_complete": "Quét hoàn tất: {groups} nhóm · {contexts} ngữ cảnh · {files} tệp đã được ánh xạ",
+  "ctx_scan_note_failed": "Quét thất bại",
+  "ctx_scan_process_title": "Quét ngữ cảnh: {name}",
+  "scan_note_cancelled": "Đã hủy quét KPI",
+  "scan_note_complete": "Quét KPI hoàn tất. Có đề xuất mới trên các ngữ cảnh",
+  "scan_note_failed": "Quét KPI thất bại"
 }

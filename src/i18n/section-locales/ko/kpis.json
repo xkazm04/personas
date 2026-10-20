@@ -378,5 +378,11 @@
     "layer_col_pace": "속도",
     "stat_observed": "측정"
   },
-  "steering_create_goal": "목표 만들기"
+  "steering_create_goal": "목표 만들기",
+  "ctx_scan_note_complete": "스캔 완료: 그룹 {groups}개 · 컨텍스트 {contexts}개 · 파일 {files}개 매핑됨",
+  "ctx_scan_note_failed": "스캔 실패",
+  "ctx_scan_process_title": "컨텍스트 스캔: {name}",
+  "scan_note_cancelled": "KPI 스캔이 취소되었습니다",
+  "scan_note_complete": "KPI 스캔 완료. 컨텍스트에 새 제안이 있습니다",
+  "scan_note_failed": "KPI 스캔 실패"
 }

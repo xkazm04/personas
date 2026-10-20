@@ -64,7 +64,8 @@
     "toggle_failed": "无法更改此网站的允许状态",
     "writes_ask": "{count} 项需先询问",
     "writes_none": "由页面决定",
-    "pattern_chip": "模式"
+    "pattern_chip": "模式",
+    "remove_body": "将移除 {origin}，同时移除该站点的覆盖设置及其凭据绑定。"
   },
   "add_site": {
     "cancel": "取消",

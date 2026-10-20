@@ -378,5 +378,11 @@
     "layer_col_pace": "Tempo",
     "stat_observed": "Změřeno"
   },
-  "steering_create_goal": "Vytvořit cíl"
+  "steering_create_goal": "Vytvořit cíl",
+  "ctx_scan_note_complete": "Skenování dokončeno: {groups} skupin · {contexts} kontextů · {files} souborů zmapováno",
+  "ctx_scan_note_failed": "Skenování selhalo",
+  "ctx_scan_process_title": "Skenování kontextu: {name}",
+  "scan_note_cancelled": "Skenování KPI zrušeno",
+  "scan_note_complete": "Skenování KPI dokončeno. Nové návrhy v kontextech",
+  "scan_note_failed": "Skenování KPI selhalo"
 }

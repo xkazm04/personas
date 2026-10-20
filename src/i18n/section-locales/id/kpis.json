@@ -378,5 +378,11 @@
     "layer_col_pace": "Laju",
     "stat_observed": "Teramati"
   },
-  "steering_create_goal": "Buat sasaran"
+  "steering_create_goal": "Buat sasaran",
+  "ctx_scan_note_complete": "Pindai selesai: {groups} grup · {contexts} konteks · {files} file terpetakan",
+  "ctx_scan_note_failed": "Pindai gagal",
+  "ctx_scan_process_title": "Pindai konteks: {name}",
+  "scan_note_cancelled": "Pindai KPI dibatalkan",
+  "scan_note_complete": "Pindai KPI selesai. Usulan baru pada konteks",
+  "scan_note_failed": "Pindai KPI gagal"
 }

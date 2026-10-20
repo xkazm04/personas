@@ -53,7 +53,7 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
           <div>
             <h2 id="activity-diagram-title" className="typo-body-lg text-foreground/90">{titleOverride || templateName}</h2>
             <p className="typo-body text-foreground">
-              {subtitleOverride || `${flows.length} use case flow${flows.length !== 1 ? 's' : ''}`}
+              {subtitleOverride || tx(flows.length === 1 ? t.templates.diagrams.flows_count_one : t.templates.diagrams.flows_count_other, { count: flows.length })}
             </p>
           </div>
         </div>

@@ -244,7 +244,9 @@
     "loading_firings": "جارٍ التحميل…",
     "no_firings": "لا توجد إطلاقات حديثة",
     "recent_firings": "الإطلاقات الأخيرة",
-    "firings_load_failed": "تعذّر تحميل عمليات التشغيل الأخيرة."
+    "firings_load_failed": "تعذّر تحميل عمليات التشغيل الأخيرة.",
+    "triggers_load_failed_one": "تعذر تحميل المشغّلات لـ {count} شخصية.",
+    "triggers_load_failed_other": "تعذر تحميل المشغّلات لـ {count} شخصيات."
   },
   "sr_connecting": "جارٍ الاتصال بمنسّق السحابة…",
   "sr_deploying": "جارٍ نشر الوكيل على السحابة",

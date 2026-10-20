@@ -378,5 +378,11 @@
     "layer_col_pace": "Tempo",
     "stat_observed": "Gemessen"
   },
-  "steering_create_goal": "Ziel erstellen"
+  "steering_create_goal": "Ziel erstellen",
+  "ctx_scan_note_complete": "Scan abgeschlossen: {groups} Gruppen · {contexts} Kontexte · {files} Dateien erfasst",
+  "ctx_scan_note_failed": "Scan fehlgeschlagen",
+  "ctx_scan_process_title": "Kontext-Scan: {name}",
+  "scan_note_cancelled": "KPI-Scan abgebrochen",
+  "scan_note_complete": "KPI-Scan abgeschlossen. Neue Vorschläge zu den Kontexten",
+  "scan_note_failed": "KPI-Scan fehlgeschlagen"
 }

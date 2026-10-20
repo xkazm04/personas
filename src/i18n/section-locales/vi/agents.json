@@ -974,7 +974,8 @@
     },
     "try_design_wizard": "Thử trình hướng dẫn thiết kế",
     "unsaved_changes": "Thay đổi chưa lưu: {sections}",
-    "unsaved_changes_generic": "Thay đổi chưa lưu"
+    "unsaved_changes_generic": "Thay đổi chưa lưu",
+    "model_profile_corrupt": "Không thể phân tích cấu hình mô hình ({bytes} byte) - các trường đã được đặt lại về mặc định. Tự động lưu bị tạm dừng cho các trường mô hình. Hãy chọn một mô hình để khôi phục, hoặc khôi phục từ bản sao lưu."
   },
   "events_panel": {
     "choose_agent": "Chọn tác nhân để xem sự kiện",
@@ -2511,7 +2512,15 @@
     "persona_count_one": "{count} tác nhân",
     "persona_count_other": "{count} tác nhân",
     "persona_count_filtered_one": "{shown} trên {total} tác nhân",
-    "persona_count_filtered_other": "{shown} trên {total} tác nhân"
+    "persona_count_filtered_other": "{shown} trên {total} tác nhân",
+    "delete_cancel_failed_one": "Không thể hủy {count} lần thực thi.",
+    "delete_cancel_failed_other": "Không thể hủy {count} lần thực thi.",
+    "delete_done": "Đã xóa.",
+    "delete_drain_timeout": "Đã hết thời gian chờ xả.",
+    "delete_force_stopped_one": "{count} lần thực thi đang chạy đã bị buộc dừng.",
+    "delete_force_stopped_other": "{count} lần thực thi đang chạy đã bị buộc dừng.",
+    "execution_still_queued": "Lần thực thi của agent trước vẫn đang trong hàng đợi. Chuyển lại để theo dõi.",
+    "execution_still_running": "Lần thực thi của agent trước vẫn đang chạy. Chuyển lại để theo dõi."
   },
   "persona_overview": {
     "click_to_copy": "Nhấp để sao chép",
@@ -2726,7 +2735,12 @@
     "sensitive_preview_desc": "Ẩn chi tiết xem trước khi di chuột qua cho đến khi được hiển thị.",
     "speak_as": "Nói với tư cách",
     "timeout_sec": "Thời gian chờ (giây)",
-    "twin_profile_aria": "Hồ sơ bản sao mà tác nhân này nói với tư cách"
+    "twin_profile_aria": "Hồ sơ bản sao mà tác nhân này nói với tư cách",
+    "max_concurrent_hint": "Số lần thực thi song song tối đa cho persona này. Giới hạn số lượt chạy cùng lúc để tránh vượt giới hạn tốc độ API.",
+    "retention_hint": "Thời gian lưu lịch sử thực thi trước khi tự động dọn dẹp. Các lần thực thi cũ hơn sẽ bị xóa để tiết kiệm dung lượng đĩa.",
+    "retention_range": "1-24 tháng",
+    "timeout_hint": "Thời gian tối đa một lần thực thi có thể chạy trước khi bị hủy. Giới hạn cứng của công cụ là {seconds} giây ({minutes} phút) - giá trị cao hơn sẽ bị từ chối.",
+    "timeout_range": "{min}-{max} giây"
   },
   "share": {
     "button": "Chia sẻ",

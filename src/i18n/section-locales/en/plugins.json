@@ -382,7 +382,8 @@
     "skills_applied": "Applied to {sent} of {total} waiting sessions",
     "_comment_skills_applied_partial": "Partial toast after the fan-out; the button now retries the misses",
     "skills_applied_partial": "Applied to {sent} of {total} — retry the rest from the drawer",
-    "state_queued": "Queued"
+    "state_queued": "Queued",
+    "pair_load_failed": "Could not load paired devices"
   },
   "title": "Plugins",
   "subtitle": "Extend your workspace with plugins. Toggle to show or hide from the sidebar.",

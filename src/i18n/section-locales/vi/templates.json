@@ -556,7 +556,9 @@
     "decisions_count": "{count} quyết định",
     "edges_count": "{count} cạnh",
     "no_flow_data": "Không có dữ liệu luồng",
-    "nodes_count": "{count} nút"
+    "nodes_count": "{count} nút",
+    "flows_count_one": "{count} luồng trường hợp sử dụng",
+    "flows_count_other": "{count} luồng trường hợp sử dụng"
   },
   "empty": {
     "clear_search": "Xóa tìm kiếm",
@@ -880,7 +882,21 @@
     "_comment_ledger_noun_step": "Plural of the Zapier element word used in the ledger",
     "_comment_ledger_represented": "Ledger line: how many of those became tools or triggers",
     "_comment_ledger_title": "Heading of the import loss ledger on the analyze step",
-    "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for"
+    "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for",
+    "err_cancel_failed": "Hủy chuyển đổi thất bại. Vui lòng thử lại.",
+    "err_cancel_unconfirmed": "Không thể xác nhận việc hủy chuyển đổi. Vui lòng đợi và thử lại.",
+    "err_confirm_failed": "Xác nhận và lưu persona thất bại.",
+    "err_continue_failed": "Tiếp tục chuyển đổi thất bại.",
+    "err_draft_invalid": "JSON bản nháp không hợp lệ. Vui lòng sửa các trường của bản nháp.",
+    "err_draft_malformed": "JSON bản nháp bị lỗi định dạng: {detail}",
+    "err_generate_failed": "Tạo bản nháp chuyển đổi thất bại.",
+    "err_parse_fallback": "lỗi phân tích cú pháp",
+    "err_session_missing": "Thiếu phiên chuyển đổi. Vui lòng bắt đầu lại quy trình nhập.",
+    "err_test_failed": "Kiểm thử thất bại",
+    "err_transform_invalid": "Kết quả chuyển đổi không hợp lệ. Vui lòng thử lại hoặc tinh chỉnh yêu cầu của bạn.",
+    "err_transform_no_draft": "Chuyển đổi đã hoàn tất nhưng không tạo được bản nháp. Vui lòng thử lại.",
+    "err_transform_session_lost": "Mất phiên chuyển đổi. Backend có thể đã khởi động lại. Vui lòng thử lại.",
+    "test_fix_adjustment": "Sửa lỗi: Lần thực thi kiểm thử thất bại với: {message}. Vui lòng điều chỉnh persona để khắc phục sự cố này."
   },
   "opportunities": {
     "add_connector": "Thêm",

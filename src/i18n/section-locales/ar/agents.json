@@ -974,7 +974,8 @@
     },
     "try_design_wizard": "جرّب معالج التصميم",
     "unsaved_changes": "تغييرات غير محفوظة: {sections}",
-    "unsaved_changes_generic": "تغييرات غير محفوظة"
+    "unsaved_changes_generic": "تغييرات غير محفوظة",
+    "model_profile_corrupt": "تعذر تحليل إعدادات النموذج ({bytes} بايت) - تمت إعادة الحقول إلى القيم الافتراضية. الحفظ التلقائي متوقف لحقول النموذج. اختر نموذجًا للإصلاح أو استعد من نسخة احتياطية."
   },
   "events_panel": {
     "choose_agent": "اختر وكيلاً لعرض أحداثه",
@@ -2511,7 +2512,15 @@
     "persona_count_one": "{count} وكيل",
     "persona_count_other": "{count} وكلاء",
     "persona_count_filtered_one": "{shown} من {total} وكيل",
-    "persona_count_filtered_other": "{shown} من {total} وكلاء"
+    "persona_count_filtered_other": "{shown} من {total} وكلاء",
+    "delete_cancel_failed_one": "تعذر إلغاء {count} تنفيذ.",
+    "delete_cancel_failed_other": "تعذر إلغاء {count} تنفيذات.",
+    "delete_done": "تم الحذف.",
+    "delete_drain_timeout": "انتهت مهلة التفريغ.",
+    "delete_force_stopped_one": "تم إيقاف {count} تنفيذ قيد التشغيل بالقوة.",
+    "delete_force_stopped_other": "تم إيقاف {count} تنفيذات قيد التشغيل بالقوة.",
+    "execution_still_queued": "التنفيذ ما زال في الانتظار للوكيل السابق. عد إليه لمتابعته.",
+    "execution_still_running": "التنفيذ ما زال قيد التشغيل للوكيل السابق. عد إليه لمتابعته."
   },
   "persona_overview": {
     "click_to_copy": "انقر للنسخ",
@@ -2726,7 +2735,12 @@
     "sensitive_preview_desc": "إخفاء تفاصيل المعاينة عند التمرير حتى يتم الكشف عنها.",
     "speak_as": "التحدث باسم",
     "timeout_sec": "المهلة (ثانية)",
-    "twin_profile_aria": "ملف التوأم الذي تتحدث هذه الشخصية باسمه"
+    "twin_profile_aria": "ملف التوأم الذي تتحدث هذه الشخصية باسمه",
+    "max_concurrent_hint": "الحد الأقصى للتنفيذات المتوازية لهذه الشخصية. يحدّ من عدد عمليات التشغيل المتزامنة لتجنب حدود معدل API.",
+    "retention_hint": "المدة التي يُحتفظ فيها بسجل التنفيذ قبل التنظيف التلقائي. تُحذف التنفيذات الأقدم لتوفير مساحة القرص.",
+    "retention_range": "من شهر إلى 24 شهرًا",
+    "timeout_hint": "المدة التي يمكن أن يستغرقها تنفيذ واحد قبل إلغائه. الحد الأقصى الصارم للمحرك هو {seconds} ثانية ({minutes} دقيقة) - تُرفض القيم الأعلى منه.",
+    "timeout_range": "{min}-{max} ثانية"
   },
   "share": {
     "button": "مشاركة",

@@ -64,7 +64,8 @@
     "toggle_failed": "このサイトの許可設定を変更できませんでした",
     "writes_ask": "{count}件が要確認",
     "writes_none": "ページが決定",
-    "pattern_chip": "パターン"
+    "pattern_chip": "パターン",
+    "remove_body": "{origin} を削除します。このサイトの上書き設定と認証情報の紐付けも削除されます。"
   },
   "add_site": {
     "cancel": "キャンセル",

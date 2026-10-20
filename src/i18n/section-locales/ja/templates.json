@@ -556,7 +556,9 @@
     "decisions_count": "{count}決定",
     "edges_count": "{count}エッジ",
     "no_flow_data": "フローデータがありません",
-    "nodes_count": "{count}ノード"
+    "nodes_count": "{count}ノード",
+    "flows_count_one": "{count} 件のユースケースフロー",
+    "flows_count_other": "{count} 件のユースケースフロー"
   },
   "empty": {
     "clear_search": "検索をクリア",
@@ -880,7 +882,21 @@
     "_comment_ledger_noun_step": "Plural of the Zapier element word used in the ledger",
     "_comment_ledger_represented": "Ledger line: how many of those became tools or triggers",
     "_comment_ledger_title": "Heading of the import loss ledger on the analyze step",
-    "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for"
+    "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for",
+    "err_cancel_failed": "変換のキャンセルに失敗しました。もう一度お試しください。",
+    "err_cancel_unconfirmed": "変換のキャンセルを確認できませんでした。しばらく待ってからもう一度お試しください。",
+    "err_confirm_failed": "ペルソナの確認と保存に失敗しました。",
+    "err_continue_failed": "変換を続行できませんでした。",
+    "err_draft_invalid": "下書きのJSONが無効です。下書きの項目を修正してください。",
+    "err_draft_malformed": "下書きのJSONが不正な形式です: {detail}",
+    "err_generate_failed": "変換の下書きを生成できませんでした。",
+    "err_parse_fallback": "解析エラー",
+    "err_session_missing": "変換セッションが見つかりません。インポートをやり直してください。",
+    "err_test_failed": "テストに失敗しました",
+    "err_transform_invalid": "変換の出力が無効でした。再試行するか、リクエストを調整してください。",
+    "err_transform_no_draft": "変換は完了しましたが、下書きが生成されませんでした。もう一度お試しください。",
+    "err_transform_session_lost": "変換セッションが失われました。バックエンドが再起動した可能性があります。もう一度お試しください。",
+    "test_fix_adjustment": "修正: テスト実行が次のエラーで失敗しました: {message}。この問題を解決するようペルソナを調整してください。"
   },
   "opportunities": {
     "add_connector": "追加",

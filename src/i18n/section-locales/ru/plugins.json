@@ -3111,7 +3111,8 @@
     "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
     "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many",
     "state_queued": "В очереди",
-    "state_expired": "Время ожидания истекло"
+    "state_expired": "Время ожидания истекло",
+    "pair_load_failed": "Не удалось загрузить сопряженные устройства"
   },
   "obsidian_brain_desc": "Подключите хранилище Obsidian для поиска знаний, просмотра заметок и синхронизации.",
   "obsidian_brain_label": "Мозг Obsidian",

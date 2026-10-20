@@ -1,4 +1,5 @@
 import { extractMessage, silentCatch } from "@/lib/silentCatch";
+import { getActiveTranslations, interpolate } from "@/i18n/useTranslation";
 import {
   clearN8nTransformSnapshot,
   confirmN8nPersonaDraft,
@@ -7,6 +8,8 @@ import { testN8nDraft } from '@/api/agents/tests';
 import { normalizeDraftFromUnknown, stringifyDraft } from './n8nTypes';
 import type { WizardDeps } from './n8nWizardTypes';
 
+
+const n8nT = () => getActiveTranslations().templates.n8n;
 export function createLifecycleHandlers(deps: WizardDeps) {
   const {
     state, dispatch,
@@ -28,13 +31,13 @@ export function createLifecycleHandlers(deps: WizardDeps) {
       try {
         parsed = JSON.parse(payloadJson);
       } catch (parseErr) {
-        dispatch({ type: 'CONFIRM_FAILED', error: `Draft JSON is malformed: ${parseErr instanceof Error ? parseErr.message : 'parse error'}` });
+        dispatch({ type: 'CONFIRM_FAILED', error: interpolate(n8nT().err_draft_malformed, { detail: parseErr instanceof Error ? parseErr.message : n8nT().err_parse_fallback }) });
         return;
       }
 
       const normalized = normalizeDraftFromUnknown(parsed);
       if (!normalized) {
-        dispatch({ type: 'CONFIRM_FAILED', error: 'Draft JSON is invalid. Please fix draft fields.' });
+        dispatch({ type: 'CONFIRM_FAILED', error: n8nT().err_draft_invalid });
         return;
       }
 
@@ -59,7 +62,7 @@ export function createLifecycleHandlers(deps: WizardDeps) {
     } catch (err) {
       dispatch({
         type: 'CONFIRM_FAILED',
-        error: extractMessage(err) || 'Failed to confirm and save persona.',
+        error: extractMessage(err) || n8nT().err_confirm_failed,
       });
     } finally {
       confirmingRef.current = false;
@@ -74,7 +77,7 @@ export function createLifecycleHandlers(deps: WizardDeps) {
       await test.startTestStream(testId);
       await testN8nDraft(testId, stringifyDraft(state.draft));
     } catch (err) {
-      dispatch({ type: 'TEST_FAILED', error: extractMessage(err) || 'Test failed' });
+      dispatch({ type: 'TEST_FAILED', error: extractMessage(err) || n8nT().err_test_failed });
     }
   };
 

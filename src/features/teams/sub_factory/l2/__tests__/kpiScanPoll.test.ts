@@ -60,6 +60,9 @@ describe('KPI scan poll', () => {
 
 describe('kpiScanNote', () => {
   it('reports a cancelled scan as cancelled, not as a failure', async () => {
+    // The note reads the lazily-loaded `kpis` section; the scan button's component has loaded it by then.
+    const { preloadSectionsAsync } = await import('@/i18n/useTranslation');
+    await preloadSectionsAsync('en', ['kpis']);
     const { kpiScanNote } = await import('../useFactoryScans');
     expect(kpiScanNote({ status: 'cancelled' })).toBe('KPI scan cancelled');
     expect(kpiScanNote({ status: 'failed', error: 'boom' })).toBe('boom');

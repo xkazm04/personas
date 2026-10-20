@@ -101,7 +101,7 @@ export default function N8nImportTab() {
             size="xs"
             className="text-red-400/50 hover:text-red-400"
           >
-            Dismiss
+            {t.templates.n8n.dismiss}
           </Button>
         </motion.div>
       )}
@@ -124,7 +124,7 @@ export default function N8nImportTab() {
             size="xs"
             className="text-amber-300/70 hover:text-amber-200"
           >
-            Dismiss
+            {t.templates.n8n.dismiss}
           </Button>
         </motion.div>
       )}

@@ -980,7 +980,8 @@
       },
       "try_design_wizard": "디자인 마법사 사용하기",
       "unsaved_changes": "저장되지 않은 변경 사항: {sections}",
-      "unsaved_changes_generic": "저장되지 않은 변경 사항"
+      "unsaved_changes_generic": "저장되지 않은 변경 사항",
+      "model_profile_corrupt": "모델 설정을 해석할 수 없어 ({bytes}바이트) 필드를 기본값으로 초기화했습니다. 모델 필드의 자동 저장이 일시 중지되었습니다. 모델을 선택해 복구하거나 백업에서 복원하세요."
     },
     "events_panel": {
       "choose_agent": "이벤트를 보려면 에이전트 선택",
@@ -2517,7 +2518,15 @@
       "persona_count_one": "페르소나 {count}개",
       "persona_count_other": "페르소나 {count}개",
       "persona_count_filtered_one": "페르소나 {total}개 중 {shown}개",
-      "persona_count_filtered_other": "페르소나 {total}개 중 {shown}개"
+      "persona_count_filtered_other": "페르소나 {total}개 중 {shown}개",
+      "delete_cancel_failed_one": "실행 {count}건을 취소하지 못했습니다.",
+      "delete_cancel_failed_other": "실행 {count}건을 취소하지 못했습니다.",
+      "delete_done": "삭제되었습니다.",
+      "delete_drain_timeout": "드레인 제한 시간에 도달했습니다.",
+      "delete_force_stopped_one": "실행 중이던 {count}건을 강제 중지했습니다.",
+      "delete_force_stopped_other": "실행 중이던 {count}건을 강제 중지했습니다.",
+      "execution_still_queued": "이전 에이전트의 실행이 아직 대기 중입니다. 확인하려면 다시 전환하세요.",
+      "execution_still_running": "이전 에이전트의 실행이 아직 진행 중입니다. 확인하려면 다시 전환하세요."
     },
     "persona_overview": {
       "click_to_copy": "클릭해 복사",
@@ -2732,7 +2741,12 @@
       "sensitive_preview_desc": "공개될 때까지 호버 미리보기 세부정보를 가립니다.",
       "speak_as": "으로 말하기",
       "timeout_sec": "타임아웃 (초)",
-      "twin_profile_aria": "이 페르소나가 말하는 트윈 프로필"
+      "twin_profile_aria": "이 페르소나가 말하는 트윈 프로필",
+      "max_concurrent_hint": "이 페르소나의 최대 병렬 실행 수입니다. API 요청 제한을 피하기 위해 동시에 실행할 수 있는 횟수를 제한합니다.",
+      "retention_hint": "자동 정리 전까지 실행 기록을 보관하는 기간입니다. 디스크 공간을 절약하기 위해 오래된 실행은 삭제됩니다.",
+      "retention_range": "1-24개월",
+      "timeout_hint": "단일 실행이 취소되기 전까지 실행될 수 있는 시간입니다. 엔진의 최대 한도는 {seconds}초({minutes}분)이며, 이를 초과하는 값은 거부됩니다.",
+      "timeout_range": "{min}-{max}초"
     },
     "share": {
       "button": "공유",
@@ -4698,7 +4712,9 @@
       "loading_firings": "로딩 중…",
       "no_firings": "최근 실행 없음",
       "recent_firings": "최근 실행",
-      "firings_load_failed": "최근 트리거 실행을 불러오지 못했습니다."
+      "firings_load_failed": "최근 트리거 실행을 불러오지 못했습니다.",
+      "triggers_load_failed_one": "페르소나 {count}개의 트리거를 불러오지 못했습니다.",
+      "triggers_load_failed_other": "페르소나 {count}개의 트리거를 불러오지 못했습니다."
     },
     "sr_connecting": "클라우드 오케스트레이터에 연결 중…",
     "sr_deploying": "클라우드에 에이전트 배포 중",
@@ -6095,7 +6111,13 @@
       "layer_col_pace": "속도",
       "stat_observed": "측정"
     },
-    "steering_create_goal": "목표 만들기"
+    "steering_create_goal": "목표 만들기",
+    "ctx_scan_note_complete": "스캔 완료: 그룹 {groups}개 · 컨텍스트 {contexts}개 · 파일 {files}개 매핑됨",
+    "ctx_scan_note_failed": "스캔 실패",
+    "ctx_scan_process_title": "컨텍스트 스캔: {name}",
+    "scan_note_cancelled": "KPI 스캔이 취소되었습니다",
+    "scan_note_complete": "KPI 스캔 완료. 컨텍스트에 새 제안이 있습니다",
+    "scan_note_failed": "KPI 스캔 실패"
   },
   "mastermind": {
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
@@ -14577,7 +14599,8 @@
       "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
       "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many",
       "state_queued": "대기 중",
-      "state_expired": "대기 만료"
+      "state_expired": "대기 만료",
+      "pair_load_failed": "페어링된 기기를 불러오지 못했습니다"
     },
     "obsidian_brain_desc": "Obsidian 볼트를 연결해 지식 검색, 노트 탐색, 동기화를 이용하세요.",
     "obsidian_brain_label": "Obsidian Brain",
@@ -20610,7 +20633,9 @@
       "decisions_count": "{count}개 결정",
       "edges_count": "{count}개 엣지",
       "no_flow_data": "사용 가능한 흐름 데이터 없음",
-      "nodes_count": "{count}개 노드"
+      "nodes_count": "{count}개 노드",
+      "flows_count_one": "사용 사례 흐름 {count}개",
+      "flows_count_other": "사용 사례 흐름 {count}개"
     },
     "empty": {
       "clear_search": "검색 초기화",
@@ -20934,7 +20959,21 @@
       "_comment_ledger_noun_step": "Plural of the Zapier element word used in the ledger",
       "_comment_ledger_represented": "Ledger line: how many of those became tools or triggers",
       "_comment_ledger_title": "Heading of the import loss ledger on the analyze step",
-      "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for"
+      "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for",
+      "err_cancel_failed": "변환을 취소하지 못했습니다. 다시 시도하세요.",
+      "err_cancel_unconfirmed": "변환 취소를 확인할 수 없습니다. 잠시 기다린 후 다시 시도하세요.",
+      "err_confirm_failed": "페르소나를 확인하고 저장하지 못했습니다.",
+      "err_continue_failed": "변환을 계속하지 못했습니다.",
+      "err_draft_invalid": "초안 JSON이 올바르지 않습니다. 초안 필드를 수정하세요.",
+      "err_draft_malformed": "초안 JSON 형식이 잘못되었습니다: {detail}",
+      "err_generate_failed": "변환 초안을 생성하지 못했습니다.",
+      "err_parse_fallback": "구문 분석 오류",
+      "err_session_missing": "변환 세션이 없습니다. 가져오기 과정을 다시 시작하세요.",
+      "err_test_failed": "테스트 실패",
+      "err_transform_invalid": "변환 결과가 올바르지 않습니다. 다시 시도하거나 요청을 보완하세요.",
+      "err_transform_no_draft": "변환은 완료되었지만 초안이 생성되지 않았습니다. 다시 시도하세요.",
+      "err_transform_session_lost": "변환 세션이 끊어졌습니다. 백엔드가 재시작되었을 수 있습니다. 다시 시도하세요.",
+      "test_fix_adjustment": "수정: 테스트 실행이 다음 오류로 실패했습니다: {message}. 이 문제를 해결하도록 페르소나를 조정하세요."
     },
     "opportunities": {
       "add_connector": "추가",
@@ -25487,7 +25526,8 @@
       "toggle_failed": "이 사이트의 허용 여부를 변경하지 못했습니다",
       "writes_ask": "{count}개 확인 필요",
       "writes_none": "페이지가 결정",
-      "pattern_chip": "패턴"
+      "pattern_chip": "패턴",
+      "remove_body": "{origin}이(가) 제거되며, 이 사이트의 재정의 설정과 자격 증명 연결도 함께 제거됩니다."
     },
     "add_site": {
       "cancel": "취소",

@@ -254,7 +254,7 @@ export function FleetPairDevice() {
         {loadError && (
           <InlineErrorBanner
             compact
-            title={t.common.error}
+            title={t.plugins.fleet.pair_load_failed}
             message={loadError}
             onRetry={refreshDevices}
           />

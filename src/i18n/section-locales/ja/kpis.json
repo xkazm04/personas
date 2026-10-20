@@ -378,5 +378,11 @@
     "layer_col_pace": "ペース",
     "stat_observed": "観測"
   },
-  "steering_create_goal": "ゴールを作成"
+  "steering_create_goal": "ゴールを作成",
+  "ctx_scan_note_complete": "スキャン完了: {groups} グループ · {contexts} コンテキスト · {files} ファイルをマッピング",
+  "ctx_scan_note_failed": "スキャンに失敗しました",
+  "ctx_scan_process_title": "コンテキストスキャン: {name}",
+  "scan_note_cancelled": "KPIスキャンをキャンセルしました",
+  "scan_note_complete": "KPIスキャン完了。コンテキストに新しい提案があります",
+  "scan_note_failed": "KPIスキャンに失敗しました"
 }

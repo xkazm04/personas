@@ -713,7 +713,21 @@
     "connector_status_ready": "Ready",
     "connector_status_ambiguous": "Pick one of {count}",
     "connector_status_missing": "No credential",
-    "connector_open_vault": "Open Vault"
+    "connector_open_vault": "Open Vault",
+    "err_transform_invalid": "Transform output was invalid. Please retry or refine your request.",
+    "err_transform_no_draft": "Transform completed but no draft was generated. Please try again.",
+    "err_transform_session_lost": "Transform session lost. The backend may have restarted. Please try again.",
+    "err_draft_malformed": "Draft JSON is malformed: {detail}",
+    "err_parse_fallback": "parse error",
+    "err_draft_invalid": "Draft JSON is invalid. Please fix draft fields.",
+    "err_confirm_failed": "Failed to confirm and save persona.",
+    "err_test_failed": "Test failed",
+    "err_generate_failed": "Failed to generate transformation draft.",
+    "err_cancel_unconfirmed": "Unable to confirm transform cancellation. Please wait and try again.",
+    "err_cancel_failed": "Failed to cancel transform. Please try again.",
+    "err_session_missing": "Transform session is missing. Please restart the import flow.",
+    "err_continue_failed": "Failed to continue transformation.",
+    "test_fix_adjustment": "Fix: The test execution failed with: {message}. Please adjust the persona to fix this issue."
   },
   "diagram": {
     "no_flow_data": "No flow data available",
@@ -1130,7 +1144,9 @@
     "edges_count": "{count} edges",
     "connectors_count": "{count} connector(s)",
     "decisions_count": "{count} decision(s)",
-    "close_dialog": "Close dialog"
+    "close_dialog": "Close dialog",
+    "flows_count_one": "{count} use case flow",
+    "flows_count_other": "{count} use case flows"
   },
   "generation": {
     "run_design_review": "Run Design Review",

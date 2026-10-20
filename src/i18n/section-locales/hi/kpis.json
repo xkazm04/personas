@@ -378,5 +378,11 @@
     "layer_col_pace": "गति",
     "stat_observed": "मापा गया"
   },
-  "steering_create_goal": "लक्ष्य बनाएँ"
+  "steering_create_goal": "लक्ष्य बनाएँ",
+  "ctx_scan_note_complete": "स्कैन पूर्ण: {groups} समूह · {contexts} कॉन्टेक्स्ट · {files} फ़ाइलें मैप की गईं",
+  "ctx_scan_note_failed": "स्कैन विफल रहा",
+  "ctx_scan_process_title": "कॉन्टेक्स्ट स्कैन: {name}",
+  "scan_note_cancelled": "KPI स्कैन रद्द किया गया",
+  "scan_note_complete": "KPI स्कैन पूर्ण। कॉन्टेक्स्ट पर नए प्रस्ताव",
+  "scan_note_failed": "KPI स्कैन विफल रहा"
 }

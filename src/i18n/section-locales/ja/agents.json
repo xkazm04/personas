@@ -974,7 +974,8 @@
     },
     "try_design_wizard": "デザインウィザードを試す",
     "unsaved_changes": "未保存の変更: {sections}",
-    "unsaved_changes_generic": "未保存の変更があります"
+    "unsaved_changes_generic": "未保存の変更があります",
+    "model_profile_corrupt": "モデル設定を解析できませんでした ({bytes} バイト)。各項目はデフォルトにリセットされました。モデル項目の自動保存は一時停止中です。モデルを選択して修復するか、バックアップから復元してください。"
   },
   "events_panel": {
     "choose_agent": "エージェントを選択してイベントを表示",
@@ -2511,7 +2512,15 @@
     "persona_count_one": "{count} 件のペルソナ",
     "persona_count_other": "{count} 件のペルソナ",
     "persona_count_filtered_one": "{total} 件中 {shown} 件のペルソナ",
-    "persona_count_filtered_other": "{total} 件中 {shown} 件のペルソナ"
+    "persona_count_filtered_other": "{total} 件中 {shown} 件のペルソナ",
+    "delete_cancel_failed_one": "{count} 件の実行をキャンセルできませんでした。",
+    "delete_cancel_failed_other": "{count} 件の実行をキャンセルできませんでした。",
+    "delete_done": "削除しました。",
+    "delete_drain_timeout": "ドレインがタイムアウトしました。",
+    "delete_force_stopped_one": "実行中の {count} 件の実行を強制停止しました。",
+    "delete_force_stopped_other": "実行中の {count} 件の実行を強制停止しました。",
+    "execution_still_queued": "前のエージェントの実行がまだキューに入っています。切り替えて確認してください。",
+    "execution_still_running": "前のエージェントの実行がまだ進行中です。切り替えて確認してください。"
   },
   "persona_overview": {
     "click_to_copy": "クリックしてコピー",
@@ -2726,7 +2735,12 @@
     "sensitive_preview_desc": "ホバープレビューの詳細を表示するまでマスク。",
     "speak_as": "話者",
     "timeout_sec": "タイムアウト（秒）",
-    "twin_profile_aria": "このペルソナが話者として使うツインプロファイル"
+    "twin_profile_aria": "このペルソナが話者として使うツインプロファイル",
+    "max_concurrent_hint": "このペルソナの最大並列実行数です。同時に実行できる数を制限し、APIのレート制限を防ぎます。",
+    "retention_hint": "実行履歴を自動クリーンアップするまでの保持期間です。古い実行はディスク容量節約のため削除されます。",
+    "retention_range": "1〜24 か月",
+    "timeout_hint": "1回の実行がキャンセルされるまでの最長時間です。エンジンの上限は {seconds} 秒 ({minutes} 分) で、これを超える値は拒否されます。",
+    "timeout_range": "{min}〜{max} 秒"
   },
   "share": {
     "button": "共有",

@@ -980,7 +980,8 @@
       },
       "try_design_wizard": "جرّب معالج التصميم",
       "unsaved_changes": "تغييرات غير محفوظة: {sections}",
-      "unsaved_changes_generic": "تغييرات غير محفوظة"
+      "unsaved_changes_generic": "تغييرات غير محفوظة",
+      "model_profile_corrupt": "تعذر تحليل إعدادات النموذج ({bytes} بايت) - تمت إعادة الحقول إلى القيم الافتراضية. الحفظ التلقائي متوقف لحقول النموذج. اختر نموذجًا للإصلاح أو استعد من نسخة احتياطية."
     },
     "events_panel": {
       "choose_agent": "اختر وكيلاً لعرض أحداثه",
@@ -2517,7 +2518,15 @@
       "persona_count_one": "{count} وكيل",
       "persona_count_other": "{count} وكلاء",
       "persona_count_filtered_one": "{shown} من {total} وكيل",
-      "persona_count_filtered_other": "{shown} من {total} وكلاء"
+      "persona_count_filtered_other": "{shown} من {total} وكلاء",
+      "delete_cancel_failed_one": "تعذر إلغاء {count} تنفيذ.",
+      "delete_cancel_failed_other": "تعذر إلغاء {count} تنفيذات.",
+      "delete_done": "تم الحذف.",
+      "delete_drain_timeout": "انتهت مهلة التفريغ.",
+      "delete_force_stopped_one": "تم إيقاف {count} تنفيذ قيد التشغيل بالقوة.",
+      "delete_force_stopped_other": "تم إيقاف {count} تنفيذات قيد التشغيل بالقوة.",
+      "execution_still_queued": "التنفيذ ما زال في الانتظار للوكيل السابق. عد إليه لمتابعته.",
+      "execution_still_running": "التنفيذ ما زال قيد التشغيل للوكيل السابق. عد إليه لمتابعته."
     },
     "persona_overview": {
       "click_to_copy": "انقر للنسخ",
@@ -2732,7 +2741,12 @@
       "sensitive_preview_desc": "إخفاء تفاصيل المعاينة عند التمرير حتى يتم الكشف عنها.",
       "speak_as": "التحدث باسم",
       "timeout_sec": "المهلة (ثانية)",
-      "twin_profile_aria": "ملف التوأم الذي تتحدث هذه الشخصية باسمه"
+      "twin_profile_aria": "ملف التوأم الذي تتحدث هذه الشخصية باسمه",
+      "max_concurrent_hint": "الحد الأقصى للتنفيذات المتوازية لهذه الشخصية. يحدّ من عدد عمليات التشغيل المتزامنة لتجنب حدود معدل API.",
+      "retention_hint": "المدة التي يُحتفظ فيها بسجل التنفيذ قبل التنظيف التلقائي. تُحذف التنفيذات الأقدم لتوفير مساحة القرص.",
+      "retention_range": "من شهر إلى 24 شهرًا",
+      "timeout_hint": "المدة التي يمكن أن يستغرقها تنفيذ واحد قبل إلغائه. الحد الأقصى الصارم للمحرك هو {seconds} ثانية ({minutes} دقيقة) - تُرفض القيم الأعلى منه.",
+      "timeout_range": "{min}-{max} ثانية"
     },
     "share": {
       "button": "مشاركة",
@@ -4698,7 +4712,9 @@
       "loading_firings": "جارٍ التحميل…",
       "no_firings": "لا توجد إطلاقات حديثة",
       "recent_firings": "الإطلاقات الأخيرة",
-      "firings_load_failed": "تعذّر تحميل عمليات التشغيل الأخيرة."
+      "firings_load_failed": "تعذّر تحميل عمليات التشغيل الأخيرة.",
+      "triggers_load_failed_one": "تعذر تحميل المشغّلات لـ {count} شخصية.",
+      "triggers_load_failed_other": "تعذر تحميل المشغّلات لـ {count} شخصيات."
     },
     "sr_connecting": "جارٍ الاتصال بمنسّق السحابة…",
     "sr_deploying": "جارٍ نشر الوكيل على السحابة",
@@ -6095,7 +6111,13 @@
       "layer_col_pace": "إيقاع",
       "stat_observed": "مقيس"
     },
-    "steering_create_goal": "إنشاء هدف"
+    "steering_create_goal": "إنشاء هدف",
+    "ctx_scan_note_complete": "اكتمل الفحص: {groups} مجموعات · {contexts} سياقات · {files} ملفات تمت مطابقتها",
+    "ctx_scan_note_failed": "فشل الفحص",
+    "ctx_scan_process_title": "فحص السياق: {name}",
+    "scan_note_cancelled": "تم إلغاء فحص KPI",
+    "scan_note_complete": "اكتمل فحص KPI. مقترحات جديدة على السياقات",
+    "scan_note_failed": "فشل فحص KPI"
   },
   "mastermind": {
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
@@ -14577,7 +14599,8 @@
       "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
       "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many",
       "state_queued": "في الطابور",
-      "state_expired": "انتهت مهلة الانتظار"
+      "state_expired": "انتهت مهلة الانتظار",
+      "pair_load_failed": "تعذر تحميل الأجهزة المقترنة"
     },
     "obsidian_brain_desc": "ربط خزنة Obsidian الخاصة بك لاسترجاع المعرفة وتصفح الملاحظات والمزامنة.",
     "obsidian_brain_label": "دماغ Obsidian",
@@ -20610,7 +20633,9 @@
       "decisions_count": "{count} قرار",
       "edges_count": "{count} حافة",
       "no_flow_data": "لا توجد بيانات تدفق",
-      "nodes_count": "{count} عقدة"
+      "nodes_count": "{count} عقدة",
+      "flows_count_one": "{count} مسار حالة استخدام",
+      "flows_count_other": "{count} مسارات حالات استخدام"
     },
     "empty": {
       "clear_search": "مسح البحث",
@@ -20934,7 +20959,21 @@
       "_comment_ledger_noun_step": "Plural of the Zapier element word used in the ledger",
       "_comment_ledger_represented": "Ledger line: how many of those became tools or triggers",
       "_comment_ledger_title": "Heading of the import loss ledger on the analyze step",
-      "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for"
+      "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for",
+      "err_cancel_failed": "فشل إلغاء التحويل. يرجى المحاولة مرة أخرى.",
+      "err_cancel_unconfirmed": "تعذر تأكيد إلغاء التحويل. يرجى الانتظار ثم المحاولة مرة أخرى.",
+      "err_confirm_failed": "فشل تأكيد الشخصية وحفظها.",
+      "err_continue_failed": "فشلت متابعة التحويل.",
+      "err_draft_invalid": "ملف JSON للمسودة غير صالح. يرجى تصحيح حقول المسودة.",
+      "err_draft_malformed": "ملف JSON للمسودة مشوّه: {detail}",
+      "err_generate_failed": "فشل إنشاء مسودة التحويل.",
+      "err_parse_fallback": "خطأ في التحليل",
+      "err_session_missing": "جلسة التحويل مفقودة. يرجى إعادة بدء عملية الاستيراد.",
+      "err_test_failed": "فشل الاختبار",
+      "err_transform_invalid": "مخرجات التحويل غير صالحة. يرجى إعادة المحاولة أو تحسين طلبك.",
+      "err_transform_no_draft": "اكتمل التحويل لكن لم يتم إنشاء أي مسودة. يرجى المحاولة مرة أخرى.",
+      "err_transform_session_lost": "فُقدت جلسة التحويل. ربما أُعيد تشغيل الخلفية. يرجى المحاولة مرة أخرى.",
+      "test_fix_adjustment": "إصلاح: فشل تنفيذ الاختبار مع الرسالة: {message}. يرجى تعديل الشخصية لإصلاح هذه المشكلة."
     },
     "opportunities": {
       "add_connector": "إضافة",
@@ -25487,7 +25526,8 @@
       "toggle_failed": "تعذّر تغيير حالة السماح لهذا الموقع",
       "writes_ask": "{count} تسأل أولًا",
       "writes_none": "الصفحة تقرر",
-      "pattern_chip": "نمط"
+      "pattern_chip": "نمط",
+      "remove_body": "ستتم إزالة {origin} مع تجاوزات هذا الموقع وربط بيانات الاعتماد الخاص به."
     },
     "add_site": {
       "cancel": "إلغاء",

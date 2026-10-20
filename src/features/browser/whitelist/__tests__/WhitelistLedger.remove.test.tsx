@@ -50,7 +50,7 @@ describe('WhitelistLedger remove', () => {
     expect(onRemove).not.toHaveBeenCalled();
 
     const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).getByText(SITE.origin)).toBeTruthy();
+    expect(within(dialog).getByText(SITE.origin, { exact: false })).toBeTruthy();
     fireEvent.click(within(dialog).getAllByRole('button').slice(-1)[0]!);
 
     await waitFor(() => expect(onRemove).toHaveBeenCalledTimes(1));

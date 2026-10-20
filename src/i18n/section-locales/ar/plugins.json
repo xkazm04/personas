@@ -3111,7 +3111,8 @@
     "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
     "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many",
     "state_queued": "في الطابور",
-    "state_expired": "انتهت مهلة الانتظار"
+    "state_expired": "انتهت مهلة الانتظار",
+    "pair_load_failed": "تعذر تحميل الأجهزة المقترنة"
   },
   "obsidian_brain_desc": "ربط خزنة Obsidian الخاصة بك لاسترجاع المعرفة وتصفح الملاحظات والمزامنة.",
   "obsidian_brain_label": "دماغ Obsidian",

@@ -378,5 +378,11 @@
     "layer_col_pace": "Ritmo",
     "stat_observed": "Observados"
   },
-  "steering_create_goal": "Crear objetivo"
+  "steering_create_goal": "Crear objetivo",
+  "ctx_scan_note_complete": "Análisis completado: {groups} grupos · {contexts} contextos · {files} archivos mapeados",
+  "ctx_scan_note_failed": "El análisis falló",
+  "ctx_scan_process_title": "Análisis de contexto: {name}",
+  "scan_note_cancelled": "Análisis de KPI cancelado",
+  "scan_note_complete": "Análisis de KPI completado. Nuevas propuestas en los contextos",
+  "scan_note_failed": "El análisis de KPI falló"
 }

@@ -11,6 +11,7 @@ import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { EventName, type ContextGenCompletePayload } from '@/lib/eventRegistry';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { getActiveTranslations, interpolate } from '@/i18n/useTranslation';
 
 import type { FactoryL2Data } from './factoryL2Data';
 
@@ -56,9 +57,10 @@ export async function pollKpiScan(
 
 /** The note a finished KPI scan leaves; a cancelled one is not a failure. */
 export function kpiScanNote(st: KpiScanFinal): string {
-  if (st.status === 'completed') return 'KPI scan complete. Fresh proposals on the contexts';
-  if (st.status === 'cancelled') return 'KPI scan cancelled';
-  return st.error ?? 'KPI scan failed';
+  const k = getActiveTranslations().kpis;
+  if (st.status === 'completed') return k.scan_note_complete;
+  if (st.status === 'cancelled') return k.scan_note_cancelled;
+  return st.error ?? k.scan_note_failed;
 }
 
 export function useFactoryScans(data: FactoryL2Data, onNote: (s: string) => void) {
@@ -105,7 +107,7 @@ export function useFactoryScans(data: FactoryL2Data, onNote: (s: string) => void
         useOverviewStore.getState().processStarted(
           'factory_scan',
           scan_id,
-          `Context scan: ${p.name}`,
+          interpolate(getActiveTranslations().kpis.ctx_scan_process_title, { name: p.name }),
           { section: 'plugins', tab: 'context-map' },
         );
       })
@@ -116,10 +118,15 @@ export function useFactoryScans(data: FactoryL2Data, onNote: (s: string) => void
     (event: Event<ContextGenCompletePayload>) => {
       if (!ctxScanId || event.payload.scan_id !== ctxScanId) return;
       setCtxScanId(null);
+      const k = getActiveTranslations().kpis;
       onNote(
         event.payload.status === 'completed'
-          ? `Scan complete: ${event.payload.groups_created} groups · ${event.payload.contexts_created} contexts · ${event.payload.files_mapped} files mapped`
-          : event.payload.error ?? 'Scan failed',
+          ? interpolate(k.ctx_scan_note_complete, {
+              groups: event.payload.groups_created,
+              contexts: event.payload.contexts_created,
+              files: event.payload.files_mapped,
+            })
+          : event.payload.error ?? k.ctx_scan_note_failed,
       );
       data.reloadMap();
     },

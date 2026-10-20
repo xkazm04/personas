@@ -556,7 +556,9 @@
     "decisions_count": "{count} قرار",
     "edges_count": "{count} حافة",
     "no_flow_data": "لا توجد بيانات تدفق",
-    "nodes_count": "{count} عقدة"
+    "nodes_count": "{count} عقدة",
+    "flows_count_one": "{count} مسار حالة استخدام",
+    "flows_count_other": "{count} مسارات حالات استخدام"
   },
   "empty": {
     "clear_search": "مسح البحث",
@@ -880,7 +882,21 @@
     "_comment_ledger_noun_step": "Plural of the Zapier element word used in the ledger",
     "_comment_ledger_represented": "Ledger line: how many of those became tools or triggers",
     "_comment_ledger_title": "Heading of the import loss ledger on the analyze step",
-    "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for"
+    "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for",
+    "err_cancel_failed": "فشل إلغاء التحويل. يرجى المحاولة مرة أخرى.",
+    "err_cancel_unconfirmed": "تعذر تأكيد إلغاء التحويل. يرجى الانتظار ثم المحاولة مرة أخرى.",
+    "err_confirm_failed": "فشل تأكيد الشخصية وحفظها.",
+    "err_continue_failed": "فشلت متابعة التحويل.",
+    "err_draft_invalid": "ملف JSON للمسودة غير صالح. يرجى تصحيح حقول المسودة.",
+    "err_draft_malformed": "ملف JSON للمسودة مشوّه: {detail}",
+    "err_generate_failed": "فشل إنشاء مسودة التحويل.",
+    "err_parse_fallback": "خطأ في التحليل",
+    "err_session_missing": "جلسة التحويل مفقودة. يرجى إعادة بدء عملية الاستيراد.",
+    "err_test_failed": "فشل الاختبار",
+    "err_transform_invalid": "مخرجات التحويل غير صالحة. يرجى إعادة المحاولة أو تحسين طلبك.",
+    "err_transform_no_draft": "اكتمل التحويل لكن لم يتم إنشاء أي مسودة. يرجى المحاولة مرة أخرى.",
+    "err_transform_session_lost": "فُقدت جلسة التحويل. ربما أُعيد تشغيل الخلفية. يرجى المحاولة مرة أخرى.",
+    "test_fix_adjustment": "إصلاح: فشل تنفيذ الاختبار مع الرسالة: {message}. يرجى تعديل الشخصية لإصلاح هذه المشكلة."
   },
   "opportunities": {
     "add_connector": "إضافة",

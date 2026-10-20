@@ -64,7 +64,8 @@
     "toggle_failed": "Nepodařilo se změnit, zda je tento web povolen",
     "writes_ask": "{count} nejdřív se zeptá",
     "writes_none": "Rozhoduje stránka",
-    "pattern_chip": "vzor"
+    "pattern_chip": "vzor",
+    "remove_body": "Web {origin} bude odebrán spolu s jeho přepsáními a vazbou na přihlašovací údaje."
   },
   "add_site": {
     "cancel": "Zrušit",

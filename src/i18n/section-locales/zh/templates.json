@@ -556,7 +556,9 @@
     "decisions_count": "{count} 个决策",
     "edges_count": "{count} 条边",
     "no_flow_data": "没有可用的流程数据",
-    "nodes_count": "{count} 个节点"
+    "nodes_count": "{count} 个节点",
+    "flows_count_one": "{count} 个用例流程",
+    "flows_count_other": "{count} 个用例流程"
   },
   "empty": {
     "clear_search": "清除搜索",
@@ -880,7 +882,21 @@
     "_comment_ledger_noun_step": "Plural of the Zapier element word used in the ledger",
     "_comment_ledger_represented": "Ledger line: how many of those became tools or triggers",
     "_comment_ledger_title": "Heading of the import loss ledger on the analyze step",
-    "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for"
+    "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for",
+    "err_cancel_failed": "取消转换失败。请重试。",
+    "err_cancel_unconfirmed": "无法确认转换是否已取消。请稍候再试。",
+    "err_confirm_failed": "确认并保存 persona 失败。",
+    "err_continue_failed": "继续转换失败。",
+    "err_draft_invalid": "草稿 JSON 无效。请修正草稿字段。",
+    "err_draft_malformed": "草稿 JSON 格式错误：{detail}",
+    "err_generate_failed": "生成转换草稿失败。",
+    "err_parse_fallback": "解析错误",
+    "err_session_missing": "转换会话丢失。请重新开始导入流程。",
+    "err_test_failed": "测试失败",
+    "err_transform_invalid": "转换输出无效。请重试或细化您的请求。",
+    "err_transform_no_draft": "转换已完成，但未生成草稿。请重试。",
+    "err_transform_session_lost": "转换会话已丢失，后端可能已重启。请重试。",
+    "test_fix_adjustment": "修复：测试执行失败，错误为：{message}。请调整 persona 以解决此问题。"
   },
   "opportunities": {
     "add_connector": "添加",

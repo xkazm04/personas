@@ -980,7 +980,8 @@
       },
       "try_design_wizard": "डिज़ाइन विज़ार्ड आज़माएँ",
       "unsaved_changes": "असहेजे परिवर्तन: {sections}",
-      "unsaved_changes_generic": "असहेजे परिवर्तन"
+      "unsaved_changes_generic": "असहेजे परिवर्तन",
+      "model_profile_corrupt": "मॉडल कॉन्फ़िग पार्स नहीं हो सका ({bytes} बाइट) - फ़ील्ड डिफ़ॉल्ट पर रीसेट कर दिए गए। मॉडल फ़ील्ड के लिए ऑटो-सेव रुका हुआ है। ठीक करने के लिए कोई मॉडल चुनें, या बैकअप से पुनर्स्थापित करें।"
     },
     "events_panel": {
       "choose_agent": "इसके इवेंट देखने के लिए एक एजेंट चुनें",
@@ -2517,7 +2518,15 @@
       "persona_count_one": "{count} पर्सोना",
       "persona_count_other": "{count} पर्सोना",
       "persona_count_filtered_one": "{total} में से {shown} पर्सोना",
-      "persona_count_filtered_other": "{total} में से {shown} पर्सोना"
+      "persona_count_filtered_other": "{total} में से {shown} पर्सोना",
+      "delete_cancel_failed_one": "{count} एक्ज़ीक्यूशन रद्द नहीं हो सका।",
+      "delete_cancel_failed_other": "{count} एक्ज़ीक्यूशन रद्द नहीं हो सके।",
+      "delete_done": "हटा दिया गया।",
+      "delete_drain_timeout": "ड्रेन टाइमआउट की सीमा पूरी हो गई।",
+      "delete_force_stopped_one": "{count} चल रहे एक्ज़ीक्यूशन को ज़बरदस्ती रोका गया।",
+      "delete_force_stopped_other": "{count} चल रहे एक्ज़ीक्यूशन को ज़बरदस्ती रोका गया।",
+      "execution_still_queued": "पिछले एजेंट के लिए एक्ज़ीक्यूशन अभी कतार में है। उसे देखने के लिए वापस स्विच करें।",
+      "execution_still_running": "पिछले एजेंट के लिए एक्ज़ीक्यूशन अभी चल रहा है। उसे देखने के लिए वापस स्विच करें।"
     },
     "persona_overview": {
       "click_to_copy": "कॉपी करने के लिए क्लिक करें",
@@ -2732,7 +2741,12 @@
       "sensitive_preview_desc": "प्रकट होने तक होवर प्रीव्यू विवरण छुपाएं।",
       "speak_as": "इस रूप में बोलें",
       "timeout_sec": "टाइमआउट (सेकंड)",
-      "twin_profile_aria": "ट्विन प्रोफ़ाइल जिसके रूप में यह पर्सोना बोलता है"
+      "twin_profile_aria": "ट्विन प्रोफ़ाइल जिसके रूप में यह पर्सोना बोलता है",
+      "max_concurrent_hint": "इस पर्सोना के लिए अधिकतम समानांतर एक्ज़ीक्यूशन। एक साथ चलने वाले रन सीमित करता है ताकि API रेट लिमिट से बचा जा सके।",
+      "retention_hint": "एक्ज़ीक्यूशन इतिहास स्वचालित सफ़ाई से पहले कितने समय तक रखा जाता है। डिस्क स्थान बचाने के लिए पुराने एक्ज़ीक्यूशन हटा दिए जाते हैं।",
+      "retention_range": "1-24 महीने",
+      "timeout_hint": "एक एक्ज़ीक्यूशन रद्द होने से पहले कितनी देर चल सकता है। इंजन की अधिकतम सीमा {seconds} सेकंड ({minutes} मिनट) है - इससे अधिक मान अस्वीकार कर दिए जाते हैं।",
+      "timeout_range": "{min}-{max} सेकंड"
     },
     "share": {
       "button": "साझा करें",
@@ -4698,7 +4712,9 @@
       "loading_firings": "लोड हो रहा है…",
       "no_firings": "कोई हाल की फायरिंग नहीं",
       "recent_firings": "हाल की फायरिंग",
-      "firings_load_failed": "हाल के ट्रिगर लोड नहीं हो सके।"
+      "firings_load_failed": "हाल के ट्रिगर लोड नहीं हो सके।",
+      "triggers_load_failed_one": "{count} पर्सोना के ट्रिगर लोड नहीं हो सके।",
+      "triggers_load_failed_other": "{count} पर्सोना के ट्रिगर लोड नहीं हो सके।"
     },
     "sr_connecting": "क्लाउड ऑर्केस्ट्रेटर से कनेक्ट हो रहा है…",
     "sr_deploying": "Persona को क्लाउड पर डिप्लॉय किया जा रहा है",
@@ -6095,7 +6111,13 @@
       "layer_col_pace": "गति",
       "stat_observed": "मापा गया"
     },
-    "steering_create_goal": "लक्ष्य बनाएँ"
+    "steering_create_goal": "लक्ष्य बनाएँ",
+    "ctx_scan_note_complete": "स्कैन पूर्ण: {groups} समूह · {contexts} कॉन्टेक्स्ट · {files} फ़ाइलें मैप की गईं",
+    "ctx_scan_note_failed": "स्कैन विफल रहा",
+    "ctx_scan_process_title": "कॉन्टेक्स्ट स्कैन: {name}",
+    "scan_note_cancelled": "KPI स्कैन रद्द किया गया",
+    "scan_note_complete": "KPI स्कैन पूर्ण। कॉन्टेक्स्ट पर नए प्रस्ताव",
+    "scan_note_failed": "KPI स्कैन विफल रहा"
   },
   "mastermind": {
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
@@ -14577,7 +14599,8 @@
       "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
       "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many",
       "state_queued": "कतार में",
-      "state_expired": "प्रतीक्षा समय समाप्त"
+      "state_expired": "प्रतीक्षा समय समाप्त",
+      "pair_load_failed": "पेयर किए गए डिवाइस लोड नहीं हो सके"
     },
     "obsidian_brain_desc": "ज्ञान पुनर्प्राप्ति, नोट ब्राउज़िंग, और सिंक के लिए अपना Obsidian vault कनेक्ट करें।",
     "obsidian_brain_label": "Obsidian ब्रेन",
@@ -20610,7 +20633,9 @@
       "decisions_count": "{count} निर्णय",
       "edges_count": "{count} एज",
       "no_flow_data": "कोई फ्लो डेटा उपलब्ध नहीं",
-      "nodes_count": "{count} नोड"
+      "nodes_count": "{count} नोड",
+      "flows_count_one": "{count} उपयोग-मामला फ़्लो",
+      "flows_count_other": "{count} उपयोग-मामला फ़्लो"
     },
     "empty": {
       "clear_search": "खोज साफ़ करें",
@@ -20934,7 +20959,21 @@
       "_comment_ledger_noun_step": "Plural of the Zapier element word used in the ledger",
       "_comment_ledger_represented": "Ledger line: how many of those became tools or triggers",
       "_comment_ledger_title": "Heading of the import loss ledger on the analyze step",
-      "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for"
+      "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for",
+      "err_cancel_failed": "ट्रांसफ़ॉर्म रद्द करने में विफल। कृपया पुनः प्रयास करें।",
+      "err_cancel_unconfirmed": "ट्रांसफ़ॉर्म रद्द होने की पुष्टि नहीं हो सकी। कृपया प्रतीक्षा करें और पुनः प्रयास करें।",
+      "err_confirm_failed": "पर्सोना की पुष्टि और सेव करने में विफल।",
+      "err_continue_failed": "ट्रांसफ़ॉर्मेशन जारी रखने में विफल।",
+      "err_draft_invalid": "ड्राफ़्ट JSON अमान्य है। कृपया ड्राफ़्ट फ़ील्ड ठीक करें।",
+      "err_draft_malformed": "ड्राफ़्ट JSON दोषपूर्ण है: {detail}",
+      "err_generate_failed": "ट्रांसफ़ॉर्मेशन ड्राफ़्ट बनाने में विफल।",
+      "err_parse_fallback": "पार्स त्रुटि",
+      "err_session_missing": "ट्रांसफ़ॉर्म सत्र मौजूद नहीं है। कृपया इम्पोर्ट फ़्लो फिर से शुरू करें।",
+      "err_test_failed": "परीक्षण विफल रहा",
+      "err_transform_invalid": "ट्रांसफ़ॉर्म आउटपुट अमान्य था। कृपया पुनः प्रयास करें या अपना अनुरोध परिष्कृत करें।",
+      "err_transform_no_draft": "ट्रांसफ़ॉर्म पूरा हुआ लेकिन कोई ड्राफ़्ट नहीं बना। कृपया पुनः प्रयास करें।",
+      "err_transform_session_lost": "ट्रांसफ़ॉर्म सत्र खो गया। बैकएंड पुनः शुरू हुआ हो सकता है। कृपया पुनः प्रयास करें।",
+      "test_fix_adjustment": "सुधार: परीक्षण एक्ज़ीक्यूशन इस त्रुटि के साथ विफल रहा: {message}। कृपया इस समस्या को ठीक करने के लिए पर्सोना में बदलाव करें।"
     },
     "opportunities": {
       "add_connector": "जोड़ें",
@@ -25487,7 +25526,8 @@
       "toggle_failed": "इस साइट की अनुमति बदली नहीं जा सकी",
       "writes_ask": "{count} पहले पूछते हैं",
       "writes_none": "पेज तय करता है",
-      "pattern_chip": "पैटर्न"
+      "pattern_chip": "पैटर्न",
+      "remove_body": "{origin} को हटा दिया जाएगा, साथ ही इस साइट के ओवरराइड और उसकी क्रेडेंशियल बाइंडिंग भी हट जाएगी।"
     },
     "add_site": {
       "cancel": "रद्द करें",

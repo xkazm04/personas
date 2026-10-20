@@ -974,7 +974,8 @@
     },
     "try_design_wizard": "Essayer l’assistant de conception",
     "unsaved_changes": "Modifications non enregistrées : {sections}",
-    "unsaved_changes_generic": "Modifications non enregistrées"
+    "unsaved_changes_generic": "Modifications non enregistrées",
+    "model_profile_corrupt": "La configuration du modèle n'a pas pu être analysée ({bytes} octets) - les champs ont été réinitialisés par défaut. L'enregistrement automatique est suspendu pour les champs du modèle. Choisissez un modèle pour réparer, ou restaurez une sauvegarde."
   },
   "events_panel": {
     "choose_agent": "Choisissez un agent pour voir ses événements",
@@ -2511,7 +2512,15 @@
     "persona_count_one": "{count} agent",
     "persona_count_other": "{count} agents",
     "persona_count_filtered_one": "{shown} sur {total} agent",
-    "persona_count_filtered_other": "{shown} sur {total} agents"
+    "persona_count_filtered_other": "{shown} sur {total} agents",
+    "delete_cancel_failed_one": "{count} exécution n'a pas pu être annulée.",
+    "delete_cancel_failed_other": "{count} exécutions n'ont pas pu être annulées.",
+    "delete_done": "Supprimé.",
+    "delete_drain_timeout": "Le délai de vidange a été atteint.",
+    "delete_force_stopped_one": "{count} exécution en cours a été arrêtée de force.",
+    "delete_force_stopped_other": "{count} exécutions en cours ont été arrêtées de force.",
+    "execution_still_queued": "Une exécution est toujours en file d'attente pour l'agent précédent. Revenez-y pour la suivre.",
+    "execution_still_running": "Une exécution est toujours en cours pour l'agent précédent. Revenez-y pour la suivre."
   },
   "persona_overview": {
     "click_to_copy": "Cliquez pour copier",
@@ -2726,7 +2735,12 @@
     "sensitive_preview_desc": "Masquer les détails d’aperçu au survol jusqu’à révélation.",
     "speak_as": "Parler en tant que",
     "timeout_sec": "Délai d’expiration (sec)",
-    "twin_profile_aria": "Profil de jumeau adopté par cet agent"
+    "twin_profile_aria": "Profil de jumeau adopté par cet agent",
+    "max_concurrent_hint": "Nombre maximal d'exécutions parallèles pour ce persona. Limite le nombre d'exécutions simultanées pour éviter les limites de débit de l'API.",
+    "retention_hint": "Durée de conservation de l'historique des exécutions avant le nettoyage automatique. Les exécutions plus anciennes sont supprimées pour libérer de l'espace disque.",
+    "retention_range": "1 à 24 mois",
+    "timeout_hint": "Durée maximale d'une exécution avant son annulation. Le plafond strict du moteur est de {seconds} secondes ({minutes} min) - les valeurs supérieures sont rejetées.",
+    "timeout_range": "{min} à {max} secondes"
   },
   "share": {
     "button": "Partager",

@@ -378,5 +378,11 @@
     "layer_col_pace": "Темп",
     "stat_observed": "Измерено"
   },
-  "steering_create_goal": "Создать цель"
+  "steering_create_goal": "Создать цель",
+  "ctx_scan_note_complete": "Сканирование завершено: групп {groups} · контекстов {contexts} · файлов {files}",
+  "ctx_scan_note_failed": "Сбой сканирования",
+  "ctx_scan_process_title": "Сканирование контекста: {name}",
+  "scan_note_cancelled": "Сканирование KPI отменено",
+  "scan_note_complete": "Сканирование KPI завершено. Новые предложения по контекстам",
+  "scan_note_failed": "Сбой сканирования KPI"
 }

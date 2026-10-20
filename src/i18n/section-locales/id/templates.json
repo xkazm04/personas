@@ -556,7 +556,9 @@
     "decisions_count": "{count} keputusan",
     "edges_count": "{count} tepi",
     "no_flow_data": "Tidak ada data aliran yang tersedia",
-    "nodes_count": "{count} simpul"
+    "nodes_count": "{count} simpul",
+    "flows_count_one": "{count} alur kasus penggunaan",
+    "flows_count_other": "{count} alur kasus penggunaan"
   },
   "empty": {
     "clear_search": "Hapus pencarian",
@@ -880,7 +882,21 @@
     "_comment_ledger_noun_step": "Plural of the Zapier element word used in the ledger",
     "_comment_ledger_represented": "Ledger line: how many of those became tools or triggers",
     "_comment_ledger_title": "Heading of the import loss ledger on the analyze step",
-    "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for"
+    "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for",
+    "err_cancel_failed": "Gagal membatalkan transformasi. Silakan coba lagi.",
+    "err_cancel_unconfirmed": "Tidak dapat memastikan pembatalan transformasi. Harap tunggu dan coba lagi.",
+    "err_confirm_failed": "Gagal mengonfirmasi dan menyimpan persona.",
+    "err_continue_failed": "Gagal melanjutkan transformasi.",
+    "err_draft_invalid": "JSON draf tidak valid. Harap perbaiki kolom draf.",
+    "err_draft_malformed": "JSON draf rusak: {detail}",
+    "err_generate_failed": "Gagal membuat draf transformasi.",
+    "err_parse_fallback": "kesalahan penguraian",
+    "err_session_missing": "Sesi transformasi tidak ditemukan. Silakan mulai ulang alur impor.",
+    "err_test_failed": "Pengujian gagal",
+    "err_transform_invalid": "Keluaran transformasi tidak valid. Silakan coba lagi atau perjelas permintaan Anda.",
+    "err_transform_no_draft": "Transformasi selesai tetapi tidak ada draf yang dibuat. Silakan coba lagi.",
+    "err_transform_session_lost": "Sesi transformasi hilang. Backend mungkin telah dimulai ulang. Silakan coba lagi.",
+    "test_fix_adjustment": "Perbaikan: Eksekusi pengujian gagal dengan: {message}. Harap sesuaikan persona untuk memperbaiki masalah ini."
   },
   "opportunities": {
     "add_connector": "Tambah",

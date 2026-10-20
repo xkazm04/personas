@@ -378,5 +378,11 @@
     "layer_col_pace": "গতি",
     "stat_observed": "পরিমাপিত"
   },
-  "steering_create_goal": "লক্ষ্য তৈরি করুন"
+  "steering_create_goal": "লক্ষ্য তৈরি করুন",
+  "ctx_scan_note_complete": "স্ক্যান সম্পন্ন: {groups}টি গ্রুপ · {contexts}টি কনটেক্সট · {files}টি ফাইল ম্যাপ করা হয়েছে",
+  "ctx_scan_note_failed": "স্ক্যান ব্যর্থ হয়েছে",
+  "ctx_scan_process_title": "কনটেক্সট স্ক্যান: {name}",
+  "scan_note_cancelled": "KPI স্ক্যান বাতিল হয়েছে",
+  "scan_note_complete": "KPI স্ক্যান সম্পন্ন। কনটেক্সটগুলোতে নতুন প্রস্তাব এসেছে",
+  "scan_note_failed": "KPI স্ক্যান ব্যর্থ হয়েছে"
 }

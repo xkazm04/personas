@@ -980,7 +980,8 @@
       },
       "try_design_wizard": "ডিজাইন উইজার্ড ব্যবহার করুন",
       "unsaved_changes": "অসংরক্ষিত পরিবর্তন: {sections}",
-      "unsaved_changes_generic": "অসংরক্ষিত পরিবর্তন"
+      "unsaved_changes_generic": "অসংরক্ষিত পরিবর্তন",
+      "model_profile_corrupt": "মডেল কনফিগ পার্স করা যায়নি ({bytes} বাইট) - ফিল্ডগুলো ডিফল্টে রিসেট হয়েছে। মডেল ফিল্ডের অটো-সেভ বন্ধ আছে। মেরামত করতে একটি মডেল বেছে নিন, অথবা ব্যাকআপ থেকে পুনরুদ্ধার করুন।"
     },
     "events_panel": {
       "choose_agent": "ইভেন্ট দেখতে একটি এজেন্ট বেছে নিন",
@@ -2517,7 +2518,15 @@
       "persona_count_one": "{count} পার্সোনা",
       "persona_count_other": "{count} পার্সোনা",
       "persona_count_filtered_one": "{total} এর মধ্যে {shown} পার্সোনা",
-      "persona_count_filtered_other": "{total} এর মধ্যে {shown} পার্সোনা"
+      "persona_count_filtered_other": "{total} এর মধ্যে {shown} পার্সোনা",
+      "delete_cancel_failed_one": "{count}টি এক্সিকিউশন বাতিল করা যায়নি।",
+      "delete_cancel_failed_other": "{count}টি এক্সিকিউশন বাতিল করা যায়নি।",
+      "delete_done": "মুছে ফেলা হয়েছে।",
+      "delete_drain_timeout": "ড্রেইন টাইমআউট সীমায় পৌঁছেছে।",
+      "delete_force_stopped_one": "চলমান {count}টি এক্সিকিউশন জোর করে থামানো হয়েছে।",
+      "delete_force_stopped_other": "চলমান {count}টি এক্সিকিউশন জোর করে থামানো হয়েছে।",
+      "execution_still_queued": "আগের এজেন্টের এক্সিকিউশন এখনও সারিতে আছে। নজর রাখতে সেখানে ফিরে যান।",
+      "execution_still_running": "আগের এজেন্টের এক্সিকিউশন এখনও চলছে। নজর রাখতে সেখানে ফিরে যান।"
     },
     "persona_overview": {
       "click_to_copy": "কপি করতে ক্লিক করুন",
@@ -2732,7 +2741,12 @@
       "sensitive_preview_desc": "প্রকাশ না করা পর্যন্ত হোভার প্রিভিউ বিস্তারিত মাস্ক করুন।",
       "speak_as": "যার মত কথা বলবেন",
       "timeout_sec": "টাইমআউট (সেকেন্ড)",
-      "twin_profile_aria": "টুইন প্রোফাইল যা এই পার্সোনা হিসেবে কথা বলে"
+      "twin_profile_aria": "টুইন প্রোফাইল যা এই পার্সোনা হিসেবে কথা বলে",
+      "max_concurrent_hint": "এই পারসোনার সর্বোচ্চ সমান্তরাল এক্সিকিউশন। API রেট লিমিট এড়াতে একই সময়ে কতগুলো রান চলতে পারবে তা সীমিত করে।",
+      "retention_hint": "স্বয়ংক্রিয় পরিষ্কারের আগে এক্সিকিউশন ইতিহাস কত দিন রাখা হবে। ডিস্কের জায়গা বাঁচাতে পুরনো এক্সিকিউশন মুছে ফেলা হয়।",
+      "retention_range": "১-২৪ মাস",
+      "timeout_hint": "বাতিল হওয়ার আগে একটি এক্সিকিউশন সর্বোচ্চ কত সময় চলতে পারবে। ইঞ্জিনের কঠোর সীমা {seconds} সেকেন্ড ({minutes} মিনিট) - এর বেশি মান গ্রহণ করা হবে না।",
+      "timeout_range": "{min}-{max} সেকেন্ড"
     },
     "share": {
       "button": "শেয়ার",
@@ -4698,7 +4712,9 @@
       "loading_firings": "লোড হচ্ছে…",
       "no_firings": "কোনো সাম্প্রতিক ফায়ারিং নেই",
       "recent_firings": "সাম্প্রতিক ফায়ারিং",
-      "firings_load_failed": "সাম্প্রতিক ট্রিগার লোড করা যায়নি।"
+      "firings_load_failed": "সাম্প্রতিক ট্রিগার লোড করা যায়নি।",
+      "triggers_load_failed_one": "{count}টি পারসোনার ট্রিগার লোড করা যায়নি।",
+      "triggers_load_failed_other": "{count}টি পারসোনার ট্রিগার লোড করা যায়নি।"
     },
     "sr_connecting": "ক্লাউড অর্কেস্ট্রেটরে সংযুক্ত হচ্ছে…",
     "sr_deploying": "ক্লাউডে পার্সোনা ডিপ্লয় হচ্ছে",
@@ -6095,7 +6111,13 @@
       "layer_col_pace": "গতি",
       "stat_observed": "পরিমাপিত"
     },
-    "steering_create_goal": "লক্ষ্য তৈরি করুন"
+    "steering_create_goal": "লক্ষ্য তৈরি করুন",
+    "ctx_scan_note_complete": "স্ক্যান সম্পন্ন: {groups}টি গ্রুপ · {contexts}টি কনটেক্সট · {files}টি ফাইল ম্যাপ করা হয়েছে",
+    "ctx_scan_note_failed": "স্ক্যান ব্যর্থ হয়েছে",
+    "ctx_scan_process_title": "কনটেক্সট স্ক্যান: {name}",
+    "scan_note_cancelled": "KPI স্ক্যান বাতিল হয়েছে",
+    "scan_note_complete": "KPI স্ক্যান সম্পন্ন। কনটেক্সটগুলোতে নতুন প্রস্তাব এসেছে",
+    "scan_note_failed": "KPI স্ক্যান ব্যর্থ হয়েছে"
   },
   "mastermind": {
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
@@ -14577,7 +14599,8 @@
       "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
       "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many",
       "state_queued": "সারিতে",
-      "state_expired": "অপেক্ষার সময় শেষ"
+      "state_expired": "অপেক্ষার সময় শেষ",
+      "pair_load_failed": "পেয়ার করা ডিভাইস লোড করা যায়নি"
     },
     "obsidian_brain_desc": "নলেজ রিট্রিভাল, নোট ব্রাউজিং ও সিঙ্কের জন্য আপনার Obsidian ভল্ট সংযুক্ত করুন।",
     "obsidian_brain_label": "Obsidian Brain",
@@ -20610,7 +20633,9 @@
       "decisions_count": "{count}টি সিদ্ধান্ত",
       "edges_count": "{count}টি প্রান্ত",
       "no_flow_data": "কোনো প্রবাহ ডেটা পাওয়া যাচ্ছে না",
-      "nodes_count": "{count}টি নোড"
+      "nodes_count": "{count}টি নোড",
+      "flows_count_one": "{count}টি ইউজ কেস ফ্লো",
+      "flows_count_other": "{count}টি ইউজ কেস ফ্লো"
     },
     "empty": {
       "clear_search": "সার্চ সাফ করুন",
@@ -20934,7 +20959,21 @@
       "_comment_ledger_noun_step": "Plural of the Zapier element word used in the ledger",
       "_comment_ledger_represented": "Ledger line: how many of those became tools or triggers",
       "_comment_ledger_title": "Heading of the import loss ledger on the analyze step",
-      "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for"
+      "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for",
+      "err_cancel_failed": "ট্রান্সফর্ম বাতিল করা যায়নি। আবার চেষ্টা করুন।",
+      "err_cancel_unconfirmed": "ট্রান্সফর্ম বাতিল হয়েছে কি না নিশ্চিত করা যায়নি। একটু অপেক্ষা করে আবার চেষ্টা করুন।",
+      "err_confirm_failed": "পারসোনা নিশ্চিত ও সংরক্ষণ করা যায়নি।",
+      "err_continue_failed": "ট্রান্সফর্মেশন চালিয়ে যাওয়া যায়নি।",
+      "err_draft_invalid": "ড্রাফট JSON অবৈধ। ড্রাফটের ফিল্ডগুলো ঠিক করুন।",
+      "err_draft_malformed": "ড্রাফট JSON ত্রুটিপূর্ণ: {detail}",
+      "err_generate_failed": "ট্রান্সফর্মেশন ড্রাফট তৈরি করা যায়নি।",
+      "err_parse_fallback": "পার্স ত্রুটি",
+      "err_session_missing": "ট্রান্সফর্ম সেশন পাওয়া যাচ্ছে না। ইমপোর্ট প্রক্রিয়াটি আবার শুরু করুন।",
+      "err_test_failed": "পরীক্ষা ব্যর্থ হয়েছে",
+      "err_transform_invalid": "ট্রান্সফর্মের আউটপুট অবৈধ ছিল। আবার চেষ্টা করুন বা অনুরোধটি পরিমার্জন করুন।",
+      "err_transform_no_draft": "ট্রান্সফর্ম সম্পন্ন হয়েছে কিন্তু কোনো ড্রাফট তৈরি হয়নি। আবার চেষ্টা করুন।",
+      "err_transform_session_lost": "ট্রান্সফর্ম সেশন হারিয়ে গেছে। ব্যাকএন্ড হয়তো রিস্টার্ট হয়েছে। আবার চেষ্টা করুন।",
+      "test_fix_adjustment": "ঠিক করুন: পরীক্ষামূলক এক্সিকিউশন এই ত্রুটিতে ব্যর্থ হয়েছে: {message}। এই সমস্যা সমাধানে পারসোনাটি সামঞ্জস্য করুন।"
     },
     "opportunities": {
       "add_connector": "যোগ করুন",
@@ -25487,7 +25526,8 @@
       "toggle_failed": "এই সাইট অনুমোদিত কিনা তা পরিবর্তন করা যায়নি",
       "writes_ask": "{count}টি আগে জিজ্ঞাসা করে",
       "writes_none": "পেজ সিদ্ধান্ত নেয়",
-      "pattern_chip": "প্যাটার্ন"
+      "pattern_chip": "প্যাটার্ন",
+      "remove_body": "{origin} সরানো হবে, সাথে এই সাইটের ওভাররাইড এবং ক্রেডেনশিয়াল বাইন্ডিংও সরে যাবে।"
     },
     "add_site": {
       "cancel": "বাতিল করুন",

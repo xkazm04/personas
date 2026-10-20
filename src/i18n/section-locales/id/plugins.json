@@ -3111,7 +3111,8 @@
     "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
     "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many",
     "state_queued": "Mengantre",
-    "state_expired": "Waktu tunggu habis"
+    "state_expired": "Waktu tunggu habis",
+    "pair_load_failed": "Tidak dapat memuat perangkat yang dipasangkan"
   },
   "obsidian_brain_desc": "Hubungkan brankas Obsidian Anda untuk pengambilan pengetahuan, penelusuran catatan, dan sinkronisasi.",
   "obsidian_brain_label": "Obsidian Brain",

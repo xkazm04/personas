@@ -195,7 +195,9 @@
     "label_next_trigger": "Next trigger:",
     "label_cron": "Cron:",
     "loading_firings": "Loading...",
-    "firings_load_failed": "Couldn't load recent firings."
+    "firings_load_failed": "Couldn't load recent firings.",
+    "triggers_load_failed_one": "Couldn't load triggers for {count} persona.",
+    "triggers_load_failed_other": "Couldn't load triggers for {count} personas."
   },
   "dashboard": {
     "title": "Deployments",

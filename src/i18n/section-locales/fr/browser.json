@@ -64,7 +64,8 @@
     "toggle_failed": "Impossible de modifier l'autorisation de ce site",
     "writes_ask": "{count} demandent d'abord",
     "writes_none": "La page décide",
-    "pattern_chip": "motif"
+    "pattern_chip": "motif",
+    "remove_body": "{origin} sera supprimé, ainsi que les remplacements de ce site et sa liaison d'identifiants."
   },
   "add_site": {
     "cancel": "Annuler",

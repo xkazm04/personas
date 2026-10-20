@@ -4,6 +4,7 @@ import { RefreshCw, Plus } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { usePersonaNameMap } from "@/hooks/usePersonaNameMap";
 import { Button } from '@/features/shared/components/buttons';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import {
   cloudListTriggers,
@@ -40,6 +41,8 @@ export function CloudSchedulesPanel({ deployments, isFetchingDeployments = false
 
   const [triggers, setTriggers] = useState<CloudTrigger[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  // Personas whose trigger list could not be read: a failed read is not "no schedules".
+  const [failedCount, setFailedCount] = useState(0);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [firings, setFirings] = useState<CloudTriggerFiring[]>([]);
   const [isLoadingFirings, setIsLoadingFirings] = useState(false);
@@ -61,14 +64,17 @@ export function CloudSchedulesPanel({ deployments, isFetchingDeployments = false
   const fetchTriggers = useCallback(async () => {
     if (deployedPersonaIds.size === 0) {
       setTriggers([]);
+      setFailedCount(0);
       return;
     }
     setIsLoading(true);
     try {
+      let failed = 0;
       const results = await Promise.all(
-        Array.from(deployedPersonaIds).map((pid) => cloudListTriggers(pid).catch((err) => { silentCatch('CloudSchedulesPanel:cloudListTriggers')(err); return [] as CloudTrigger[]; })),
+        Array.from(deployedPersonaIds).map((pid) => cloudListTriggers(pid).catch((err) => { silentCatch('CloudSchedulesPanel:cloudListTriggers')(err); failed += 1; return [] as CloudTrigger[]; })),
       );
       setTriggers(results.flat());
+      setFailedCount(failed);
     } finally {
       setIsLoading(false);
     }
@@ -185,10 +191,19 @@ export function CloudSchedulesPanel({ deployments, isFetchingDeployments = false
         </p>
       )}
 
+      {failedCount > 0 && !isLoading && (
+        <InlineErrorBanner
+          compact
+          severity="warning"
+          message={tx(failedCount === 1 ? ds.triggers_load_failed_one : ds.triggers_load_failed_other, { count: failedCount })}
+          onRetry={() => { void fetchTriggers(); }}
+        />
+      )}
+
       {/* Trigger list */}
       {showGhost ? (
         <TriggerListGhosts />
-      ) : triggers.length === 0 && deployedPersonaIds.size > 0 ? (
+      ) : triggers.length === 0 && deployedPersonaIds.size > 0 && failedCount === 0 ? (
         <p className="typo-body text-foreground py-6 text-center">
           {ds.empty}
         </p>

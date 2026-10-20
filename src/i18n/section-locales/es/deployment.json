@@ -244,7 +244,9 @@
     "loading_firings": "Cargando…",
     "no_firings": "Sin activaciones recientes",
     "recent_firings": "Activaciones recientes",
-    "firings_load_failed": "No se pudieron cargar los disparos recientes."
+    "firings_load_failed": "No se pudieron cargar los disparos recientes.",
+    "triggers_load_failed_one": "No se pudieron cargar los disparadores de {count} persona.",
+    "triggers_load_failed_other": "No se pudieron cargar los disparadores de {count} personas."
   },
   "sr_connecting": "Conectando al orquestador en la nube…",
   "sr_deploying": "Desplegando agente en la nube",

@@ -273,7 +273,8 @@
     "design_wizard_banner": "Customize this template with the AI Design Wizard",
     "try_design_wizard": "Try Design Wizard",
     "cloud_banner_connect": "Connect to the cloud to run your agents remotely",
-    "cloud_banner_signin": "Sign in to unlock cloud features and remote execution"
+    "cloud_banner_signin": "Sign in to unlock cloud features and remote execution",
+    "model_profile_corrupt": "Model config couldn't be parsed ({bytes} bytes) - fields reset to defaults. Auto-save is paused for model fields. Pick a model to repair, or restore from a backup."
   },
   "header": {
     "toggle_failed": "Failed to toggle persona -- check your connection",
@@ -1971,7 +1972,12 @@
     "health_watch_enable": "Enable continuous health monitoring",
     "speak_as": "Speak as",
     "no_twins_configured": "No twins configured. Open the Twin plugin to create one — this persona will then be able to adopt it.",
-    "twin_profile_aria": "Twin profile this persona speaks as"
+    "twin_profile_aria": "Twin profile this persona speaks as",
+    "max_concurrent_hint": "Maximum parallel executions for this persona. Limits how many runs can happen at the same time to prevent API rate limits.",
+    "timeout_hint": "How long a single execution can run before being cancelled. The engine hard ceiling is {seconds} seconds ({minutes} min) - values above this are rejected.",
+    "timeout_range": "{min}-{max} seconds",
+    "retention_hint": "How long execution history is kept before automatic cleanup. Older executions are deleted to save disk space.",
+    "retention_range": "1-24 months"
   },
   "tool_runner": {
     "no_tools": "No tools assigned to this persona.",
@@ -2150,7 +2156,15 @@
     "persona_count_one": "{count} persona",
     "persona_count_other": "{count} personas",
     "persona_count_filtered_one": "{shown} of {total} persona",
-    "persona_count_filtered_other": "{shown} of {total} personas"
+    "persona_count_filtered_other": "{shown} of {total} personas",
+    "delete_done": "Deleted.",
+    "delete_force_stopped_one": "{count} running execution was force-stopped.",
+    "delete_force_stopped_other": "{count} running executions were force-stopped.",
+    "delete_cancel_failed_one": "{count} execution could not be cancelled.",
+    "delete_cancel_failed_other": "{count} executions could not be cancelled.",
+    "delete_drain_timeout": "Drain timeout was reached.",
+    "execution_still_running": "Execution still running for the previous agent. Switch back to monitor it.",
+    "execution_still_queued": "Execution still queued for the previous agent. Switch back to monitor it."
   },
   "life": {
     "sub_core": "Core",

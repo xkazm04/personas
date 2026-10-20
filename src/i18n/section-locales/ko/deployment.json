@@ -244,7 +244,9 @@
     "loading_firings": "로딩 중…",
     "no_firings": "최근 실행 없음",
     "recent_firings": "최근 실행",
-    "firings_load_failed": "최근 트리거 실행을 불러오지 못했습니다."
+    "firings_load_failed": "최근 트리거 실행을 불러오지 못했습니다.",
+    "triggers_load_failed_one": "페르소나 {count}개의 트리거를 불러오지 못했습니다.",
+    "triggers_load_failed_other": "페르소나 {count}개의 트리거를 불러오지 못했습니다."
   },
   "sr_connecting": "클라우드 오케스트레이터에 연결 중…",
   "sr_deploying": "클라우드에 에이전트 배포 중",

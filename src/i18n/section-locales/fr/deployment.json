@@ -244,7 +244,9 @@
     "loading_firings": "Chargement…",
     "no_firings": "Aucun déclenchement récent",
     "recent_firings": "Déclenchements récents",
-    "firings_load_failed": "Impossible de charger les déclenchements récents."
+    "firings_load_failed": "Impossible de charger les déclenchements récents.",
+    "triggers_load_failed_one": "Impossible de charger les déclencheurs de {count} persona.",
+    "triggers_load_failed_other": "Impossible de charger les déclencheurs de {count} personas."
   },
   "sr_connecting": "Connexion à l’orchestrateur cloud…",
   "sr_deploying": "Déploiement de l’agent dans le cloud",

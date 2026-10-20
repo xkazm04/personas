@@ -980,7 +980,8 @@
       },
       "try_design_wizard": "Design-Assistent testen",
       "unsaved_changes": "Ungespeicherte Änderungen: {sections}",
-      "unsaved_changes_generic": "Ungespeicherte Änderungen"
+      "unsaved_changes_generic": "Ungespeicherte Änderungen",
+      "model_profile_corrupt": "Die Modellkonfiguration konnte nicht gelesen werden ({bytes} Bytes) - die Felder wurden auf Standardwerte zurückgesetzt. Das automatische Speichern ist für Modellfelder pausiert. Wähle ein Modell zur Reparatur oder stelle eine Sicherung wieder her."
     },
     "events_panel": {
       "choose_agent": "Agenten auswählen, um seine Ereignisse zu sehen",
@@ -2517,7 +2518,15 @@
       "persona_count_one": "{count} Persona",
       "persona_count_other": "{count} Personas",
       "persona_count_filtered_one": "{shown} von {total} Persona",
-      "persona_count_filtered_other": "{shown} von {total} Personas"
+      "persona_count_filtered_other": "{shown} von {total} Personas",
+      "delete_cancel_failed_one": "{count} Ausführung konnte nicht abgebrochen werden.",
+      "delete_cancel_failed_other": "{count} Ausführungen konnten nicht abgebrochen werden.",
+      "delete_done": "Gelöscht.",
+      "delete_drain_timeout": "Das Timeout für das Abarbeiten wurde erreicht.",
+      "delete_force_stopped_one": "{count} laufende Ausführung wurde zwangsweise gestoppt.",
+      "delete_force_stopped_other": "{count} laufende Ausführungen wurden zwangsweise gestoppt.",
+      "execution_still_queued": "Die Ausführung für den vorherigen Agenten ist noch in der Warteschlange. Wechsle zurück, um sie zu überwachen.",
+      "execution_still_running": "Die Ausführung für den vorherigen Agenten läuft noch. Wechsle zurück, um sie zu überwachen."
     },
     "persona_overview": {
       "click_to_copy": "Zum Kopieren klicken",
@@ -2732,7 +2741,12 @@
       "sensitive_preview_desc": "Hover-Vorschaudetails bis zur Enthüllung maskieren.",
       "speak_as": "Sprechen als",
       "timeout_sec": "Zeitüberschreitung (Sek.)",
-      "twin_profile_aria": "Twin-Profil, als das diese Persona spricht"
+      "twin_profile_aria": "Twin-Profil, als das diese Persona spricht",
+      "max_concurrent_hint": "Maximale Anzahl paralleler Ausführungen für diese Persona. Begrenzt, wie viele Läufe gleichzeitig stattfinden, um API-Ratenlimits zu vermeiden.",
+      "retention_hint": "Wie lange der Ausführungsverlauf aufbewahrt wird, bevor er automatisch bereinigt wird. Ältere Ausführungen werden gelöscht, um Speicherplatz zu sparen.",
+      "retention_range": "1-24 Monate",
+      "timeout_hint": "Wie lange eine einzelne Ausführung laufen darf, bevor sie abgebrochen wird. Die harte Obergrenze der Engine beträgt {seconds} Sekunden ({minutes} Min.) - höhere Werte werden abgelehnt.",
+      "timeout_range": "{min}-{max} Sekunden"
     },
     "share": {
       "button": "Teilen",
@@ -4698,7 +4712,9 @@
       "loading_firings": "Laden…",
       "no_firings": "Keine letzten Ausführungen",
       "recent_firings": "Letzte Ausführungen",
-      "firings_load_failed": "Die letzten Auslösungen konnten nicht geladen werden."
+      "firings_load_failed": "Die letzten Auslösungen konnten nicht geladen werden.",
+      "triggers_load_failed_one": "Trigger für {count} Persona konnten nicht geladen werden.",
+      "triggers_load_failed_other": "Trigger für {count} Personas konnten nicht geladen werden."
     },
     "sr_connecting": "Verbindung zum Cloud-Orchestrator wird hergestellt…",
     "sr_deploying": "Persona wird in der Cloud bereitgestellt",
@@ -6095,7 +6111,13 @@
       "layer_col_pace": "Tempo",
       "stat_observed": "Gemessen"
     },
-    "steering_create_goal": "Ziel erstellen"
+    "steering_create_goal": "Ziel erstellen",
+    "ctx_scan_note_complete": "Scan abgeschlossen: {groups} Gruppen · {contexts} Kontexte · {files} Dateien erfasst",
+    "ctx_scan_note_failed": "Scan fehlgeschlagen",
+    "ctx_scan_process_title": "Kontext-Scan: {name}",
+    "scan_note_cancelled": "KPI-Scan abgebrochen",
+    "scan_note_complete": "KPI-Scan abgeschlossen. Neue Vorschläge zu den Kontexten",
+    "scan_note_failed": "KPI-Scan fehlgeschlagen"
   },
   "mastermind": {
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
@@ -14577,7 +14599,8 @@
       "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
       "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many",
       "state_queued": "Wartend",
-      "state_expired": "Abgelaufen"
+      "state_expired": "Abgelaufen",
+      "pair_load_failed": "Gekoppelte Geräte konnten nicht geladen werden"
     },
     "obsidian_brain_desc": "Obsidian-Tresor für Wissensabruf, Notizen-Browsing und Synchronisation verbinden.",
     "obsidian_brain_label": "Obsidian Brain",
@@ -20610,7 +20633,9 @@
       "decisions_count": "{count} Entscheidung(en)",
       "edges_count": "{count} Kanten",
       "no_flow_data": "Keine Flow-Daten verfügbar",
-      "nodes_count": "{count} Knoten"
+      "nodes_count": "{count} Knoten",
+      "flows_count_one": "{count} Anwendungsfall-Ablauf",
+      "flows_count_other": "{count} Anwendungsfall-Abläufe"
     },
     "empty": {
       "clear_search": "Suche löschen",
@@ -20934,7 +20959,21 @@
       "_comment_ledger_noun_step": "Plural of the Zapier element word used in the ledger",
       "_comment_ledger_represented": "Ledger line: how many of those became tools or triggers",
       "_comment_ledger_title": "Heading of the import loss ledger on the analyze step",
-      "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for"
+      "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for",
+      "err_cancel_failed": "Die Transformation konnte nicht abgebrochen werden. Bitte versuche es erneut.",
+      "err_cancel_unconfirmed": "Der Abbruch der Transformation konnte nicht bestätigt werden. Bitte warte kurz und versuche es erneut.",
+      "err_confirm_failed": "Die Persona konnte nicht bestätigt und gespeichert werden.",
+      "err_continue_failed": "Die Transformation konnte nicht fortgesetzt werden.",
+      "err_draft_invalid": "Das Entwurfs-JSON ist ungültig. Bitte korrigiere die Entwurfsfelder.",
+      "err_draft_malformed": "Das Entwurfs-JSON ist fehlerhaft: {detail}",
+      "err_generate_failed": "Der Transformationsentwurf konnte nicht erzeugt werden.",
+      "err_parse_fallback": "Parse-Fehler",
+      "err_session_missing": "Die Transformationssitzung fehlt. Bitte starte den Importvorgang neu.",
+      "err_test_failed": "Test fehlgeschlagen",
+      "err_transform_invalid": "Die Transformationsausgabe war ungültig. Bitte versuche es erneut oder präzisiere deine Anfrage.",
+      "err_transform_no_draft": "Die Transformation wurde abgeschlossen, aber es wurde kein Entwurf erzeugt. Bitte versuche es erneut.",
+      "err_transform_session_lost": "Die Transformationssitzung ging verloren. Möglicherweise wurde das Backend neu gestartet. Bitte versuche es erneut.",
+      "test_fix_adjustment": "Fix: Die Testausführung ist fehlgeschlagen mit: {message}. Bitte passe die Persona an, um dieses Problem zu beheben."
     },
     "opportunities": {
       "add_connector": "Hinzufügen",
@@ -25487,7 +25526,8 @@
       "toggle_failed": "Konnte nicht ändern, ob diese Website erlaubt ist",
       "writes_ask": "{count} fragen zuerst",
       "writes_none": "Seite entscheidet",
-      "pattern_chip": "Muster"
+      "pattern_chip": "Muster",
+      "remove_body": "{origin} wird entfernt, zusammen mit den Überschreibungen dieser Website und ihrer Zugangsdatenbindung."
     },
     "add_site": {
       "cancel": "Abbrechen",

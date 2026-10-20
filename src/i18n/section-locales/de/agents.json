@@ -974,7 +974,8 @@
     },
     "try_design_wizard": "Design-Assistent testen",
     "unsaved_changes": "Ungespeicherte Änderungen: {sections}",
-    "unsaved_changes_generic": "Ungespeicherte Änderungen"
+    "unsaved_changes_generic": "Ungespeicherte Änderungen",
+    "model_profile_corrupt": "Die Modellkonfiguration konnte nicht gelesen werden ({bytes} Bytes) - die Felder wurden auf Standardwerte zurückgesetzt. Das automatische Speichern ist für Modellfelder pausiert. Wähle ein Modell zur Reparatur oder stelle eine Sicherung wieder her."
   },
   "events_panel": {
     "choose_agent": "Agenten auswählen, um seine Ereignisse zu sehen",
@@ -2511,7 +2512,15 @@
     "persona_count_one": "{count} Persona",
     "persona_count_other": "{count} Personas",
     "persona_count_filtered_one": "{shown} von {total} Persona",
-    "persona_count_filtered_other": "{shown} von {total} Personas"
+    "persona_count_filtered_other": "{shown} von {total} Personas",
+    "delete_cancel_failed_one": "{count} Ausführung konnte nicht abgebrochen werden.",
+    "delete_cancel_failed_other": "{count} Ausführungen konnten nicht abgebrochen werden.",
+    "delete_done": "Gelöscht.",
+    "delete_drain_timeout": "Das Timeout für das Abarbeiten wurde erreicht.",
+    "delete_force_stopped_one": "{count} laufende Ausführung wurde zwangsweise gestoppt.",
+    "delete_force_stopped_other": "{count} laufende Ausführungen wurden zwangsweise gestoppt.",
+    "execution_still_queued": "Die Ausführung für den vorherigen Agenten ist noch in der Warteschlange. Wechsle zurück, um sie zu überwachen.",
+    "execution_still_running": "Die Ausführung für den vorherigen Agenten läuft noch. Wechsle zurück, um sie zu überwachen."
   },
   "persona_overview": {
     "click_to_copy": "Zum Kopieren klicken",
@@ -2726,7 +2735,12 @@
     "sensitive_preview_desc": "Hover-Vorschaudetails bis zur Enthüllung maskieren.",
     "speak_as": "Sprechen als",
     "timeout_sec": "Zeitüberschreitung (Sek.)",
-    "twin_profile_aria": "Twin-Profil, als das diese Persona spricht"
+    "twin_profile_aria": "Twin-Profil, als das diese Persona spricht",
+    "max_concurrent_hint": "Maximale Anzahl paralleler Ausführungen für diese Persona. Begrenzt, wie viele Läufe gleichzeitig stattfinden, um API-Ratenlimits zu vermeiden.",
+    "retention_hint": "Wie lange der Ausführungsverlauf aufbewahrt wird, bevor er automatisch bereinigt wird. Ältere Ausführungen werden gelöscht, um Speicherplatz zu sparen.",
+    "retention_range": "1-24 Monate",
+    "timeout_hint": "Wie lange eine einzelne Ausführung laufen darf, bevor sie abgebrochen wird. Die harte Obergrenze der Engine beträgt {seconds} Sekunden ({minutes} Min.) - höhere Werte werden abgelehnt.",
+    "timeout_range": "{min}-{max} Sekunden"
   },
   "share": {
     "button": "Teilen",

@@ -556,7 +556,9 @@
     "decisions_count": "{count} décision(s)",
     "edges_count": "{count} connexions",
     "no_flow_data": "Aucune donnée de flux disponible",
-    "nodes_count": "{count} nœuds"
+    "nodes_count": "{count} nœuds",
+    "flows_count_one": "{count} flux de cas d'usage",
+    "flows_count_other": "{count} flux de cas d'usage"
   },
   "empty": {
     "clear_search": "Effacer la recherche",
@@ -880,7 +882,21 @@
     "_comment_ledger_noun_step": "Plural of the Zapier element word used in the ledger",
     "_comment_ledger_represented": "Ledger line: how many of those became tools or triggers",
     "_comment_ledger_title": "Heading of the import loss ledger on the analyze step",
-    "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for"
+    "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for",
+    "err_cancel_failed": "Échec de l'annulation de la transformation. Veuillez réessayer.",
+    "err_cancel_unconfirmed": "Impossible de confirmer l'annulation de la transformation. Veuillez patienter et réessayer.",
+    "err_confirm_failed": "Échec de la confirmation et de l'enregistrement du persona.",
+    "err_continue_failed": "Échec de la poursuite de la transformation.",
+    "err_draft_invalid": "Le JSON du brouillon est invalide. Veuillez corriger les champs du brouillon.",
+    "err_draft_malformed": "Le JSON du brouillon est mal formé : {detail}",
+    "err_generate_failed": "Échec de la génération du brouillon de transformation.",
+    "err_parse_fallback": "erreur d'analyse",
+    "err_session_missing": "La session de transformation est introuvable. Veuillez relancer l'import.",
+    "err_test_failed": "Échec du test",
+    "err_transform_invalid": "Le résultat de la transformation est invalide. Veuillez réessayer ou affiner votre demande.",
+    "err_transform_no_draft": "La transformation est terminée mais aucun brouillon n'a été généré. Veuillez réessayer.",
+    "err_transform_session_lost": "Session de transformation perdue. Le backend a peut-être redémarré. Veuillez réessayer.",
+    "test_fix_adjustment": "Correction : l'exécution du test a échoué avec : {message}. Veuillez ajuster le persona pour résoudre ce problème."
   },
   "opportunities": {
     "add_connector": "Ajouter",

@@ -3111,7 +3111,8 @@
     "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
     "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many",
     "state_queued": "En cola",
-    "state_expired": "Expirado"
+    "state_expired": "Expirado",
+    "pair_load_failed": "No se pudieron cargar los dispositivos emparejados"
   },
   "obsidian_brain_desc": "Conecte su vault de Obsidian para recuperación de conocimiento, exploración de notas y sincronización.",
   "obsidian_brain_label": "Obsidian Brain",

@@ -3306,6 +3306,7 @@ export type Translations = {
       try_design_wizard: string;
       cloud_banner_connect: string;
       cloud_banner_signin: string;
+      model_profile_corrupt: string;
     };
     header: {
       toggle_failed: string;
@@ -5004,6 +5005,11 @@ export type Translations = {
       speak_as: string;
       no_twins_configured: string;
       twin_profile_aria: string;
+      max_concurrent_hint: string;
+      timeout_hint: string;
+      timeout_range: string;
+      retention_hint: string;
+      retention_range: string;
     };
     tool_runner: {
       no_tools: string;
@@ -5183,6 +5189,14 @@ export type Translations = {
       persona_count_other: string;
       persona_count_filtered_one: string;
       persona_count_filtered_other: string;
+      delete_done: string;
+      delete_force_stopped_one: string;
+      delete_force_stopped_other: string;
+      delete_cancel_failed_one: string;
+      delete_cancel_failed_other: string;
+      delete_drain_timeout: string;
+      execution_still_running: string;
+      execution_still_queued: string;
     };
     life: {
       sub_core: string;
@@ -8663,6 +8677,8 @@ export type Translations = {
       label_cron: string;
       loading_firings: string;
       firings_load_failed: string;
+      triggers_load_failed_one: string;
+      triggers_load_failed_other: string;
     };
     dashboard: {
       title: string;
@@ -12000,6 +12016,20 @@ export type Translations = {
       connector_status_ambiguous: string;
       connector_status_missing: string;
       connector_open_vault: string;
+      err_transform_invalid: string;
+      err_transform_no_draft: string;
+      err_transform_session_lost: string;
+      err_draft_malformed: string;
+      err_parse_fallback: string;
+      err_draft_invalid: string;
+      err_confirm_failed: string;
+      err_test_failed: string;
+      err_generate_failed: string;
+      err_cancel_unconfirmed: string;
+      err_cancel_failed: string;
+      err_session_missing: string;
+      err_continue_failed: string;
+      test_fix_adjustment: string;
     };
     diagram: {
       no_flow_data: string;
@@ -12417,6 +12447,8 @@ export type Translations = {
       connectors_count: string;
       decisions_count: string;
       close_dialog: string;
+      flows_count_one: string;
+      flows_count_other: string;
     };
     generation: {
       run_design_review: string;
@@ -16721,6 +16753,7 @@ export type Translations = {
       _comment_skills_applied_partial: string;
       skills_applied_partial: string;
       state_queued: string;
+      pair_load_failed: string;
     };
     title: string;
     subtitle: string;
@@ -24704,6 +24737,12 @@ export type Translations = {
     pace_unpaced: string;
     pace_unpaced_no_target: string;
     headline_count: string;
+    scan_note_complete: string;
+    scan_note_cancelled: string;
+    scan_note_failed: string;
+    ctx_scan_process_title: string;
+    ctx_scan_note_complete: string;
+    ctx_scan_note_failed: string;
   };
   planner: {
     nav_label: string;
@@ -26221,6 +26260,7 @@ export type Translations = {
       open_failed: string;
       save_failed: string;
       pattern_chip: string;
+      remove_body: string;
     };
     servers: {
       title: string;

@@ -556,7 +556,9 @@
     "decisions_count": "{count} решение(й)",
     "edges_count": "{count} рёбер",
     "no_flow_data": "Нет данных потока",
-    "nodes_count": "{count} узлов"
+    "nodes_count": "{count} узлов",
+    "flows_count_one": "{count} сценарий использования",
+    "flows_count_other": "Сценариев использования: {count}"
   },
   "empty": {
     "clear_search": "Очистить поиск",
@@ -880,7 +882,21 @@
     "_comment_ledger_noun_step": "Plural of the Zapier element word used in the ledger",
     "_comment_ledger_represented": "Ledger line: how many of those became tools or triggers",
     "_comment_ledger_title": "Heading of the import loss ledger on the analyze step",
-    "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for"
+    "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for",
+    "err_cancel_failed": "Не удалось отменить преобразование. Повторите попытку.",
+    "err_cancel_unconfirmed": "Не удалось подтвердить отмену преобразования. Подождите и повторите попытку.",
+    "err_confirm_failed": "Не удалось подтвердить и сохранить персону.",
+    "err_continue_failed": "Не удалось продолжить преобразование.",
+    "err_draft_invalid": "Черновик JSON недействителен. Исправьте поля черновика.",
+    "err_draft_malformed": "Черновик JSON имеет неверный формат: {detail}",
+    "err_generate_failed": "Не удалось сформировать черновик преобразования.",
+    "err_parse_fallback": "ошибка разбора",
+    "err_session_missing": "Сеанс преобразования отсутствует. Перезапустите процесс импорта.",
+    "err_test_failed": "Тест не пройден",
+    "err_transform_invalid": "Результат преобразования недействителен. Повторите попытку или уточните запрос.",
+    "err_transform_no_draft": "Преобразование завершено, но черновик не создан. Повторите попытку.",
+    "err_transform_session_lost": "Сеанс преобразования потерян. Возможно, бэкенд перезапускался. Повторите попытку.",
+    "test_fix_adjustment": "Исправление: тестовое выполнение завершилось ошибкой: {message}. Измените персону, чтобы устранить эту проблему."
   },
   "opportunities": {
     "add_connector": "Добавить",

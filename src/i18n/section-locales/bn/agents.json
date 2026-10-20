@@ -974,7 +974,8 @@
     },
     "try_design_wizard": "ডিজাইন উইজার্ড ব্যবহার করুন",
     "unsaved_changes": "অসংরক্ষিত পরিবর্তন: {sections}",
-    "unsaved_changes_generic": "অসংরক্ষিত পরিবর্তন"
+    "unsaved_changes_generic": "অসংরক্ষিত পরিবর্তন",
+    "model_profile_corrupt": "মডেল কনফিগ পার্স করা যায়নি ({bytes} বাইট) - ফিল্ডগুলো ডিফল্টে রিসেট হয়েছে। মডেল ফিল্ডের অটো-সেভ বন্ধ আছে। মেরামত করতে একটি মডেল বেছে নিন, অথবা ব্যাকআপ থেকে পুনরুদ্ধার করুন।"
   },
   "events_panel": {
     "choose_agent": "ইভেন্ট দেখতে একটি এজেন্ট বেছে নিন",
@@ -2511,7 +2512,15 @@
     "persona_count_one": "{count} পার্সোনা",
     "persona_count_other": "{count} পার্সোনা",
     "persona_count_filtered_one": "{total} এর মধ্যে {shown} পার্সোনা",
-    "persona_count_filtered_other": "{total} এর মধ্যে {shown} পার্সোনা"
+    "persona_count_filtered_other": "{total} এর মধ্যে {shown} পার্সোনা",
+    "delete_cancel_failed_one": "{count}টি এক্সিকিউশন বাতিল করা যায়নি।",
+    "delete_cancel_failed_other": "{count}টি এক্সিকিউশন বাতিল করা যায়নি।",
+    "delete_done": "মুছে ফেলা হয়েছে।",
+    "delete_drain_timeout": "ড্রেইন টাইমআউট সীমায় পৌঁছেছে।",
+    "delete_force_stopped_one": "চলমান {count}টি এক্সিকিউশন জোর করে থামানো হয়েছে।",
+    "delete_force_stopped_other": "চলমান {count}টি এক্সিকিউশন জোর করে থামানো হয়েছে।",
+    "execution_still_queued": "আগের এজেন্টের এক্সিকিউশন এখনও সারিতে আছে। নজর রাখতে সেখানে ফিরে যান।",
+    "execution_still_running": "আগের এজেন্টের এক্সিকিউশন এখনও চলছে। নজর রাখতে সেখানে ফিরে যান।"
   },
   "persona_overview": {
     "click_to_copy": "কপি করতে ক্লিক করুন",
@@ -2726,7 +2735,12 @@
     "sensitive_preview_desc": "প্রকাশ না করা পর্যন্ত হোভার প্রিভিউ বিস্তারিত মাস্ক করুন।",
     "speak_as": "যার মত কথা বলবেন",
     "timeout_sec": "টাইমআউট (সেকেন্ড)",
-    "twin_profile_aria": "টুইন প্রোফাইল যা এই পার্সোনা হিসেবে কথা বলে"
+    "twin_profile_aria": "টুইন প্রোফাইল যা এই পার্সোনা হিসেবে কথা বলে",
+    "max_concurrent_hint": "এই পারসোনার সর্বোচ্চ সমান্তরাল এক্সিকিউশন। API রেট লিমিট এড়াতে একই সময়ে কতগুলো রান চলতে পারবে তা সীমিত করে।",
+    "retention_hint": "স্বয়ংক্রিয় পরিষ্কারের আগে এক্সিকিউশন ইতিহাস কত দিন রাখা হবে। ডিস্কের জায়গা বাঁচাতে পুরনো এক্সিকিউশন মুছে ফেলা হয়।",
+    "retention_range": "১-২৪ মাস",
+    "timeout_hint": "বাতিল হওয়ার আগে একটি এক্সিকিউশন সর্বোচ্চ কত সময় চলতে পারবে। ইঞ্জিনের কঠোর সীমা {seconds} সেকেন্ড ({minutes} মিনিট) - এর বেশি মান গ্রহণ করা হবে না।",
+    "timeout_range": "{min}-{max} সেকেন্ড"
   },
   "share": {
     "button": "শেয়ার",

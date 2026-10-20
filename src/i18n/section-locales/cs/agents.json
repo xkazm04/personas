@@ -974,7 +974,8 @@
     },
     "try_design_wizard": "Vyzkoušet průvodce",
     "unsaved_changes": "Neuložené změny: {sections}",
-    "unsaved_changes_generic": "Neuložené změny"
+    "unsaved_changes_generic": "Neuložené změny",
+    "model_profile_corrupt": "Konfiguraci modelu se nepodařilo zpracovat ({bytes} bajtů) - pole byla obnovena na výchozí hodnoty. Automatické ukládání polí modelu je pozastaveno. Opravíte to výběrem modelu nebo obnovou ze zálohy."
   },
   "events_panel": {
     "choose_agent": "Vyberte agenta, abyste viděli jeho události",
@@ -2511,7 +2512,15 @@
     "persona_count_one": "{count} persona",
     "persona_count_other": "{count} person",
     "persona_count_filtered_one": "{shown} z {total} persony",
-    "persona_count_filtered_other": "{shown} z {total} person"
+    "persona_count_filtered_other": "{shown} z {total} person",
+    "delete_cancel_failed_one": "{count} spuštění se nepodařilo zrušit.",
+    "delete_cancel_failed_other": "{count} spuštění se nepodařilo zrušit.",
+    "delete_done": "Smazáno.",
+    "delete_drain_timeout": "Byl dosažen časový limit vyprázdnění.",
+    "delete_force_stopped_one": "{count} běžící spuštění bylo násilně zastaveno.",
+    "delete_force_stopped_other": "{count} běžících spuštění bylo násilně zastaveno.",
+    "execution_still_queued": "Spuštění předchozího agenta je stále ve frontě. Přepněte se zpět a sledujte ho.",
+    "execution_still_running": "Spuštění předchozího agenta stále běží. Přepněte se zpět a sledujte ho."
   },
   "persona_overview": {
     "click_to_copy": "Kliknutím zkopírujete",
@@ -2726,7 +2735,12 @@
     "sensitive_preview_desc": "Skrýt detaily náhledu, dokud nebudou odhaleny.",
     "speak_as": "Mluvit jako",
     "timeout_sec": "Časový limit (s)",
-    "twin_profile_aria": "Twin profil, za který tato persona mluví"
+    "twin_profile_aria": "Twin profil, za který tato persona mluví",
+    "max_concurrent_hint": "Maximální počet paralelních spuštění této persony. Omezuje, kolik běhů může probíhat současně, aby se předešlo limitům rychlosti API.",
+    "retention_hint": "Jak dlouho se uchovává historie spuštění před automatickým úklidem. Starší spuštění se mažou, aby se ušetřilo místo na disku.",
+    "retention_range": "1-24 měsíců",
+    "timeout_hint": "Jak dlouho může jedno spuštění běžet, než bude zrušeno. Pevný strop enginu je {seconds} sekund ({minutes} min) - vyšší hodnoty jsou odmítnuty.",
+    "timeout_range": "{min}-{max} sekund"
   },
   "share": {
     "button": "Sdílet",

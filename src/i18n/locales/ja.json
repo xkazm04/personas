@@ -980,7 +980,8 @@
       },
       "try_design_wizard": "デザインウィザードを試す",
       "unsaved_changes": "未保存の変更: {sections}",
-      "unsaved_changes_generic": "未保存の変更があります"
+      "unsaved_changes_generic": "未保存の変更があります",
+      "model_profile_corrupt": "モデル設定を解析できませんでした ({bytes} バイト)。各項目はデフォルトにリセットされました。モデル項目の自動保存は一時停止中です。モデルを選択して修復するか、バックアップから復元してください。"
     },
     "events_panel": {
       "choose_agent": "エージェントを選択してイベントを表示",
@@ -2517,7 +2518,15 @@
       "persona_count_one": "{count} 件のペルソナ",
       "persona_count_other": "{count} 件のペルソナ",
       "persona_count_filtered_one": "{total} 件中 {shown} 件のペルソナ",
-      "persona_count_filtered_other": "{total} 件中 {shown} 件のペルソナ"
+      "persona_count_filtered_other": "{total} 件中 {shown} 件のペルソナ",
+      "delete_cancel_failed_one": "{count} 件の実行をキャンセルできませんでした。",
+      "delete_cancel_failed_other": "{count} 件の実行をキャンセルできませんでした。",
+      "delete_done": "削除しました。",
+      "delete_drain_timeout": "ドレインがタイムアウトしました。",
+      "delete_force_stopped_one": "実行中の {count} 件の実行を強制停止しました。",
+      "delete_force_stopped_other": "実行中の {count} 件の実行を強制停止しました。",
+      "execution_still_queued": "前のエージェントの実行がまだキューに入っています。切り替えて確認してください。",
+      "execution_still_running": "前のエージェントの実行がまだ進行中です。切り替えて確認してください。"
     },
     "persona_overview": {
       "click_to_copy": "クリックしてコピー",
@@ -2732,7 +2741,12 @@
       "sensitive_preview_desc": "ホバープレビューの詳細を表示するまでマスク。",
       "speak_as": "話者",
       "timeout_sec": "タイムアウト（秒）",
-      "twin_profile_aria": "このペルソナが話者として使うツインプロファイル"
+      "twin_profile_aria": "このペルソナが話者として使うツインプロファイル",
+      "max_concurrent_hint": "このペルソナの最大並列実行数です。同時に実行できる数を制限し、APIのレート制限を防ぎます。",
+      "retention_hint": "実行履歴を自動クリーンアップするまでの保持期間です。古い実行はディスク容量節約のため削除されます。",
+      "retention_range": "1〜24 か月",
+      "timeout_hint": "1回の実行がキャンセルされるまでの最長時間です。エンジンの上限は {seconds} 秒 ({minutes} 分) で、これを超える値は拒否されます。",
+      "timeout_range": "{min}〜{max} 秒"
     },
     "share": {
       "button": "共有",
@@ -4698,7 +4712,9 @@
       "loading_firings": "読み込み中…",
       "no_firings": "最近の発火なし",
       "recent_firings": "最近の発火",
-      "firings_load_failed": "最近のトリガー実行を読み込めませんでした。"
+      "firings_load_failed": "最近のトリガー実行を読み込めませんでした。",
+      "triggers_load_failed_one": "{count} 件のペルソナのトリガーを読み込めませんでした。",
+      "triggers_load_failed_other": "{count} 件のペルソナのトリガーを読み込めませんでした。"
     },
     "sr_connecting": "クラウドオーケストレーターに接続中…",
     "sr_deploying": "エージェントをクラウドにデプロイ中",
@@ -6095,7 +6111,13 @@
       "layer_col_pace": "ペース",
       "stat_observed": "観測"
     },
-    "steering_create_goal": "ゴールを作成"
+    "steering_create_goal": "ゴールを作成",
+    "ctx_scan_note_complete": "スキャン完了: {groups} グループ · {contexts} コンテキスト · {files} ファイルをマッピング",
+    "ctx_scan_note_failed": "スキャンに失敗しました",
+    "ctx_scan_process_title": "コンテキストスキャン: {name}",
+    "scan_note_cancelled": "KPIスキャンをキャンセルしました",
+    "scan_note_complete": "KPIスキャン完了。コンテキストに新しい提案があります",
+    "scan_note_failed": "KPIスキャンに失敗しました"
   },
   "mastermind": {
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
@@ -14577,7 +14599,8 @@
       "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
       "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many",
       "state_queued": "キュー待ち",
-      "state_expired": "待機切れ"
+      "state_expired": "待機切れ",
+      "pair_load_failed": "ペアリング済みデバイスを読み込めませんでした"
     },
     "obsidian_brain_desc": "ナレッジの取得、ノートの閲覧、同期のためにObsidian vaultを接続します。",
     "obsidian_brain_label": "Obsidian Brain",
@@ -20610,7 +20633,9 @@
       "decisions_count": "{count}決定",
       "edges_count": "{count}エッジ",
       "no_flow_data": "フローデータがありません",
-      "nodes_count": "{count}ノード"
+      "nodes_count": "{count}ノード",
+      "flows_count_one": "{count} 件のユースケースフロー",
+      "flows_count_other": "{count} 件のユースケースフロー"
     },
     "empty": {
       "clear_search": "検索をクリア",
@@ -20934,7 +20959,21 @@
       "_comment_ledger_noun_step": "Plural of the Zapier element word used in the ledger",
       "_comment_ledger_represented": "Ledger line: how many of those became tools or triggers",
       "_comment_ledger_title": "Heading of the import loss ledger on the analyze step",
-      "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for"
+      "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for",
+      "err_cancel_failed": "変換のキャンセルに失敗しました。もう一度お試しください。",
+      "err_cancel_unconfirmed": "変換のキャンセルを確認できませんでした。しばらく待ってからもう一度お試しください。",
+      "err_confirm_failed": "ペルソナの確認と保存に失敗しました。",
+      "err_continue_failed": "変換を続行できませんでした。",
+      "err_draft_invalid": "下書きのJSONが無効です。下書きの項目を修正してください。",
+      "err_draft_malformed": "下書きのJSONが不正な形式です: {detail}",
+      "err_generate_failed": "変換の下書きを生成できませんでした。",
+      "err_parse_fallback": "解析エラー",
+      "err_session_missing": "変換セッションが見つかりません。インポートをやり直してください。",
+      "err_test_failed": "テストに失敗しました",
+      "err_transform_invalid": "変換の出力が無効でした。再試行するか、リクエストを調整してください。",
+      "err_transform_no_draft": "変換は完了しましたが、下書きが生成されませんでした。もう一度お試しください。",
+      "err_transform_session_lost": "変換セッションが失われました。バックエンドが再起動した可能性があります。もう一度お試しください。",
+      "test_fix_adjustment": "修正: テスト実行が次のエラーで失敗しました: {message}。この問題を解決するようペルソナを調整してください。"
     },
     "opportunities": {
       "add_connector": "追加",
@@ -25487,7 +25526,8 @@
       "toggle_failed": "このサイトの許可設定を変更できませんでした",
       "writes_ask": "{count}件が要確認",
       "writes_none": "ページが決定",
-      "pattern_chip": "パターン"
+      "pattern_chip": "パターン",
+      "remove_body": "{origin} を削除します。このサイトの上書き設定と認証情報の紐付けも削除されます。"
     },
     "add_site": {
       "cancel": "キャンセル",

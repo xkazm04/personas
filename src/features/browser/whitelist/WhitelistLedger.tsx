@@ -46,7 +46,7 @@ export default function WhitelistLedger({
   onOpen,
   onEdit,
 }: WhitelistLedgerProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const w = t.browser.whitelist;
   // Remove drops the origin, its overrides and its credential binding with no
   // undo, so it asks first (a wildcard row revokes access to many sites).
@@ -185,7 +185,7 @@ export default function WhitelistLedger({
         <ConfirmDialog
           danger
           title={w.action_remove}
-          body={pendingRemove.origin}
+          body={tx(w.remove_body, { origin: pendingRemove.origin })}
           confirmLabel={w.action_remove}
           onConfirm={async () => {
             const site = pendingRemove;

@@ -974,7 +974,8 @@
     },
     "try_design_wizard": "디자인 마법사 사용하기",
     "unsaved_changes": "저장되지 않은 변경 사항: {sections}",
-    "unsaved_changes_generic": "저장되지 않은 변경 사항"
+    "unsaved_changes_generic": "저장되지 않은 변경 사항",
+    "model_profile_corrupt": "모델 설정을 해석할 수 없어 ({bytes}바이트) 필드를 기본값으로 초기화했습니다. 모델 필드의 자동 저장이 일시 중지되었습니다. 모델을 선택해 복구하거나 백업에서 복원하세요."
   },
   "events_panel": {
     "choose_agent": "이벤트를 보려면 에이전트 선택",
@@ -2511,7 +2512,15 @@
     "persona_count_one": "페르소나 {count}개",
     "persona_count_other": "페르소나 {count}개",
     "persona_count_filtered_one": "페르소나 {total}개 중 {shown}개",
-    "persona_count_filtered_other": "페르소나 {total}개 중 {shown}개"
+    "persona_count_filtered_other": "페르소나 {total}개 중 {shown}개",
+    "delete_cancel_failed_one": "실행 {count}건을 취소하지 못했습니다.",
+    "delete_cancel_failed_other": "실행 {count}건을 취소하지 못했습니다.",
+    "delete_done": "삭제되었습니다.",
+    "delete_drain_timeout": "드레인 제한 시간에 도달했습니다.",
+    "delete_force_stopped_one": "실행 중이던 {count}건을 강제 중지했습니다.",
+    "delete_force_stopped_other": "실행 중이던 {count}건을 강제 중지했습니다.",
+    "execution_still_queued": "이전 에이전트의 실행이 아직 대기 중입니다. 확인하려면 다시 전환하세요.",
+    "execution_still_running": "이전 에이전트의 실행이 아직 진행 중입니다. 확인하려면 다시 전환하세요."
   },
   "persona_overview": {
     "click_to_copy": "클릭해 복사",
@@ -2726,7 +2735,12 @@
     "sensitive_preview_desc": "공개될 때까지 호버 미리보기 세부정보를 가립니다.",
     "speak_as": "으로 말하기",
     "timeout_sec": "타임아웃 (초)",
-    "twin_profile_aria": "이 페르소나가 말하는 트윈 프로필"
+    "twin_profile_aria": "이 페르소나가 말하는 트윈 프로필",
+    "max_concurrent_hint": "이 페르소나의 최대 병렬 실행 수입니다. API 요청 제한을 피하기 위해 동시에 실행할 수 있는 횟수를 제한합니다.",
+    "retention_hint": "자동 정리 전까지 실행 기록을 보관하는 기간입니다. 디스크 공간을 절약하기 위해 오래된 실행은 삭제됩니다.",
+    "retention_range": "1-24개월",
+    "timeout_hint": "단일 실행이 취소되기 전까지 실행될 수 있는 시간입니다. 엔진의 최대 한도는 {seconds}초({minutes}분)이며, 이를 초과하는 값은 거부됩니다.",
+    "timeout_range": "{min}-{max}초"
   },
   "share": {
     "button": "공유",

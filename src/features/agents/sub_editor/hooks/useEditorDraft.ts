@@ -5,10 +5,12 @@ import { useEditorDirtyState, useEditorHistory } from '../libs/EditorDocument';
 import { useEditorSave } from '../libs/useEditorSave';
 import { type PersonaDraft, buildDraft, checkModelProfileIntegrity, clampDraftPatch } from '../libs/PersonaDraft';
 import { silentCatch } from '@/lib/silentCatch';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const emptyDraft = () => buildDraft({ name: '', enabled: false });
 
 export function useEditorDraft() {
+  const { t, tx } = useTranslation();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const selectedPersonaId = selectedPersona?.id;
   const pendingPersonaId = useAgentStore((s) => s.pendingSelectPersonaId);
@@ -103,7 +105,7 @@ export function useEditorDraft() {
 
   const baseWarnings = selectedPersona?.warnings ?? [];
   const modelProfileWarning = !modelProfileIntegrity.ok
-    ? [`Model config couldn't be parsed (${modelProfileIntegrity.rawLength} bytes) — fields reset to defaults. Auto-save is paused for model fields. Pick a model to repair, or restore from a backup.`]
+    ? [tx(t.agents.editor.model_profile_corrupt, { bytes: modelProfileIntegrity.rawLength })]
     : [];
   const partialLoadWarnings = !dismissedWarnings
     ? [...baseWarnings, ...modelProfileWarning]

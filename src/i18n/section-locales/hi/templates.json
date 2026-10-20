@@ -556,7 +556,9 @@
     "decisions_count": "{count} निर्णय",
     "edges_count": "{count} एज",
     "no_flow_data": "कोई फ्लो डेटा उपलब्ध नहीं",
-    "nodes_count": "{count} नोड"
+    "nodes_count": "{count} नोड",
+    "flows_count_one": "{count} उपयोग-मामला फ़्लो",
+    "flows_count_other": "{count} उपयोग-मामला फ़्लो"
   },
   "empty": {
     "clear_search": "खोज साफ़ करें",
@@ -880,7 +882,21 @@
     "_comment_ledger_noun_step": "Plural of the Zapier element word used in the ledger",
     "_comment_ledger_represented": "Ledger line: how many of those became tools or triggers",
     "_comment_ledger_title": "Heading of the import loss ledger on the analyze step",
-    "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for"
+    "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for",
+    "err_cancel_failed": "ट्रांसफ़ॉर्म रद्द करने में विफल। कृपया पुनः प्रयास करें।",
+    "err_cancel_unconfirmed": "ट्रांसफ़ॉर्म रद्द होने की पुष्टि नहीं हो सकी। कृपया प्रतीक्षा करें और पुनः प्रयास करें।",
+    "err_confirm_failed": "पर्सोना की पुष्टि और सेव करने में विफल।",
+    "err_continue_failed": "ट्रांसफ़ॉर्मेशन जारी रखने में विफल।",
+    "err_draft_invalid": "ड्राफ़्ट JSON अमान्य है। कृपया ड्राफ़्ट फ़ील्ड ठीक करें।",
+    "err_draft_malformed": "ड्राफ़्ट JSON दोषपूर्ण है: {detail}",
+    "err_generate_failed": "ट्रांसफ़ॉर्मेशन ड्राफ़्ट बनाने में विफल।",
+    "err_parse_fallback": "पार्स त्रुटि",
+    "err_session_missing": "ट्रांसफ़ॉर्म सत्र मौजूद नहीं है। कृपया इम्पोर्ट फ़्लो फिर से शुरू करें।",
+    "err_test_failed": "परीक्षण विफल रहा",
+    "err_transform_invalid": "ट्रांसफ़ॉर्म आउटपुट अमान्य था। कृपया पुनः प्रयास करें या अपना अनुरोध परिष्कृत करें।",
+    "err_transform_no_draft": "ट्रांसफ़ॉर्म पूरा हुआ लेकिन कोई ड्राफ़्ट नहीं बना। कृपया पुनः प्रयास करें।",
+    "err_transform_session_lost": "ट्रांसफ़ॉर्म सत्र खो गया। बैकएंड पुनः शुरू हुआ हो सकता है। कृपया पुनः प्रयास करें।",
+    "test_fix_adjustment": "सुधार: परीक्षण एक्ज़ीक्यूशन इस त्रुटि के साथ विफल रहा: {message}। कृपया इस समस्या को ठीक करने के लिए पर्सोना में बदलाव करें।"
   },
   "opportunities": {
     "add_connector": "जोड़ें",

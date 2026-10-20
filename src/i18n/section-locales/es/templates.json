@@ -556,7 +556,9 @@
     "decisions_count": "{count} decisión(es)",
     "edges_count": "{count} conexiones",
     "no_flow_data": "Sin datos de flujo disponibles",
-    "nodes_count": "{count} nodos"
+    "nodes_count": "{count} nodos",
+    "flows_count_one": "{count} flujo de caso de uso",
+    "flows_count_other": "{count} flujos de casos de uso"
   },
   "empty": {
     "clear_search": "Limpiar búsqueda",
@@ -880,7 +882,21 @@
     "_comment_ledger_noun_step": "Plural of the Zapier element word used in the ledger",
     "_comment_ledger_represented": "Ledger line: how many of those became tools or triggers",
     "_comment_ledger_title": "Heading of the import loss ledger on the analyze step",
-    "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for"
+    "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for",
+    "err_cancel_failed": "No se pudo cancelar la transformación. Inténtalo de nuevo.",
+    "err_cancel_unconfirmed": "No se pudo confirmar la cancelación de la transformación. Espera e inténtalo de nuevo.",
+    "err_confirm_failed": "No se pudo confirmar y guardar la persona.",
+    "err_continue_failed": "No se pudo continuar la transformación.",
+    "err_draft_invalid": "El JSON del borrador no es válido. Corrige los campos del borrador.",
+    "err_draft_malformed": "El JSON del borrador está mal formado: {detail}",
+    "err_generate_failed": "No se pudo generar el borrador de la transformación.",
+    "err_parse_fallback": "error de análisis",
+    "err_session_missing": "Falta la sesión de transformación. Reinicia el flujo de importación.",
+    "err_test_failed": "La prueba falló",
+    "err_transform_invalid": "El resultado de la transformación no era válido. Reintenta o afina tu solicitud.",
+    "err_transform_no_draft": "La transformación terminó, pero no se generó ningún borrador. Inténtalo de nuevo.",
+    "err_transform_session_lost": "Se perdió la sesión de transformación. Es posible que el backend se haya reiniciado. Inténtalo de nuevo.",
+    "test_fix_adjustment": "Corrección: la ejecución de prueba falló con: {message}. Ajusta la persona para resolver este problema."
   },
   "opportunities": {
     "add_connector": "Agregar",

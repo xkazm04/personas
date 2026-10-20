@@ -980,7 +980,8 @@
       },
       "try_design_wizard": "Thử trình hướng dẫn thiết kế",
       "unsaved_changes": "Thay đổi chưa lưu: {sections}",
-      "unsaved_changes_generic": "Thay đổi chưa lưu"
+      "unsaved_changes_generic": "Thay đổi chưa lưu",
+      "model_profile_corrupt": "Không thể phân tích cấu hình mô hình ({bytes} byte) - các trường đã được đặt lại về mặc định. Tự động lưu bị tạm dừng cho các trường mô hình. Hãy chọn một mô hình để khôi phục, hoặc khôi phục từ bản sao lưu."
     },
     "events_panel": {
       "choose_agent": "Chọn tác nhân để xem sự kiện",
@@ -2517,7 +2518,15 @@
       "persona_count_one": "{count} tác nhân",
       "persona_count_other": "{count} tác nhân",
       "persona_count_filtered_one": "{shown} trên {total} tác nhân",
-      "persona_count_filtered_other": "{shown} trên {total} tác nhân"
+      "persona_count_filtered_other": "{shown} trên {total} tác nhân",
+      "delete_cancel_failed_one": "Không thể hủy {count} lần thực thi.",
+      "delete_cancel_failed_other": "Không thể hủy {count} lần thực thi.",
+      "delete_done": "Đã xóa.",
+      "delete_drain_timeout": "Đã hết thời gian chờ xả.",
+      "delete_force_stopped_one": "{count} lần thực thi đang chạy đã bị buộc dừng.",
+      "delete_force_stopped_other": "{count} lần thực thi đang chạy đã bị buộc dừng.",
+      "execution_still_queued": "Lần thực thi của agent trước vẫn đang trong hàng đợi. Chuyển lại để theo dõi.",
+      "execution_still_running": "Lần thực thi của agent trước vẫn đang chạy. Chuyển lại để theo dõi."
     },
     "persona_overview": {
       "click_to_copy": "Nhấp để sao chép",
@@ -2732,7 +2741,12 @@
       "sensitive_preview_desc": "Ẩn chi tiết xem trước khi di chuột qua cho đến khi được hiển thị.",
       "speak_as": "Nói với tư cách",
       "timeout_sec": "Thời gian chờ (giây)",
-      "twin_profile_aria": "Hồ sơ bản sao mà tác nhân này nói với tư cách"
+      "twin_profile_aria": "Hồ sơ bản sao mà tác nhân này nói với tư cách",
+      "max_concurrent_hint": "Số lần thực thi song song tối đa cho persona này. Giới hạn số lượt chạy cùng lúc để tránh vượt giới hạn tốc độ API.",
+      "retention_hint": "Thời gian lưu lịch sử thực thi trước khi tự động dọn dẹp. Các lần thực thi cũ hơn sẽ bị xóa để tiết kiệm dung lượng đĩa.",
+      "retention_range": "1-24 tháng",
+      "timeout_hint": "Thời gian tối đa một lần thực thi có thể chạy trước khi bị hủy. Giới hạn cứng của công cụ là {seconds} giây ({minutes} phút) - giá trị cao hơn sẽ bị từ chối.",
+      "timeout_range": "{min}-{max} giây"
     },
     "share": {
       "button": "Chia sẻ",
@@ -4698,7 +4712,9 @@
       "loading_firings": "Đang tải…",
       "no_firings": "Không có lần kích hoạt gần đây",
       "recent_firings": "Lần kích hoạt gần đây",
-      "firings_load_failed": "Không thể tải các lần kích hoạt gần đây."
+      "firings_load_failed": "Không thể tải các lần kích hoạt gần đây.",
+      "triggers_load_failed_one": "Không thể tải trình kích hoạt cho {count} persona.",
+      "triggers_load_failed_other": "Không thể tải trình kích hoạt cho {count} persona."
     },
     "sr_connecting": "Đang kết nối đến bộ điều phối đám mây…",
     "sr_deploying": "Đang triển khai tác tử lên đám mây",
@@ -6095,7 +6111,13 @@
       "layer_col_pace": "Nhịp độ",
       "stat_observed": "Đã đo"
     },
-    "steering_create_goal": "Tạo mục tiêu"
+    "steering_create_goal": "Tạo mục tiêu",
+    "ctx_scan_note_complete": "Quét hoàn tất: {groups} nhóm · {contexts} ngữ cảnh · {files} tệp đã được ánh xạ",
+    "ctx_scan_note_failed": "Quét thất bại",
+    "ctx_scan_process_title": "Quét ngữ cảnh: {name}",
+    "scan_note_cancelled": "Đã hủy quét KPI",
+    "scan_note_complete": "Quét KPI hoàn tất. Có đề xuất mới trên các ngữ cảnh",
+    "scan_note_failed": "Quét KPI thất bại"
   },
   "mastermind": {
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
@@ -14577,7 +14599,8 @@
       "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
       "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many",
       "state_queued": "Đang chờ",
-      "state_expired": "Hết hạn chờ"
+      "state_expired": "Hết hạn chờ",
+      "pair_load_failed": "Không thể tải các thiết bị đã ghép nối"
     },
     "obsidian_brain_desc": "Kết nối vault Obsidian để truy xuất kiến thức, duyệt ghi chú và đồng bộ.",
     "obsidian_brain_label": "Obsidian Brain",
@@ -20610,7 +20633,9 @@
       "decisions_count": "{count} quyết định",
       "edges_count": "{count} cạnh",
       "no_flow_data": "Không có dữ liệu luồng",
-      "nodes_count": "{count} nút"
+      "nodes_count": "{count} nút",
+      "flows_count_one": "{count} luồng trường hợp sử dụng",
+      "flows_count_other": "{count} luồng trường hợp sử dụng"
     },
     "empty": {
       "clear_search": "Xóa tìm kiếm",
@@ -20934,7 +20959,21 @@
       "_comment_ledger_noun_step": "Plural of the Zapier element word used in the ledger",
       "_comment_ledger_represented": "Ledger line: how many of those became tools or triggers",
       "_comment_ledger_title": "Heading of the import loss ledger on the analyze step",
-      "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for"
+      "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for",
+      "err_cancel_failed": "Hủy chuyển đổi thất bại. Vui lòng thử lại.",
+      "err_cancel_unconfirmed": "Không thể xác nhận việc hủy chuyển đổi. Vui lòng đợi và thử lại.",
+      "err_confirm_failed": "Xác nhận và lưu persona thất bại.",
+      "err_continue_failed": "Tiếp tục chuyển đổi thất bại.",
+      "err_draft_invalid": "JSON bản nháp không hợp lệ. Vui lòng sửa các trường của bản nháp.",
+      "err_draft_malformed": "JSON bản nháp bị lỗi định dạng: {detail}",
+      "err_generate_failed": "Tạo bản nháp chuyển đổi thất bại.",
+      "err_parse_fallback": "lỗi phân tích cú pháp",
+      "err_session_missing": "Thiếu phiên chuyển đổi. Vui lòng bắt đầu lại quy trình nhập.",
+      "err_test_failed": "Kiểm thử thất bại",
+      "err_transform_invalid": "Kết quả chuyển đổi không hợp lệ. Vui lòng thử lại hoặc tinh chỉnh yêu cầu của bạn.",
+      "err_transform_no_draft": "Chuyển đổi đã hoàn tất nhưng không tạo được bản nháp. Vui lòng thử lại.",
+      "err_transform_session_lost": "Mất phiên chuyển đổi. Backend có thể đã khởi động lại. Vui lòng thử lại.",
+      "test_fix_adjustment": "Sửa lỗi: Lần thực thi kiểm thử thất bại với: {message}. Vui lòng điều chỉnh persona để khắc phục sự cố này."
     },
     "opportunities": {
       "add_connector": "Thêm",
@@ -25487,7 +25526,8 @@
       "toggle_failed": "Không thể thay đổi trạng thái cho phép của trang này",
       "writes_ask": "{count} hỏi trước",
       "writes_none": "Trang tự quyết định",
-      "pattern_chip": "mẫu"
+      "pattern_chip": "mẫu",
+      "remove_body": "{origin} sẽ bị gỡ bỏ, cùng với các ghi đè của trang này và liên kết thông tin xác thực của nó."
     },
     "add_site": {
       "cancel": "Hủy",

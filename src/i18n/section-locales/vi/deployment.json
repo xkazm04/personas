@@ -244,7 +244,9 @@
     "loading_firings": "Đang tải…",
     "no_firings": "Không có lần kích hoạt gần đây",
     "recent_firings": "Lần kích hoạt gần đây",
-    "firings_load_failed": "Không thể tải các lần kích hoạt gần đây."
+    "firings_load_failed": "Không thể tải các lần kích hoạt gần đây.",
+    "triggers_load_failed_one": "Không thể tải trình kích hoạt cho {count} persona.",
+    "triggers_load_failed_other": "Không thể tải trình kích hoạt cho {count} persona."
   },
   "sr_connecting": "Đang kết nối đến bộ điều phối đám mây…",
   "sr_deploying": "Đang triển khai tác tử lên đám mây",

@@ -974,7 +974,8 @@
     },
     "try_design_wizard": "Probar asistente de diseño",
     "unsaved_changes": "Cambios sin guardar: {sections}",
-    "unsaved_changes_generic": "Cambios sin guardar"
+    "unsaved_changes_generic": "Cambios sin guardar",
+    "model_profile_corrupt": "No se pudo analizar la configuración del modelo ({bytes} bytes); los campos se restablecieron a sus valores por defecto. El guardado automático está en pausa para los campos del modelo. Elige un modelo para repararla o restaura una copia de seguridad."
   },
   "events_panel": {
     "choose_agent": "Elige un agente para ver sus eventos",
@@ -2511,7 +2512,15 @@
     "persona_count_one": "{count} persona",
     "persona_count_other": "{count} personas",
     "persona_count_filtered_one": "{shown} de {total} persona",
-    "persona_count_filtered_other": "{shown} de {total} personas"
+    "persona_count_filtered_other": "{shown} de {total} personas",
+    "delete_cancel_failed_one": "No se pudo cancelar {count} ejecución.",
+    "delete_cancel_failed_other": "No se pudieron cancelar {count} ejecuciones.",
+    "delete_done": "Eliminado.",
+    "delete_drain_timeout": "Se agotó el tiempo de espera del vaciado.",
+    "delete_force_stopped_one": "Se detuvo a la fuerza {count} ejecución en curso.",
+    "delete_force_stopped_other": "Se detuvieron a la fuerza {count} ejecuciones en curso.",
+    "execution_still_queued": "La ejecución del agente anterior sigue en cola. Vuelve a él para supervisarla.",
+    "execution_still_running": "La ejecución del agente anterior sigue en curso. Vuelve a él para supervisarla."
   },
   "persona_overview": {
     "click_to_copy": "Haz clic para copiar",
@@ -2726,7 +2735,12 @@
     "sensitive_preview_desc": "Ocultar detalles de vista previa hasta que se revelen.",
     "speak_as": "Hablar como",
     "timeout_sec": "Tiempo de espera (seg)",
-    "twin_profile_aria": "Perfil gemelo que esta persona adopta"
+    "twin_profile_aria": "Perfil gemelo que esta persona adopta",
+    "max_concurrent_hint": "Máximo de ejecuciones en paralelo para esta persona. Limita cuántas ejecuciones pueden ocurrir a la vez para evitar los límites de tasa de la API.",
+    "retention_hint": "Cuánto tiempo se conserva el historial de ejecuciones antes de la limpieza automática. Las ejecuciones más antiguas se eliminan para ahorrar espacio en disco.",
+    "retention_range": "1-24 meses",
+    "timeout_hint": "Cuánto tiempo puede ejecutarse una sola ejecución antes de cancelarse. El límite máximo del motor es de {seconds} segundos ({minutes} min); los valores superiores se rechazan.",
+    "timeout_range": "{min}-{max} segundos"
   },
   "share": {
     "button": "Compartir",

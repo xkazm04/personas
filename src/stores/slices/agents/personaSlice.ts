@@ -24,6 +24,7 @@ import { classifyUnknownError, categoryLabel } from "@/lib/errorTaxonomy";
 import { storeBus } from "@/lib/storeBus";
 import { autoAssignPersonaIcons } from "@/lib/icons/autoAssignIcons";
 import { createLatestWins } from "../../util/latestWins";
+import { getActiveTranslations, interpolate } from "@/i18n/useTranslation";
 
 /** Sub-resources fetched via getPersonaDetail, cached by persona ID. */
 export interface PersonaDetailExtras {
@@ -558,15 +559,17 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
     // Show a summary toast when executions were affected during deletion
     const stopped = result.executionsCancelled + result.executionsForceCancelled;
     if (stopped > 0 || result.cancelFailures.length > 0) {
-      const parts: string[] = ["Deleted."];
+      const pl = getActiveTranslations().agents.persona_list;
+      const parts: string[] = [pl.delete_done];
       if (stopped > 0) {
-        parts.push(`${stopped} running execution${stopped !== 1 ? "s were" : " was"} force-stopped.`);
+        parts.push(interpolate(stopped === 1 ? pl.delete_force_stopped_one : pl.delete_force_stopped_other, { count: stopped }));
       }
       if (result.cancelFailures.length > 0) {
-        parts.push(`${result.cancelFailures.length} execution${result.cancelFailures.length !== 1 ? "s" : ""} could not be cancelled.`);
+        const failed = result.cancelFailures.length;
+        parts.push(interpolate(failed === 1 ? pl.delete_cancel_failed_one : pl.delete_cancel_failed_other, { count: failed }));
       }
       if (result.timeoutReached) {
-        parts.push("Drain timeout was reached.");
+        parts.push(pl.delete_drain_timeout);
       }
       const hasFailures = result.cancelFailures.length > 0;
       storeBus.emit('toast', {
@@ -593,10 +596,10 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
     if (id !== prev && prev != null) {
       const { isExecuting, executionPersonaId, queuePosition } = get();
       if (isExecuting && executionPersonaId === prev) {
-        const label = queuePosition != null ? "queued" : "running";
+        const pl = getActiveTranslations().agents.persona_list;
         storeBus.emit('toast', {
-          message: `Execution still ${label} for the previous agent. Switch back to monitor it.`,
-          type: "success",
+          message: queuePosition != null ? pl.execution_still_queued : pl.execution_still_running,
+          type: "warning",
           duration: 5000,
         });
       }

@@ -378,5 +378,11 @@
     "layer_col_pace": "进度",
     "stat_observed": "已观测"
   },
-  "steering_create_goal": "创建目标"
+  "steering_create_goal": "创建目标",
+  "ctx_scan_note_complete": "扫描完成：{groups} 个分组 · {contexts} 个上下文 · 已映射 {files} 个文件",
+  "ctx_scan_note_failed": "扫描失败",
+  "ctx_scan_process_title": "上下文扫描：{name}",
+  "scan_note_cancelled": "KPI 扫描已取消",
+  "scan_note_complete": "KPI 扫描完成。各上下文有新的提案",
+  "scan_note_failed": "KPI 扫描失败"
 }

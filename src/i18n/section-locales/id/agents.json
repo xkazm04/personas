@@ -974,7 +974,8 @@
     },
     "try_design_wizard": "Coba wizard desain",
     "unsaved_changes": "Perubahan belum disimpan: {sections}",
-    "unsaved_changes_generic": "Perubahan belum disimpan"
+    "unsaved_changes_generic": "Perubahan belum disimpan",
+    "model_profile_corrupt": "Konfigurasi model tidak dapat diurai ({bytes} byte) - kolom direset ke default. Simpan otomatis dijeda untuk kolom model. Pilih model untuk memperbaiki, atau pulihkan dari cadangan."
   },
   "events_panel": {
     "choose_agent": "Pilih agen untuk melihat acaranya",
@@ -2511,7 +2512,15 @@
     "persona_count_one": "{count} persona",
     "persona_count_other": "{count} persona",
     "persona_count_filtered_one": "{shown} dari {total} persona",
-    "persona_count_filtered_other": "{shown} dari {total} persona"
+    "persona_count_filtered_other": "{shown} dari {total} persona",
+    "delete_cancel_failed_one": "{count} eksekusi tidak dapat dibatalkan.",
+    "delete_cancel_failed_other": "{count} eksekusi tidak dapat dibatalkan.",
+    "delete_done": "Dihapus.",
+    "delete_drain_timeout": "Batas waktu pengosongan tercapai.",
+    "delete_force_stopped_one": "{count} eksekusi yang berjalan dihentikan paksa.",
+    "delete_force_stopped_other": "{count} eksekusi yang berjalan dihentikan paksa.",
+    "execution_still_queued": "Eksekusi masih mengantre untuk agen sebelumnya. Kembali untuk memantaunya.",
+    "execution_still_running": "Eksekusi masih berjalan untuk agen sebelumnya. Kembali untuk memantaunya."
   },
   "persona_overview": {
     "click_to_copy": "Klik untuk menyalin",
@@ -2726,7 +2735,12 @@
     "sensitive_preview_desc": "Sembunyikan detail pratinjau hover hingga ditampilkan.",
     "speak_as": "Bicara sebagai",
     "timeout_sec": "Waktu Habis (dtk)",
-    "twin_profile_aria": "Profil kembaran yang digunakan persona ini untuk berbicara"
+    "twin_profile_aria": "Profil kembaran yang digunakan persona ini untuk berbicara",
+    "max_concurrent_hint": "Jumlah maksimum eksekusi paralel untuk persona ini. Membatasi berapa banyak proses yang berjalan bersamaan agar tidak terkena batas laju API.",
+    "retention_hint": "Berapa lama riwayat eksekusi disimpan sebelum dibersihkan otomatis. Eksekusi lama dihapus untuk menghemat ruang disk.",
+    "retention_range": "1-24 bulan",
+    "timeout_hint": "Berapa lama satu eksekusi dapat berjalan sebelum dibatalkan. Batas keras mesin adalah {seconds} detik ({minutes} mnt) - nilai di atas ini ditolak.",
+    "timeout_range": "{min}-{max} detik"
   },
   "share": {
     "button": "Bagikan",

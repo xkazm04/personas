@@ -974,7 +974,8 @@
     },
     "try_design_wizard": "डिज़ाइन विज़ार्ड आज़माएँ",
     "unsaved_changes": "असहेजे परिवर्तन: {sections}",
-    "unsaved_changes_generic": "असहेजे परिवर्तन"
+    "unsaved_changes_generic": "असहेजे परिवर्तन",
+    "model_profile_corrupt": "मॉडल कॉन्फ़िग पार्स नहीं हो सका ({bytes} बाइट) - फ़ील्ड डिफ़ॉल्ट पर रीसेट कर दिए गए। मॉडल फ़ील्ड के लिए ऑटो-सेव रुका हुआ है। ठीक करने के लिए कोई मॉडल चुनें, या बैकअप से पुनर्स्थापित करें।"
   },
   "events_panel": {
     "choose_agent": "इसके इवेंट देखने के लिए एक एजेंट चुनें",
@@ -2511,7 +2512,15 @@
     "persona_count_one": "{count} पर्सोना",
     "persona_count_other": "{count} पर्सोना",
     "persona_count_filtered_one": "{total} में से {shown} पर्सोना",
-    "persona_count_filtered_other": "{total} में से {shown} पर्सोना"
+    "persona_count_filtered_other": "{total} में से {shown} पर्सोना",
+    "delete_cancel_failed_one": "{count} एक्ज़ीक्यूशन रद्द नहीं हो सका।",
+    "delete_cancel_failed_other": "{count} एक्ज़ीक्यूशन रद्द नहीं हो सके।",
+    "delete_done": "हटा दिया गया।",
+    "delete_drain_timeout": "ड्रेन टाइमआउट की सीमा पूरी हो गई।",
+    "delete_force_stopped_one": "{count} चल रहे एक्ज़ीक्यूशन को ज़बरदस्ती रोका गया।",
+    "delete_force_stopped_other": "{count} चल रहे एक्ज़ीक्यूशन को ज़बरदस्ती रोका गया।",
+    "execution_still_queued": "पिछले एजेंट के लिए एक्ज़ीक्यूशन अभी कतार में है। उसे देखने के लिए वापस स्विच करें।",
+    "execution_still_running": "पिछले एजेंट के लिए एक्ज़ीक्यूशन अभी चल रहा है। उसे देखने के लिए वापस स्विच करें।"
   },
   "persona_overview": {
     "click_to_copy": "कॉपी करने के लिए क्लिक करें",
@@ -2726,7 +2735,12 @@
     "sensitive_preview_desc": "प्रकट होने तक होवर प्रीव्यू विवरण छुपाएं।",
     "speak_as": "इस रूप में बोलें",
     "timeout_sec": "टाइमआउट (सेकंड)",
-    "twin_profile_aria": "ट्विन प्रोफ़ाइल जिसके रूप में यह पर्सोना बोलता है"
+    "twin_profile_aria": "ट्विन प्रोफ़ाइल जिसके रूप में यह पर्सोना बोलता है",
+    "max_concurrent_hint": "इस पर्सोना के लिए अधिकतम समानांतर एक्ज़ीक्यूशन। एक साथ चलने वाले रन सीमित करता है ताकि API रेट लिमिट से बचा जा सके।",
+    "retention_hint": "एक्ज़ीक्यूशन इतिहास स्वचालित सफ़ाई से पहले कितने समय तक रखा जाता है। डिस्क स्थान बचाने के लिए पुराने एक्ज़ीक्यूशन हटा दिए जाते हैं।",
+    "retention_range": "1-24 महीने",
+    "timeout_hint": "एक एक्ज़ीक्यूशन रद्द होने से पहले कितनी देर चल सकता है। इंजन की अधिकतम सीमा {seconds} सेकंड ({minutes} मिनट) है - इससे अधिक मान अस्वीकार कर दिए जाते हैं।",
+    "timeout_range": "{min}-{max} सेकंड"
   },
   "share": {
     "button": "साझा करें",
