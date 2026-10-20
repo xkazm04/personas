@@ -132,10 +132,18 @@ export function filterAndSortCredentials(
         return sortDirection === undefined ? bTime - aTime : dir * (aTime - bTime);
       }
       case 'health': {
-        const toResult = (m: CredentialMetadata) =>
-          m.healthcheck_last_success !== null
-            ? { success: m.healthcheck_last_success, message: m.healthcheck_last_message ?? '' }
-            : null;
+        // Carry the typed probe state: the stored boolean is `true` for
+        // "could not check", so without it unverifiable sorts as healthy.
+        const toResult = (m: CredentialMetadata) => {
+          const state = readCredentialHealthState(m);
+          return state === 'untested'
+            ? null
+            : {
+                success: m.healthcheck_last_success ?? false,
+                message: m.healthcheck_last_message ?? '',
+                state,
+              };
+        };
         const scoreA = computeHealthScore(toResult(a), null).score;
         const scoreB = computeHealthScore(toResult(b), null).score;
         return dir * (scoreA - scoreB);
