@@ -295,10 +295,12 @@ interface ApiKeyRowProps {
   onAudit: () => void;
 }
 
-function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete, onAudit }: ApiKeyRowProps) {
+export function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete, onAudit }: ApiKeyRowProps) {
   const { t, tx } = useTranslation();
   const s = t.settings.api_keys;
   const { armed: confirmDelete, trigger: triggerDelete } = useConfirmClick(onDelete);
+  // Revoke has no re-enable path: arm first, commit on the second click (same as delete).
+  const { armed: confirmRevoke, trigger: triggerRevoke } = useConfirmClick(onRevoke);
 
   const isRevoked = apiKey.revoked_at !== null || !apiKey.enabled;
   const expiry = expiryInfo(apiKey);
@@ -392,13 +394,26 @@ function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete, onAudit }: ApiKeyRow
         {!isRevoked && (
           <button
             type="button"
-            onClick={onRevoke}
+            onClick={triggerRevoke}
             disabled={actioning}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption text-foreground hover:text-amber-400 hover:bg-amber-400/10 transition-colors disabled:opacity-50"
+            className={`inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption transition-colors disabled:opacity-50 ${
+              confirmRevoke
+                ? 'text-amber-400 bg-amber-400/10 hover:bg-amber-400/20'
+                : 'text-foreground hover:text-amber-400 hover:bg-amber-400/10'
+            }`}
             title={s.revoke_tooltip}
           >
-            <ShieldOff size={12} />
-            {s.revoke}
+            {confirmRevoke ? (
+              <>
+                <Check size={12} />
+                {s.confirm_delete}
+              </>
+            ) : (
+              <>
+                <ShieldOff size={12} />
+                {s.revoke}
+              </>
+            )}
           </button>
         )}
         <button
