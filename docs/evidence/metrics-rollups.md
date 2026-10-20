@@ -7,7 +7,6 @@ evidence:
   - src-tauri/db/src/migrations/incremental/                      # sla_daily backfill reuses the exact runtime rollup writer, so backfilled and live rows share one definition (recomputation named, once)
   - src/features/overview/sub_usage/libs/periodComparison.ts        # the 2x-window single-fetch comparison: one read, split locally, previous period as ghost series
   - src/features/overview/libs/computeTrends.ts                     # comparison discipline: returns null rather than fabricate a trend from a single loaded window; previous=0 branches before dividing
-  - src/features/overview/sub_usage/libs/pivotToolUsage.ts          # client pivoting for presentation shape only — transposes already-aggregated rows, no new numbers
 counter_evidence:
   - src/features/overview/libs/computeTrends.ts                     # same file, other face: ordinal-index period split assumes a dense series while the feed is group-by-sparse (boundary drifts by the count of quiet days); avgField takes unweighted means of daily means and daily p50s
 deviations:
