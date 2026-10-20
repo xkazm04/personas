@@ -1,4 +1,5 @@
 import { ContentHeaderSkeleton } from './ContentHeaderSkeleton';
+import { ListSkeleton } from './ListSkeleton';
 
 /**
  * @catalog RouteChunkSkeleton — the delayed, header-only Suspense fallback for a lazy route/section chunk. Renders nothing for the first ~150ms (CSS `animate-fade-in` + `animationDelay`, fill-mode both), then a calm `ContentHeaderSkeleton` ghost — so a warm chunk resolves before a single pixel paints and only a genuinely slow chunk shows chrome instead of a blank gap.
@@ -26,13 +27,27 @@ interface RouteChunkSkeletonProps {
   showActions?: boolean;
   /** Render the large subtitle bar. Default on (most page headers carry one). */
   showSubtitle?: boolean;
+  /**
+   * `body` is for a panel that sits UNDER a header the page already renders
+   * (a tab panel): the same 150ms-delayed, calm ghost, but rows instead of a
+   * second header band. Default `header` keeps the route-level behaviour.
+   */
+  variant?: 'header' | 'body';
 }
 
 export function RouteChunkSkeleton({
   showIcon = false,
   showActions = true,
   showSubtitle = true,
+  variant = 'header',
 }: RouteChunkSkeletonProps = {}) {
+  if (variant === 'body') {
+    return (
+      <div aria-hidden="true" className="animate-fade-in" style={{ animationDelay: '150ms' }}>
+        <ListSkeleton rows={5} rowHeight={56} />
+      </div>
+    );
+  }
   return (
     <div
       aria-hidden="true"
