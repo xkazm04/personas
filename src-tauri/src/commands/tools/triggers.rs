@@ -1673,22 +1673,23 @@ mod recent_runs_tests {
 
     /// A chatty trigger filling the cap must not hide the quiet trigger's older run.
     #[test]
-    fn a_chatty_trigger_does_not_starve_a_quiet_one() {
-        let pool = init_test_db().unwrap();
-        let conn = pool.get().unwrap();
+    fn a_chatty_trigger_does_not_starve_a_quiet_one() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let conn = pool.get()?;
         seed(&conn);
         for i in 0..30 {
             run(&conn, &format!("c{i}"), "chatty", i + 1);
         }
         run(&conn, "q-old", "quiet", 120);
 
-        let runs = query_recent_schedule_runs(&conn, 24, 5, 10).unwrap();
+        let runs = query_recent_schedule_runs(&conn, 24, 5, 10)?;
         assert!(
             runs.iter().any(|r| r.execution_id == "q-old"),
             "quiet run dropped"
         );
         assert_eq!(runs.iter().filter(|r| r.trigger_id == "chatty").count(), 5);
         assert_eq!(runs[0].execution_id, "c0", "newest first");
+        Ok(())
     }
 }
 
