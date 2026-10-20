@@ -244,6 +244,18 @@
 .cb-root .cb-vtop .cb-lab {
   min-width: 0;
 }
+/* A label that holds the taller of two readings: both sentences share one grid
+   cell and the other is hidden, so the verdict row never changes height when
+   the reading swaps. */
+.cb-root .cb-lab-stack {
+  display: grid;
+}
+.cb-root .cb-lab-stack > * {
+  grid-area: 1 / 1;
+}
+.cb-root .cb-lab-sizer {
+  visibility: hidden;
+}
 .cb-root .cb-vfoot {
   display: flex;
   flex-wrap: wrap;

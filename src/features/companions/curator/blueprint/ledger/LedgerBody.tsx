@@ -96,7 +96,11 @@ function LedgerBodyInner({
             </div>
           )}
           {bodyRows}
-          <Bands model={model} />
+          {/* The bands sit BELOW the rows, so while the first read is in flight
+              they would be pushed down by every row that lands (measured in the
+              shot harness: CLS 0.07 at 1400x900 from this alone). They draw the
+              moment the read settles - rows, or the offer - and never move. */}
+          {!(phase === 'reading' && model.rows === null) && <Bands model={model} />}
         </div>
       </div>
     </section>
