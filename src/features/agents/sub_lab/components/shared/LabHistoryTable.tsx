@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { Trash2, Clock, type LucideIcon } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { statusBadge } from '@/lib/eval/evalFramework';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { LabEmptyState } from './LabEmptyState';
 
 export interface LabHistoryColumn<TRun> {
@@ -36,6 +38,7 @@ export function LabHistoryTable<TRun extends { id: string; status: string; creat
   title,
 }: LabHistoryTableProps<TRun>) {
   const { t } = useTranslation();
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   if (runs.length === 0) {
     return (
       <div className="space-y-3">
@@ -50,6 +53,19 @@ export function LabHistoryTable<TRun extends { id: string; status: string; creat
 
   return (
     <div className="space-y-2">
+      {pendingDeleteId && (
+        <ConfirmDialog
+          danger
+          title={t.agents.lab.delete_run}
+          body={t.common.confirm_destructive_cannot_undo}
+          confirmLabel={t.common.delete}
+          onConfirm={() => {
+            onDelete(pendingDeleteId);
+            setPendingDeleteId(null);
+          }}
+          onCancel={() => setPendingDeleteId(null)}
+        />
+      )}
       <h4 className="flex items-center gap-2.5 typo-label text-foreground">
         <Clock className="w-3 h-3" />
         {title}
@@ -95,7 +111,7 @@ export function LabHistoryTable<TRun extends { id: string; status: string; creat
                 <td className="px-2 py-2.5">
                   <button
                     type="button"
-                    onClick={(e) => { e.stopPropagation(); onDelete(run.id); }}
+                    onClick={(e) => { e.stopPropagation(); setPendingDeleteId(run.id); }}
                     className="p-1 rounded-card hover:bg-red-500/15 text-foreground hover:text-red-400 transition-colors"
                     title={t.agents.lab.delete_run}
                     aria-label={t.agents.lab.delete_run}
