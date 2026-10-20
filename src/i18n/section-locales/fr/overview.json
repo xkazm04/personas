@@ -63,7 +63,9 @@
     "unknown": "Inconnu",
     "value_delivered_count": "Valeur livrée",
     "value_delivered_rate": "Taux de valeur livrée",
-    "value_section_title": "Valeur métier"
+    "value_section_title": "Valeur métier",
+    "prev_p50": "p50 préc.",
+    "prev_p95": "p95 préc."
   },
   "analytics_dashboard": {
     "active_count": "{count} actif(s)",
@@ -1156,7 +1158,6 @@
     "curation_schedule_save": "Enregistrer la planification",
     "curation_schedule_title": "Planifier la révision des mémoires",
     "delete_all": "Tout supprimer",
-    "delete_all_confirm_body": "Cette action supprime définitivement les {count} mémoires. Elle est irréversible.",
     "delete_all_confirm_cta": "Tout supprimer",
     "delete_all_confirm_title": "Supprimer toutes les mémoires ?",
     "form": {
@@ -1182,7 +1183,8 @@
     "reflect_pick_persona": "Lancer une réflexion sur les souvenirs d’un agent",
     "reflecting": "Réflexion en cours…",
     "search_placeholder": "Rechercher les mémorisations…",
-    "title": "Mémorisations"
+    "title": "Mémorisations",
+    "delete_all_confirm_body_all_agents": "Cette action supprime définitivement les {count} souvenirs de tous les agents, quel que soit le filtre actuel. Elle est irréversible."
   },
   "memory_actions": {
     "dismiss_suggestion": "Ignorer la suggestion",
@@ -1366,7 +1368,11 @@
   "popup_fields": {
     "ollama_domain": "ollama.com",
     "ollama_key_instructions": ", puis copiez votre clé API depuis les paramètres. Cette clé est stockée localement et partagée par tous les agents.",
-    "sign_up_free_at": "Inscrivez-vous gratuitement sur"
+    "sign_up_free_at": "Inscrivez-vous gratuitement sur",
+    "api_key_label": "Clé API",
+    "litellm_base_url_label": "URL de base du proxy",
+    "litellm_master_key_label": "Clé maître",
+    "ollama_key_placeholder": "Collez votre clé depuis ollama.com/settings"
   },
   "predictive_alerts_extra": {
     "all_nominal": "Tous les systèmes nominaux",
@@ -1887,7 +1893,9 @@
     "p95_latency": "Latence P95",
     "runs": "Exécutions",
     "streak": "Série",
-    "successful": "Réussies"
+    "successful": "Réussies",
+    "daily_trend_hint_one": "{date} : {rate} ({count} exécution)",
+    "daily_trend_hint_other": "{date} : {rate} ({count} exécutions)"
   },
   "sla": {
     "active_agents": "{count} agents actifs",

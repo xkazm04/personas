@@ -10,7 +10,7 @@ import { StationStrip } from './StationStrip';
 
 export function StationColumn() {
   const { geo, nav, words, statusWord, liftedKey } = useSoundingsModel();
-  const { m, tx, laneLabel } = words;
+  const { m, tx, laneLabel, dimLabel } = words;
   const { level, curStation, readKey, marked, setReadKey, openCard, frameRefs } = nav;
   const { g, colSpan, column } = geo;
   if (level < 1 || !curStation || !g || !colSpan || !column) return null;
@@ -50,12 +50,12 @@ export function StationColumn() {
             tabIndex={readKey === node.key ? 0 : -1}
             style={{ left: f.x, top: f.y, width: f.w, height: f.h, '--c': STATUS_COLOR[node.status] } as CSSProperties}
             aria-label={node.detail
-              ? tx(m.soundings_frame_aria_detail, { dim: node.label, status: statusWord(node.status), detail: toolText(node.detail) })
-              : tx(m.soundings_frame_aria, { dim: node.label, status: statusWord(node.status) })}
+              ? tx(m.soundings_frame_aria_detail, { dim: dimLabel(node.key), status: statusWord(node.status), detail: toolText(node.detail) })
+              : tx(m.soundings_frame_aria, { dim: dimLabel(node.key), status: statusWord(node.status) })}
             onClick={(e) => { e.stopPropagation(); setReadKey(node.key); openCard(node.key); }}
           >
             <StatusMark status={node.status} />
-            <span className="sd-fl">{node.label}</span>
+            <span className="sd-fl">{dimLabel(node.key)}</span>
             <Ladder node={node} />
             <span className={node.detail ? 'sd-ff' : 'sd-ff sd-none'}>{second}</span>
           </button>

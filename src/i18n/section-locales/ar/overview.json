@@ -63,7 +63,9 @@
     "unknown": "غير معروف",
     "value_delivered_count": "القيمة المسلمة",
     "value_delivered_rate": "معدل تسليم القيمة",
-    "value_section_title": "القيمة التجارية"
+    "value_section_title": "القيمة التجارية",
+    "prev_p50": "p50 السابق",
+    "prev_p95": "p95 السابق"
   },
   "analytics_dashboard": {
     "active_count": "{count} نشط",
@@ -1156,7 +1158,6 @@
     "curation_schedule_save": "حفظ الجدولة",
     "curation_schedule_title": "جدولة تنقيح الذكريات",
     "delete_all": "حذف الكل",
-    "delete_all_confirm_body": "سيحذف هذا الإجراء {count} ذكريات بشكل دائم. لا يمكن التراجع عن هذا.",
     "delete_all_confirm_cta": "حذف الكل",
     "delete_all_confirm_title": "حذف جميع الذكريات؟",
     "form": {
@@ -1182,7 +1183,8 @@
     "reflect_pick_persona": "تأمّل ذكريات وكيل",
     "reflecting": "جارٍ التأمّل…",
     "search_placeholder": "البحث في الذكريات…",
-    "title": "الذكريات"
+    "title": "الذكريات",
+    "delete_all_confirm_body_all_agents": "سيؤدي هذا إلى حذف جميع الذكريات البالغ عددها {count} نهائيًا عبر جميع الوكلاء، بغض النظر عن عامل التصفية الحالي. لا يمكن التراجع عن هذا الإجراء."
   },
   "memory_actions": {
     "dismiss_suggestion": "رفض الاقتراح",
@@ -1366,7 +1368,11 @@
   "popup_fields": {
     "ollama_domain": "ollama.com",
     "ollama_key_instructions": "، ثم انسخ مفتاح API من الإعدادات. يُخزَّن هذا المفتاح محلياً ويُشارَك بين جميع الوكلاء.",
-    "sign_up_free_at": "اشترك مجاناً على"
+    "sign_up_free_at": "اشترك مجاناً على",
+    "api_key_label": "مفتاح API",
+    "litellm_base_url_label": "عنوان URL الأساسي للوكيل",
+    "litellm_master_key_label": "المفتاح الرئيسي",
+    "ollama_key_placeholder": "الصق مفتاحك من ollama.com/settings"
   },
   "predictive_alerts_extra": {
     "all_nominal": "جميع الأنظمة طبيعية",
@@ -1887,7 +1893,9 @@
     "p95_latency": "التأخر P95",
     "runs": "التشغيلات",
     "streak": "السلسلة",
-    "successful": "ناجح"
+    "successful": "ناجح",
+    "daily_trend_hint_one": "{date}: {rate} ({count} تشغيل)",
+    "daily_trend_hint_other": "{date}: {rate} ({count} عمليات تشغيل)"
   },
   "sla": {
     "active_agents": "{count} وكيل نشط",

@@ -105,7 +105,10 @@
     "pending": "대기 중",
     "processed": "처리됨",
     "processing": "처리 중",
-    "retrying": "재시도 중"
+    "retrying": "재시도 중",
+    "dead_letter": "데드 레터",
+    "discarded": "폐기됨",
+    "skipped": "건너뜀"
   },
   "execution": {
     "cancelled": "취소됨",

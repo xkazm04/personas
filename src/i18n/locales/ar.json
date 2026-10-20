@@ -1446,7 +1446,8 @@
       "what_changed_tokens_fewer": "الأيمن ({side}) استخدم رموزًا أقل بنسبة {pct}%",
       "what_changed_tokens_more": "الأيمن ({side}) استخدم رموزًا أكثر بنسبة {pct}%",
       "what_changed_tool_calls": "استدعاءات الأدوات: {from} -> {to}",
-      "what_changed_tool_order": "ترتيب استدعاء الأدوات مختلف"
+      "what_changed_tool_order": "ترتيب استدعاء الأدوات مختلف",
+      "replay_capped": "يتم عرض أول {count} سطر من سجل هذا التشغيل. لا يُعاد عرض المخرجات الأطول."
     },
     "filters": {
       "add_to_favorites": "إضافة إلى المفضلة",
@@ -3287,7 +3288,32 @@
       "runs_manual": "يعمل عندما تبدؤه",
       "runs_next": "مشغّل {type}، التشغيل التالي {time}",
       "runs_on_event": "مشغّل {type}، يعمل عند إطلاقه"
-    }
+    },
+    "glyph_compose_event_from": "{description} (من {persona})",
+    "glyph_compose_memory_summary": "يتذكر التفضيلات بين عمليات التشغيل",
+    "glyph_compose_review_summary": "ينتظر موافقتك قبل النشر",
+    "glyph_day_long_fri": "الجمعة",
+    "glyph_day_long_mon": "الاثنين",
+    "glyph_day_long_sat": "السبت",
+    "glyph_day_long_sun": "الأحد",
+    "glyph_day_long_thu": "الخميس",
+    "glyph_day_long_tue": "الثلاثاء",
+    "glyph_day_long_wed": "الأربعاء",
+    "glyph_event_picker_done": "تم",
+    "glyph_event_picker_subscribe": "اشتراك في {count}",
+    "glyph_event_picker_subscriptions": "الاشتراكات",
+    "glyph_event_picker_subtitle_empty": "اختر شخصية وحدد الأحداث التي يجب أن يتفاعل معها هذا الوكيل",
+    "glyph_event_picker_subtitle_one": "{count} اشتراك جاهز",
+    "glyph_event_picker_subtitle_other": "{count} اشتراكات جاهزة",
+    "glyph_recipe_alt_connections": "الاتصالات التي تستخدمها هذه الوصفة",
+    "glyph_recipe_alt_dimensions": "أبعاد يمكنك ضبطها · {count}",
+    "glyph_recipe_alt_keep": "واصل الوصف",
+    "glyph_recipe_alt_load_failed": "تعذر تحميل هذه الوصفة.",
+    "glyph_recipe_alt_loading": "جارٍ تحميل الوصفة…",
+    "glyph_recipe_alt_path": "مسار أسرع · تطابق {pct}%",
+    "glyph_recipe_alt_use": "استخدم هذه الوصفة كنقطة بداية",
+    "glyph_sched_days_label": "الأيام",
+    "glyph_sched_time_label": "الوقت"
   },
   "alerts": {
     "error_clear_history": "فشل مسح سجل التنبيهات:",
@@ -6301,7 +6327,22 @@
     "soundings_where_it_sits": "أين يقع. المشاريع المرتبطة بخط عريض",
     "soundings_who_athena": "أثينا",
     "soundings_who_chart": "الرسم البياني",
-    "soundings_yes": "نعم"
+    "soundings_yes": "نعم",
+    "dim_label_agents": "الوكلاء",
+    "dim_label_auth": "المصادقة",
+    "dim_label_ci": "CI",
+    "dim_label_datalinks": "تحليل البيانات",
+    "dim_label_db": "قاعدة البيانات",
+    "dim_label_goals": "الأهداف",
+    "dim_label_hosting": "الاستضافة",
+    "dim_label_ideas": "الأفكار",
+    "dim_label_kpi": "KPI",
+    "dim_label_llm": "تكلفة LLM",
+    "dim_label_monitoring": "المراقبة",
+    "dim_label_security": "الأمان",
+    "dim_label_skills": "المهارات",
+    "dim_label_support": "الدعم",
+    "dim_label_tests": "الاختبارات"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "إضافة قدرة",
@@ -8843,7 +8884,9 @@
       "unknown": "غير معروف",
       "value_delivered_count": "القيمة المسلمة",
       "value_delivered_rate": "معدل تسليم القيمة",
-      "value_section_title": "القيمة التجارية"
+      "value_section_title": "القيمة التجارية",
+      "prev_p50": "p50 السابق",
+      "prev_p95": "p95 السابق"
     },
     "analytics_dashboard": {
       "active_count": "{count} نشط",
@@ -9936,7 +9979,6 @@
       "curation_schedule_save": "حفظ الجدولة",
       "curation_schedule_title": "جدولة تنقيح الذكريات",
       "delete_all": "حذف الكل",
-      "delete_all_confirm_body": "سيحذف هذا الإجراء {count} ذكريات بشكل دائم. لا يمكن التراجع عن هذا.",
       "delete_all_confirm_cta": "حذف الكل",
       "delete_all_confirm_title": "حذف جميع الذكريات؟",
       "form": {
@@ -9962,7 +10004,8 @@
       "reflect_pick_persona": "تأمّل ذكريات وكيل",
       "reflecting": "جارٍ التأمّل…",
       "search_placeholder": "البحث في الذكريات…",
-      "title": "الذكريات"
+      "title": "الذكريات",
+      "delete_all_confirm_body_all_agents": "سيؤدي هذا إلى حذف جميع الذكريات البالغ عددها {count} نهائيًا عبر جميع الوكلاء، بغض النظر عن عامل التصفية الحالي. لا يمكن التراجع عن هذا الإجراء."
     },
     "memory_actions": {
       "dismiss_suggestion": "رفض الاقتراح",
@@ -10146,7 +10189,11 @@
     "popup_fields": {
       "ollama_domain": "ollama.com",
       "ollama_key_instructions": "، ثم انسخ مفتاح API من الإعدادات. يُخزَّن هذا المفتاح محلياً ويُشارَك بين جميع الوكلاء.",
-      "sign_up_free_at": "اشترك مجاناً على"
+      "sign_up_free_at": "اشترك مجاناً على",
+      "api_key_label": "مفتاح API",
+      "litellm_base_url_label": "عنوان URL الأساسي للوكيل",
+      "litellm_master_key_label": "المفتاح الرئيسي",
+      "ollama_key_placeholder": "الصق مفتاحك من ollama.com/settings"
     },
     "predictive_alerts_extra": {
       "all_nominal": "جميع الأنظمة طبيعية",
@@ -10667,7 +10714,9 @@
       "p95_latency": "التأخر P95",
       "runs": "التشغيلات",
       "streak": "السلسلة",
-      "successful": "ناجح"
+      "successful": "ناجح",
+      "daily_trend_hint_one": "{date}: {rate} ({count} تشغيل)",
+      "daily_trend_hint_other": "{date}: {rate} ({count} عمليات تشغيل)"
     },
     "sla": {
       "active_agents": "{count} وكيل نشط",
@@ -19465,7 +19514,10 @@
       "pending": "معلّق",
       "processed": "تمت المعالجة",
       "processing": "جارٍ المعالجة",
-      "retrying": "إعادة المحاولة"
+      "retrying": "إعادة المحاولة",
+      "dead_letter": "رسالة ميتة",
+      "discarded": "مُهمَل",
+      "skipped": "تم تخطيه"
     },
     "execution": {
       "cancelled": "ملغى",

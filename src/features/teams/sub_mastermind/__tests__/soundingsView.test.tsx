@@ -75,7 +75,7 @@ describe('SoundingsView', () => {
     // Enter lifts the focused (most urgent) reading into the card.
     fireEvent.keyDown(window, { key: 'Enter' });
     await waitFor(() => expect(root().dataset.level).toBe('2'));
-    await waitFor(() => expect(document.getElementById('sd-card-title')?.textContent).toBe('L-db'));
+    await waitFor(() => expect(document.getElementById('sd-card-title')?.textContent).toBe('Database'));
 
     // The Improve door is the page's own handler.
     fireEvent.click(screen.getByTestId('sd-improve'));

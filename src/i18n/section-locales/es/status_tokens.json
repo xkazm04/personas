@@ -105,7 +105,10 @@
     "pending": "Pendiente",
     "processed": "Procesado",
     "processing": "Procesando",
-    "retrying": "Reintentando"
+    "retrying": "Reintentando",
+    "dead_letter": "Mensaje fallido",
+    "discarded": "Descartado",
+    "skipped": "Omitido"
   },
   "execution": {
     "cancelled": "Cancelado",

@@ -63,7 +63,9 @@
     "unknown": "Không rõ",
     "value_delivered_count": "Giá trị đạt được",
     "value_delivered_rate": "Tỷ lệ giá trị đạt được",
-    "value_section_title": "Giá trị kinh doanh"
+    "value_section_title": "Giá trị kinh doanh",
+    "prev_p50": "p50 trước",
+    "prev_p95": "p95 trước"
   },
   "analytics_dashboard": {
     "active_count": "{count} đang hoạt động",
@@ -1156,7 +1158,6 @@
     "curation_schedule_save": "Lưu lịch trình",
     "curation_schedule_title": "Lên lịch rà soát bộ nhớ",
     "delete_all": "Xóa tất cả",
-    "delete_all_confirm_body": "Thao tác này sẽ xóa vĩnh viễn tất cả {count} bộ nhớ. Không thể hoàn tác.",
     "delete_all_confirm_cta": "Xóa tất cả",
     "delete_all_confirm_title": "Xóa tất cả bộ nhớ?",
     "form": {
@@ -1182,7 +1183,8 @@
     "reflect_pick_persona": "Chiêm nghiệm ký ức của một agent",
     "reflecting": "Đang chiêm nghiệm…",
     "search_placeholder": "Tìm kiếm bộ nhớ…",
-    "title": "Bộ nhớ"
+    "title": "Bộ nhớ",
+    "delete_all_confirm_body_all_agents": "Thao tác này xóa vĩnh viễn toàn bộ {count} bộ nhớ của mọi agent, bất kể bộ lọc hiện tại hiển thị gì. Không thể hoàn tác."
   },
   "memory_actions": {
     "dismiss_suggestion": "Bỏ qua gợi ý",
@@ -1366,7 +1368,11 @@
   "popup_fields": {
     "ollama_domain": "ollama.com",
     "ollama_key_instructions": ", sau đó sao chép khóa API của bạn từ Cài đặt. Khóa này được lưu cục bộ và dùng chung cho mọi tác nhân.",
-    "sign_up_free_at": "Đăng ký miễn phí tại"
+    "sign_up_free_at": "Đăng ký miễn phí tại",
+    "api_key_label": "Khóa API",
+    "litellm_base_url_label": "URL gốc của proxy",
+    "litellm_master_key_label": "Khóa chính",
+    "ollama_key_placeholder": "Dán khóa của bạn từ ollama.com/settings"
   },
   "predictive_alerts_extra": {
     "all_nominal": "Tất cả hệ thống bình thường",
@@ -1887,7 +1893,9 @@
     "p95_latency": "Độ trễ P95",
     "runs": "Lượt chạy",
     "streak": "Chuỗi thành công",
-    "successful": "Thành công"
+    "successful": "Thành công",
+    "daily_trend_hint_one": "{date}: {rate} ({count} lần chạy)",
+    "daily_trend_hint_other": "{date}: {rate} ({count} lần chạy)"
   },
   "sla": {
     "active_agents": "{count} tác nhân hoạt động",

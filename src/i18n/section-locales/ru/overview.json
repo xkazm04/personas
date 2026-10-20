@@ -63,7 +63,9 @@
     "unknown": "Неизвестно",
     "value_delivered_count": "Доставлено ценности",
     "value_delivered_rate": "Доля реализованной ценности",
-    "value_section_title": "Бизнес-ценность"
+    "value_section_title": "Бизнес-ценность",
+    "prev_p50": "Пред. p50",
+    "prev_p95": "Пред. p95"
   },
   "analytics_dashboard": {
     "active_count": "Активно: {count}",
@@ -1156,7 +1158,6 @@
     "curation_schedule_save": "Сохранить расписание",
     "curation_schedule_title": "Расписание курирования памяти",
     "delete_all": "Удалить все",
-    "delete_all_confirm_body": "Это безвозвратно удалит все {count} воспоминаний. Отменить невозможно.",
     "delete_all_confirm_cta": "Удалить все",
     "delete_all_confirm_title": "Удалить все воспоминания?",
     "form": {
@@ -1182,7 +1183,8 @@
     "reflect_pick_persona": "Рефлексия воспоминаний агента",
     "reflecting": "Идёт рефлексия…",
     "search_placeholder": "Поиск воспоминаний…",
-    "title": "Воспоминания"
+    "title": "Воспоминания",
+    "delete_all_confirm_body_all_agents": "Все воспоминания ({count}) всех агентов будут удалены безвозвратно, независимо от текущего фильтра. Это действие нельзя отменить."
   },
   "memory_actions": {
     "dismiss_suggestion": "Отклонить предложение",
@@ -1366,7 +1368,11 @@
   "popup_fields": {
     "ollama_domain": "ollama.com",
     "ollama_key_instructions": ", затем скопируйте API-ключ из Настроек. Ключ хранится локально и используется всеми агентами.",
-    "sign_up_free_at": "Бесплатная регистрация на"
+    "sign_up_free_at": "Бесплатная регистрация на",
+    "api_key_label": "Ключ API",
+    "litellm_base_url_label": "Базовый URL прокси",
+    "litellm_master_key_label": "Мастер-ключ",
+    "ollama_key_placeholder": "Вставьте ключ со страницы ollama.com/settings"
   },
   "predictive_alerts_extra": {
     "all_nominal": "Все системы в норме",
@@ -1887,7 +1893,9 @@
     "p95_latency": "P95-задержка",
     "runs": "Запуски",
     "streak": "Серия",
-    "successful": "Успешно"
+    "successful": "Успешно",
+    "daily_trend_hint_one": "{date}: {rate} ({count} запуск)",
+    "daily_trend_hint_other": "{date}: {rate} ({count} запусков)"
   },
   "sla": {
     "active_agents": "{count} активных агентов",

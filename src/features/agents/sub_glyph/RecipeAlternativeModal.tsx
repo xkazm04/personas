@@ -9,6 +9,7 @@
  *  starts from that proven shape instead of from scratch.
  */
 import { useEffect, useState } from "react";
+import { useTranslation } from "@/i18n/useTranslation";
 import { Sparkles, Cpu, ArrowRight } from "lucide-react";
 import { getRecipe } from "@/api/recipes/recipes";
 import { silentCatch } from "@/lib/silentCatch";
@@ -85,6 +86,8 @@ interface Props {
 export function RecipeAlternativeModal({ recipeId, recipeName, matchScore, onClose, onSelect }: Props) {
   const [recipe, setRecipe] = useState<RecipeDefinition | null>(null);
   const [error, setError] = useState(false);
+  const { t, tx } = useTranslation();
+  const ga = t.agents;
   const pct = Math.round(matchScore * 100);
 
   useEffect(() => {
@@ -118,23 +121,23 @@ export function RecipeAlternativeModal({ recipeId, recipeName, matchScore, onClo
             {isEmoji(recipe?.icon ?? null) ? recipe!.icon : <Sparkles className="w-5 h-5" style={{ color: sigilColor }} />}
           </span>
           <div className="flex flex-col gap-0.5 min-w-0">
-            <span className="typo-label" style={{ color: ACCENT }}>Faster path · {pct}% match</span>
+            <span className="typo-label" style={{ color: ACCENT }}>{tx(ga.glyph_recipe_alt_path, { pct })}</span>
             <h2 id="recipe-alternative-modal" className="typo-title-lg truncate">{recipe?.name ?? recipeName}</h2>
             {recipe?.category && <span className="typo-caption">{recipe.category}</span>}
           </div>
         </div>
 
         {error ? (
-          <div className="py-8 text-center typo-body text-foreground">Couldn't load this recipe.</div>
+          <div className="py-8 text-center typo-body text-foreground">{ga.glyph_recipe_alt_load_failed}</div>
         ) : !recipe ? (
-          <div className="py-10 flex justify-center"><LoadingSpinner label="Loading recipe…" /></div>
+          <div className="py-10 flex justify-center"><LoadingSpinner label={ga.glyph_recipe_alt_loading} /></div>
         ) : (
           <>
             {recipe.description && <p className="typo-body text-foreground">{recipe.description}</p>}
 
             {connectors.length > 0 && (
               <div className="flex flex-col gap-1.5">
-                <span className="typo-label text-foreground">Connections this recipe uses</span>
+                <span className="typo-label text-foreground">{ga.glyph_recipe_alt_connections}</span>
                 <div className="flex flex-wrap gap-1.5">
                   {connectors.map((name) => {
                     const meta = getConnectorMeta(name);
@@ -162,7 +165,7 @@ export function RecipeAlternativeModal({ recipeId, recipeName, matchScore, onClo
 
             {dimensions.length > 0 && (
               <div className="flex flex-col gap-1.5">
-                <span className="typo-label text-foreground">Dimensions you can tune · {dimensions.length}</span>
+                <span className="typo-label text-foreground">{tx(ga.glyph_recipe_alt_dimensions, { count: dimensions.length })}</span>
                 <div className="flex flex-wrap gap-1.5">
                   {dimensions.map((d) => (
                     <span key={d} className="typo-caption px-2.5 py-1 rounded-full border capitalize" style={{ borderColor: colorWithAlpha(sigilColor, 0.3), background: colorWithAlpha(sigilColor, 0.08), color: "var(--color-foreground)" }}>{d}</span>
@@ -173,7 +176,7 @@ export function RecipeAlternativeModal({ recipeId, recipeName, matchScore, onClo
 
             {/* footer */}
             <div className="flex items-center justify-end gap-2 pt-1">
-              <Button variant="ghost" size="sm" onClick={onClose}>Keep describing</Button>
+              <Button variant="ghost" size="sm" onClick={onClose}>{ga.glyph_recipe_alt_keep}</Button>
               <Button
                 variant="primary"
                 size="sm"
@@ -181,7 +184,7 @@ export function RecipeAlternativeModal({ recipeId, recipeName, matchScore, onClo
                 onClick={() => { onSelect(recipe); onClose(); }}
                 data-testid="recipe-alternative-select"
               >
-                Use this recipe as the starting point
+                {ga.glyph_recipe_alt_use}
               </Button>
             </div>
           </>

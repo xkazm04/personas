@@ -12,6 +12,11 @@ describe('eventStatusOptions', () => {
     expect(values).toContain('delivered');
   });
 
+  it('offers the dead-letter and discarded states the backend writes', () => {
+    expect(values).toContain('dead_letter');
+    expect(values).toContain('discarded');
+  });
+
   it('offers no status the backend never writes', () => {
     expect(values).not.toContain('processed');
   });

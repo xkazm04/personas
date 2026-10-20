@@ -63,7 +63,9 @@
     "unknown": "Desconocido",
     "value_delivered_count": "Valor entregado",
     "value_delivered_rate": "Tasa de valor entregado",
-    "value_section_title": "Valor de negocio"
+    "value_section_title": "Valor de negocio",
+    "prev_p50": "p50 anterior",
+    "prev_p95": "p95 anterior"
   },
   "analytics_dashboard": {
     "active_count": "{count} activas",
@@ -1156,7 +1158,6 @@
     "curation_schedule_save": "Guardar programación",
     "curation_schedule_title": "Programar curación de memorias",
     "delete_all": "Eliminar todo",
-    "delete_all_confirm_body": "Esto elimina permanentemente las {count} memorias. Esta acción no se puede deshacer.",
     "delete_all_confirm_cta": "Eliminar todo",
     "delete_all_confirm_title": "¿Eliminar todas las memorias?",
     "form": {
@@ -1182,7 +1183,8 @@
     "reflect_pick_persona": "Reflexionar sobre los recuerdos de un agente",
     "reflecting": "Reflexionando…",
     "search_placeholder": "Buscar memorias…",
-    "title": "Memorias"
+    "title": "Memorias",
+    "delete_all_confirm_body_all_agents": "Esto elimina de forma permanente las {count} memorias de todos los agentes, sea cual sea el filtro actual. No se puede deshacer."
   },
   "memory_actions": {
     "dismiss_suggestion": "Descartar sugerencia",
@@ -1366,7 +1368,11 @@
   "popup_fields": {
     "ollama_domain": "ollama.com",
     "ollama_key_instructions": ", luego copie su clave API desde Configuración. Esta clave se almacena localmente y se comparte entre todos los agentes.",
-    "sign_up_free_at": "Regístrate gratis en"
+    "sign_up_free_at": "Regístrate gratis en",
+    "api_key_label": "Clave de API",
+    "litellm_base_url_label": "URL base del proxy",
+    "litellm_master_key_label": "Clave maestra",
+    "ollama_key_placeholder": "Pega tu clave de ollama.com/settings"
   },
   "predictive_alerts_extra": {
     "all_nominal": "Todos los sistemas nominales",
@@ -1887,7 +1893,9 @@
     "p95_latency": "Latencia P95",
     "runs": "Ejecuciones",
     "streak": "Racha",
-    "successful": "Exitoso"
+    "successful": "Exitoso",
+    "daily_trend_hint_one": "{date}: {rate} ({count} ejecución)",
+    "daily_trend_hint_other": "{date}: {rate} ({count} ejecuciones)"
   },
   "sla": {
     "active_agents": "{count} agentes activos",

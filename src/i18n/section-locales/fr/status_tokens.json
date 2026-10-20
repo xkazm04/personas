@@ -105,7 +105,10 @@
     "pending": "En attente",
     "processed": "Traité",
     "processing": "En traitement",
-    "retrying": "Nouvelle tentative"
+    "retrying": "Nouvelle tentative",
+    "dead_letter": "Lettre morte",
+    "discarded": "Ignoré",
+    "skipped": "Passé"
   },
   "execution": {
     "cancelled": "Annulé",

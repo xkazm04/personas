@@ -105,7 +105,10 @@
     "pending": "Čeká",
     "processed": "Zpracováno",
     "processing": "Zpracování",
-    "retrying": "Opakování"
+    "retrying": "Opakování",
+    "dead_letter": "Nedoručená zpráva",
+    "discarded": "Zahozeno",
+    "skipped": "Přeskočeno"
   },
   "execution": {
     "cancelled": "Zrušeno",

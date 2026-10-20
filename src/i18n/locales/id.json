@@ -1446,7 +1446,8 @@
       "what_changed_tokens_fewer": "Kanan ({side}) memakai {pct}% lebih sedikit token",
       "what_changed_tokens_more": "Kanan ({side}) memakai {pct}% lebih banyak token",
       "what_changed_tool_calls": "Panggilan alat: {from} -> {to}",
-      "what_changed_tool_order": "Urutan panggilan alat berbeda"
+      "what_changed_tool_order": "Urutan panggilan alat berbeda",
+      "replay_capped": "Menampilkan {count} baris pertama log eksekusi ini. Output yang lebih panjang tidak diputar ulang."
     },
     "filters": {
       "add_to_favorites": "Tambah ke favorit",
@@ -3287,7 +3288,32 @@
       "runs_manual": "Berjalan saat Anda memulainya",
       "runs_next": "Pemicu {type}, jalankan berikutnya {time}",
       "runs_on_event": "Pemicu {type}, berjalan saat terpicu"
-    }
+    },
+    "glyph_compose_event_from": "{description} (dari {persona})",
+    "glyph_compose_memory_summary": "Mengingat preferensi antar eksekusi",
+    "glyph_compose_review_summary": "Menunggu persetujuan Anda sebelum dipublikasikan",
+    "glyph_day_long_fri": "Jumat",
+    "glyph_day_long_mon": "Senin",
+    "glyph_day_long_sat": "Sabtu",
+    "glyph_day_long_sun": "Minggu",
+    "glyph_day_long_thu": "Kamis",
+    "glyph_day_long_tue": "Selasa",
+    "glyph_day_long_wed": "Rabu",
+    "glyph_event_picker_done": "Selesai",
+    "glyph_event_picker_subscribe": "Berlangganan {count}",
+    "glyph_event_picker_subscriptions": "Langganan",
+    "glyph_event_picker_subtitle_empty": "Pilih persona dan tentukan event yang harus direspons agen ini",
+    "glyph_event_picker_subtitle_one": "{count} langganan siap",
+    "glyph_event_picker_subtitle_other": "{count} langganan siap",
+    "glyph_recipe_alt_connections": "Koneksi yang digunakan resep ini",
+    "glyph_recipe_alt_dimensions": "Dimensi yang dapat disetel · {count}",
+    "glyph_recipe_alt_keep": "Lanjutkan mendeskripsikan",
+    "glyph_recipe_alt_load_failed": "Tidak dapat memuat resep ini.",
+    "glyph_recipe_alt_loading": "Memuat resep…",
+    "glyph_recipe_alt_path": "Jalur lebih cepat · kecocokan {pct}%",
+    "glyph_recipe_alt_use": "Gunakan resep ini sebagai titik awal",
+    "glyph_sched_days_label": "Hari",
+    "glyph_sched_time_label": "Waktu"
   },
   "alerts": {
     "error_clear_history": "Gagal menghapus riwayat peringatan:",
@@ -6301,7 +6327,22 @@
     "soundings_where_it_sits": "Di mana letaknya. Proyek terkait ditebalkan",
     "soundings_who_athena": "Athena",
     "soundings_who_chart": "Grafik",
-    "soundings_yes": "ya"
+    "soundings_yes": "ya",
+    "dim_label_agents": "Agen",
+    "dim_label_auth": "Autentikasi",
+    "dim_label_ci": "CI",
+    "dim_label_datalinks": "Analisis data",
+    "dim_label_db": "Basis data",
+    "dim_label_goals": "Tujuan",
+    "dim_label_hosting": "Hosting",
+    "dim_label_ideas": "Ide",
+    "dim_label_kpi": "KPI",
+    "dim_label_llm": "Biaya LLM",
+    "dim_label_monitoring": "Pemantauan",
+    "dim_label_security": "Keamanan",
+    "dim_label_skills": "Skill",
+    "dim_label_support": "Dukungan",
+    "dim_label_tests": "Tes"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "Tambah kemampuan",
@@ -8843,7 +8884,9 @@
       "unknown": "Tidak diketahui",
       "value_delivered_count": "Nilai tersampaikan",
       "value_delivered_rate": "Tingkat nilai tersampaikan",
-      "value_section_title": "Nilai bisnis"
+      "value_section_title": "Nilai bisnis",
+      "prev_p50": "p50 sebelumnya",
+      "prev_p95": "p95 sebelumnya"
     },
     "analytics_dashboard": {
       "active_count": "{count} aktif",
@@ -9936,7 +9979,6 @@
       "curation_schedule_save": "Simpan jadwal",
       "curation_schedule_title": "Jadwalkan kurasi memori",
       "delete_all": "Hapus semua",
-      "delete_all_confirm_body": "Ini akan menghapus semua {count} memori secara permanen. Tindakan ini tidak dapat dibatalkan.",
       "delete_all_confirm_cta": "Hapus semua",
       "delete_all_confirm_title": "Hapus semua memori?",
       "form": {
@@ -9962,7 +10004,8 @@
       "reflect_pick_persona": "Refleksikan memori sebuah agen",
       "reflecting": "Sedang merefleksi…",
       "search_placeholder": "Cari memori…",
-      "title": "Memori"
+      "title": "Memori",
+      "delete_all_confirm_body_all_agents": "Ini akan menghapus permanen seluruh {count} memori dari semua agen, apa pun yang ditampilkan filter saat ini. Tindakan ini tidak dapat dibatalkan."
     },
     "memory_actions": {
       "dismiss_suggestion": "Abaikan saran",
@@ -10146,7 +10189,11 @@
     "popup_fields": {
       "ollama_domain": "ollama.com",
       "ollama_key_instructions": ", lalu salin kunci API Anda dari Pengaturan. Kunci ini disimpan secara lokal dan dibagikan ke semua agen.",
-      "sign_up_free_at": "Daftar gratis di"
+      "sign_up_free_at": "Daftar gratis di",
+      "api_key_label": "Kunci API",
+      "litellm_base_url_label": "URL Dasar Proxy",
+      "litellm_master_key_label": "Kunci Master",
+      "ollama_key_placeholder": "Tempel kunci Anda dari ollama.com/settings"
     },
     "predictive_alerts_extra": {
       "all_nominal": "Semua sistem nominal",
@@ -10667,7 +10714,9 @@
       "p95_latency": "Latensi P95",
       "runs": "Proses",
       "streak": "Beruntun",
-      "successful": "Berhasil"
+      "successful": "Berhasil",
+      "daily_trend_hint_one": "{date}: {rate} ({count} eksekusi)",
+      "daily_trend_hint_other": "{date}: {rate} ({count} eksekusi)"
     },
     "sla": {
       "active_agents": "{count} agen aktif",
@@ -19465,7 +19514,10 @@
       "pending": "Tertunda",
       "processed": "Diproses",
       "processing": "Memproses",
-      "retrying": "Mencoba ulang"
+      "retrying": "Mencoba ulang",
+      "dead_letter": "Dead letter",
+      "discarded": "Dibuang",
+      "skipped": "Dilewati"
     },
     "execution": {
       "cancelled": "Dibatalkan",

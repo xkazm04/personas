@@ -1446,7 +1446,8 @@
       "what_changed_tokens_fewer": "Правый ({side}) использовал на {pct}% меньше токенов",
       "what_changed_tokens_more": "Правый ({side}) использовал на {pct}% больше токенов",
       "what_changed_tool_calls": "Вызовы инструментов: {from} -> {to}",
-      "what_changed_tool_order": "Другой порядок вызова инструментов"
+      "what_changed_tool_order": "Другой порядок вызова инструментов",
+      "replay_capped": "Показаны первые {count} строк журнала этого запуска. Более длинный вывод не воспроизводится."
     },
     "filters": {
       "add_to_favorites": "Добавить в избранное",
@@ -3287,7 +3288,32 @@
       "runs_manual": "Запускается, когда вы его запускаете",
       "runs_next": "Триггер {type}, следующий запуск {time}",
       "runs_on_event": "Триггер {type}, срабатывает при событии"
-    }
+    },
+    "glyph_compose_event_from": "{description} (от {persona})",
+    "glyph_compose_memory_summary": "Помнит предпочтения между запусками",
+    "glyph_compose_review_summary": "Ждёт вашего одобрения перед публикацией",
+    "glyph_day_long_fri": "Пятница",
+    "glyph_day_long_mon": "Понедельник",
+    "glyph_day_long_sat": "Суббота",
+    "glyph_day_long_sun": "Воскресенье",
+    "glyph_day_long_thu": "Четверг",
+    "glyph_day_long_tue": "Вторник",
+    "glyph_day_long_wed": "Среда",
+    "glyph_event_picker_done": "Готово",
+    "glyph_event_picker_subscribe": "Подписаться: {count}",
+    "glyph_event_picker_subscriptions": "Подписки",
+    "glyph_event_picker_subtitle_empty": "Выберите персону и события, на которые должен реагировать этот агент",
+    "glyph_event_picker_subtitle_one": "Подписка готова: {count}",
+    "glyph_event_picker_subtitle_other": "Подписок готово: {count}",
+    "glyph_recipe_alt_connections": "Подключения, которые использует этот рецепт",
+    "glyph_recipe_alt_dimensions": "Параметры настройки · {count}",
+    "glyph_recipe_alt_keep": "Продолжить описание",
+    "glyph_recipe_alt_load_failed": "Не удалось загрузить этот рецепт.",
+    "glyph_recipe_alt_loading": "Загрузка рецепта…",
+    "glyph_recipe_alt_path": "Путь быстрее · совпадение {pct}%",
+    "glyph_recipe_alt_use": "Использовать этот рецепт как отправную точку",
+    "glyph_sched_days_label": "Дни",
+    "glyph_sched_time_label": "Время"
   },
   "alerts": {
     "error_clear_history": "Не удалось очистить историю оповещений:",
@@ -6301,7 +6327,22 @@
     "soundings_where_it_sits": "Где это находится. Связанные проекты выделены жирным",
     "soundings_who_athena": "Афина",
     "soundings_who_chart": "Карта",
-    "soundings_yes": "да"
+    "soundings_yes": "да",
+    "dim_label_agents": "Агенты",
+    "dim_label_auth": "Авторизация",
+    "dim_label_ci": "CI",
+    "dim_label_datalinks": "Анализ данных",
+    "dim_label_db": "База данных",
+    "dim_label_goals": "Цели",
+    "dim_label_hosting": "Хостинг",
+    "dim_label_ideas": "Идеи",
+    "dim_label_kpi": "KPI",
+    "dim_label_llm": "Стоимость LLM",
+    "dim_label_monitoring": "Мониторинг",
+    "dim_label_security": "Безопасность",
+    "dim_label_skills": "Навыки",
+    "dim_label_support": "Поддержка",
+    "dim_label_tests": "Тесты"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "Добавить возможность",
@@ -8843,7 +8884,9 @@
       "unknown": "Неизвестно",
       "value_delivered_count": "Доставлено ценности",
       "value_delivered_rate": "Доля реализованной ценности",
-      "value_section_title": "Бизнес-ценность"
+      "value_section_title": "Бизнес-ценность",
+      "prev_p50": "Пред. p50",
+      "prev_p95": "Пред. p95"
     },
     "analytics_dashboard": {
       "active_count": "Активно: {count}",
@@ -9936,7 +9979,6 @@
       "curation_schedule_save": "Сохранить расписание",
       "curation_schedule_title": "Расписание курирования памяти",
       "delete_all": "Удалить все",
-      "delete_all_confirm_body": "Это безвозвратно удалит все {count} воспоминаний. Отменить невозможно.",
       "delete_all_confirm_cta": "Удалить все",
       "delete_all_confirm_title": "Удалить все воспоминания?",
       "form": {
@@ -9962,7 +10004,8 @@
       "reflect_pick_persona": "Рефлексия воспоминаний агента",
       "reflecting": "Идёт рефлексия…",
       "search_placeholder": "Поиск воспоминаний…",
-      "title": "Воспоминания"
+      "title": "Воспоминания",
+      "delete_all_confirm_body_all_agents": "Все воспоминания ({count}) всех агентов будут удалены безвозвратно, независимо от текущего фильтра. Это действие нельзя отменить."
     },
     "memory_actions": {
       "dismiss_suggestion": "Отклонить предложение",
@@ -10146,7 +10189,11 @@
     "popup_fields": {
       "ollama_domain": "ollama.com",
       "ollama_key_instructions": ", затем скопируйте API-ключ из Настроек. Ключ хранится локально и используется всеми агентами.",
-      "sign_up_free_at": "Бесплатная регистрация на"
+      "sign_up_free_at": "Бесплатная регистрация на",
+      "api_key_label": "Ключ API",
+      "litellm_base_url_label": "Базовый URL прокси",
+      "litellm_master_key_label": "Мастер-ключ",
+      "ollama_key_placeholder": "Вставьте ключ со страницы ollama.com/settings"
     },
     "predictive_alerts_extra": {
       "all_nominal": "Все системы в норме",
@@ -10667,7 +10714,9 @@
       "p95_latency": "P95-задержка",
       "runs": "Запуски",
       "streak": "Серия",
-      "successful": "Успешно"
+      "successful": "Успешно",
+      "daily_trend_hint_one": "{date}: {rate} ({count} запуск)",
+      "daily_trend_hint_other": "{date}: {rate} ({count} запусков)"
     },
     "sla": {
       "active_agents": "{count} активных агентов",
@@ -19465,7 +19514,10 @@
       "pending": "Ожидание",
       "processed": "Обработано",
       "processing": "Обработка",
-      "retrying": "Повтор"
+      "retrying": "Повтор",
+      "dead_letter": "Недоставленное",
+      "discarded": "Отброшено",
+      "skipped": "Пропущено"
     },
     "execution": {
       "cancelled": "Отменено",

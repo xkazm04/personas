@@ -1446,7 +1446,8 @@
       "what_changed_tokens_fewer": "右 ({side}) のトークン使用量が {pct}% 減少",
       "what_changed_tokens_more": "右 ({side}) のトークン使用量が {pct}% 増加",
       "what_changed_tool_calls": "ツール呼び出し: {from} -> {to}",
-      "what_changed_tool_order": "ツール呼び出しの順序が異なります"
+      "what_changed_tool_order": "ツール呼び出しの順序が異なります",
+      "replay_capped": "この実行ログの最初の {count} 行を表示しています。それ以降の出力は再生されません。"
     },
     "filters": {
       "add_to_favorites": "お気に入りに追加",
@@ -3287,7 +3288,32 @@
       "runs_manual": "開始したときに実行",
       "runs_next": "{type} トリガー、次回実行 {time}",
       "runs_on_event": "{type} トリガー、発火時に実行"
-    }
+    },
+    "glyph_compose_event_from": "{description}（{persona} より）",
+    "glyph_compose_memory_summary": "実行間で好みを記憶します",
+    "glyph_compose_review_summary": "公開前にあなたの承認を待ちます",
+    "glyph_day_long_fri": "金曜日",
+    "glyph_day_long_mon": "月曜日",
+    "glyph_day_long_sat": "土曜日",
+    "glyph_day_long_sun": "日曜日",
+    "glyph_day_long_thu": "木曜日",
+    "glyph_day_long_tue": "火曜日",
+    "glyph_day_long_wed": "水曜日",
+    "glyph_event_picker_done": "完了",
+    "glyph_event_picker_subscribe": "{count} 件を購読",
+    "glyph_event_picker_subscriptions": "購読",
+    "glyph_event_picker_subtitle_empty": "ペルソナを選び、このエージェントが反応するイベントを選択してください",
+    "glyph_event_picker_subtitle_one": "{count} 件の購読の準備ができました",
+    "glyph_event_picker_subtitle_other": "{count} 件の購読の準備ができました",
+    "glyph_recipe_alt_connections": "このレシピが使う接続",
+    "glyph_recipe_alt_dimensions": "調整できる項目 · {count}",
+    "glyph_recipe_alt_keep": "説明を続ける",
+    "glyph_recipe_alt_load_failed": "このレシピを読み込めませんでした。",
+    "glyph_recipe_alt_loading": "レシピを読み込み中…",
+    "glyph_recipe_alt_path": "より速い方法 · {pct}% 一致",
+    "glyph_recipe_alt_use": "このレシピを出発点にする",
+    "glyph_sched_days_label": "曜日",
+    "glyph_sched_time_label": "時刻"
   },
   "alerts": {
     "error_clear_history": "アラート履歴のクリアに失敗しました:",
@@ -6301,7 +6327,22 @@
     "soundings_where_it_sits": "位置。関連プロジェクトは太字",
     "soundings_who_athena": "Athena",
     "soundings_who_chart": "チャート",
-    "soundings_yes": "はい"
+    "soundings_yes": "はい",
+    "dim_label_agents": "エージェント",
+    "dim_label_auth": "認証",
+    "dim_label_ci": "CI",
+    "dim_label_datalinks": "データ分析",
+    "dim_label_db": "データベース",
+    "dim_label_goals": "目標",
+    "dim_label_hosting": "ホスティング",
+    "dim_label_ideas": "アイデア",
+    "dim_label_kpi": "KPI",
+    "dim_label_llm": "LLM コスト",
+    "dim_label_monitoring": "モニタリング",
+    "dim_label_security": "セキュリティ",
+    "dim_label_skills": "スキル",
+    "dim_label_support": "サポート",
+    "dim_label_tests": "テスト"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "機能を追加",
@@ -8843,7 +8884,9 @@
       "unknown": "不明",
       "value_delivered_count": "価値提供数",
       "value_delivered_rate": "価値提供率",
-      "value_section_title": "ビジネス価値"
+      "value_section_title": "ビジネス価値",
+      "prev_p50": "前回 p50",
+      "prev_p95": "前回 p95"
     },
     "analytics_dashboard": {
       "active_count": "{count}件アクティブ",
@@ -9936,7 +9979,6 @@
       "curation_schedule_save": "スケジュールを保存",
       "curation_schedule_title": "メモリーキュレーションのスケジュール設定",
       "delete_all": "すべて削除",
-      "delete_all_confirm_body": "すべての{count}件の記憶が完全に削除されます。この操作は取り消せません。",
       "delete_all_confirm_cta": "すべて削除",
       "delete_all_confirm_title": "すべての記憶を削除しますか？",
       "form": {
@@ -9962,7 +10004,8 @@
       "reflect_pick_persona": "エージェントのメモリをリフレクション",
       "reflecting": "リフレクション中…",
       "search_placeholder": "メモリーを検索…",
-      "title": "メモリ"
+      "title": "メモリ",
+      "delete_all_confirm_body_all_agents": "現在のフィルターの表示に関係なく、すべてのエージェントの {count} 件のメモリをすべて完全に削除します。この操作は元に戻せません。"
     },
     "memory_actions": {
       "dismiss_suggestion": "提案を却下",
@@ -10146,7 +10189,11 @@
     "popup_fields": {
       "ollama_domain": "ollama.com",
       "ollama_key_instructions": "、設定からAPIキーをコピーしてください。このキーはローカルに保存され、すべてのエージェントで共有されます。",
-      "sign_up_free_at": "無料で登録"
+      "sign_up_free_at": "無料で登録",
+      "api_key_label": "API キー",
+      "litellm_base_url_label": "プロキシのベース URL",
+      "litellm_master_key_label": "マスターキー",
+      "ollama_key_placeholder": "ollama.com/settings のキーを貼り付け"
     },
     "predictive_alerts_extra": {
       "all_nominal": "すべて正常",
@@ -10667,7 +10714,9 @@
       "p95_latency": "P95レイテンシ",
       "runs": "実行",
       "streak": "連続成功",
-      "successful": "成功"
+      "successful": "成功",
+      "daily_trend_hint_one": "{date}: {rate}（{count} 回の実行）",
+      "daily_trend_hint_other": "{date}: {rate}（{count} 回の実行）"
     },
     "sla": {
       "active_agents": "{count}件の有効なエージェント",
@@ -19465,7 +19514,10 @@
       "pending": "保留中",
       "processed": "処理済み",
       "processing": "処理中",
-      "retrying": "再試行中"
+      "retrying": "再試行中",
+      "dead_letter": "デッドレター",
+      "discarded": "破棄済み",
+      "skipped": "スキップ済み"
     },
     "execution": {
       "cancelled": "キャンセル済み",

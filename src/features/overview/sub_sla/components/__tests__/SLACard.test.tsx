@@ -53,6 +53,11 @@ describe('DailyTrendChart bar geometry', () => {
     expect(parseFloat(full.style.height)).toBe(96);
   });
 
+  it('hints each bar through the Tooltip primitive, not a native title', () => {
+    const { container } = render(<DailyTrendChart points={points} />);
+    expect(container.querySelector('[title]')).toBeNull();
+  });
+
   it('clamps an out-of-range rate instead of overflowing the plot', () => {
     render(<DailyTrendChart points={[{ date: '2026-10-01', success_rate: 1.4, total: 4 }]} />);
     expect(parseFloat(screen.getByTestId('sla-trend-bar').style.height)).toBe(96);

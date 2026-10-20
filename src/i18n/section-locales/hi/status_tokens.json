@@ -105,7 +105,10 @@
     "pending": "लंबित",
     "processed": "प्रसंस्कृत",
     "processing": "प्रक्रियाधीन",
-    "retrying": "पुनः प्रयास"
+    "retrying": "पुनः प्रयास",
+    "dead_letter": "डेड लेटर",
+    "discarded": "त्यागा गया",
+    "skipped": "छोड़ा गया"
   },
   "execution": {
     "cancelled": "रद्द",

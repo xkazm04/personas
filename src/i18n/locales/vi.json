@@ -1446,7 +1446,8 @@
       "what_changed_tokens_fewer": "Bên phải ({side}) dùng ít token hơn {pct}%",
       "what_changed_tokens_more": "Bên phải ({side}) dùng nhiều token hơn {pct}%",
       "what_changed_tool_calls": "Lệnh gọi công cụ: {from} -> {to}",
-      "what_changed_tool_order": "Thứ tự gọi công cụ khác nhau"
+      "what_changed_tool_order": "Thứ tự gọi công cụ khác nhau",
+      "replay_capped": "Đang hiển thị {count} dòng đầu tiên của nhật ký lần chạy này. Phần đầu ra dài hơn sẽ không được phát lại."
     },
     "filters": {
       "add_to_favorites": "Thêm vào yêu thích",
@@ -3287,7 +3288,32 @@
       "runs_manual": "Chạy khi bạn bắt đầu",
       "runs_next": "Trình kích hoạt {type}, lần chạy tiếp theo {time}",
       "runs_on_event": "Trình kích hoạt {type}, chạy khi được kích hoạt"
-    }
+    },
+    "glyph_compose_event_from": "{description} (từ {persona})",
+    "glyph_compose_memory_summary": "Ghi nhớ tùy chọn giữa các lần chạy",
+    "glyph_compose_review_summary": "Chờ bạn phê duyệt trước khi xuất bản",
+    "glyph_day_long_fri": "Thứ Sáu",
+    "glyph_day_long_mon": "Thứ Hai",
+    "glyph_day_long_sat": "Thứ Bảy",
+    "glyph_day_long_sun": "Chủ Nhật",
+    "glyph_day_long_thu": "Thứ Năm",
+    "glyph_day_long_tue": "Thứ Ba",
+    "glyph_day_long_wed": "Thứ Tư",
+    "glyph_event_picker_done": "Xong",
+    "glyph_event_picker_subscribe": "Đăng ký {count}",
+    "glyph_event_picker_subscriptions": "Đăng ký",
+    "glyph_event_picker_subtitle_empty": "Chọn một persona và chọn các sự kiện mà agent này sẽ phản ứng",
+    "glyph_event_picker_subtitle_one": "{count} đăng ký sẵn sàng",
+    "glyph_event_picker_subtitle_other": "{count} đăng ký sẵn sàng",
+    "glyph_recipe_alt_connections": "Các kết nối mà công thức này sử dụng",
+    "glyph_recipe_alt_dimensions": "Các chiều có thể tinh chỉnh · {count}",
+    "glyph_recipe_alt_keep": "Tiếp tục mô tả",
+    "glyph_recipe_alt_load_failed": "Không thể tải công thức này.",
+    "glyph_recipe_alt_loading": "Đang tải công thức…",
+    "glyph_recipe_alt_path": "Lối nhanh hơn · khớp {pct}%",
+    "glyph_recipe_alt_use": "Dùng công thức này làm điểm xuất phát",
+    "glyph_sched_days_label": "Ngày",
+    "glyph_sched_time_label": "Giờ"
   },
   "alerts": {
     "error_clear_history": "Xóa lịch sử cảnh báo thất bại:",
@@ -6301,7 +6327,22 @@
     "soundings_where_it_sits": "Vị trí của nó. Các dự án liên quan được in đậm",
     "soundings_who_athena": "Athena",
     "soundings_who_chart": "Biểu đồ",
-    "soundings_yes": "có"
+    "soundings_yes": "có",
+    "dim_label_agents": "Agent",
+    "dim_label_auth": "Xác thực",
+    "dim_label_ci": "CI",
+    "dim_label_datalinks": "Phân tích dữ liệu",
+    "dim_label_db": "Cơ sở dữ liệu",
+    "dim_label_goals": "Mục tiêu",
+    "dim_label_hosting": "Lưu trữ",
+    "dim_label_ideas": "Ý tưởng",
+    "dim_label_kpi": "KPI",
+    "dim_label_llm": "Chi phí LLM",
+    "dim_label_monitoring": "Giám sát",
+    "dim_label_security": "Bảo mật",
+    "dim_label_skills": "Kỹ năng",
+    "dim_label_support": "Hỗ trợ",
+    "dim_label_tests": "Kiểm thử"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "Thêm năng lực",
@@ -8843,7 +8884,9 @@
       "unknown": "Không rõ",
       "value_delivered_count": "Giá trị đạt được",
       "value_delivered_rate": "Tỷ lệ giá trị đạt được",
-      "value_section_title": "Giá trị kinh doanh"
+      "value_section_title": "Giá trị kinh doanh",
+      "prev_p50": "p50 trước",
+      "prev_p95": "p95 trước"
     },
     "analytics_dashboard": {
       "active_count": "{count} đang hoạt động",
@@ -9936,7 +9979,6 @@
       "curation_schedule_save": "Lưu lịch trình",
       "curation_schedule_title": "Lên lịch rà soát bộ nhớ",
       "delete_all": "Xóa tất cả",
-      "delete_all_confirm_body": "Thao tác này sẽ xóa vĩnh viễn tất cả {count} bộ nhớ. Không thể hoàn tác.",
       "delete_all_confirm_cta": "Xóa tất cả",
       "delete_all_confirm_title": "Xóa tất cả bộ nhớ?",
       "form": {
@@ -9962,7 +10004,8 @@
       "reflect_pick_persona": "Chiêm nghiệm ký ức của một agent",
       "reflecting": "Đang chiêm nghiệm…",
       "search_placeholder": "Tìm kiếm bộ nhớ…",
-      "title": "Bộ nhớ"
+      "title": "Bộ nhớ",
+      "delete_all_confirm_body_all_agents": "Thao tác này xóa vĩnh viễn toàn bộ {count} bộ nhớ của mọi agent, bất kể bộ lọc hiện tại hiển thị gì. Không thể hoàn tác."
     },
     "memory_actions": {
       "dismiss_suggestion": "Bỏ qua gợi ý",
@@ -10146,7 +10189,11 @@
     "popup_fields": {
       "ollama_domain": "ollama.com",
       "ollama_key_instructions": ", sau đó sao chép khóa API của bạn từ Cài đặt. Khóa này được lưu cục bộ và dùng chung cho mọi tác nhân.",
-      "sign_up_free_at": "Đăng ký miễn phí tại"
+      "sign_up_free_at": "Đăng ký miễn phí tại",
+      "api_key_label": "Khóa API",
+      "litellm_base_url_label": "URL gốc của proxy",
+      "litellm_master_key_label": "Khóa chính",
+      "ollama_key_placeholder": "Dán khóa của bạn từ ollama.com/settings"
     },
     "predictive_alerts_extra": {
       "all_nominal": "Tất cả hệ thống bình thường",
@@ -10667,7 +10714,9 @@
       "p95_latency": "Độ trễ P95",
       "runs": "Lượt chạy",
       "streak": "Chuỗi thành công",
-      "successful": "Thành công"
+      "successful": "Thành công",
+      "daily_trend_hint_one": "{date}: {rate} ({count} lần chạy)",
+      "daily_trend_hint_other": "{date}: {rate} ({count} lần chạy)"
     },
     "sla": {
       "active_agents": "{count} tác nhân hoạt động",
@@ -19465,7 +19514,10 @@
       "pending": "Đang chờ",
       "processed": "Đã xử lý",
       "processing": "Đang xử lý",
-      "retrying": "Đang thử lại"
+      "retrying": "Đang thử lại",
+      "dead_letter": "Thư chết",
+      "discarded": "Đã loại bỏ",
+      "skipped": "Đã bỏ qua"
     },
     "execution": {
       "cancelled": "Đã hủy",

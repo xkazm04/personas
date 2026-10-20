@@ -607,7 +607,7 @@ export default function MemoriesPageDense() {
         <ConfirmDialog
           danger
           title={t.overview.memories.delete_all_confirm_title}
-          body={tx(t.overview.memories.delete_all_confirm_body, { count: deleteAllCount })}
+          body={tx(t.overview.memories.delete_all_confirm_body_all_agents, { count: deleteAllCount })}
           confirmLabel={t.overview.memories.delete_all_confirm_cta}
           onConfirm={async () => {
             try {

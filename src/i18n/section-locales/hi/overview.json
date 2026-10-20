@@ -63,7 +63,9 @@
     "unknown": "अज्ञात",
     "value_delivered_count": "वितरित मूल्य",
     "value_delivered_rate": "मूल्य-वितरण दर",
-    "value_section_title": "व्यावसायिक मूल्य"
+    "value_section_title": "व्यावसायिक मूल्य",
+    "prev_p50": "पिछला p50",
+    "prev_p95": "पिछला p95"
   },
   "analytics_dashboard": {
     "active_count": "{count} सक्रिय",
@@ -1156,7 +1158,6 @@
     "curation_schedule_save": "शेड्यूल सहेजें",
     "curation_schedule_title": "स्मृति समीक्षा शेड्यूल करें",
     "delete_all": "सभी हटाएं",
-    "delete_all_confirm_body": "यह सभी {count} स्मृतियां स्थायी रूप से हटा देगा। इसे पूर्ववत नहीं किया जा सकता।",
     "delete_all_confirm_cta": "सभी हटाएं",
     "delete_all_confirm_title": "सभी स्मृतियां हटाएं?",
     "form": {
@@ -1182,7 +1183,8 @@
     "reflect_pick_persona": "किसी एजेंट की स्मृतियों पर चिंतन करें",
     "reflecting": "चिंतन जारी…",
     "search_placeholder": "memories खोजें…",
-    "title": "स्मृतियाँ"
+    "title": "स्मृतियाँ",
+    "delete_all_confirm_body_all_agents": "यह सभी एजेंटों की सभी {count} मेमोरी को स्थायी रूप से हटा देगा, चाहे मौजूदा फ़िल्टर कुछ भी दिखा रहा हो। इसे पूर्ववत नहीं किया जा सकता।"
   },
   "memory_actions": {
     "dismiss_suggestion": "सुझाव खारिज करें",
@@ -1366,7 +1368,11 @@
   "popup_fields": {
     "ollama_domain": "ollama.com",
     "ollama_key_instructions": ", फिर सेटिंग्स से अपनी API कुंजी कॉपी करें। यह कुंजी स्थानीय रूप से संग्रहीत है और सभी एजेंट्स में साझा की जाती है।",
-    "sign_up_free_at": "मुफ़्त में साइन अप करें"
+    "sign_up_free_at": "मुफ़्त में साइन अप करें",
+    "api_key_label": "API कुंजी",
+    "litellm_base_url_label": "प्रॉक्सी बेस URL",
+    "litellm_master_key_label": "मास्टर कुंजी",
+    "ollama_key_placeholder": "ollama.com/settings से अपनी कुंजी पेस्ट करें"
   },
   "predictive_alerts_extra": {
     "all_nominal": "सभी सिस्टम सामान्य",
@@ -1887,7 +1893,9 @@
     "p95_latency": "P95 विलंबता",
     "runs": "रन",
     "streak": "स्ट्रीक",
-    "successful": "सफल"
+    "successful": "सफल",
+    "daily_trend_hint_one": "{date}: {rate} ({count} रन)",
+    "daily_trend_hint_other": "{date}: {rate} ({count} रन)"
   },
   "sla": {
     "active_agents": "{count} सक्रिय एजेंट",

@@ -3789,6 +3789,7 @@ export type Translations = {
       what_changed_tool_calls: string;
       what_changed_model: string;
       what_changed_none: string;
+      replay_capped: string;
     };
     lab: {
       vr_title: string;
@@ -6314,6 +6315,31 @@ export type Translations = {
       refused_hint: string;
       blocked_tooltip: string;
     };
+    glyph_compose_memory_summary: string;
+    glyph_compose_review_summary: string;
+    glyph_compose_event_from: string;
+    glyph_event_picker_subtitle_empty: string;
+    glyph_event_picker_subtitle_one: string;
+    glyph_event_picker_subtitle_other: string;
+    glyph_event_picker_done: string;
+    glyph_event_picker_subscribe: string;
+    glyph_event_picker_subscriptions: string;
+    glyph_sched_time_label: string;
+    glyph_sched_days_label: string;
+    glyph_day_long_mon: string;
+    glyph_day_long_tue: string;
+    glyph_day_long_wed: string;
+    glyph_day_long_thu: string;
+    glyph_day_long_fri: string;
+    glyph_day_long_sat: string;
+    glyph_day_long_sun: string;
+    glyph_recipe_alt_path: string;
+    glyph_recipe_alt_load_failed: string;
+    glyph_recipe_alt_loading: string;
+    glyph_recipe_alt_connections: string;
+    glyph_recipe_alt_dimensions: string;
+    glyph_recipe_alt_keep: string;
+    glyph_recipe_alt_use: string;
   };
   director: {
     panel_title: string;
@@ -9241,7 +9267,6 @@ export type Translations = {
       title: string;
       delete_all: string;
       delete_all_confirm_title: string;
-      delete_all_confirm_body: string;
       delete_all_confirm_cta: string;
       created_success: string;
       no_memories: string;
@@ -9280,6 +9305,7 @@ export type Translations = {
       reflecting: string;
       reflect_hint: string;
       reflect_pick_persona: string;
+      delete_all_confirm_body_all_agents: string;
     };
     memory_review: {
       keep_prefix: string;
@@ -9990,6 +10016,8 @@ export type Translations = {
       col_status: string;
       col_id: string;
       execution_label: string;
+      prev_p50: string;
+      prev_p95: string;
     };
     analytics_dashboard: {
       issues_found: string;
@@ -10071,6 +10099,8 @@ export type Translations = {
       agent: string;
       runs: string;
       streak: string;
+      daily_trend_hint_one: string;
+      daily_trend_hint_other: string;
     };
     realtime_page: {
       title: string;
@@ -10616,6 +10646,10 @@ export type Translations = {
       sign_up_free_at: string;
       ollama_domain: string;
       ollama_key_instructions: string;
+      api_key_label: string;
+      ollama_key_placeholder: string;
+      litellm_base_url_label: string;
+      litellm_master_key_label: string;
     };
     usage_filters: {
       time_range_label: string;
@@ -16010,6 +16044,9 @@ export type Translations = {
       processed: string;
       failed: string;
       retrying: string;
+      skipped: string;
+      dead_letter: string;
+      discarded: string;
     };
     automation: {
       pending: string;
@@ -25514,6 +25551,21 @@ export type Translations = {
     soundings_help_legend: string;
     soundings_unknown_note: string;
     soundings_help_flag: string;
+    dim_label_db: string;
+    dim_label_monitoring: string;
+    dim_label_ci: string;
+    dim_label_tests: string;
+    dim_label_security: string;
+    dim_label_hosting: string;
+    dim_label_auth: string;
+    dim_label_agents: string;
+    dim_label_skills: string;
+    dim_label_llm: string;
+    dim_label_kpi: string;
+    dim_label_ideas: string;
+    dim_label_goals: string;
+    dim_label_datalinks: string;
+    dim_label_support: string;
   };
   ship: {
     cover_next: string;

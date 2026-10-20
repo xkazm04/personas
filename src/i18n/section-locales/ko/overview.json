@@ -63,7 +63,9 @@
     "unknown": "알 수 없음",
     "value_delivered_count": "전달된 가치",
     "value_delivered_rate": "가치 전달률",
-    "value_section_title": "비즈니스 가치"
+    "value_section_title": "비즈니스 가치",
+    "prev_p50": "이전 p50",
+    "prev_p95": "이전 p95"
   },
   "analytics_dashboard": {
     "active_count": "{count}개 활성",
@@ -1156,7 +1158,6 @@
     "curation_schedule_save": "스케줄 저장",
     "curation_schedule_title": "메모리 큐레이션 예약",
     "delete_all": "모두 삭제",
-    "delete_all_confirm_body": "모든 메모리 {count}개를 영구 삭제합니다. 이 작업은 취소할 수 없습니다.",
     "delete_all_confirm_cta": "모두 삭제",
     "delete_all_confirm_title": "모든 메모리를 삭제할까요?",
     "form": {
@@ -1182,7 +1183,8 @@
     "reflect_pick_persona": "에이전트의 메모리 리플렉션",
     "reflecting": "리플렉션 중…",
     "search_placeholder": "메모리 검색…",
-    "title": "메모리"
+    "title": "메모리",
+    "delete_all_confirm_body_all_agents": "현재 필터와 관계없이 모든 에이전트의 메모리 {count}개를 영구 삭제합니다. 이 작업은 되돌릴 수 없습니다."
   },
   "memory_actions": {
     "dismiss_suggestion": "제안 무시",
@@ -1366,7 +1368,11 @@
   "popup_fields": {
     "ollama_domain": "ollama.com",
     "ollama_key_instructions": ", 설정에서 API 키를 복사하세요. 이 키는 로컬에 저장되며 모든 에이전트에서 공유됩니다.",
-    "sign_up_free_at": "무료 가입 위치:"
+    "sign_up_free_at": "무료 가입 위치:",
+    "api_key_label": "API 키",
+    "litellm_base_url_label": "프록시 기본 URL",
+    "litellm_master_key_label": "마스터 키",
+    "ollama_key_placeholder": "ollama.com/settings에서 받은 키를 붙여넣으세요"
   },
   "predictive_alerts_extra": {
     "all_nominal": "모든 시스템 정상",
@@ -1887,7 +1893,9 @@
     "p95_latency": "P95 지연",
     "runs": "실행 횟수",
     "streak": "연속 성공",
-    "successful": "성공"
+    "successful": "성공",
+    "daily_trend_hint_one": "{date}: {rate} ({count}회 실행)",
+    "daily_trend_hint_other": "{date}: {rate} ({count}회 실행)"
   },
   "sla": {
     "active_agents": "활성 에이전트 {count}개",

@@ -1,4 +1,5 @@
 import { useId } from "react";
+import { useTranslation } from "@/i18n/useTranslation";
 import type { Rhythm } from "./ComposerScheduleRhythmCard";
 import { DebtText } from '@/i18n/DebtText';
 
@@ -9,15 +10,15 @@ export interface DayOption {
   long: string;
 }
 
-export const DAY_OPTIONS: DayOption[] = [
-  { id: "mon", short: "Mon", long: "Monday" },
-  { id: "tue", short: "Tue", long: "Tuesday" },
-  { id: "wed", short: "Wed", long: "Wednesday" },
-  { id: "thu", short: "Thu", long: "Thursday" },
-  { id: "fri", short: "Fri", long: "Friday" },
-  { id: "sat", short: "Sat", long: "Saturday" },
-  { id: "sun", short: "Sun", long: "Sunday" },
-];
+/** Weekday ids in picker order (match `lib/types/schedule.ts`). */
+const DAY_IDS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
+
+/** The seven weekday options in the active language (short + long names). */
+export function useDayOptions(): DayOption[] {
+  const { t } = useTranslation();
+  const short = t.templates.adoption.weekdays;
+  return DAY_IDS.map((id) => ({ id, short: short[id], long: t.agents[`glyph_day_long_${id}`] }));
+}
 
 interface ComposerScheduleDetailFormProps {
   rhythm: Rhythm;
@@ -33,10 +34,12 @@ export function ComposerScheduleDetailForm({
   rhythm, time, onTimeChange, days, onToggleDay, monthDay, onMonthDayChange,
 }: ComposerScheduleDetailFormProps) {
   const timeId = useId();
+  const { t } = useTranslation();
+  const dayOptions = useDayOptions();
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-center gap-3">
-        <label htmlFor={timeId} className="typo-label text-foreground/90 w-20">Time</label>
+        <label htmlFor={timeId} className="typo-label text-foreground/90 w-20">{t.agents.glyph_sched_time_label}</label>
         <input
           id={timeId}
           type="time"
@@ -49,9 +52,9 @@ export function ComposerScheduleDetailForm({
 
       {rhythm === "weekly" && (
         <div className="flex flex-col gap-2">
-          <label className="typo-label text-foreground/90">Days</label>
+          <label className="typo-label text-foreground/90">{t.agents.glyph_sched_days_label}</label>
           <div className="flex gap-1.5 flex-wrap">
-            {DAY_OPTIONS.map((d) => {
+            {dayOptions.map((d) => {
               const active = days.includes(d.id);
               return (
                 <button

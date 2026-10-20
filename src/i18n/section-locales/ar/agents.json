@@ -1440,7 +1440,8 @@
     "what_changed_tokens_fewer": "الأيمن ({side}) استخدم رموزًا أقل بنسبة {pct}%",
     "what_changed_tokens_more": "الأيمن ({side}) استخدم رموزًا أكثر بنسبة {pct}%",
     "what_changed_tool_calls": "استدعاءات الأدوات: {from} -> {to}",
-    "what_changed_tool_order": "ترتيب استدعاء الأدوات مختلف"
+    "what_changed_tool_order": "ترتيب استدعاء الأدوات مختلف",
+    "replay_capped": "يتم عرض أول {count} سطر من سجل هذا التشغيل. لا يُعاد عرض المخرجات الأطول."
   },
   "filters": {
     "add_to_favorites": "إضافة إلى المفضلة",
@@ -3281,5 +3282,30 @@
     "runs_manual": "يعمل عندما تبدؤه",
     "runs_next": "مشغّل {type}، التشغيل التالي {time}",
     "runs_on_event": "مشغّل {type}، يعمل عند إطلاقه"
-  }
+  },
+  "glyph_compose_event_from": "{description} (من {persona})",
+  "glyph_compose_memory_summary": "يتذكر التفضيلات بين عمليات التشغيل",
+  "glyph_compose_review_summary": "ينتظر موافقتك قبل النشر",
+  "glyph_day_long_fri": "الجمعة",
+  "glyph_day_long_mon": "الاثنين",
+  "glyph_day_long_sat": "السبت",
+  "glyph_day_long_sun": "الأحد",
+  "glyph_day_long_thu": "الخميس",
+  "glyph_day_long_tue": "الثلاثاء",
+  "glyph_day_long_wed": "الأربعاء",
+  "glyph_event_picker_done": "تم",
+  "glyph_event_picker_subscribe": "اشتراك في {count}",
+  "glyph_event_picker_subscriptions": "الاشتراكات",
+  "glyph_event_picker_subtitle_empty": "اختر شخصية وحدد الأحداث التي يجب أن يتفاعل معها هذا الوكيل",
+  "glyph_event_picker_subtitle_one": "{count} اشتراك جاهز",
+  "glyph_event_picker_subtitle_other": "{count} اشتراكات جاهزة",
+  "glyph_recipe_alt_connections": "الاتصالات التي تستخدمها هذه الوصفة",
+  "glyph_recipe_alt_dimensions": "أبعاد يمكنك ضبطها · {count}",
+  "glyph_recipe_alt_keep": "واصل الوصف",
+  "glyph_recipe_alt_load_failed": "تعذر تحميل هذه الوصفة.",
+  "glyph_recipe_alt_loading": "جارٍ تحميل الوصفة…",
+  "glyph_recipe_alt_path": "مسار أسرع · تطابق {pct}%",
+  "glyph_recipe_alt_use": "استخدم هذه الوصفة كنقطة بداية",
+  "glyph_sched_days_label": "الأيام",
+  "glyph_sched_time_label": "الوقت"
 }

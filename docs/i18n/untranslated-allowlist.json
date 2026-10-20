@@ -4314,5 +4314,20 @@
   "fr:agents.lab.arena_unit_duel_one",
   "fr:agents.lab.arena_unit_duel_other",
   "id:agents.lab.arena_title",
-  "id:agents.lab.arena_unit_duel_one"
+  "id:agents.lab.arena_unit_duel_one",
+  "bn:mastermind.dim_label_auth",
+  "cs:mastermind.dim_label_hosting",
+  "de:mastermind.dim_label_monitoring",
+  "de:mastermind.dim_label_tests",
+  "de:mastermind.dim_label_hosting",
+  "de:mastermind.dim_label_skills",
+  "de:mastermind.dim_label_kpi",
+  "de:mastermind.dim_label_support",
+  "es:mastermind.dim_label_ideas",
+  "fr:mastermind.dim_label_tests",
+  "fr:mastermind.dim_label_agents",
+  "fr:mastermind.dim_label_support",
+  "hi:mastermind.dim_label_auth",
+  "id:status_tokens.event.dead_letter",
+  "id:mastermind.dim_label_hosting"
 ]

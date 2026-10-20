@@ -228,5 +228,20 @@
   "soundings_where_it_sits": "Vị trí của nó. Các dự án liên quan được in đậm",
   "soundings_who_athena": "Athena",
   "soundings_who_chart": "Biểu đồ",
-  "soundings_yes": "có"
+  "soundings_yes": "có",
+  "dim_label_agents": "Agent",
+  "dim_label_auth": "Xác thực",
+  "dim_label_ci": "CI",
+  "dim_label_datalinks": "Phân tích dữ liệu",
+  "dim_label_db": "Cơ sở dữ liệu",
+  "dim_label_goals": "Mục tiêu",
+  "dim_label_hosting": "Lưu trữ",
+  "dim_label_ideas": "Ý tưởng",
+  "dim_label_kpi": "KPI",
+  "dim_label_llm": "Chi phí LLM",
+  "dim_label_monitoring": "Giám sát",
+  "dim_label_security": "Bảo mật",
+  "dim_label_skills": "Kỹ năng",
+  "dim_label_support": "Hỗ trợ",
+  "dim_label_tests": "Kiểm thử"
 }

@@ -1440,7 +1440,8 @@
     "what_changed_tokens_fewer": "Kanan ({side}) memakai {pct}% lebih sedikit token",
     "what_changed_tokens_more": "Kanan ({side}) memakai {pct}% lebih banyak token",
     "what_changed_tool_calls": "Panggilan alat: {from} -> {to}",
-    "what_changed_tool_order": "Urutan panggilan alat berbeda"
+    "what_changed_tool_order": "Urutan panggilan alat berbeda",
+    "replay_capped": "Menampilkan {count} baris pertama log eksekusi ini. Output yang lebih panjang tidak diputar ulang."
   },
   "filters": {
     "add_to_favorites": "Tambah ke favorit",
@@ -3281,5 +3282,30 @@
     "runs_manual": "Berjalan saat Anda memulainya",
     "runs_next": "Pemicu {type}, jalankan berikutnya {time}",
     "runs_on_event": "Pemicu {type}, berjalan saat terpicu"
-  }
+  },
+  "glyph_compose_event_from": "{description} (dari {persona})",
+  "glyph_compose_memory_summary": "Mengingat preferensi antar eksekusi",
+  "glyph_compose_review_summary": "Menunggu persetujuan Anda sebelum dipublikasikan",
+  "glyph_day_long_fri": "Jumat",
+  "glyph_day_long_mon": "Senin",
+  "glyph_day_long_sat": "Sabtu",
+  "glyph_day_long_sun": "Minggu",
+  "glyph_day_long_thu": "Kamis",
+  "glyph_day_long_tue": "Selasa",
+  "glyph_day_long_wed": "Rabu",
+  "glyph_event_picker_done": "Selesai",
+  "glyph_event_picker_subscribe": "Berlangganan {count}",
+  "glyph_event_picker_subscriptions": "Langganan",
+  "glyph_event_picker_subtitle_empty": "Pilih persona dan tentukan event yang harus direspons agen ini",
+  "glyph_event_picker_subtitle_one": "{count} langganan siap",
+  "glyph_event_picker_subtitle_other": "{count} langganan siap",
+  "glyph_recipe_alt_connections": "Koneksi yang digunakan resep ini",
+  "glyph_recipe_alt_dimensions": "Dimensi yang dapat disetel · {count}",
+  "glyph_recipe_alt_keep": "Lanjutkan mendeskripsikan",
+  "glyph_recipe_alt_load_failed": "Tidak dapat memuat resep ini.",
+  "glyph_recipe_alt_loading": "Memuat resep…",
+  "glyph_recipe_alt_path": "Jalur lebih cepat · kecocokan {pct}%",
+  "glyph_recipe_alt_use": "Gunakan resep ini sebagai titik awal",
+  "glyph_sched_days_label": "Hari",
+  "glyph_sched_time_label": "Waktu"
 }

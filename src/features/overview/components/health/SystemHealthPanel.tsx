@@ -18,7 +18,7 @@ import { HealthFusionD } from './prototypes/HealthFusionD';
 import { HealthMachineE } from './prototypes/HealthMachineE';
 import { HealthSpineB } from './prototypes/HealthSpineB';
 import { HealthTriageC } from './prototypes/HealthTriageC';
-import { LITELLM_FIELDS, OLLAMA_FIELDS, OllamaFooter } from './popupFieldConfigs';
+import { litellmFields, ollamaFields, OllamaFooter } from './popupFieldConfigs';
 import { useHealthVariant, type HealthVariantId } from './healthVariant';
 import { useHealthSections } from './useHealthSections';
 
@@ -156,7 +156,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
             title={t.overview.system_health.ollama_title}
             subtitle={t.overview.system_health.ollama_subtitle}
             accent="emerald"
-            fields={OLLAMA_FIELDS}
+            fields={ollamaFields(t.overview.popup_fields)}
             saveLabel={t.overview.system_health.save_key}
             footerText={<OllamaFooter />}
             onClose={() => setShowOllamaPopup(false)}
@@ -169,7 +169,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
             title={t.overview.system_health.litellm_title}
             subtitle={t.overview.system_health.litellm_subtitle}
             accent="sky"
-            fields={LITELLM_FIELDS}
+            fields={litellmFields(t.overview.popup_fields)}
             saveLabel={t.overview.system_health.save_configuration}
             footerText={t.overview.system_health.litellm_footer}
             onClose={() => setShowLiteLLMPopup(false)}

@@ -228,5 +228,20 @@
   "soundings_where_it_sits": "यह कहां स्थित है। संबंधित प्रोजेक्ट बोल्ड में",
   "soundings_who_athena": "Athena",
   "soundings_who_chart": "चार्ट",
-  "soundings_yes": "हां"
+  "soundings_yes": "हां",
+  "dim_label_agents": "एजेंट",
+  "dim_label_auth": "Auth",
+  "dim_label_ci": "CI",
+  "dim_label_datalinks": "डेटा विश्लेषण",
+  "dim_label_db": "डेटाबेस",
+  "dim_label_goals": "लक्ष्य",
+  "dim_label_hosting": "होस्टिंग",
+  "dim_label_ideas": "विचार",
+  "dim_label_kpi": "KPI",
+  "dim_label_llm": "LLM लागत",
+  "dim_label_monitoring": "मॉनिटरिंग",
+  "dim_label_security": "सुरक्षा",
+  "dim_label_skills": "कौशल",
+  "dim_label_support": "सहायता",
+  "dim_label_tests": "टेस्ट"
 }

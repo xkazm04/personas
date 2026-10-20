@@ -105,7 +105,10 @@
     "pending": "Đang chờ",
     "processed": "Đã xử lý",
     "processing": "Đang xử lý",
-    "retrying": "Đang thử lại"
+    "retrying": "Đang thử lại",
+    "dead_letter": "Thư chết",
+    "discarded": "Đã loại bỏ",
+    "skipped": "Đã bỏ qua"
   },
   "execution": {
     "cancelled": "Đã hủy",

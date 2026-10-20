@@ -9,14 +9,14 @@ import { FILE } from '../useSoundingsNav';
 
 export function ReadingLine() {
   const { n, settling, stations, act, rankOf, liftedKey, nav, words, statusWord } = useSoundingsModel();
-  const { m, tx, reasonText } = words;
+  const { m, tx, reasonText, dimLabel } = words;
   const { level, curStation } = nav;
 
   let reading: ReactNode = settling ? m.loading_projects : null;
   if (n > 0) {
     if (level === 2 && liftedKey && liftedKey !== FILE && curStation) {
       const node = curStation.island.nodes.find((x) => x.key === liftedKey);
-      if (node) reading = <><b>{node.label}</b>{` ${tx(m.soundings_reading_dim, { dim: '', project: curStation.island.name, status: statusWord(node.status) }).trimStart()}`}</>;
+      if (node) reading = <><b>{dimLabel(node.key)}</b>{` ${tx(m.soundings_reading_dim, { dim: '', project: curStation.island.name, status: statusWord(node.status) }).trimStart()}`}</>;
     } else {
       const s = stations[act];
       // A ghost station has no verdict yet (unsettled or unmeasured): the line

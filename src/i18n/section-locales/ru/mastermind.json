@@ -228,5 +228,20 @@
   "soundings_where_it_sits": "Где это находится. Связанные проекты выделены жирным",
   "soundings_who_athena": "Афина",
   "soundings_who_chart": "Карта",
-  "soundings_yes": "да"
+  "soundings_yes": "да",
+  "dim_label_agents": "Агенты",
+  "dim_label_auth": "Авторизация",
+  "dim_label_ci": "CI",
+  "dim_label_datalinks": "Анализ данных",
+  "dim_label_db": "База данных",
+  "dim_label_goals": "Цели",
+  "dim_label_hosting": "Хостинг",
+  "dim_label_ideas": "Идеи",
+  "dim_label_kpi": "KPI",
+  "dim_label_llm": "Стоимость LLM",
+  "dim_label_monitoring": "Мониторинг",
+  "dim_label_security": "Безопасность",
+  "dim_label_skills": "Навыки",
+  "dim_label_support": "Поддержка",
+  "dim_label_tests": "Тесты"
 }

@@ -63,7 +63,9 @@
     "unknown": "অজানা",
     "value_delivered_count": "প্রদত্ত মূল্য",
     "value_delivered_rate": "মূল্য-প্রদানের হার",
-    "value_section_title": "ব্যবসায়িক মূল্য"
+    "value_section_title": "ব্যবসায়িক মূল্য",
+    "prev_p50": "আগের p50",
+    "prev_p95": "আগের p95"
   },
   "analytics_dashboard": {
     "active_count": "{count}টি সক্রিয়",
@@ -1156,7 +1158,6 @@
     "curation_schedule_save": "সময়সূচি সংরক্ষণ করুন",
     "curation_schedule_title": "স্মৃতি কিউরেশনের সময়সূচি",
     "delete_all": "সব মুছুন",
-    "delete_all_confirm_body": "এটি স্থায়ীভাবে সব {count}টি স্মৃতি মুছে দেবে। এটি পূর্বাবস্থায় ফেরানো যাবে না।",
     "delete_all_confirm_cta": "সব মুছুন",
     "delete_all_confirm_title": "সব স্মৃতি মুছবেন?",
     "form": {
@@ -1182,7 +1183,8 @@
     "reflect_pick_persona": "একটি এজেন্টের স্মৃতির প্রতিফলন করুন",
     "reflecting": "প্রতিফলন চলছে…",
     "search_placeholder": "মেমরি অনুসন্ধান…",
-    "title": "স্মৃতি"
+    "title": "স্মৃতি",
+    "delete_all_confirm_body_all_agents": "বর্তমান ফিল্টারে যা-ই দেখানো হোক, এটি সব এজেন্টের সমস্ত {count}টি মেমরি স্থায়ীভাবে মুছে ফেলবে। এটি আর ফেরানো যাবে না।"
   },
   "memory_actions": {
     "dismiss_suggestion": "পরামর্শ বরখাস্ত করুন",
@@ -1366,7 +1368,11 @@
   "popup_fields": {
     "ollama_domain": "ollama.com",
     "ollama_key_instructions": ", তারপর সেটিংস থেকে আপনার API কী কপি করুন। এই কী স্থানীয়ভাবে সংরক্ষিত এবং সমস্ত এজেন্টের মধ্যে শেয়ার করা হয়।",
-    "sign_up_free_at": "বিনামূল্যে সাইন আপ করুন"
+    "sign_up_free_at": "বিনামূল্যে সাইন আপ করুন",
+    "api_key_label": "API কী",
+    "litellm_base_url_label": "প্রক্সি বেস URL",
+    "litellm_master_key_label": "মাস্টার কী",
+    "ollama_key_placeholder": "ollama.com/settings থেকে আপনার কী পেস্ট করুন"
   },
   "predictive_alerts_extra": {
     "all_nominal": "সব সিস্টেম স্বাভাবিক",
@@ -1887,7 +1893,9 @@
     "p95_latency": "P95 লেটেন্সি",
     "runs": "রান",
     "streak": "স্ট্রিক",
-    "successful": "সফল"
+    "successful": "সফল",
+    "daily_trend_hint_one": "{date}: {rate} ({count}টি রান)",
+    "daily_trend_hint_other": "{date}: {rate} ({count}টি রান)"
   },
   "sla": {
     "active_agents": "{count} সক্রিয় এজেন্ট",

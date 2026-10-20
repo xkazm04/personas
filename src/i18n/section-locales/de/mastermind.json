@@ -228,5 +228,20 @@
   "soundings_where_it_sits": "Wo es sich befindet. Verwandte Projekte fett dargestellt",
   "soundings_who_athena": "Athena",
   "soundings_who_chart": "Diagramm",
-  "soundings_yes": "ja"
+  "soundings_yes": "ja",
+  "dim_label_agents": "Agenten",
+  "dim_label_auth": "Authentifizierung",
+  "dim_label_ci": "CI",
+  "dim_label_datalinks": "Datenanalyse",
+  "dim_label_db": "Datenbank",
+  "dim_label_goals": "Ziele",
+  "dim_label_hosting": "Hosting",
+  "dim_label_ideas": "Ideen",
+  "dim_label_kpi": "KPIs",
+  "dim_label_llm": "LLM-Kosten",
+  "dim_label_monitoring": "Monitoring",
+  "dim_label_security": "Sicherheit",
+  "dim_label_skills": "Skills",
+  "dim_label_support": "Support",
+  "dim_label_tests": "Tests"
 }

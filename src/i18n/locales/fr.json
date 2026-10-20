@@ -1446,7 +1446,8 @@
       "what_changed_tokens_fewer": "Droite ({side}) : {pct} % de tokens en moins",
       "what_changed_tokens_more": "Droite ({side}) : {pct} % de tokens en plus",
       "what_changed_tool_calls": "Appels d'outils : {from} -> {to}",
-      "what_changed_tool_order": "Ordre des appels d'outils différent"
+      "what_changed_tool_order": "Ordre des appels d'outils différent",
+      "replay_capped": "Affichage des {count} premières lignes du journal de cette exécution. Les sorties plus longues ne sont pas rejouées."
     },
     "filters": {
       "add_to_favorites": "Ajouter aux favoris",
@@ -3287,7 +3288,32 @@
       "runs_manual": "S'exécute quand vous le lancez",
       "runs_next": "Déclencheur {type}, prochaine exécution {time}",
       "runs_on_event": "Déclencheur {type}, s'exécute quand il se déclenche"
-    }
+    },
+    "glyph_compose_event_from": "{description} (de {persona})",
+    "glyph_compose_memory_summary": "Se souvient des préférences d'une exécution à l'autre",
+    "glyph_compose_review_summary": "Attend votre approbation avant de publier",
+    "glyph_day_long_fri": "Vendredi",
+    "glyph_day_long_mon": "Lundi",
+    "glyph_day_long_sat": "Samedi",
+    "glyph_day_long_sun": "Dimanche",
+    "glyph_day_long_thu": "Jeudi",
+    "glyph_day_long_tue": "Mardi",
+    "glyph_day_long_wed": "Mercredi",
+    "glyph_event_picker_done": "Terminé",
+    "glyph_event_picker_subscribe": "S'abonner à {count}",
+    "glyph_event_picker_subscriptions": "Abonnements",
+    "glyph_event_picker_subtitle_empty": "Choisissez un persona et les événements auxquels cet agent doit réagir",
+    "glyph_event_picker_subtitle_one": "{count} abonnement prêt",
+    "glyph_event_picker_subtitle_other": "{count} abonnements prêts",
+    "glyph_recipe_alt_connections": "Connexions utilisées par cette recette",
+    "glyph_recipe_alt_dimensions": "Dimensions ajustables · {count}",
+    "glyph_recipe_alt_keep": "Continuer la description",
+    "glyph_recipe_alt_load_failed": "Impossible de charger cette recette.",
+    "glyph_recipe_alt_loading": "Chargement de la recette…",
+    "glyph_recipe_alt_path": "Voie plus rapide · {pct} % de correspondance",
+    "glyph_recipe_alt_use": "Utiliser cette recette comme point de départ",
+    "glyph_sched_days_label": "Jours",
+    "glyph_sched_time_label": "Heure"
   },
   "alerts": {
     "error_clear_history": "Échec de l’effacement de l’historique des alertes :",
@@ -6301,7 +6327,22 @@
     "soundings_where_it_sits": "Où il se situe. Projets liés en gras",
     "soundings_who_athena": "Athena",
     "soundings_who_chart": "Graphique",
-    "soundings_yes": "oui"
+    "soundings_yes": "oui",
+    "dim_label_agents": "Agents",
+    "dim_label_auth": "Authentification",
+    "dim_label_ci": "CI",
+    "dim_label_datalinks": "Analyse de données",
+    "dim_label_db": "Base de données",
+    "dim_label_goals": "Objectifs",
+    "dim_label_hosting": "Hébergement",
+    "dim_label_ideas": "Idées",
+    "dim_label_kpi": "KPI",
+    "dim_label_llm": "Coût LLM",
+    "dim_label_monitoring": "Supervision",
+    "dim_label_security": "Sécurité",
+    "dim_label_skills": "Compétences",
+    "dim_label_support": "Support",
+    "dim_label_tests": "Tests"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "Ajouter la capacité",
@@ -8843,7 +8884,9 @@
       "unknown": "Inconnu",
       "value_delivered_count": "Valeur livrée",
       "value_delivered_rate": "Taux de valeur livrée",
-      "value_section_title": "Valeur métier"
+      "value_section_title": "Valeur métier",
+      "prev_p50": "p50 préc.",
+      "prev_p95": "p95 préc."
     },
     "analytics_dashboard": {
       "active_count": "{count} actif(s)",
@@ -9936,7 +9979,6 @@
       "curation_schedule_save": "Enregistrer la planification",
       "curation_schedule_title": "Planifier la révision des mémoires",
       "delete_all": "Tout supprimer",
-      "delete_all_confirm_body": "Cette action supprime définitivement les {count} mémoires. Elle est irréversible.",
       "delete_all_confirm_cta": "Tout supprimer",
       "delete_all_confirm_title": "Supprimer toutes les mémoires ?",
       "form": {
@@ -9962,7 +10004,8 @@
       "reflect_pick_persona": "Lancer une réflexion sur les souvenirs d’un agent",
       "reflecting": "Réflexion en cours…",
       "search_placeholder": "Rechercher les mémorisations…",
-      "title": "Mémorisations"
+      "title": "Mémorisations",
+      "delete_all_confirm_body_all_agents": "Cette action supprime définitivement les {count} souvenirs de tous les agents, quel que soit le filtre actuel. Elle est irréversible."
     },
     "memory_actions": {
       "dismiss_suggestion": "Ignorer la suggestion",
@@ -10146,7 +10189,11 @@
     "popup_fields": {
       "ollama_domain": "ollama.com",
       "ollama_key_instructions": ", puis copiez votre clé API depuis les paramètres. Cette clé est stockée localement et partagée par tous les agents.",
-      "sign_up_free_at": "Inscrivez-vous gratuitement sur"
+      "sign_up_free_at": "Inscrivez-vous gratuitement sur",
+      "api_key_label": "Clé API",
+      "litellm_base_url_label": "URL de base du proxy",
+      "litellm_master_key_label": "Clé maître",
+      "ollama_key_placeholder": "Collez votre clé depuis ollama.com/settings"
     },
     "predictive_alerts_extra": {
       "all_nominal": "Tous les systèmes nominaux",
@@ -10667,7 +10714,9 @@
       "p95_latency": "Latence P95",
       "runs": "Exécutions",
       "streak": "Série",
-      "successful": "Réussies"
+      "successful": "Réussies",
+      "daily_trend_hint_one": "{date} : {rate} ({count} exécution)",
+      "daily_trend_hint_other": "{date} : {rate} ({count} exécutions)"
     },
     "sla": {
       "active_agents": "{count} agents actifs",
@@ -19465,7 +19514,10 @@
       "pending": "En attente",
       "processed": "Traité",
       "processing": "En traitement",
-      "retrying": "Nouvelle tentative"
+      "retrying": "Nouvelle tentative",
+      "dead_letter": "Lettre morte",
+      "discarded": "Ignoré",
+      "skipped": "Passé"
     },
     "execution": {
       "cancelled": "Annulé",

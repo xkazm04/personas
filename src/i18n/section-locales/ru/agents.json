@@ -1440,7 +1440,8 @@
     "what_changed_tokens_fewer": "Правый ({side}) использовал на {pct}% меньше токенов",
     "what_changed_tokens_more": "Правый ({side}) использовал на {pct}% больше токенов",
     "what_changed_tool_calls": "Вызовы инструментов: {from} -> {to}",
-    "what_changed_tool_order": "Другой порядок вызова инструментов"
+    "what_changed_tool_order": "Другой порядок вызова инструментов",
+    "replay_capped": "Показаны первые {count} строк журнала этого запуска. Более длинный вывод не воспроизводится."
   },
   "filters": {
     "add_to_favorites": "Добавить в избранное",
@@ -3281,5 +3282,30 @@
     "runs_manual": "Запускается, когда вы его запускаете",
     "runs_next": "Триггер {type}, следующий запуск {time}",
     "runs_on_event": "Триггер {type}, срабатывает при событии"
-  }
+  },
+  "glyph_compose_event_from": "{description} (от {persona})",
+  "glyph_compose_memory_summary": "Помнит предпочтения между запусками",
+  "glyph_compose_review_summary": "Ждёт вашего одобрения перед публикацией",
+  "glyph_day_long_fri": "Пятница",
+  "glyph_day_long_mon": "Понедельник",
+  "glyph_day_long_sat": "Суббота",
+  "glyph_day_long_sun": "Воскресенье",
+  "glyph_day_long_thu": "Четверг",
+  "glyph_day_long_tue": "Вторник",
+  "glyph_day_long_wed": "Среда",
+  "glyph_event_picker_done": "Готово",
+  "glyph_event_picker_subscribe": "Подписаться: {count}",
+  "glyph_event_picker_subscriptions": "Подписки",
+  "glyph_event_picker_subtitle_empty": "Выберите персону и события, на которые должен реагировать этот агент",
+  "glyph_event_picker_subtitle_one": "Подписка готова: {count}",
+  "glyph_event_picker_subtitle_other": "Подписок готово: {count}",
+  "glyph_recipe_alt_connections": "Подключения, которые использует этот рецепт",
+  "glyph_recipe_alt_dimensions": "Параметры настройки · {count}",
+  "glyph_recipe_alt_keep": "Продолжить описание",
+  "glyph_recipe_alt_load_failed": "Не удалось загрузить этот рецепт.",
+  "glyph_recipe_alt_loading": "Загрузка рецепта…",
+  "glyph_recipe_alt_path": "Путь быстрее · совпадение {pct}%",
+  "glyph_recipe_alt_use": "Использовать этот рецепт как отправную точку",
+  "glyph_sched_days_label": "Дни",
+  "glyph_sched_time_label": "Время"
 }

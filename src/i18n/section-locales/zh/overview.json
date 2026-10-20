@@ -63,7 +63,9 @@
     "unknown": "未知",
     "value_delivered_count": "已交付价值",
     "value_delivered_rate": "价值交付率",
-    "value_section_title": "业务价值"
+    "value_section_title": "业务价值",
+    "prev_p50": "上期 p50",
+    "prev_p95": "上期 p95"
   },
   "analytics_dashboard": {
     "active_count": "{count} 活跃",
@@ -1156,7 +1158,6 @@
     "curation_schedule_save": "保存计划",
     "curation_schedule_title": "设置记忆整理计划",
     "delete_all": "全部删除",
-    "delete_all_confirm_body": "这将永久删除所有 {count} 条记忆，此操作无法撤销。",
     "delete_all_confirm_cta": "全部删除",
     "delete_all_confirm_title": "删除所有记忆？",
     "form": {
@@ -1182,7 +1183,8 @@
     "reflect_pick_persona": "对某个智能体的记忆进行反思",
     "reflecting": "反思中…",
     "search_placeholder": "搜索记忆…",
-    "title": "记忆"
+    "title": "记忆",
+    "delete_all_confirm_body_all_agents": "这将永久删除所有智能体的全部 {count} 条记忆，无论当前筛选结果如何。此操作无法撤销。"
   },
   "memory_actions": {
     "dismiss_suggestion": "忽略建议",
@@ -1366,7 +1368,11 @@
   "popup_fields": {
     "ollama_domain": "ollama.com",
     "ollama_key_instructions": "，然后从设置中复制您的 API 密钥。此密钥存储在本地，所有智能体共享使用。",
-    "sign_up_free_at": "免费注册于"
+    "sign_up_free_at": "免费注册于",
+    "api_key_label": "API 密钥",
+    "litellm_base_url_label": "代理基础 URL",
+    "litellm_master_key_label": "主密钥",
+    "ollama_key_placeholder": "粘贴你在 ollama.com/settings 获取的密钥"
   },
   "predictive_alerts_extra": {
     "all_nominal": "所有系统正常",
@@ -1887,7 +1893,9 @@
     "p95_latency": "P95 延迟",
     "runs": "运行次数",
     "streak": "连续成功",
-    "successful": "成功"
+    "successful": "成功",
+    "daily_trend_hint_one": "{date}：{rate}（{count} 次运行）",
+    "daily_trend_hint_other": "{date}：{rate}（{count} 次运行）"
   },
   "sla": {
     "active_agents": "{count} 个活跃智能体",

@@ -228,5 +228,20 @@
   "soundings_where_it_sits": "位置。関連プロジェクトは太字",
   "soundings_who_athena": "Athena",
   "soundings_who_chart": "チャート",
-  "soundings_yes": "はい"
+  "soundings_yes": "はい",
+  "dim_label_agents": "エージェント",
+  "dim_label_auth": "認証",
+  "dim_label_ci": "CI",
+  "dim_label_datalinks": "データ分析",
+  "dim_label_db": "データベース",
+  "dim_label_goals": "目標",
+  "dim_label_hosting": "ホスティング",
+  "dim_label_ideas": "アイデア",
+  "dim_label_kpi": "KPI",
+  "dim_label_llm": "LLM コスト",
+  "dim_label_monitoring": "モニタリング",
+  "dim_label_security": "セキュリティ",
+  "dim_label_skills": "スキル",
+  "dim_label_support": "サポート",
+  "dim_label_tests": "テスト"
 }

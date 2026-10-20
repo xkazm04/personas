@@ -756,7 +756,8 @@
     "what_changed_tool_order": "Different tool call order",
     "what_changed_tool_calls": "Tool calls: {from} -> {to}",
     "what_changed_model": "Model changed: {from} -> {to}",
-    "what_changed_none": "No significant differences detected"
+    "what_changed_none": "No significant differences detected",
+    "replay_capped": "Showing the first {count} lines of this run's log. Longer output is not replayed."
   },
   "lab": {
     "vr_title": "Versions & Ratings",
@@ -3281,5 +3282,30 @@
     "refused": "Promote will refuse this draft",
     "refused_hint": "Refine the draft to fix it, then promote.",
     "blocked_tooltip": "Promote would refuse: {reason}"
-  }
+  },
+  "glyph_compose_memory_summary": "Remembers preferences between runs",
+  "glyph_compose_review_summary": "Waits for your approval before publishing",
+  "glyph_compose_event_from": "{description} (from {persona})",
+  "glyph_event_picker_subtitle_empty": "Pick a persona and choose which events this agent should react to",
+  "glyph_event_picker_subtitle_one": "{count} subscription ready",
+  "glyph_event_picker_subtitle_other": "{count} subscriptions ready",
+  "glyph_event_picker_done": "Done",
+  "glyph_event_picker_subscribe": "Subscribe to {count}",
+  "glyph_event_picker_subscriptions": "Subscriptions",
+  "glyph_sched_time_label": "Time",
+  "glyph_sched_days_label": "Days",
+  "glyph_day_long_mon": "Monday",
+  "glyph_day_long_tue": "Tuesday",
+  "glyph_day_long_wed": "Wednesday",
+  "glyph_day_long_thu": "Thursday",
+  "glyph_day_long_fri": "Friday",
+  "glyph_day_long_sat": "Saturday",
+  "glyph_day_long_sun": "Sunday",
+  "glyph_recipe_alt_path": "Faster path · {pct}% match",
+  "glyph_recipe_alt_load_failed": "Couldn't load this recipe.",
+  "glyph_recipe_alt_loading": "Loading recipe…",
+  "glyph_recipe_alt_connections": "Connections this recipe uses",
+  "glyph_recipe_alt_dimensions": "Dimensions you can tune · {count}",
+  "glyph_recipe_alt_keep": "Keep describing",
+  "glyph_recipe_alt_use": "Use this recipe as the starting point"
 }

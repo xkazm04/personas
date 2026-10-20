@@ -105,7 +105,10 @@
     "pending": "Ожидание",
     "processed": "Обработано",
     "processing": "Обработка",
-    "retrying": "Повтор"
+    "retrying": "Повтор",
+    "dead_letter": "Недоставленное",
+    "discarded": "Отброшено",
+    "skipped": "Пропущено"
   },
   "execution": {
     "cancelled": "Отменено",

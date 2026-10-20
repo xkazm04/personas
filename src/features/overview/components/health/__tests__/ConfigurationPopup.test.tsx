@@ -12,10 +12,13 @@ vi.mock('@/api/system/settings', () => ({
 }));
 
 import { ConfigurationPopup } from '../ConfigurationPopup';
-import { LITELLM_FIELDS } from '../popupFieldConfigs';
+import { litellmFields } from '../popupFieldConfigs';
+import { en } from '@/i18n/en';
+
 
 describe('ConfigurationPopup', () => {
   it('names every field by its label', async () => {
+    const LITELLM_FIELDS = litellmFields(en.overview.popup_fields);
     render(
       <ConfigurationPopup
         title="LiteLLM"

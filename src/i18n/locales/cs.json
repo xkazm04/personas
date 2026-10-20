@@ -1446,7 +1446,8 @@
       "what_changed_tokens_fewer": "Pravá ({side}) použila o {pct} % méně tokenů",
       "what_changed_tokens_more": "Pravá ({side}) použila o {pct} % více tokenů",
       "what_changed_tool_calls": "Volání nástrojů: {from} -> {to}",
-      "what_changed_tool_order": "Jiné pořadí volání nástrojů"
+      "what_changed_tool_order": "Jiné pořadí volání nástrojů",
+      "replay_capped": "Zobrazuje se prvních {count} řádků logu tohoto běhu. Delší výstup se nepřehrává."
     },
     "filters": {
       "add_to_favorites": "Přidat do oblíbených",
@@ -3287,7 +3288,32 @@
       "runs_manual": "Spustí se, když ho spustíte vy",
       "runs_next": "Spouštěč {type}, další spuštění {time}",
       "runs_on_event": "Spouštěč {type}, spustí se při aktivaci"
-    }
+    },
+    "glyph_compose_event_from": "{description} (od {persona})",
+    "glyph_compose_memory_summary": "Pamatuje si preference mezi běhy",
+    "glyph_compose_review_summary": "Před publikováním čeká na vaše schválení",
+    "glyph_day_long_fri": "Pátek",
+    "glyph_day_long_mon": "Pondělí",
+    "glyph_day_long_sat": "Sobota",
+    "glyph_day_long_sun": "Neděle",
+    "glyph_day_long_thu": "Čtvrtek",
+    "glyph_day_long_tue": "Úterý",
+    "glyph_day_long_wed": "Středa",
+    "glyph_event_picker_done": "Hotovo",
+    "glyph_event_picker_subscribe": "Odebírat ({count})",
+    "glyph_event_picker_subscriptions": "Odběry",
+    "glyph_event_picker_subtitle_empty": "Vyberte personu a zvolte, na které události má tento agent reagovat",
+    "glyph_event_picker_subtitle_one": "{count} odběr připraven",
+    "glyph_event_picker_subtitle_other": "Připravené odběry: {count}",
+    "glyph_recipe_alt_connections": "Připojení používaná tímto receptem",
+    "glyph_recipe_alt_dimensions": "Rozměry, které lze ladit · {count}",
+    "glyph_recipe_alt_keep": "Pokračovat v popisu",
+    "glyph_recipe_alt_load_failed": "Tento recept se nepodařilo načíst.",
+    "glyph_recipe_alt_loading": "Načítání receptu…",
+    "glyph_recipe_alt_path": "Rychlejší cesta · shoda {pct} %",
+    "glyph_recipe_alt_use": "Použít tento recept jako výchozí bod",
+    "glyph_sched_days_label": "Dny",
+    "glyph_sched_time_label": "Čas"
   },
   "alerts": {
     "error_clear_history": "Vymazání historie upozornění selhalo:",
@@ -6301,7 +6327,22 @@
     "soundings_where_it_sits": "Kde se nachází. Související projekty tučně",
     "soundings_who_athena": "Athena",
     "soundings_who_chart": "Graf",
-    "soundings_yes": "ano"
+    "soundings_yes": "ano",
+    "dim_label_agents": "Agenti",
+    "dim_label_auth": "Autentizace",
+    "dim_label_ci": "CI",
+    "dim_label_datalinks": "Analýza dat",
+    "dim_label_db": "Databáze",
+    "dim_label_goals": "Cíle",
+    "dim_label_hosting": "Hosting",
+    "dim_label_ideas": "Nápady",
+    "dim_label_kpi": "KPI",
+    "dim_label_llm": "Náklady na LLM",
+    "dim_label_monitoring": "Monitorování",
+    "dim_label_security": "Zabezpečení",
+    "dim_label_skills": "Dovednosti",
+    "dim_label_support": "Podpora",
+    "dim_label_tests": "Testy"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "Přidat schopnost",
@@ -8843,7 +8884,9 @@
       "unknown": "Neznámý",
       "value_delivered_count": "Doručená hodnota",
       "value_delivered_rate": "Míra doručené hodnoty",
-      "value_section_title": "Obchodní hodnota"
+      "value_section_title": "Obchodní hodnota",
+      "prev_p50": "Předchozí p50",
+      "prev_p95": "Předchozí p95"
     },
     "analytics_dashboard": {
       "active_count": "{count} aktivních",
@@ -9936,7 +9979,6 @@
       "curation_schedule_save": "Uložit plán",
       "curation_schedule_title": "Naplánovat kontrolu paměti",
       "delete_all": "Smazat vše",
-      "delete_all_confirm_body": "Tímto trvale smažete všech {count} vzpomínek. Tuto akci nelze vrátit zpět.",
       "delete_all_confirm_cta": "Smazat vše",
       "delete_all_confirm_title": "Smazat všechny vzpomínky?",
       "form": {
@@ -9962,7 +10004,8 @@
       "reflect_pick_persona": "Reflektovat vzpomínky agenta",
       "reflecting": "Probíhá reflexe…",
       "search_placeholder": "Hledat vzpomínky…",
-      "title": "Vzpomínky"
+      "title": "Vzpomínky",
+      "delete_all_confirm_body_all_agents": "Tím se trvale smaže všech {count} vzpomínek napříč všemi agenty, bez ohledu na aktuální filtr. Tuto akci nelze vrátit zpět."
     },
     "memory_actions": {
       "dismiss_suggestion": "Zavřít návrh",
@@ -10146,7 +10189,11 @@
     "popup_fields": {
       "ollama_domain": "ollama.com",
       "ollama_key_instructions": ", poté zkopírujte svůj API klíč z Nastavení. Klíč se ukládá lokálně a sdílí mezi všemi agenty.",
-      "sign_up_free_at": "Zaregistrujte se zdarma na"
+      "sign_up_free_at": "Zaregistrujte se zdarma na",
+      "api_key_label": "Klíč API",
+      "litellm_base_url_label": "Základní URL proxy",
+      "litellm_master_key_label": "Hlavní klíč",
+      "ollama_key_placeholder": "Vložte svůj klíč z ollama.com/settings"
     },
     "predictive_alerts_extra": {
       "all_nominal": "Všechny systémy v normě",
@@ -10667,7 +10714,9 @@
       "p95_latency": "P95 latence",
       "runs": "Běhy",
       "streak": "Série",
-      "successful": "Úspěšné"
+      "successful": "Úspěšné",
+      "daily_trend_hint_one": "{date}: {rate} ({count} běh)",
+      "daily_trend_hint_other": "{date}: {rate} (běhů: {count})"
     },
     "sla": {
       "active_agents": "{count} aktivních agentů",
@@ -19465,7 +19514,10 @@
       "pending": "Čeká",
       "processed": "Zpracováno",
       "processing": "Zpracování",
-      "retrying": "Opakování"
+      "retrying": "Opakování",
+      "dead_letter": "Nedoručená zpráva",
+      "discarded": "Zahozeno",
+      "skipped": "Přeskočeno"
     },
     "execution": {
       "cancelled": "Zrušeno",

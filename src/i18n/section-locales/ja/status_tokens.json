@@ -105,7 +105,10 @@
     "pending": "保留中",
     "processed": "処理済み",
     "processing": "処理中",
-    "retrying": "再試行中"
+    "retrying": "再試行中",
+    "dead_letter": "デッドレター",
+    "discarded": "破棄済み",
+    "skipped": "スキップ済み"
   },
   "execution": {
     "cancelled": "キャンセル済み",

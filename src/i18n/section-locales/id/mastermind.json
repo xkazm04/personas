@@ -228,5 +228,20 @@
   "soundings_where_it_sits": "Di mana letaknya. Proyek terkait ditebalkan",
   "soundings_who_athena": "Athena",
   "soundings_who_chart": "Grafik",
-  "soundings_yes": "ya"
+  "soundings_yes": "ya",
+  "dim_label_agents": "Agen",
+  "dim_label_auth": "Autentikasi",
+  "dim_label_ci": "CI",
+  "dim_label_datalinks": "Analisis data",
+  "dim_label_db": "Basis data",
+  "dim_label_goals": "Tujuan",
+  "dim_label_hosting": "Hosting",
+  "dim_label_ideas": "Ide",
+  "dim_label_kpi": "KPI",
+  "dim_label_llm": "Biaya LLM",
+  "dim_label_monitoring": "Pemantauan",
+  "dim_label_security": "Keamanan",
+  "dim_label_skills": "Skill",
+  "dim_label_support": "Dukungan",
+  "dim_label_tests": "Tes"
 }

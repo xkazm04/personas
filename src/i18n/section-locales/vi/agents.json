@@ -1440,7 +1440,8 @@
     "what_changed_tokens_fewer": "Bên phải ({side}) dùng ít token hơn {pct}%",
     "what_changed_tokens_more": "Bên phải ({side}) dùng nhiều token hơn {pct}%",
     "what_changed_tool_calls": "Lệnh gọi công cụ: {from} -> {to}",
-    "what_changed_tool_order": "Thứ tự gọi công cụ khác nhau"
+    "what_changed_tool_order": "Thứ tự gọi công cụ khác nhau",
+    "replay_capped": "Đang hiển thị {count} dòng đầu tiên của nhật ký lần chạy này. Phần đầu ra dài hơn sẽ không được phát lại."
   },
   "filters": {
     "add_to_favorites": "Thêm vào yêu thích",
@@ -3281,5 +3282,30 @@
     "runs_manual": "Chạy khi bạn bắt đầu",
     "runs_next": "Trình kích hoạt {type}, lần chạy tiếp theo {time}",
     "runs_on_event": "Trình kích hoạt {type}, chạy khi được kích hoạt"
-  }
+  },
+  "glyph_compose_event_from": "{description} (từ {persona})",
+  "glyph_compose_memory_summary": "Ghi nhớ tùy chọn giữa các lần chạy",
+  "glyph_compose_review_summary": "Chờ bạn phê duyệt trước khi xuất bản",
+  "glyph_day_long_fri": "Thứ Sáu",
+  "glyph_day_long_mon": "Thứ Hai",
+  "glyph_day_long_sat": "Thứ Bảy",
+  "glyph_day_long_sun": "Chủ Nhật",
+  "glyph_day_long_thu": "Thứ Năm",
+  "glyph_day_long_tue": "Thứ Ba",
+  "glyph_day_long_wed": "Thứ Tư",
+  "glyph_event_picker_done": "Xong",
+  "glyph_event_picker_subscribe": "Đăng ký {count}",
+  "glyph_event_picker_subscriptions": "Đăng ký",
+  "glyph_event_picker_subtitle_empty": "Chọn một persona và chọn các sự kiện mà agent này sẽ phản ứng",
+  "glyph_event_picker_subtitle_one": "{count} đăng ký sẵn sàng",
+  "glyph_event_picker_subtitle_other": "{count} đăng ký sẵn sàng",
+  "glyph_recipe_alt_connections": "Các kết nối mà công thức này sử dụng",
+  "glyph_recipe_alt_dimensions": "Các chiều có thể tinh chỉnh · {count}",
+  "glyph_recipe_alt_keep": "Tiếp tục mô tả",
+  "glyph_recipe_alt_load_failed": "Không thể tải công thức này.",
+  "glyph_recipe_alt_loading": "Đang tải công thức…",
+  "glyph_recipe_alt_path": "Lối nhanh hơn · khớp {pct}%",
+  "glyph_recipe_alt_use": "Dùng công thức này làm điểm xuất phát",
+  "glyph_sched_days_label": "Ngày",
+  "glyph_sched_time_label": "Giờ"
 }

@@ -1440,7 +1440,8 @@
     "what_changed_tokens_fewer": "ডান ({side}) {pct}% কম টোকেন ব্যবহার করেছে",
     "what_changed_tokens_more": "ডান ({side}) {pct}% বেশি টোকেন ব্যবহার করেছে",
     "what_changed_tool_calls": "টুল কল: {from} -> {to}",
-    "what_changed_tool_order": "টুল কলের ক্রম ভিন্ন"
+    "what_changed_tool_order": "টুল কলের ক্রম ভিন্ন",
+    "replay_capped": "এই রানের লগের প্রথম {count}টি লাইন দেখানো হচ্ছে। দীর্ঘ আউটপুট রিপ্লে করা হয় না।"
   },
   "filters": {
     "add_to_favorites": "পছন্দে যোগ করুন",
@@ -3281,5 +3282,30 @@
     "runs_manual": "আপনি শুরু করলে চলে",
     "runs_next": "{type} ট্রিগার, পরবর্তী রান {time}",
     "runs_on_event": "{type} ট্রিগার, সক্রিয় হলে চলে"
-  }
+  },
+  "glyph_compose_event_from": "{description} ({persona} থেকে)",
+  "glyph_compose_memory_summary": "রানগুলোর মধ্যে পছন্দ মনে রাখে",
+  "glyph_compose_review_summary": "প্রকাশের আগে আপনার অনুমোদনের জন্য অপেক্ষা করে",
+  "glyph_day_long_fri": "শুক্রবার",
+  "glyph_day_long_mon": "সোমবার",
+  "glyph_day_long_sat": "শনিবার",
+  "glyph_day_long_sun": "রবিবার",
+  "glyph_day_long_thu": "বৃহস্পতিবার",
+  "glyph_day_long_tue": "মঙ্গলবার",
+  "glyph_day_long_wed": "বুধবার",
+  "glyph_event_picker_done": "সম্পন্ন",
+  "glyph_event_picker_subscribe": "{count}টিতে সাবস্ক্রাইব করুন",
+  "glyph_event_picker_subscriptions": "সাবস্ক্রিপশন",
+  "glyph_event_picker_subtitle_empty": "একটি পার্সোনা বেছে নিন এবং এই এজেন্ট কোন ইভেন্টে সাড়া দেবে তা নির্বাচন করুন",
+  "glyph_event_picker_subtitle_one": "{count}টি সাবস্ক্রিপশন প্রস্তুত",
+  "glyph_event_picker_subtitle_other": "{count}টি সাবস্ক্রিপশন প্রস্তুত",
+  "glyph_recipe_alt_connections": "এই রেসিপি যেসব সংযোগ ব্যবহার করে",
+  "glyph_recipe_alt_dimensions": "যে মাত্রাগুলো টিউন করা যায় · {count}",
+  "glyph_recipe_alt_keep": "বর্ণনা চালিয়ে যান",
+  "glyph_recipe_alt_load_failed": "এই রেসিপি লোড করা যায়নি।",
+  "glyph_recipe_alt_loading": "রেসিপি লোড হচ্ছে…",
+  "glyph_recipe_alt_path": "দ্রুততর পথ · {pct}% মিল",
+  "glyph_recipe_alt_use": "এই রেসিপিটি শুরুর বিন্দু হিসেবে ব্যবহার করুন",
+  "glyph_sched_days_label": "দিন",
+  "glyph_sched_time_label": "সময়"
 }

@@ -3,7 +3,8 @@ import type { PersonaExecution } from '@/lib/types/types';
 import { useReplayTimeline } from '@/hooks/execution/useReplayTimeline';
 import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from '@/stores/toastStore';
-import { fetchReplayLines } from './fetchReplayLines';
+import { fetchReplayLines, REPLAY_MAX_LINES } from './fetchReplayLines';
+import { formatCount } from '@/lib/utils/formatters';
 
 import { createLogger } from '@/lib/log';
 import { silentCatch } from '@/lib/silentCatch';
@@ -23,7 +24,7 @@ interface ReplaySandboxProps {
 }
 
 export function ReplaySandbox({ execution }: ReplaySandboxProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const e = t.agents.executions;
   const setRerunInputData = useSystemStore((s) => s.setRerunInputData);
   const addToast = useToastStore((s) => s.addToast);
@@ -163,6 +164,13 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
           onToggleAutoSkip={() => actions.setAutoSkipSilence(!state.autoSkipSilence)}
         />
       </div>
+
+      {/* The log was cut at the replay cap: say so instead of replaying a silent prefix. */}
+      {logLines != null && logLines.length >= REPLAY_MAX_LINES && (
+        <p className="px-4 py-1.5 typo-caption text-foreground border-b border-primary/10" data-testid="replay-capped-notice">
+          {tx(e.replay_capped, { count: formatCount(REPLAY_MAX_LINES) })}
+        </p>
+      )}
 
       {/* Synchronized panels */}
       <div className="flex-1 flex overflow-hidden">

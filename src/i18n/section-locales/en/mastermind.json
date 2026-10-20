@@ -228,5 +228,20 @@
   "soundings_help_depth_l1": "Inside a station the same bands hold readings: Surface needs you, Shallows is not built, Mid-water is in progress, Deep is done. Lanes left to right: runtime, delivery, agentic, product.",
   "soundings_help_legend": "Depth, shape and colour agree",
   "soundings_unknown_note": "Unknown means the check could not read this, not that the value is zero.",
-  "soundings_help_flag": "An agent waits for your input"
+  "soundings_help_flag": "An agent waits for your input",
+  "dim_label_db": "Database",
+  "dim_label_monitoring": "Monitoring",
+  "dim_label_ci": "CI",
+  "dim_label_tests": "Tests",
+  "dim_label_security": "Security",
+  "dim_label_hosting": "Hosting",
+  "dim_label_auth": "Auth",
+  "dim_label_agents": "Agents",
+  "dim_label_skills": "Skills",
+  "dim_label_llm": "LLM cost",
+  "dim_label_kpi": "KPIs",
+  "dim_label_ideas": "Ideas",
+  "dim_label_goals": "Goals",
+  "dim_label_datalinks": "Data analysis",
+  "dim_label_support": "Support"
 }

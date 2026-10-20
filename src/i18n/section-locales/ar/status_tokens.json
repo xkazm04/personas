@@ -105,7 +105,10 @@
     "pending": "معلّق",
     "processed": "تمت المعالجة",
     "processing": "جارٍ المعالجة",
-    "retrying": "إعادة المحاولة"
+    "retrying": "إعادة المحاولة",
+    "dead_letter": "رسالة ميتة",
+    "discarded": "مُهمَل",
+    "skipped": "تم تخطيه"
   },
   "execution": {
     "cancelled": "ملغى",

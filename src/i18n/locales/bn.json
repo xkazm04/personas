@@ -1446,7 +1446,8 @@
       "what_changed_tokens_fewer": "ডান ({side}) {pct}% কম টোকেন ব্যবহার করেছে",
       "what_changed_tokens_more": "ডান ({side}) {pct}% বেশি টোকেন ব্যবহার করেছে",
       "what_changed_tool_calls": "টুল কল: {from} -> {to}",
-      "what_changed_tool_order": "টুল কলের ক্রম ভিন্ন"
+      "what_changed_tool_order": "টুল কলের ক্রম ভিন্ন",
+      "replay_capped": "এই রানের লগের প্রথম {count}টি লাইন দেখানো হচ্ছে। দীর্ঘ আউটপুট রিপ্লে করা হয় না।"
     },
     "filters": {
       "add_to_favorites": "পছন্দে যোগ করুন",
@@ -3287,7 +3288,32 @@
       "runs_manual": "আপনি শুরু করলে চলে",
       "runs_next": "{type} ট্রিগার, পরবর্তী রান {time}",
       "runs_on_event": "{type} ট্রিগার, সক্রিয় হলে চলে"
-    }
+    },
+    "glyph_compose_event_from": "{description} ({persona} থেকে)",
+    "glyph_compose_memory_summary": "রানগুলোর মধ্যে পছন্দ মনে রাখে",
+    "glyph_compose_review_summary": "প্রকাশের আগে আপনার অনুমোদনের জন্য অপেক্ষা করে",
+    "glyph_day_long_fri": "শুক্রবার",
+    "glyph_day_long_mon": "সোমবার",
+    "glyph_day_long_sat": "শনিবার",
+    "glyph_day_long_sun": "রবিবার",
+    "glyph_day_long_thu": "বৃহস্পতিবার",
+    "glyph_day_long_tue": "মঙ্গলবার",
+    "glyph_day_long_wed": "বুধবার",
+    "glyph_event_picker_done": "সম্পন্ন",
+    "glyph_event_picker_subscribe": "{count}টিতে সাবস্ক্রাইব করুন",
+    "glyph_event_picker_subscriptions": "সাবস্ক্রিপশন",
+    "glyph_event_picker_subtitle_empty": "একটি পার্সোনা বেছে নিন এবং এই এজেন্ট কোন ইভেন্টে সাড়া দেবে তা নির্বাচন করুন",
+    "glyph_event_picker_subtitle_one": "{count}টি সাবস্ক্রিপশন প্রস্তুত",
+    "glyph_event_picker_subtitle_other": "{count}টি সাবস্ক্রিপশন প্রস্তুত",
+    "glyph_recipe_alt_connections": "এই রেসিপি যেসব সংযোগ ব্যবহার করে",
+    "glyph_recipe_alt_dimensions": "যে মাত্রাগুলো টিউন করা যায় · {count}",
+    "glyph_recipe_alt_keep": "বর্ণনা চালিয়ে যান",
+    "glyph_recipe_alt_load_failed": "এই রেসিপি লোড করা যায়নি।",
+    "glyph_recipe_alt_loading": "রেসিপি লোড হচ্ছে…",
+    "glyph_recipe_alt_path": "দ্রুততর পথ · {pct}% মিল",
+    "glyph_recipe_alt_use": "এই রেসিপিটি শুরুর বিন্দু হিসেবে ব্যবহার করুন",
+    "glyph_sched_days_label": "দিন",
+    "glyph_sched_time_label": "সময়"
   },
   "alerts": {
     "error_clear_history": "সতর্কতার ইতিহাস মুছতে ব্যর্থ:",
@@ -6301,7 +6327,22 @@
     "soundings_where_it_sits": "এটি কোথায় অবস্থিত। সম্পর্কিত প্রকল্পগুলো বোল্ডে",
     "soundings_who_athena": "অ্যাথেনা",
     "soundings_who_chart": "চার্ট",
-    "soundings_yes": "হ্যাঁ"
+    "soundings_yes": "হ্যাঁ",
+    "dim_label_agents": "এজেন্ট",
+    "dim_label_auth": "Auth",
+    "dim_label_ci": "CI",
+    "dim_label_datalinks": "ডেটা বিশ্লেষণ",
+    "dim_label_db": "ডাটাবেস",
+    "dim_label_goals": "লক্ষ্য",
+    "dim_label_hosting": "হোস্টিং",
+    "dim_label_ideas": "আইডিয়া",
+    "dim_label_kpi": "KPI",
+    "dim_label_llm": "LLM খরচ",
+    "dim_label_monitoring": "মনিটরিং",
+    "dim_label_security": "নিরাপত্তা",
+    "dim_label_skills": "স্কিল",
+    "dim_label_support": "সহায়তা",
+    "dim_label_tests": "টেস্ট"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "সক্ষমতা যোগ করুন",
@@ -8843,7 +8884,9 @@
       "unknown": "অজানা",
       "value_delivered_count": "প্রদত্ত মূল্য",
       "value_delivered_rate": "মূল্য-প্রদানের হার",
-      "value_section_title": "ব্যবসায়িক মূল্য"
+      "value_section_title": "ব্যবসায়িক মূল্য",
+      "prev_p50": "আগের p50",
+      "prev_p95": "আগের p95"
     },
     "analytics_dashboard": {
       "active_count": "{count}টি সক্রিয়",
@@ -9936,7 +9979,6 @@
       "curation_schedule_save": "সময়সূচি সংরক্ষণ করুন",
       "curation_schedule_title": "স্মৃতি কিউরেশনের সময়সূচি",
       "delete_all": "সব মুছুন",
-      "delete_all_confirm_body": "এটি স্থায়ীভাবে সব {count}টি স্মৃতি মুছে দেবে। এটি পূর্বাবস্থায় ফেরানো যাবে না।",
       "delete_all_confirm_cta": "সব মুছুন",
       "delete_all_confirm_title": "সব স্মৃতি মুছবেন?",
       "form": {
@@ -9962,7 +10004,8 @@
       "reflect_pick_persona": "একটি এজেন্টের স্মৃতির প্রতিফলন করুন",
       "reflecting": "প্রতিফলন চলছে…",
       "search_placeholder": "মেমরি অনুসন্ধান…",
-      "title": "স্মৃতি"
+      "title": "স্মৃতি",
+      "delete_all_confirm_body_all_agents": "বর্তমান ফিল্টারে যা-ই দেখানো হোক, এটি সব এজেন্টের সমস্ত {count}টি মেমরি স্থায়ীভাবে মুছে ফেলবে। এটি আর ফেরানো যাবে না।"
     },
     "memory_actions": {
       "dismiss_suggestion": "পরামর্শ বরখাস্ত করুন",
@@ -10146,7 +10189,11 @@
     "popup_fields": {
       "ollama_domain": "ollama.com",
       "ollama_key_instructions": ", তারপর সেটিংস থেকে আপনার API কী কপি করুন। এই কী স্থানীয়ভাবে সংরক্ষিত এবং সমস্ত এজেন্টের মধ্যে শেয়ার করা হয়।",
-      "sign_up_free_at": "বিনামূল্যে সাইন আপ করুন"
+      "sign_up_free_at": "বিনামূল্যে সাইন আপ করুন",
+      "api_key_label": "API কী",
+      "litellm_base_url_label": "প্রক্সি বেস URL",
+      "litellm_master_key_label": "মাস্টার কী",
+      "ollama_key_placeholder": "ollama.com/settings থেকে আপনার কী পেস্ট করুন"
     },
     "predictive_alerts_extra": {
       "all_nominal": "সব সিস্টেম স্বাভাবিক",
@@ -10667,7 +10714,9 @@
       "p95_latency": "P95 লেটেন্সি",
       "runs": "রান",
       "streak": "স্ট্রিক",
-      "successful": "সফল"
+      "successful": "সফল",
+      "daily_trend_hint_one": "{date}: {rate} ({count}টি রান)",
+      "daily_trend_hint_other": "{date}: {rate} ({count}টি রান)"
     },
     "sla": {
       "active_agents": "{count} সক্রিয় এজেন্ট",
@@ -19465,7 +19514,10 @@
       "pending": "মুলতুবি",
       "processed": "প্রক্রিয়াকৃত",
       "processing": "প্রক্রিয়াধীন",
-      "retrying": "পুনরায় চেষ্টা হচ্ছে"
+      "retrying": "পুনরায় চেষ্টা হচ্ছে",
+      "dead_letter": "ডেড লেটার",
+      "discarded": "বাতিল করা হয়েছে",
+      "skipped": "এড়িয়ে যাওয়া হয়েছে"
     },
     "execution": {
       "cancelled": "বাতিল",

@@ -1440,7 +1440,8 @@
     "what_changed_tokens_fewer": "दायें ({side}) में {pct}% कम टोकन लगे",
     "what_changed_tokens_more": "दायें ({side}) में {pct}% अधिक टोकन लगे",
     "what_changed_tool_calls": "टूल कॉल: {from} -> {to}",
-    "what_changed_tool_order": "टूल कॉल का क्रम अलग है"
+    "what_changed_tool_order": "टूल कॉल का क्रम अलग है",
+    "replay_capped": "इस रन के लॉग की पहली {count} पंक्तियाँ दिखाई जा रही हैं। इससे लंबा आउटपुट दोबारा नहीं चलाया जाता।"
   },
   "filters": {
     "add_to_favorites": "पसंदीदा में जोड़ें",
@@ -3281,5 +3282,30 @@
     "runs_manual": "जब आप शुरू करें तब चलता है",
     "runs_next": "{type} ट्रिगर, अगला रन {time}",
     "runs_on_event": "{type} ट्रिगर, सक्रिय होने पर चलता है"
-  }
+  },
+  "glyph_compose_event_from": "{description} ({persona} से)",
+  "glyph_compose_memory_summary": "रन के बीच पसंद याद रखता है",
+  "glyph_compose_review_summary": "प्रकाशित करने से पहले आपकी मंज़ूरी का इंतज़ार करता है",
+  "glyph_day_long_fri": "शुक्रवार",
+  "glyph_day_long_mon": "सोमवार",
+  "glyph_day_long_sat": "शनिवार",
+  "glyph_day_long_sun": "रविवार",
+  "glyph_day_long_thu": "गुरुवार",
+  "glyph_day_long_tue": "मंगलवार",
+  "glyph_day_long_wed": "बुधवार",
+  "glyph_event_picker_done": "हो गया",
+  "glyph_event_picker_subscribe": "{count} की सदस्यता लें",
+  "glyph_event_picker_subscriptions": "सदस्यताएँ",
+  "glyph_event_picker_subtitle_empty": "कोई पर्सोना चुनें और तय करें कि यह एजेंट किन इवेंट पर प्रतिक्रिया दे",
+  "glyph_event_picker_subtitle_one": "{count} सदस्यता तैयार है",
+  "glyph_event_picker_subtitle_other": "{count} सदस्यताएँ तैयार हैं",
+  "glyph_recipe_alt_connections": "यह रेसिपी जो कनेक्शन इस्तेमाल करती है",
+  "glyph_recipe_alt_dimensions": "ट्यून किए जा सकने वाले आयाम · {count}",
+  "glyph_recipe_alt_keep": "वर्णन जारी रखें",
+  "glyph_recipe_alt_load_failed": "यह रेसिपी लोड नहीं हो सकी।",
+  "glyph_recipe_alt_loading": "रेसिपी लोड हो रही है…",
+  "glyph_recipe_alt_path": "तेज़ रास्ता · {pct}% मेल",
+  "glyph_recipe_alt_use": "इस रेसिपी को शुरुआती बिंदु बनाएँ",
+  "glyph_sched_days_label": "दिन",
+  "glyph_sched_time_label": "समय"
 }

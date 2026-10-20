@@ -228,5 +228,20 @@
   "soundings_where_it_sits": "এটি কোথায় অবস্থিত। সম্পর্কিত প্রকল্পগুলো বোল্ডে",
   "soundings_who_athena": "অ্যাথেনা",
   "soundings_who_chart": "চার্ট",
-  "soundings_yes": "হ্যাঁ"
+  "soundings_yes": "হ্যাঁ",
+  "dim_label_agents": "এজেন্ট",
+  "dim_label_auth": "Auth",
+  "dim_label_ci": "CI",
+  "dim_label_datalinks": "ডেটা বিশ্লেষণ",
+  "dim_label_db": "ডাটাবেস",
+  "dim_label_goals": "লক্ষ্য",
+  "dim_label_hosting": "হোস্টিং",
+  "dim_label_ideas": "আইডিয়া",
+  "dim_label_kpi": "KPI",
+  "dim_label_llm": "LLM খরচ",
+  "dim_label_monitoring": "মনিটরিং",
+  "dim_label_security": "নিরাপত্তা",
+  "dim_label_skills": "স্কিল",
+  "dim_label_support": "সহায়তা",
+  "dim_label_tests": "টেস্ট"
 }

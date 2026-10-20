@@ -1446,7 +1446,8 @@
       "what_changed_tokens_fewer": "Rechts ({side}) verbrauchte {pct} % weniger Tokens",
       "what_changed_tokens_more": "Rechts ({side}) verbrauchte {pct} % mehr Tokens",
       "what_changed_tool_calls": "Tool-Aufrufe: {from} -> {to}",
-      "what_changed_tool_order": "Andere Reihenfolge der Tool-Aufrufe"
+      "what_changed_tool_order": "Andere Reihenfolge der Tool-Aufrufe",
+      "replay_capped": "Es werden die ersten {count} Zeilen des Protokolls dieses Laufs angezeigt. Längere Ausgaben werden nicht wiedergegeben."
     },
     "filters": {
       "add_to_favorites": "Zu Favoriten hinzufügen",
@@ -3287,7 +3288,32 @@
       "runs_manual": "Läuft, wenn du es startest",
       "runs_next": "{type}-Auslöser, nächster Lauf {time}",
       "runs_on_event": "{type}-Auslöser, läuft, wenn er auslöst"
-    }
+    },
+    "glyph_compose_event_from": "{description} (von {persona})",
+    "glyph_compose_memory_summary": "Merkt sich Präferenzen zwischen Läufen",
+    "glyph_compose_review_summary": "Wartet vor der Veröffentlichung auf deine Freigabe",
+    "glyph_day_long_fri": "Freitag",
+    "glyph_day_long_mon": "Montag",
+    "glyph_day_long_sat": "Samstag",
+    "glyph_day_long_sun": "Sonntag",
+    "glyph_day_long_thu": "Donnerstag",
+    "glyph_day_long_tue": "Dienstag",
+    "glyph_day_long_wed": "Mittwoch",
+    "glyph_event_picker_done": "Fertig",
+    "glyph_event_picker_subscribe": "{count} abonnieren",
+    "glyph_event_picker_subscriptions": "Abonnements",
+    "glyph_event_picker_subtitle_empty": "Wähle eine Persona und lege fest, auf welche Ereignisse dieser Agent reagieren soll",
+    "glyph_event_picker_subtitle_one": "{count} Abonnement bereit",
+    "glyph_event_picker_subtitle_other": "{count} Abonnements bereit",
+    "glyph_recipe_alt_connections": "Verbindungen, die dieses Rezept nutzt",
+    "glyph_recipe_alt_dimensions": "Anpassbare Dimensionen · {count}",
+    "glyph_recipe_alt_keep": "Weiter beschreiben",
+    "glyph_recipe_alt_load_failed": "Dieses Rezept konnte nicht geladen werden.",
+    "glyph_recipe_alt_loading": "Rezept wird geladen…",
+    "glyph_recipe_alt_path": "Schnellerer Weg · {pct} % Übereinstimmung",
+    "glyph_recipe_alt_use": "Dieses Rezept als Ausgangspunkt verwenden",
+    "glyph_sched_days_label": "Tage",
+    "glyph_sched_time_label": "Uhrzeit"
   },
   "alerts": {
     "error_clear_history": "Alarmverlauf konnte nicht gelöscht werden:",
@@ -6301,7 +6327,22 @@
     "soundings_where_it_sits": "Wo es sich befindet. Verwandte Projekte fett dargestellt",
     "soundings_who_athena": "Athena",
     "soundings_who_chart": "Diagramm",
-    "soundings_yes": "ja"
+    "soundings_yes": "ja",
+    "dim_label_agents": "Agenten",
+    "dim_label_auth": "Authentifizierung",
+    "dim_label_ci": "CI",
+    "dim_label_datalinks": "Datenanalyse",
+    "dim_label_db": "Datenbank",
+    "dim_label_goals": "Ziele",
+    "dim_label_hosting": "Hosting",
+    "dim_label_ideas": "Ideen",
+    "dim_label_kpi": "KPIs",
+    "dim_label_llm": "LLM-Kosten",
+    "dim_label_monitoring": "Monitoring",
+    "dim_label_security": "Sicherheit",
+    "dim_label_skills": "Skills",
+    "dim_label_support": "Support",
+    "dim_label_tests": "Tests"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "Fähigkeit hinzufügen",
@@ -8843,7 +8884,9 @@
       "unknown": "Unbekannt",
       "value_delivered_count": "Wert geliefert",
       "value_delivered_rate": "Wertlieferungsrate",
-      "value_section_title": "Geschäftswert"
+      "value_section_title": "Geschäftswert",
+      "prev_p50": "Vorh. p50",
+      "prev_p95": "Vorh. p95"
     },
     "analytics_dashboard": {
       "active_count": "{count} aktiv",
@@ -9936,7 +9979,6 @@
       "curation_schedule_save": "Zeitplan speichern",
       "curation_schedule_title": "Gedächtnispflege planen",
       "delete_all": "Alle löschen",
-      "delete_all_confirm_body": "Dies löscht dauerhaft alle {count} Erinnerungen. Dies kann nicht rückgängig gemacht werden.",
       "delete_all_confirm_cta": "Alle löschen",
       "delete_all_confirm_title": "Alle Erinnerungen löschen?",
       "form": {
@@ -9962,7 +10004,8 @@
       "reflect_pick_persona": "Erinnerungen eines Agenten reflektieren",
       "reflecting": "Reflektiert…",
       "search_placeholder": "Erinnerungen suchen…",
-      "title": "Erinnerungen"
+      "title": "Erinnerungen",
+      "delete_all_confirm_body_all_agents": "Dadurch werden alle {count} Erinnerungen aller Agenten endgültig gelöscht, unabhängig vom aktuellen Filter. Das kann nicht rückgängig gemacht werden."
     },
     "memory_actions": {
       "dismiss_suggestion": "Vorschlag verwerfen",
@@ -10146,7 +10189,11 @@
     "popup_fields": {
       "ollama_domain": "ollama.com",
       "ollama_key_instructions": ", kopieren Sie dann Ihren API-Schlüssel aus den Einstellungen. Der Schlüssel wird lokal gespeichert und für alle Agenten gemeinsam genutzt.",
-      "sign_up_free_at": "Kostenlos registrieren auf"
+      "sign_up_free_at": "Kostenlos registrieren auf",
+      "api_key_label": "API-Schlüssel",
+      "litellm_base_url_label": "Proxy-Basis-URL",
+      "litellm_master_key_label": "Master-Schlüssel",
+      "ollama_key_placeholder": "Füge deinen Schlüssel von ollama.com/settings ein"
     },
     "predictive_alerts_extra": {
       "all_nominal": "Alle Systeme normal",
@@ -10667,7 +10714,9 @@
       "p95_latency": "P95-Latenz",
       "runs": "Läufe",
       "streak": "Serie",
-      "successful": "Erfolgreich"
+      "successful": "Erfolgreich",
+      "daily_trend_hint_one": "{date}: {rate} ({count} Lauf)",
+      "daily_trend_hint_other": "{date}: {rate} ({count} Läufe)"
     },
     "sla": {
       "active_agents": "{count} aktive Agenten",
@@ -19465,7 +19514,10 @@
       "pending": "Ausstehend",
       "processed": "Verarbeitet",
       "processing": "Verarbeitung",
-      "retrying": "Wird wiederholt"
+      "retrying": "Wird wiederholt",
+      "dead_letter": "Dead Letter",
+      "discarded": "Verworfen",
+      "skipped": "Übersprungen"
     },
     "execution": {
       "cancelled": "Abgebrochen",

@@ -189,7 +189,6 @@
     "title": "Memories",
     "delete_all": "Delete all",
     "delete_all_confirm_title": "Delete all memories?",
-    "delete_all_confirm_body": "This permanently deletes all {count} memories. This cannot be undone.",
     "delete_all_confirm_cta": "Delete all",
     "created_success": "Memory created successfully",
     "no_memories": "No memories yet",
@@ -227,7 +226,8 @@
     "reflect": "Reflect",
     "reflecting": "Reflecting...",
     "reflect_hint": "Consolidate related memories into durable insights — the result is a proposal you review before anything changes",
-    "reflect_pick_persona": "Reflect memories for an agent"
+    "reflect_pick_persona": "Reflect memories for an agent",
+    "delete_all_confirm_body_all_agents": "This permanently deletes all {count} memories across all agents, whatever the current filter shows. This cannot be undone."
   },
   "memory_review": {
     "keep_prefix": "Keep “",
@@ -937,7 +937,9 @@
     "all_statuses": "All statuses",
     "col_status": "Status",
     "col_id": "ID",
-    "execution_label": "Execution"
+    "execution_label": "Execution",
+    "prev_p50": "Prev p50",
+    "prev_p95": "Prev p95"
   },
   "analytics_dashboard": {
     "issues_found": "{count} issues found",
@@ -1018,7 +1020,9 @@
     "healed": "{count} healed",
     "agent": "Agent",
     "runs": "Runs",
-    "streak": "Streak"
+    "streak": "Streak",
+    "daily_trend_hint_one": "{date}: {rate} ({count} run)",
+    "daily_trend_hint_other": "{date}: {rate} ({count} runs)"
   },
   "realtime_page": {
     "title": "Event Bus Monitor",
@@ -1563,7 +1567,11 @@
   "popup_fields": {
     "sign_up_free_at": "Sign up free at",
     "ollama_domain": "ollama.com",
-    "ollama_key_instructions": ", then copy your API key from Settings. This key is stored locally and shared across all agents."
+    "ollama_key_instructions": ", then copy your API key from Settings. This key is stored locally and shared across all agents.",
+    "api_key_label": "API Key",
+    "ollama_key_placeholder": "Paste your key from ollama.com/settings",
+    "litellm_base_url_label": "Proxy Base URL",
+    "litellm_master_key_label": "Master Key"
   },
   "usage_filters": {
     "time_range_label": "Time range"

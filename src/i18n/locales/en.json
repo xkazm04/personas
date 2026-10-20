@@ -3782,7 +3782,8 @@
       "what_changed_tool_order": "Different tool call order",
       "what_changed_tool_calls": "Tool calls: {from} -> {to}",
       "what_changed_model": "Model changed: {from} -> {to}",
-      "what_changed_none": "No significant differences detected"
+      "what_changed_none": "No significant differences detected",
+      "replay_capped": "Showing the first {count} lines of this run's log. Longer output is not replayed."
     },
     "lab": {
       "vr_title": "Versions & Ratings",
@@ -6307,7 +6308,32 @@
       "refused": "Promote will refuse this draft",
       "refused_hint": "Refine the draft to fix it, then promote.",
       "blocked_tooltip": "Promote would refuse: {reason}"
-    }
+    },
+    "glyph_compose_memory_summary": "Remembers preferences between runs",
+    "glyph_compose_review_summary": "Waits for your approval before publishing",
+    "glyph_compose_event_from": "{description} (from {persona})",
+    "glyph_event_picker_subtitle_empty": "Pick a persona and choose which events this agent should react to",
+    "glyph_event_picker_subtitle_one": "{count} subscription ready",
+    "glyph_event_picker_subtitle_other": "{count} subscriptions ready",
+    "glyph_event_picker_done": "Done",
+    "glyph_event_picker_subscribe": "Subscribe to {count}",
+    "glyph_event_picker_subscriptions": "Subscriptions",
+    "glyph_sched_time_label": "Time",
+    "glyph_sched_days_label": "Days",
+    "glyph_day_long_mon": "Monday",
+    "glyph_day_long_tue": "Tuesday",
+    "glyph_day_long_wed": "Wednesday",
+    "glyph_day_long_thu": "Thursday",
+    "glyph_day_long_fri": "Friday",
+    "glyph_day_long_sat": "Saturday",
+    "glyph_day_long_sun": "Sunday",
+    "glyph_recipe_alt_path": "Faster path · {pct}% match",
+    "glyph_recipe_alt_load_failed": "Couldn't load this recipe.",
+    "glyph_recipe_alt_loading": "Loading recipe…",
+    "glyph_recipe_alt_connections": "Connections this recipe uses",
+    "glyph_recipe_alt_dimensions": "Dimensions you can tune · {count}",
+    "glyph_recipe_alt_keep": "Keep describing",
+    "glyph_recipe_alt_use": "Use this recipe as the starting point"
   },
   "director": {
     "panel_title": "Director",
@@ -9235,7 +9261,6 @@
       "title": "Memories",
       "delete_all": "Delete all",
       "delete_all_confirm_title": "Delete all memories?",
-      "delete_all_confirm_body": "This permanently deletes all {count} memories. This cannot be undone.",
       "delete_all_confirm_cta": "Delete all",
       "created_success": "Memory created successfully",
       "no_memories": "No memories yet",
@@ -9273,7 +9298,8 @@
       "reflect": "Reflect",
       "reflecting": "Reflecting...",
       "reflect_hint": "Consolidate related memories into durable insights — the result is a proposal you review before anything changes",
-      "reflect_pick_persona": "Reflect memories for an agent"
+      "reflect_pick_persona": "Reflect memories for an agent",
+      "delete_all_confirm_body_all_agents": "This permanently deletes all {count} memories across all agents, whatever the current filter shows. This cannot be undone."
     },
     "memory_review": {
       "keep_prefix": "Keep “",
@@ -9983,7 +10009,9 @@
       "all_statuses": "All statuses",
       "col_status": "Status",
       "col_id": "ID",
-      "execution_label": "Execution"
+      "execution_label": "Execution",
+      "prev_p50": "Prev p50",
+      "prev_p95": "Prev p95"
     },
     "analytics_dashboard": {
       "issues_found": "{count} issues found",
@@ -10064,7 +10092,9 @@
       "healed": "{count} healed",
       "agent": "Agent",
       "runs": "Runs",
-      "streak": "Streak"
+      "streak": "Streak",
+      "daily_trend_hint_one": "{date}: {rate} ({count} run)",
+      "daily_trend_hint_other": "{date}: {rate} ({count} runs)"
     },
     "realtime_page": {
       "title": "Event Bus Monitor",
@@ -10609,7 +10639,11 @@
     "popup_fields": {
       "sign_up_free_at": "Sign up free at",
       "ollama_domain": "ollama.com",
-      "ollama_key_instructions": ", then copy your API key from Settings. This key is stored locally and shared across all agents."
+      "ollama_key_instructions": ", then copy your API key from Settings. This key is stored locally and shared across all agents.",
+      "api_key_label": "API Key",
+      "ollama_key_placeholder": "Paste your key from ollama.com/settings",
+      "litellm_base_url_label": "Proxy Base URL",
+      "litellm_master_key_label": "Master Key"
     },
     "usage_filters": {
       "time_range_label": "Time range"
@@ -16003,7 +16037,10 @@
       "processing": "Processing",
       "processed": "Processed",
       "failed": "Failed",
-      "retrying": "Retrying"
+      "retrying": "Retrying",
+      "skipped": "Skipped",
+      "dead_letter": "Dead letter",
+      "discarded": "Discarded"
     },
     "automation": {
       "pending": "Pending",
@@ -25507,7 +25544,22 @@
     "soundings_help_depth_l1": "Inside a station the same bands hold readings: Surface needs you, Shallows is not built, Mid-water is in progress, Deep is done. Lanes left to right: runtime, delivery, agentic, product.",
     "soundings_help_legend": "Depth, shape and colour agree",
     "soundings_unknown_note": "Unknown means the check could not read this, not that the value is zero.",
-    "soundings_help_flag": "An agent waits for your input"
+    "soundings_help_flag": "An agent waits for your input",
+    "dim_label_db": "Database",
+    "dim_label_monitoring": "Monitoring",
+    "dim_label_ci": "CI",
+    "dim_label_tests": "Tests",
+    "dim_label_security": "Security",
+    "dim_label_hosting": "Hosting",
+    "dim_label_auth": "Auth",
+    "dim_label_agents": "Agents",
+    "dim_label_skills": "Skills",
+    "dim_label_llm": "LLM cost",
+    "dim_label_kpi": "KPIs",
+    "dim_label_ideas": "Ideas",
+    "dim_label_goals": "Goals",
+    "dim_label_datalinks": "Data analysis",
+    "dim_label_support": "Support"
   },
   "ship": {
     "cover_next": "Next",

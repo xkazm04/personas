@@ -1440,7 +1440,8 @@
     "what_changed_tokens_fewer": "Rechts ({side}) verbrauchte {pct} % weniger Tokens",
     "what_changed_tokens_more": "Rechts ({side}) verbrauchte {pct} % mehr Tokens",
     "what_changed_tool_calls": "Tool-Aufrufe: {from} -> {to}",
-    "what_changed_tool_order": "Andere Reihenfolge der Tool-Aufrufe"
+    "what_changed_tool_order": "Andere Reihenfolge der Tool-Aufrufe",
+    "replay_capped": "Es werden die ersten {count} Zeilen des Protokolls dieses Laufs angezeigt. Längere Ausgaben werden nicht wiedergegeben."
   },
   "filters": {
     "add_to_favorites": "Zu Favoriten hinzufügen",
@@ -3281,5 +3282,30 @@
     "runs_manual": "Läuft, wenn du es startest",
     "runs_next": "{type}-Auslöser, nächster Lauf {time}",
     "runs_on_event": "{type}-Auslöser, läuft, wenn er auslöst"
-  }
+  },
+  "glyph_compose_event_from": "{description} (von {persona})",
+  "glyph_compose_memory_summary": "Merkt sich Präferenzen zwischen Läufen",
+  "glyph_compose_review_summary": "Wartet vor der Veröffentlichung auf deine Freigabe",
+  "glyph_day_long_fri": "Freitag",
+  "glyph_day_long_mon": "Montag",
+  "glyph_day_long_sat": "Samstag",
+  "glyph_day_long_sun": "Sonntag",
+  "glyph_day_long_thu": "Donnerstag",
+  "glyph_day_long_tue": "Dienstag",
+  "glyph_day_long_wed": "Mittwoch",
+  "glyph_event_picker_done": "Fertig",
+  "glyph_event_picker_subscribe": "{count} abonnieren",
+  "glyph_event_picker_subscriptions": "Abonnements",
+  "glyph_event_picker_subtitle_empty": "Wähle eine Persona und lege fest, auf welche Ereignisse dieser Agent reagieren soll",
+  "glyph_event_picker_subtitle_one": "{count} Abonnement bereit",
+  "glyph_event_picker_subtitle_other": "{count} Abonnements bereit",
+  "glyph_recipe_alt_connections": "Verbindungen, die dieses Rezept nutzt",
+  "glyph_recipe_alt_dimensions": "Anpassbare Dimensionen · {count}",
+  "glyph_recipe_alt_keep": "Weiter beschreiben",
+  "glyph_recipe_alt_load_failed": "Dieses Rezept konnte nicht geladen werden.",
+  "glyph_recipe_alt_loading": "Rezept wird geladen…",
+  "glyph_recipe_alt_path": "Schnellerer Weg · {pct} % Übereinstimmung",
+  "glyph_recipe_alt_use": "Dieses Rezept als Ausgangspunkt verwenden",
+  "glyph_sched_days_label": "Tage",
+  "glyph_sched_time_label": "Uhrzeit"
 }

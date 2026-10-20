@@ -17,6 +17,7 @@
  *   • launch   — intent augmented with memory/review preferences, then fired.
  */
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import { useTranslation } from "@/i18n/useTranslation";
 import type { GlyphDimension } from "@/features/shared/glyph";
 import type {
   Frequency, QuickConfigState, EventSubscription,
@@ -84,6 +85,7 @@ export function useComposeConfig({
   intentText, onIntentChange, onLaunch, onQuickConfigChange,
   initialNotificationChannels, resetKey, coreAugmentation = "",
 }: UseComposeConfigArgs) {
+  const { t, tx } = useTranslation();
   const [memoryEnabled, setMemoryEnabled] = useState(false);
   const [reviewEnabled, setReviewEnabled] = useState(false);
   const [selectedConnectors, setSelectedConnectors] = useState<string[]>([]);
@@ -232,19 +234,19 @@ export function useComposeConfig({
     {
       dim: "event", kind: "picker",
       active: selectedEvents.length > 0,
-      summary: selectedEvents.map((e) => `${e.description} (from ${e.personaName})`),
+      summary: selectedEvents.map((e) => tx(t.agents.glyph_compose_event_from, { description: e.description, persona: e.personaName })),
       onClick: () => setEventsModalOpen(true),
     },
     {
       dim: "memory", kind: "toggle",
       active: memoryEnabled,
-      summary: memoryEnabled ? ["Remembers preferences between runs"] : [],
+      summary: memoryEnabled ? [t.agents.glyph_compose_memory_summary] : [],
       onClick: () => setMemoryEnabled((v) => !v),
     },
     {
       dim: "review", kind: "toggle",
       active: reviewEnabled,
-      summary: reviewEnabled ? ["Waits for your approval before publishing"] : [],
+      summary: reviewEnabled ? [t.agents.glyph_compose_review_summary] : [],
       onClick: () => setReviewEnabled((v) => !v),
     },
     {
@@ -256,7 +258,7 @@ export function useComposeConfig({
       onClick: () => setMessagingModalOpen(true),
     },
   ]; return base.map((it) => ({ ...it, quick })); }, [showInput, intentText, frequency, triggerSummary, selectedConnectors, connectorSummary,
-      selectedEvents, memoryEnabled, reviewEnabled, selectedChannels, quick]);
+      selectedEvents, memoryEnabled, reviewEnabled, selectedChannels, quick, t, tx]);
 
   // Augment the intent with memory/review preferences right before launch —
   // the build prompt's heuristics open/skip those gates from the keywords, so

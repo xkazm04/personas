@@ -105,7 +105,10 @@
     "pending": "মুলতুবি",
     "processed": "প্রক্রিয়াকৃত",
     "processing": "প্রক্রিয়াধীন",
-    "retrying": "পুনরায় চেষ্টা হচ্ছে"
+    "retrying": "পুনরায় চেষ্টা হচ্ছে",
+    "dead_letter": "ডেড লেটার",
+    "discarded": "বাতিল করা হয়েছে",
+    "skipped": "এড়িয়ে যাওয়া হয়েছে"
   },
   "execution": {
     "cancelled": "বাতিল",

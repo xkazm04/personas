@@ -1440,7 +1440,8 @@
     "what_changed_tokens_fewer": "右侧（{side}）少用了 {pct}% 的令牌",
     "what_changed_tokens_more": "右侧（{side}）多用了 {pct}% 的令牌",
     "what_changed_tool_calls": "工具调用：{from} -> {to}",
-    "what_changed_tool_order": "工具调用顺序不同"
+    "what_changed_tool_order": "工具调用顺序不同",
+    "replay_capped": "仅显示本次运行日志的前 {count} 行，更长的输出不会回放。"
   },
   "filters": {
     "add_to_favorites": "添加到收藏",
@@ -3281,5 +3282,30 @@
     "runs_manual": "在您启动时运行",
     "runs_next": "{type} 触发器，下次运行 {time}",
     "runs_on_event": "{type} 触发器，触发时运行"
-  }
+  },
+  "glyph_compose_event_from": "{description}（来自 {persona}）",
+  "glyph_compose_memory_summary": "在多次运行之间记住偏好",
+  "glyph_compose_review_summary": "发布前等待你的批准",
+  "glyph_day_long_fri": "星期五",
+  "glyph_day_long_mon": "星期一",
+  "glyph_day_long_sat": "星期六",
+  "glyph_day_long_sun": "星期日",
+  "glyph_day_long_thu": "星期四",
+  "glyph_day_long_tue": "星期二",
+  "glyph_day_long_wed": "星期三",
+  "glyph_event_picker_done": "完成",
+  "glyph_event_picker_subscribe": "订阅 {count} 项",
+  "glyph_event_picker_subscriptions": "订阅",
+  "glyph_event_picker_subtitle_empty": "选择一个角色，并选择此智能体应响应哪些事件",
+  "glyph_event_picker_subtitle_one": "{count} 个订阅已就绪",
+  "glyph_event_picker_subtitle_other": "{count} 个订阅已就绪",
+  "glyph_recipe_alt_connections": "此配方使用的连接",
+  "glyph_recipe_alt_dimensions": "可调整的维度 · {count}",
+  "glyph_recipe_alt_keep": "继续描述",
+  "glyph_recipe_alt_load_failed": "无法加载此配方。",
+  "glyph_recipe_alt_loading": "正在加载配方…",
+  "glyph_recipe_alt_path": "更快的路径 · 匹配度 {pct}%",
+  "glyph_recipe_alt_use": "以此配方作为起点",
+  "glyph_sched_days_label": "日期",
+  "glyph_sched_time_label": "时间"
 }

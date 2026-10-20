@@ -1,5 +1,7 @@
 import { formatPercent } from '../libs/slaHelpers';
 import { rateToHealth, HEALTH_STATUS_TOKEN } from '@/lib/design/statusTokens';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /** Plot height of the daily-trend strip, in px. The row takes its height from this
  *  constant AND every bar is sized in absolute pixels against it, so the two can
@@ -35,6 +37,7 @@ function trendBarHeight(successRate: number): number {
 }
 
 export function DailyTrendChart({ points }: { points: { date: string; success_rate: number; total: number }[] }) {
+  const { t, tx } = useTranslation();
   if (points.length === 0) return null;
   const barWidth = Math.max(4, Math.min(16, Math.floor(600 / points.length)));
 
@@ -49,14 +52,23 @@ export function DailyTrendChart({ points }: { points: { date: string; success_ra
           ? HEALTH_STATUS_TOKEN.neutral.icon
           : `${HEALTH_STATUS_TOKEN[rateToHealth(p.success_rate)].icon}/60`;
         return (
-          <div key={i} className="flex flex-col items-center justify-end flex-shrink-0" style={{ width: barWidth }} title={`${p.date}: ${noData ? '—' : formatPercent(p.success_rate)} (${p.total} runs)`}>
-            <div
-              data-testid="sla-trend-bar"
-              data-no-data={noData ? 'true' : undefined}
-              className={`animate-fade-in w-full rounded-t-interactive ${color}`}
-              style={{ height: noData ? TREND_BAR_MIN_H : trendBarHeight(p.success_rate) }}
-            />
-          </div>
+          <Tooltip
+            key={i}
+            content={tx(p.total === 1 ? t.overview.sla_card.daily_trend_hint_one : t.overview.sla_card.daily_trend_hint_other, {
+              date: p.date,
+              rate: noData ? '—' : formatPercent(p.success_rate),
+              count: p.total,
+            })}
+          >
+            <div className="flex flex-col items-center justify-end flex-shrink-0" style={{ width: barWidth }}>
+              <div
+                data-testid="sla-trend-bar"
+                data-no-data={noData ? 'true' : undefined}
+                className={`animate-fade-in w-full rounded-t-interactive ${color}`}
+                style={{ height: noData ? TREND_BAR_MIN_H : trendBarHeight(p.success_rate) }}
+              />
+            </div>
+          </Tooltip>
         );
       })}
     </div>
