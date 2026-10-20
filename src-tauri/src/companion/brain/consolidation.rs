@@ -183,6 +183,42 @@ fn default_confidence() -> f32 {
     0.7
 }
 
+/// A `running` row older than this is a crashed pass, not an in-flight one
+/// (the CLI call times out at 300 s), so it no longer blocks a new start.
+const RUN_STALE_AFTER_SECS: i64 = 600;
+
+/// Single-flight guard. Inserts the `running` row for `id` only when no other
+/// non-stale `running` row exists, in ONE statement so two starts cannot both
+/// pass the check. Returns `None` when `id` now holds the slot, or
+/// `Some(existing_id)` when a pass is already in flight (the caller returns
+/// that id instead of running a second 300 s pass over the same episodes).
+fn claim_run_slot(pool: &UserDbPool, id: &str, now: &str) -> Result<Option<String>, AppError> {
+    let cutoff = (sim_clock::now() - chrono::Duration::seconds(RUN_STALE_AFTER_SECS)).to_rfc3339();
+    let conn = pool.get()?;
+    let inserted = conn.execute(
+        "INSERT INTO companion_consolidation (id, triggered_at, status)
+         SELECT ?1, ?2, 'running'
+         WHERE NOT EXISTS (
+             SELECT 1 FROM companion_consolidation
+             WHERE status = 'running' AND triggered_at > ?3
+         )",
+        params![id, now, cutoff],
+    )?;
+    if inserted == 1 {
+        return Ok(None);
+    }
+    let existing: Option<String> = conn
+        .query_row(
+            "SELECT id FROM companion_consolidation
+             WHERE status = 'running' AND triggered_at > ?1
+             ORDER BY triggered_at DESC LIMIT 1",
+            params![cutoff],
+            |r| r.get("id"),
+        )
+        .optional()?;
+    Ok(existing)
+}
+
 /// Run a consolidation pass end-to-end. Creates the
 /// `companion_consolidation` row in `running`, calls the CLI, parses
 /// the JSON envelope, persists each proposal as an item row, and
@@ -203,13 +239,8 @@ pub async fn run_consolidation(
 
     // Insert the run row in `running` so the UI can show progress
     // immediately. We update to `review` when the JSON envelope lands.
-    {
-        let conn = pool.get()?;
-        conn.execute(
-            "INSERT INTO companion_consolidation (id, triggered_at, status)
-             VALUES (?1, ?2, 'running')",
-            params![id, now],
-        )?;
+    if let Some(running) = claim_run_slot(pool, &id, &now)? {
+        return Ok(running);
     }
 
     // Build the prompt: existing facts (so Claude can recommend
@@ -1348,6 +1379,28 @@ mod tests {
     struct Brain {
         pool: UserDbPool,
         _home: TestHome,
+    }
+
+    #[test]
+    fn second_start_returns_the_running_id() -> Result<(), AppError> {
+        let b = brain()?;
+        let now = sim_clock::now().to_rfc3339();
+        assert_eq!(claim_run_slot(&b.pool, "cons_a", &now)?, None);
+        assert_eq!(
+            claim_run_slot(&b.pool, "cons_b", &now)?,
+            Some("cons_a".to_string())
+        );
+        let conn = b.pool.get()?;
+        let n: i64 = conn.query_row(
+            "SELECT COUNT(*) AS n FROM companion_consolidation",
+            [],
+            |r| r.get("n"),
+        )?;
+        assert_eq!(n, 1);
+        // A finished run frees the slot.
+        conn.execute("UPDATE companion_consolidation SET status = 'review'", [])?;
+        assert_eq!(claim_run_slot(&b.pool, "cons_c", &now)?, None);
+        Ok(())
     }
 
     fn brain() -> Result<Brain, AppError> {
