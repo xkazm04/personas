@@ -142,7 +142,19 @@ describe('RecipesPanel', () => {
     render(<Harness />);
     await waitFor(() => expect(screen.getByText('List open PRs')).toBeTruthy());
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(await screen.findByTestId('recipe-delete-confirm-action'));
     await waitFor(() => expect(screen.getByText('Failed to delete recipe')).toBeTruthy());
+  });
+
+  it('does not delete a recipe on the first click, only after confirming', async () => {
+    deleteRecipe.mockClear();
+    getCredentialRecipes.mockResolvedValue([RECIPE]);
+    render(<Harness />);
+    await waitFor(() => expect(screen.getByText('List open PRs')).toBeTruthy());
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    expect(deleteRecipe).not.toHaveBeenCalled();
+    fireEvent.click(await screen.findByTestId('recipe-delete-confirm-action'));
+    await waitFor(() => expect(deleteRecipe).toHaveBeenCalledWith('r-1'));
   });
 
   it('draws no settings control that does nothing', async () => {

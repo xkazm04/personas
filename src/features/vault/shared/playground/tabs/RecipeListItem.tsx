@@ -1,7 +1,9 @@
+import { useRef, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { BookOpen, Settings, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { PromptTemplateRenderer } from '@/features/shared/components/editors/PromptTemplateRenderer';
+import { ConfirmPopover } from '@/features/shared/components/feedback/ConfirmPopover';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 
 interface RecipeListItemProps {
@@ -25,6 +27,8 @@ export function RecipeListItem({
 }: RecipeListItemProps) {
   const { t } = useTranslation();
   const sh = t.vault.shared;
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const deleteRef = useRef<HTMLButtonElement>(null);
   return (
     <div className="rounded-modal border border-border/40 bg-card/30 overflow-hidden hover:border-border/60 transition-colors">
       <div className="flex items-center gap-3 px-4 py-3">
@@ -66,13 +70,30 @@ export function RecipeListItem({
           </button>
         )}
         <button
+          ref={deleteRef}
           type="button"
-          onClick={onDelete}
+          onClick={() => setConfirmOpen(true)}
           aria-label={t.common.delete}
           className="rounded-card p-1.5 text-red-400/40 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
+        <ConfirmPopover
+          open={confirmOpen}
+          anchorRef={deleteRef}
+          tone="danger"
+          title={recipe.name}
+          detail={t.common.confirm_destructive_cannot_undo}
+          confirmLabel={t.common.delete}
+          confirmIcon={<Trash2 className="w-3.5 h-3.5" />}
+          onConfirm={() => {
+            setConfirmOpen(false);
+            onDelete();
+          }}
+          onCancel={() => setConfirmOpen(false)}
+          testId="recipe-delete-confirm"
+          confirmTestId="recipe-delete-confirm-action"
+        />
       </div>
 
       {isExpanded && (
