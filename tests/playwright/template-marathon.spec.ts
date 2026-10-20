@@ -20,7 +20,6 @@ import {
   query,
   readAdoptionState,
   seedAdoptionAnswers,
-  selectAdoptionVariant,
   sleep,
   waitForBuildPhase,
   waitForExecution,
@@ -226,8 +225,8 @@ test('marathon-template', async () => {
     // there's no specific testid on the AdoptionWizardModal so we
     // match the dialog + the id of the title node.
     await waitForVisible('[role="dialog"], #adoption-matrix-title', 15_000);
-    // Switch to persona-layout (Glyph) variant
-    await selectAdoptionVariant('persona-layout');
+    // The adoption modal has one layout now; the Classic / Persona Layout
+    // switcher this step used to click is gone (no layout_tab_* in src).
     await sleep(300);
     return { opened: true };
   });
