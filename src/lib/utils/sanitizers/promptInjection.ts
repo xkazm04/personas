@@ -87,8 +87,9 @@ export function escapeForPrompt(text: string, opts: EscapeForPromptOptions = {})
     .replace(/^(#{1,6})\s/gm, (_, hashes: string) => `${hashes.replace(/#/g, '＃')} `)
     // Escape triple backticks (could break markdown code fences)
     .replace(/```/g, '\\`\\`\\`')
-    // Escape section-like delimiters
-    .replace(/^---+$/gm, '------');
+    // Escape section-like delimiters. The backslash prefix makes the line no
+    // longer match ^---+$ (the old '------' replacement was itself a delimiter).
+    .replace(/^---+$/gm, (m) => `\\${m}`);
 
   if (opts.neutralizeTemplateVars) {
     // Neutralize {{...}} patterns to prevent recursive substitution

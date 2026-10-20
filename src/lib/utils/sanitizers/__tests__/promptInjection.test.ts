@@ -34,6 +34,11 @@ describe('promptInjection shared module', () => {
     expect(result).not.toMatch(/#{1,6}\s+(INJECT|OVERRIDE)/);
   });
 
+  it('escapeForPrompt leaves no bare --- delimiter line', () => {
+    const out = escapeForPrompt(['a', '---', 'b', '-----', 'c'].join('\n'));
+    expect(out).not.toMatch(/^-{3,}$/m);
+  });
+
   it('escapeForPrompt neutralizes {{...}} only when neutralizeTemplateVars is set', () => {
     const withNeutralize = escapeForPrompt(TEMPLATE_VAR_PAYLOAD, { neutralizeTemplateVars: true });
     expect(withNeutralize).not.toContain('{{system_prompt}}');
