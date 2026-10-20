@@ -9,7 +9,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/api/devTools/devTools', () => ({ scanCodebase: vi.fn() }));
-vi.mock('@/api/devTools/kpis', () => ({ getKpiScanStatus: vi.fn(), scanKpis: vi.fn() }));
+vi.mock('@/api/devTools/kpis', () => ({ getKpiScanStatus: vi.fn(), scanKpis: vi.fn(), cancelKpiScan: vi.fn() }));
 vi.mock('@/hooks/useTauriEvent', () => ({ useTauriEvent: vi.fn() }));
 vi.mock('@/stores/overviewStore', () => ({ useOverviewStore: { getState: vi.fn() } }));
 
@@ -55,5 +55,14 @@ describe('KPI scan poll', () => {
     const st = await pollKpiScan('s1', { getStatus, wait: noWait, alive: () => false });
     expect(st).toBeNull();
     expect(getStatus).not.toHaveBeenCalled();
+  });
+});
+
+describe('kpiScanNote', () => {
+  it('reports a cancelled scan as cancelled, not as a failure', async () => {
+    const { kpiScanNote } = await import('../useFactoryScans');
+    expect(kpiScanNote({ status: 'cancelled' })).toBe('KPI scan cancelled');
+    expect(kpiScanNote({ status: 'failed', error: 'boom' })).toBe('boom');
+    expect(kpiScanNote({ status: 'completed' })).toMatch(/complete/);
   });
 });

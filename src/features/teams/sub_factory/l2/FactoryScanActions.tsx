@@ -13,6 +13,7 @@ export function FactoryScanActions({ data, onNote, w }: { data: FactoryL2Data; o
   return (
     <span className="flex flex-wrap items-center gap-2" data-testid="factory-cons-toolbar">
       <KitButton onClick={() => { if (!noProject && !s.kpiScanning) void s.scanKpisNow(); }} loading={s.kpiScanning} testId="factory-scan-kpis">{w.t.kpis.scan_button}</KitButton>
+      {s.kpiScanning && <KitButton quiet onClick={s.cancelKpiScanNow} testId="factory-cancel-kpi-scan">{w.t.common.cancel}</KitButton>}
       <KitButton onClick={() => { if (data.contexts.length > 0 && !data.useCaseState.scanning) s.scanFeatures(); }} loading={data.useCaseState.scanning} testId="factory-scan-features">{w.L.scanFeatures}</KitButton>
       <KitButton onClick={() => { if (!noProject && !s.ctxScanning) s.scanContexts(true); }} loading={s.ctxScanning} testId="factory-rescan-contexts">{w.L.rescanContexts}</KitButton>
       <KitButton quiet onClick={() => { if (!noProject && !s.ctxScanning) s.scanContexts(false); }} loading={s.ctxScanning} testId="factory-full-scan">{w.L.fullScan}</KitButton>

@@ -8,6 +8,8 @@
 //   · derived   → one of the orchestrator's own DB metrics.
 //   · manual    → no automated measurement; scored by the rating + pros/cons.
 import { useState } from 'react';
+import { KitButton } from '@/features/shared/components/kit';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Wrench, Cable, Database, Hand, Loader2, Check, X, Sparkles } from 'lucide-react';
 
 import { BaseModal } from '@/lib/ui/BaseModal';
@@ -44,6 +46,7 @@ export function MeasureSetupModal({ kpi, onClose }: { kpi: MockKpi; onClose: () 
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
+  const { t } = useTranslation();
   const compose = useComposeTask();
 
   // connector
@@ -153,6 +156,11 @@ export function MeasureSetupModal({ kpi, onClose }: { kpi: MockKpi; onClose: () 
                 {compose.phase === 'running' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                 {compose.phase === 'running' ? 'Composing & testing…' : 'Compose & test with AI'}
               </button>
+              {compose.phase === 'running' && (
+                <KitButton quiet onClick={() => compose.reset()} testId="measure-compose-cancel">
+                  {t.common.cancel}
+                </KitButton>
+              )}
 
               {(compose.phase === 'running' || tailLines.length > 0) && (
                 <pre className="typo-code max-h-40 overflow-y-auto rounded-interactive border border-primary/10 bg-background/50 p-2 whitespace-pre-wrap break-words">{tailLines.join('\n') || 'Starting…'}</pre>

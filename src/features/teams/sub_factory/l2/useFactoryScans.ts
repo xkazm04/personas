@@ -6,11 +6,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Event } from '@tauri-apps/api/event';
 
 import { scanCodebase } from '@/api/devTools/devTools';
-import { getKpiScanStatus, scanKpis } from '@/api/devTools/kpis';
+import { cancelKpiScan, getKpiScanStatus, scanKpis } from '@/api/devTools/kpis';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { EventName, type ContextGenCompletePayload } from '@/lib/eventRegistry';
 import { useOverviewStore } from '@/stores/overviewStore';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 import type { FactoryL2Data } from './factoryL2Data';
 
@@ -54,8 +54,16 @@ export async function pollKpiScan(
   return null;
 }
 
+/** The note a finished KPI scan leaves; a cancelled one is not a failure. */
+export function kpiScanNote(st: KpiScanFinal): string {
+  if (st.status === 'completed') return 'KPI scan complete. Fresh proposals on the contexts';
+  if (st.status === 'cancelled') return 'KPI scan cancelled';
+  return st.error ?? 'KPI scan failed';
+}
+
 export function useFactoryScans(data: FactoryL2Data, onNote: (s: string) => void) {
   const [kpiScanning, setKpiScanning] = useState(false);
+  const kpiScanId = useRef<string | null>(null);
   const [ctxScanId, setCtxScanId] = useState<string | null>(null);
   // Leaving the tab stops the status poll; the scan itself runs on.
   const mounted = useRef(true);
@@ -69,16 +77,24 @@ export function useFactoryScans(data: FactoryL2Data, onNote: (s: string) => void
     setKpiScanning(true);
     try {
       const { scan_id } = await scanKpis(data.project.id);
+      kpiScanId.current = scan_id;
       const st = await pollKpiScan(scan_id, { getStatus: getKpiScanStatus, alive: () => mounted.current });
       if (!mounted.current) return;
-      if (st) onNote(st.status === 'completed' ? 'KPI scan complete. Fresh proposals on the contexts' : st.error ?? 'KPI scan failed');
+      if (st) onNote(kpiScanNote(st));
       data.reloadKpis();
     } catch (e) {
       toastCatch('factory kpi scan')(e);
     } finally {
+      kpiScanId.current = null;
       setKpiScanning(false);
     }
   }, [data, onNote]);
+
+  /** Stop the running KPI scan; the status poll then reads `cancelled` and ends. */
+  const cancelKpiScanNow = useCallback(() => {
+    const id = kpiScanId.current;
+    if (id) void cancelKpiScan(id).catch(silentCatch('useFactoryScans:cancelKpiScan'));
+  }, []);
 
   const scanContexts = useCallback((delta: boolean) => {
     const p = data.project;
@@ -115,5 +131,5 @@ export function useFactoryScans(data: FactoryL2Data, onNote: (s: string) => void
     void data.useCaseState.scan().catch(toastCatch('factory feature scan'));
   }, [data.useCaseState]);
 
-  return { kpiScanning, ctxScanning: ctxScanId !== null, scanKpisNow, scanContexts, scanFeatures };
+  return { kpiScanning, ctxScanning: ctxScanId !== null, scanKpisNow, cancelKpiScanNow, scanContexts, scanFeatures };
 }
