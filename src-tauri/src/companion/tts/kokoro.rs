@@ -303,9 +303,9 @@ mod tests {
 
     #[test]
     fn model_dir_uses_personas_home_override() {
-        std::env::set_var("PERSONAS_HOME", "C:\\test-home");
+        // The shared lock, not a bare set_var: PERSONAS_HOME is process-global.
+        let _home = crate::companion::brain::test_home::TestHome::new("kokoro-dir");
         let dir = model_dir().unwrap();
-        std::env::remove_var("PERSONAS_HOME");
         // Component-wise, not string-wise: the backslash literal only matched
         // on Windows and failed the Linux CI leg. See the same note in
         // `companion::stt::downloader`.
@@ -320,23 +320,13 @@ mod tests {
 
     #[test]
     fn is_model_installed_false_for_empty_dir() {
-        let tmp =
-            std::env::temp_dir().join(format!("personas-kokoro-model-test-{}", std::process::id()));
-        let _ = std::fs::create_dir_all(&tmp);
-        std::env::set_var("PERSONAS_HOME", &tmp);
+        let _home = crate::companion::brain::test_home::TestHome::new("kokoro-model");
         assert!(!is_model_installed());
-        std::env::remove_var("PERSONAS_HOME");
-        let _ = std::fs::remove_dir_all(&tmp);
     }
 
     #[test]
     fn status_reports_expected_paths() {
-        let tmp = std::env::temp_dir().join(format!(
-            "personas-kokoro-status-test-{}",
-            std::process::id()
-        ));
-        let _ = std::fs::create_dir_all(&tmp);
-        std::env::set_var("PERSONAS_HOME", &tmp);
+        let _home = crate::companion::brain::test_home::TestHome::new("kokoro-status");
         std::env::remove_var("PERSONAS_KOKORO_BIN");
 
         let s = status().unwrap();
@@ -344,8 +334,5 @@ mod tests {
         assert!(s.model_dir.contains("kokoro"));
         assert_eq!(s.expected_filename, ENGINE_FILENAME);
         assert!(s.model_download_url.contains("kokoro-multi-lang-v1_0"));
-
-        std::env::remove_var("PERSONAS_HOME");
-        let _ = std::fs::remove_dir_all(&tmp);
     }
 }

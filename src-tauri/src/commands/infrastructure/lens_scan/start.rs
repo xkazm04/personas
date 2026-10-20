@@ -18,6 +18,7 @@ use std::path::{Path, PathBuf};
 
 use futures_util::FutureExt;
 use personas_core::types::CliArgs;
+use personas_core::validation::require_non_empty;
 use tokio::io::AsyncReadExt;
 
 use super::tooling::{is_safe_token, plain, validate_ids, LensScanScripts};
@@ -39,8 +40,8 @@ fn validate_lens(lens: &str) -> Result<(), AppError> {
 /// A house standard line as drive accepts it (`house:<subject>/<line>`):
 /// letters, digits and `. _ : / -`, not starting with `-`, 200 at most.
 fn validate_standard(standard: &str) -> Result<(), AppError> {
-    let ok = !standard.is_empty()
-        && standard.len() <= 200
+    require_non_empty("standard", standard)?;
+    let ok = standard.len() <= 200
         && !standard.starts_with('-')
         && standard
             .chars()

@@ -95,6 +95,7 @@ export type ConnectorReadiness =
   | 'linked_untested' // credential linked, not yet tested
   | 'healthy'         // credential linked, healthcheck passed
   | 'unverifiable'    // credential linked, but the connector has no live probe
+  | 'unreachable'     // credential linked, the probe could not reach the service
   | 'unhealthy';      // credential linked, healthcheck failed
 
 export function deriveReadiness(status: ConnectorStatus): ConnectorReadiness {
@@ -110,13 +111,18 @@ export function deriveReadiness(status: ConnectorStatus): ConnectorReadiness {
     case 'unverifiable': return 'unverifiable';
     // `unreachable` (connect / DNS / timeout) arrives with success === false
     // but is no verdict on the credential (`HealthProbeState::is_verdict`):
-    // the service was never asked. Reading the boolean painted an offline
-    // laptop's good keys as failing; it files beside "untested", as the vault
-    // list's health filter does.
-    case 'unreachable': return 'linked_untested';
+    // the service was never asked. Folding it into `unhealthy` painted every
+    // connector red on an offline laptop and taught the user that red is
+    // noise; it gets its own state (and filter pill), never `unhealthy`.
+    case 'unreachable': return 'unreachable';
     case 'verified': return 'healthy';
     case 'failed': return 'unhealthy';
   }
+}
+
+/** True when the last probe never reached the service, so it judged nothing. */
+export function isUnreachable(result: ConnectorTestResult | null | undefined): boolean {
+  return !!result && resolveProbeOutcome(result) === 'unreachable';
 }
 
 /** True if the connector has a linked credential (minimum for execution). */
@@ -157,6 +163,8 @@ export interface TestAllSummary {
   regressed: number;
   /** Fails now, and did not pass before (failed or never checked). */
   failing: number;
+  /** The probe never reached the service: no verdict, reported on its own. */
+  unreachable: number;
 }
 
 /**
@@ -169,8 +177,9 @@ export function summarizeTestAll(
   outcomes: readonly { name: string; result: ConnectorTestResult | null }[],
   baseline: ReadonlyMap<string, ConnectorTestResult | null>,
 ): TestAllSummary {
-  const summary: TestAllSummary = { recovered: 0, regressed: 0, failing: 0 };
+  const summary: TestAllSummary = { recovered: 0, regressed: 0, failing: 0, unreachable: 0 };
   for (const { name, result } of outcomes) {
+    if (isUnreachable(result)) { summary.unreachable++; continue; }
     const now = probeVerdict(result);
     if (now === null) continue;
     const before = probeVerdict(baseline.get(name));
@@ -225,11 +234,7 @@ export const STATUS_CONFIG = {
   ready: { color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20', labelKey: 'status_ready' },
   untested: { color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20', labelKey: 'status_untested' },
   unverifiable: { color: 'text-foreground', bg: 'bg-secondary/40 border-primary/15', labelKey: 'status_unverifiable' },
-  // Neutral like `unverifiable`, never red: the probe reached no verdict. Its
-  // badge reads the vault's own word for it (`t.vault.credential_list
-  // .health_unreachable`, in ConnectorStatusCard); `labelKey` only keeps the
-  // map's shape and is not rendered for this key.
-  unreachable: { color: 'text-foreground', bg: 'bg-secondary/40 border-primary/15', labelKey: 'status_untested' },
+  unreachable: { color: 'text-status-warning', bg: 'bg-status-warning/10 border-status-warning/20', labelKey: 'status_unreachable' },
   failed: { color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20', labelKey: 'status_failed' },
   missing: { color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20', labelKey: 'status_missing' },
   testing: { color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20', labelKey: 'status_testing' },

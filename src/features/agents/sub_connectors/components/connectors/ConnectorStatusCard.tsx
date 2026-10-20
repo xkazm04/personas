@@ -62,7 +62,7 @@ export function ConnectorStatusCard({
               <span className="inline-flex transition-transform duration-300 ease-in-out">
                 {(() => { const Icon = STATUS_ICON[statusKey]; return <Icon className={`w-2.5 h-2.5 ${statusKey === 'testing' ? 'animate-spin' : ''}`} />; })()}
               </span>
-              <span>{statusKey === 'unreachable' ? t.vault.credential_list.health_unreachable : t.agents.connectors[config.labelKey]}</span>
+              <span>{t.agents.connectors[config.labelKey]}</span>
             </span>
           </div>
           {status.credentialName && <p className="typo-body text-foreground mt-0.5">{tx(t.agents.connectors.st_credential, { name: status.credentialName })}</p>}

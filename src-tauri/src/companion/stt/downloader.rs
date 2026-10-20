@@ -273,9 +273,9 @@ mod tests {
 
     #[test]
     fn model_path_uses_personas_home_override() {
-        std::env::set_var("PERSONAS_HOME", "C:\\test-home");
+        // The shared lock, not a bare set_var: PERSONAS_HOME is process-global.
+        let _home = crate::companion::brain::test_home::TestHome::new("stt-model-path");
         let p = model_path("base.en").unwrap();
-        std::env::remove_var("PERSONAS_HOME");
         // Compare PATH COMPONENTS, not a rendered string: the literal
         // "companion-stt\\models\\ggml-base.en.bin" only ever matched on
         // Windows, so this assertion was dead on the Linux CI leg and failed
@@ -298,12 +298,8 @@ mod tests {
 
     #[test]
     fn delete_model_idempotent_on_missing() {
-        let tmp = std::env::temp_dir().join(format!("personas-stt-del-{}", std::process::id()));
-        let _ = std::fs::create_dir_all(&tmp);
-        std::env::set_var("PERSONAS_HOME", &tmp);
+        let _home = crate::companion::brain::test_home::TestHome::new("stt-delete");
         let r = delete_model("base.en");
-        std::env::remove_var("PERSONAS_HOME");
-        let _ = std::fs::remove_dir_all(&tmp);
         assert!(r.is_ok());
     }
 }
