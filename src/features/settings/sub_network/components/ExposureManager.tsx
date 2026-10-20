@@ -7,6 +7,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import type { ExposedResource, CreateExposedResourceInput, AccessLevel, ResourceType } from '@/api/network/exposure';
+import { buildCreateExposureInput } from './exposureInput';
 import { BundleExportDialog } from './BundleExportDialog';
 import { IdentitySettings } from './IdentitySettings';
 import { InlineConfirm } from './InlineConfirm';
@@ -122,15 +123,13 @@ function AddExposureForm({
     const displayName = resourceType === 'persona' && selectedPersona
       ? selectedPersona.name
       : resourceId;
-    onAdd({
-      resource_type: resourceType,
-      resource_id: resourceId,
-      display_name: displayName,
-      fields_exposed: [],
-      access_level: accessLevel,
-      requires_auth: false,
-      tags: tags ? tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
-    });
+    onAdd(buildCreateExposureInput({
+      resourceType,
+      resourceId,
+      displayName,
+      accessLevel,
+      tags,
+    }));
   };
 
   return (
