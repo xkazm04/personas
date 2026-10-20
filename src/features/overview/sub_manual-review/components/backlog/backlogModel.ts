@@ -36,9 +36,11 @@ export interface BacklogIdea {
   createdAt: string;
 }
 
-/** Effort/impact/risk default to the midpoint when a scanner left them unset —
- *  the same 5 the triage deck has always used, so scores stay comparable. */
-const DEFAULT_LEVEL = 5;
+/** Effort/impact/risk default to the MIDPOINT of the 1-5 scale
+ *  (`IDEA_SCALE_MAX` is 5) when a scanner left them unset, matching
+ *  `triageRuleSuggestions`. It was 5 from the old ten-point scale, which is
+ *  now the ceiling: unrated ideas ranked as heaviest and riskiest. */
+const DEFAULT_LEVEL = 3;
 
 /**
  * Map one stored idea to its view row. `projectName` is injected (the store

@@ -53,9 +53,9 @@ function view(over: Partial<BacklogIdea> = {}): BacklogIdea {
 }
 
 describe('toBacklogIdea', () => {
-  it('applies the midpoint default to unset effort/impact/risk', () => {
+  it('applies the midpoint (3 of the 1-5 scale, not the ceiling) to unset effort/impact/risk', () => {
     const v = toBacklogIdea(devIdea(), names);
-    expect([v.effort, v.impact, v.risk]).toEqual([5, 5, 5]);
+    expect([v.effort, v.impact, v.risk]).toEqual([3, 3, 3]);
   });
 
   it('keeps real levels and nullable prose as empty strings', () => {
