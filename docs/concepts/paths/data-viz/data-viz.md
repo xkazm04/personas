@@ -10,9 +10,7 @@ techniques:
   - encoding-vocabulary
   - empty-and-degraded-chart-states
 evidence:
-  - src/features/overview/sub_usage/components/MetricChart.tsx     # canonical chart panel: required height reserves the box, per-chart error boundary, lazy engine
   - src/features/shared/charts/RechartsWrapper.tsx                 # the single deferred chart-engine chunk for the whole app (render-prop, one shared import)
-  - src/features/overview/sub_usage/components/LazyChart.tsx       # viewport-deferred mounting: one-shot observer, geometry-matched skeleton, reaper on unmount
   - src/features/overview/libs/metricIdentity.ts                   # registered metric-identity variants (id names surface+window+source) over one shared resolver
   - src/features/overview/libs/computeTrends.ts                    # one derivation source; returns null rather than fabricate a trend; avg-metric zero-baseline treated as no-sample
   - src/features/companions/overseer/directorScore.ts            # the declared-domain sparkline exemplar: fixed scale, its docstring states the doctrine
