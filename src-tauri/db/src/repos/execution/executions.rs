@@ -1469,6 +1469,10 @@ pub fn get_recent_failures(
 /// "N consecutive"), EXCLUDING environmental failures that say nothing about
 /// the persona itself: provider session/usage/rate limits and app-restart
 /// kills. One quota storm must not trip the breaker.
+///
+/// `incomplete` (a stalled / zombie-swept run) is an abandoned attempt, not a
+/// neutral row: a persona that alternates stall and fail is just as broken as
+/// one that only fails, so both statuses count toward the streak.
 pub fn count_consecutive_real_failures(pool: &DbPool, persona_id: &str) -> Result<u32, AppError> {
     timed_query!(
         "persona_executions",
@@ -1477,7 +1481,7 @@ pub fn count_consecutive_real_failures(pool: &DbPool, persona_id: &str) -> Resul
             let conn = pool.conn("executions::count_consecutive_real_failures")?;
             let n: i64 = conn.query_row(
                 "SELECT COUNT(*) AS n FROM persona_executions
-                 WHERE persona_id = ?1 AND status = 'failed'
+                 WHERE persona_id = ?1 AND status IN ('failed', 'incomplete')
                    AND datetime(created_at) > COALESCE(
                        (SELECT MAX(datetime(created_at)) FROM persona_executions
                          WHERE persona_id = ?1 AND status = 'completed'),
@@ -2165,8 +2169,10 @@ pub fn create_retry(
     })
 }
 
-/// Count consecutive recent failures for a persona (unbroken streak of 'failed' status
-/// from the most recent execution backwards).
+/// Count consecutive recent failures for a persona (unbroken streak of 'failed'
+/// or 'incomplete' status from the most recent execution backwards). Rows still
+/// in flight (`queued` / `running`) are skipped, not treated as a streak break:
+/// a newer active run has not decided anything yet.
 pub fn get_consecutive_failure_count(pool: &DbPool, persona_id: &str) -> Result<u32, AppError> {
     timed_query!(
         "persona_executions",
@@ -2186,7 +2192,8 @@ pub fn get_consecutive_failure_count(pool: &DbPool, persona_id: &str) -> Result<
 
             let count = statuses
                 .iter()
-                .take_while(|s| s.as_str() == "failed")
+                .filter(|s| !matches!(s.as_str(), "queued" | "running"))
+                .take_while(|s| matches!(s.as_str(), "failed" | "incomplete"))
                 .count();
             Ok(count as u32)
         }
@@ -2802,6 +2809,42 @@ mod tests {
         assert_eq!(item.business_outcome, "unknown");
         assert_eq!(item.origin, "manual", "bare run classifies as manual");
         assert!(item.origin_lane.is_none());
+    }
+
+    /// Stalled (`incomplete`) runs count toward both streaks, and a newer
+    /// queued/running row does not reset the healing gate's streak to 0.
+    #[test]
+    fn failure_streaks_see_stalled_runs_and_skip_in_flight_rows() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Streak Agent");
+        // Oldest -> newest: stall, fail, stall, fail, then a live run.
+        let plan = [
+            ("incomplete", "2026-01-01T00:00:01Z"),
+            ("failed", "2026-01-01T00:00:02Z"),
+            ("incomplete", "2026-01-01T00:00:03Z"),
+            ("failed", "2026-01-01T00:00:04Z"),
+            ("running", "2026-01-01T00:00:05Z"),
+        ];
+        for (status, at) in plan {
+            let row = create(&pool, &persona_id, None, None, None, None)?;
+            pool.get()?.execute(
+                "UPDATE persona_executions SET status = ?1, created_at = ?2,
+                     error_message = 'boom' WHERE id = ?3",
+                params![status, at, row.id],
+            )?;
+        }
+        assert_eq!(count_consecutive_real_failures(&pool, &persona_id)?, 4);
+        assert_eq!(get_consecutive_failure_count(&pool, &persona_id)?, 4);
+
+        // A completed run ends the healing streak.
+        let ok = create(&pool, &persona_id, None, None, None, None)?;
+        pool.get()?.execute(
+            "UPDATE persona_executions SET status = 'completed', created_at = '2026-01-01T00:00:06Z' WHERE id = ?1",
+            params![ok.id],
+        )?;
+        assert_eq!(get_consecutive_failure_count(&pool, &persona_id)?, 0);
+        assert_eq!(count_consecutive_real_failures(&pool, &persona_id)?, 0);
+        Ok(())
     }
 
     /// The queue drain must not resurrect a row that left `queued` while the
