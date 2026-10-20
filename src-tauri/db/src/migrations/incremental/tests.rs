@@ -2468,3 +2468,92 @@ fn the_decisions_table_is_moved_after_the_runs_table_when_it_is_not() {
         vec!["dev_council_runs", "dev_council_decisions"]
     );
 }
+
+// ── e70: a team assignment may be paused ────────────────────────────────────
+
+/// An install created before e70 carries a status CHECK with no `paused`, so
+/// every Pause click failed with `CHECK constraint failed`. The rebuild must
+/// admit `paused` (and still refuse an unknown token), keep every row, replay
+/// the status index, and be a no-op on replay. A fresh database gets the same
+/// result because c02 creates the old shape and e70 rebuilds it.
+#[test]
+fn team_assignment_status_admits_paused_after_the_rebuild() {
+    let pool = crate::init_test_db().unwrap();
+    let conn = crate::PoolExt::conn(&pool, "test:e70_paused").unwrap();
+    conn.execute_batch("PRAGMA foreign_keys = OFF;").unwrap();
+
+    conn.execute_batch(
+        "DROP TABLE team_assignments;
+         CREATE TABLE team_assignments (
+            id                  TEXT PRIMARY KEY,
+            team_id             TEXT NOT NULL REFERENCES persona_teams(id) ON DELETE CASCADE,
+            title               TEXT NOT NULL,
+            goal                TEXT NOT NULL,
+            status              TEXT NOT NULL DEFAULT 'queued'
+                                CHECK(status IN ('queued','running','awaiting_review','done','failed','aborted')),
+            match_strategy      TEXT NOT NULL DEFAULT 'manual'
+                                CHECK(match_strategy IN ('manual','embedding','llm_eval')),
+            max_parallel_steps  INTEGER NOT NULL DEFAULT 3,
+            source              TEXT NOT NULL DEFAULT 'team_ui'
+                                CHECK(source IN ('team_ui','athena','api')),
+            companion_op_id     TEXT,
+            created_at          TEXT NOT NULL DEFAULT (datetime('now')),
+            started_at          TEXT,
+            completed_at        TEXT,
+            error_message       TEXT,
+            goal_id             TEXT
+         );
+         CREATE INDEX idx_team_assignments_status
+            ON team_assignments(status) WHERE status IN ('queued','running','awaiting_review');
+         INSERT INTO team_assignments (id, team_id, title, goal, status)
+            VALUES ('a1', 't-gone', 'kept', 'g', 'running');",
+    )
+    .unwrap();
+    assert!(
+        conn.execute(
+            "UPDATE team_assignments SET status = 'paused' WHERE id = 'a1'",
+            []
+        )
+        .is_err(),
+        "the legacy shape refuses 'paused' - otherwise this test proves nothing"
+    );
+
+    run_incremental(&conn).unwrap();
+
+    conn.execute(
+        "UPDATE team_assignments SET status = 'paused' WHERE id = 'a1'",
+        [],
+    )
+    .expect("paused is admitted after the rebuild");
+    assert!(conn
+        .execute(
+            "UPDATE team_assignments SET status = 'bogus' WHERE id = 'a1'",
+            []
+        )
+        .is_err());
+    let (n, goal_id_col): (i64, i64) = conn
+        .query_row(
+            "SELECT (SELECT COUNT(*) FROM team_assignments WHERE title = 'kept') AS n,
+                    (SELECT COUNT(*) FROM pragma_table_info('team_assignments') WHERE name = 'goal_id') AS g",
+            [],
+            |r| Ok((r.get("n")?, r.get("g")?)),
+        )
+        .unwrap();
+    assert_eq!((n, goal_id_col), (1, 1));
+    let idx: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'index' AND name = 'idx_team_assignments_status'",
+            [],
+            |r| r.get("n"),
+        )
+        .unwrap();
+    assert_eq!(idx, 1, "the status index is replayed");
+
+    run_incremental(&conn).unwrap();
+    conn.execute(
+        "UPDATE team_assignments SET status = 'running' WHERE id = 'a1'",
+        [],
+    )
+    .unwrap();
+    conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
+}
