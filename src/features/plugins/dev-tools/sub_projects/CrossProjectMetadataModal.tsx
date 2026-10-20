@@ -10,6 +10,7 @@ import {
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
+import { toastCatch } from '@/lib/silentCatch';
 import {
   generateCrossProjectMetadata,
   getCrossProjectMetadata,
@@ -275,7 +276,9 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
       setMap(result);
       addToast(`Map generated: ${result.total_projects} projects analyzed`, 'success');
     } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Generation failed', 'error');
+      // An IPC rejection is an AppError object, never an Error: the old ladder
+      // always fell to a hardcoded English 'Generation failed' and dropped the reason.
+      toastCatch('CrossProjectMetadataModal:generate')(err);
     } finally {
       setGenerating(false);
     }
