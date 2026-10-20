@@ -3,6 +3,7 @@ import { lazyRetry } from '@/lib/lazyRetry';
 import { GitCommitVertical } from 'lucide-react';
 import { ContentBody, ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 import { useTranslation } from '@/i18n/useTranslation';
 import { buildSpine } from './engine/spine';
 import { devFailure, devInstances, type DevMode } from './engine/devAdapter';
@@ -112,7 +113,7 @@ export default function ProcessPage() {
             ) : view.length === 0 ? (
               <p className="py-16 text-center typo-body">{p.empty}</p>
             ) : (
-              <Suspense fallback={null}>
+              <Suspense fallback={<RouteChunkSkeleton variant="body" />}>
                 <View reading={reading} mode={mode} repo={repo} cohort={cohort} view={view} model={model} base={base} onRepoChange={setRepoPick} />
               </Suspense>
             )}
