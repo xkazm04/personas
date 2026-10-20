@@ -29,7 +29,7 @@ import { UnifiedTable, type TableColumn } from '@/features/shared/components/dis
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useLlmPinpoints } from './useLlmPinpoints';
+import { useLlmPinpoints, type LlmPinpointsData } from './useLlmPinpoints';
 import type { LlmPinpoint, LlmWindow } from './llmTracingAdapters';
 import { isOverBudget, overBudgetCount, pinpointsForContext } from './llmTracingAdapters';
 import { LLM_COST_THRESHOLD_USD } from '../sub_triage/findings/findingConfig';
@@ -49,11 +49,13 @@ const WINDOW_TABS: SegmentedTab<LlmWindow>[] = [
 // Layer 1 — projects × connector assignment matrix
 // ---------------------------------------------------------------------------
 
-function LlmMatrix() {
+// llmCreds comes from the page's single useLlmPinpoints instance, as MonMatrix's
+// monCreds does: a second instance here re-ran listCredentials AND the paged
+// tool fetch on every tab open and project switch.
+function LlmMatrix({ llmCreds }: { llmCreds: LlmPinpointsData['llmCreds'] }) {
   const { t } = useTranslation();
   const projects = useSystemStore((s) => s.projects);
   const fetchProjects = useSystemStore((s) => s.fetchProjects);
-  const { llmCreds } = useLlmPinpoints();
 
   const assign = useCallback(
     async (projectId: string, credId: string | null) => {
@@ -416,7 +418,7 @@ export default function LlmOverviewPage() {
       ) : (
         <>
       {/* Layer 1 — assignment matrix */}
-      <LlmMatrix />
+      <LlmMatrix llmCreds={data.llmCreds} />
 
       {/* The filter says what it is and how to leave. A filtered table that does
           not announce its filter is a table that lies about its totals. */}
