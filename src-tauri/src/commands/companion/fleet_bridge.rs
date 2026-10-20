@@ -1727,6 +1727,35 @@ pub fn clear_pending_assessment(session_id: &str) {
     map.retain(|_, &mut t| crate::commands::fleet::registry::now_ms() - t < 30 * 60 * 1000);
 }
 
+/// Run one `companion_approval` UPDATE and say so when it does not land.
+/// A reject/supersede write that fails (pool exhausted, SQLITE_BUSY) leaves
+/// the row pending and approvable while the in-memory list has already
+/// dropped it, so the failure must be visible, not `let _ =`. Returns whether
+/// the row write succeeded.
+pub(crate) fn update_approval_logged(
+    pool: &crate::db::UserDbPool,
+    what: &str,
+    approval_id: &str,
+    sql: &str,
+    params: impl rusqlite::Params,
+) -> bool {
+    let result = pool
+        .get()
+        .map_err(|e| e.to_string())
+        .and_then(|conn| conn.execute(sql, params).map_err(|e| e.to_string()));
+    match result {
+        Ok(_) => true,
+        Err(e) => {
+            tracing::warn!(
+                approval_id = %approval_id,
+                error = %e,
+                "companion_approval write failed ({what}); row may stay pending"
+            );
+            false
+        }
+    }
+}
+
 /// Validate (and repair) the `session_id` on every fleet PTY action a batched
 /// turn dispatched. Exact ids pass; a prefix of a batch member is repaired to
 /// the full id (the model often echoes the 8-char display id); anything else
@@ -1780,12 +1809,13 @@ pub fn validate_fleet_session_ids(
                         "rationale": approval.rationale,
                     })
                     .to_string();
-                    if let Ok(conn) = pool.get() {
-                        let _ = conn.execute(
-                            "UPDATE companion_approval SET payload = ?1 WHERE id = ?2",
-                            rusqlite::params![payload, approval.id],
-                        );
-                    }
+                    update_approval_logged(
+                        pool,
+                        "repair fleet payload",
+                        &approval.id,
+                        "UPDATE companion_approval SET payload = ?1 WHERE id = ?2",
+                        rusqlite::params![payload, approval.id],
+                    );
                 }
                 true
             }
@@ -1795,12 +1825,13 @@ pub fn validate_fleet_session_ids(
                     given = %given,
                     "fleet batch: action targets a session outside the batch — rejected"
                 );
-                if let Ok(conn) = pool.get() {
-                    let _ = conn.execute(
-                        "UPDATE companion_approval SET status = 'rejected' WHERE id = ?1",
-                        rusqlite::params![approval.id],
-                    );
-                }
+                update_approval_logged(
+                    pool,
+                    "reject out-of-batch fleet proposal",
+                    &approval.id,
+                    "UPDATE companion_approval SET status = 'rejected' WHERE id = ?1",
+                    rusqlite::params![approval.id],
+                );
                 false
             }
         }
@@ -2494,6 +2525,44 @@ pub async fn companion_get_operative_memory_digest(
 ) -> Result<String, AppError> {
     crate::ipc_auth::require_auth(&state).await?;
     Ok(crate::companion::orchestration::operative_memory::memory().digest_for_prompt())
+}
+
+#[cfg(test)]
+mod approval_write_tests {
+    use super::update_approval_logged;
+
+    #[test]
+    fn failing_update_reports_false_and_ok_update_true() -> Result<(), Box<dyn std::error::Error>> {
+        let pool = r2d2::Pool::builder()
+            .max_size(1)
+            .build(r2d2_sqlite::SqliteConnectionManager::memory())?;
+        // No companion_approval table: the UPDATE must fail loudly (false).
+        assert!(!update_approval_logged(
+            &pool,
+            "t",
+            "a1",
+            "UPDATE companion_approval SET status = 'rejected' WHERE id = ?1",
+            rusqlite::params!["a1"],
+        ));
+        pool.get()?.execute_batch(
+            "CREATE TABLE companion_approval (id TEXT PRIMARY KEY, status TEXT);
+             INSERT INTO companion_approval VALUES ('a1','pending');",
+        )?;
+        assert!(update_approval_logged(
+            &pool,
+            "t",
+            "a1",
+            "UPDATE companion_approval SET status = 'rejected' WHERE id = ?1",
+            rusqlite::params!["a1"],
+        ));
+        let status: String = pool.get()?.query_row(
+            "SELECT status FROM companion_approval WHERE id = 'a1'",
+            [],
+            |r| r.get("status"),
+        )?;
+        assert_eq!(status, "rejected");
+        Ok(())
+    }
 }
 
 #[cfg(test)]
