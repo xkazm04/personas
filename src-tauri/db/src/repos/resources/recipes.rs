@@ -63,7 +63,10 @@ pub fn get_page(pool: &DbPool, limit: u32, offset: u32) -> Result<Vec<RecipeDefi
         let limit = i64::from(limit.clamp(1, 200));
         let offset = i64::from(offset);
         let mut qb = QueryBuilder::new();
-        qb.order_by("created_at", "DESC");
+        // Same order the Recipes table sorts its loaded window by (name,
+        // case-insensitive), with id as a stable tie-break. A newest-first
+        // page order made every appended page insert rows ABOVE visible ones.
+        qb.order_by_multiple(&[("name COLLATE NOCASE", "ASC"), ("id", "ASC")]);
         qb.limit(limit);
         qb.offset(offset);
         let conn = pool.get()?;
@@ -960,6 +963,22 @@ mod tests {
             .collect();
         assert_eq!(ids.len(), 5);
         assert!(get_page(&pool, 2, 10).unwrap().is_empty());
+    }
+
+    #[test]
+    fn get_page_orders_by_name_nocase_with_id_tiebreak() -> Result<(), AppError> {
+        let pool = crate::init_test_db()?;
+        for n in ["banana", "Apple", "cherry", "apple", "Banana"] {
+            create(&pool, sample_recipe(n))?;
+        }
+        let mut names = Vec::new();
+        for off in [0u32, 2, 4] {
+            for r in get_page(&pool, 2, off)? {
+                names.push(r.name.to_lowercase());
+            }
+        }
+        assert_eq!(names, ["apple", "apple", "banana", "banana", "cherry"]);
+        Ok(())
     }
 
     #[test]
