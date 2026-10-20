@@ -319,6 +319,7 @@ export default function GeneratedReviewsTab({
           hasMore={gallery.hasMore}
           isLoading={gallery.isLoading}
           fetchMore={gallery.fetchMore}
+          pagingFailed={!!gallery.error}
           compareSelectedIds={compare.selectedIds}
           compareAtCapacity={!compare.canAdd}
           onToggleCompare={compare.toggle}
