@@ -11,6 +11,7 @@ import {
   toBacklogIdea,
   triageValueScore,
   type BacklogIdea,
+  selectionAfterSelectAll,
 } from '../backlogModel';
 
 function devIdea(over: Partial<DevIdea> = {}): DevIdea {
@@ -165,5 +166,18 @@ describe('nextQueueIndex', () => {
   it('handles a single-item queue', () => {
     expect(nextQueueIndex(['a'], 0, 1, all)).toBeNull();
     expect(nextQueueIndex(['a'], 0, -1, all)).toBeNull();
+  });
+});
+
+describe('selectionAfterSelectAll', () => {
+  const rows = [{ id: 'a' }, { id: 'b' }];
+  it('replaces the selection with exactly the rows the reviewer sees', () => {
+    expect([...selectionAfterSelectAll(new Set(['x', 'y']), rows)].sort()).toEqual(['a', 'b']);
+  });
+  it('clears when every seen row was already selected', () => {
+    expect(selectionAfterSelectAll(new Set(['a', 'b']), rows).size).toBe(0);
+  });
+  it('is a no-op on an empty narrowed set', () => {
+    expect(selectionAfterSelectAll(new Set(['x']), []).size).toBe(1);
   });
 });

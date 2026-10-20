@@ -36,6 +36,7 @@ import {
   FULL_LEVEL_RANGE,
   hasLevelFilter,
   nextQueueIndex,
+  selectionAfterSelectAll,
   SORT_MODE_COLUMN,
   withinLevelRanges,
   type BacklogIdea,
@@ -134,13 +135,9 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
     });
   }, []);
 
-  const toggleSelectAll = useCallback(() => {
-    setSelectedIds((prev) =>
-      prev.size === visibleRows.length && visibleRows.length > 0
-        ? new Set()
-        : new Set(visibleRows.map((i) => i.id)),
-    );
-  }, [visibleRows]);
+  const toggleSelectAll = useCallback((seen: BacklogIdea[]) => {
+    setSelectedIds((prev) => selectionAfterSelectAll(prev, seen));
+  }, []);
 
   const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
 

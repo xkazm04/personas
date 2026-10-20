@@ -198,3 +198,14 @@ export function nextQueueIndex(
   while (next >= 0 && next < queue.length && !exists(queue[next]!)) next += delta;
   return next >= 0 && next < queue.length ? next : null;
 }
+
+/**
+ * The selection after the header select-all is toggled over `rows`, the rows the
+ * reviewer can actually see (after the rail, search, project filter and pager
+ * scope). Select-all is exactly that set; toggling it when all of it is already
+ * selected clears. A bulk verdict must never reach an idea nobody looked at.
+ */
+export function selectionAfterSelectAll(prev: ReadonlySet<string>, rows: readonly { id: string }[]): Set<string> {
+  if (rows.length === 0) return new Set(prev);
+  return rows.every((r) => prev.has(r.id)) ? new Set() : new Set(rows.map((r) => r.id));
+}

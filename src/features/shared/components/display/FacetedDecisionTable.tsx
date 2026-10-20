@@ -96,8 +96,10 @@ export interface FacetedDecisionTableProps<T> {
   fit?: 'fill' | 'content' | 'page';
   /* -- DataGrid selection / bulk pass-throughs ------------------------------ */
   isRowSelected?: (row: T) => boolean;
+  /** Header checkbox state. Omitted: derived from `isRowSelected` over the NARROWED rows. */
   selectAll?: boolean;
-  onSelectAll?: () => void;
+  /** Receives the rows the rail, search and filters narrowed to (the set the reviewer sees), never `items`. */
+  onSelectAll?: (rows: T[]) => void;
   selectedCount?: number;
   bulkActions?: DataGridBulkAction[];
   onClearSelection?: () => void;
@@ -231,8 +233,8 @@ export function FacetedDecisionTable<T>({
           emptyTitle={labels.emptyTitle}
           emptyDescription={labels.emptyDescription}
           isRowSelected={isRowSelected}
-          selectAll={selectAll}
-          onSelectAll={onSelectAll}
+          selectAll={selectAll ?? (isRowSelected ? rows.length > 0 && rows.every(isRowSelected) : undefined)}
+          onSelectAll={onSelectAll ? () => onSelectAll(rows) : undefined}
           selectedCount={selectedCount}
           bulkActions={bulkActions}
           onClearSelection={onClearSelection}

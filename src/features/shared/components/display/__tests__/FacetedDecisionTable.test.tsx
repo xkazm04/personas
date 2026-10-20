@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { FacetedDecisionTable } from '../FacetedDecisionTable';
 import type { DataGridColumn } from '../DataGrid';
@@ -70,5 +70,44 @@ describe('FacetedDecisionTable selection when the data changes', () => {
 
     rerender(<FacetedDecisionTable<Item> items={items} {...props} />);
     expect(screen.getByText('1 items')).toBeTruthy();
+  });
+});
+
+describe('FacetedDecisionTable select-all scope', () => {
+  it('hands onSelectAll the rows the rail and search narrowed to, not every item', () => {
+    const onSelectAll = vi.fn();
+    render(
+      <FacetedDecisionTable<Item>
+        items={items}
+        getRowKey={(r) => r.id}
+        getGroupPath={(r) => r.path}
+        columns={[{ key: 'select', label: '', width: '2rem', render: () => null }, ...columns]}
+        searchHaystack={(r) => [r.path]}
+        labels={labels}
+        onSelectAll={onSelectAll}
+      />,
+    );
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search items' }), { target: { value: 'forms' } });
+    fireEvent.click(screen.getByRole('checkbox'));
+    expect(onSelectAll).toHaveBeenCalledTimes(1);
+    expect(onSelectAll).toHaveBeenCalledWith([items[0]]);
+  });
+
+  it('derives the header checkbox from the narrowed rows when selectAll is not given', () => {
+    render(
+      <FacetedDecisionTable<Item>
+        items={items}
+        getRowKey={(r) => r.id}
+        getGroupPath={(r) => r.path}
+        columns={[{ key: 'select', label: '', width: '2rem', render: () => null }, ...columns]}
+        searchHaystack={(r) => [r.path]}
+        labels={labels}
+        onSelectAll={() => {}}
+        isRowSelected={(r) => r.id === '1'}
+      />,
+    );
+    expect(screen.getByRole('checkbox').getAttribute('aria-checked')).toBe('false');
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search items' }), { target: { value: 'forms' } });
+    expect(screen.getByRole('checkbox').getAttribute('aria-checked')).toBe('true');
   });
 });
