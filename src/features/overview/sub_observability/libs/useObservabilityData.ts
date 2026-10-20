@@ -55,7 +55,7 @@ export function useObservabilityData() {
   const refreshAll = useCallback(() => {
     return Promise.all([
       fetchObservabilityMetrics(effectiveDays, selectedPersonaId || undefined),
-      fetchHealingIssues(),
+      fetchHealingIssues(selectedPersonaId ?? null),
       fetchAlertRules(true),
       fetchAlertHistory(true),
     ]);

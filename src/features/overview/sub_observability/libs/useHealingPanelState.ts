@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
+import { useOverviewStore } from '@/stores/overviewStore';
 import { isAutoFixedIssue, isOpenIssue } from './issueModel';
 
 interface UseHealingPanelStateParams {
@@ -37,7 +38,9 @@ export function useHealingPanelState({
       if (result) {
         setAnalysisResult(result);
       } else {
-        setAnalysisError('Healing analysis failed. Please try again.');
+        // The slice already reported and recorded why; show that cause, not a generic line.
+        const reason = useOverviewStore.getState().healingAnalysisError;
+        setAnalysisError(reason ?? 'Healing analysis failed. Please try again.');
       }
     } catch (err) {
       setAnalysisError(err instanceof Error ? err.message : 'Healing analysis failed');

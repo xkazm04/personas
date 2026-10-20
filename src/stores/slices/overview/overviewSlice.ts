@@ -378,7 +378,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
 
     const [obsSettled, healingSettled] = await Promise.allSettled([
       withRetry(() => getOverviewBundle(days, personaId), "Failed to load observability metrics"),
-      listHealingIssues(undefined, undefined, 100),
+      listHealingIssues(personaId, undefined, 100),
     ]);
 
     let allOk = true;
@@ -415,6 +415,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
 
     if (healingSettled.status === 'fulfilled') {
       patch.healingIssues = healingSettled.value as PersonaHealingIssue[];
+      patch.healingScopePersonaId = personaId ?? null;
       pipelineResults.push({ source: 'healingIssues', error: null });
     } else {
       allOk = false;

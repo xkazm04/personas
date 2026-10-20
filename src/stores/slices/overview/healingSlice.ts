@@ -17,12 +17,17 @@ export interface HealingSlice {
   // State
   healingIssues: PersonaHealingIssue[];
   healingRunning: boolean;
+  /** Why the last analysis run failed (reported message), null after a success or a new run. */
+  healingAnalysisError: string | null;
+  /** The persona the list is scoped to; null = every persona. Every list writer honours it. */
+  healingScopePersonaId: string | null;
   retryChain: PersonaExecution[];
   healingTimeline: HealingTimelineEvent[];
   healingTimelineLoading: boolean;
 
   // Actions
-  fetchHealingIssues: () => Promise<void>;
+  /** `undefined` keeps the current scope (event-driven refreshes), `null` widens to all personas. */
+  fetchHealingIssues: (personaId?: string | null) => Promise<void>;
   triggerHealing: (personaId?: string) => Promise<{ failures_analyzed: number; issues_created: number; auto_fixed: number } | null>;
   /** Resolves `true` once the backend recorded the resolution, `false` when it
    *  refused or failed (already reported). A caller that shows success must
@@ -36,14 +41,19 @@ export interface HealingSlice {
 export const createHealingSlice: StateCreator<OverviewStore, [], [], HealingSlice> = (set, get) => ({
   healingIssues: [],
   healingRunning: false,
+  healingAnalysisError: null,
+  healingScopePersonaId: null,
   retryChain: [],
   healingTimeline: [],
   healingTimelineLoading: false,
 
-  fetchHealingIssues: async () => {
+  fetchHealingIssues: async (personaId) => {
+    const scope = personaId === undefined ? get().healingScopePersonaId : personaId;
     try {
-      const issues = await listHealingIssues(undefined, undefined, 100);
-      set({ healingIssues: issues });
+      const issues = await listHealingIssues(scope ?? undefined, undefined, 100);
+      // The newest 100 of the scope, not of every persona: a client filter over a
+      // cross-persona top 100 would miss older rows of the chosen persona.
+      set({ healingIssues: issues, healingScopePersonaId: scope });
     } catch (err) {
       reportError(err, "Failed to fetch healing issues", set);
     }
@@ -51,14 +61,15 @@ export const createHealingSlice: StateCreator<OverviewStore, [], [], HealingSlic
 
   triggerHealing: async (personaId?: string) => {
     if (!personaId) return null;
-    set({ healingRunning: true });
+    set({ healingRunning: true, healingAnalysisError: null });
     try {
       const result = await runHealingAnalysis(personaId);
-      const issues = await listHealingIssues(undefined, undefined, 100);
+      const issues = await listHealingIssues(get().healingScopePersonaId ?? undefined, undefined, 100);
       set({ healingIssues: issues, healingRunning: false });
       return { failures_analyzed: result.failuresAnalyzed, issues_created: result.issuesCreated, auto_fixed: result.autoFixed };
     } catch (err) {
-      reportError(err, "Failed to run healing analysis", set, { stateUpdates: { healingRunning: false } });
+      const reason = reportError(err, "Failed to run healing analysis", set, { stateUpdates: { healingRunning: false } });
+      set({ healingAnalysisError: reason });
       return null;
     }
   },

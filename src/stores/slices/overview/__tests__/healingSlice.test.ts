@@ -14,6 +14,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const updateHealingStatus = vi.fn();
 const getHealingIssue = vi.fn();
+const listHealingIssues = vi.fn();
+const runHealingAnalysis = vi.fn();
 let listener: ((payload: { issueId: string; personaId: string }) => Promise<void>) | null = null;
 
 vi.mock('@/api/overview/healing', () => ({
@@ -21,8 +23,8 @@ vi.mock('@/api/overview/healing', () => ({
   getHealingIssue: (...a: unknown[]) => getHealingIssue(...a),
   getHealingTimeline: vi.fn(),
   getRetryChain: vi.fn(),
-  listHealingIssues: vi.fn(),
-  runHealingAnalysis: vi.fn(),
+  listHealingIssues: (...a: unknown[]) => listHealingIssues(...a),
+  runHealingAnalysis: (...a: unknown[]) => runHealingAnalysis(...a),
 }));
 
 vi.mock('@/lib/eventRegistry', () => ({
@@ -55,6 +57,8 @@ const ISSUE: PersonaHealingIssue = {
 beforeEach(() => {
   updateHealingStatus.mockReset();
   getHealingIssue.mockReset();
+  listHealingIssues.mockReset();
+  runHealingAnalysis.mockReset();
   listener = null;
 });
 
@@ -99,5 +103,26 @@ describe('subscribeHealingEvents', () => {
     await store.getState().subscribeHealingEvents();
     await listener!({ issueId: 'issue-1', personaId: 'persona-1' });
     expect(store.getState().healingIssues).toHaveLength(1);
+  });
+});
+
+describe('healing scope and analysis failure', () => {
+  it('fetches a persona-scoped list and keeps that scope for later unscoped refreshes', async () => {
+    listHealingIssues.mockResolvedValue([ISSUE]);
+    const store = makeStore();
+    await store.getState().fetchHealingIssues('persona-1');
+    expect(listHealingIssues).toHaveBeenLastCalledWith('persona-1', undefined, 100);
+    await store.getState().fetchHealingIssues();
+    expect(listHealingIssues).toHaveBeenLastCalledWith('persona-1', undefined, 100);
+    await store.getState().fetchHealingIssues(null);
+    expect(listHealingIssues).toHaveBeenLastCalledWith(undefined, undefined, 100);
+    expect(store.getState().healingScopePersonaId).toBeNull();
+  });
+
+  it('a failed analysis records its cause for the caller', async () => {
+    runHealingAnalysis.mockRejectedValue({ error: 'Validation error: no executions', kind: 'Validation' });
+    const store = makeStore();
+    await expect(store.getState().triggerHealing('persona-1')).resolves.toBeNull();
+    expect(store.getState().healingAnalysisError).toContain('no executions');
   });
 });
