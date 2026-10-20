@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import {
   parseImportInput,
   buildMappings,
@@ -39,6 +40,8 @@ export interface CredentialImportActions {
 }
 
 export function useCredentialImport(): CredentialImportState & CredentialImportActions {
+  const { t } = useTranslation();
+  const vi = t.vault.import;
   const [phase, setPhase] = useState<ImportPhase>('pick_source');
   const [sourceId, setSourceId] = useState<ImportSourceId | null>(null);
   const [rawInput, setRawInput] = useState('');
@@ -61,11 +64,11 @@ export function useCredentialImport(): CredentialImportState & CredentialImportA
   const parse = useCallback(() => {
     if (!sourceId || !rawInput.trim()) return;
 
-    const result = parseImportInput(sourceId, rawInput.trim());
+    const result = parseImportInput(sourceId, rawInput.trim(), vi);
     setParseResult(result);
 
     if (result.secrets.length === 0) {
-      setError(result.errors.length > 0 ? result.errors[0]! : 'No secrets found in the input');
+      setError(result.errors.length > 0 ? result.errors[0]! : vi.err_no_secrets);
       return;
     }
 
@@ -74,7 +77,7 @@ export function useCredentialImport(): CredentialImportState & CredentialImportA
     setSelectedKeys(new Set(result.secrets.map((s) => s.id)));
     setError(null);
     setPhase('preview');
-  }, [sourceId, rawInput]);
+  }, [sourceId, rawInput, vi]);
 
   const toggleKey = useCallback((id: string) => {
     setSelectedKeys((prev) => {

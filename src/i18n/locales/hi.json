@@ -24191,7 +24191,9 @@
       "no_members": "अभी तक कोई सदस्य नहीं। टूल बंडलिंग शुरू करने के लिए नीचे एक जोड़ें।",
       "pick_credential": "एक क्रेडेंशियल चुनें…",
       "pick_error": "एक क्रेडेंशियल चुनें और इसे एक छोटा डिस्प्ले नाम दें",
-      "remove_member_aria": "{name} को हटाएँ"
+      "remove_member_aria": "{name} को हटाएँ",
+      "disable_member": "अक्षम करें",
+      "enable_member": "सक्षम करें"
     },
     "graph": {
       "connection_count_one": "{count} कनेक्शन",
@@ -24235,7 +24237,27 @@
       "selected_for_import": "आयात के लिए चयनित",
       "source_ref": "स्रोत संदर्भ",
       "sync_supported": "Sync समर्थित",
-      "title": "आयात स्रोत"
+      "title": "आयात स्रोत",
+      "cli_hint": "{cli} CLI कमांड चलाएँ और JSON आउटपुट नीचे पेस्ट करें।",
+      "env_hint": "अपनी .env फ़ाइल की सामग्री नीचे पेस्ट करें।",
+      "err_aws_no_secret_string": "AWS प्रतिक्रिया में कोई SecretString नहीं मिला",
+      "err_aws_parse_failed": "AWS Secrets Manager का JSON आउटपुट पार्स नहीं हो सका",
+      "err_azure_parse_failed": "Azure Key Vault का JSON आउटपुट पार्स नहीं हो सका",
+      "err_doppler_parse_failed": "Doppler का JSON आउटपुट पार्स नहीं हो सका। उपयोग करें: doppler secrets download --format=json",
+      "err_env_missing_separator": "पंक्ति {line}: '=' विभाजक गायब है",
+      "err_no_secrets": "इनपुट में कोई सीक्रेट नहीं मिला",
+      "err_op_expected_array": "op CLI आउटपुट से JSON ऐरे अपेक्षित था",
+      "err_op_parse_failed": "1Password का JSON आउटपुट पार्स नहीं हो सका। उपयोग करें: op item list --format=json",
+      "placeholder_1password": "इस कमांड का आउटपुट पेस्ट करें: op item list --format=json",
+      "placeholder_aws_secrets": "इस कमांड का आउटपुट पेस्ट करें: aws secretsmanager get-secret-value --secret-id <name>",
+      "placeholder_azure_keyvault": "इस कमांड का आउटपुट पेस्ट करें: az keyvault secret show --vault-name <vault> --name <secret>",
+      "placeholder_doppler": "इस कमांड का आउटपुट पेस्ट करें: doppler secrets download --format=json",
+      "source_desc_1password": "op CLI से 1Password से आयात करें",
+      "source_desc_aws_secrets": "AWS Secrets Manager से आयात करें",
+      "source_desc_azure_keyvault": "Azure Key Vault से आयात करें",
+      "source_desc_doppler": "Doppler सीक्रेट प्लेटफ़ॉर्म से आयात करें",
+      "source_desc_env_file": "स्थानीय .env फ़ाइल से सीक्रेट आयात करें",
+      "source_label_env_file": ".env फ़ाइल"
     },
     "ingest": {
       "rename_credential": "क्रेडेंशियल नाम बदलें",
@@ -24495,7 +24517,11 @@
       "rotate_now": "अभी रोटेट करें",
       "rotation_failed": "रोटेशन विफल: {error}",
       "rotation_paused": "रोटेशन रुका हुआ",
-      "update_period_failed": "रोटेशन अवधि अपडेट करने में विफल: {error}"
+      "update_period_failed": "रोटेशन अवधि अपडेट करने में विफल: {error}",
+      "countdown_days_hours": "{days} दिन {hours} घं.",
+      "countdown_due_now": "अभी देय",
+      "countdown_hours_minutes": "{hours} घं. {minutes} मि.",
+      "countdown_minutes": "{minutes} मि."
     },
     "schema_configs": {
       "custom": {
@@ -24612,7 +24638,9 @@
       "kv_value_label": "मान",
       "kv_value_placeholder": "मान",
       "none_configured": "कोई कॉन्फ़िगर नहीं।",
-      "required_badge": "आवश्यक"
+      "required_badge": "आवश्यक",
+      "field_captured": "कैप्चर किया गया",
+      "select_placeholder": "चुनें..."
     },
     "setup_kind": {
       "cli_login": "प्रदाता की CLI इंस्टॉल है लेकिन साइन-इन नहीं है — टर्मिनल में उसका लॉगिन कमांड चलाएँ (उदाहरण के लिए `vercel login` या `gh auth login`)",
@@ -24841,7 +24869,8 @@
       "extract_export_json": "JSON निर्यात करें",
       "extract_filter_all": "सभी प्रकार",
       "extract_filter_label": "इकाई प्रकार से फ़िल्टर करें",
-      "health_unreachable": "सेवा तक पहुँचा नहीं जा सका"
+      "health_unreachable": "सेवा तक पहुँचा नहीं जा सका",
+      "oauth_context_lost": "OAuth पूरा हुआ लेकिन संदर्भ खो गया। कृपया पुनः प्रयास करें।"
     },
     "subtitle": "क्रेडेंशियल जोड़ने का तरीका चुनें",
     "title": "वॉल्ट",
@@ -25027,7 +25056,12 @@
       "critical_title": "क्रेडेंशियल गंभीर",
       "drift_title": "क्रेडेंशियल ड्रिफ़्ट पाया गया",
       "rotation_failed_title": "क्रेडेंशियल रोटेशन विफल",
-      "warning_title": "क्रेडेंशियल चेतावनी"
+      "warning_title": "क्रेडेंशियल चेतावनी",
+      "reason_backoff_retry": "क्षणिक विफलता दर {pct} है (1 घंटा)। घातीय बैकऑफ़ लागू किया जा रहा है।",
+      "reason_default": "उपचार स्तर: {level}",
+      "reason_disable": "गंभीर: स्थायी विफलता दर {pct} है (1 घंटा)। रोटेशन नीतियाँ स्वतः अक्षम की जा रही हैं।",
+      "reason_preemptive_rotation": "निरंतर गिरावट: विफलता दर {pct} है (1 घंटा)। पूर्व-निवारक रोटेशन निर्धारित किया जा रहा है।",
+      "reason_rotate_then_alert": "स्थायी त्रुटियाँ मिलीं: स्थायी विफलता दर {pct} है (1 घंटा)। रोटेशन और अलर्ट जारी है।"
     },
     "resource_picker": {
       "no_matches": "कोई मिलान नहीं",

@@ -281,7 +281,7 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
                             onClick={() => handleToggle(m.memberCredentialId, !m.enabled)}
                             disabled={isPending}
                           >
-                            {m.enabled ? t.common.disabled : t.common.enabled}
+                            {m.enabled ? gw.disable_member : gw.enable_member}
                           </Button>
                           <Button
                             variant="ghost"

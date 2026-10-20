@@ -1,4 +1,5 @@
 import { useCallback, useRef } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useGoogleOAuth } from '@/features/vault/shared/hooks/useGoogleOAuth';
 import { OAUTH_FIELD } from '@/features/vault/sub_catalog/components/design/CredentialDesignHelpers';
 
@@ -21,6 +22,10 @@ export interface CredentialOAuthState {
 }
 
 export function useCredentialOAuth({ onSuccess, onError }: UseCredentialOAuthOptions): CredentialOAuthState {
+  const { t } = useTranslation();
+  const contextLostMessage = t.vault.shared.oauth_context_lost;
+  const contextLostRef = useRef(contextLostMessage);
+  contextLostRef.current = contextLostMessage;
   // Store pending values (which may contain client_secret) in a ref to avoid
   // exposure via React DevTools, Sentry, and error boundary serialization.
   const pendingValuesRef = useRef<Record<string, string> | null>(null);
@@ -33,7 +38,7 @@ export function useCredentialOAuth({ onSuccess, onError }: UseCredentialOAuthOpt
     onSuccess: (data) => {
       const pv = pendingValuesRef.current;
       if (!pv) {
-        onErrorRef.current('OAuth finished but context was lost. Please retry.');
+        onErrorRef.current(contextLostRef.current);
         return;
       }
 

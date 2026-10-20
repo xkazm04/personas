@@ -1,12 +1,13 @@
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
+import { en, type Translations } from '@/i18n/en';
 
 /** Supported external secret sources */
 export type ImportSourceId = 'env_file' | '1password' | 'aws_secrets' | 'azure_keyvault' | 'doppler';
 
 export interface ImportSourceMeta {
   id: ImportSourceId;
+  /** Brand name shown as-is; the `.env` entry is localized via {@link importSourceLabel}. */
   label: string;
-  description: string;
   color: string;
   icon: string; // lucide icon name hint
   cliCommand?: string;
@@ -17,7 +18,6 @@ export const IMPORT_SOURCES: ImportSourceMeta[] = [
   {
     id: 'env_file',
     label: '.env File',
-    description: 'Import secrets from a local .env file',
     color: '#22C55E',
     icon: 'file-text',
     syncSupported: false,
@@ -25,7 +25,6 @@ export const IMPORT_SOURCES: ImportSourceMeta[] = [
   {
     id: '1password',
     label: '1Password CLI',
-    description: 'Import from 1Password using the op CLI',
     color: '#0572EC',
     icon: 'key-round',
     cliCommand: 'op',
@@ -34,7 +33,6 @@ export const IMPORT_SOURCES: ImportSourceMeta[] = [
   {
     id: 'aws_secrets',
     label: 'AWS Secrets Manager',
-    description: 'Import from AWS Secrets Manager',
     color: '#FF9900',
     icon: 'cloud',
     cliCommand: 'aws',
@@ -43,7 +41,6 @@ export const IMPORT_SOURCES: ImportSourceMeta[] = [
   {
     id: 'azure_keyvault',
     label: 'Azure Key Vault',
-    description: 'Import from Azure Key Vault',
     color: '#0078D4',
     icon: 'shield',
     cliCommand: 'az',
@@ -52,13 +49,42 @@ export const IMPORT_SOURCES: ImportSourceMeta[] = [
   {
     id: 'doppler',
     label: 'Doppler',
-    description: 'Import from Doppler SecretOps platform',
     color: '#7C3AED',
     icon: 'lock',
     cliCommand: 'doppler',
     syncSupported: true,
   },
 ];
+
+type ImportText = Translations['vault']['import'];
+
+/** Localized label for a source (only `.env File` is not a brand name). */
+export function importSourceLabel(vi: ImportText, source: ImportSourceMeta): string {
+  return source.id === 'env_file' ? vi.source_label_env_file : source.label;
+}
+
+/** Localized one-line description for a source. */
+export function importSourceDescription(vi: ImportText, id: ImportSourceId): string {
+  switch (id) {
+    case 'env_file': return vi.source_desc_env_file;
+    case '1password': return vi.source_desc_1password;
+    case 'aws_secrets': return vi.source_desc_aws_secrets;
+    case 'azure_keyvault': return vi.source_desc_azure_keyvault;
+    case 'doppler': return vi.source_desc_doppler;
+  }
+}
+
+/**
+ * Parser-error copy. The parsers are pure functions, so the caller hands in
+ * the localized strings; when omitted (tests, non-React callers) the English
+ * catalog is read lazily at the moment an error is produced.
+ */
+export type ImportParseMessages = Pick<ImportText,
+  | 'err_env_missing_separator' | 'err_op_expected_array' | 'err_op_parse_failed'
+  | 'err_aws_no_secret_string' | 'err_aws_parse_failed' | 'err_azure_parse_failed'
+  | 'err_doppler_parse_failed'>;
+
+const msg = (m: ImportParseMessages | undefined): ImportParseMessages => m ?? en.vault.import;
 
 /** A single parsed secret entry from any source */
 export interface ImportedSecret {
@@ -167,7 +193,7 @@ export function detectServiceFromKey(key: string): SecretServiceMapping {
 }
 
 /** Parse .env file content into secrets */
-export function parseEnvFile(content: string): ImportParseResult {
+export function parseEnvFile(content: string, m?: ImportParseMessages): ImportParseResult {
   const secrets: ImportedSecret[] = [];
   const errors: string[] = [];
 
@@ -184,7 +210,7 @@ export function parseEnvFile(content: string): ImportParseResult {
 
     const eqIndex = trimmed.indexOf('=');
     if (eqIndex === -1) {
-      errors.push(`Line ${i + 1}: missing '=' separator`);
+      errors.push(msg(m).err_env_missing_separator.replace('{line}', String(i + 1)));
       continue;
     }
 
@@ -207,14 +233,14 @@ export function parseEnvFile(content: string): ImportParseResult {
 }
 
 /** Parse 1Password CLI JSON output (op item list --format=json) */
-export function parse1PasswordOutput(jsonStr: string): ImportParseResult {
+export function parse1PasswordOutput(jsonStr: string, m?: ImportParseMessages): ImportParseResult {
   const errors: string[] = [];
   const secrets: ImportedSecret[] = [];
 
   try {
     const items = JSON.parse(jsonStr);
     if (!Array.isArray(items)) {
-      return { source: '1password', secrets: [], errors: ['Expected a JSON array from op CLI output'] };
+      return { source: '1password', secrets: [], errors: [msg(m).err_op_expected_array] };
     }
     for (const item of items) {
       const title = item.title ?? item.label ?? 'unknown';
@@ -231,14 +257,14 @@ export function parse1PasswordOutput(jsonStr: string): ImportParseResult {
       }
     }
   } catch {
-    errors.push('Failed to parse 1Password JSON output. Use: op item list --format=json');
+    errors.push(msg(m).err_op_parse_failed);
   }
 
   return { source: '1password', secrets, errors };
 }
 
 /** Parse AWS Secrets Manager JSON (aws secretsmanager get-secret-value) */
-export function parseAwsSecretsOutput(jsonStr: string): ImportParseResult {
+export function parseAwsSecretsOutput(jsonStr: string, m?: ImportParseMessages): ImportParseResult {
   const errors: string[] = [];
   const secrets: ImportedSecret[] = [];
 
@@ -259,17 +285,17 @@ export function parseAwsSecretsOutput(jsonStr: string): ImportParseResult {
         secrets.push({ id: String(secrets.length), key: name.replace(/[/\s]/g, '_').toUpperCase(), value: secretString, sourcePath: data.ARN });
       }
     } else {
-      errors.push('No SecretString found in AWS response');
+      errors.push(msg(m).err_aws_no_secret_string);
     }
   } catch {
-    errors.push('Failed to parse AWS Secrets Manager JSON output');
+    errors.push(msg(m).err_aws_parse_failed);
   }
 
   return { source: 'aws_secrets', secrets, errors };
 }
 
 /** Parse Azure Key Vault JSON (az keyvault secret list / show) */
-export function parseAzureKeyVaultOutput(jsonStr: string): ImportParseResult {
+export function parseAzureKeyVaultOutput(jsonStr: string, m?: ImportParseMessages): ImportParseResult {
   const errors: string[] = [];
   const secrets: ImportedSecret[] = [];
 
@@ -288,14 +314,14 @@ export function parseAzureKeyVaultOutput(jsonStr: string): ImportParseResult {
       }
     }
   } catch {
-    errors.push('Failed to parse Azure Key Vault JSON output');
+    errors.push(msg(m).err_azure_parse_failed);
   }
 
   return { source: 'azure_keyvault', secrets, errors };
 }
 
 /** Parse Doppler CLI JSON output (doppler secrets download --format=json) */
-export function parseDopplerOutput(jsonStr: string): ImportParseResult {
+export function parseDopplerOutput(jsonStr: string, m?: ImportParseMessages): ImportParseResult {
   const errors: string[] = [];
   const secrets: ImportedSecret[] = [];
 
@@ -309,20 +335,20 @@ export function parseDopplerOutput(jsonStr: string): ImportParseResult {
       }
     }
   } catch {
-    errors.push('Failed to parse Doppler JSON output. Use: doppler secrets download --format=json');
+    errors.push(msg(m).err_doppler_parse_failed);
   }
 
   return { source: 'doppler', secrets, errors };
 }
 
 /** Route raw input to the correct parser */
-export function parseImportInput(sourceId: ImportSourceId, input: string): ImportParseResult {
+export function parseImportInput(sourceId: ImportSourceId, input: string, m?: ImportParseMessages): ImportParseResult {
   switch (sourceId) {
-    case 'env_file': return parseEnvFile(input);
-    case '1password': return parse1PasswordOutput(input);
-    case 'aws_secrets': return parseAwsSecretsOutput(input);
-    case 'azure_keyvault': return parseAzureKeyVaultOutput(input);
-    case 'doppler': return parseDopplerOutput(input);
+    case 'env_file': return parseEnvFile(input, m);
+    case '1password': return parse1PasswordOutput(input, m);
+    case 'aws_secrets': return parseAwsSecretsOutput(input, m);
+    case 'azure_keyvault': return parseAzureKeyVaultOutput(input, m);
+    case 'doppler': return parseDopplerOutput(input, m);
   }
 }
 

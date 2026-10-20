@@ -984,7 +984,9 @@
     "no_members": "Участников пока нет. Добавьте одного ниже для начала.",
     "pick_credential": "Выберите учётные данные…",
     "pick_error": "Выберите учётные данные и дайте им короткое отображаемое имя",
-    "remove_member_aria": "Удалить {name}"
+    "remove_member_aria": "Удалить {name}",
+    "disable_member": "Отключить",
+    "enable_member": "Включить"
   },
   "graph": {
     "connection_count_one": "{count} подключение",
@@ -1028,7 +1030,27 @@
     "selected_for_import": "выбрано для импорта",
     "source_ref": "Ссылка на источник",
     "sync_supported": "Поддерживается синхронизация",
-    "title": "Источник импорта"
+    "title": "Источник импорта",
+    "cli_hint": "Выполните команду CLI {cli} и вставьте JSON-вывод ниже.",
+    "env_hint": "Вставьте ниже содержимое вашего файла .env.",
+    "err_aws_no_secret_string": "В ответе AWS не найден SecretString",
+    "err_aws_parse_failed": "Не удалось разобрать JSON-вывод AWS Secrets Manager",
+    "err_azure_parse_failed": "Не удалось разобрать JSON-вывод Azure Key Vault",
+    "err_doppler_parse_failed": "Не удалось разобрать JSON-вывод Doppler. Используйте: doppler secrets download --format=json",
+    "err_env_missing_separator": "Строка {line}: отсутствует разделитель «=»",
+    "err_no_secrets": "Во вводе не найдено секретов",
+    "err_op_expected_array": "Ожидался JSON-массив в выводе CLI op",
+    "err_op_parse_failed": "Не удалось разобрать JSON-вывод 1Password. Используйте: op item list --format=json",
+    "placeholder_1password": "Вставьте вывод команды: op item list --format=json",
+    "placeholder_aws_secrets": "Вставьте вывод команды: aws secretsmanager get-secret-value --secret-id <name>",
+    "placeholder_azure_keyvault": "Вставьте вывод команды: az keyvault secret show --vault-name <vault> --name <secret>",
+    "placeholder_doppler": "Вставьте вывод команды: doppler secrets download --format=json",
+    "source_desc_1password": "Импорт из 1Password через CLI op",
+    "source_desc_aws_secrets": "Импорт из AWS Secrets Manager",
+    "source_desc_azure_keyvault": "Импорт из Azure Key Vault",
+    "source_desc_doppler": "Импорт из платформы секретов Doppler",
+    "source_desc_env_file": "Импорт секретов из локального файла .env",
+    "source_label_env_file": "Файл .env"
   },
   "ingest": {
     "rename_credential": "Переименовать учётные данные",
@@ -1288,7 +1310,11 @@
     "rotate_now": "Ротировать сейчас",
     "rotation_failed": "Ошибка ротации: {error}",
     "rotation_paused": "Ротация приостановлена",
-    "update_period_failed": "Не удалось обновить период ротации: {error}"
+    "update_period_failed": "Не удалось обновить период ротации: {error}",
+    "countdown_days_hours": "{days} д {hours} ч",
+    "countdown_due_now": "Срок наступил",
+    "countdown_hours_minutes": "{hours} ч {minutes} мин",
+    "countdown_minutes": "{minutes} мин"
   },
   "schema_configs": {
     "custom": {
@@ -1405,7 +1431,9 @@
     "kv_value_label": "Значение",
     "kv_value_placeholder": "значение",
     "none_configured": "Не настроено.",
-    "required_badge": "ОБЯ"
+    "required_badge": "ОБЯ",
+    "field_captured": "захвачено",
+    "select_placeholder": "Выберите..."
   },
   "setup_kind": {
     "cli_login": "CLI провайдера установлен, но вход не выполнен — запустите его команду входа в терминале (например, `vercel login` или `gh auth login`)",
@@ -1634,7 +1662,8 @@
     "extract_export_json": "Экспорт в JSON",
     "extract_filter_all": "Все типы",
     "extract_filter_label": "Фильтр по типу сущности",
-    "health_unreachable": "Не удалось связаться со службой"
+    "health_unreachable": "Не удалось связаться со службой",
+    "oauth_context_lost": "OAuth завершён, но контекст был потерян. Повторите попытку."
   },
   "subtitle": "Выберите способ добавления учётных данных",
   "title": "Хранилище",
@@ -1820,7 +1849,12 @@
     "critical_title": "Критическое состояние учётных данных",
     "drift_title": "Обнаружен дрейф учётных данных",
     "rotation_failed_title": "Не удалось выполнить ротацию учётных данных",
-    "warning_title": "Предупреждение об учётных данных"
+    "warning_title": "Предупреждение об учётных данных",
+    "reason_backoff_retry": "Доля временных сбоев — {pct} (1 ч). Применяется экспоненциальная задержка.",
+    "reason_default": "Уровень исправления: {level}",
+    "reason_disable": "Критично: доля постоянных сбоев — {pct} (1 ч). Политики ротации отключаются автоматически.",
+    "reason_preemptive_rotation": "Устойчивая деградация: доля сбоев — {pct} (1 ч). Планируется упреждающая ротация.",
+    "reason_rotate_then_alert": "Обнаружены постоянные ошибки: доля постоянных сбоев — {pct} (1 ч). Выполняется ротация и оповещение."
   },
   "resource_picker": {
     "no_matches": "Нет совпадений",

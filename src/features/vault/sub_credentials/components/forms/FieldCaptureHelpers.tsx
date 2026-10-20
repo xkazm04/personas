@@ -122,7 +122,7 @@ export function FieldActionButtons({
     <div className="flex items-center gap-1">
       {mode === 'confirming' && value && (
         <StatusBadge variant="success" size="sm" icon={<Check className="w-2.5 h-2.5" />}>
-          captured
+          {t.vault.schemas.field_captured}
         </StatusBadge>
       )}
       {isSecret && (

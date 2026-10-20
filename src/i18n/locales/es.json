@@ -24191,7 +24191,9 @@
       "no_members": "Sin miembros aún. Agrega uno abajo para comenzar a agrupar herramientas.",
       "pick_credential": "Elige una credencial…",
       "pick_error": "Elige una credencial y dale un nombre de visualización corto",
-      "remove_member_aria": "Quitar a {name}"
+      "remove_member_aria": "Quitar a {name}",
+      "disable_member": "Desactivar",
+      "enable_member": "Activar"
     },
     "graph": {
       "connection_count_one": "{count} conexión",
@@ -24235,7 +24237,27 @@
       "selected_for_import": "seleccionados para importar",
       "source_ref": "Referencia de origen",
       "sync_supported": "Sincronización compatible",
-      "title": "Origen de importación"
+      "title": "Origen de importación",
+      "cli_hint": "Ejecuta el comando de la CLI {cli} y pega la salida JSON a continuación.",
+      "env_hint": "Pega a continuación el contenido de tu archivo .env.",
+      "err_aws_no_secret_string": "No se encontró ningún SecretString en la respuesta de AWS",
+      "err_aws_parse_failed": "No se pudo analizar la salida JSON de AWS Secrets Manager",
+      "err_azure_parse_failed": "No se pudo analizar la salida JSON de Azure Key Vault",
+      "err_doppler_parse_failed": "No se pudo analizar la salida JSON de Doppler. Usa: doppler secrets download --format=json",
+      "err_env_missing_separator": "Línea {line}: falta el separador «=»",
+      "err_no_secrets": "No se encontraron secretos en la entrada",
+      "err_op_expected_array": "Se esperaba un array JSON en la salida de la CLI op",
+      "err_op_parse_failed": "No se pudo analizar la salida JSON de 1Password. Usa: op item list --format=json",
+      "placeholder_1password": "Pega la salida de: op item list --format=json",
+      "placeholder_aws_secrets": "Pega la salida de: aws secretsmanager get-secret-value --secret-id <name>",
+      "placeholder_azure_keyvault": "Pega la salida de: az keyvault secret show --vault-name <vault> --name <secret>",
+      "placeholder_doppler": "Pega la salida de: doppler secrets download --format=json",
+      "source_desc_1password": "Importar desde 1Password con la CLI op",
+      "source_desc_aws_secrets": "Importar desde AWS Secrets Manager",
+      "source_desc_azure_keyvault": "Importar desde Azure Key Vault",
+      "source_desc_doppler": "Importar desde la plataforma de secretos Doppler",
+      "source_desc_env_file": "Importar secretos desde un archivo .env local",
+      "source_label_env_file": "Archivo .env"
     },
     "ingest": {
       "rename_credential": "Renombrar credencial",
@@ -24495,7 +24517,11 @@
       "rotate_now": "Rotar ahora",
       "rotation_failed": "Rotación fallida: {error}",
       "rotation_paused": "Rotación pausada",
-      "update_period_failed": "Error al actualizar el período de rotación: {error}"
+      "update_period_failed": "Error al actualizar el período de rotación: {error}",
+      "countdown_days_hours": "{days} d {hours} h",
+      "countdown_due_now": "Vence ahora",
+      "countdown_hours_minutes": "{hours} h {minutes} min",
+      "countdown_minutes": "{minutes} min"
     },
     "schema_configs": {
       "custom": {
@@ -24612,7 +24638,9 @@
       "kv_value_label": "Valor",
       "kv_value_placeholder": "valor",
       "none_configured": "Ninguno configurado.",
-      "required_badge": "REQ"
+      "required_badge": "REQ",
+      "field_captured": "capturado",
+      "select_placeholder": "Seleccionar..."
     },
     "setup_kind": {
       "cli_login": "La CLI del proveedor está instalada pero no has iniciado sesión — ejecuta su comando de inicio de sesión en una terminal (por ejemplo `vercel login` o `gh auth login`)",
@@ -24841,7 +24869,8 @@
       "extract_export_json": "Exportar JSON",
       "extract_filter_all": "Todos los tipos",
       "extract_filter_label": "Filtrar por tipo de entidad",
-      "health_unreachable": "No se pudo conectar con el servicio"
+      "health_unreachable": "No se pudo conectar con el servicio",
+      "oauth_context_lost": "OAuth terminó pero se perdió el contexto. Inténtalo de nuevo."
     },
     "subtitle": "Elige cómo quieres agregar una credencial",
     "title": "Bóveda",
@@ -25027,7 +25056,12 @@
       "critical_title": "Credencial en estado crítico",
       "drift_title": "Desviación de credencial detectada",
       "rotation_failed_title": "Falló la rotación de la credencial",
-      "warning_title": "Advertencia de credencial"
+      "warning_title": "Advertencia de credencial",
+      "reason_backoff_retry": "Tasa de fallos transitorios del {pct} (1 h). Aplicando retroceso exponencial.",
+      "reason_default": "Nivel de remediación: {level}",
+      "reason_disable": "Crítico: tasa de fallos permanentes del {pct} (1 h). Desactivando automáticamente las políticas de rotación.",
+      "reason_preemptive_rotation": "Degradación sostenida: tasa de fallos del {pct} (1 h). Programando rotación preventiva.",
+      "reason_rotate_then_alert": "Errores permanentes detectados: tasa de fallos permanentes del {pct} (1 h). Rotando y alertando."
     },
     "resource_picker": {
       "no_matches": "Sin coincidencias",

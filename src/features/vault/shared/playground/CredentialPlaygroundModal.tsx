@@ -61,7 +61,7 @@ export function CredentialPlaygroundModal({ credential, connector, onClose, onDe
   const health = useCredentialHealth(credential.id);
   const { result: healthcheckResult, isHealthchecking } = health;
   useRotationTicker();
-  const rotationCountdown = formatCountdown(rotationStatus?.next_rotation_at) ?? '';
+  const rotationCountdown = formatCountdown(rotationStatus?.next_rotation_at, t.vault.rotation_section) ?? '';
 
   const googleOAuth = useGoogleOAuth({ onSuccess: () => setEditError(null), onError: (msg) => setEditError(msg) });
 

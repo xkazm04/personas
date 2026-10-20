@@ -24191,7 +24191,9 @@
       "no_members": "아직 멤버 없음. 아래에서 추가해 도구 묶기 시작.",
       "pick_credential": "자격 증명 선택…",
       "pick_error": "자격 증명을 선택하고 짧은 표시 이름을 지정하세요",
-      "remove_member_aria": "{name} 제거"
+      "remove_member_aria": "{name} 제거",
+      "disable_member": "비활성화",
+      "enable_member": "활성화"
     },
     "graph": {
       "connection_count_one": "{count}개 연결",
@@ -24235,7 +24237,27 @@
       "selected_for_import": "가져오기 위해 선택됨",
       "source_ref": "소스 참조",
       "sync_supported": "동기화 지원",
-      "title": "가져오기 소스"
+      "title": "가져오기 소스",
+      "cli_hint": "{cli} CLI 명령을 실행하고 JSON 출력을 아래에 붙여넣으세요.",
+      "env_hint": ".env 파일의 내용을 아래에 붙여넣으세요.",
+      "err_aws_no_secret_string": "AWS 응답에서 SecretString을 찾을 수 없습니다",
+      "err_aws_parse_failed": "AWS Secrets Manager JSON 출력을 파싱하지 못했습니다",
+      "err_azure_parse_failed": "Azure Key Vault JSON 출력을 파싱하지 못했습니다",
+      "err_doppler_parse_failed": "Doppler JSON 출력을 파싱하지 못했습니다. 다음을 사용하세요: doppler secrets download --format=json",
+      "err_env_missing_separator": "{line}행: '=' 구분자가 없습니다",
+      "err_no_secrets": "입력에서 시크릿을 찾을 수 없습니다",
+      "err_op_expected_array": "op CLI 출력은 JSON 배열이어야 합니다",
+      "err_op_parse_failed": "1Password JSON 출력을 파싱하지 못했습니다. 다음을 사용하세요: op item list --format=json",
+      "placeholder_1password": "다음 명령의 출력을 붙여넣기: op item list --format=json",
+      "placeholder_aws_secrets": "다음 명령의 출력을 붙여넣기: aws secretsmanager get-secret-value --secret-id <name>",
+      "placeholder_azure_keyvault": "다음 명령의 출력을 붙여넣기: az keyvault secret show --vault-name <vault> --name <secret>",
+      "placeholder_doppler": "다음 명령의 출력을 붙여넣기: doppler secrets download --format=json",
+      "source_desc_1password": "op CLI로 1Password에서 가져오기",
+      "source_desc_aws_secrets": "AWS Secrets Manager에서 가져오기",
+      "source_desc_azure_keyvault": "Azure Key Vault에서 가져오기",
+      "source_desc_doppler": "Doppler 시크릿 플랫폼에서 가져오기",
+      "source_desc_env_file": "로컬 .env 파일에서 시크릿 가져오기",
+      "source_label_env_file": ".env 파일"
     },
     "ingest": {
       "rename_credential": "자격 증명 이름 변경",
@@ -24495,7 +24517,11 @@
       "rotate_now": "지금 교체",
       "rotation_failed": "교체 실패: {error}",
       "rotation_paused": "교체 일시 중지",
-      "update_period_failed": "교체 주기 업데이트 실패: {error}"
+      "update_period_failed": "교체 주기 업데이트 실패: {error}",
+      "countdown_days_hours": "{days}일 {hours}시간",
+      "countdown_due_now": "기한 도래",
+      "countdown_hours_minutes": "{hours}시간 {minutes}분",
+      "countdown_minutes": "{minutes}분"
     },
     "schema_configs": {
       "custom": {
@@ -24612,7 +24638,9 @@
       "kv_value_label": "값",
       "kv_value_placeholder": "값",
       "none_configured": "구성된 것 없음.",
-      "required_badge": "필수"
+      "required_badge": "필수",
+      "field_captured": "캡처됨",
+      "select_placeholder": "선택..."
     },
     "setup_kind": {
       "cli_login": "제공업체 CLI는 설치되어 있지만 로그인되어 있지 않습니다 — 터미널에서 로그인 명령을 실행하세요 (예: `vercel login` 또는 `gh auth login`)",
@@ -24841,7 +24869,8 @@
       "extract_export_json": "JSON 내보내기",
       "extract_filter_all": "모든 유형",
       "extract_filter_label": "엔터티 유형으로 필터링",
-      "health_unreachable": "서비스에 연결할 수 없음"
+      "health_unreachable": "서비스에 연결할 수 없음",
+      "oauth_context_lost": "OAuth는 완료되었지만 컨텍스트가 손실되었습니다. 다시 시도해 주세요."
     },
     "subtitle": "자격 증명 추가 방법을 선택하세요",
     "title": "보관함",
@@ -25027,7 +25056,12 @@
       "critical_title": "자격 증명 위험",
       "drift_title": "자격 증명 드리프트 감지됨",
       "rotation_failed_title": "자격 증명 교체 실패",
-      "warning_title": "자격 증명 경고"
+      "warning_title": "자격 증명 경고",
+      "reason_backoff_retry": "일시적 실패율이 {pct}입니다(1시간). 지수 백오프를 적용합니다.",
+      "reason_default": "조치 수준: {level}",
+      "reason_disable": "심각: 영구 실패율이 {pct}입니다(1시간). 교체 정책을 자동으로 비활성화합니다.",
+      "reason_preemptive_rotation": "지속적 성능 저하: 실패율이 {pct}입니다(1시간). 선제적 교체를 예약합니다.",
+      "reason_rotate_then_alert": "영구 오류 감지: 영구 실패율이 {pct}입니다(1시간). 교체 및 알림을 진행합니다."
     },
     "resource_picker": {
       "no_matches": "일치하는 항목 없음",

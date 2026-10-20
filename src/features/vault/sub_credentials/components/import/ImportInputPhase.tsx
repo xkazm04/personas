@@ -1,5 +1,5 @@
 import { ArrowLeft, Upload, Terminal } from 'lucide-react';
-import { IMPORT_SOURCES, type ImportSourceId } from './importHelpers';
+import { IMPORT_SOURCES, importSourceLabel, type ImportSourceId } from './importHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
 import { VaultErrorBanner } from '@/features/vault/sub_credentials/components/card/banners/VaultErrorBanner';
 
@@ -22,16 +22,16 @@ export function ImportInputPhase({ sourceId, rawInput, onInputChange, onParse, o
   const placeholder = sourceId === 'env_file'
     ? 'OPENAI_API_KEY=sk-...\nGITHUB_TOKEN=ghp_...\nSTRIPE_SECRET_KEY=sk_live_...'
     : sourceId === '1password'
-    ? 'Paste output of: op item list --format=json'
+    ? vi.placeholder_1password
     : sourceId === 'aws_secrets'
-    ? 'Paste output of: aws secretsmanager get-secret-value --secret-id <name>'
+    ? vi.placeholder_aws_secrets
     : sourceId === 'azure_keyvault'
-    ? 'Paste output of: az keyvault secret show --vault-name <vault> --name <secret>'
-    : 'Paste output of: doppler secrets download --format=json';
+    ? vi.placeholder_azure_keyvault
+    : vi.placeholder_doppler;
 
   const cliHint = source.cliCommand
-    ? `Run the ${source.cliCommand} CLI command and paste the JSON output below.`
-    : 'Paste your .env file contents below.';
+    ? tx(vi.cli_hint, { cli: source.cliCommand })
+    : vi.env_hint;
 
   return (
     <div
@@ -52,7 +52,7 @@ export function ImportInputPhase({ sourceId, rawInput, onInputChange, onParse, o
           <Terminal className="w-3.5 h-3.5" style={{ color: source.color }} />
         </div>
         <div>
-          <h3 className="typo-body text-foreground">{tx(t.vault.credential_import.import_from, { source: source.label })}</h3>
+          <h3 className="typo-body text-foreground">{tx(t.vault.credential_import.import_from, { source: importSourceLabel(vi, source) })}</h3>
           <p className="typo-body text-foreground">{cliHint}</p>
         </div>
       </div>

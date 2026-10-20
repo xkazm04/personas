@@ -984,7 +984,9 @@
     "no_members": "لا توجد أعضاء بعد. أضف عضواً أدناه لبدء تجميع الأدوات.",
     "pick_credential": "اختر بيانات اعتماد…",
     "pick_error": "اختر بيانات اعتماد وأعطها اسماً قصيراً للعرض",
-    "remove_member_aria": "إزالة {name}"
+    "remove_member_aria": "إزالة {name}",
+    "disable_member": "تعطيل",
+    "enable_member": "تمكين"
   },
   "graph": {
     "connection_count_one": "{count} اتصال",
@@ -1028,7 +1030,27 @@
     "selected_for_import": "محدد للاستيراد",
     "source_ref": "مرجع المصدر",
     "sync_supported": "المزامنة مدعومة",
-    "title": "مصدر الاستيراد"
+    "title": "مصدر الاستيراد",
+    "cli_hint": "شغّل أمر CLI ‏{cli} والصق مخرجات JSON أدناه.",
+    "env_hint": "الصق محتوى ملف ‎.env‎ الخاص بك أدناه.",
+    "err_aws_no_secret_string": "لم يُعثر على SecretString في استجابة AWS",
+    "err_aws_parse_failed": "تعذّر تحليل مخرجات JSON من AWS Secrets Manager",
+    "err_azure_parse_failed": "تعذّر تحليل مخرجات JSON من Azure Key Vault",
+    "err_doppler_parse_failed": "تعذّر تحليل مخرجات JSON من Doppler. استخدم: doppler secrets download --format=json",
+    "err_env_missing_separator": "السطر {line}: الفاصل «=» مفقود",
+    "err_no_secrets": "لم يُعثر على أي أسرار في المُدخل",
+    "err_op_expected_array": "كان من المتوقع مصفوفة JSON من مخرجات op CLI",
+    "err_op_parse_failed": "تعذّر تحليل مخرجات JSON من 1Password. استخدم: op item list --format=json",
+    "placeholder_1password": "الصق مخرجات الأمر: op item list --format=json",
+    "placeholder_aws_secrets": "الصق مخرجات الأمر: aws secretsmanager get-secret-value --secret-id <name>",
+    "placeholder_azure_keyvault": "الصق مخرجات الأمر: az keyvault secret show --vault-name <vault> --name <secret>",
+    "placeholder_doppler": "الصق مخرجات الأمر: doppler secrets download --format=json",
+    "source_desc_1password": "الاستيراد من 1Password باستخدام op CLI",
+    "source_desc_aws_secrets": "الاستيراد من AWS Secrets Manager",
+    "source_desc_azure_keyvault": "الاستيراد من Azure Key Vault",
+    "source_desc_doppler": "الاستيراد من منصة أسرار Doppler",
+    "source_desc_env_file": "استيراد الأسرار من ملف ‎.env‎ محلي",
+    "source_label_env_file": "ملف ‎.env‎"
   },
   "ingest": {
     "rename_credential": "إعادة تسمية بيانات الاعتماد",
@@ -1288,7 +1310,11 @@
     "rotate_now": "تدوير الآن",
     "rotation_failed": "فشل التدوير: {error}",
     "rotation_paused": "التدوير موقوف",
-    "update_period_failed": "فشل تحديث فترة التدوير: {error}"
+    "update_period_failed": "فشل تحديث فترة التدوير: {error}",
+    "countdown_days_hours": "{days} ي {hours} س",
+    "countdown_due_now": "مستحق الآن",
+    "countdown_hours_minutes": "{hours} س {minutes} د",
+    "countdown_minutes": "{minutes} د"
   },
   "schema_configs": {
     "custom": {
@@ -1405,7 +1431,9 @@
     "kv_value_label": "القيمة",
     "kv_value_placeholder": "قيمة",
     "none_configured": "لا شيء مضبوط.",
-    "required_badge": "مطلوب"
+    "required_badge": "مطلوب",
+    "field_captured": "تم الالتقاط",
+    "select_placeholder": "اختر..."
   },
   "setup_kind": {
     "cli_login": "واجهة سطر الأوامر (CLI) للمزوّد مثبّتة لكن لم يتم تسجيل الدخول — شغّل أمر تسجيل الدخول الخاص بها في الطرفية (مثل `vercel login` أو `gh auth login`)",
@@ -1634,7 +1662,8 @@
     "extract_export_json": "تصدير JSON",
     "extract_filter_all": "كل الأنواع",
     "extract_filter_label": "التصفية حسب نوع الكيان",
-    "health_unreachable": "تعذّر الوصول إلى الخدمة"
+    "health_unreachable": "تعذّر الوصول إلى الخدمة",
+    "oauth_context_lost": "اكتملت مصادقة OAuth لكن السياق فُقد. يُرجى إعادة المحاولة."
   },
   "subtitle": "اختر طريقة إضافة بيانات الاعتماد",
   "title": "الخزنة",
@@ -1820,7 +1849,12 @@
     "critical_title": "بيانات اعتماد في حالة حرجة",
     "drift_title": "تم اكتشاف انحراف في بيانات الاعتماد",
     "rotation_failed_title": "فشل تدوير بيانات الاعتماد",
-    "warning_title": "تحذير بشأن بيانات الاعتماد"
+    "warning_title": "تحذير بشأن بيانات الاعتماد",
+    "reason_backoff_retry": "معدل الفشل العابر {pct} (ساعة واحدة). جارٍ تطبيق التراجع الأسي.",
+    "reason_default": "مستوى المعالجة: {level}",
+    "reason_disable": "حرج: معدل الفشل الدائم {pct} (ساعة واحدة). جارٍ تعطيل سياسات التدوير تلقائيًا.",
+    "reason_preemptive_rotation": "تدهور مستمر: معدل الفشل {pct} (ساعة واحدة). جارٍ جدولة تدوير استباقي.",
+    "reason_rotate_then_alert": "رُصدت أخطاء دائمة: معدل الفشل الدائم {pct} (ساعة واحدة). جارٍ التدوير والتنبيه."
   },
   "resource_picker": {
     "no_matches": "لا توجد نتائج مطابقة",

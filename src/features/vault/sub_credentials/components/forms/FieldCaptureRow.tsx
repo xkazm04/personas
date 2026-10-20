@@ -1,4 +1,5 @@
 import { useId, useMemo, useState } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import {
   type FieldInputType,
@@ -54,6 +55,7 @@ export function FieldCaptureRow({
   allowCopy = true,
   testIdBase,
 }: FieldCaptureRowProps) {
+  const { t } = useTranslation();
   const isEditable = mode !== 'readonly' && !!onChange;
   const isSecret = inputType === 'password';
   // A React id, not one derived from the label or test id: two rows with the
@@ -114,7 +116,7 @@ export function FieldCaptureRow({
           aria-required={required || undefined}
           className={`rounded-modal ${error ? 'border-red-500/50' : ''}`}
         >
-          <option value="">{placeholder || 'Select...'}</option>
+          <option value="">{placeholder || t.vault.schemas.select_placeholder}</option>
           {options.map((option) => {
             const isPair = typeof option === 'object' && option !== null;
             const optValue = isPair ? option.value : option;

@@ -24191,7 +24191,9 @@
       "no_members": "Belum ada anggota. Tambahkan satu di bawah untuk mulai menggabungkan alat.",
       "pick_credential": "Pilih kredensial…",
       "pick_error": "Pilih kredensial dan beri nama tampilan yang singkat",
-      "remove_member_aria": "Hapus {name}"
+      "remove_member_aria": "Hapus {name}",
+      "disable_member": "Nonaktifkan",
+      "enable_member": "Aktifkan"
     },
     "graph": {
       "connection_count_one": "{count} koneksi",
@@ -24235,7 +24237,27 @@
       "selected_for_import": "dipilih untuk diimpor",
       "source_ref": "Referensi sumber",
       "sync_supported": "Sinkronisasi didukung",
-      "title": "Sumber impor"
+      "title": "Sumber impor",
+      "cli_hint": "Jalankan perintah CLI {cli} lalu tempel keluaran JSON di bawah.",
+      "env_hint": "Tempel isi berkas .env Anda di bawah.",
+      "err_aws_no_secret_string": "SecretString tidak ditemukan dalam respons AWS",
+      "err_aws_parse_failed": "Gagal mengurai keluaran JSON AWS Secrets Manager",
+      "err_azure_parse_failed": "Gagal mengurai keluaran JSON Azure Key Vault",
+      "err_doppler_parse_failed": "Gagal mengurai keluaran JSON Doppler. Gunakan: doppler secrets download --format=json",
+      "err_env_missing_separator": "Baris {line}: pemisah '=' tidak ada",
+      "err_no_secrets": "Tidak ada secret yang ditemukan pada masukan",
+      "err_op_expected_array": "Diharapkan array JSON dari keluaran op CLI",
+      "err_op_parse_failed": "Gagal mengurai keluaran JSON 1Password. Gunakan: op item list --format=json",
+      "placeholder_1password": "Tempel keluaran dari: op item list --format=json",
+      "placeholder_aws_secrets": "Tempel keluaran dari: aws secretsmanager get-secret-value --secret-id <name>",
+      "placeholder_azure_keyvault": "Tempel keluaran dari: az keyvault secret show --vault-name <vault> --name <secret>",
+      "placeholder_doppler": "Tempel keluaran dari: doppler secrets download --format=json",
+      "source_desc_1password": "Impor dari 1Password menggunakan op CLI",
+      "source_desc_aws_secrets": "Impor dari AWS Secrets Manager",
+      "source_desc_azure_keyvault": "Impor dari Azure Key Vault",
+      "source_desc_doppler": "Impor dari platform secret Doppler",
+      "source_desc_env_file": "Impor secret dari berkas .env lokal",
+      "source_label_env_file": "Berkas .env"
     },
     "ingest": {
       "rename_credential": "Ganti nama kredensial",
@@ -24495,7 +24517,11 @@
       "rotate_now": "Rotasi sekarang",
       "rotation_failed": "Rotasi gagal: {error}",
       "rotation_paused": "Rotasi dijeda",
-      "update_period_failed": "Gagal memperbarui periode rotasi: {error}"
+      "update_period_failed": "Gagal memperbarui periode rotasi: {error}",
+      "countdown_days_hours": "{days}h {hours}j",
+      "countdown_due_now": "Jatuh tempo sekarang",
+      "countdown_hours_minutes": "{hours}j {minutes}m",
+      "countdown_minutes": "{minutes}m"
     },
     "schema_configs": {
       "custom": {
@@ -24612,7 +24638,9 @@
       "kv_value_label": "Nilai",
       "kv_value_placeholder": "nilai",
       "none_configured": "Tidak ada yang dikonfigurasi.",
-      "required_badge": "WAJIB"
+      "required_badge": "WAJIB",
+      "field_captured": "tertangkap",
+      "select_placeholder": "Pilih..."
     },
     "setup_kind": {
       "cli_login": "CLI penyedia sudah terpasang tetapi belum masuk — jalankan perintah login-nya di terminal (misalnya `vercel login` atau `gh auth login`)",
@@ -24841,7 +24869,8 @@
       "extract_export_json": "Ekspor JSON",
       "extract_filter_all": "Semua tipe",
       "extract_filter_label": "Filter menurut tipe entitas",
-      "health_unreachable": "Layanan tidak dapat dijangkau"
+      "health_unreachable": "Layanan tidak dapat dijangkau",
+      "oauth_context_lost": "OAuth selesai tetapi konteks hilang. Silakan coba lagi."
     },
     "subtitle": "Pilih cara Anda ingin menambahkan kredensial",
     "title": "Brankas",
@@ -25027,7 +25056,12 @@
       "critical_title": "Kredensial Kritis",
       "drift_title": "Penyimpangan Kredensial Terdeteksi",
       "rotation_failed_title": "Rotasi Kredensial Gagal",
-      "warning_title": "Peringatan Kredensial"
+      "warning_title": "Peringatan Kredensial",
+      "reason_backoff_retry": "Tingkat kegagalan sementara {pct} (1 jam). Menerapkan backoff eksponensial.",
+      "reason_default": "Tingkat remediasi: {level}",
+      "reason_disable": "Kritis: tingkat kegagalan permanen {pct} (1 jam). Menonaktifkan kebijakan rotasi secara otomatis.",
+      "reason_preemptive_rotation": "Penurunan berkelanjutan: tingkat kegagalan {pct} (1 jam). Menjadwalkan rotasi preventif.",
+      "reason_rotate_then_alert": "Kesalahan permanen terdeteksi: tingkat kegagalan permanen {pct} (1 jam). Merotasi dan mengirim peringatan."
     },
     "resource_picker": {
       "no_matches": "Tidak ada yang cocok",

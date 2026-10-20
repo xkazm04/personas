@@ -24191,7 +24191,9 @@
       "no_members": "এখনও কোনো সদস্য নেই। টুল বান্ডিল শুরু করতে নিচে একটি যোগ করুন।",
       "pick_credential": "একটি ক্রেডেনশিয়াল বেছে নিন…",
       "pick_error": "একটি ক্রেডেনশিয়াল বেছে নিন এবং একটি সংক্ষিপ্ত ডিসপ্লে নাম দিন",
-      "remove_member_aria": "{name} কে সরান"
+      "remove_member_aria": "{name} কে সরান",
+      "disable_member": "নিষ্ক্রিয় করুন",
+      "enable_member": "সক্রিয় করুন"
     },
     "graph": {
       "connection_count_one": "{count}টি সংযোগ",
@@ -24235,7 +24237,27 @@
       "selected_for_import": "আমদানির জন্য নির্বাচিত",
       "source_ref": "উৎস রেফারেন্স",
       "sync_supported": "সিঙ্ক সমর্থিত",
-      "title": "ইম্পোর্ট উৎস"
+      "title": "ইম্পোর্ট উৎস",
+      "cli_hint": "{cli} CLI কমান্ড চালান এবং JSON আউটপুট নিচে পেস্ট করুন।",
+      "env_hint": "আপনার .env ফাইলের বিষয়বস্তু নিচে পেস্ট করুন।",
+      "err_aws_no_secret_string": "AWS প্রতিক্রিয়ায় কোনো SecretString পাওয়া যায়নি",
+      "err_aws_parse_failed": "AWS Secrets Manager-এর JSON আউটপুট পার্স করা যায়নি",
+      "err_azure_parse_failed": "Azure Key Vault-এর JSON আউটপুট পার্স করা যায়নি",
+      "err_doppler_parse_failed": "Doppler-এর JSON আউটপুট পার্স করা যায়নি। ব্যবহার করুন: doppler secrets download --format=json",
+      "err_env_missing_separator": "লাইন {line}: '=' বিভাজক নেই",
+      "err_no_secrets": "ইনপুটে কোনো সিক্রেট পাওয়া যায়নি",
+      "err_op_expected_array": "op CLI আউটপুট থেকে একটি JSON অ্যারে প্রত্যাশিত ছিল",
+      "err_op_parse_failed": "1Password-এর JSON আউটপুট পার্স করা যায়নি। ব্যবহার করুন: op item list --format=json",
+      "placeholder_1password": "এই কমান্ডের আউটপুট পেস্ট করুন: op item list --format=json",
+      "placeholder_aws_secrets": "এই কমান্ডের আউটপুট পেস্ট করুন: aws secretsmanager get-secret-value --secret-id <name>",
+      "placeholder_azure_keyvault": "এই কমান্ডের আউটপুট পেস্ট করুন: az keyvault secret show --vault-name <vault> --name <secret>",
+      "placeholder_doppler": "এই কমান্ডের আউটপুট পেস্ট করুন: doppler secrets download --format=json",
+      "source_desc_1password": "op CLI ব্যবহার করে 1Password থেকে ইমপোর্ট করুন",
+      "source_desc_aws_secrets": "AWS Secrets Manager থেকে ইমপোর্ট করুন",
+      "source_desc_azure_keyvault": "Azure Key Vault থেকে ইমপোর্ট করুন",
+      "source_desc_doppler": "Doppler সিক্রেট প্ল্যাটফর্ম থেকে ইমপোর্ট করুন",
+      "source_desc_env_file": "স্থানীয় .env ফাইল থেকে সিক্রেট ইমপোর্ট করুন",
+      "source_label_env_file": ".env ফাইল"
     },
     "ingest": {
       "rename_credential": "ক্রেডেনশিয়ালের নাম পরিবর্তন করুন",
@@ -24495,7 +24517,11 @@
       "rotate_now": "এখন রোটেট করুন",
       "rotation_failed": "রোটেশন ব্যর্থ: {error}",
       "rotation_paused": "রোটেশন বিরতিতে",
-      "update_period_failed": "রোটেশন পিরিয়ড আপডেট ব্যর্থ: {error}"
+      "update_period_failed": "রোটেশন পিরিয়ড আপডেট ব্যর্থ: {error}",
+      "countdown_days_hours": "{days} দিন {hours} ঘণ্টা",
+      "countdown_due_now": "এখনই প্রদেয়",
+      "countdown_hours_minutes": "{hours} ঘণ্টা {minutes} মিনিট",
+      "countdown_minutes": "{minutes} মিনিট"
     },
     "schema_configs": {
       "custom": {
@@ -24612,7 +24638,9 @@
       "kv_value_label": "মান",
       "kv_value_placeholder": "মান",
       "none_configured": "কিছু কনফিগার নেই।",
-      "required_badge": "প্রয়োজনীয়"
+      "required_badge": "প্রয়োজনীয়",
+      "field_captured": "ক্যাপচার করা হয়েছে",
+      "select_placeholder": "নির্বাচন করুন..."
     },
     "setup_kind": {
       "cli_login": "প্রোভাইডারের CLI ইনস্টল করা আছে কিন্তু সাইন ইন করা নেই — টার্মিনালে এর লগইন কমান্ড চালান (উদাহরণস্বরূপ `vercel login` বা `gh auth login`)",
@@ -24841,7 +24869,8 @@
       "extract_export_json": "JSON এক্সপোর্ট",
       "extract_filter_all": "সব ধরন",
       "extract_filter_label": "সত্তার ধরন অনুযায়ী ফিল্টার",
-      "health_unreachable": "সার্ভিসে পৌঁছানো যায়নি"
+      "health_unreachable": "সার্ভিসে পৌঁছানো যায়নি",
+      "oauth_context_lost": "OAuth সম্পন্ন হয়েছে কিন্তু প্রসঙ্গ হারিয়ে গেছে। অনুগ্রহ করে আবার চেষ্টা করুন।"
     },
     "subtitle": "শংসাপত্র যোগ করার পদ্ধতি বেছে নিন",
     "title": "ভল্ট",
@@ -25027,7 +25056,12 @@
       "critical_title": "ক্রেডেনশিয়াল গুরুতর অবস্থায়",
       "drift_title": "ক্রেডেনশিয়াল ড্রিফট শনাক্ত হয়েছে",
       "rotation_failed_title": "ক্রেডেনশিয়াল রোটেশন ব্যর্থ",
-      "warning_title": "ক্রেডেনশিয়াল সতর্কতা"
+      "warning_title": "ক্রেডেনশিয়াল সতর্কতা",
+      "reason_backoff_retry": "ক্ষণস্থায়ী ব্যর্থতার হার {pct} (১ ঘণ্টা)। এক্সপোনেনশিয়াল ব্যাকঅফ প্রয়োগ করা হচ্ছে।",
+      "reason_default": "প্রতিকারের স্তর: {level}",
+      "reason_disable": "গুরুতর: স্থায়ী ব্যর্থতার হার {pct} (১ ঘণ্টা)। রোটেশন নীতি স্বয়ংক্রিয়ভাবে নিষ্ক্রিয় করা হচ্ছে।",
+      "reason_preemptive_rotation": "ক্রমাগত অবনতি: ব্যর্থতার হার {pct} (১ ঘণ্টা)। প্রতিরোধমূলক রোটেশন নির্ধারণ করা হচ্ছে।",
+      "reason_rotate_then_alert": "স্থায়ী ত্রুটি শনাক্ত হয়েছে: স্থায়ী ব্যর্থতার হার {pct} (১ ঘণ্টা)। রোটেশন ও সতর্কতা চলছে।"
     },
     "resource_picker": {
       "no_matches": "কোনো মিল পাওয়া যায়নি",

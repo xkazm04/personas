@@ -984,7 +984,9 @@
     "no_members": "暂无成员。在下方添加一个以开始捆绑工具。",
     "pick_credential": "选择凭据…",
     "pick_error": "请选择凭据并提供简短显示名称",
-    "remove_member_aria": "移除 {name}"
+    "remove_member_aria": "移除 {name}",
+    "disable_member": "禁用",
+    "enable_member": "启用"
   },
   "graph": {
     "connection_count_one": "{count} 个连接",
@@ -1028,7 +1030,27 @@
     "selected_for_import": "已选择导入",
     "source_ref": "来源引用",
     "sync_supported": "支持同步",
-    "title": "导入来源"
+    "title": "导入来源",
+    "cli_hint": "运行 {cli} CLI 命令，并将 JSON 输出粘贴到下方。",
+    "env_hint": "将 .env 文件的内容粘贴到下方。",
+    "err_aws_no_secret_string": "AWS 响应中未找到 SecretString",
+    "err_aws_parse_failed": "无法解析 AWS Secrets Manager 的 JSON 输出",
+    "err_azure_parse_failed": "无法解析 Azure Key Vault 的 JSON 输出",
+    "err_doppler_parse_failed": "无法解析 Doppler 的 JSON 输出。请使用：doppler secrets download --format=json",
+    "err_env_missing_separator": "第 {line} 行：缺少“=”分隔符",
+    "err_no_secrets": "输入中未找到任何密钥",
+    "err_op_expected_array": "op CLI 输出应为 JSON 数组",
+    "err_op_parse_failed": "无法解析 1Password 的 JSON 输出。请使用：op item list --format=json",
+    "placeholder_1password": "粘贴以下命令的输出：op item list --format=json",
+    "placeholder_aws_secrets": "粘贴以下命令的输出：aws secretsmanager get-secret-value --secret-id <name>",
+    "placeholder_azure_keyvault": "粘贴以下命令的输出：az keyvault secret show --vault-name <vault> --name <secret>",
+    "placeholder_doppler": "粘贴以下命令的输出：doppler secrets download --format=json",
+    "source_desc_1password": "使用 op CLI 从 1Password 导入",
+    "source_desc_aws_secrets": "从 AWS Secrets Manager 导入",
+    "source_desc_azure_keyvault": "从 Azure Key Vault 导入",
+    "source_desc_doppler": "从 Doppler 密钥平台导入",
+    "source_desc_env_file": "从本地 .env 文件导入密钥",
+    "source_label_env_file": ".env 文件"
   },
   "ingest": {
     "rename_credential": "重命名凭据",
@@ -1288,7 +1310,11 @@
     "rotate_now": "立即轮换",
     "rotation_failed": "轮换失败：{error}",
     "rotation_paused": "轮换已暂停",
-    "update_period_failed": "更新轮换周期失败：{error}"
+    "update_period_failed": "更新轮换周期失败：{error}",
+    "countdown_days_hours": "{days}天{hours}小时",
+    "countdown_due_now": "已到期",
+    "countdown_hours_minutes": "{hours}小时{minutes}分钟",
+    "countdown_minutes": "{minutes}分钟"
   },
   "schema_configs": {
     "custom": {
@@ -1405,7 +1431,9 @@
     "kv_value_label": "值",
     "kv_value_placeholder": "值",
     "none_configured": "未配置。",
-    "required_badge": "必填"
+    "required_badge": "必填",
+    "field_captured": "已捕获",
+    "select_placeholder": "请选择..."
   },
   "setup_kind": {
     "cli_login": "该提供商的 CLI 已安装但尚未登录 — 请在终端中运行它的登录命令（例如 `vercel login` 或 `gh auth login`）",
@@ -1634,7 +1662,8 @@
     "extract_export_json": "导出 JSON",
     "extract_filter_all": "所有类型",
     "extract_filter_label": "按实体类型筛选",
-    "health_unreachable": "无法连接到服务"
+    "health_unreachable": "无法连接到服务",
+    "oauth_context_lost": "OAuth 已完成，但上下文丢失。请重试。"
   },
   "subtitle": "选择添加凭证的方式",
   "title": "密钥库",
@@ -1820,7 +1849,12 @@
     "critical_title": "凭据严重告警",
     "drift_title": "检测到凭据漂移",
     "rotation_failed_title": "凭据轮换失败",
-    "warning_title": "凭据警告"
+    "warning_title": "凭据警告",
+    "reason_backoff_retry": "瞬时故障率为 {pct}（1 小时）。正在应用指数退避。",
+    "reason_default": "修复级别：{level}",
+    "reason_disable": "严重：永久故障率为 {pct}（1 小时）。正在自动禁用轮换策略。",
+    "reason_preemptive_rotation": "持续降级：故障率为 {pct}（1 小时）。正在安排预防性轮换。",
+    "reason_rotate_then_alert": "检测到永久性错误：永久故障率为 {pct}（1 小时）。正在轮换并告警。"
   },
   "resource_picker": {
     "no_matches": "无匹配项",

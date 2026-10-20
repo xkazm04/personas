@@ -24191,7 +24191,9 @@
       "no_members": "Aucun membre. Ajoutez-en un ci-dessous pour commencer à regrouper des outils.",
       "pick_credential": "Choisir un identifiant…",
       "pick_error": "Choisissez un identifiant et donnez-lui un nom d’affichage court",
-      "remove_member_aria": "Retirer {name}"
+      "remove_member_aria": "Retirer {name}",
+      "disable_member": "Désactiver",
+      "enable_member": "Activer"
     },
     "graph": {
       "connection_count_one": "{count} connexion",
@@ -24235,7 +24237,27 @@
       "selected_for_import": "sélectionné(s) pour import",
       "source_ref": "Référence source",
       "sync_supported": "Synchronisation supportée",
-      "title": "Source d’import"
+      "title": "Source d’import",
+      "cli_hint": "Exécutez la commande CLI {cli} et collez la sortie JSON ci-dessous.",
+      "env_hint": "Collez ci-dessous le contenu de votre fichier .env.",
+      "err_aws_no_secret_string": "Aucun SecretString trouvé dans la réponse AWS",
+      "err_aws_parse_failed": "Échec de l'analyse de la sortie JSON d'AWS Secrets Manager",
+      "err_azure_parse_failed": "Échec de l'analyse de la sortie JSON d'Azure Key Vault",
+      "err_doppler_parse_failed": "Échec de l'analyse de la sortie JSON de Doppler. Utilisez : doppler secrets download --format=json",
+      "err_env_missing_separator": "Ligne {line} : séparateur « = » manquant",
+      "err_no_secrets": "Aucun secret trouvé dans la saisie",
+      "err_op_expected_array": "Un tableau JSON était attendu dans la sortie de la CLI op",
+      "err_op_parse_failed": "Échec de l'analyse de la sortie JSON de 1Password. Utilisez : op item list --format=json",
+      "placeholder_1password": "Collez la sortie de : op item list --format=json",
+      "placeholder_aws_secrets": "Collez la sortie de : aws secretsmanager get-secret-value --secret-id <name>",
+      "placeholder_azure_keyvault": "Collez la sortie de : az keyvault secret show --vault-name <vault> --name <secret>",
+      "placeholder_doppler": "Collez la sortie de : doppler secrets download --format=json",
+      "source_desc_1password": "Importer depuis 1Password avec la CLI op",
+      "source_desc_aws_secrets": "Importer depuis AWS Secrets Manager",
+      "source_desc_azure_keyvault": "Importer depuis Azure Key Vault",
+      "source_desc_doppler": "Importer depuis la plateforme de secrets Doppler",
+      "source_desc_env_file": "Importer des secrets depuis un fichier .env local",
+      "source_label_env_file": "Fichier .env"
     },
     "ingest": {
       "rename_credential": "Renommer l’identifiant",
@@ -24495,7 +24517,11 @@
       "rotate_now": "Faire pivoter maintenant",
       "rotation_failed": "Échec de la rotation : {error}",
       "rotation_paused": "Rotation suspendue",
-      "update_period_failed": "Échec de la mise à jour de la période de rotation : {error}"
+      "update_period_failed": "Échec de la mise à jour de la période de rotation : {error}",
+      "countdown_days_hours": "{days} j {hours} h",
+      "countdown_due_now": "Échéance atteinte",
+      "countdown_hours_minutes": "{hours} h {minutes} min",
+      "countdown_minutes": "{minutes} min"
     },
     "schema_configs": {
       "custom": {
@@ -24612,7 +24638,9 @@
       "kv_value_label": "Valeur",
       "kv_value_placeholder": "valeur",
       "none_configured": "Aucun configuré.",
-      "required_badge": "REQ"
+      "required_badge": "REQ",
+      "field_captured": "capturé",
+      "select_placeholder": "Sélectionner..."
     },
     "setup_kind": {
       "cli_login": "La CLI du fournisseur est installée mais vous n’êtes pas connecté — exécutez sa commande de connexion dans un terminal (par exemple `vercel login` ou `gh auth login`)",
@@ -24841,7 +24869,8 @@
       "extract_export_json": "Exporter en JSON",
       "extract_filter_all": "Tous les types",
       "extract_filter_label": "Filtrer par type d'entité",
-      "health_unreachable": "Service injoignable"
+      "health_unreachable": "Service injoignable",
+      "oauth_context_lost": "OAuth est terminé mais le contexte a été perdu. Veuillez réessayer."
     },
     "subtitle": "Choisissez comment ajouter un identifiant",
     "title": "Coffre-fort",
@@ -25027,7 +25056,12 @@
       "critical_title": "Identifiant critique",
       "drift_title": "Dérive d'identifiant détectée",
       "rotation_failed_title": "Échec de la rotation de l'identifiant",
-      "warning_title": "Avertissement d'identifiant"
+      "warning_title": "Avertissement d'identifiant",
+      "reason_backoff_retry": "Taux d'échec transitoire à {pct} (1 h). Application d'un backoff exponentiel.",
+      "reason_default": "Niveau de remédiation : {level}",
+      "reason_disable": "Critique : taux d'échec permanent de {pct} (1 h). Désactivation automatique des politiques de rotation.",
+      "reason_preemptive_rotation": "Dégradation persistante : taux d'échec de {pct} (1 h). Planification d'une rotation préventive.",
+      "reason_rotate_then_alert": "Erreurs permanentes détectées : taux d'échec permanent de {pct} (1 h). Rotation et alerte en cours."
     },
     "resource_picker": {
       "no_matches": "Aucun résultat",

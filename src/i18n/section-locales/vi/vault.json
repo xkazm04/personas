@@ -984,7 +984,9 @@
     "no_members": "Chưa có thành viên. Thêm một thành viên bên dưới để bắt đầu nhóm công cụ.",
     "pick_credential": "Chọn thông tin xác thực…",
     "pick_error": "Chọn thông tin xác thực và đặt tên hiển thị ngắn",
-    "remove_member_aria": "Xóa {name}"
+    "remove_member_aria": "Xóa {name}",
+    "disable_member": "Tắt",
+    "enable_member": "Bật"
   },
   "graph": {
     "connection_count_one": "{count} kết nối",
@@ -1028,7 +1030,27 @@
     "selected_for_import": "đã chọn để nhập",
     "source_ref": "Tham chiếu nguồn",
     "sync_supported": "Hỗ trợ đồng bộ",
-    "title": "Nguồn nhập"
+    "title": "Nguồn nhập",
+    "cli_hint": "Chạy lệnh CLI {cli} rồi dán đầu ra JSON vào bên dưới.",
+    "env_hint": "Dán nội dung tệp .env của bạn vào bên dưới.",
+    "err_aws_no_secret_string": "Không tìm thấy SecretString trong phản hồi AWS",
+    "err_aws_parse_failed": "Không thể phân tích đầu ra JSON của AWS Secrets Manager",
+    "err_azure_parse_failed": "Không thể phân tích đầu ra JSON của Azure Key Vault",
+    "err_doppler_parse_failed": "Không thể phân tích đầu ra JSON của Doppler. Hãy dùng: doppler secrets download --format=json",
+    "err_env_missing_separator": "Dòng {line}: thiếu dấu phân tách '='",
+    "err_no_secrets": "Không tìm thấy bí mật nào trong dữ liệu nhập",
+    "err_op_expected_array": "Cần một mảng JSON từ đầu ra của op CLI",
+    "err_op_parse_failed": "Không thể phân tích đầu ra JSON của 1Password. Hãy dùng: op item list --format=json",
+    "placeholder_1password": "Dán đầu ra của lệnh: op item list --format=json",
+    "placeholder_aws_secrets": "Dán đầu ra của lệnh: aws secretsmanager get-secret-value --secret-id <name>",
+    "placeholder_azure_keyvault": "Dán đầu ra của lệnh: az keyvault secret show --vault-name <vault> --name <secret>",
+    "placeholder_doppler": "Dán đầu ra của lệnh: doppler secrets download --format=json",
+    "source_desc_1password": "Nhập từ 1Password bằng op CLI",
+    "source_desc_aws_secrets": "Nhập từ AWS Secrets Manager",
+    "source_desc_azure_keyvault": "Nhập từ Azure Key Vault",
+    "source_desc_doppler": "Nhập từ nền tảng bí mật Doppler",
+    "source_desc_env_file": "Nhập bí mật từ tệp .env cục bộ",
+    "source_label_env_file": "Tệp .env"
   },
   "ingest": {
     "rename_credential": "Đổi tên thông tin xác thực",
@@ -1288,7 +1310,11 @@
     "rotate_now": "Xoay ngay",
     "rotation_failed": "Xoay vòng thất bại: {error}",
     "rotation_paused": "Xoay vòng tạm dừng",
-    "update_period_failed": "Không thể cập nhật chu kỳ xoay vòng: {error}"
+    "update_period_failed": "Không thể cập nhật chu kỳ xoay vòng: {error}",
+    "countdown_days_hours": "{days} ngày {hours} giờ",
+    "countdown_due_now": "Đến hạn ngay",
+    "countdown_hours_minutes": "{hours} giờ {minutes} phút",
+    "countdown_minutes": "{minutes} phút"
   },
   "schema_configs": {
     "custom": {
@@ -1405,7 +1431,9 @@
     "kv_value_label": "Giá trị",
     "kv_value_placeholder": "giá trị",
     "none_configured": "Chưa cấu hình.",
-    "required_badge": "BẮT BUỘC"
+    "required_badge": "BẮT BUỘC",
+    "field_captured": "đã ghi nhận",
+    "select_placeholder": "Chọn..."
   },
   "setup_kind": {
     "cli_login": "CLI của nhà cung cấp đã được cài đặt nhưng chưa đăng nhập — hãy chạy lệnh đăng nhập của nó trong terminal (ví dụ `vercel login` hoặc `gh auth login`)",
@@ -1634,7 +1662,8 @@
     "extract_export_json": "Xuất JSON",
     "extract_filter_all": "Tất cả loại",
     "extract_filter_label": "Lọc theo loại thực thể",
-    "health_unreachable": "Không thể kết nối tới dịch vụ"
+    "health_unreachable": "Không thể kết nối tới dịch vụ",
+    "oauth_context_lost": "OAuth đã hoàn tất nhưng ngữ cảnh bị mất. Vui lòng thử lại."
   },
   "subtitle": "Chọn cách bạn muốn thêm thông tin xác thực",
   "title": "Kho lưu trữ",
@@ -1820,7 +1849,12 @@
     "critical_title": "Thông tin xác thực ở mức nghiêm trọng",
     "drift_title": "Phát hiện thông tin xác thực bị lệch",
     "rotation_failed_title": "Xoay vòng thông tin xác thực thất bại",
-    "warning_title": "Cảnh báo thông tin xác thực"
+    "warning_title": "Cảnh báo thông tin xác thực",
+    "reason_backoff_retry": "Tỷ lệ lỗi tạm thời là {pct} (1 giờ). Đang áp dụng backoff theo cấp số nhân.",
+    "reason_default": "Mức khắc phục: {level}",
+    "reason_disable": "Nghiêm trọng: tỷ lệ lỗi vĩnh viễn là {pct} (1 giờ). Đang tự động tắt các chính sách xoay vòng.",
+    "reason_preemptive_rotation": "Suy giảm kéo dài: tỷ lệ lỗi là {pct} (1 giờ). Đang lên lịch xoay vòng phòng ngừa.",
+    "reason_rotate_then_alert": "Phát hiện lỗi vĩnh viễn: tỷ lệ lỗi vĩnh viễn là {pct} (1 giờ). Đang xoay vòng và cảnh báo."
   },
   "resource_picker": {
     "no_matches": "Không có kết quả phù hợp",

@@ -984,7 +984,9 @@
     "no_members": "Noch keine Mitglieder. Unten eines hinzufügen, um Tools zu bündeln.",
     "pick_credential": "Zugangsdaten auswählen…",
     "pick_error": "Zugangsdaten auswählen und kurzen Anzeigenamen vergeben",
-    "remove_member_aria": "{name} entfernen"
+    "remove_member_aria": "{name} entfernen",
+    "disable_member": "Deaktivieren",
+    "enable_member": "Aktivieren"
   },
   "graph": {
     "connection_count_one": "{count} Verbindung",
@@ -1028,7 +1030,27 @@
     "selected_for_import": "zum Import ausgewählt",
     "source_ref": "Quellreferenz",
     "sync_supported": "Sync unterstützt",
-    "title": "Importquelle"
+    "title": "Importquelle",
+    "cli_hint": "Führe den CLI-Befehl {cli} aus und füge die JSON-Ausgabe unten ein.",
+    "env_hint": "Füge den Inhalt deiner .env-Datei unten ein.",
+    "err_aws_no_secret_string": "Keine SecretString in der AWS-Antwort gefunden",
+    "err_aws_parse_failed": "AWS-Secrets-Manager-JSON-Ausgabe konnte nicht gelesen werden",
+    "err_azure_parse_failed": "Azure-Key-Vault-JSON-Ausgabe konnte nicht gelesen werden",
+    "err_doppler_parse_failed": "Doppler-JSON-Ausgabe konnte nicht gelesen werden. Verwende: doppler secrets download --format=json",
+    "err_env_missing_separator": "Zeile {line}: Trennzeichen „=“ fehlt",
+    "err_no_secrets": "Keine Secrets in der Eingabe gefunden",
+    "err_op_expected_array": "Ein JSON-Array aus der Ausgabe der op-CLI wurde erwartet",
+    "err_op_parse_failed": "1Password-JSON-Ausgabe konnte nicht gelesen werden. Verwende: op item list --format=json",
+    "placeholder_1password": "Ausgabe einfügen von: op item list --format=json",
+    "placeholder_aws_secrets": "Ausgabe einfügen von: aws secretsmanager get-secret-value --secret-id <name>",
+    "placeholder_azure_keyvault": "Ausgabe einfügen von: az keyvault secret show --vault-name <vault> --name <secret>",
+    "placeholder_doppler": "Ausgabe einfügen von: doppler secrets download --format=json",
+    "source_desc_1password": "Aus 1Password mit der op-CLI importieren",
+    "source_desc_aws_secrets": "Aus AWS Secrets Manager importieren",
+    "source_desc_azure_keyvault": "Aus Azure Key Vault importieren",
+    "source_desc_doppler": "Aus der Doppler-Secrets-Plattform importieren",
+    "source_desc_env_file": "Secrets aus einer lokalen .env-Datei importieren",
+    "source_label_env_file": ".env-Datei"
   },
   "ingest": {
     "rename_credential": "Zugangsdaten umbenennen",
@@ -1288,7 +1310,11 @@
     "rotate_now": "Jetzt rotieren",
     "rotation_failed": "Rotation fehlgeschlagen: {error}",
     "rotation_paused": "Rotation pausiert",
-    "update_period_failed": "Rotationszeitraum konnte nicht aktualisiert werden: {error}"
+    "update_period_failed": "Rotationszeitraum konnte nicht aktualisiert werden: {error}",
+    "countdown_days_hours": "{days} T. {hours} Std.",
+    "countdown_due_now": "Jetzt fällig",
+    "countdown_hours_minutes": "{hours} Std. {minutes} Min.",
+    "countdown_minutes": "{minutes} Min."
   },
   "schema_configs": {
     "custom": {
@@ -1405,7 +1431,9 @@
     "kv_value_label": "Wert",
     "kv_value_placeholder": "wert",
     "none_configured": "Keine konfiguriert.",
-    "required_badge": "PFLICHT"
+    "required_badge": "PFLICHT",
+    "field_captured": "erfasst",
+    "select_placeholder": "Auswählen..."
   },
   "setup_kind": {
     "cli_login": "Die CLI des Anbieters ist installiert, aber nicht angemeldet — führe im Terminal ihren Login-Befehl aus (zum Beispiel `vercel login` oder `gh auth login`)",
@@ -1634,7 +1662,8 @@
     "extract_export_json": "JSON exportieren",
     "extract_filter_all": "Alle Typen",
     "extract_filter_label": "Nach Entitätstyp filtern",
-    "health_unreachable": "Dienst nicht erreichbar"
+    "health_unreachable": "Dienst nicht erreichbar",
+    "oauth_context_lost": "OAuth wurde abgeschlossen, aber der Kontext ging verloren. Bitte versuche es erneut."
   },
   "subtitle": "Wählen Sie, wie Sie Zugangsdaten hinzufügen möchten",
   "title": "Tresor",
@@ -1820,7 +1849,12 @@
     "critical_title": "Zugangsdaten kritisch",
     "drift_title": "Abweichung bei Zugangsdaten erkannt",
     "rotation_failed_title": "Rotation der Zugangsdaten fehlgeschlagen",
-    "warning_title": "Warnung zu Zugangsdaten"
+    "warning_title": "Warnung zu Zugangsdaten",
+    "reason_backoff_retry": "Vorübergehende Fehlerrate bei {pct} (1 Std.). Exponentielles Backoff wird angewendet.",
+    "reason_default": "Behebungsstufe: {level}",
+    "reason_disable": "Kritisch: {pct} permanente Fehlerrate (1 Std.). Rotationsrichtlinien werden automatisch deaktiviert.",
+    "reason_preemptive_rotation": "Anhaltende Verschlechterung: {pct} Fehlerrate (1 Std.). Vorbeugende Rotation wird geplant.",
+    "reason_rotate_then_alert": "Permanente Fehler erkannt: {pct} permanente Fehlerrate (1 Std.). Rotation und Benachrichtigung laufen."
   },
   "resource_picker": {
     "no_matches": "Keine Treffer",

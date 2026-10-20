@@ -6487,6 +6487,26 @@ export type Translations = {
       secrets_found_other: string;
       import_secrets_one: string;
       import_secrets_other: string;
+      source_label_env_file: string;
+      source_desc_env_file: string;
+      source_desc_1password: string;
+      source_desc_aws_secrets: string;
+      source_desc_azure_keyvault: string;
+      source_desc_doppler: string;
+      placeholder_1password: string;
+      placeholder_aws_secrets: string;
+      placeholder_azure_keyvault: string;
+      placeholder_doppler: string;
+      cli_hint: string;
+      env_hint: string;
+      err_env_missing_separator: string;
+      err_op_expected_array: string;
+      err_op_parse_failed: string;
+      err_aws_no_secret_string: string;
+      err_aws_parse_failed: string;
+      err_azure_parse_failed: string;
+      err_doppler_parse_failed: string;
+      err_no_secrets: string;
     };
     features: {
       anomaly: {
@@ -7275,6 +7295,7 @@ export type Translations = {
       extract_filter_all: string;
       extract_export_csv: string;
       extract_export_json: string;
+      oauth_context_lost: string;
     };
     manager: {
       title: string;
@@ -7451,6 +7472,10 @@ export type Translations = {
       enable_rotation: string;
       enable_failed: string;
       last_rotated: string;
+      countdown_due_now: string;
+      countdown_days_hours: string;
+      countdown_hours_minutes: string;
+      countdown_minutes: string;
     };
     event_config: {
       event_triggers: string;
@@ -7745,6 +7770,8 @@ export type Translations = {
       kv_hide_value: string;
       kv_remove: string;
       kv_add: string;
+      select_placeholder: string;
+      field_captured: string;
     };
     connector_categories: {
       advertising: string;
@@ -8045,6 +8072,8 @@ export type Translations = {
       member_health_unknown: string;
       member_checked_label: string;
       remove_member_aria: string;
+      enable_member: string;
+      disable_member: string;
     };
     pending_auth: {
       title: string;
@@ -8295,6 +8324,11 @@ export type Translations = {
       drift_title: string;
       critical_title: string;
       warning_title: string;
+      reason_backoff_retry: string;
+      reason_preemptive_rotation: string;
+      reason_rotate_then_alert: string;
+      reason_disable: string;
+      reason_default: string;
     };
   };
   deliberation: {

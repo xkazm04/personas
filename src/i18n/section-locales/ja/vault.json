@@ -984,7 +984,9 @@
     "no_members": "まだメンバーはいません。下にメンバーを追加してツールのバンドルを開始してください。",
     "pick_credential": "認証情報を選択…",
     "pick_error": "認証情報を選択して短い表示名を付けてください",
-    "remove_member_aria": "{name} を削除"
+    "remove_member_aria": "{name} を削除",
+    "disable_member": "無効にする",
+    "enable_member": "有効にする"
   },
   "graph": {
     "connection_count_one": "{count}件の接続",
@@ -1028,7 +1030,27 @@
     "selected_for_import": "インポート対象として選択済み",
     "source_ref": "ソース参照",
     "sync_supported": "同期対応",
-    "title": "インポート元"
+    "title": "インポート元",
+    "cli_hint": "{cli} CLI コマンドを実行し、JSON 出力を下に貼り付けてください。",
+    "env_hint": "お使いの .env ファイルの内容を下に貼り付けてください。",
+    "err_aws_no_secret_string": "AWS のレスポンスに SecretString が見つかりません",
+    "err_aws_parse_failed": "AWS Secrets Manager の JSON 出力を解析できませんでした",
+    "err_azure_parse_failed": "Azure Key Vault の JSON 出力を解析できませんでした",
+    "err_doppler_parse_failed": "Doppler の JSON 出力を解析できませんでした。次を使用してください: doppler secrets download --format=json",
+    "err_env_missing_separator": "{line} 行目: 「=」区切りがありません",
+    "err_no_secrets": "入力内にシークレットが見つかりません",
+    "err_op_expected_array": "op CLI の出力は JSON 配列である必要があります",
+    "err_op_parse_failed": "1Password の JSON 出力を解析できませんでした。次を使用してください: op item list --format=json",
+    "placeholder_1password": "次の出力を貼り付け: op item list --format=json",
+    "placeholder_aws_secrets": "次の出力を貼り付け: aws secretsmanager get-secret-value --secret-id <name>",
+    "placeholder_azure_keyvault": "次の出力を貼り付け: az keyvault secret show --vault-name <vault> --name <secret>",
+    "placeholder_doppler": "次の出力を貼り付け: doppler secrets download --format=json",
+    "source_desc_1password": "op CLI を使って 1Password からインポート",
+    "source_desc_aws_secrets": "AWS Secrets Manager からインポート",
+    "source_desc_azure_keyvault": "Azure Key Vault からインポート",
+    "source_desc_doppler": "Doppler シークレットプラットフォームからインポート",
+    "source_desc_env_file": "ローカルの .env ファイルからシークレットをインポート",
+    "source_label_env_file": ".env ファイル"
   },
   "ingest": {
     "rename_credential": "認証情報名を変更",
@@ -1288,7 +1310,11 @@
     "rotate_now": "今すぐローテーション",
     "rotation_failed": "ローテーション失敗: {error}",
     "rotation_paused": "ローテーション停止中",
-    "update_period_failed": "ローテーション期間の更新に失敗: {error}"
+    "update_period_failed": "ローテーション期間の更新に失敗: {error}",
+    "countdown_days_hours": "{days}日{hours}時間",
+    "countdown_due_now": "期限です",
+    "countdown_hours_minutes": "{hours}時間{minutes}分",
+    "countdown_minutes": "{minutes}分"
   },
   "schema_configs": {
     "custom": {
@@ -1405,7 +1431,9 @@
     "kv_value_label": "値",
     "kv_value_placeholder": "値",
     "none_configured": "設定なし。",
-    "required_badge": "必須"
+    "required_badge": "必須",
+    "field_captured": "取得済み",
+    "select_placeholder": "選択..."
   },
   "setup_kind": {
     "cli_login": "プロバイダーの CLI はインストール済みですがサインインしていません — ターミナルでログインコマンドを実行してください（例: `vercel login` または `gh auth login`）",
@@ -1634,7 +1662,8 @@
     "extract_export_json": "JSONをエクスポート",
     "extract_filter_all": "すべての種類",
     "extract_filter_label": "エンティティの種類で絞り込む",
-    "health_unreachable": "サービスに接続できませんでした"
+    "health_unreachable": "サービスに接続できませんでした",
+    "oauth_context_lost": "OAuth は完了しましたが、コンテキストが失われました。もう一度お試しください。"
   },
   "subtitle": "認証情報の追加方法を選択してください",
   "title": "保管庫",
@@ -1820,7 +1849,12 @@
     "critical_title": "認証情報が重大な状態です",
     "drift_title": "認証情報のドリフトを検出しました",
     "rotation_failed_title": "認証情報のローテーションに失敗しました",
-    "warning_title": "認証情報の警告"
+    "warning_title": "認証情報の警告",
+    "reason_backoff_retry": "一時的な障害率は {pct}（1 時間）です。指数バックオフを適用しています。",
+    "reason_default": "修復レベル: {level}",
+    "reason_disable": "重大: 恒久的な障害率が {pct}（1 時間）です。ローテーションポリシーを自動で無効にしています。",
+    "reason_preemptive_rotation": "継続的な劣化: 障害率は {pct}（1 時間）です。予防的ローテーションを予約しています。",
+    "reason_rotate_then_alert": "恒久的なエラーを検出: 恒久的な障害率は {pct}（1 時間）です。ローテーションと通知を実行中です。"
   },
   "resource_picker": {
     "no_matches": "一致するものがありません",

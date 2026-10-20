@@ -24191,7 +24191,9 @@
       "no_members": "Zatím žádní členové. Přidej jednoho níže a začni sjednocovat nástroje.",
       "pick_credential": "Vyber přihlašovací údaj…",
       "pick_error": "Vyber přihlašovací údaj a dej mu krátký zobrazovaný název",
-      "remove_member_aria": "Odebrat {name}"
+      "remove_member_aria": "Odebrat {name}",
+      "disable_member": "Zakázat",
+      "enable_member": "Povolit"
     },
     "graph": {
       "connection_count_one": "{count} připojení",
@@ -24235,7 +24237,27 @@
       "selected_for_import": "vybráno pro import",
       "source_ref": "Reference zdroje",
       "sync_supported": "Synchronizace podporována",
-      "title": "Zdroj importu"
+      "title": "Zdroj importu",
+      "cli_hint": "Spusťte příkaz CLI {cli} a níže vložte výstup JSON.",
+      "env_hint": "Níže vložte obsah svého souboru .env.",
+      "err_aws_no_secret_string": "V odpovědi AWS nebyl nalezen žádný SecretString",
+      "err_aws_parse_failed": "Výstup JSON z AWS Secrets Manager se nepodařilo zpracovat",
+      "err_azure_parse_failed": "Výstup JSON z Azure Key Vault se nepodařilo zpracovat",
+      "err_doppler_parse_failed": "Výstup JSON z Doppleru se nepodařilo zpracovat. Použijte: doppler secrets download --format=json",
+      "err_env_missing_separator": "Řádek {line}: chybí oddělovač „=“",
+      "err_no_secrets": "Ve vstupu nebyla nalezena žádná tajemství",
+      "err_op_expected_array": "Z výstupu CLI op se očekávalo pole JSON",
+      "err_op_parse_failed": "Výstup JSON z 1Passwordu se nepodařilo zpracovat. Použijte: op item list --format=json",
+      "placeholder_1password": "Vložte výstup příkazu: op item list --format=json",
+      "placeholder_aws_secrets": "Vložte výstup příkazu: aws secretsmanager get-secret-value --secret-id <name>",
+      "placeholder_azure_keyvault": "Vložte výstup příkazu: az keyvault secret show --vault-name <vault> --name <secret>",
+      "placeholder_doppler": "Vložte výstup příkazu: doppler secrets download --format=json",
+      "source_desc_1password": "Import z 1Passwordu pomocí CLI op",
+      "source_desc_aws_secrets": "Import z AWS Secrets Manager",
+      "source_desc_azure_keyvault": "Import z Azure Key Vault",
+      "source_desc_doppler": "Import z platformy tajemství Doppler",
+      "source_desc_env_file": "Import tajemství z místního souboru .env",
+      "source_label_env_file": "Soubor .env"
     },
     "ingest": {
       "rename_credential": "Přejmenovat údaje",
@@ -24495,7 +24517,11 @@
       "rotate_now": "Rotovat hned",
       "rotation_failed": "Rotace selhala: {error}",
       "rotation_paused": "Rotace pozastavena",
-      "update_period_failed": "Nepodařilo se aktualizovat rotační období: {error}"
+      "update_period_failed": "Nepodařilo se aktualizovat rotační období: {error}",
+      "countdown_days_hours": "{days} d {hours} h",
+      "countdown_due_now": "Splatné nyní",
+      "countdown_hours_minutes": "{hours} h {minutes} min",
+      "countdown_minutes": "{minutes} min"
     },
     "schema_configs": {
       "custom": {
@@ -24612,7 +24638,9 @@
       "kv_value_label": "Hodnota",
       "kv_value_placeholder": "hodnota",
       "none_configured": "Nic není nakonfigurováno.",
-      "required_badge": "POV"
+      "required_badge": "POV",
+      "field_captured": "zachyceno",
+      "select_placeholder": "Vyberte..."
     },
     "setup_kind": {
       "cli_login": "CLI poskytovatele je nainstalované, ale nejste přihlášeni — spusťte v terminálu jeho přihlašovací příkaz (například `vercel login` nebo `gh auth login`)",
@@ -24841,7 +24869,8 @@
       "extract_export_json": "Exportovat JSON",
       "extract_filter_all": "Všechny typy",
       "extract_filter_label": "Filtrovat podle typu entity",
-      "health_unreachable": "Službu se nepodařilo kontaktovat"
+      "health_unreachable": "Službu se nepodařilo kontaktovat",
+      "oauth_context_lost": "OAuth skončil, ale kontext byl ztracen. Zkuste to prosím znovu."
     },
     "subtitle": "Zvolte způsob přidání přihlašovacího údaje",
     "title": "Trezor",
@@ -25027,7 +25056,12 @@
       "critical_title": "Přihlašovací údaje v kritickém stavu",
       "drift_title": "Zjištěn drift přihlašovacích údajů",
       "rotation_failed_title": "Rotace přihlašovacích údajů selhala",
-      "warning_title": "Varování k přihlašovacím údajům"
+      "warning_title": "Varování k přihlašovacím údajům",
+      "reason_backoff_retry": "Míra přechodných selhání je {pct} (1 h). Používá se exponenciální odklad.",
+      "reason_default": "Úroveň nápravy: {level}",
+      "reason_disable": "Kritické: míra trvalých selhání je {pct} (1 h). Zásady rotace se automaticky vypínají.",
+      "reason_preemptive_rotation": "Trvalé zhoršení: míra selhání je {pct} (1 h). Plánuje se preventivní rotace.",
+      "reason_rotate_then_alert": "Zjištěny trvalé chyby: míra trvalých selhání je {pct} (1 h). Probíhá rotace a upozornění."
     },
     "resource_picker": {
       "no_matches": "Žádné shody",
