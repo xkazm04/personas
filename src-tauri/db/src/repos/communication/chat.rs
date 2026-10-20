@@ -97,8 +97,11 @@ pub fn create(pool: &DbPool, input: CreateChatMessageInput) -> Result<ChatMessag
 
         validate_check(errors)?;
 
-        // Strip HTML tags from content for defence-in-depth against XSS
-        let content = personas_core::validation::strip_html_tags(&input.content);
+        // Stored verbatim (policy: operator, 2026-10-20). Stripping tags erased
+        // code ("Vec<String>" -> "Vec"). XSS defence is render-time escaping:
+        // desktop ChatMessageContent (react-markdown, no rehype-raw) and web
+        // MarkdownReport (hand-rolled React nodes, safeHref) never emit raw HTML.
+        let content = input.content.as_str();
 
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
@@ -360,5 +363,36 @@ mod tests {
         assert!(chrono::DateTime::parse_from_rfc3339(&first[0].2).is_ok());
         assert_eq!(delete_session(&pool, &p, "chat-1-abcd1234").unwrap(), 0);
         assert_eq!(tombstones(&pool).unwrap().len(), 1, "one row per session");
+    }
+
+    /// Chat content is stored verbatim: code samples keep their generics and
+    /// markup. Both renderers (desktop react-markdown without rehype-raw, the
+    /// web MarkdownReport) escape at render time.
+    #[test]
+    fn chat_content_is_stored_verbatim() {
+        let pool = init_test_db().unwrap();
+        let p = persona(&pool);
+        let samples = [
+            "Use Vec<String> here",
+            "```tsx
+<div className=\"card\">Hi</div>
+```",
+            "Promise<void> and Map<string, number>",
+        ];
+        for content in samples {
+            let msg = create(
+                &pool,
+                CreateChatMessageInput {
+                    persona_id: p.clone(),
+                    session_id: "chat-verbatim".into(),
+                    role: ChatRole::Assistant,
+                    content: content.into(),
+                    execution_id: None,
+                    metadata: None,
+                },
+            )
+            .unwrap();
+            assert_eq!(msg.content, content);
+        }
     }
 }
