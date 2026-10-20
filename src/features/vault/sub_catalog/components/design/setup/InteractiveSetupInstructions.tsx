@@ -127,7 +127,7 @@ export function InteractiveSetupInstructions({
               aria-label={dp.open_setup_page}
             >
               <ExternalLink className="w-2.5 h-2.5" />
-              Open
+              {dp.open}
             </button>
           </Tooltip>
         )}

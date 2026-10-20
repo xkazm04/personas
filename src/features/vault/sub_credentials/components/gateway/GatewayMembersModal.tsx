@@ -289,7 +289,7 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
                             icon={<Trash2 className="w-3.5 h-3.5" />}
                             onClick={() => handleRemove(m.memberCredentialId)}
                             disabled={isPending}
-                            aria-label={`Remove ${m.memberLabel}`}
+                            aria-label={tx(t.vault.gateway.remove_member_aria, { name: m.memberLabel })}
                           />
                         </li>
                       );

@@ -13,7 +13,11 @@
     "personas_one": "{count} агент",
     "personas_other": "{count} агентов",
     "show_all": "Показать все {count} записей",
-    "total_accesses": "{count} всего"
+    "total_accesses": "{count} всего",
+    "by_persona": "от {name}",
+    "entries_one": "{count} запись",
+    "entries_other": "{count} записей",
+    "page_of": "Страница {page}/{total}"
   },
   "auto_cred_extra": {
     "all_fields_captured": "Все {count} поля захвачены",
@@ -102,7 +106,19 @@
     "test_to_save": "Протестируйте подключение для активации сохранения",
     "universal_auto_setup": "Универсальная автонастройка",
     "universal_auto_setup_hint": "Укажите URL и описание, а ИИ автоматически просмотрит сайт, обнаружит и создаст API-учётные данные.",
-    "what_do_you_need": "Что вам нужно?"
+    "what_do_you_need": "Что вам нужно?",
+    "err_kind_cli_error": "Ошибка CLI",
+    "err_kind_cli_not_found": "CLI не найден",
+    "err_kind_env_conflict": "Конфликт окружения",
+    "err_kind_extraction_failed": "Не удалось извлечь данные",
+    "err_kind_spawn_failed": "Не удалось запустить процесс",
+    "err_kind_timeout": "Тайм-аут",
+    "field_missing": "{label} (отсутствует)",
+    "log_blocked_url": "Заблокирован небезопасный URL из сеанса настройки",
+    "log_open_url_failed": "Не удалось открыть URL: {url}",
+    "log_saved_procedure": "Используется сохранённая процедура для {label}",
+    "open_url": "Открыть",
+    "open_url_title": "Открыть {url} в браузере"
   },
   "auto_cred": {
     "action_required": "Требуется действие",
@@ -642,7 +658,9 @@
     "start_over": "Начать заново",
     "technical_details": "Технические детали",
     "title": "Создать учётные данные",
-    "try_again_with": "Повторить с запросом"
+    "try_again_with": "Повторить с запросом",
+    "instruction_imported": "Учётные данные {label} (импортированы)",
+    "instruction_template": "Учётные данные {label}"
   },
   "design_phases": {
     "all_steps_complete": "Все шаги выполнены -- заполните поля ниже и проверьте подключение.",
@@ -698,7 +716,9 @@
     "typical_time": "Обычно 15–30 секунд",
     "use_template": "Использовать",
     "verified_setup": "Проверенная настройка",
-    "view_credential": "Просмотреть учётные данные"
+    "view_credential": "Просмотреть учётные данные",
+    "open": "Открыть",
+    "step_number": "Шаг {n}"
   },
   "desktop_discovery": {
     "allowed_binaries": "Разрешённые исполняемые файлы: ",
@@ -783,7 +803,8 @@
     "scheduled_rotation": "Запланированная ротация",
     "scheduled_rotation_desc": "Ротация учётных данных по расписанию cron (например, ежедневно, еженедельно).",
     "seconds_10": "10 секунд",
-    "seconds_30": "30 секунд"
+    "seconds_30": "30 секунд",
+    "template_trigger_aria": "Триггер события {name}"
   },
   "features": {
     "anomaly_detected": "Обнаружена аномалия: учётные данные внезапно перестали работать после предыдущего успеха. Возможный отзыв.",
@@ -962,7 +983,8 @@
     "no_eligible": "Нет подходящих учётных данных. Сначала добавьте учётные данные MCP в список.",
     "no_members": "Участников пока нет. Добавьте одного ниже для начала.",
     "pick_credential": "Выберите учётные данные…",
-    "pick_error": "Выберите учётные данные и дайте им короткое отображаемое имя"
+    "pick_error": "Выберите учётные данные и дайте им короткое отображаемое имя",
+    "remove_member_aria": "Удалить {name}"
   },
   "graph": {
     "connection_count_one": "{count} подключение",
@@ -1066,7 +1088,11 @@
     "title_databases": "Базы данных",
     "title_dependencies": "Зависимости",
     "unverifiable_count": "{count} непроверяемых",
-    "unverifiable_tooltip": "У этого коннектора нет активной проверки -- учётные данные сохранены, но никогда не проверялись у поставщика"
+    "unverifiable_tooltip": "У этого коннектора нет активной проверки -- учётные данные сохранены, но никогда не проверялись у поставщика",
+    "create_failed": "Не удалось создать учётные данные",
+    "rotate_result_failed": "Ошибок: {count}",
+    "rotate_result_refreshed": "Обновлено: {count}",
+    "rotate_result_skipped": "Пропущено: {count}"
   },
   "negotiator_extra": {
     "ask_button": "Ask",
@@ -1084,7 +1110,8 @@
     "planning_description": "ИИ анализирует портал разработчика и составляет пошаговый план настройки…",
     "start_auto": "Начать автоматическую подготовку",
     "existing_auth_description": "Вы уже вошли в {service} через {method}. Настройка использует эту сессию и пропустит шаги входа.",
-    "use_existing_auth": "Использовать текущую сессию {service}"
+    "use_existing_auth": "Использовать текущую сессию {service}",
+    "step_of": "Шаг {current} из {total}: {title}"
   },
   "negotiator": {
     "all_steps_completed": "Все шаги выполнены",
@@ -1760,7 +1787,12 @@
     "select_services": "Выберите сервисы для подключения",
     "selected_count": "Выбрано {selected} из {total}",
     "sign_in_browser": "Войдите в свою учётную запись Google в окне браузера.",
-    "some_failed": "Некоторые учётные данные не удалось создать"
+    "some_failed": "Некоторые учётные данные не удалось создать",
+    "service_gmail_desc": "Отправка, чтение и управление почтой",
+    "service_google_calendar_desc": "Чтение и управление событиями календаря",
+    "service_google_drive_desc": "Чтение и управление файлами",
+    "service_google_sheets_desc": "Чтение и запись данных таблиц",
+    "status_failed": "Сбой"
   },
   "connector_attention": {
     "title": "Подключения требуют внимания",
@@ -1781,5 +1813,24 @@
     "reconnect_now": "Переподключить сейчас",
     "reconnecting": "Переподключение...",
     "signed_in_as": "Вход выполнен как {email}"
+  },
+  "remediation_notify": {
+    "auto_disabled_body": "{name}: обнаружены устойчивые критические сбои. Политики ротации отключены, чтобы предотвратить каскадные ошибки.",
+    "auto_disabled_title": "Учётные данные автоматически отключены",
+    "critical_title": "Критическое состояние учётных данных",
+    "drift_title": "Обнаружен дрейф учётных данных",
+    "rotation_failed_title": "Не удалось выполнить ротацию учётных данных",
+    "warning_title": "Предупреждение об учётных данных"
+  },
+  "resource_picker": {
+    "no_matches": "Нет совпадений",
+    "nothing_to_pick": "Пока нечего выбирать",
+    "pick_first": "Сначала выберите: {dep}",
+    "picked_count": "Выбрано: {count}",
+    "save_scope": "Сохранить область",
+    "scope_title": "Область: {label}",
+    "search_placeholder": "Поиск: {label}…",
+    "stale_picks_one": "{count} выбор",
+    "stale_picks_other": "Выборов: {count}"
   }
 }

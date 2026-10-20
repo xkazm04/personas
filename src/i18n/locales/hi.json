@@ -23220,7 +23220,11 @@
       "personas_one": "{count} पर्सोना",
       "personas_other": "{count} पर्सोना",
       "show_all": "सभी {count} प्रविष्टियाँ दिखाएँ",
-      "total_accesses": "{count} कुल"
+      "total_accesses": "{count} कुल",
+      "by_persona": "{name} द्वारा",
+      "entries_one": "{count} प्रविष्टि",
+      "entries_other": "{count} प्रविष्टियाँ",
+      "page_of": "पृष्ठ {page}/{total}"
     },
     "auto_cred_extra": {
       "all_fields_captured": "सभी {count} फ़ील्ड कैप्चर किए गए",
@@ -23309,7 +23313,19 @@
       "test_to_save": "सेव सक्षम करने के लिए कनेक्शन परीक्षण करें",
       "universal_auto_setup": "यूनिवर्सल ऑटो-सेटअप",
       "universal_auto_setup_hint": "एक URL और विवरण प्रदान करें, और AI API क्रेडेंशियल खोजने और स्वचालित रूप से बनाने के लिए साइट पर नेविगेट करेगा।",
-      "what_do_you_need": "आपको क्या चाहिए?"
+      "what_do_you_need": "आपको क्या चाहिए?",
+      "err_kind_cli_error": "CLI त्रुटि",
+      "err_kind_cli_not_found": "CLI नहीं मिला",
+      "err_kind_env_conflict": "Env टकराव",
+      "err_kind_extraction_failed": "निष्कर्षण विफल",
+      "err_kind_spawn_failed": "स्पॉन विफल",
+      "err_kind_timeout": "टाइमआउट",
+      "field_missing": "{label} (अनुपलब्ध)",
+      "log_blocked_url": "सेटअप सत्र से एक असुरक्षित URL को ब्लॉक किया गया",
+      "log_open_url_failed": "URL खोलने में विफल: {url}",
+      "log_saved_procedure": "{label} के लिए सहेजी गई प्रक्रिया का उपयोग हो रहा है",
+      "open_url": "खोलें",
+      "open_url_title": "{url} को ब्राउज़र में खोलें"
     },
     "auto_cred": {
       "action_required": "कार्रवाई आवश्यक",
@@ -23849,7 +23865,9 @@
       "start_over": "फिर से शुरू करें",
       "technical_details": "तकनीकी विवरण",
       "title": "क्रेडेंशियल डिज़ाइन करें",
-      "try_again_with": "अपने अनुरोध के साथ पुनः प्रयास करें"
+      "try_again_with": "अपने अनुरोध के साथ पुनः प्रयास करें",
+      "instruction_imported": "{label} क्रेडेंशियल (आयातित)",
+      "instruction_template": "{label} क्रेडेंशियल"
     },
     "design_phases": {
       "all_steps_complete": "सभी चरण पूर्ण -- नीचे फ़ील्ड भरें और अपना कनेक्शन परीक्षण करें।",
@@ -23905,7 +23923,9 @@
       "typical_time": "आमतौर पर 15-30 सेकंड",
       "use_template": "उपयोग करें",
       "verified_setup": "सत्यापित सेटअप",
-      "view_credential": "क्रेडेंशियल देखें"
+      "view_credential": "क्रेडेंशियल देखें",
+      "open": "खोलें",
+      "step_number": "चरण {n}"
     },
     "desktop_discovery": {
       "allowed_binaries": "अनुमत बाइनरी: ",
@@ -23990,7 +24010,8 @@
       "scheduled_rotation": "शेड्यूल्ड रोटेशन",
       "scheduled_rotation_desc": "cron शेड्यूल पर क्रेडेंशियल रोटेट करें (जैसे, दैनिक, साप्ताहिक)।",
       "seconds_10": "10 सेकंड",
-      "seconds_30": "30 सेकंड"
+      "seconds_30": "30 सेकंड",
+      "template_trigger_aria": "{name} इवेंट ट्रिगर"
     },
     "features": {
       "anomaly_detected": "विसंगति पाई गई: पहले सफल होने के बाद क्रेडेंशियल अचानक विफल हो रहा है। संभावित निरस्तीकरण।",
@@ -24169,7 +24190,8 @@
       "no_eligible": "कोई योग्य क्रेडेंशियल नहीं। पहले क्रेडेंशियल सूची में MCP क्रेडेंशियल जोड़ें।",
       "no_members": "अभी तक कोई सदस्य नहीं। टूल बंडलिंग शुरू करने के लिए नीचे एक जोड़ें।",
       "pick_credential": "एक क्रेडेंशियल चुनें…",
-      "pick_error": "एक क्रेडेंशियल चुनें और इसे एक छोटा डिस्प्ले नाम दें"
+      "pick_error": "एक क्रेडेंशियल चुनें और इसे एक छोटा डिस्प्ले नाम दें",
+      "remove_member_aria": "{name} को हटाएँ"
     },
     "graph": {
       "connection_count_one": "{count} कनेक्शन",
@@ -24273,7 +24295,11 @@
       "title_databases": "डेटाबेस",
       "title_dependencies": "निर्भरताएं",
       "unverifiable_count": "{count} असत्यापित",
-      "unverifiable_tooltip": "इस कनेक्टर की कोई लाइव जांच नहीं है -- क्रेडेंशियल सहेजे गए हैं लेकिन कभी प्रदाता के विरुद्ध सत्यापित नहीं हुए"
+      "unverifiable_tooltip": "इस कनेक्टर की कोई लाइव जांच नहीं है -- क्रेडेंशियल सहेजे गए हैं लेकिन कभी प्रदाता के विरुद्ध सत्यापित नहीं हुए",
+      "create_failed": "क्रेडेंशियल बनाने में विफल",
+      "rotate_result_failed": "{count} विफल",
+      "rotate_result_refreshed": "{count} रीफ़्रेश किए गए",
+      "rotate_result_skipped": "{count} छोड़े गए"
     },
     "negotiator_extra": {
       "ask_button": "Ask",
@@ -24291,7 +24317,8 @@
       "planning_description": "AI डेवलपर पोर्टल का विश्लेषण कर रहा है और चरण-दर-चरण प्रावधान योजना बना रहा है…",
       "start_auto": "ऑटो-प्रावधान शुरू करें",
       "existing_auth_description": "आप {method} के ज़रिए {service} में पहले से साइन इन हैं। सेटअप उसी सत्र का उपयोग करेगा और साइन-इन चरण छोड़ देगा।",
-      "use_existing_auth": "मौजूदा {service} सत्र का उपयोग करें"
+      "use_existing_auth": "मौजूदा {service} सत्र का उपयोग करें",
+      "step_of": "चरण {current}/{total}: {title}"
     },
     "negotiator": {
       "all_steps_completed": "सभी चरण पूर्ण",
@@ -24967,7 +24994,12 @@
       "select_services": "कनेक्ट करने के लिए सेवाएं चुनें",
       "selected_count": "{total} में से {selected} चयनित",
       "sign_in_browser": "ब्राउज़र विंडो में अपने Google खाते से साइन इन करें।",
-      "some_failed": "कुछ क्रेडेंशियल विफल हुए"
+      "some_failed": "कुछ क्रेडेंशियल विफल हुए",
+      "service_gmail_desc": "ईमेल भेजें, पढ़ें और प्रबंधित करें",
+      "service_google_calendar_desc": "कैलेंडर इवेंट पढ़ें और प्रबंधित करें",
+      "service_google_drive_desc": "फ़ाइलें पढ़ें और प्रबंधित करें",
+      "service_google_sheets_desc": "स्प्रेडशीट डेटा पढ़ें और लिखें",
+      "status_failed": "विफल"
     },
     "connector_attention": {
       "title": "कनेक्शन पर ध्यान देने की ज़रूरत है",
@@ -24988,6 +25020,25 @@
       "reconnect_now": "अभी फिर से कनेक्ट करें",
       "reconnecting": "फिर से कनेक्ट हो रहा है...",
       "signed_in_as": "{email} के रूप में साइन इन"
+    },
+    "remediation_notify": {
+      "auto_disabled_body": "{name}: लगातार गंभीर विफलताएँ पाई गईं। क्रमिक त्रुटियों से बचने के लिए रोटेशन नीतियाँ अक्षम कर दी गईं।",
+      "auto_disabled_title": "क्रेडेंशियल स्वतः अक्षम",
+      "critical_title": "क्रेडेंशियल गंभीर",
+      "drift_title": "क्रेडेंशियल ड्रिफ़्ट पाया गया",
+      "rotation_failed_title": "क्रेडेंशियल रोटेशन विफल",
+      "warning_title": "क्रेडेंशियल चेतावनी"
+    },
+    "resource_picker": {
+      "no_matches": "कोई मिलान नहीं",
+      "nothing_to_pick": "अभी चुनने के लिए कुछ नहीं",
+      "pick_first": "पहले {dep} चुनें",
+      "picked_count": "{count} चुने गए",
+      "save_scope": "स्कोप सहेजें",
+      "scope_title": "स्कोप {label}",
+      "search_placeholder": "{label} खोजें…",
+      "stale_picks_one": "{count} चयन",
+      "stale_picks_other": "{count} चयन"
     }
   },
   "notepad": {

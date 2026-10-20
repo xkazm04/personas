@@ -6813,6 +6813,8 @@ export type Translations = {
       original_request: string;
       start_over: string;
       try_again_with: string;
+      instruction_template: string;
+      instruction_imported: string;
     };
     playground: {
       mcp_run: string;
@@ -7299,6 +7301,10 @@ export type Translations = {
       testing_progress: string;
       unverifiable_count: string;
       unverifiable_tooltip: string;
+      rotate_result_refreshed: string;
+      rotate_result_failed: string;
+      rotate_result_skipped: string;
+      create_failed: string;
     };
     breadcrumb: {
       aria_label: string;
@@ -7472,6 +7478,7 @@ export type Translations = {
       healthcheck_auto_rotate: string;
       last_evaluated: string;
       loading: string;
+      template_trigger_aria: string;
     };
     credential_forms: {
       encrypted_keychain: string;
@@ -7527,6 +7534,10 @@ export type Translations = {
       anomalies_other: string;
       no_anomalies: string;
       show_all: string;
+      entries_one: string;
+      entries_other: string;
+      by_persona: string;
+      page_of: string;
     };
     credential_import: {
       import_from: string;
@@ -7869,6 +7880,8 @@ export type Translations = {
       recipe_used_one: string;
       recipe_used_other: string;
       instruction_placeholder: string;
+      step_number: string;
+      open: string;
     };
     auto_cred_extra: {
       browser_automation_warning: string;
@@ -7958,6 +7971,18 @@ export type Translations = {
       no_fields_discovered: string;
       fields_captured_partial: string;
       credential_stored: string;
+      err_kind_cli_not_found: string;
+      err_kind_spawn_failed: string;
+      err_kind_timeout: string;
+      err_kind_env_conflict: string;
+      err_kind_cli_error: string;
+      err_kind_extraction_failed: string;
+      field_missing: string;
+      open_url: string;
+      open_url_title: string;
+      log_saved_procedure: string;
+      log_blocked_url: string;
+      log_open_url_failed: string;
     };
     negotiator_extra: {
       panel_title: string;
@@ -7976,6 +8001,7 @@ export type Translations = {
       paste_label: string;
       paste_placeholder: string;
       ask_button: string;
+      step_of: string;
     };
     workspace_panel: {
       select_services: string;
@@ -7992,6 +8018,11 @@ export type Translations = {
       credentials_created_one: string;
       credentials_created_other: string;
       sign_in_browser: string;
+      status_failed: string;
+      service_gmail_desc: string;
+      service_google_calendar_desc: string;
+      service_google_drive_desc: string;
+      service_google_sheets_desc: string;
     };
     gateway: {
       gateway_members: string;
@@ -8013,6 +8044,7 @@ export type Translations = {
       member_health_failed: string;
       member_health_unknown: string;
       member_checked_label: string;
+      remove_member_aria: string;
     };
     pending_auth: {
       title: string;
@@ -8244,6 +8276,25 @@ export type Translations = {
       account_not_recorded: string;
       account_mismatch: string;
       reconnect_failed: string;
+    };
+    resource_picker: {
+      pick_first: string;
+      scope_title: string;
+      picked_count: string;
+      stale_picks_one: string;
+      stale_picks_other: string;
+      search_placeholder: string;
+      no_matches: string;
+      nothing_to_pick: string;
+      save_scope: string;
+    };
+    remediation_notify: {
+      rotation_failed_title: string;
+      auto_disabled_title: string;
+      auto_disabled_body: string;
+      drift_title: string;
+      critical_title: string;
+      warning_title: string;
     };
   };
   deliberation: {

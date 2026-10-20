@@ -23220,7 +23220,11 @@
       "personas_one": "{count} persona",
       "personas_other": "{count} personas",
       "show_all": "Afficher les {count} entrées",
-      "total_accesses": "{count} au total"
+      "total_accesses": "{count} au total",
+      "by_persona": "par {name}",
+      "entries_one": "{count} entrée",
+      "entries_other": "{count} entrées",
+      "page_of": "Page {page} sur {total}"
     },
     "auto_cred_extra": {
       "all_fields_captured": "Tous les {count} champs capturés",
@@ -23309,7 +23313,19 @@
       "test_to_save": "Testez la connexion pour activer l’enregistrement",
       "universal_auto_setup": "Configuration automatique universelle",
       "universal_auto_setup_hint": "Fournissez une URL et une description, et l’IA naviguera sur le site pour découvrir et créer les identifiants API automatiquement.",
-      "what_do_you_need": "De quoi avez-vous besoin ?"
+      "what_do_you_need": "De quoi avez-vous besoin ?",
+      "err_kind_cli_error": "Erreur CLI",
+      "err_kind_cli_not_found": "CLI introuvable",
+      "err_kind_env_conflict": "Conflit d'environnement",
+      "err_kind_extraction_failed": "Échec de l'extraction",
+      "err_kind_spawn_failed": "Échec du lancement",
+      "err_kind_timeout": "Délai dépassé",
+      "field_missing": "{label} (manquant)",
+      "log_blocked_url": "URL non sécurisée bloquée depuis la session de configuration",
+      "log_open_url_failed": "Échec de l'ouverture de l'URL : {url}",
+      "log_saved_procedure": "Utilisation de la procédure enregistrée pour {label}",
+      "open_url": "Ouvrir",
+      "open_url_title": "Ouvrir {url} dans le navigateur"
     },
     "auto_cred": {
       "action_required": "Action requise",
@@ -23849,7 +23865,9 @@
       "start_over": "Recommencer",
       "technical_details": "Détails techniques",
       "title": "Concevoir un identifiant",
-      "try_again_with": "Réessayer avec votre demande"
+      "try_again_with": "Réessayer avec votre demande",
+      "instruction_imported": "Identifiant {label} (importé)",
+      "instruction_template": "Identifiant {label}"
     },
     "design_phases": {
       "all_steps_complete": "Toutes les étapes terminées -- remplissez les champs ci-dessous et testez votre connexion.",
@@ -23905,7 +23923,9 @@
       "typical_time": "Généralement 15 à 30 secondes",
       "use_template": "Utiliser",
       "verified_setup": "Configuration vérifiée",
-      "view_credential": "Voir l’identifiant"
+      "view_credential": "Voir l’identifiant",
+      "open": "Ouvrir",
+      "step_number": "Étape {n}"
     },
     "desktop_discovery": {
       "allowed_binaries": "Binaires autorisés : ",
@@ -23990,7 +24010,8 @@
       "scheduled_rotation": "Rotation planifiée",
       "scheduled_rotation_desc": "Rotation automatique selon un calendrier",
       "seconds_10": "10 secondes",
-      "seconds_30": "30 secondes"
+      "seconds_30": "30 secondes",
+      "template_trigger_aria": "Déclencheur d'événement {name}"
     },
     "features": {
       "anomaly_detected": "Anomalie détectée : l’identifiant échoue soudainement après un succès précédent. Révocation possible.",
@@ -24169,7 +24190,8 @@
       "no_eligible": "Aucun identifiant éligible. Ajoutez d’abord un identifiant MCP dans la liste des identifiants.",
       "no_members": "Aucun membre. Ajoutez-en un ci-dessous pour commencer à regrouper des outils.",
       "pick_credential": "Choisir un identifiant…",
-      "pick_error": "Choisissez un identifiant et donnez-lui un nom d’affichage court"
+      "pick_error": "Choisissez un identifiant et donnez-lui un nom d’affichage court",
+      "remove_member_aria": "Retirer {name}"
     },
     "graph": {
       "connection_count_one": "{count} connexion",
@@ -24273,7 +24295,11 @@
       "title_databases": "Bases de données",
       "title_dependencies": "Dépendances",
       "unverifiable_count": "{count} non vérifiable(s)",
-      "unverifiable_tooltip": "Ce connecteur n’a aucune sonde en direct -- les identifiants sont stockés mais n’ont jamais été vérifiés auprès du fournisseur"
+      "unverifiable_tooltip": "Ce connecteur n’a aucune sonde en direct -- les identifiants sont stockés mais n’ont jamais été vérifiés auprès du fournisseur",
+      "create_failed": "Échec de la création de l'identifiant",
+      "rotate_result_failed": "{count} en échec",
+      "rotate_result_refreshed": "{count} actualisé(s)",
+      "rotate_result_skipped": "{count} ignoré(s)"
     },
     "negotiator_extra": {
       "ask_button": "Ask",
@@ -24291,7 +24317,8 @@
       "planning_description": "L’IA analyse le portail développeur et génère un plan de provisionnement étape par étape…",
       "start_auto": "Démarrer le provisionnement automatique",
       "existing_auth_description": "Vous êtes déjà connecté à {service} via {method}. La configuration réutilisera cette session et ignorera les étapes de connexion.",
-      "use_existing_auth": "Utiliser la session {service} existante"
+      "use_existing_auth": "Utiliser la session {service} existante",
+      "step_of": "Étape {current} sur {total} : {title}"
     },
     "negotiator": {
       "all_steps_completed": "Toutes les étapes terminées",
@@ -24967,7 +24994,12 @@
       "select_services": "Sélectionnez les services à connecter",
       "selected_count": "{selected} sur {total} sélectionné(s)",
       "sign_in_browser": "Connectez-vous avec votre compte Google dans la fenêtre du navigateur.",
-      "some_failed": "Certains identifiants ont échoué"
+      "some_failed": "Certains identifiants ont échoué",
+      "service_gmail_desc": "Envoyer, lire et gérer les e-mails",
+      "service_google_calendar_desc": "Lire et gérer les événements du calendrier",
+      "service_google_drive_desc": "Lire et gérer les fichiers",
+      "service_google_sheets_desc": "Lire et écrire les données de feuilles de calcul",
+      "status_failed": "Échec"
     },
     "connector_attention": {
       "title": "Connexions nécessitant votre attention",
@@ -24988,6 +25020,25 @@
       "reconnect_now": "Reconnecter maintenant",
       "reconnecting": "Reconnexion...",
       "signed_in_as": "Connecte en tant que {email}"
+    },
+    "remediation_notify": {
+      "auto_disabled_body": "{name} : échecs critiques persistants détectés. Politiques de rotation désactivées pour éviter les erreurs en cascade.",
+      "auto_disabled_title": "Identifiant désactivé automatiquement",
+      "critical_title": "Identifiant critique",
+      "drift_title": "Dérive d'identifiant détectée",
+      "rotation_failed_title": "Échec de la rotation de l'identifiant",
+      "warning_title": "Avertissement d'identifiant"
+    },
+    "resource_picker": {
+      "no_matches": "Aucun résultat",
+      "nothing_to_pick": "Rien à sélectionner pour l'instant",
+      "pick_first": "Sélectionnez d'abord : {dep}",
+      "picked_count": "{count} sélectionné(s)",
+      "save_scope": "Enregistrer la portée",
+      "scope_title": "Portée {label}",
+      "search_placeholder": "Rechercher {label}…",
+      "stale_picks_one": "{count} sélection",
+      "stale_picks_other": "{count} sélections"
     }
   },
   "notepad": {

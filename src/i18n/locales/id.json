@@ -23220,7 +23220,11 @@
       "personas_one": "{count} persona",
       "personas_other": "{count} persona",
       "show_all": "Tampilkan semua {count} entri",
-      "total_accesses": "Total {count}"
+      "total_accesses": "Total {count}",
+      "by_persona": "oleh {name}",
+      "entries_one": "{count} entri",
+      "entries_other": "{count} entri",
+      "page_of": "Halaman {page}/{total}"
     },
     "auto_cred_extra": {
       "all_fields_captured": "Semua {count} bidang berhasil ditangkap",
@@ -23309,7 +23313,19 @@
       "test_to_save": "Uji koneksi untuk mengaktifkan penyimpanan",
       "universal_auto_setup": "Pengaturan otomatis universal",
       "universal_auto_setup_hint": "Berikan URL dan deskripsi, dan AI akan menavigasi situs untuk menemukan dan membuat kredensial API secara otomatis.",
-      "what_do_you_need": "Apa yang Anda butuhkan?"
+      "what_do_you_need": "Apa yang Anda butuhkan?",
+      "err_kind_cli_error": "Kesalahan CLI",
+      "err_kind_cli_not_found": "CLI Tidak Ditemukan",
+      "err_kind_env_conflict": "Konflik Env",
+      "err_kind_extraction_failed": "Ekstraksi Gagal",
+      "err_kind_spawn_failed": "Gagal Memulai Proses",
+      "err_kind_timeout": "Waktu Habis",
+      "field_missing": "{label} (tidak ada)",
+      "log_blocked_url": "URL tidak aman dari sesi penyiapan diblokir",
+      "log_open_url_failed": "Gagal membuka URL: {url}",
+      "log_saved_procedure": "Menggunakan prosedur tersimpan untuk {label}",
+      "open_url": "Buka",
+      "open_url_title": "Buka {url} di browser"
     },
     "auto_cred": {
       "action_required": "Tindakan diperlukan",
@@ -23849,7 +23865,9 @@
       "start_over": "Mulai ulang",
       "technical_details": "Detail teknis",
       "title": "Rancang kredensial",
-      "try_again_with": "Coba lagi dengan permintaan Anda"
+      "try_again_with": "Coba lagi dengan permintaan Anda",
+      "instruction_imported": "Kredensial {label} (diimpor)",
+      "instruction_template": "Kredensial {label}"
     },
     "design_phases": {
       "all_steps_complete": "Semua langkah selesai — isi kolom di bawah dan uji koneksi Anda.",
@@ -23905,7 +23923,9 @@
       "typical_time": "Biasanya 15--30 detik",
       "use_template": "Gunakan",
       "verified_setup": "Pengaturan terverifikasi",
-      "view_credential": "Lihat kredensial"
+      "view_credential": "Lihat kredensial",
+      "open": "Buka",
+      "step_number": "Langkah {n}"
     },
     "desktop_discovery": {
       "allowed_binaries": "Biner yang diizinkan: ",
@@ -23990,7 +24010,8 @@
       "scheduled_rotation": "Rotasi terjadwal",
       "scheduled_rotation_desc": "Rotasi kredensial berdasarkan jadwal cron (misal, harian, mingguan).",
       "seconds_10": "10 detik",
-      "seconds_30": "30 detik"
+      "seconds_30": "30 detik",
+      "template_trigger_aria": "Pemicu event {name}"
     },
     "features": {
       "anomaly_detected": "Anomali terdeteksi: kredensial tiba-tiba gagal setelah berhasil sebelumnya. Kemungkinan dicabut.",
@@ -24169,7 +24190,8 @@
       "no_eligible": "Tidak ada kredensial yang memenuhi syarat. Tambahkan kredensial MCP terlebih dahulu di daftar kredensial.",
       "no_members": "Belum ada anggota. Tambahkan satu di bawah untuk mulai menggabungkan alat.",
       "pick_credential": "Pilih kredensial…",
-      "pick_error": "Pilih kredensial dan beri nama tampilan yang singkat"
+      "pick_error": "Pilih kredensial dan beri nama tampilan yang singkat",
+      "remove_member_aria": "Hapus {name}"
     },
     "graph": {
       "connection_count_one": "{count} koneksi",
@@ -24273,7 +24295,11 @@
       "title_databases": "Basis data",
       "title_dependencies": "Dependensi",
       "unverifiable_count": "{count} tidak dapat diverifikasi",
-      "unverifiable_tooltip": "Konektor ini tidak memiliki pemeriksaan langsung -- kredensial disimpan tetapi tidak pernah diverifikasi terhadap penyedia"
+      "unverifiable_tooltip": "Konektor ini tidak memiliki pemeriksaan langsung -- kredensial disimpan tetapi tidak pernah diverifikasi terhadap penyedia",
+      "create_failed": "Gagal membuat kredensial",
+      "rotate_result_failed": "{count} gagal",
+      "rotate_result_refreshed": "{count} diperbarui",
+      "rotate_result_skipped": "{count} dilewati"
     },
     "negotiator_extra": {
       "ask_button": "Ask",
@@ -24291,7 +24317,8 @@
       "planning_description": "AI sedang menganalisis portal developer dan membuat rencana provisi langkah demi langkah…",
       "start_auto": "Mulai provisi otomatis",
       "existing_auth_description": "Anda sudah masuk ke {service} melalui {method}. Penyiapan akan memakai sesi itu dan melewati langkah masuk.",
-      "use_existing_auth": "Gunakan sesi {service} yang ada"
+      "use_existing_auth": "Gunakan sesi {service} yang ada",
+      "step_of": "Langkah {current} dari {total}: {title}"
     },
     "negotiator": {
       "all_steps_completed": "Semua langkah selesai",
@@ -24967,7 +24994,12 @@
       "select_services": "Pilih layanan untuk dihubungkan",
       "selected_count": "{selected} dari {total} dipilih",
       "sign_in_browser": "Masuk dengan akun Google Anda di jendela browser.",
-      "some_failed": "Beberapa kredensial gagal"
+      "some_failed": "Beberapa kredensial gagal",
+      "service_gmail_desc": "Kirim, baca, dan kelola email",
+      "service_google_calendar_desc": "Baca dan kelola acara kalender",
+      "service_google_drive_desc": "Baca dan kelola file",
+      "service_google_sheets_desc": "Baca dan tulis data spreadsheet",
+      "status_failed": "Gagal"
     },
     "connector_attention": {
       "title": "Koneksi perlu perhatian",
@@ -24988,6 +25020,25 @@
       "reconnect_now": "Sambungkan ulang sekarang",
       "reconnecting": "Menyambungkan ulang...",
       "signed_in_as": "Masuk sebagai {email}"
+    },
+    "remediation_notify": {
+      "auto_disabled_body": "{name}: terdeteksi kegagalan kritis berkelanjutan. Kebijakan rotasi dinonaktifkan untuk mencegah kesalahan beruntun.",
+      "auto_disabled_title": "Kredensial Dinonaktifkan Otomatis",
+      "critical_title": "Kredensial Kritis",
+      "drift_title": "Penyimpangan Kredensial Terdeteksi",
+      "rotation_failed_title": "Rotasi Kredensial Gagal",
+      "warning_title": "Peringatan Kredensial"
+    },
+    "resource_picker": {
+      "no_matches": "Tidak ada yang cocok",
+      "nothing_to_pick": "Belum ada yang bisa dipilih",
+      "pick_first": "Pilih {dep} terlebih dahulu",
+      "picked_count": "{count} dipilih",
+      "save_scope": "Simpan cakupan",
+      "scope_title": "Cakupan {label}",
+      "search_placeholder": "Cari {label}…",
+      "stale_picks_one": "{count} pilihan",
+      "stale_picks_other": "{count} pilihan"
     }
   },
   "notepad": {

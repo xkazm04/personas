@@ -8,6 +8,7 @@ import {
 import type { NegotiatorStepCardProps } from '@/features/vault/sub_catalog/components/negotiator/NegotiatorStepCardHelpers';
 import { Collapse } from '@/features/shared/components/display/Collapse';
 import { StepExpandedContent } from './StepActions';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function NegotiatorStepCard({
   step,
@@ -23,6 +24,7 @@ export function NegotiatorStepCard({
   stepHelp,
   isLoadingHelp,
 }: NegotiatorStepCardProps) {
+  const { t, tx } = useTranslation();
   const Icon = ACTION_ICONS[step.action_type] || Globe;
   const colorClasses = ACTION_COLORS[step.action_type] || ACTION_COLORS.navigate;
   const headerId = `negotiator-step-header-${stepIndex}`;
@@ -37,7 +39,7 @@ export function NegotiatorStepCard({
       }}
       aria-current={isActive ? 'step' : undefined}
       aria-roledescription="step"
-      aria-label={`Step ${stepIndex + 1} of ${totalSteps}: ${step.title}`}
+      aria-label={tx(t.vault.negotiator_extra.step_of, { current: stepIndex + 1, total: totalSteps, title: step.title })}
       className={`rounded-modal border transition-all ${
         isActive
           ? 'border-violet-500/30 bg-violet-500/5 shadow-elevation-3 shadow-violet-500/5'

@@ -6806,7 +6806,9 @@
       "how_to_fix": "How to fix this",
       "original_request": "Your original request (preserved):",
       "start_over": "Start over",
-      "try_again_with": "Try again with your request"
+      "try_again_with": "Try again with your request",
+      "instruction_template": "{label} credential",
+      "instruction_imported": "{label} credential (imported)"
     },
     "playground": {
       "mcp_run": "Run",
@@ -7292,7 +7294,11 @@
       "daily_progress": "Daily {done}/{total}",
       "testing_progress": "Testing {done}/{total}",
       "unverifiable_count": "{count} unverifiable",
-      "unverifiable_tooltip": "This connector has no live probe -- credentials are stored but were never checked against the provider"
+      "unverifiable_tooltip": "This connector has no live probe -- credentials are stored but were never checked against the provider",
+      "rotate_result_refreshed": "{count} refreshed",
+      "rotate_result_failed": "{count} failed",
+      "rotate_result_skipped": "{count} skipped",
+      "create_failed": "Failed to create credential"
     },
     "breadcrumb": {
       "aria_label": "Vault breadcrumb"
@@ -7465,7 +7471,8 @@
       "minutes_10": "10 minutes",
       "healthcheck_auto_rotate": "Rotation will trigger automatically when a previously-healthy credential begins failing its healthcheck.",
       "last_evaluated": "Last evaluated: {time}",
-      "loading": "Loading events..."
+      "loading": "Loading events...",
+      "template_trigger_aria": "{name} event trigger"
     },
     "credential_forms": {
       "encrypted_keychain": "Encrypted with OS Keychain",
@@ -7520,7 +7527,11 @@
       "anomalies_one": "{count} anomaly",
       "anomalies_other": "{count} anomalies",
       "no_anomalies": "No anomalies",
-      "show_all": "Show all {count} entries"
+      "show_all": "Show all {count} entries",
+      "entries_one": "{count} entry",
+      "entries_other": "{count} entries",
+      "by_persona": "by {name}",
+      "page_of": "Page {page}/{total}"
     },
     "credential_import": {
       "import_from": "Import from {source}",
@@ -7862,7 +7873,9 @@
       "use_template": "Use",
       "recipe_used_one": "-- used {count} time",
       "recipe_used_other": "-- used {count} times",
-      "instruction_placeholder": "e.g. Slack, OpenAI, GitHub, Stripe..."
+      "instruction_placeholder": "e.g. Slack, OpenAI, GitHub, Stripe...",
+      "step_number": "Step {n}",
+      "open": "Open"
     },
     "auto_cred_extra": {
       "browser_automation_warning": "Browser automation is running. Do not interact with the window — it will resume when complete.",
@@ -7951,7 +7964,19 @@
       "extracted_values_label": "Extracted Values",
       "no_fields_discovered": "No fields were discovered. Try again with a more specific description.",
       "fields_captured_partial": "{filled}/{total} fields captured",
-      "credential_stored": "{label} credential has been securely stored."
+      "credential_stored": "{label} credential has been securely stored.",
+      "err_kind_cli_not_found": "CLI Not Found",
+      "err_kind_spawn_failed": "Spawn Failed",
+      "err_kind_timeout": "Timeout",
+      "err_kind_env_conflict": "Env Conflict",
+      "err_kind_cli_error": "CLI Error",
+      "err_kind_extraction_failed": "Extraction Failed",
+      "field_missing": "{label} (missing)",
+      "open_url": "Open",
+      "open_url_title": "Open {url} in browser",
+      "log_saved_procedure": "Using saved procedure for {label}",
+      "log_blocked_url": "Blocked an unsafe URL from the setup session",
+      "log_open_url_failed": "Failed to open URL: {url}"
     },
     "negotiator_extra": {
       "panel_title": "AI Credential Negotiator",
@@ -7969,7 +7994,8 @@
       "manual_badge": "manual",
       "paste_label": "Paste: {label}",
       "paste_placeholder": "Paste {label} here...",
-      "ask_button": "Ask"
+      "ask_button": "Ask",
+      "step_of": "Step {current} of {total}: {title}"
     },
     "workspace_panel": {
       "select_services": "Select services to connect",
@@ -7985,7 +8011,12 @@
       "granting_access_other": "This will grant access to {count} services",
       "credentials_created_one": "{count} credential created from a single login.",
       "credentials_created_other": "{count} credentials created from a single login.",
-      "sign_in_browser": "Sign in with your Google account in the browser window."
+      "sign_in_browser": "Sign in with your Google account in the browser window.",
+      "status_failed": "Failed",
+      "service_gmail_desc": "Send, read, and manage email",
+      "service_google_calendar_desc": "Read and manage calendar events",
+      "service_google_drive_desc": "Read and manage files",
+      "service_google_sheets_desc": "Read and write spreadsheet data"
     },
     "gateway": {
       "gateway_members": "{name} — gateway members",
@@ -8006,7 +8037,8 @@
       "member_health_ok": "Healthy",
       "member_health_failed": "Unreachable",
       "member_health_unknown": "Not checked yet",
-      "member_checked_label": "Checked"
+      "member_checked_label": "Checked",
+      "remove_member_aria": "Remove {name}"
     },
     "pending_auth": {
       "title": "Authorization required",
@@ -8238,6 +8270,25 @@
       "account_not_recorded": "Account not recorded yet. The reconnect will bind it.",
       "account_mismatch": "That is a different account. Sign in with the account this credential is bound to.",
       "reconnect_failed": "Reconnect failed. Try again, or open the credential in the vault."
+    },
+    "resource_picker": {
+      "pick_first": "Pick a {dep} first",
+      "scope_title": "Scope {label}",
+      "picked_count": "{count} picked",
+      "stale_picks_one": "{count} pick",
+      "stale_picks_other": "{count} picks",
+      "search_placeholder": "Search {label}…",
+      "no_matches": "No matches",
+      "nothing_to_pick": "Nothing to pick yet",
+      "save_scope": "Save scope"
+    },
+    "remediation_notify": {
+      "rotation_failed_title": "Credential Rotation Failed",
+      "auto_disabled_title": "Credential Auto-Disabled",
+      "auto_disabled_body": "{name}: sustained critical failures detected. Rotation policies disabled to prevent cascading errors.",
+      "drift_title": "Credential Drift Detected",
+      "critical_title": "Credential Critical",
+      "warning_title": "Credential Warning"
     }
   },
   "deliberation": {

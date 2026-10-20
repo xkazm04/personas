@@ -13,7 +13,11 @@
     "personas_one": "{count} persona",
     "personas_other": "{count} personas",
     "show_all": "Mostrar todas las {count} entradas",
-    "total_accesses": "{count} en total"
+    "total_accesses": "{count} en total",
+    "by_persona": "por {name}",
+    "entries_one": "{count} entrada",
+    "entries_other": "{count} entradas",
+    "page_of": "Página {page}/{total}"
   },
   "auto_cred_extra": {
     "all_fields_captured": "Todos los {count} campos capturados",
@@ -102,7 +106,19 @@
     "test_to_save": "Prueba la conexión para habilitar el guardado",
     "universal_auto_setup": "Configuración automática universal",
     "universal_auto_setup_hint": "Proporciona una URL y descripción, y la IA navegará el sitio para descubrir y crear credenciales API automáticamente.",
-    "what_do_you_need": "¿Qué necesitas?"
+    "what_do_you_need": "¿Qué necesitas?",
+    "err_kind_cli_error": "Error de CLI",
+    "err_kind_cli_not_found": "CLI no encontrada",
+    "err_kind_env_conflict": "Conflicto de entorno",
+    "err_kind_extraction_failed": "Falló la extracción",
+    "err_kind_spawn_failed": "Falló el inicio del proceso",
+    "err_kind_timeout": "Tiempo agotado",
+    "field_missing": "{label} (falta)",
+    "log_blocked_url": "Se bloqueó una URL no segura de la sesión de configuración",
+    "log_open_url_failed": "No se pudo abrir la URL: {url}",
+    "log_saved_procedure": "Usando el procedimiento guardado para {label}",
+    "open_url": "Abrir",
+    "open_url_title": "Abrir {url} en el navegador"
   },
   "auto_cred": {
     "action_required": "Acción requerida",
@@ -642,7 +658,9 @@
     "start_over": "Empezar de nuevo",
     "technical_details": "Detalles técnicos",
     "title": "Diseñar credencial",
-    "try_again_with": "Intentar de nuevo con su solicitud"
+    "try_again_with": "Intentar de nuevo con su solicitud",
+    "instruction_imported": "Credencial de {label} (importada)",
+    "instruction_template": "Credencial de {label}"
   },
   "design_phases": {
     "all_steps_complete": "Todos los pasos completados -- rellene los campos a continuación y pruebe su conexión.",
@@ -698,7 +716,9 @@
     "typical_time": "Normalmente 15-30 segundos",
     "use_template": "Usar",
     "verified_setup": "Configuración verificada",
-    "view_credential": "Ver credencial"
+    "view_credential": "Ver credencial",
+    "open": "Abrir",
+    "step_number": "Paso {n}"
   },
   "desktop_discovery": {
     "allowed_binaries": "Binarios permitidos: ",
@@ -783,7 +803,8 @@
     "scheduled_rotation": "Rotación programada",
     "scheduled_rotation_desc": "Rota las credenciales según un programa cron (p. ej. diario, semanal).",
     "seconds_10": "10 segundos",
-    "seconds_30": "30 segundos"
+    "seconds_30": "30 segundos",
+    "template_trigger_aria": "Disparador de evento {name}"
   },
   "features": {
     "anomaly_detected": "Anomalía detectada: la credencial está fallando repentinamente después de un éxito previo. Posible revocación.",
@@ -962,7 +983,8 @@
     "no_eligible": "Sin credenciales elegibles. Agrega una credencial MCP primero en la lista de credenciales.",
     "no_members": "Sin miembros aún. Agrega uno abajo para comenzar a agrupar herramientas.",
     "pick_credential": "Elige una credencial…",
-    "pick_error": "Elige una credencial y dale un nombre de visualización corto"
+    "pick_error": "Elige una credencial y dale un nombre de visualización corto",
+    "remove_member_aria": "Quitar a {name}"
   },
   "graph": {
     "connection_count_one": "{count} conexión",
@@ -1066,7 +1088,11 @@
     "title_databases": "Bases de datos",
     "title_dependencies": "Dependencias",
     "unverifiable_count": "{count} no verificable(s)",
-    "unverifiable_tooltip": "Este conector no tiene ninguna prueba en vivo -- las credenciales están almacenadas pero nunca se verificaron con el proveedor"
+    "unverifiable_tooltip": "Este conector no tiene ninguna prueba en vivo -- las credenciales están almacenadas pero nunca se verificaron con el proveedor",
+    "create_failed": "No se pudo crear la credencial",
+    "rotate_result_failed": "{count} fallidas",
+    "rotate_result_refreshed": "{count} actualizadas",
+    "rotate_result_skipped": "{count} omitidas"
   },
   "negotiator_extra": {
     "ask_button": "Ask",
@@ -1084,7 +1110,8 @@
     "planning_description": "La IA está analizando el portal del desarrollador y generando un plan de aprovisionamiento paso a paso…",
     "start_auto": "Iniciar aprovisionamiento automático",
     "existing_auth_description": "Ya has iniciado sesión en {service} mediante {method}. La configuración reutilizará esa sesión y omitirá los pasos de inicio de sesión.",
-    "use_existing_auth": "Usar la sesión de {service} existente"
+    "use_existing_auth": "Usar la sesión de {service} existente",
+    "step_of": "Paso {current} de {total}: {title}"
   },
   "negotiator": {
     "all_steps_completed": "Todos los pasos completados",
@@ -1760,7 +1787,12 @@
     "select_services": "Seleccionar servicios para conectar",
     "selected_count": "{selected} de {total} seleccionados",
     "sign_in_browser": "Inicie sesión con su cuenta de Google en la ventana del navegador.",
-    "some_failed": "Algunas credenciales fallaron"
+    "some_failed": "Algunas credenciales fallaron",
+    "service_gmail_desc": "Enviar, leer y gestionar correo",
+    "service_google_calendar_desc": "Leer y gestionar eventos del calendario",
+    "service_google_drive_desc": "Leer y gestionar archivos",
+    "service_google_sheets_desc": "Leer y escribir datos de hojas de cálculo",
+    "status_failed": "Fallido"
   },
   "connector_attention": {
     "title": "Conexiones que requieren atención",
@@ -1781,5 +1813,24 @@
     "reconnect_now": "Reconectar ahora",
     "reconnecting": "Reconectando...",
     "signed_in_as": "Sesion iniciada como {email}"
+  },
+  "remediation_notify": {
+    "auto_disabled_body": "{name}: se detectaron fallos críticos sostenidos. Las políticas de rotación se desactivaron para evitar errores en cascada.",
+    "auto_disabled_title": "Credencial desactivada automáticamente",
+    "critical_title": "Credencial en estado crítico",
+    "drift_title": "Desviación de credencial detectada",
+    "rotation_failed_title": "Falló la rotación de la credencial",
+    "warning_title": "Advertencia de credencial"
+  },
+  "resource_picker": {
+    "no_matches": "Sin coincidencias",
+    "nothing_to_pick": "Aún no hay nada que elegir",
+    "pick_first": "Elige primero un {dep}",
+    "picked_count": "{count} elegidos",
+    "save_scope": "Guardar alcance",
+    "scope_title": "Alcance de {label}",
+    "search_placeholder": "Buscar {label}…",
+    "stale_picks_one": "{count} elemento elegido",
+    "stale_picks_other": "{count} elementos elegidos"
   }
 }

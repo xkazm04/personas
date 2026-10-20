@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useCredentialDesignOrchestrator } from '@/features/vault/sub_catalog/components/design/useCredentialDesignOrchestrator';
 import { useSystemStore } from "@/stores/systemStore";
 import { useVaultStore } from "@/stores/vaultStore";
@@ -9,6 +10,7 @@ import type { CredentialDesignModalProps } from '@/features/vault/sub_catalog/co
 import { filterTemplateConnectors, buildTemplateResult } from '@/features/vault/sub_catalog/components/design/CredentialDesignHelpers';
 
 export function useCredentialDesignModal({ open, initialInstruction, onClose, onComplete }: CredentialDesignModalProps) {
+  const { t, tx } = useTranslation();
   const orch = useCredentialDesignOrchestrator();
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const { navigate } = useCredentialNav();
@@ -110,7 +112,7 @@ export function useCredentialDesignModal({ open, initialInstruction, onClose, on
 
     const result = buildTemplateResult(template);
     orch.loadTemplate(result);
-    orch.setInstruction(`${template.label} credential`);
+    orch.setInstruction(tx(t.vault.design_modal.instruction_template, { label: template.label }));
     orch.invalidateHealth();
     setShowTemplates(false);
   };
@@ -120,7 +122,7 @@ export function useCredentialDesignModal({ open, initialInstruction, onClose, on
     if (results.length === 0) return;
     const first = results[0]!;
     orch.loadTemplate(first);
-    orch.setInstruction(`${first.connector.label} credential (imported)`);
+    orch.setInstruction(tx(t.vault.design_modal.instruction_imported, { label: first.connector.label }));
     orch.invalidateHealth();
     setShowImport(false);
     importFlow.reset();

@@ -14,6 +14,7 @@ import { rotateCredentialNow, listRotationPolicies, updateRotationPolicy } from 
 import { sendOsNotification } from '@/lib/utils/platform/osNotification';
 import { remediationBus, type RemediationEvent, type RemediationAction } from './remediationBus';
 import { extractMessage } from '@/lib/silentCatch';
+import { getActiveTranslations, interpolate as tx } from '@/i18n/useTranslation';
 
 // The rotation IPC rejects with a serialized AppError OBJECT, never an Error:
 // `err instanceof Error` turned every refusal into the bare fallback, so the
@@ -33,7 +34,7 @@ async function executeAutoRotate(event: RemediationEvent): Promise<void> {
     remediationBus.updateOutcome(event.id, 'failed', message);
     // Rotation failure triggers a notification
     void sendOsNotification(
-      'Credential Rotation Failed',
+      getActiveTranslations().vault.remediation_notify.rotation_failed_title,
       `${event.credentialName}: ${message}`,
     );
   }
@@ -60,8 +61,8 @@ async function executeAutoDisable(event: RemediationEvent): Promise<void> {
     );
 
     void sendOsNotification(
-      'Credential Auto-Disabled',
-      `${event.credentialName}: sustained critical failures detected. Rotation policies disabled to prevent cascading errors.`,
+      getActiveTranslations().vault.remediation_notify.auto_disabled_title,
+      tx(getActiveTranslations().vault.remediation_notify.auto_disabled_body, { name: event.credentialName }),
     );
   } catch (err) {
     const message = reasonOf(err, 'Disable failed');
@@ -71,9 +72,10 @@ async function executeAutoDisable(event: RemediationEvent): Promise<void> {
 
 async function executeNotify(event: RemediationEvent): Promise<void> {
   const severity = event.action === 'notify_critical' ? 'Critical' : 'Warning';
+  const rn = getActiveTranslations().vault.remediation_notify;
   const title = event.action === 'notify_drift'
-    ? 'Credential Drift Detected'
-    : `Credential ${severity}`;
+    ? rn.drift_title
+    : event.action === 'notify_critical' ? rn.critical_title : rn.warning_title;
 
   void sendOsNotification(title, `${event.credentialName}: ${event.reason}`);
   remediationBus.updateOutcome(event.id, 'success', `${severity} notification sent`);

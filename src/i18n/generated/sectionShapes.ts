@@ -244,7 +244,9 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "autopilot": {},
     "cli_capture": {},
     "rotation_insight": {},
-    "connector_attention": {}
+    "connector_attention": {},
+    "resource_picker": {},
+    "remediation_notify": {}
   },
   "deliberation": {},
   "deployment": {

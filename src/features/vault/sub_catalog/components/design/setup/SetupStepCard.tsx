@@ -23,7 +23,7 @@ export function SetupStepCard({
   onToggle: () => void;
   components: Components;
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   // Strip the leading number (e.g. "1. " or "2) ")
   const content = stepMarkdown.replace(/^\s*\d+[.)]\s+/, '');
 
@@ -53,7 +53,7 @@ export function SetupStepCard({
       {/* Step content */}
       <div className={`flex-1 min-w-0 ${isCompleted ? 'opacity-50' : ''}`}>
         <span className="typo-heading text-foreground uppercase">
-          Step {stepIndex + 1}
+          {tx(t.vault.design_phases.step_number, { n: stepIndex + 1 })}
         </span>
         <div className="prose-none">
           <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>

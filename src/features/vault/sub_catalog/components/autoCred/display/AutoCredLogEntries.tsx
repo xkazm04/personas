@@ -45,6 +45,7 @@ export function UrlCard({
   entry: BrowserLogEntry;
   onUrlClick: (url: string) => void;
 }) {
+  const { t } = useTranslation();
   const safeUrl = sanitizeExternalUrl(entry.url);
   let hostname = '';
   if (safeUrl) {
@@ -64,7 +65,7 @@ export function UrlCard({
           onClick={() => onUrlClick(safeUrl)}
           className="px-3 py-1 typo-body text-blue-400 hover:text-blue-300 rounded-card border border-blue-500/20 hover:bg-blue-500/10 transition-colors shrink-0"
         >
-          Open
+          {t.vault.auto_cred_extra.open_url}
         </button>
       )}
     </div>
@@ -91,6 +92,7 @@ export function RichMessage({
   message: string;
   onUrlClick: (url: string) => void;
 }) {
+  const { t, tx } = useTranslation();
   const parts = splitByUrls(message);
   if (parts.length === 1 && !parts[0]!.isUrl) return <>{message}</>;
 
@@ -106,7 +108,7 @@ export function RichMessage({
             key={i}
             onClick={() => onUrlClick(safe)}
             className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer transition-colors"
-            title={`Open ${safe} in browser`}
+            title={tx(t.vault.auto_cred_extra.open_url_title, { url: safe })}
           >
             {part.text}
             <ExternalLink className="w-2.5 h-2.5 inline-block ml-0.5" />

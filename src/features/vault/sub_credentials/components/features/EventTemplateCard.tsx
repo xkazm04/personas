@@ -25,7 +25,7 @@ export function EventTemplateCard({
   onToggle,
   onUpdateConfig,
 }: EventTemplateCardProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const isEnabled = existing ? existing.enabled : false;
   const config = safeParseConfig(existing?.config);
   const Icon = EVENT_ICONS[template.id] || Zap;
@@ -56,7 +56,7 @@ export function EventTemplateCard({
           type="button"
           role="switch"
           aria-checked={isEnabled}
-          aria-label={`${template.name} event trigger`}
+          aria-label={tx(t.vault.event_config.template_trigger_aria, { name: template.name })}
           onClick={() => onToggle(template.id, template.name)}
           disabled={isSaving}
           className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${

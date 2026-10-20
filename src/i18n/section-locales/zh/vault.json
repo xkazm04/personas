@@ -13,7 +13,11 @@
     "personas_one": "{count} 个智能体",
     "personas_other": "{count} 个智能体",
     "show_all": "显示全部 {count} 条记录",
-    "total_accesses": "共 {count} 次"
+    "total_accesses": "共 {count} 次",
+    "by_persona": "由 {name}",
+    "entries_one": "{count} 条记录",
+    "entries_other": "{count} 条记录",
+    "page_of": "第 {page}/{total} 页"
   },
   "auto_cred_extra": {
     "all_fields_captured": "已捕获全部 {count} 个字段",
@@ -102,7 +106,19 @@
     "test_to_save": "测试连接以启用保存",
     "universal_auto_setup": "通用自动设置",
     "universal_auto_setup_hint": "提供 URL 和描述，AI 将导航网站以自动发现并创建 API 凭证。",
-    "what_do_you_need": "您需要什么？"
+    "what_do_you_need": "您需要什么？",
+    "err_kind_cli_error": "CLI 错误",
+    "err_kind_cli_not_found": "未找到 CLI",
+    "err_kind_env_conflict": "环境冲突",
+    "err_kind_extraction_failed": "提取失败",
+    "err_kind_spawn_failed": "启动失败",
+    "err_kind_timeout": "超时",
+    "field_missing": "{label}（缺失）",
+    "log_blocked_url": "已拦截来自设置会话的不安全 URL",
+    "log_open_url_failed": "无法打开 URL：{url}",
+    "log_saved_procedure": "正在使用 {label} 的已保存流程",
+    "open_url": "打开",
+    "open_url_title": "在浏览器中打开 {url}"
   },
   "auto_cred": {
     "action_required": "需要操作",
@@ -642,7 +658,9 @@
     "start_over": "重新开始",
     "technical_details": "技术详情",
     "title": "设计凭据",
-    "try_again_with": "使用您的请求重试"
+    "try_again_with": "使用您的请求重试",
+    "instruction_imported": "{label} 凭据（已导入）",
+    "instruction_template": "{label} 凭据"
   },
   "design_phases": {
     "all_steps_complete": "所有步骤已完成 -- 请填写以下字段并测试您的连接。",
@@ -698,7 +716,9 @@
     "typical_time": "通常需要 15-30 秒",
     "use_template": "使用",
     "verified_setup": "已验证设置",
-    "view_credential": "查看凭证"
+    "view_credential": "查看凭证",
+    "open": "打开",
+    "step_number": "第 {n} 步"
   },
   "desktop_discovery": {
     "allowed_binaries": "允许的二进制文件：",
@@ -783,7 +803,8 @@
     "scheduled_rotation": "计划轮换",
     "scheduled_rotation_desc": "按 cron 计划轮换凭据（例如每天、每周）。",
     "seconds_10": "10 秒",
-    "seconds_30": "30 秒"
+    "seconds_30": "30 秒",
+    "template_trigger_aria": "{name} 事件触发器"
   },
   "features": {
     "anomaly_detected": "检测到异常：凭证在之前成功后突然失败。可能已被吊销。",
@@ -962,7 +983,8 @@
     "no_eligible": "无合格凭据。请先在凭据列表中添加 MCP 凭据。",
     "no_members": "暂无成员。在下方添加一个以开始捆绑工具。",
     "pick_credential": "选择凭据…",
-    "pick_error": "请选择凭据并提供简短显示名称"
+    "pick_error": "请选择凭据并提供简短显示名称",
+    "remove_member_aria": "移除 {name}"
   },
   "graph": {
     "connection_count_one": "{count} 个连接",
@@ -1066,7 +1088,11 @@
     "title_databases": "数据库",
     "title_dependencies": "依赖项",
     "unverifiable_count": "{count} 个无法验证",
-    "unverifiable_tooltip": "此连接器没有实时探测 -- 凭据已存储，但从未针对提供商进行过验证"
+    "unverifiable_tooltip": "此连接器没有实时探测 -- 凭据已存储，但从未针对提供商进行过验证",
+    "create_failed": "创建凭据失败",
+    "rotate_result_failed": "{count} 个失败",
+    "rotate_result_refreshed": "{count} 个已刷新",
+    "rotate_result_skipped": "{count} 个已跳过"
   },
   "negotiator_extra": {
     "ask_button": "Ask",
@@ -1084,7 +1110,8 @@
     "planning_description": "AI 正在分析开发者门户并生成分步配置计划…",
     "start_auto": "开始自动配置",
     "existing_auth_description": "您已通过 {method} 登录 {service}。设置将复用该会话并跳过登录步骤。",
-    "use_existing_auth": "使用现有的 {service} 会话"
+    "use_existing_auth": "使用现有的 {service} 会话",
+    "step_of": "第 {current} 步，共 {total} 步：{title}"
   },
   "negotiator": {
     "all_steps_completed": "所有步骤已完成",
@@ -1760,7 +1787,12 @@
     "select_services": "选择要连接的服务",
     "selected_count": "已选择 {selected} / {total}",
     "sign_in_browser": "在浏览器窗口中使用您的 Google 账户登录。",
-    "some_failed": "部分凭据创建失败"
+    "some_failed": "部分凭据创建失败",
+    "service_gmail_desc": "发送、读取和管理电子邮件",
+    "service_google_calendar_desc": "读取和管理日历事件",
+    "service_google_drive_desc": "读取和管理文件",
+    "service_google_sheets_desc": "读取和写入电子表格数据",
+    "status_failed": "失败"
   },
   "connector_attention": {
     "title": "连接需要处理",
@@ -1781,5 +1813,24 @@
     "reconnect_now": "立即重新连接",
     "reconnecting": "正在重新连接...",
     "signed_in_as": "已使用 {email} 登录"
+  },
+  "remediation_notify": {
+    "auto_disabled_body": "{name}：检测到持续的严重故障。已停用轮换策略以防止连锁错误。",
+    "auto_disabled_title": "凭据已自动停用",
+    "critical_title": "凭据严重告警",
+    "drift_title": "检测到凭据漂移",
+    "rotation_failed_title": "凭据轮换失败",
+    "warning_title": "凭据警告"
+  },
+  "resource_picker": {
+    "no_matches": "无匹配项",
+    "nothing_to_pick": "暂无可选项",
+    "pick_first": "请先选择 {dep}",
+    "picked_count": "已选 {count} 项",
+    "save_scope": "保存范围",
+    "scope_title": "范围 {label}",
+    "search_placeholder": "搜索 {label}…",
+    "stale_picks_one": "{count} 个选择",
+    "stale_picks_other": "{count} 个选择"
   }
 }

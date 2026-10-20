@@ -9,6 +9,7 @@ import type { CredentialViewState } from '@/features/vault/shared/hooks/useCrede
 import type { CredentialViewAction } from '@/features/vault/shared/hooks/useCredentialViewFSM';
 import { usePostSaveResourcePicker } from '@/features/vault/sub_credentials/components/picker/usePostSaveResourcePicker';
 import { silentCatch } from '@/lib/silentCatch';
+import { getActiveTranslations } from '@/i18n/useTranslation';
 
 interface CatalogFormData {
   connector: ConnectorDefinition;
@@ -100,7 +101,7 @@ export function useCatalogHandlers({
         data: values,
       });
     } catch {
-      setError('Failed to create credential');
+      setError(getActiveTranslations().vault.manager.create_failed);
       return;
     }
     // The credential exists from here on (the store already appended it).

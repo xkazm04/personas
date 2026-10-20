@@ -5,6 +5,7 @@ import { startAutoCredBrowser, getPlaywrightProcedure, cancelAutoCredBrowser } f
 import { openExternalUrl } from '@/api/system/system';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { silentCatch } from '@/lib/silentCatch';
+import { getActiveTranslations, interpolate as tx } from '@/i18n/useTranslation';
 
 type AutoCredProgressFrame = {
   session_id: string;
@@ -49,7 +50,7 @@ export class TauriPlaywrightAdapter implements PlaywrightAdapter {
           savedProcedure = proc.procedure_json;
           onLog({
             ts: Date.now(),
-            message: `Using saved procedure for ${ctx.connector.label}`,
+            message: tx(getActiveTranslations().vault.auto_cred_extra.log_saved_procedure, { label: ctx.connector.label }),
             type: 'info',
           });
         }
@@ -96,14 +97,14 @@ export class TauriPlaywrightAdapter implements PlaywrightAdapter {
       const safe = sanitizeExternalUrl(event.payload.url);
       if (!safe) {
         // The rejected URL is not echoed: it may carry embedded credentials.
-        onLog({ ts: Date.now(), message: 'Blocked an unsafe URL from the setup session', type: 'error' });
+        onLog({ ts: Date.now(), message: getActiveTranslations().vault.auto_cred_extra.log_blocked_url, type: 'error' });
         return;
       }
       openExternalUrl(safe).catch((err: unknown) => {
         silentCatch('TauriPlaywrightAdapter:openUrl')(err);
         onLog({
           ts: Date.now(),
-          message: `Failed to open URL: ${safe}`,
+          message: tx(getActiveTranslations().vault.auto_cred_extra.log_open_url_failed, { url: safe }),
           type: 'error',
         });
       });

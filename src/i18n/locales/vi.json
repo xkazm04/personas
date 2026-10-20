@@ -23220,7 +23220,11 @@
       "personas_one": "{count} tác nhân",
       "personas_other": "{count} tác nhân",
       "show_all": "Hiển thị tất cả {count} mục",
-      "total_accesses": "{count} tổng cộng"
+      "total_accesses": "{count} tổng cộng",
+      "by_persona": "bởi {name}",
+      "entries_one": "{count} mục",
+      "entries_other": "{count} mục",
+      "page_of": "Trang {page}/{total}"
     },
     "auto_cred_extra": {
       "all_fields_captured": "Đã thu thập đủ {count} trường",
@@ -23309,7 +23313,19 @@
       "test_to_save": "Kiểm tra kết nối để kích hoạt lưu",
       "universal_auto_setup": "Thiết lập tự động phổ quát",
       "universal_auto_setup_hint": "Cung cấp URL và mô tả, AI sẽ điều hướng trang web để tự động khám phá và tạo thông tin xác thực API.",
-      "what_do_you_need": "Bạn cần gì?"
+      "what_do_you_need": "Bạn cần gì?",
+      "err_kind_cli_error": "Lỗi CLI",
+      "err_kind_cli_not_found": "Không tìm thấy CLI",
+      "err_kind_env_conflict": "Xung đột môi trường",
+      "err_kind_extraction_failed": "Trích xuất thất bại",
+      "err_kind_spawn_failed": "Khởi chạy thất bại",
+      "err_kind_timeout": "Hết thời gian chờ",
+      "field_missing": "{label} (thiếu)",
+      "log_blocked_url": "Đã chặn một URL không an toàn từ phiên thiết lập",
+      "log_open_url_failed": "Không mở được URL: {url}",
+      "log_saved_procedure": "Đang dùng quy trình đã lưu cho {label}",
+      "open_url": "Mở",
+      "open_url_title": "Mở {url} trong trình duyệt"
     },
     "auto_cred": {
       "action_required": "Cần thao tác",
@@ -23849,7 +23865,9 @@
       "start_over": "Bắt đầu lại",
       "technical_details": "Chi tiết kỹ thuật",
       "title": "Thiết kế thông tin xác thực",
-      "try_again_with": "Thử lại với yêu cầu của bạn"
+      "try_again_with": "Thử lại với yêu cầu của bạn",
+      "instruction_imported": "Thông tin xác thực {label} (đã nhập)",
+      "instruction_template": "Thông tin xác thực {label}"
     },
     "design_phases": {
       "all_steps_complete": "Tất cả các bước đã hoàn thành -- điền vào các trường bên dưới và kiểm tra kết nối của bạn.",
@@ -23905,7 +23923,9 @@
       "typical_time": "Thường mất 15--30 giây",
       "use_template": "Sử dụng",
       "verified_setup": "Đã xác minh thiết lập",
-      "view_credential": "Xem thông tin xác thực"
+      "view_credential": "Xem thông tin xác thực",
+      "open": "Mở",
+      "step_number": "Bước {n}"
     },
     "desktop_discovery": {
       "allowed_binaries": "Tệp nhị phân được phép: ",
@@ -23990,7 +24010,8 @@
       "scheduled_rotation": "Xoay vòng theo lịch",
       "scheduled_rotation_desc": "Xoay vòng thông tin xác thực theo lịch cron (vd: hàng ngày, hàng tuần).",
       "seconds_10": "10 giây",
-      "seconds_30": "30 giây"
+      "seconds_30": "30 giây",
+      "template_trigger_aria": "Trình kích hoạt sự kiện {name}"
     },
     "features": {
       "anomaly_detected": "Phát hiện bất thường: thông tin xác thực đột ngột thất bại sau khi thành công trước đó. Có thể đã bị thu hồi.",
@@ -24169,7 +24190,8 @@
       "no_eligible": "Không có thông tin xác thực đủ điều kiện. Thêm thông tin xác thực MCP trước trong danh sách thông tin xác thực.",
       "no_members": "Chưa có thành viên. Thêm một thành viên bên dưới để bắt đầu nhóm công cụ.",
       "pick_credential": "Chọn thông tin xác thực…",
-      "pick_error": "Chọn thông tin xác thực và đặt tên hiển thị ngắn"
+      "pick_error": "Chọn thông tin xác thực và đặt tên hiển thị ngắn",
+      "remove_member_aria": "Xóa {name}"
     },
     "graph": {
       "connection_count_one": "{count} kết nối",
@@ -24273,7 +24295,11 @@
       "title_databases": "Cơ sở dữ liệu",
       "title_dependencies": "Phụ thuộc",
       "unverifiable_count": "{count} không thể xác minh",
-      "unverifiable_tooltip": "Trình kết nối này không có kiểm tra trực tiếp -- thông tin xác thực được lưu trữ nhưng chưa bao giờ được xác minh với nhà cung cấp"
+      "unverifiable_tooltip": "Trình kết nối này không có kiểm tra trực tiếp -- thông tin xác thực được lưu trữ nhưng chưa bao giờ được xác minh với nhà cung cấp",
+      "create_failed": "Không tạo được thông tin xác thực",
+      "rotate_result_failed": "{count} thất bại",
+      "rotate_result_refreshed": "{count} đã làm mới",
+      "rotate_result_skipped": "{count} đã bỏ qua"
     },
     "negotiator_extra": {
       "ask_button": "Ask",
@@ -24291,7 +24317,8 @@
       "planning_description": "AI đang phân tích cổng thông tin nhà phát triển và tạo kế hoạch cung cấp từng bước…",
       "start_auto": "Bắt đầu tự động cấp phát",
       "existing_auth_description": "Bạn đã đăng nhập {service} qua {method}. Thiết lập sẽ dùng lại phiên đó và bỏ qua các bước đăng nhập.",
-      "use_existing_auth": "Dùng phiên {service} hiện có"
+      "use_existing_auth": "Dùng phiên {service} hiện có",
+      "step_of": "Bước {current}/{total}: {title}"
     },
     "negotiator": {
       "all_steps_completed": "Đã hoàn thành tất cả bước",
@@ -24967,7 +24994,12 @@
       "select_services": "Chọn dịch vụ để kết nối",
       "selected_count": "{selected} trên {total} đã chọn",
       "sign_in_browser": "Đăng nhập bằng tài khoản Google của bạn trong cửa sổ trình duyệt.",
-      "some_failed": "Một số thông tin xác thực thất bại"
+      "some_failed": "Một số thông tin xác thực thất bại",
+      "service_gmail_desc": "Gửi, đọc và quản lý email",
+      "service_google_calendar_desc": "Đọc và quản lý sự kiện lịch",
+      "service_google_drive_desc": "Đọc và quản lý tệp",
+      "service_google_sheets_desc": "Đọc và ghi dữ liệu bảng tính",
+      "status_failed": "Thất bại"
     },
     "connector_attention": {
       "title": "Kết nối cần chú ý",
@@ -24988,6 +25020,25 @@
       "reconnect_now": "Kết nối lại ngay",
       "reconnecting": "Đang kết nối lại...",
       "signed_in_as": "Đã đăng nhập với tên {email}"
+    },
+    "remediation_notify": {
+      "auto_disabled_body": "{name}: phát hiện lỗi nghiêm trọng kéo dài. Chính sách xoay vòng đã bị tắt để tránh lỗi dây chuyền.",
+      "auto_disabled_title": "Thông tin xác thực đã tự động tắt",
+      "critical_title": "Thông tin xác thực ở mức nghiêm trọng",
+      "drift_title": "Phát hiện thông tin xác thực bị lệch",
+      "rotation_failed_title": "Xoay vòng thông tin xác thực thất bại",
+      "warning_title": "Cảnh báo thông tin xác thực"
+    },
+    "resource_picker": {
+      "no_matches": "Không có kết quả phù hợp",
+      "nothing_to_pick": "Chưa có gì để chọn",
+      "pick_first": "Hãy chọn {dep} trước",
+      "picked_count": "Đã chọn {count}",
+      "save_scope": "Lưu phạm vi",
+      "scope_title": "Phạm vi {label}",
+      "search_placeholder": "Tìm {label}…",
+      "stale_picks_one": "{count} lựa chọn",
+      "stale_picks_other": "{count} lựa chọn"
     }
   },
   "notepad": {
