@@ -17,7 +17,6 @@ import { RecommendedCarousel } from '../explore/RecommendedCarousel';
 import { TeamSynthesisPanel } from '../../shared/TeamSynthesisPanel';
 import { EmptyState } from '../explore/EmptyState';
 import { GalleryLoadError } from '../explore/GalleryLoadError';
-import { useAdoptionCompletionNotifier } from './useAdoptionCompletionNotifier';
 import { TemplateModals } from '../modals/TemplateModals';
 import { TemplateDetailModal } from '../modals/TemplateDetailModal';
 import { TemplateVirtualList } from './TemplateVirtualList';
@@ -89,8 +88,6 @@ export default function GeneratedReviewsTab({
   const [difficultyFilter, setDifficultyFilter] = useState<string[]>([]);
   const [setupFilter, setSetupFilter] = useState<string[]>([]);
   const modals = useModalStack<TemplateModal>();
-
-  useAdoptionCompletionNotifier(templateAdoptActive, modals.isOpen('adopt'));
 
   // A template opened from outside the gallery (Athena's suggestion card
   // routes here with the id it ranked). Consume it once: fetch that review by

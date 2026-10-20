@@ -71,8 +71,6 @@ vi.mock('@/hooks/design/core/useBackgroundRebuild', () => ({
 vi.mock('@/hooks/design/core/useBackgroundPreview', () => ({
   useBackgroundPreview: () => ({ reviewId: null, phase: 'idle', isActive: false, reviewName: null, resetPreview: vi.fn() }),
 }));
-vi.mock('./useAdoptionCompletionNotifier', () => ({ useAdoptionCompletionNotifier: () => {} }));
-vi.mock('../useAdoptionCompletionNotifier', () => ({ useAdoptionCompletionNotifier: () => {} }));
 
 // Heavy children stubbed: this test is about which SHELVES mount.
 vi.mock('../../search/TemplateSearchBar', () => ({ TemplateSearchBar: () => null }));
