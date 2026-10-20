@@ -14,6 +14,7 @@ import { useEventLog } from '../libs/useEventLog';
 import { eventSourceLabel } from '../libs/eventSourceRegistry';
 import { EventDetailModal } from '../EventDetailModal';
 import { eventTypeLabel } from '../libs/eventTypeLabel';
+import { eventStatusOptions } from '../libs/eventStatusOptions';
 import { EventLogToolbar } from './EventLogToolbar';
 import { useEventLogColumns } from './eventLogColumns';
 import { createLogger } from "@/lib/log";
@@ -28,15 +29,7 @@ const EVENT_ROW_HEIGHT = 44;
 
 export default function EventLogList() {
   const { t, tx } = useTranslation();
-  const STATUS_OPTIONS = [
-    { value: 'all', label: t.overview.events.all_statuses },
-    { value: 'completed', label: 'Completed' },
-    { value: 'failed', label: 'Failed' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'processed', label: 'Processed' },
-    { value: 'processing', label: 'Processing' },
-    { value: 'skipped', label: 'Skipped' },
-  ];
+  const STATUS_OPTIONS = eventStatusOptions(t, t.overview.events.all_statuses);
   const {
     recentEvents, personas, availableTypes, skippedStats,
     statusFilter, setStatusFilter, typeFilter, setTypeFilter,
