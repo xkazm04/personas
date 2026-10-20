@@ -29,7 +29,7 @@ export function reportPath(state, dir = meshDir(), ms = Date.now()) {
   return path.join(dir, `onboard-${localDate(ms)}-${short8(state.peerId)}.md`);
 }
 
-const cell = (s) => String(s == null ? '' : s).replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
+const cell = (s) => String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
 const verdictText = (v) => (v ? `${v.outcome}${v.stalledAt ? ` at \`${v.stalledAt}\`` : ''}` : 'not run');
 
 export function renderReport(state, ms = Date.now()) {
