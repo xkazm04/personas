@@ -84,9 +84,9 @@ export const getAllMonthlySpend = () =>
 const overviewBundleCache = new Map<string, { expiresAt: number; promise: Promise<OverviewBundle> }>();
 const OVERVIEW_BUNDLE_CACHE_MS = 1000;
 
-export const getOverviewBundle = (days?: number, personaId?: string) => {
+export const getOverviewBundle = (days?: number, personaId?: string, window?: { start: string; end: string } | null) => {
   const utcOffsetMinutes = localUtcOffsetMinutes();
-  const key = `${days ?? 30}|${personaId ?? ""}|${utcOffsetMinutes}`;
+  const key = `${days ?? 30}|${personaId ?? ""}|${utcOffsetMinutes}|${window?.start ?? ""}|${window?.end ?? ""}`;
   const now = Date.now();
   const cached = overviewBundleCache.get(key);
   if (cached && cached.expiresAt > now) {
@@ -97,6 +97,9 @@ export const getOverviewBundle = (days?: number, personaId?: string) => {
     days,
     personaId,
     utcOffsetMinutes,
+    // A custom range travels as an explicit window; the backend lets it win over `days`.
+    start: window?.start,
+    end: window?.end,
   }).catch((error) => {
     silentCatch("observability:getOverviewBundle")(error);
     overviewBundleCache.delete(key);
@@ -120,9 +123,11 @@ export const getPromptPerformance = (personaId: string, days?: number) =>
 // Execution Metrics Dashboard
 // ============================================================================
 
-export const getExecutionDashboard = (days?: number) =>
+export const getExecutionDashboard = (days?: number, window?: { start: string; end: string } | null) =>
   invoke<ExecutionDashboardData>("get_execution_dashboard", {
     days: days,
+    start: window?.start,
+    end: window?.end,
   });
 
 // ============================================================================

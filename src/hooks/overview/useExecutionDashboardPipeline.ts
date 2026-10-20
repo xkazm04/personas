@@ -1,8 +1,9 @@
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useMemo, useRef } from 'react';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
 import { useOverviewFilterValues } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { log } from '@/lib/log';
+import { buildFetchWindow, fetchWindowKey } from '@/features/overview/libs/fetchWindow';
 
 /**
  * Single canonical fetch lifecycle for the overview section.
@@ -111,7 +112,7 @@ function idleYield(): Promise<void> {
 }
 
 export function useExecutionDashboardPipeline() {
-  const { effectiveDays, compareEnabled, previousPeriodDays, selectedPersonaId } = useOverviewFilterValues();
+  const { effectiveDays, compareEnabled, previousPeriodDays, selectedPersonaId, customDateRange } = useOverviewFilterValues();
   const {
     runDashboardWave1, runDashboardWave2, fetchAlertRules, fetchAlertHistory,
   } = useOverviewStore(useShallow((s) => ({
@@ -121,11 +122,19 @@ export function useExecutionDashboardPipeline() {
     fetchAlertHistory: s.fetchAlertHistory,
   })));
   const fetchDays = compareEnabled ? previousPeriodDays : effectiveDays;
+  // A custom range is fetched as an explicit window (null for presets).
+  const customStart = customDateRange?.[0];
+  const customEnd = customDateRange?.[1];
+  const fetchWindow = useMemo(
+    () => buildFetchWindow(customStart && customEnd ? [customStart, customEnd] : null, compareEnabled),
+    [customStart, customEnd, compareEnabled],
+  );
+  const windowKey = fetchWindowKey(fetchWindow);
   const mountedRef = useRef({ cancelled: false });
 
   // Identifies the data shape of a run. A re-mount with the same key can
   // reuse the store's existing data instead of re-fetching.
-  const filterKey = `${effectiveDays}|${fetchDays}|${selectedPersonaId || ''}|${compareEnabled ? 1 : 0}`;
+  const filterKey = `${effectiveDays}|${fetchDays}|${selectedPersonaId || ''}|${compareEnabled ? 1 : 0}|${windowKey}`;
 
   // ── Mount-only: alert data is global and not filter-dependent ──
   // Skipped when a previous mount fetched it within the TTL window.
@@ -159,7 +168,7 @@ export function useExecutionDashboardPipeline() {
       // Wave 1: critical above-the-fold data (executionDashboard +
       // globalExecutions). Coalesced into a single store commit by
       // runDashboardWave1 instead of 3 sequential set()s.
-      const wave1Ok = await runDashboardWave1(fetchDays, selectedPersonaId || undefined);
+      const wave1Ok = await runDashboardWave1(fetchDays, selectedPersonaId || undefined, fetchWindow);
       if (signal.cancelled) return;
       // Cache only a clean run — a partial failure should retry next mount.
       if (wave1Ok) lastPipelineRun = { filterKey, at: Date.now() };
@@ -168,9 +177,9 @@ export function useExecutionDashboardPipeline() {
       if (signal.cancelled) return;
       // Wave 2: secondary data (observabilityMetrics + healingIssues),
       // likewise coalesced into a single commit by runDashboardWave2.
-      await runDashboardWave2(fetchDays, selectedPersonaId || undefined);
+      await runDashboardWave2(fetchDays, selectedPersonaId || undefined, fetchWindow);
     },
-    [runDashboardWave1, runDashboardWave2, fetchDays, selectedPersonaId, filterKey],
+    [runDashboardWave1, runDashboardWave2, fetchDays, selectedPersonaId, filterKey, fetchWindow],
   );
 
   // Debounce filter-driven refreshes to avoid redundant fetches when

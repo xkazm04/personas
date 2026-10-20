@@ -6,6 +6,7 @@ import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/ov
 import { mergePreviousPeriod } from '@/features/overview/sub_usage/libs/periodComparison';
 import { computePeriodTrends } from '@/features/overview/libs/computeTrends';
 import { resolveTimeRange, type TimeRange } from '@/lib/types/timeRange';
+import { buildFetchWindow } from '@/features/overview/libs/fetchWindow';
 import { fmtDate, summarizeCurrentWindow } from './executionMetricsHelpers';
 
 type TimeWindow = 1 | 7 | 30 | 90;
@@ -47,14 +48,20 @@ export function useExecutionMetrics() {
   const activeRangeLabel = useMemo(() => resolveTimeRange(activeRange).label, [activeRange]);
 
   // Lifecycle fetch is handled by useExecutionDashboardPipeline; load is for manual retry.
-  const load = useCallback(() => fetchExecutionDashboard(fetchDays), [fetchExecutionDashboard, fetchDays]);
+  const load = useCallback(
+    () => fetchExecutionDashboard(fetchDays, buildFetchWindow(customDateRange, compareEnabled)),
+    [fetchExecutionDashboard, fetchDays, customDateRange, compareEnabled],
+  );
 
   // The selected window only. With Compare on, `data` spans 2x the window;
   // its summary fields and its full series must not reach a tile or a chart
   // labelled with the single window (see summarizeCurrentWindow).
   const summary = useMemo(
-    () => (data ? summarizeCurrentWindow(data, effectiveDays, compareEnabled) : null),
-    [data, effectiveDays, compareEnabled],
+    // A custom range ends on its chosen day, not today: anchor the compare cut there.
+    () => (data
+      ? summarizeCurrentWindow(data, effectiveDays, compareEnabled, customDateRange ? Date.parse(`${customDateRange[1]}T12:00:00Z`) : undefined)
+      : null),
+    [data, effectiveDays, compareEnabled, customDateRange],
   );
 
   const { chartData, personaCostData, personaNames } = useMemo(() => {
