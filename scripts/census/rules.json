@@ -1857,7 +1857,7 @@
       ],
       "baseline": {
         "files": 49,
-        "matches": 75
+        "matches": 74
       },
       "floor": 4000
     },
@@ -3220,8 +3220,8 @@
         "description": "`let _ = <path>::<fn>(..)` where the called function's own name ends in a sync-watermark noun (cursor / sync_state / watermark / checkpoint / high_water / synced_at). PROXY FOR the stack-free condition: the only durable record of what two copies last agreed on is written for its side effect alone, so if the write fails nothing observes it, and the NEXT reconciliation runs against a base it believes is current - a silent persistence failure laundered into a confident wrong answer about whether the two sides diverged. THIS IS NOT 'AN ERROR WAS SWALLOWED': a watermark is the one fact in a sync that cannot be re-derived from either side, because it is the memory of the agreement itself. MEASURED 2026-08-16 at 2a874e692: 11 matches across 4 of 963 .rs files, ALL ELEVEN OPENED AND CONFIRMED (precision 11/11), commentMatchesSkipped 0. Population and partition: 29 production watermark-writer call sites exist in the tree (set_cursor, write_cursor, touch_cursor, update_cursor, upsert_sync_state, set_watermark, seed_watermark_to_newest), enumerated by hand; this pattern's anchor sees 30 statements (11 dropped + 19 propagated, the extra 1 being reads of the same watermark) and the writer-only split is 11 violating / 18 compliant - so 38% of this repo's watermark writes discard the verdict and 62% do not, and the discipline is NOT evenly spread: every poller and relay propagates, and 8 of the 11 discards are one function family. THE 11: commands/obsidian_brain/mod.rs:651,741,820,955,1013,1043,1241,1687 (`let _ = sync_repo::upsert_sync_state(..)`) - these are the sharpest, because that file's three_way_compare (commands/obsidian_brain/conflict.rs:36) compares the CURRENT app and vault hashes against the stored base, so a base hash that failed to persist makes the next pass see both sides as changed and report a ConvergedConflict to the user that did not happen; three sites in the SAME FILE (:364, :1305, :1376) use `?`, so this is drift inside one module and not a house style. cloud/sync/mod.rs:393 (`let _ = cursor::set_cursor(pool, \"tombstones\", &tick_start)`) - two defects in one line: the value is a WALL-CLOCK read (tick_start = now_rfc3339() at :374) and the same file's :272-281 carries a nine-line comment explaining why that is wrong and was fixed for the table path at :281, plus the Result is dropped. engine/shared_event_relay.rs:170 and engine/src/shared_event_local_relay.rs:96 (`let _ = repo::update_cursor(..)`) - the team event relay's per-subscription cursor; :96's own comment three lines above says 'Hold the cursor at the last successful seq so ordering is preserved', which is exactly the invariant the dropped Result cannot guarantee. ZERO MATCHES INSIDE #[cfg(test)], verified by BRACE-MATCHED RANGE against all four files (never a line threshold): obsidian_brain/mod.rs's only #[cfg(test)] is a `mod mirror_tests;` DECLARATION at :10 while every match is at :651-:1687; cloud/sync/mod.rs's test module opens at :484 (match at :393); shared_event_relay.rs's at :245 (match at :170); shared_event_local_relay.rs has no test module at all and its match is at :96 of 99, inside run_once. DOES NOT OVERLAP `unverified-effect-dispatch`, which is the nearest neighbour and the one to check: that rule is `let _ = .. .emit(..)` / emit_event(..) at 60 files / 162 matches, anchored on the EMIT, and no line in the tree matches both patterns - the distinction is semantic and load-bearing, because a notification is re-derivable from the state it announces and a watermark is not. Nor `discarded-guard-verdict` (anchored on a `.execute(\"UPDATE .. WHERE id = ?N .. AND ..\")` SQL literal at the call site; all 11 here go through repository functions and carry no SQL). Nor `blind-identity-write` (scoped to src-tauri/db/src/repos; all 11 are outside that root, and it keys on the CALLEE's signature where this keys on the CALLER's statement). Nor `unfenced-work-outcome-write`, `optional-store-handle`, `unkeyed-billable-spawn`. No rule in the 116-rule registry targets src-tauri/src/cloud/**, a PostgREST-shaped write, or a watermark. ONE DISCLOSED RECALL GAP, and it is the most damaging instance in the repo: cloud/sync/cursor.rs:110 `let _ = settings::set(pool, settings_keys::CLOUD_SYNC_DEVICE_ID, &new_id)` persists the REPLICA IDENTITY through a generic settings setter whose name carries no watermark noun, so it is invisible here - and its failure mode is worse than any match (resolve_device_id is an unguarded read-then-write with three concurrent entry points, so a loser stamps an entire sync pass with an id that was never stored and pending_commands?target_device_id=eq.<id> then matches nothing). Widening the noun list to settings::set takes the count from 11 to ~200 and destroys precision; that site must be fixed by hand. PRECONDITION (must be re-derived per repo): this repo spells the drop as Rust's `let _ =` and names its watermark writers with a noun in the function name. A TypeScript repo spells the identical condition `void saveCursor(x)` or `saveCursor(x).catch(() => {})` and scores a structural zero against this pattern while having the condition. LEGAL FIX, one character each: change `let _ =` to a bound value and propagate with `?`. The compliant form is in the same files - commands/obsidian_brain/mod.rs:1305 and cloud/sync/mod.rs:282. Do NOT silence a match by wrapping in `.ok()` (discards the Err too) or by renaming the function to drop the noun. END OF LIFE: this rule is designed to reach zero - all 11 are one-character fixes. When the count reaches 0 the runner fails structurally on zero-matches BY DESIGN: DELETE the rule then, do not baseline it at 0."
       },
       "baseline": {
-        "files": 4,
-        "matches": 11
+        "files": 3,
+        "matches": 10
       },
       "floor": 900
     },
@@ -4017,6 +4017,10 @@
         {
           "path": "src/features/plugins/dev-tools/sub_runner/__tests__/prBridgeContent.test.ts",
           "reason": "the parity test that tethers the PrBridge.tsx mirror: its title names the Rust constant it reads, it does not declare a second copy of the rule"
+        },
+        {
+          "path": "src/features/triggers/sub_test/testFireRouting.ts",
+          "reason": "TETHERED mirror (repo law): the test-fire listener preview mirrors the event bus matching rules (canonical event types, source filter) in src-tauri/engine bus.rs; the parity tests under src/features/triggers/sub_test read bus.rs at run time, so the two cannot drift (scan-sweep 2026-10-20, 5a91a25cef, de67938c85)"
         }
       ],
       "baseline": {
@@ -5415,8 +5419,8 @@
         "description": "A catch handler whose only state write is an empty array, and which sets no error/failure identity anywhere in the handler. The rejection becomes indistinguishable from an empty result."
       },
       "baseline": {
-        "files": 28,
-        "matches": 31
+        "files": 27,
+        "matches": 30
       },
       "floor": 4000
     },
