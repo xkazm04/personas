@@ -2251,6 +2251,13 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
             // live persona out of the cloud, and a delete without a tombstone
             // is the resurrection bug the table was created for.
             crate::repos::core::persona_tombstones::record_in(&tx, id)?;
+            // The p2p manifest lists every unexpired exposed_resources row;
+            // exposed_resources has no FK to personas, so without this the
+            // deleted persona stays advertised to peers (bundle fetch then 404s).
+            tx.execute(
+                "DELETE FROM exposed_resources WHERE resource_type = 'persona' AND resource_id = ?1",
+                params![id],
+            )?;
         }
         tx.commit()?;
         if rows > 0 {
@@ -4254,6 +4261,39 @@ mod tests {
             |r| r.get("n"),
         )?;
         assert_eq!(retired, 0, "an advanced cursor retires the tombstone");
+        Ok(())
+    }
+
+    /// exposed_resources has no FK, so deleting a persona must drop its p2p
+    /// exposure row itself or the manifest keeps advertising a ghost.
+    #[test]
+    fn deleting_a_persona_withdraws_its_exposure() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO personas (id, name, system_prompt, enabled, created_at, updated_at)
+             VALUES ('exp1', 'E1', 'sp', 1, datetime('now'), datetime('now'))",
+            [],
+        )?;
+        for (ty, rid) in [
+            ("persona", "exp1"),
+            ("persona", "other"),
+            ("template", "exp1"),
+        ] {
+            conn.execute(
+                "INSERT INTO exposed_resources (id, resource_type, resource_id, display_name, requires_auth)
+                 VALUES (?1, ?2, ?3, 'n', 0)",
+                params![format!("{ty}-{rid}"), ty, rid],
+            )?;
+        }
+        drop(conn);
+        assert!(delete(&pool, "exp1")?);
+        let conn = pool.get()?;
+        let left: Vec<String> = conn
+            .prepare("SELECT id FROM exposed_resources ORDER BY id")?
+            .query_map([], |r| r.get(0))?
+            .collect::<Result<_, _>>()?;
+        assert_eq!(left, vec!["persona-other", "template-exp1"]);
         Ok(())
     }
 

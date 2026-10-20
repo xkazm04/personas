@@ -348,6 +348,14 @@ pub fn delete_review(pool: &DbPool, id: &str) -> Result<bool, AppError> {
             "DELETE FROM persona_design_reviews WHERE id = ?1",
             params![id],
         )?;
+        if rows > 0 {
+            // exposed_resources has no FK: withdraw the template's p2p exposure
+            // so the manifest does not keep advertising a deleted template.
+            conn.execute(
+                "DELETE FROM exposed_resources WHERE resource_type = 'template' AND resource_id = ?1",
+                params![id],
+            )?;
+        }
         Ok(rows > 0)
     })
 }
