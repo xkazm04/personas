@@ -105,6 +105,17 @@ fn is_blocked_hostname(host: &str) -> bool {
     false
 }
 
+/// Async door for [`validate_url_safety`]: it can do a blocking DNS lookup, so
+/// it runs on the blocking pool. Call this before the first request to any
+/// caller-influenced URL - the SSRF-safe client's resolver guards hostnames
+/// only, an IP literal (127.0.0.1, 169.254.169.254) skips it entirely.
+pub async fn validate_url_safety_async(url: &str) -> Result<(), String> {
+    let url = url.to_owned();
+    tokio::task::spawn_blocking(move || validate_url_safety(&url))
+        .await
+        .map_err(|e| format!("URL safety check failed: {e}"))?
+}
+
 /// Validate that a URL is safe for outbound HTTP requests.
 ///
 /// Returns `Ok(())` if the URL targets an external host, or `Err(reason)` if

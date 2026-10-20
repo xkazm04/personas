@@ -301,6 +301,12 @@ pub async fn execute_procedure(
     let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
 
     let url = render_template(&procedure.http.url, &fields);
+    // Pre-flight: the SSRF-safe client's resolver guards hostnames only, so an
+    // LLM-composed IP-literal URL (169.254.169.254, 127.0.0.1) must be refused
+    // before any socket is opened.
+    crate::engine::url_safety::validate_url_safety_async(&url)
+        .await
+        .map_err(|reason| AppError::Validation(format!("Procedure URL blocked: {reason}")))?;
     let method = reqwest::Method::from_bytes(procedure.http.method.to_uppercase().as_bytes())
         .map_err(|_| {
             AppError::Validation(format!("Bad HTTP method '{}'", procedure.http.method))
