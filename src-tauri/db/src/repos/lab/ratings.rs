@@ -136,6 +136,10 @@ fn composite_and_coverage(
 /// matches zero result rows and silently empties this whole table — that was a
 /// real shipped bug (UAT 2026-07-20: 13 real results rendered as "Not measured").
 ///
+/// The averaged sub-scores (ta/oq/pc) EXCLUDE degraded rows (`heuristic_fallback`
+/// / `timeout`): those carry sentinel scores, and an eval outage must not move a
+/// version rating. They stay in `sample_count`, `degraded_count` and cost.
+///
 /// A row counts as measured when it produced at least one sub-score. That keeps
 /// `failed` scenarios (a low score is still a measurement) and `inconclusive`
 /// ones (surfaced separately via `degraded_count`), while dropping rows that
@@ -185,9 +189,12 @@ pub fn get_version_ratings(
                    MAX(version_number) AS version_number,
                    model_id,
                    MAX(provider) AS provider,
-                   AVG(CAST(ta AS REAL)) AS ta_avg,
-                   AVG(CAST(oq AS REAL)) AS oq_avg,
-                   AVG(CAST(pc AS REAL)) AS pc_avg,
+                   AVG(CASE WHEN COALESCE(eval_method, '') NOT IN ('heuristic_fallback', 'timeout')
+                            THEN CAST(ta AS REAL) END) AS ta_avg,
+                   AVG(CASE WHEN COALESCE(eval_method, '') NOT IN ('heuristic_fallback', 'timeout')
+                            THEN CAST(oq AS REAL) END) AS oq_avg,
+                   AVG(CASE WHEN COALESCE(eval_method, '') NOT IN ('heuristic_fallback', 'timeout')
+                            THEN CAST(pc AS REAL) END) AS pc_avg,
                    AVG(cost) AS cost_avg,
                    AVG(CAST(dur AS REAL)) AS dur_avg,
                    AVG(CAST(in_tok AS REAL)) AS in_tok_avg,
@@ -414,6 +421,40 @@ mod status_vocabulary_tests {
             ratings.is_empty(),
             "a row with no sub-scores at all carries no measurement"
         );
+    }
+
+    /// An inconclusive row (heuristic fallback / timeout) carries sentinel
+    /// scores ("nothing expected = 100", confusion-veto zeros). It stays in the
+    /// sample and degraded counts but must not move the averaged sub-scores,
+    /// or an eval outage rewrites a version's rating.
+    #[test]
+    fn heuristic_fallback_rows_do_not_move_version_ratings() {
+        let pool = crate::init_test_db().expect("test db");
+        seed_arena_result(&pool, "passed", Some(80), Some(90));
+        let conn = pool.get().unwrap();
+        conn.execute(
+            "INSERT INTO lab_arena_results
+                (id, run_id, scenario_name, model_id, provider, status,
+                 tool_accuracy_score, output_quality_score, protocol_compliance,
+                 cost_usd, duration_ms, eval_method, version_id, version_number, created_at)
+             VALUES ('res-fallback', 'r1', 'sc2', 'haiku', 'anthropic', 'inconclusive',
+                     100, 40, 100, 0.01, 1000, 'heuristic_fallback', 'v1', 1, '2026-01-01')",
+            [],
+        )
+        .unwrap();
+        drop(conn);
+
+        let ratings = get_version_ratings(&pool, "p1").expect("query ok");
+        assert_eq!(ratings.len(), 1);
+        let r = &ratings[0];
+        assert_eq!(
+            r.sample_count, 2,
+            "the degraded row stays in the sample count"
+        );
+        assert_eq!(r.degraded_count, 1);
+        assert_eq!(r.tool_accuracy, Some(80.0));
+        assert_eq!(r.output_quality, Some(90.0));
+        assert_eq!(r.protocol_compliance, Some(70.0));
     }
 
     /// Economics must see Arena attempts — it was scoped to `lab_eval_results`
