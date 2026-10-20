@@ -2480,33 +2480,30 @@ fn the_decisions_table_is_moved_after_the_runs_table_when_it_is_not() {
 fn team_assignment_status_admits_paused_after_the_rebuild() {
     let pool = crate::init_test_db().unwrap();
     let conn = crate::PoolExt::conn(&pool, "test:e70_paused").unwrap();
-    conn.execute_batch("PRAGMA foreign_keys = OFF;").unwrap();
 
-    conn.execute_batch(
-        "DROP TABLE team_assignments;
-         CREATE TABLE team_assignments (
-            id                  TEXT PRIMARY KEY,
-            team_id             TEXT NOT NULL REFERENCES persona_teams(id) ON DELETE CASCADE,
-            title               TEXT NOT NULL,
-            goal                TEXT NOT NULL,
-            status              TEXT NOT NULL DEFAULT 'queued'
-                                CHECK(status IN ('queued','running','awaiting_review','done','failed','aborted')),
-            match_strategy      TEXT NOT NULL DEFAULT 'manual'
-                                CHECK(match_strategy IN ('manual','embedding','llm_eval')),
-            max_parallel_steps  INTEGER NOT NULL DEFAULT 3,
-            source              TEXT NOT NULL DEFAULT 'team_ui'
-                                CHECK(source IN ('team_ui','athena','api')),
-            companion_op_id     TEXT,
-            created_at          TEXT NOT NULL DEFAULT (datetime('now')),
-            started_at          TEXT,
-            completed_at        TEXT,
-            error_message       TEXT,
-            goal_id             TEXT
-         );
-         CREATE INDEX idx_team_assignments_status
-            ON team_assignments(status) WHERE status IN ('queued','running','awaiting_review');
-         INSERT INTO team_assignments (id, team_id, title, goal, status)
-            VALUES ('a1', 't-gone', 'kept', 'g', 'running');",
+    // Put the table back into its pre-e70 shape by running e70's rebuild in
+    // reverse over the production DDL, so the fixture is the real schema minus
+    // `paused` rather than a hand-copied CREATE that drifts from it.
+    rebuild_table_from_live_ddl(
+        &conn,
+        "team_assignments",
+        &|sql| {
+            assert_eq!(
+                sql.matches("'aborted','paused'").count(),
+                1,
+                "e70 ran on the fresh db"
+            );
+            Ok(sql.replacen("'aborted','paused'", "'aborted'", 1))
+        },
+        "",
+    )
+    .unwrap();
+    // The rebuild's guard restores enforcement; the row's team is deliberately gone.
+    conn.execute_batch("PRAGMA foreign_keys = OFF;").unwrap();
+    conn.execute(
+        "INSERT INTO team_assignments (id, team_id, title, goal, status)
+            VALUES ('a1', 't-gone', 'kept', 'g', 'running')",
+        [],
     )
     .unwrap();
     assert!(

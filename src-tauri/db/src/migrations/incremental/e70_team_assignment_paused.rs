@@ -30,7 +30,7 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
                 let ddl: String = conn.query_row(
                     "SELECT sql FROM sqlite_master WHERE type='table' AND name='team_assignments'",
                     [],
-                    |r| r.get(0),
+                    |r| r.get("sql"),
                 )?;
                 Ok(ddl.contains("'paused'"))
             },

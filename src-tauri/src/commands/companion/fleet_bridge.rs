@@ -2533,20 +2533,19 @@ mod approval_write_tests {
 
     #[test]
     fn failing_update_reports_false_and_ok_update_true() -> Result<(), Box<dyn std::error::Error>> {
-        let pool = r2d2::Pool::builder()
-            .max_size(1)
-            .build(r2d2_sqlite::SqliteConnectionManager::memory())?;
-        // No companion_approval table: the UPDATE must fail loudly (false).
+        let pool = crate::db::init_test_user_db()?;
+        // A write the database refuses (no such table) must report false.
         assert!(!update_approval_logged(
             &pool,
             "t",
             "a1",
-            "UPDATE companion_approval SET status = 'rejected' WHERE id = ?1",
+            "UPDATE companion_approval_missing SET status = 'rejected' WHERE id = ?1",
             rusqlite::params!["a1"],
         ));
-        pool.get()?.execute_batch(
-            "CREATE TABLE companion_approval (id TEXT PRIMARY KEY, status TEXT);
-             INSERT INTO companion_approval VALUES ('a1','pending');",
+        pool.get()?.execute(
+            "INSERT INTO companion_approval (id, session_id, kind, payload, status)
+             VALUES ('a1', 's1', 'k', '{}', 'pending')",
+            [],
         )?;
         assert!(update_approval_logged(
             &pool,
