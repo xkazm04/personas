@@ -25,6 +25,8 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 
 import { AthenaVerdictCard } from './AthenaVerdictCard';
 import { BacklogDetailModal } from './BacklogDetailModal';
@@ -403,6 +405,12 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
       >
         {queue.loading && queue.rows.length === 0 ? (
           <BacklogGhostRows />
+        ) : queue.error && queue.rows.length === 0 ? (
+          // A failed read leaves the PREVIOUS status's rows in the store, which
+          // the queue filters away: that is an unknown, not "no ideas".
+          <div className="px-4 py-6">
+            <InlineErrorBanner message={resolveErrorTranslated(t, queue.error).message} onRetry={queue.reload} />
+          </div>
         ) : view === 'focus' ? (
           <div className="h-full min-h-0 flex flex-col gap-2">
             <div className="flex justify-end">{sortControls}</div>

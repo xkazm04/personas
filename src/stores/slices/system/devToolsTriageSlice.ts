@@ -62,6 +62,12 @@ export interface DevToolsTriageSlice {
   triageLoading: boolean;
   /** True while a keyset continuation is in flight. */
   triageLoadingMore: boolean;
+  /**
+   * The newest first-page read's failure, or null. The rows on screen are
+   * then the PREVIOUS answer (another status), so a consumer that filters them
+   * by the new status paints "no ideas" over an unknown; it must check this.
+   */
+  triageReadError: string | null;
   triageFilterCategory: string | null;
   triageFilterScanType: string | null;
   /**
@@ -155,13 +161,14 @@ export const createDevToolsTriageSlice: StateCreator<SystemStore, [], [], DevToo
   triageCounts: null,
   triageLoading: false,
   triageLoadingMore: false,
+  triageReadError: null,
   triageFilterCategory: null,
   triageFilterScanType: null,
   lastTriageQuery: null,
 
   fetchTriageIdeas: async (projectId, query) => {
     const token = triageReadLatestWins.next();
-    set({ triageLoading: true, lastTriageQuery: { projectId, query } });
+    set({ triageLoading: true, triageReadError: null, lastTriageQuery: { projectId, query } });
     try {
       const result = await devApi.triageIdeas(projectId, query?.limit, undefined, {
         status: query?.status,
@@ -178,7 +185,7 @@ export const createDevToolsTriageSlice: StateCreator<SystemStore, [], [], DevToo
       });
     } catch (err) {
       if (!triageReadLatestWins.isCurrent(token)) return;
-      reportError(err, "Failed to fetch triage ideas", set);
+      set({ triageReadError: reportError(err, "Failed to fetch triage ideas", set) });
     } finally {
       // Only the newest read owns the flag: a superseded one ending would
       // clear "loading" while the list on screen is still the old answer.
