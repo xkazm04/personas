@@ -182,8 +182,19 @@ export async function listPersonaExecutions(personaId: string, limit = 5): Promi
   return ((payload as { executions?: ExecutionRow[] })?.executions) ?? [];
 }
 
-/** Wait for a new completed (or failed) execution row for `personaId`,
- *  scanning rows with `created_at > sinceIso`. */
+/** Every terminal execution status: ExecutionState::TERMINAL in
+ *  src-tauri/core/src/types.rs (pinned by __tests__/template-marathon-bridge.test.ts).
+ *  Waiting only for completed|failed turned an `incomplete` (process died) or
+ *  `cancelled` run into a 10-minute wait reported as "execution-timeout". */
+export const TERMINAL_EXECUTION_STATUSES: readonly string[] = ['completed', 'failed', 'incomplete', 'cancelled'];
+
+/** Whether `row` is a finished execution created after `sinceIso`. */
+export function isSettledExecutionSince(row: ExecutionRow, sinceIso: string): boolean {
+  return row.created_at > sinceIso && TERMINAL_EXECUTION_STATUSES.includes(row.status);
+}
+
+/** Wait for a new finished execution row (any terminal status) for
+ *  `personaId`, scanning rows with `created_at > sinceIso`. */
 export async function waitForExecution(
   personaId: string,
   sinceIso: string,
@@ -192,7 +203,7 @@ export async function waitForExecution(
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     const rows = await listPersonaExecutions(personaId, 10);
-    const matched = rows.find((r) => r.created_at > sinceIso && (r.status === 'completed' || r.status === 'failed'));
+    const matched = rows.find((r) => isSettledExecutionSince(r, sinceIso));
     if (matched) return matched;
     await sleep(3_000);
   }

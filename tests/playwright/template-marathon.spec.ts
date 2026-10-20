@@ -396,8 +396,10 @@ test('marathon-template', async () => {
         result.capability_results.push({ cap_id: capId, outcome: 'hard-fail', detail: `execution-timeout (${mode})` });
         continue;
       }
-      if (row.status === 'failed') {
-        result.capability_results.push({ cap_id: capId, outcome: 'hard-fail', execution_id: row.id, detail: `execution-failed (${mode})` });
+      // Any terminal status but completed is a failed capability: failed,
+      // incomplete (the process died) and cancelled all ran nothing to verify.
+      if (row.status !== 'completed') {
+        result.capability_results.push({ cap_id: capId, outcome: 'hard-fail', execution_id: row.id, detail: `execution-${row.status} (${mode})` });
         continue;
       }
       // Phase 7: metadata check. Real executions should produce at
