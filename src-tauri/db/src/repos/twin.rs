@@ -687,6 +687,24 @@ pub fn list_communications_by_contact(
     }
 }
 
+/// Byte cap on `key_facts_json`. Mirrors `TWIN_KEY_FACTS_JSON_MAX_BYTES` in
+/// `src/api/twin/twin.ts`; enforced here too because the TS wrapper is not the
+/// only door (test-automation bridge, MCP tools, direct invoke).
+pub const KEY_FACTS_JSON_MAX_BYTES: usize = 64 * 1024;
+
+/// Reject an oversized or unparseable `key_facts_json` (shape is not checked).
+pub fn validate_key_facts_json(value: &str) -> Result<(), AppError> {
+    if value.len() > KEY_FACTS_JSON_MAX_BYTES {
+        return Err(AppError::Validation(format!(
+            "key_facts_json exceeds {KEY_FACTS_JSON_MAX_BYTES} bytes (got {})",
+            value.len()
+        )));
+    }
+    serde_json::from_str::<serde_json::Value>(value)
+        .map_err(|e| AppError::Validation(format!("key_facts_json is not valid JSON ({e})")))?;
+    Ok(())
+}
+
 /// Record an interaction and optionally create a pending memory for it.
 pub fn record_interaction(
     pool: &DbPool,
@@ -728,6 +746,9 @@ pub fn record_interaction_on(
     key_facts_json: Option<&str>,
     create_memory: bool,
 ) -> Result<TwinCommunication, AppError> {
+    if let Some(kf) = key_facts_json {
+        validate_key_facts_json(kf)?;
+    }
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
     conn.execute(
@@ -1729,6 +1750,39 @@ pub fn third_party_memory_ids(pool: &DbPool, twin_id: &str) -> Result<Vec<String
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn record_interaction_rejects_oversized_or_invalid_key_facts() {
+        let pool = crate::init_test_db().expect("init test db");
+        let twin = create_profile(&pool, "Cap Twin", None, None, None, None).expect("profile");
+        let big = format!("\"{}\"", "x".repeat(KEY_FACTS_JSON_MAX_BYTES));
+        for bad in [big.as_str(), "{not json"] {
+            let r = record_interaction(
+                &pool,
+                &twin.id,
+                "email",
+                "in",
+                None,
+                "hi",
+                None,
+                Some(bad),
+                false,
+            );
+            assert!(matches!(r, Err(AppError::Validation(_))), "{r:?}");
+        }
+        record_interaction(
+            &pool,
+            &twin.id,
+            "email",
+            "in",
+            None,
+            "hi",
+            None,
+            Some("{\"a\":1}"),
+            false,
+        )
+        .expect("small valid payload stores");
+    }
+
     use super::*;
 
     /// Every projection const must name columns that actually exist on a
