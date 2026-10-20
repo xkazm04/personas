@@ -9,7 +9,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {
   SKILL_DIR, runDir, shortId, nowIso, mintId, resolveClaudeBin, isFleetShim, Refusal,
-  ENV_STRIP, ENV_SET, RUN_LABEL_PREFIX, GLOBAL_CAP, PER_PROJECT_CAP,
+  ENV_STRIP, ENV_SET, RUN_LABEL_PREFIX, GLOBAL_CAP, PER_PROJECT_CAP, projectCap,
   QUIET_MIN, TIMEOUT_MIN, LIVE_RUN_STATES, QUEUE_REASONS, SELF_REPO, COUNCIL, normRoot, repoOf, repoEnv, isReviewRun,
 } from './contract.mjs';
 import { seedCouncil } from './council.mjs';
@@ -371,7 +371,8 @@ export function dispatchCore({ flags = {} } = {}) {
   if (run.state === 'running') return run;
   if (run.state !== 'planned') throw new Refusal('run not planned', { runId: run.runId, state: run.state });
   const mine = listRuns(run.slug, { states: ['running'] }).filter((r) => r.runId !== run.runId);
-  if (mine.length >= PER_PROJECT_CAP) throw new Refusal('project cap', { cap: PER_PROJECT_CAP, running: mine.map((r) => shortId(r.runId)) });
+  const cap = projectCap(loadBrief(run.slug));
+  if (mine.length >= cap) throw new Refusal('project cap', { cap, running: mine.map((r) => shortId(r.runId)) });
   // Everything that holds the run's TARGET repo, in EVERY project (two projects writing one repo must
   // not collide): running, exited, verifying (they still own their files until they merge), and a
   // planned run once it has a worktree (a dispatch that crashed after the spawn may have a live

@@ -7,7 +7,7 @@
 
 import fs from 'node:fs';
 import {
-  ASK_KINDS, BUILDER_MODEL_CHOICES, COUNCIL, FEATURE_SLUG_RE, LIVE_RUN_STATES, MAX_ASKS, MAX_DISPATCH, MODELS, PARALLEL_CHARTERS, PLAN, REVIEW_CHARTERS,
+  ASK_KINDS, BUILDER_MODEL_CHOICES, COUNCIL, FEATURE_SLUG_RE, LIVE_RUN_STATES, MAX_ASKS, MAX_DISPATCH, MODELS, projectCap, PARALLEL_CHARTERS, PLAN, REVIEW_CHARTERS,
   SELF_REPO, UX, VERDICT_STATUSES, WAKE_MAX, WAKE_MIN, Refusal, canonical, isReviewRun, nowIso, resolveModel, shortId,
 } from './contract.mjs';
 import { charactersOf, councilEvents, councilJournal, roundsUsed } from './council.mjs';
@@ -135,7 +135,8 @@ export function validateDecision(decision, { slug, wakeId, brief, planWake = fal
   else if (wakeId && d.wakeId !== wakeId) errors.push(`wakeId "${d.wakeId}" does not match the wake "${wakeId}"${slug ? ` of ${slug}` : ''}`);
 
   const dispatch = checkArray(d, 'dispatch', errors);
-  if (dispatch.length > MAX_DISPATCH) errors.push(`dispatch has ${dispatch.length} entries; at most ${MAX_DISPATCH} per wake`);
+  const maxDispatch = brief ? projectCap(brief) : MAX_DISPATCH;
+  if (dispatch.length > maxDispatch) errors.push(`dispatch has ${dispatch.length} entries; at most ${maxDispatch} per wake`);
   const several = dispatch.length > 1;
   const seenDispatchIdeas = new Map();
   dispatch.forEach((x, i) => {
@@ -254,7 +255,7 @@ export function validateDecision(decision, { slug, wakeId, brief, planWake = fal
     // a parallel charter may be dispatched twice in one wake (disjoint paths are checked above)
     const dispatched = dispatch.filter((x) => isObj(x) && x.charterSlug === s).length;
     if (PARALLEL_CHARTERS.includes(s) && dispatched === n) continue;
-    errors.push(`charter "${s}" appears ${n} times across dispatch and defer; exactly once${PARALLEL_CHARTERS.includes(s) ? ' (or dispatched up to twice, never also deferred)' : ''}`);
+    errors.push(`charter "${s}" appears ${n} times across dispatch and defer; exactly once${PARALLEL_CHARTERS.includes(s) ? ' (or dispatched several times on disjoint paths, never also deferred)' : ''}`);
   }
   return { ok: errors.length === 0, errors };
 }

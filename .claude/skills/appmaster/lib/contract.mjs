@@ -120,6 +120,16 @@ export const GLOBAL_CAP = 16;
  */
 export const PER_PROJECT_CAP = 2;
 /**
+ * A brief may raise its own project's cap with `maxConcurrent` (operator 2026-10-20: firetv runs
+ * alone before its deadline, "up to 4 subagents in parallel"), never above PROJECT_CAP_MAX. The
+ * same number bounds the dispatches one decision may make; disjoint paths stay pairwise required.
+ */
+export const PROJECT_CAP_MAX = 4;
+export const projectCap = (brief) => {
+  const n = brief?.maxConcurrent;
+  return Number.isInteger(n) && n >= 1 ? Math.min(n, PROJECT_CAP_MAX) : PER_PROJECT_CAP;
+};
+/**
  * Memory admission, in GB of FREE memory (lib/memory.mjs). Replaces the old machine-wide used-% brake,
  * which a sibling process could pin high without this loop being the cause.
  */

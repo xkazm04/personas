@@ -3,9 +3,9 @@
 // Read-only: this file never writes the limit mark (WP2's limits.mjs owns it) and never imports
 // worker/limits or the DB, so status and context work while those change.
 
-import { GLOBAL_CAP, PER_PROJECT_CAP, limitPath, readJson } from './contract.mjs';
+import { GLOBAL_CAP, PER_PROJECT_CAP, limitPath, projectCap, readJson } from './contract.mjs';
 import { memoryState } from './memory.mjs';
-import { listRuns, listSlugs } from './store.mjs';
+import { listRuns, listSlugs, loadBrief } from './store.mjs';
 
 /** The global usage-limit mark; a mark whose resetsAt has passed reads as cleared. */
 export function readLimitMark(now = Date.now()) {
@@ -23,7 +23,7 @@ export function runningCounts(slug) {
     const n = listRuns(s, { states: ['running'] }).length;
     global += n; if (s === slug) project = n;
   }
-  return { project, global, perProjectCap: PER_PROJECT_CAP, globalCap: GLOBAL_CAP };
+  return { project, global, perProjectCap: slug ? projectCap(loadBrief(slug)) : PER_PROJECT_CAP, globalCap: GLOBAL_CAP };
 }
 
 /** {memory:{usedPct,freeGb,stop}, limit:{limited,resetsAt,...}, running:{project,global}} */
