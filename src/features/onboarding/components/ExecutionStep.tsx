@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import {
   Play,
   Terminal,
@@ -24,7 +25,7 @@ export function ExecutionStep({
   personaName: string;
   onComplete: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const executePersona = useAgentStore((s) => s.executePersona);
   const executionOutput = useAgentStore((s) => s.executionOutput);
   // The execution THIS step started. We must NOT key completion off the global
@@ -34,6 +35,9 @@ export function ExecutionStep({
   const [started, setStarted] = useState(false);
   const [finished, setFinished] = useState(false);
   const [executionError, setExecutionError] = useState<string | null>(null);
+  // Terminal status of a run that ended without completing. Held as the raw
+  // token and worded at render, so a language switch re-words it.
+  const [endedStatus, setEndedStatus] = useState<string | null>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
   const unlistenRef = useRef<UnlistenFn | null>(null);
 
@@ -66,7 +70,7 @@ export function ExecutionStep({
       if (status === 'completed') {
         onComplete();
       } else {
-        setExecutionError(`Execution ${status}`);
+        setEndedStatus(status);
       }
     };
 
@@ -111,6 +115,7 @@ export function ExecutionStep({
     setFinished(false);
     setStartedExecId(null);
     setExecutionError(null);
+    setEndedStatus(null);
     const execId = await executePersona(personaId);
     if (!execId) {
       setExecutionError(t.onboarding.execution_failed);
@@ -154,10 +159,10 @@ export function ExecutionStep({
               transition is announced to screen readers (UAT P6 F-A11Y-BUILD-PETALS). */}
           <div className="flex items-center gap-2" role="status" aria-live="polite">
             {finished ? (
-              executionError ? (
+              executionError || endedStatus ? (
                 <>
                   <XCircle className="w-4 h-4 text-red-400" />
-                  <span className="typo-body text-red-400">{executionError}</span>
+                  <span className="typo-body text-red-400">{executionError ?? tx(t.onboarding.execution_ended, { status: tokenLabel(t, 'execution', endedStatus ?? 'unknown') })}</span>
                   {/* A failed first run used to leave no control at all: Run was
                       gone and Finish only appears on success, so the only way
                       out was closing onboarding. */}

@@ -745,7 +745,8 @@
     "hint_cost": "Lower cost per run with a cheaper model or shorter context.",
     "hint_activity": "Trigger or schedule this agent more often to raise activity.",
     "improve_agent": "Improve this agent",
-    "section_subtitle": "{count} agents · fleet avg {avg}"
+    "section_subtitle": "{count} agents · fleet avg {avg}",
+    "sort_hint": "Click a metric to sort"
   },
   "observability_extra": {
     "auto_refresh_on": "Auto-refresh on",
@@ -1599,7 +1600,13 @@
     "ask_athena_hint": "Forward this suggestion to Athena to investigate",
     "ask_athena_prompt": "I'm reviewing a fleet optimization suggestion for my agents: \"{title}\". {description} Suggested action: {action}. {focus}",
     "ask_athena_focus_persona": "Please look into the agent \"{persona}\" and, if it would help, open its Lab to test alternative models, then report back what you find.",
-    "ask_athena_focus_general": "Please look into this and recommend what to change."
+    "ask_athena_focus_general": "Please look into this and recommend what to change.",
+    "severity_critical": "Urgent",
+    "severity_warning": "Suggested",
+    "severity_info": "Insight",
+    "label_impact": "Impact",
+    "label_action": "Action",
+    "label_agent": "Agent"
   },
   "attention_loop": {
     "title": "Attention Loop",

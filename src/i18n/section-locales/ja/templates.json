@@ -214,7 +214,11 @@
       "thu": "Thu",
       "tue": "Tue",
       "wed": "Wed"
-    }
+    },
+    "channel_email": "メール",
+    "channel_inbox": "受信トレイ",
+    "channel_title_bar": "タイトルバー",
+    "petals_header": "花びら"
   },
   "banners": {
     "adoption_in_progress": "テンプレート採用中",
@@ -613,7 +617,10 @@
     "ready_to_deploy_hint": "全コネクタ設定済のテンプレート",
     "template_details_tabs_aria": "テンプレートの詳細",
     "triggers": "トリガー",
-    "use_cases": "ユースケース"
+    "use_cases": "ユースケース",
+    "cred_default_name": "{name} の認証情報",
+    "cred_healthcheck_failed": "ヘルスチェックに失敗しました",
+    "cred_test_failed": "接続テストに失敗しました"
   },
   "generation": {
     "batch_all": "すべて ({count})",

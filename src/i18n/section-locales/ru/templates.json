@@ -214,7 +214,11 @@
       "thu": "Thu",
       "tue": "Tue",
       "wed": "Wed"
-    }
+    },
+    "channel_email": "Эл. почта",
+    "channel_inbox": "Входящие",
+    "channel_title_bar": "Заголовок окна",
+    "petals_header": "Лепестки"
   },
   "banners": {
     "adoption_in_progress": "Применение шаблона выполняется",
@@ -613,7 +617,10 @@
     "ready_to_deploy_hint": "Шаблоны со всеми настроенными коннекторами",
     "template_details_tabs_aria": "Детали шаблона",
     "triggers": "Триггеры",
-    "use_cases": "Сценарии использования"
+    "use_cases": "Сценарии использования",
+    "cred_default_name": "Учётные данные {name}",
+    "cred_healthcheck_failed": "Проверка состояния не удалась",
+    "cred_test_failed": "Проверка подключения не удалась"
   },
   "generation": {
     "batch_all": "Все ({count})",

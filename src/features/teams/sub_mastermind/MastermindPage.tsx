@@ -618,15 +618,15 @@ function MastermindInner() {
     if (!scanPopup || busySlugs.has(scanPopup.slug) || agentKeys.length === 0) return;
     const slug = scanPopup.slug;
     ideaScans.begin(slug);
-    const label = agentKeys.length === 1 ? agentKeys[0] : `${agentKeys.length} agents`;
+    const label = agentKeys.length === 1 ? agentKeys[0] : tx(t.common.agent_count_other, { count: agentKeys.length });
     try {
       const { scan_id } = await runScan(slug, agentKeys, {
         // Empty scope = whole project, which is exactly what run_scan expects.
         contextIds: contextIds.length > 0 ? contextIds : undefined,
         targetCount: targetCount ?? undefined,
       });
-      ideaScans.attach(slug, scan_id, `Idea Scan (${label})`);
-      addToast(`Idea scan dispatched (${label})`, 'success');
+      ideaScans.attach(slug, scan_id, tx(t.mastermind.scan_drawer_label, { label }));
+      addToast(tx(t.mastermind.scan_dispatched_toast, { label }), 'success');
       void invalidateScans(slug);
       setScanPopup(null);
     } catch (err) {

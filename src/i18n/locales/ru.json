@@ -5398,7 +5398,22 @@
     "domain_revenue": "Продажи и маркетинг",
     "adopt_failed": "Не удалось открыть {name}.",
     "adopt_no_template": "У {name} нет исходного шаблона для внедрения.",
-    "adopt_not_found": "{name} пока нет в галерее шаблонов."
+    "adopt_not_found": "{name} пока нет в галерее шаблонов.",
+    "l2_all_domains": "Все домены",
+    "l2_col_capabilities": "Возможности",
+    "l2_col_focus": "Направление",
+    "l2_col_name": "Название",
+    "l2_col_tools": "Инструменты",
+    "l2_col_type": "Тип",
+    "l2_counts": "{templates} шаблонов · {recipes} рецептов",
+    "l2_filter_all": "Все",
+    "l2_filter_placeholder": "Фильтр по названию…",
+    "l2_filter_recipes": "Рецепты",
+    "l2_filter_templates": "Шаблоны",
+    "l2_kind_recipe": "Рецепт",
+    "l2_kind_template": "Шаблон",
+    "l2_no_matches": "Нет совпадений.",
+    "l2_shown": "Показано {shown} из {total}"
   },
   "feedback_labels": {
     "accurate_prompt": "Точный промпт",
@@ -6397,7 +6412,9 @@
     "dim_label_security": "Безопасность",
     "dim_label_skills": "Навыки",
     "dim_label_support": "Поддержка",
-    "dim_label_tests": "Тесты"
+    "dim_label_tests": "Тесты",
+    "scan_dispatched_toast": "Сканирование идей запущено ({label})",
+    "scan_drawer_label": "Сканирование идей ({label})"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "Добавить возможность",
@@ -8872,7 +8889,9 @@
     "waiting_for_output": "Ожидание вывода…",
     "what_testing_checks": "Что проверяет тестирование:",
     "what_to_explore": "Что исследовать",
-    "your_agent_fallback": "Ваш агент"
+    "your_agent_fallback": "Ваш агент",
+    "approve_failed": "Не удалось одобрить {name}. Вы можете одобрить его позже в разделе «Коннекторы».",
+    "execution_ended": "Выполнение: {status}"
   },
   "overview": {
     "activity_timeline": {
@@ -9518,7 +9537,13 @@
       "ask_athena_prompt": "Я рассматриваю предложение по оптимизации флота для своих агентов: «{title}». {description} Рекомендуемое действие: {action}. {focus}",
       "open_lab": "Открыть Lab",
       "open_lab_hint": "Протестировать альтернативные модели для «{persona}» в Lab",
-      "title": "Оптимизация флота"
+      "title": "Оптимизация флота",
+      "label_action": "Действие",
+      "label_agent": "Агент",
+      "label_impact": "Влияние",
+      "severity_critical": "Срочно",
+      "severity_info": "Наблюдение",
+      "severity_warning": "Рекомендуется"
     },
     "focused_decision": {
       "accept": "Принять",
@@ -9975,7 +10000,8 @@
       "stat_total_runs": "Всего запусков",
       "subtitle": "Рейтинг производительности всех агентов",
       "this_agent": "Этот агент",
-      "title": "Рейтинг агентов"
+      "title": "Рейтинг агентов",
+      "sort_hint": "Нажмите на метрику для сортировки"
     },
     "llm_spend": {
       "by_source": "Расходы по уровню",
@@ -20351,7 +20377,11 @@
         "thu": "Thu",
         "tue": "Tue",
         "wed": "Wed"
-      }
+      },
+      "channel_email": "Эл. почта",
+      "channel_inbox": "Входящие",
+      "channel_title_bar": "Заголовок окна",
+      "petals_header": "Лепестки"
     },
     "banners": {
       "adoption_in_progress": "Применение шаблона выполняется",
@@ -20750,7 +20780,10 @@
       "ready_to_deploy_hint": "Шаблоны со всеми настроенными коннекторами",
       "template_details_tabs_aria": "Детали шаблона",
       "triggers": "Триггеры",
-      "use_cases": "Сценарии использования"
+      "use_cases": "Сценарии использования",
+      "cred_default_name": "Учётные данные {name}",
+      "cred_healthcheck_failed": "Проверка состояния не удалась",
+      "cred_test_failed": "Проверка подключения не удалась"
     },
     "generation": {
       "batch_all": "Все ({count})",

@@ -2,7 +2,7 @@
  * Explore level 2 — a domain's templates + recipes as a sub-domain-filtered,
  * sortable table (the chosen direction for volume/orientation). Illustrated
  * header + DomainTable. Level-1 (Bento) is the locked, i18n'd surface; this
- * level's copy is still hardcoded until finalized.
+ * level's copy goes through `t.explore` (`l2_*`) like Level 1.
  */
 import { ChevronLeft } from 'lucide-react';
 import { domainById, domainArt, domainLabel } from '../exploreDomains';
@@ -21,7 +21,7 @@ interface Props {
 export function DomainLevel2({ domainId, onBack, onSelect, onSelectRecipe }: Props) {
   const { byDomain, loading } = useExploreCatalog();
   const isDark = useIsDarkTheme();
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
 
   const d = domainById(domainId)!;
   const templates = byDomain[domainId] ?? [];
@@ -38,7 +38,7 @@ export function DomainLevel2({ domainId, onBack, onSelect, onSelectRecipe }: Pro
           onClick={onBack}
           className="relative self-start inline-flex items-center gap-1 typo-caption text-foreground opacity-70 hover:opacity-100 -mt-1"
         >
-          <ChevronLeft className="w-3.5 h-3.5" /> All domains
+          <ChevronLeft className="w-3.5 h-3.5" /> {t.explore.l2_all_domains}
         </button>
         <div className="relative">
           <div className="typo-heading-lg text-foreground">{domainLabel(d, t.explore)}</div>
@@ -46,7 +46,7 @@ export function DomainLevel2({ domainId, onBack, onSelect, onSelectRecipe }: Pro
             {loading ? (
               <span className="inline-block h-2.5 w-32 rounded bg-primary/[0.08] animate-fade-in" style={{ animationDelay: '120ms' }} aria-hidden="true" />
             ) : (
-              `${templates.length} templates · ${recipes.length} recipes`
+              tx(t.explore.l2_counts, { templates: templates.length, recipes: recipes.length })
             )}
           </div>
         </div>

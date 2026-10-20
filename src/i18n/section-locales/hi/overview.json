@@ -642,7 +642,13 @@
     "ask_athena_prompt": "मैं अपने एजेंट्स के लिए एक फ्लीट अनुकूलन सुझाव की समीक्षा कर रहा हूँ: \"{title}\"। {description} सुझाया गया कार्य: {action}। {focus}",
     "open_lab": "लैब खोलें",
     "open_lab_hint": "लैब में {persona} के लिए वैकल्पिक मॉडल परखें",
-    "title": "फ्लीट अनुकूलन"
+    "title": "फ्लीट अनुकूलन",
+    "label_action": "कार्रवाई",
+    "label_agent": "एजेंट",
+    "label_impact": "प्रभाव",
+    "severity_critical": "अत्यावश्यक",
+    "severity_info": "अंतर्दृष्टि",
+    "severity_warning": "सुझाया गया"
   },
   "focused_decision": {
     "accept": "स्वीकार करें",
@@ -1099,7 +1105,8 @@
     "stat_total_runs": "कुल रन",
     "subtitle": "सभी एजेंटों में प्रदर्शन रैंकिंग",
     "this_agent": "यह एजेंट",
-    "title": "एजेंट लीडरबोर्ड"
+    "title": "एजेंट लीडरबोर्ड",
+    "sort_hint": "क्रमबद्ध करने के लिए किसी मीट्रिक पर क्लिक करें"
   },
   "llm_spend": {
     "by_source": "स्तर के अनुसार लागत",

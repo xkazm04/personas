@@ -9872,7 +9872,8 @@
       "hint_cost": "Lower cost per run with a cheaper model or shorter context.",
       "hint_activity": "Trigger or schedule this agent more often to raise activity.",
       "improve_agent": "Improve this agent",
-      "section_subtitle": "{count} agents · fleet avg {avg}"
+      "section_subtitle": "{count} agents · fleet avg {avg}",
+      "sort_hint": "Click a metric to sort"
     },
     "observability_extra": {
       "auto_refresh_on": "Auto-refresh on",
@@ -10726,7 +10727,13 @@
       "ask_athena_hint": "Forward this suggestion to Athena to investigate",
       "ask_athena_prompt": "I'm reviewing a fleet optimization suggestion for my agents: \"{title}\". {description} Suggested action: {action}. {focus}",
       "ask_athena_focus_persona": "Please look into the agent \"{persona}\" and, if it would help, open its Lab to test alternative models, then report back what you find.",
-      "ask_athena_focus_general": "Please look into this and recommend what to change."
+      "ask_athena_focus_general": "Please look into this and recommend what to change.",
+      "severity_critical": "Urgent",
+      "severity_warning": "Suggested",
+      "severity_info": "Insight",
+      "label_impact": "Impact",
+      "label_action": "Action",
+      "label_agent": "Agent"
     },
     "attention_loop": {
       "title": "Attention Loop",
@@ -11399,7 +11406,10 @@
       "triggers": "Triggers",
       "no_flows": "No flows",
       "readiness_tooltip": "{percent}% of services connected",
-      "template_details_tabs_aria": "Template details"
+      "template_details_tabs_aria": "Template details",
+      "cred_default_name": "{name} Credential",
+      "cred_healthcheck_failed": "Healthcheck failed",
+      "cred_test_failed": "Connection test failed"
     },
     "actions": {
       "view_details": "View Details",
@@ -11470,7 +11480,11 @@
         "listens_for": "Listens for {event_type}.",
         "manual_on_demand": "Manual — user invokes on demand.",
         "custom_cron": "Custom cron: {cron}."
-      }
+      },
+      "petals_header": "Petals",
+      "channel_inbox": "Inbox",
+      "channel_title_bar": "Title bar",
+      "channel_email": "Email"
     },
     "choose": {
       "select_use_cases": "Select Use Cases",
@@ -15293,7 +15307,9 @@
     "agent_promoted_hint": "Your first agent is live. The tour is almost complete!",
     "skip_build": "Skip build for now",
     "dark_themes": "Dark Themes",
-    "light_themes": "Light Themes"
+    "light_themes": "Light Themes",
+    "approve_failed": "Could not approve {name}. You can approve it later from Connectors.",
+    "execution_ended": "Execution {status}"
   },
   "system_health": {
     "install_all": "Install All Dependencies",
@@ -16021,7 +16037,22 @@
     "domain_revenue": "Sales & Marketing",
     "domain_finance": "Finance",
     "domain_operations": "Operations",
-    "domain_people": "Customer & People"
+    "domain_people": "Customer & People",
+    "l2_all_domains": "All domains",
+    "l2_counts": "{templates} templates · {recipes} recipes",
+    "l2_filter_all": "All",
+    "l2_filter_templates": "Templates",
+    "l2_filter_recipes": "Recipes",
+    "l2_filter_placeholder": "Filter by name…",
+    "l2_col_name": "Name",
+    "l2_col_type": "Type",
+    "l2_col_focus": "Focus",
+    "l2_col_tools": "Tools",
+    "l2_col_capabilities": "Capabilities",
+    "l2_kind_template": "Template",
+    "l2_kind_recipe": "Recipe",
+    "l2_no_matches": "No matches.",
+    "l2_shown": "{shown} of {total} shown"
   },
   "foundry": {
     "_comment": "Composition x-ray badge on adopted templates (templates/sub_generated/adoption/CompositionXray.tsx). The three-step Compose (Foundry) wizard this section was written for was retired 2026-07-07; only the x-ray strings survive. \"Foundry\" is a product name — do not translate it.",
@@ -25673,7 +25704,9 @@
     "dim_label_ideas": "Ideas",
     "dim_label_goals": "Goals",
     "dim_label_datalinks": "Data analysis",
-    "dim_label_support": "Support"
+    "dim_label_support": "Support",
+    "scan_drawer_label": "Idea Scan ({label})",
+    "scan_dispatched_toast": "Idea scan dispatched ({label})"
   },
   "ship": {
     "cover_next": "Next",

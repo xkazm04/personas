@@ -243,5 +243,7 @@
   "dim_label_ideas": "Ideas",
   "dim_label_goals": "Goals",
   "dim_label_datalinks": "Data analysis",
-  "dim_label_support": "Support"
+  "dim_label_support": "Support",
+  "scan_drawer_label": "Idea Scan ({label})",
+  "scan_dispatched_toast": "Idea scan dispatched ({label})"
 }

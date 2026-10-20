@@ -214,7 +214,11 @@
       "thu": "Thu",
       "tue": "Tue",
       "wed": "Wed"
-    }
+    },
+    "channel_email": "E-Mail",
+    "channel_inbox": "Posteingang",
+    "channel_title_bar": "Titelleiste",
+    "petals_header": "Blütenblätter"
   },
   "banners": {
     "adoption_in_progress": "Vorlagenübernahme läuft",
@@ -613,7 +617,10 @@
     "ready_to_deploy_hint": "Vorlagen mit allen konfigurierten Konnektoren",
     "template_details_tabs_aria": "Template-Details",
     "triggers": "Auslöser",
-    "use_cases": "Anwendungsfälle"
+    "use_cases": "Anwendungsfälle",
+    "cred_default_name": "Zugangsdaten für {name}",
+    "cred_healthcheck_failed": "Statusprüfung fehlgeschlagen",
+    "cred_test_failed": "Verbindungstest fehlgeschlagen"
   },
   "generation": {
     "batch_all": "Alle ({count})",

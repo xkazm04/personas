@@ -642,7 +642,13 @@
     "ask_athena_prompt": "Tôi đang xem xét một đề xuất tối ưu hóa đội cho các tác nhân của mình: \"{title}\". {description} Hành động được đề xuất: {action}. {focus}",
     "open_lab": "Mở Lab",
     "open_lab_hint": "Kiểm tra các mô hình thay thế cho {persona} trong Lab",
-    "title": "Tối ưu hóa đội"
+    "title": "Tối ưu hóa đội",
+    "label_action": "Hành động",
+    "label_agent": "Tác nhân",
+    "label_impact": "Tác động",
+    "severity_critical": "Khẩn cấp",
+    "severity_info": "Nhận định",
+    "severity_warning": "Đề xuất"
   },
   "focused_decision": {
     "accept": "Chấp nhận",
@@ -1099,7 +1105,8 @@
     "stat_total_runs": "Tổng số lần chạy",
     "subtitle": "Xếp hạng hiệu suất trên tất cả tác nhân",
     "this_agent": "Tác nhân này",
-    "title": "Bảng xếp hạng tác nhân"
+    "title": "Bảng xếp hạng tác nhân",
+    "sort_hint": "Nhấp vào một chỉ số để sắp xếp"
   },
   "llm_spend": {
     "by_source": "Chi phí theo cấp độ",

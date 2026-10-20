@@ -214,7 +214,11 @@
       "thu": "Thu",
       "tue": "Tue",
       "wed": "Wed"
-    }
+    },
+    "channel_email": "이메일",
+    "channel_inbox": "받은편지함",
+    "channel_title_bar": "제목 표시줄",
+    "petals_header": "꽃잎"
   },
   "banners": {
     "adoption_in_progress": "템플릿 채택 진행 중",
@@ -613,7 +617,10 @@
     "ready_to_deploy_hint": "모든 커넥터가 설정된 템플릿",
     "template_details_tabs_aria": "템플릿 세부 정보",
     "triggers": "트리거",
-    "use_cases": "사용 사례"
+    "use_cases": "사용 사례",
+    "cred_default_name": "{name} 자격 증명",
+    "cred_healthcheck_failed": "상태 확인 실패",
+    "cred_test_failed": "연결 테스트 실패"
   },
   "generation": {
     "batch_all": "전체 ({count})",

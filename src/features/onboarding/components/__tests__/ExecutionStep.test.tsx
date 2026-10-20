@@ -25,7 +25,10 @@ vi.mock('@/stores/agentStore', () => ({
 
 import en from '@/i18n/locales/en.json';
 vi.mock('@/i18n/useTranslation', () => ({
-  useTranslation: () => ({ t: en, tx: (s: string) => s }),
+  useTranslation: () => ({
+    t: en,
+    tx: (s: string, v?: Record<string, string | number>) => s.replace(/\{(\w+)\}/g, (_, k: string) => String(v?.[k] ?? '')),
+  }),
 }));
 
 import { ExecutionStep } from '../ExecutionStep';
@@ -55,6 +58,8 @@ describe('ExecutionStep settles a run that ended before the listener attached', 
     const onComplete = mount();
     await waitFor(() => expect(screen.getByTestId('onboarding-execution-retry')).toBeTruthy());
     expect(onComplete).not.toHaveBeenCalled();
+    // The ended line is worded from the status token through the catalog.
+    expect(screen.getByRole('status').textContent).toContain(`Execution ${en.status_tokens.execution.failed}`);
 
     executePersona.mockResolvedValue('e2');
     getExecution.mockResolvedValue({ id: 'e2', status: 'running' });

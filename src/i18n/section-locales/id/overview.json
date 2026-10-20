@@ -642,7 +642,13 @@
     "ask_athena_prompt": "Saya sedang meninjau saran optimasi armada untuk agen saya: \"{title}\". {description} Tindakan yang disarankan: {action}. {focus}",
     "open_lab": "Buka Lab",
     "open_lab_hint": "Uji model alternatif untuk {persona} di Lab",
-    "title": "Optimasi armada"
+    "title": "Optimasi armada",
+    "label_action": "Tindakan",
+    "label_agent": "Agen",
+    "label_impact": "Dampak",
+    "severity_critical": "Mendesak",
+    "severity_info": "Wawasan",
+    "severity_warning": "Disarankan"
   },
   "focused_decision": {
     "accept": "Terima",
@@ -1099,7 +1105,8 @@
     "stat_total_runs": "Total proses",
     "subtitle": "Peringkat kinerja di semua agen",
     "this_agent": "Agen ini",
-    "title": "Papan peringkat agen"
+    "title": "Papan peringkat agen",
+    "sort_hint": "Klik metrik untuk mengurutkan"
   },
   "llm_spend": {
     "by_source": "Biaya per tier",

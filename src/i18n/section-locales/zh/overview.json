@@ -642,7 +642,13 @@
     "ask_athena_prompt": "我正在查看我的智能体的舰队优化建议：\"{title}\"。{description} 建议操作：{action}。{focus}",
     "open_lab": "打开实验室",
     "open_lab_hint": "在实验室中为 {persona} 测试备选模型",
-    "title": "舰队优化"
+    "title": "舰队优化",
+    "label_action": "操作",
+    "label_agent": "智能体",
+    "label_impact": "影响",
+    "severity_critical": "紧急",
+    "severity_info": "洞察",
+    "severity_warning": "建议"
   },
   "focused_decision": {
     "accept": "接受",
@@ -1099,7 +1105,8 @@
     "stat_total_runs": "总运行数",
     "subtitle": "所有智能体的性能排名",
     "this_agent": "此智能体",
-    "title": "智能体排行榜"
+    "title": "智能体排行榜",
+    "sort_hint": "点击指标即可排序"
   },
   "llm_spend": {
     "by_source": "按层级划分成本",

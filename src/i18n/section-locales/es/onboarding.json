@@ -607,5 +607,7 @@
   "waiting_for_output": "Esperando salida…",
   "what_testing_checks": "Qué verifica la prueba:",
   "what_to_explore": "Qué explorar",
-  "your_agent_fallback": "Su agente"
+  "your_agent_fallback": "Su agente",
+  "approve_failed": "No se pudo aprobar {name}. Puedes aprobarlo más tarde desde Conectores.",
+  "execution_ended": "Ejecución {status}"
 }

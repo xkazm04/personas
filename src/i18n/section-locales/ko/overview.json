@@ -642,7 +642,13 @@
     "ask_athena_prompt": "에이전트에 대한 플릿 최적화 제안을 검토 중입니다: \"{title}\". {description} 제안된 조치: {action}. {focus}",
     "open_lab": "Lab 열기",
     "open_lab_hint": "Lab에서 {persona}의 대체 모델 테스트",
-    "title": "플릿 최적화"
+    "title": "플릿 최적화",
+    "label_action": "작업",
+    "label_agent": "에이전트",
+    "label_impact": "영향",
+    "severity_critical": "긴급",
+    "severity_info": "인사이트",
+    "severity_warning": "제안"
   },
   "focused_decision": {
     "accept": "수락",
@@ -1099,7 +1105,8 @@
     "stat_total_runs": "총 실행 수",
     "subtitle": "모든 에이전트의 성능 순위",
     "this_agent": "이 에이전트",
-    "title": "에이전트 리더보드"
+    "title": "에이전트 리더보드",
+    "sort_hint": "지표를 클릭하면 정렬됩니다"
   },
   "llm_spend": {
     "by_source": "티어별 비용",

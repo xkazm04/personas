@@ -243,5 +243,7 @@
   "dim_label_security": "Sicherheit",
   "dim_label_skills": "Skills",
   "dim_label_support": "Support",
-  "dim_label_tests": "Tests"
+  "dim_label_tests": "Tests",
+  "scan_dispatched_toast": "Ideen-Scan gestartet ({label})",
+  "scan_drawer_label": "Ideen-Scan ({label})"
 }

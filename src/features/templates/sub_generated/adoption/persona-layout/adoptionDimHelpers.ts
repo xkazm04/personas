@@ -10,14 +10,14 @@ type Tx = (template: string, vars: Record<string, string | number>) => string;
  * Messages card. The `key` resolves a brand icon via getConnectorMeta in
  * AdoptionLeftPanel; built-in/titlebar fall back to the local-messaging icon.
  */
-export function resolveChannelCard(ch: ChannelSpecV2): { key: string; label: string } {
+export function resolveChannelCard(ch: ChannelSpecV2, t: Translations): { key: string; label: string } {
   switch (ch.type) {
     case 'built-in':
-      return { key: 'personas_messages', label: 'Inbox' };
+      return { key: 'personas_messages', label: t.templates.adoption.channel_inbox };
     case 'titlebar':
-      return { key: 'personas_messages', label: 'Title bar' };
+      return { key: 'personas_messages', label: t.templates.adoption.channel_title_bar };
     case 'email':
-      return { key: 'gmail', label: 'Email' };
+      return { key: 'gmail', label: t.templates.adoption.channel_email };
     default:
       return { key: ch.type, label: getConnectorMeta(ch.type).label };
   }

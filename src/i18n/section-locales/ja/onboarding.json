@@ -607,5 +607,7 @@
   "waiting_for_output": "出力を待っています…",
   "what_testing_checks": "テストで確認すること：",
   "what_to_explore": "探索するもの",
-  "your_agent_fallback": "エージェント"
+  "your_agent_fallback": "エージェント",
+  "approve_failed": "{name} を承認できませんでした。後でコネクタから承認できます。",
+  "execution_ended": "実行: {status}"
 }

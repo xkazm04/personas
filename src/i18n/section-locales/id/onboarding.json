@@ -607,5 +607,7 @@
   "waiting_for_output": "Menunggu output…",
   "what_testing_checks": "Apa yang diperiksa pengujian:",
   "what_to_explore": "Apa yang perlu dijelajahi",
-  "your_agent_fallback": "Agen Anda"
+  "your_agent_fallback": "Agen Anda",
+  "approve_failed": "Tidak dapat menyetujui {name}. Anda dapat menyetujuinya nanti dari Konektor.",
+  "execution_ended": "Eksekusi {status}"
 }

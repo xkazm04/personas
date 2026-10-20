@@ -83,7 +83,7 @@ export function PersonaLayoutAdoption(props: PersonaLayoutAdoptionProps) {
   const leftSlot = (
     <div className="flex flex-col gap-3">
       <div className="flex w-full items-center justify-between px-0.5">
-        <span className="typo-label text-foreground/45">Petals</span>
+        <span className="typo-label text-foreground/45">{t.templates.adoption.petals_header}</span>
         <span className="typo-caption tabular-nums text-foreground/45">{model.answeredCount}/{model.totalCount}</span>
       </div>
       <div className="flex flex-col gap-2">

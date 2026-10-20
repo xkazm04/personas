@@ -642,7 +642,13 @@
     "ask_athena_prompt": "Ich überprüfe einen Flottenoptimierungsvorschlag für meine Agenten: „{title}\" {description} Empfohlene Maßnahme: {action}. {focus}",
     "open_lab": "Lab öffnen",
     "open_lab_hint": "Alternative Modelle für {persona} im Lab testen",
-    "title": "Flottenoptimierung"
+    "title": "Flottenoptimierung",
+    "label_action": "Aktion",
+    "label_agent": "Agent",
+    "label_impact": "Auswirkung",
+    "severity_critical": "Dringend",
+    "severity_info": "Erkenntnis",
+    "severity_warning": "Empfohlen"
   },
   "focused_decision": {
     "accept": "Akzeptieren",
@@ -1099,7 +1105,8 @@
     "stat_total_runs": "Läufe gesamt",
     "subtitle": "Leistungsrankings aller Agenten",
     "this_agent": "Dieser Agent",
-    "title": "Agenten-Rangliste"
+    "title": "Agenten-Rangliste",
+    "sort_hint": "Klicken Sie auf eine Metrik, um zu sortieren"
   },
   "llm_spend": {
     "by_source": "Kosten nach Stufe",

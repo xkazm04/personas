@@ -64,7 +64,10 @@
     "triggers": "Triggers",
     "no_flows": "No flows",
     "readiness_tooltip": "{percent}% of services connected",
-    "template_details_tabs_aria": "Template details"
+    "template_details_tabs_aria": "Template details",
+    "cred_default_name": "{name} Credential",
+    "cred_healthcheck_failed": "Healthcheck failed",
+    "cred_test_failed": "Connection test failed"
   },
   "actions": {
     "view_details": "View Details",
@@ -135,7 +138,11 @@
       "listens_for": "Listens for {event_type}.",
       "manual_on_demand": "Manual — user invokes on demand.",
       "custom_cron": "Custom cron: {cron}."
-    }
+    },
+    "petals_header": "Petals",
+    "channel_inbox": "Inbox",
+    "channel_title_bar": "Title bar",
+    "channel_email": "Email"
   },
   "choose": {
     "select_use_cases": "Select Use Cases",

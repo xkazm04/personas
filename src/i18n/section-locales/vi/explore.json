@@ -9,5 +9,20 @@
   "domain_revenue": "Bán hàng & Tiếp thị",
   "adopt_failed": "Không thể mở {name}.",
   "adopt_no_template": "{name} không có mẫu nguồn để áp dụng.",
-  "adopt_not_found": "{name} chưa có trong thư viện mẫu."
+  "adopt_not_found": "{name} chưa có trong thư viện mẫu.",
+  "l2_all_domains": "Tất cả miền",
+  "l2_col_capabilities": "Khả năng",
+  "l2_col_focus": "Trọng tâm",
+  "l2_col_name": "Tên",
+  "l2_col_tools": "Công cụ",
+  "l2_col_type": "Loại",
+  "l2_counts": "{templates} mẫu · {recipes} công thức",
+  "l2_filter_all": "Tất cả",
+  "l2_filter_placeholder": "Lọc theo tên…",
+  "l2_filter_recipes": "Công thức",
+  "l2_filter_templates": "Mẫu",
+  "l2_kind_recipe": "Công thức",
+  "l2_kind_template": "Mẫu",
+  "l2_no_matches": "Không có kết quả phù hợp.",
+  "l2_shown": "Hiển thị {shown} trên {total}"
 }

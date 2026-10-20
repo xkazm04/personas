@@ -6,6 +6,7 @@
  */
 import { useMemo, useState } from 'react';
 import { FileStack, Blocks, Search, ChevronUp, ChevronDown } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { categoryLabel } from '../exploreDomains';
 import { recipesForTemplate, type ExploreItem, type ExploreRecipe } from '../useExploreCatalog';
 
@@ -30,6 +31,7 @@ interface Props {
 }
 
 export function DomainTable({ templates, recipes, loading, accent, onSelect, onSelectRecipe }: Props) {
+  const { t, tx } = useTranslation();
   const [cat, setCat] = useState<string | null>(null);
   const [type, setType] = useState<TypeFilter>('all');
   const [query, setQuery] = useState('');
@@ -67,7 +69,7 @@ export function DomainTable({ templates, recipes, loading, accent, onSelect, onS
     <div className="space-y-3">
       {/* Sub-domain pre-filter */}
       <div className="flex flex-wrap items-center gap-2">
-        <FilterChip label="All" count={allRows.filter((r) => type === 'all' || r.kind === type).length} active={cat === null} accent={accent} onClick={() => setCat(null)} />
+        <FilterChip label={t.explore.l2_filter_all} count={allRows.filter((r) => type === 'all' || r.kind === type).length} active={cat === null} accent={accent} onClick={() => setCat(null)} />
         {cats.map(([c, n]) => (
           <FilterChip key={c} label={categoryLabel(c)} count={n} active={cat === c} accent={accent} onClick={() => setCat(c)} />
         ))}
@@ -76,7 +78,7 @@ export function DomainTable({ templates, recipes, loading, accent, onSelect, onS
       {/* Type switcher + name filter (left-aligned) */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="inline-flex rounded-input border border-primary/10 p-0.5 bg-background/40">
-          {([['all', 'All'], ['template', 'Templates'], ['recipe', 'Recipes']] as [TypeFilter, string][]).map(([id, label]) => (
+          {([['all', t.explore.l2_filter_all], ['template', t.explore.l2_filter_templates], ['recipe', t.explore.l2_filter_recipes]] as [TypeFilter, string][]).map(([id, label]) => (
             <button type="button" key={id} onClick={() => setType(id)}
               className="px-3 py-1 rounded-input typo-caption transition-colors"
               style={type === id ? { backgroundColor: `${accent}22`, color: accent } : undefined}>
@@ -87,7 +89,7 @@ export function DomainTable({ templates, recipes, loading, accent, onSelect, onS
         <div className="relative">
           <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-foreground opacity-50" />
           <input
-            value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Filter by name…"
+            value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t.explore.l2_filter_placeholder}
             className="pl-8 pr-3 py-1.5 rounded-input bg-background/50 border border-primary/10 typo-body text-foreground w-52 focus:outline-none focus:border-primary/30"
           />
         </div>
@@ -98,11 +100,11 @@ export function DomainTable({ templates, recipes, loading, accent, onSelect, onS
         <table className="w-full border-collapse">
           <thead>
             <tr className="border-b border-primary/10">
-              <Th col="name" label="Name" sort={sort} onSort={toggleSort} />
-              <Th col="kind" label="Type" sort={sort} onSort={toggleSort} />
-              <Th col="category" label="Focus" sort={sort} onSort={toggleSort} />
-              <Th col="tools" label="Tools" sort={sort} onSort={toggleSort} />
-              <Th col="recipes" label="Capabilities" sort={sort} onSort={toggleSort} />
+              <Th col="name" label={t.explore.l2_col_name} sort={sort} onSort={toggleSort} />
+              <Th col="kind" label={t.explore.l2_col_type} sort={sort} onSort={toggleSort} />
+              <Th col="category" label={t.explore.l2_col_focus} sort={sort} onSort={toggleSort} />
+              <Th col="tools" label={t.explore.l2_col_tools} sort={sort} onSort={toggleSort} />
+              <Th col="recipes" label={t.explore.l2_col_capabilities} sort={sort} onSort={toggleSort} />
             </tr>
           </thead>
           <tbody>
@@ -121,7 +123,7 @@ export function DomainTable({ templates, recipes, loading, accent, onSelect, onS
                 <td className="px-3 py-2">
                   <span className="inline-flex items-center gap-1 typo-caption text-foreground opacity-70">
                     {r.kind === 'template' ? <FileStack className="w-3 h-3" /> : <Blocks className="w-3 h-3" />}
-                    {r.kind === 'template' ? 'Template' : 'Recipe'}
+                    {r.kind === 'template' ? t.explore.l2_kind_template : t.explore.l2_kind_recipe}
                   </span>
                 </td>
                 <td className="px-3 py-2">
@@ -135,12 +137,12 @@ export function DomainTable({ templates, recipes, loading, accent, onSelect, onS
               <DomainTableGhostRows />
             )}
             {rows.length === 0 && !loading && (
-              <tr><td colSpan={5} className="px-3 py-8 text-center typo-body text-foreground opacity-60">No matches.</td></tr>
+              <tr><td colSpan={5} className="px-3 py-8 text-center typo-body text-foreground opacity-60">{t.explore.l2_no_matches}</td></tr>
             )}
           </tbody>
         </table>
       </div>
-      <div className="typo-caption text-foreground opacity-55">{rows.length} of {allRows.length} shown</div>
+      <div className="typo-caption text-foreground opacity-55">{tx(t.explore.l2_shown, { shown: rows.length, total: allRows.length })}</div>
     </div>
   );
 }

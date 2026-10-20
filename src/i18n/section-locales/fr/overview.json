@@ -642,7 +642,13 @@
     "ask_athena_prompt": "Je passe en revue une suggestion d’optimisation de flotte pour mes agents : « {title} ». {description} Action suggérée : {action}. {focus}",
     "open_lab": "Ouvrir le Lab",
     "open_lab_hint": "Tester d’autres modèles pour {persona} dans le Lab",
-    "title": "Optimisation de la flotte"
+    "title": "Optimisation de la flotte",
+    "label_action": "Action",
+    "label_agent": "Agent",
+    "label_impact": "Impact",
+    "severity_critical": "Urgent",
+    "severity_info": "Aperçu",
+    "severity_warning": "Suggéré"
   },
   "focused_decision": {
     "accept": "Accepter",
@@ -1099,7 +1105,8 @@
     "stat_total_runs": "Exécutions totales",
     "subtitle": "Classement des performances de tous les agents",
     "this_agent": "Cet agent",
-    "title": "Classement des agents"
+    "title": "Classement des agents",
+    "sort_hint": "Cliquez sur une métrique pour trier"
   },
   "llm_spend": {
     "by_source": "Coût par niveau",

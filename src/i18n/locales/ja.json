@@ -5398,7 +5398,22 @@
     "domain_revenue": "営業・マーケティング",
     "adopt_failed": "{name} を開けませんでした。",
     "adopt_no_template": "{name} には採用できるソーステンプレートがありません。",
-    "adopt_not_found": "{name} はまだテンプレートギャラリーにありません。"
+    "adopt_not_found": "{name} はまだテンプレートギャラリーにありません。",
+    "l2_all_domains": "すべての領域",
+    "l2_col_capabilities": "機能",
+    "l2_col_focus": "フォーカス",
+    "l2_col_name": "名前",
+    "l2_col_tools": "ツール",
+    "l2_col_type": "種類",
+    "l2_counts": "テンプレート {templates} 件 · レシピ {recipes} 件",
+    "l2_filter_all": "すべて",
+    "l2_filter_placeholder": "名前で絞り込み…",
+    "l2_filter_recipes": "レシピ",
+    "l2_filter_templates": "テンプレート",
+    "l2_kind_recipe": "レシピ",
+    "l2_kind_template": "テンプレート",
+    "l2_no_matches": "一致する項目はありません。",
+    "l2_shown": "{total} 件中 {shown} 件を表示"
   },
   "feedback_labels": {
     "accurate_prompt": "正確なプロンプト",
@@ -6397,7 +6412,9 @@
     "dim_label_security": "セキュリティ",
     "dim_label_skills": "スキル",
     "dim_label_support": "サポート",
-    "dim_label_tests": "テスト"
+    "dim_label_tests": "テスト",
+    "scan_dispatched_toast": "アイデアスキャンを開始しました（{label}）",
+    "scan_drawer_label": "アイデアスキャン（{label}）"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "機能を追加",
@@ -8872,7 +8889,9 @@
     "waiting_for_output": "出力を待っています…",
     "what_testing_checks": "テストで確認すること：",
     "what_to_explore": "探索するもの",
-    "your_agent_fallback": "エージェント"
+    "your_agent_fallback": "エージェント",
+    "approve_failed": "{name} を承認できませんでした。後でコネクタから承認できます。",
+    "execution_ended": "実行: {status}"
   },
   "overview": {
     "activity_timeline": {
@@ -9518,7 +9537,13 @@
       "ask_athena_prompt": "エージェントのフリート最適化の提案を確認しています:「{title}」。{description} 推奨アクション:{action}。{focus}",
       "open_lab": "ラボを開く",
       "open_lab_hint": "Labで{persona}の代替モデルをテストする",
-      "title": "フリート最適化"
+      "title": "フリート最適化",
+      "label_action": "アクション",
+      "label_agent": "エージェント",
+      "label_impact": "影響",
+      "severity_critical": "緊急",
+      "severity_info": "インサイト",
+      "severity_warning": "提案"
     },
     "focused_decision": {
       "accept": "受諾",
@@ -9975,7 +10000,8 @@
       "stat_total_runs": "総実行数",
       "subtitle": "すべてのエージェントのパフォーマンスランキング",
       "this_agent": "このエージェント",
-      "title": "エージェントリーダーボード"
+      "title": "エージェントリーダーボード",
+      "sort_hint": "指標をクリックして並べ替え"
     },
     "llm_spend": {
       "by_source": "種別別コスト",
@@ -20351,7 +20377,11 @@
         "thu": "Thu",
         "tue": "Tue",
         "wed": "Wed"
-      }
+      },
+      "channel_email": "メール",
+      "channel_inbox": "受信トレイ",
+      "channel_title_bar": "タイトルバー",
+      "petals_header": "花びら"
     },
     "banners": {
       "adoption_in_progress": "テンプレート採用中",
@@ -20750,7 +20780,10 @@
       "ready_to_deploy_hint": "全コネクタ設定済のテンプレート",
       "template_details_tabs_aria": "テンプレートの詳細",
       "triggers": "トリガー",
-      "use_cases": "ユースケース"
+      "use_cases": "ユースケース",
+      "cred_default_name": "{name} の認証情報",
+      "cred_healthcheck_failed": "ヘルスチェックに失敗しました",
+      "cred_test_failed": "接続テストに失敗しました"
     },
     "generation": {
       "batch_all": "すべて ({count})",

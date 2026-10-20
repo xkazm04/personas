@@ -607,5 +607,7 @@
   "waiting_for_output": "En attente de la sortie…",
   "what_testing_checks": "Ce que les tests vérifient :",
   "what_to_explore": "À explorer",
-  "your_agent_fallback": "Votre agent"
+  "your_agent_fallback": "Votre agent",
+  "approve_failed": "Impossible d'approuver {name}. Vous pourrez l'approuver plus tard depuis Connecteurs.",
+  "execution_ended": "Exécution {status}"
 }

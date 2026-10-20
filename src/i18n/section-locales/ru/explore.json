@@ -9,5 +9,20 @@
   "domain_revenue": "Продажи и маркетинг",
   "adopt_failed": "Не удалось открыть {name}.",
   "adopt_no_template": "У {name} нет исходного шаблона для внедрения.",
-  "adopt_not_found": "{name} пока нет в галерее шаблонов."
+  "adopt_not_found": "{name} пока нет в галерее шаблонов.",
+  "l2_all_domains": "Все домены",
+  "l2_col_capabilities": "Возможности",
+  "l2_col_focus": "Направление",
+  "l2_col_name": "Название",
+  "l2_col_tools": "Инструменты",
+  "l2_col_type": "Тип",
+  "l2_counts": "{templates} шаблонов · {recipes} рецептов",
+  "l2_filter_all": "Все",
+  "l2_filter_placeholder": "Фильтр по названию…",
+  "l2_filter_recipes": "Рецепты",
+  "l2_filter_templates": "Шаблоны",
+  "l2_kind_recipe": "Рецепт",
+  "l2_kind_template": "Шаблон",
+  "l2_no_matches": "Нет совпадений.",
+  "l2_shown": "Показано {shown} из {total}"
 }

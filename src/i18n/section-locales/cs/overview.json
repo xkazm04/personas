@@ -642,7 +642,13 @@
     "ask_athena_prompt": "Přezkoumávám návrh na optimalizaci flotily pro své agenty: „{title}“. {description} Navrhovaná akce: {action}. {focus}",
     "open_lab": "Otevřít Lab",
     "open_lab_hint": "Otestujte alternativní modely pro {persona} v Labu",
-    "title": "Optimalizace flotily"
+    "title": "Optimalizace flotily",
+    "label_action": "Akce",
+    "label_agent": "Agent",
+    "label_impact": "Dopad",
+    "severity_critical": "Naléhavé",
+    "severity_info": "Poznatek",
+    "severity_warning": "Doporučeno"
   },
   "focused_decision": {
     "accept": "Přijmout",
@@ -1099,7 +1105,8 @@
     "stat_total_runs": "Celkem běhů",
     "subtitle": "Žebříček výkonu napříč všemi agenty",
     "this_agent": "Tento agent",
-    "title": "Žebříček agentů"
+    "title": "Žebříček agentů",
+    "sort_hint": "Kliknutím na metriku seřadíte"
   },
   "llm_spend": {
     "by_source": "Náklady podle úrovně",

@@ -214,7 +214,11 @@
       "thu": "Thu",
       "tue": "Tue",
       "wed": "Wed"
-    }
+    },
+    "channel_email": "电子邮件",
+    "channel_inbox": "收件箱",
+    "channel_title_bar": "标题栏",
+    "petals_header": "花瓣"
   },
   "banners": {
     "adoption_in_progress": "模板采用进行中",
@@ -613,7 +617,10 @@
     "ready_to_deploy_hint": "所有连接器已配置完成的模板",
     "template_details_tabs_aria": "模板详情",
     "triggers": "触发器",
-    "use_cases": "用例"
+    "use_cases": "用例",
+    "cred_default_name": "{name} 凭据",
+    "cred_healthcheck_failed": "健康检查失败",
+    "cred_test_failed": "连接测试失败"
   },
   "generation": {
     "batch_all": "全部 ({count})",

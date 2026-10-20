@@ -214,7 +214,11 @@
       "thu": "Thu",
       "tue": "Tue",
       "wed": "Wed"
-    }
+    },
+    "channel_email": "Email",
+    "channel_inbox": "Kotak masuk",
+    "channel_title_bar": "Bilah judul",
+    "petals_header": "Kelopak"
   },
   "banners": {
     "adoption_in_progress": "Adopsi templat sedang berlangsung",
@@ -613,7 +617,10 @@
     "ready_to_deploy_hint": "Templat dengan semua konektor dikonfigurasi",
     "template_details_tabs_aria": "Detail templat",
     "triggers": "Pemicu",
-    "use_cases": "Kasus penggunaan"
+    "use_cases": "Kasus penggunaan",
+    "cred_default_name": "Kredensial {name}",
+    "cred_healthcheck_failed": "Pemeriksaan kesehatan gagal",
+    "cred_test_failed": "Uji koneksi gagal"
   },
   "generation": {
     "batch_all": "Semua ({count})",

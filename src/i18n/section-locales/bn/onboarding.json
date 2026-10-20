@@ -607,5 +607,7 @@
   "waiting_for_output": "আউটপুটের অপেক্ষায়…",
   "what_testing_checks": "পরীক্ষা কী যাচাই করে:",
   "what_to_explore": "কী অন্বেষণ করবেন",
-  "your_agent_fallback": "আপনার এজেন্ট"
+  "your_agent_fallback": "আপনার এজেন্ট",
+  "approve_failed": "{name} অনুমোদন করা যায়নি। আপনি পরে কানেক্টর থেকে এটি অনুমোদন করতে পারবেন।",
+  "execution_ended": "এক্সিকিউশন {status}"
 }

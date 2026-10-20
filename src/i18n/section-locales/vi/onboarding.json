@@ -607,5 +607,7 @@
   "waiting_for_output": "Đang chờ đầu ra…",
   "what_testing_checks": "Những gì kiểm tra xác nhận:",
   "what_to_explore": "Những gì cần khám phá",
-  "your_agent_fallback": "Tác nhân của bạn"
+  "your_agent_fallback": "Tác nhân của bạn",
+  "approve_failed": "Không thể phê duyệt {name}. Bạn có thể phê duyệt sau trong Trình kết nối.",
+  "execution_ended": "Thực thi {status}"
 }

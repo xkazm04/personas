@@ -9,5 +9,20 @@
   "domain_revenue": "销售与营销",
   "adopt_failed": "无法打开 {name}。",
   "adopt_no_template": "{name} 没有可采用的源模板。",
-  "adopt_not_found": "{name} 尚未在模板库中。"
+  "adopt_not_found": "{name} 尚未在模板库中。",
+  "l2_all_domains": "所有领域",
+  "l2_col_capabilities": "能力",
+  "l2_col_focus": "重点",
+  "l2_col_name": "名称",
+  "l2_col_tools": "工具",
+  "l2_col_type": "类型",
+  "l2_counts": "{templates} 个模板 · {recipes} 个配方",
+  "l2_filter_all": "全部",
+  "l2_filter_placeholder": "按名称筛选…",
+  "l2_filter_recipes": "配方",
+  "l2_filter_templates": "模板",
+  "l2_kind_recipe": "配方",
+  "l2_kind_template": "模板",
+  "l2_no_matches": "没有匹配项。",
+  "l2_shown": "显示 {shown} / {total}"
 }

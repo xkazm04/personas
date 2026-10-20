@@ -642,7 +642,13 @@
     "ask_athena_prompt": "আমি আমার এজেন্টগুলির জন্য একটি ফ্লিট অপ্টিমাইজেশন পরামর্শ পর্যালোচনা করছি: \"{title}\"। {description} প্রস্তাবিত পদক্ষেপ: {action}। {focus}",
     "open_lab": "Lab খুলুন",
     "open_lab_hint": "Lab-এ {persona}-এর জন্য বিকল্প মডেল পরীক্ষা করুন",
-    "title": "ফ্লিট অপ্টিমাইজেশন"
+    "title": "ফ্লিট অপ্টিমাইজেশন",
+    "label_action": "পদক্ষেপ",
+    "label_agent": "এজেন্ট",
+    "label_impact": "প্রভাব",
+    "severity_critical": "জরুরি",
+    "severity_info": "অন্তর্দৃষ্টি",
+    "severity_warning": "প্রস্তাবিত"
   },
   "focused_decision": {
     "accept": "গ্রহণ করুন",
@@ -1099,7 +1105,8 @@
     "stat_total_runs": "মোট রান",
     "subtitle": "সব এজেন্ট জুড়ে পারফরম্যান্স র্যাংকিং",
     "this_agent": "এই এজেন্ট",
-    "title": "এজেন্ট লিডারবোর্ড"
+    "title": "এজেন্ট লিডারবোর্ড",
+    "sort_hint": "সাজাতে একটি মেট্রিকে ক্লিক করুন"
   },
   "llm_spend": {
     "by_source": "স্তর অনুযায়ী খরচ",

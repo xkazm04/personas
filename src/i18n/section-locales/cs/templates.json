@@ -214,7 +214,11 @@
       "thu": "Thu",
       "tue": "Tue",
       "wed": "Wed"
-    }
+    },
+    "channel_email": "E-mail",
+    "channel_inbox": "Doručená pošta",
+    "channel_title_bar": "Záhlaví okna",
+    "petals_header": "Okvětní lístky"
   },
   "banners": {
     "adoption_in_progress": "Probíhá adopce šablony",
@@ -613,7 +617,10 @@
     "ready_to_deploy_hint": "Šablony se všemi propojenými službami",
     "template_details_tabs_aria": "Detaily šablony",
     "triggers": "Spouštěče",
-    "use_cases": "Případy užití"
+    "use_cases": "Případy užití",
+    "cred_default_name": "Přihlašovací údaje {name}",
+    "cred_healthcheck_failed": "Kontrola stavu selhala",
+    "cred_test_failed": "Test připojení selhal"
   },
   "generation": {
     "batch_all": "Vše ({count})",

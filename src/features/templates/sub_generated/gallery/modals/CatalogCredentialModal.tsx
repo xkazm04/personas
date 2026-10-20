@@ -5,6 +5,9 @@ import { CredentialTemplateForm } from '@/features/vault/sub_catalog/components/
 import { isGoogleOAuthConnector } from '@/lib/utils/platform/connectors';
 import { testCredentialDesignHealthcheck } from '@/api/overview/healthcheckApi';
 import type { ConnectorDefinition } from '@/lib/types/types';
+import { useTranslation } from '@/i18n/useTranslation';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import { silentCatch, extractMessage } from '@/lib/silentCatch';
 
 interface CatalogCredentialModalProps {
   connectorDefinition: ConnectorDefinition;
@@ -17,7 +20,19 @@ export function CatalogCredentialModal({
   onSave,
   onClose,
 }: CatalogCredentialModalProps) {
+  const { t, tx } = useTranslation();
   const isGoogleTemplate = isGoogleOAuthConnector(connectorDefinition);
+
+  // A recognised failure shows its registry wording; anything else shows the
+  // step's own localized line. Either way the raw error is reported first.
+  const failureMessage = useCallback(
+    (err: unknown, context: string, fallback: string) => {
+      silentCatch(`CatalogCredentialModal:${context}`)(err);
+      const resolved = resolveErrorTranslated(t, extractMessage(err));
+      return resolved.category === 'unclassified' ? fallback : resolved.message;
+    },
+    [t],
+  );
 
   const effectiveTemplateFields = useMemo(() => {
     const fields = connectorDefinition.fields ?? [];
@@ -30,7 +45,7 @@ export function CatalogCredentialModal({
   }, [connectorDefinition.fields, isGoogleTemplate]);
 
   const [credentialName, setCredentialName] = useState(
-    `${connectorDefinition.label} Credential`,
+    tx(t.templates.gallery.cred_default_name, { name: connectorDefinition.label }),
   );
   const [isHealthchecking, setIsHealthchecking] = useState(false);
   const [healthcheckResult, setHealthcheckResult] = useState<{
@@ -49,14 +64,16 @@ export function CatalogCredentialModal({
           .getState()
           .healthcheckCredentialPreview(connectorDefinition.name, values);
         setHealthcheckResult(result);
-      } catch {
-        // intentional: healthcheck error is shown inline via result state
-        setHealthcheckResult({ success: false, message: 'Healthcheck failed' });
+      } catch (err) {
+        setHealthcheckResult({
+          success: false,
+          message: failureMessage(err, 'healthcheck', t.templates.gallery.cred_healthcheck_failed),
+        });
       } finally {
         setIsHealthchecking(false);
       }
     },
-    [connectorDefinition.name],
+    [connectorDefinition.name, failureMessage, t],
   );
 
   const handleDynamicHealthcheck = useCallback(
@@ -74,14 +91,16 @@ export function CatalogCredentialModal({
           values,
         );
         setHealthcheckResult({ success: result.success, message: result.message });
-      } catch {
-        // intentional: healthcheck error is shown inline via result state
-        setHealthcheckResult({ success: false, message: 'Connection test failed' });
+      } catch (err) {
+        setHealthcheckResult({
+          success: false,
+          message: failureMessage(err, 'connectionTest', t.templates.gallery.cred_test_failed),
+        });
       } finally {
         setIsHealthchecking(false);
       }
     },
-    [connectorDefinition],
+    [connectorDefinition, failureMessage, t],
   );
 
   const handleOAuthConsent = useCallback((_values: Record<string, string>) => {

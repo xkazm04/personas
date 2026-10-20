@@ -214,7 +214,11 @@
       "thu": "Thu",
       "tue": "Tue",
       "wed": "Wed"
-    }
+    },
+    "channel_email": "البريد الإلكتروني",
+    "channel_inbox": "صندوق الوارد",
+    "channel_title_bar": "شريط العنوان",
+    "petals_header": "البتلات"
   },
   "banners": {
     "adoption_in_progress": "اعتماد القالب جارٍ",
@@ -613,7 +617,10 @@
     "ready_to_deploy_hint": "قوالب بجميع الموصّلات مُعدّة",
     "template_details_tabs_aria": "تفاصيل القالب",
     "triggers": "المُشغّلات",
-    "use_cases": "حالات الاستخدام"
+    "use_cases": "حالات الاستخدام",
+    "cred_default_name": "بيانات اعتماد {name}",
+    "cred_healthcheck_failed": "فشل فحص الحالة",
+    "cred_test_failed": "فشل اختبار الاتصال"
   },
   "generation": {
     "batch_all": "الكل ({count})",

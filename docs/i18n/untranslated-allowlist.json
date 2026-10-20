@@ -4345,5 +4345,17 @@
   "fr:pipeline.team_color_violet",
   "fr:pipeline.team_color_orange",
   "fr:pipeline.team_color_cyan",
-  "id:agents.lab.notify_mode_arena"
+  "id:agents.lab.notify_mode_arena",
+  "cs:overview.fleet_optimization.label_agent",
+  "de:overview.fleet_optimization.label_agent",
+  "de:explore.l2_col_name",
+  "de:explore.l2_col_tools",
+  "fr:overview.fleet_optimization.severity_critical",
+  "fr:overview.fleet_optimization.label_impact",
+  "fr:overview.fleet_optimization.label_action",
+  "fr:overview.fleet_optimization.label_agent",
+  "fr:explore.l2_col_type",
+  "fr:explore.l2_col_focus",
+  "id:templates.adoption.channel_email",
+  "vi:templates.adoption.channel_email"
 ]

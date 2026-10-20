@@ -5398,7 +5398,22 @@
     "domain_revenue": "المبيعات والتسويق",
     "adopt_failed": "تعذر فتح {name}.",
     "adopt_no_template": "لا يوجد قالب مصدر لـ {name} لاعتماده.",
-    "adopt_not_found": "{name} غير موجود في معرض القوالب بعد."
+    "adopt_not_found": "{name} غير موجود في معرض القوالب بعد.",
+    "l2_all_domains": "كل المجالات",
+    "l2_col_capabilities": "القدرات",
+    "l2_col_focus": "التركيز",
+    "l2_col_name": "الاسم",
+    "l2_col_tools": "الأدوات",
+    "l2_col_type": "النوع",
+    "l2_counts": "{templates} قالبًا · {recipes} وصفة",
+    "l2_filter_all": "الكل",
+    "l2_filter_placeholder": "التصفية حسب الاسم…",
+    "l2_filter_recipes": "الوصفات",
+    "l2_filter_templates": "القوالب",
+    "l2_kind_recipe": "وصفة",
+    "l2_kind_template": "قالب",
+    "l2_no_matches": "لا توجد نتائج مطابقة.",
+    "l2_shown": "عرض {shown} من {total}"
   },
   "feedback_labels": {
     "accurate_prompt": "موجّه دقيق",
@@ -6397,7 +6412,9 @@
     "dim_label_security": "الأمان",
     "dim_label_skills": "المهارات",
     "dim_label_support": "الدعم",
-    "dim_label_tests": "الاختبارات"
+    "dim_label_tests": "الاختبارات",
+    "scan_dispatched_toast": "تم إرسال مسح الأفكار ({label})",
+    "scan_drawer_label": "مسح الأفكار ({label})"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "إضافة قدرة",
@@ -8872,7 +8889,9 @@
     "waiting_for_output": "في انتظار الناتج…",
     "what_testing_checks": "ما يتحقق منه الاختبار:",
     "what_to_explore": "ما تستكشفه",
-    "your_agent_fallback": "وكيلك"
+    "your_agent_fallback": "وكيلك",
+    "approve_failed": "تعذّرت الموافقة على {name}. يمكنك الموافقة عليه لاحقًا من الموصلات.",
+    "execution_ended": "التنفيذ {status}"
   },
   "overview": {
     "activity_timeline": {
@@ -9518,7 +9537,13 @@
       "ask_athena_prompt": "أراجع اقتراح تحسين أسطول لوكلائي: «{title}». {description} الإجراء المقترح: {action}. {focus}",
       "open_lab": "فتح المختبر",
       "open_lab_hint": "اختبر نماذج بديلة لـ {persona} في المختبر",
-      "title": "تحسين الأسطول"
+      "title": "تحسين الأسطول",
+      "label_action": "الإجراء",
+      "label_agent": "الوكيل",
+      "label_impact": "التأثير",
+      "severity_critical": "عاجل",
+      "severity_info": "رؤية",
+      "severity_warning": "مقترح"
     },
     "focused_decision": {
       "accept": "قبول",
@@ -9975,7 +10000,8 @@
       "stat_total_runs": "إجمالي التشغيلات",
       "subtitle": "تصنيفات الأداء عبر جميع الوكلاء",
       "this_agent": "هذا الوكيل",
-      "title": "لوحة صدارة الوكلاء"
+      "title": "لوحة صدارة الوكلاء",
+      "sort_hint": "انقر على مقياس للفرز"
     },
     "llm_spend": {
       "by_source": "التكلفة حسب المستوى",
@@ -20351,7 +20377,11 @@
         "thu": "Thu",
         "tue": "Tue",
         "wed": "Wed"
-      }
+      },
+      "channel_email": "البريد الإلكتروني",
+      "channel_inbox": "صندوق الوارد",
+      "channel_title_bar": "شريط العنوان",
+      "petals_header": "البتلات"
     },
     "banners": {
       "adoption_in_progress": "اعتماد القالب جارٍ",
@@ -20750,7 +20780,10 @@
       "ready_to_deploy_hint": "قوالب بجميع الموصّلات مُعدّة",
       "template_details_tabs_aria": "تفاصيل القالب",
       "triggers": "المُشغّلات",
-      "use_cases": "حالات الاستخدام"
+      "use_cases": "حالات الاستخدام",
+      "cred_default_name": "بيانات اعتماد {name}",
+      "cred_healthcheck_failed": "فشل فحص الحالة",
+      "cred_test_failed": "فشل اختبار الاتصال"
     },
     "generation": {
       "batch_all": "الكل ({count})",

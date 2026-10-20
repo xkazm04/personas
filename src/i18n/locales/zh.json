@@ -5398,7 +5398,22 @@
     "domain_revenue": "销售与营销",
     "adopt_failed": "无法打开 {name}。",
     "adopt_no_template": "{name} 没有可采用的源模板。",
-    "adopt_not_found": "{name} 尚未在模板库中。"
+    "adopt_not_found": "{name} 尚未在模板库中。",
+    "l2_all_domains": "所有领域",
+    "l2_col_capabilities": "能力",
+    "l2_col_focus": "重点",
+    "l2_col_name": "名称",
+    "l2_col_tools": "工具",
+    "l2_col_type": "类型",
+    "l2_counts": "{templates} 个模板 · {recipes} 个配方",
+    "l2_filter_all": "全部",
+    "l2_filter_placeholder": "按名称筛选…",
+    "l2_filter_recipes": "配方",
+    "l2_filter_templates": "模板",
+    "l2_kind_recipe": "配方",
+    "l2_kind_template": "模板",
+    "l2_no_matches": "没有匹配项。",
+    "l2_shown": "显示 {shown} / {total}"
   },
   "feedback_labels": {
     "accurate_prompt": "准确的提示词",
@@ -6397,7 +6412,9 @@
     "dim_label_security": "安全",
     "dim_label_skills": "技能",
     "dim_label_support": "支持",
-    "dim_label_tests": "测试"
+    "dim_label_tests": "测试",
+    "scan_dispatched_toast": "创意扫描已发送（{label}）",
+    "scan_drawer_label": "创意扫描（{label}）"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "添加能力",
@@ -8872,7 +8889,9 @@
     "waiting_for_output": "等待输出…",
     "what_testing_checks": "测试检查内容：",
     "what_to_explore": "探索内容",
-    "your_agent_fallback": "您的智能体"
+    "your_agent_fallback": "您的智能体",
+    "approve_failed": "无法批准 {name}。您可以稍后在“连接器”中批准。",
+    "execution_ended": "执行{status}"
   },
   "overview": {
     "activity_timeline": {
@@ -9518,7 +9537,13 @@
       "ask_athena_prompt": "我正在查看我的智能体的舰队优化建议：\"{title}\"。{description} 建议操作：{action}。{focus}",
       "open_lab": "打开实验室",
       "open_lab_hint": "在实验室中为 {persona} 测试备选模型",
-      "title": "舰队优化"
+      "title": "舰队优化",
+      "label_action": "操作",
+      "label_agent": "智能体",
+      "label_impact": "影响",
+      "severity_critical": "紧急",
+      "severity_info": "洞察",
+      "severity_warning": "建议"
     },
     "focused_decision": {
       "accept": "接受",
@@ -9975,7 +10000,8 @@
       "stat_total_runs": "总运行数",
       "subtitle": "所有智能体的性能排名",
       "this_agent": "此智能体",
-      "title": "智能体排行榜"
+      "title": "智能体排行榜",
+      "sort_hint": "点击指标即可排序"
     },
     "llm_spend": {
       "by_source": "按层级划分成本",
@@ -20351,7 +20377,11 @@
         "thu": "Thu",
         "tue": "Tue",
         "wed": "Wed"
-      }
+      },
+      "channel_email": "电子邮件",
+      "channel_inbox": "收件箱",
+      "channel_title_bar": "标题栏",
+      "petals_header": "花瓣"
     },
     "banners": {
       "adoption_in_progress": "模板采用进行中",
@@ -20750,7 +20780,10 @@
       "ready_to_deploy_hint": "所有连接器已配置完成的模板",
       "template_details_tabs_aria": "模板详情",
       "triggers": "触发器",
-      "use_cases": "用例"
+      "use_cases": "用例",
+      "cred_default_name": "{name} 凭据",
+      "cred_healthcheck_failed": "健康检查失败",
+      "cred_test_failed": "连接测试失败"
     },
     "generation": {
       "batch_all": "全部 ({count})",

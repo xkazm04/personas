@@ -214,7 +214,11 @@
       "thu": "Thu",
       "tue": "Tue",
       "wed": "Wed"
-    }
+    },
+    "channel_email": "Email",
+    "channel_inbox": "Hộp thư đến",
+    "channel_title_bar": "Thanh tiêu đề",
+    "petals_header": "Cánh hoa"
   },
   "banners": {
     "adoption_in_progress": "Đang áp dụng mẫu",
@@ -613,7 +617,10 @@
     "ready_to_deploy_hint": "Mẫu có tất cả trình kết nối đã cấu hình",
     "template_details_tabs_aria": "Chi tiết mẫu",
     "triggers": "Trình kích hoạt",
-    "use_cases": "Trường hợp sử dụng"
+    "use_cases": "Trường hợp sử dụng",
+    "cred_default_name": "Thông tin xác thực {name}",
+    "cred_healthcheck_failed": "Kiểm tra tình trạng thất bại",
+    "cred_test_failed": "Kiểm tra kết nối thất bại"
   },
   "generation": {
     "batch_all": "Tất cả ({count})",

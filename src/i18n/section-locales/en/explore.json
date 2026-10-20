@@ -9,5 +9,20 @@
   "domain_revenue": "Sales & Marketing",
   "domain_finance": "Finance",
   "domain_operations": "Operations",
-  "domain_people": "Customer & People"
+  "domain_people": "Customer & People",
+  "l2_all_domains": "All domains",
+  "l2_counts": "{templates} templates · {recipes} recipes",
+  "l2_filter_all": "All",
+  "l2_filter_templates": "Templates",
+  "l2_filter_recipes": "Recipes",
+  "l2_filter_placeholder": "Filter by name…",
+  "l2_col_name": "Name",
+  "l2_col_type": "Type",
+  "l2_col_focus": "Focus",
+  "l2_col_tools": "Tools",
+  "l2_col_capabilities": "Capabilities",
+  "l2_kind_template": "Template",
+  "l2_kind_recipe": "Recipe",
+  "l2_no_matches": "No matches.",
+  "l2_shown": "{shown} of {total} shown"
 }

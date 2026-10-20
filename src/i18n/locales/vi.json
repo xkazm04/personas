@@ -5398,7 +5398,22 @@
     "domain_revenue": "Bán hàng & Tiếp thị",
     "adopt_failed": "Không thể mở {name}.",
     "adopt_no_template": "{name} không có mẫu nguồn để áp dụng.",
-    "adopt_not_found": "{name} chưa có trong thư viện mẫu."
+    "adopt_not_found": "{name} chưa có trong thư viện mẫu.",
+    "l2_all_domains": "Tất cả miền",
+    "l2_col_capabilities": "Khả năng",
+    "l2_col_focus": "Trọng tâm",
+    "l2_col_name": "Tên",
+    "l2_col_tools": "Công cụ",
+    "l2_col_type": "Loại",
+    "l2_counts": "{templates} mẫu · {recipes} công thức",
+    "l2_filter_all": "Tất cả",
+    "l2_filter_placeholder": "Lọc theo tên…",
+    "l2_filter_recipes": "Công thức",
+    "l2_filter_templates": "Mẫu",
+    "l2_kind_recipe": "Công thức",
+    "l2_kind_template": "Mẫu",
+    "l2_no_matches": "Không có kết quả phù hợp.",
+    "l2_shown": "Hiển thị {shown} trên {total}"
   },
   "feedback_labels": {
     "accurate_prompt": "Lời nhắc chính xác",
@@ -6397,7 +6412,9 @@
     "dim_label_security": "Bảo mật",
     "dim_label_skills": "Kỹ năng",
     "dim_label_support": "Hỗ trợ",
-    "dim_label_tests": "Kiểm thử"
+    "dim_label_tests": "Kiểm thử",
+    "scan_dispatched_toast": "Đã gửi quét ý tưởng ({label})",
+    "scan_drawer_label": "Quét ý tưởng ({label})"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "Thêm năng lực",
@@ -8872,7 +8889,9 @@
     "waiting_for_output": "Đang chờ đầu ra…",
     "what_testing_checks": "Những gì kiểm tra xác nhận:",
     "what_to_explore": "Những gì cần khám phá",
-    "your_agent_fallback": "Tác nhân của bạn"
+    "your_agent_fallback": "Tác nhân của bạn",
+    "approve_failed": "Không thể phê duyệt {name}. Bạn có thể phê duyệt sau trong Trình kết nối.",
+    "execution_ended": "Thực thi {status}"
   },
   "overview": {
     "activity_timeline": {
@@ -9518,7 +9537,13 @@
       "ask_athena_prompt": "Tôi đang xem xét một đề xuất tối ưu hóa đội cho các tác nhân của mình: \"{title}\". {description} Hành động được đề xuất: {action}. {focus}",
       "open_lab": "Mở Lab",
       "open_lab_hint": "Kiểm tra các mô hình thay thế cho {persona} trong Lab",
-      "title": "Tối ưu hóa đội"
+      "title": "Tối ưu hóa đội",
+      "label_action": "Hành động",
+      "label_agent": "Tác nhân",
+      "label_impact": "Tác động",
+      "severity_critical": "Khẩn cấp",
+      "severity_info": "Nhận định",
+      "severity_warning": "Đề xuất"
     },
     "focused_decision": {
       "accept": "Chấp nhận",
@@ -9975,7 +10000,8 @@
       "stat_total_runs": "Tổng số lần chạy",
       "subtitle": "Xếp hạng hiệu suất trên tất cả tác nhân",
       "this_agent": "Tác nhân này",
-      "title": "Bảng xếp hạng tác nhân"
+      "title": "Bảng xếp hạng tác nhân",
+      "sort_hint": "Nhấp vào một chỉ số để sắp xếp"
     },
     "llm_spend": {
       "by_source": "Chi phí theo cấp độ",
@@ -20351,7 +20377,11 @@
         "thu": "Thu",
         "tue": "Tue",
         "wed": "Wed"
-      }
+      },
+      "channel_email": "Email",
+      "channel_inbox": "Hộp thư đến",
+      "channel_title_bar": "Thanh tiêu đề",
+      "petals_header": "Cánh hoa"
     },
     "banners": {
       "adoption_in_progress": "Đang áp dụng mẫu",
@@ -20750,7 +20780,10 @@
       "ready_to_deploy_hint": "Mẫu có tất cả trình kết nối đã cấu hình",
       "template_details_tabs_aria": "Chi tiết mẫu",
       "triggers": "Trình kích hoạt",
-      "use_cases": "Trường hợp sử dụng"
+      "use_cases": "Trường hợp sử dụng",
+      "cred_default_name": "Thông tin xác thực {name}",
+      "cred_healthcheck_failed": "Kiểm tra tình trạng thất bại",
+      "cred_test_failed": "Kiểm tra kết nối thất bại"
     },
     "generation": {
       "batch_all": "Tất cả ({count})",

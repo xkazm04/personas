@@ -9,5 +9,20 @@
   "domain_revenue": "Penjualan & Pemasaran",
   "adopt_failed": "Tidak dapat membuka {name}.",
   "adopt_no_template": "{name} tidak punya templat sumber untuk diadopsi.",
-  "adopt_not_found": "{name} belum ada di galeri templat."
+  "adopt_not_found": "{name} belum ada di galeri templat.",
+  "l2_all_domains": "Semua domain",
+  "l2_col_capabilities": "Kapabilitas",
+  "l2_col_focus": "Fokus",
+  "l2_col_name": "Nama",
+  "l2_col_tools": "Alat",
+  "l2_col_type": "Tipe",
+  "l2_counts": "{templates} templat · {recipes} resep",
+  "l2_filter_all": "Semua",
+  "l2_filter_placeholder": "Filter berdasarkan nama…",
+  "l2_filter_recipes": "Resep",
+  "l2_filter_templates": "Templat",
+  "l2_kind_recipe": "Resep",
+  "l2_kind_template": "Templat",
+  "l2_no_matches": "Tidak ada yang cocok.",
+  "l2_shown": "{shown} dari {total} ditampilkan"
 }

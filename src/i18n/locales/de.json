@@ -5398,7 +5398,22 @@
     "domain_revenue": "Vertrieb & Marketing",
     "adopt_failed": "{name} konnte nicht geöffnet werden.",
     "adopt_no_template": "{name} hat keine Quellvorlage zum Übernehmen.",
-    "adopt_not_found": "{name} ist noch nicht in der Vorlagengalerie."
+    "adopt_not_found": "{name} ist noch nicht in der Vorlagengalerie.",
+    "l2_all_domains": "Alle Bereiche",
+    "l2_col_capabilities": "Fähigkeiten",
+    "l2_col_focus": "Schwerpunkt",
+    "l2_col_name": "Name",
+    "l2_col_tools": "Tools",
+    "l2_col_type": "Typ",
+    "l2_counts": "{templates} Vorlagen · {recipes} Rezepte",
+    "l2_filter_all": "Alle",
+    "l2_filter_placeholder": "Nach Namen filtern…",
+    "l2_filter_recipes": "Rezepte",
+    "l2_filter_templates": "Vorlagen",
+    "l2_kind_recipe": "Rezept",
+    "l2_kind_template": "Vorlage",
+    "l2_no_matches": "Keine Treffer.",
+    "l2_shown": "{shown} von {total} angezeigt"
   },
   "feedback_labels": {
     "accurate_prompt": "Genauer Prompt",
@@ -6397,7 +6412,9 @@
     "dim_label_security": "Sicherheit",
     "dim_label_skills": "Skills",
     "dim_label_support": "Support",
-    "dim_label_tests": "Tests"
+    "dim_label_tests": "Tests",
+    "scan_dispatched_toast": "Ideen-Scan gestartet ({label})",
+    "scan_drawer_label": "Ideen-Scan ({label})"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "Fähigkeit hinzufügen",
@@ -8872,7 +8889,9 @@
     "waiting_for_output": "Warte auf Ausgabe…",
     "what_testing_checks": "Was Tests überprüfen:",
     "what_to_explore": "Was zu erkunden ist",
-    "your_agent_fallback": "Ihr Agent"
+    "your_agent_fallback": "Ihr Agent",
+    "approve_failed": "{name} konnte nicht genehmigt werden. Sie können es später unter Konnektoren genehmigen.",
+    "execution_ended": "Ausführung {status}"
   },
   "overview": {
     "activity_timeline": {
@@ -9518,7 +9537,13 @@
       "ask_athena_prompt": "Ich überprüfe einen Flottenoptimierungsvorschlag für meine Agenten: „{title}\" {description} Empfohlene Maßnahme: {action}. {focus}",
       "open_lab": "Lab öffnen",
       "open_lab_hint": "Alternative Modelle für {persona} im Lab testen",
-      "title": "Flottenoptimierung"
+      "title": "Flottenoptimierung",
+      "label_action": "Aktion",
+      "label_agent": "Agent",
+      "label_impact": "Auswirkung",
+      "severity_critical": "Dringend",
+      "severity_info": "Erkenntnis",
+      "severity_warning": "Empfohlen"
     },
     "focused_decision": {
       "accept": "Akzeptieren",
@@ -9975,7 +10000,8 @@
       "stat_total_runs": "Läufe gesamt",
       "subtitle": "Leistungsrankings aller Agenten",
       "this_agent": "Dieser Agent",
-      "title": "Agenten-Rangliste"
+      "title": "Agenten-Rangliste",
+      "sort_hint": "Klicken Sie auf eine Metrik, um zu sortieren"
     },
     "llm_spend": {
       "by_source": "Kosten nach Stufe",
@@ -20351,7 +20377,11 @@
         "thu": "Thu",
         "tue": "Tue",
         "wed": "Wed"
-      }
+      },
+      "channel_email": "E-Mail",
+      "channel_inbox": "Posteingang",
+      "channel_title_bar": "Titelleiste",
+      "petals_header": "Blütenblätter"
     },
     "banners": {
       "adoption_in_progress": "Vorlagenübernahme läuft",
@@ -20750,7 +20780,10 @@
       "ready_to_deploy_hint": "Vorlagen mit allen konfigurierten Konnektoren",
       "template_details_tabs_aria": "Template-Details",
       "triggers": "Auslöser",
-      "use_cases": "Anwendungsfälle"
+      "use_cases": "Anwendungsfälle",
+      "cred_default_name": "Zugangsdaten für {name}",
+      "cred_healthcheck_failed": "Statusprüfung fehlgeschlagen",
+      "cred_test_failed": "Verbindungstest fehlgeschlagen"
     },
     "generation": {
       "batch_all": "Alle ({count})",

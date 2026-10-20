@@ -9879,6 +9879,7 @@ export type Translations = {
       hint_activity: string;
       improve_agent: string;
       section_subtitle: string;
+      sort_hint: string;
     };
     observability_extra: {
       auto_refresh_on: string;
@@ -10733,6 +10734,12 @@ export type Translations = {
       ask_athena_prompt: string;
       ask_athena_focus_persona: string;
       ask_athena_focus_general: string;
+      severity_critical: string;
+      severity_warning: string;
+      severity_info: string;
+      label_impact: string;
+      label_action: string;
+      label_agent: string;
     };
     attention_loop: {
       title: string;
@@ -11406,6 +11413,9 @@ export type Translations = {
       no_flows: string;
       readiness_tooltip: string;
       template_details_tabs_aria: string;
+      cred_default_name: string;
+      cred_healthcheck_failed: string;
+      cred_test_failed: string;
     };
     actions: {
       view_details: string;
@@ -11477,6 +11487,10 @@ export type Translations = {
         manual_on_demand: string;
         custom_cron: string;
       };
+      petals_header: string;
+      channel_inbox: string;
+      channel_title_bar: string;
+      channel_email: string;
     };
     choose: {
       select_use_cases: string;
@@ -15300,6 +15314,8 @@ export type Translations = {
     skip_build: string;
     dark_themes: string;
     light_themes: string;
+    approve_failed: string;
+    execution_ended: string;
   };
   system_health: {
     install_all: string;
@@ -16028,6 +16044,21 @@ export type Translations = {
     domain_finance: string;
     domain_operations: string;
     domain_people: string;
+    l2_all_domains: string;
+    l2_counts: string;
+    l2_filter_all: string;
+    l2_filter_templates: string;
+    l2_filter_recipes: string;
+    l2_filter_placeholder: string;
+    l2_col_name: string;
+    l2_col_type: string;
+    l2_col_focus: string;
+    l2_col_tools: string;
+    l2_col_capabilities: string;
+    l2_kind_template: string;
+    l2_kind_recipe: string;
+    l2_no_matches: string;
+    l2_shown: string;
   };
   foundry: {
     _comment: string;
@@ -25680,6 +25711,8 @@ export type Translations = {
     dim_label_goals: string;
     dim_label_datalinks: string;
     dim_label_support: string;
+    scan_drawer_label: string;
+    scan_dispatched_toast: string;
   };
   ship: {
     cover_next: string;

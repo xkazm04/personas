@@ -214,7 +214,11 @@
       "thu": "Thu",
       "tue": "Tue",
       "wed": "Wed"
-    }
+    },
+    "channel_email": "E-mail",
+    "channel_inbox": "Boîte de réception",
+    "channel_title_bar": "Barre de titre",
+    "petals_header": "Pétales"
   },
   "banners": {
     "adoption_in_progress": "Adoption du modèle en cours",
@@ -613,7 +617,10 @@
     "ready_to_deploy_hint": "Modèles avec tous les connecteurs configurés",
     "template_details_tabs_aria": "Détails du modèle",
     "triggers": "Déclencheurs",
-    "use_cases": "Cas d’utilisation"
+    "use_cases": "Cas d’utilisation",
+    "cred_default_name": "Identifiant {name}",
+    "cred_healthcheck_failed": "Échec de la vérification d'état",
+    "cred_test_failed": "Échec du test de connexion"
   },
   "generation": {
     "batch_all": "Tout ({count})",

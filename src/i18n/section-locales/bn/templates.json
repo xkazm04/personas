@@ -214,7 +214,11 @@
       "thu": "Thu",
       "tue": "Tue",
       "wed": "Wed"
-    }
+    },
+    "channel_email": "ইমেল",
+    "channel_inbox": "ইনবক্স",
+    "channel_title_bar": "টাইটেল বার",
+    "petals_header": "পাপড়ি"
   },
   "banners": {
     "adoption_in_progress": "টেমপ্লেট অ্যাডপশন চলছে",
@@ -613,7 +617,10 @@
     "ready_to_deploy_hint": "সব সংযোগকারী কনফিগার করা টেমপ্লেট",
     "template_details_tabs_aria": "টেমপ্লেট বিবরণ",
     "triggers": "ট্রিগার",
-    "use_cases": "ব্যবহারের ক্ষেত্র"
+    "use_cases": "ব্যবহারের ক্ষেত্র",
+    "cred_default_name": "{name} ক্রেডেনশিয়াল",
+    "cred_healthcheck_failed": "হেলথচেক ব্যর্থ হয়েছে",
+    "cred_test_failed": "সংযোগ পরীক্ষা ব্যর্থ হয়েছে"
   },
   "generation": {
     "batch_all": "সব ({count})",

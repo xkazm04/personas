@@ -63,10 +63,9 @@ export function LeaderboardMatrixPlaceholder() {
   );
 }
 
-// Rank glyph and the one string with no key yet (carded for i18n).
+// Rank column glyph: language-neutral, so it stays out of the catalog.
 const COPY = {
   rank: '#',
-  sortHint: 'Click a metric to sort',
 };
 
 const MEDAL_STYLE: Record<string, string> = {
@@ -125,7 +124,7 @@ export function LeaderboardMatrixView({
             </span>
           ))}
         </div>
-        <span className="typo-caption text-foreground">{COPY.sortHint}</span>
+        <span className="typo-caption text-foreground">{lb.sort_hint}</span>
       </div>
 
       <div className="overflow-x-auto rounded-modal border border-primary/[0.08] bg-secondary/[0.03] shadow-elevation-1">

@@ -214,7 +214,11 @@
       "thu": "Thu",
       "tue": "Tue",
       "wed": "Wed"
-    }
+    },
+    "channel_email": "ईमेल",
+    "channel_inbox": "इनबॉक्स",
+    "channel_title_bar": "टाइटल बार",
+    "petals_header": "पंखुड़ियाँ"
   },
   "banners": {
     "adoption_in_progress": "टेम्पलेट अपनाना जारी है",
@@ -613,7 +617,10 @@
     "ready_to_deploy_hint": "सभी कनेक्टर कॉन्फ़िगर वाले टेम्पलेट",
     "template_details_tabs_aria": "टेम्पलेट विवरण",
     "triggers": "ट्रिगर",
-    "use_cases": "उपयोग मामले"
+    "use_cases": "उपयोग मामले",
+    "cred_default_name": "{name} क्रेडेंशियल",
+    "cred_healthcheck_failed": "हेल्थचेक विफल रहा",
+    "cred_test_failed": "कनेक्शन परीक्षण विफल रहा"
   },
   "generation": {
     "batch_all": "सभी ({count})",

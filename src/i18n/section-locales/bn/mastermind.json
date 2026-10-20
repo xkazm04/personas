@@ -243,5 +243,7 @@
   "dim_label_security": "নিরাপত্তা",
   "dim_label_skills": "স্কিল",
   "dim_label_support": "সহায়তা",
-  "dim_label_tests": "টেস্ট"
+  "dim_label_tests": "টেস্ট",
+  "scan_dispatched_toast": "আইডিয়া স্ক্যান পাঠানো হয়েছে ({label})",
+  "scan_drawer_label": "আইডিয়া স্ক্যান ({label})"
 }

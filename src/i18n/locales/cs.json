@@ -5398,7 +5398,22 @@
     "domain_revenue": "Prodej a marketing",
     "adopt_failed": "Nepodařilo se otevřít {name}.",
     "adopt_no_template": "{name} nemá zdrojovou šablonu k převzetí.",
-    "adopt_not_found": "{name} zatím není v galerii šablon."
+    "adopt_not_found": "{name} zatím není v galerii šablon.",
+    "l2_all_domains": "Všechny domény",
+    "l2_col_capabilities": "Schopnosti",
+    "l2_col_focus": "Zaměření",
+    "l2_col_name": "Název",
+    "l2_col_tools": "Nástroje",
+    "l2_col_type": "Typ",
+    "l2_counts": "{templates} šablon · {recipes} receptů",
+    "l2_filter_all": "Vše",
+    "l2_filter_placeholder": "Filtrovat podle názvu…",
+    "l2_filter_recipes": "Recepty",
+    "l2_filter_templates": "Šablony",
+    "l2_kind_recipe": "Recept",
+    "l2_kind_template": "Šablona",
+    "l2_no_matches": "Žádné shody.",
+    "l2_shown": "Zobrazeno {shown} z {total}"
   },
   "feedback_labels": {
     "accurate_prompt": "Přesný prompt",
@@ -6397,7 +6412,9 @@
     "dim_label_security": "Zabezpečení",
     "dim_label_skills": "Dovednosti",
     "dim_label_support": "Podpora",
-    "dim_label_tests": "Testy"
+    "dim_label_tests": "Testy",
+    "scan_dispatched_toast": "Skenování nápadů spuštěno ({label})",
+    "scan_drawer_label": "Skenování nápadů ({label})"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "Přidat schopnost",
@@ -8872,7 +8889,9 @@
     "waiting_for_output": "Čekání na výstup…",
     "what_testing_checks": "Co testování kontroluje:",
     "what_to_explore": "Co prozkoumat",
-    "your_agent_fallback": "Váš agent"
+    "your_agent_fallback": "Váš agent",
+    "approve_failed": "Aplikaci {name} se nepodařilo schválit. Můžete ji schválit později v Konektorech.",
+    "execution_ended": "Provedení: {status}"
   },
   "overview": {
     "activity_timeline": {
@@ -9518,7 +9537,13 @@
       "ask_athena_prompt": "Přezkoumávám návrh na optimalizaci flotily pro své agenty: „{title}“. {description} Navrhovaná akce: {action}. {focus}",
       "open_lab": "Otevřít Lab",
       "open_lab_hint": "Otestujte alternativní modely pro {persona} v Labu",
-      "title": "Optimalizace flotily"
+      "title": "Optimalizace flotily",
+      "label_action": "Akce",
+      "label_agent": "Agent",
+      "label_impact": "Dopad",
+      "severity_critical": "Naléhavé",
+      "severity_info": "Poznatek",
+      "severity_warning": "Doporučeno"
     },
     "focused_decision": {
       "accept": "Přijmout",
@@ -9975,7 +10000,8 @@
       "stat_total_runs": "Celkem běhů",
       "subtitle": "Žebříček výkonu napříč všemi agenty",
       "this_agent": "Tento agent",
-      "title": "Žebříček agentů"
+      "title": "Žebříček agentů",
+      "sort_hint": "Kliknutím na metriku seřadíte"
     },
     "llm_spend": {
       "by_source": "Náklady podle úrovně",
@@ -20351,7 +20377,11 @@
         "thu": "Thu",
         "tue": "Tue",
         "wed": "Wed"
-      }
+      },
+      "channel_email": "E-mail",
+      "channel_inbox": "Doručená pošta",
+      "channel_title_bar": "Záhlaví okna",
+      "petals_header": "Okvětní lístky"
     },
     "banners": {
       "adoption_in_progress": "Probíhá adopce šablony",
@@ -20750,7 +20780,10 @@
       "ready_to_deploy_hint": "Šablony se všemi propojenými službami",
       "template_details_tabs_aria": "Detaily šablony",
       "triggers": "Spouštěče",
-      "use_cases": "Případy užití"
+      "use_cases": "Případy užití",
+      "cred_default_name": "Přihlašovací údaje {name}",
+      "cred_healthcheck_failed": "Kontrola stavu selhala",
+      "cred_test_failed": "Test připojení selhal"
     },
     "generation": {
       "batch_all": "Vše ({count})",

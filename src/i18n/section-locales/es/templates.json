@@ -214,7 +214,11 @@
       "thu": "Thu",
       "tue": "Tue",
       "wed": "Wed"
-    }
+    },
+    "channel_email": "Correo electrónico",
+    "channel_inbox": "Bandeja de entrada",
+    "channel_title_bar": "Barra de título",
+    "petals_header": "Pétalos"
   },
   "banners": {
     "adoption_in_progress": "Adopción de plantilla en progreso",
@@ -613,7 +617,10 @@
     "ready_to_deploy_hint": "Plantillas con todos los conectores configurados",
     "template_details_tabs_aria": "Detalles de plantilla",
     "triggers": "Disparadores",
-    "use_cases": "Casos de uso"
+    "use_cases": "Casos de uso",
+    "cred_default_name": "Credencial de {name}",
+    "cred_healthcheck_failed": "Falló la comprobación de estado",
+    "cred_test_failed": "Falló la prueba de conexión"
   },
   "generation": {
     "batch_all": "Todos ({count})",

@@ -243,5 +243,7 @@
   "dim_label_security": "सुरक्षा",
   "dim_label_skills": "कौशल",
   "dim_label_support": "सहायता",
-  "dim_label_tests": "टेस्ट"
+  "dim_label_tests": "टेस्ट",
+  "scan_dispatched_toast": "आइडिया स्कैन भेजा गया ({label})",
+  "scan_drawer_label": "आइडिया स्कैन ({label})"
 }

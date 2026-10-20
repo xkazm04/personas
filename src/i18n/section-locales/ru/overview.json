@@ -642,7 +642,13 @@
     "ask_athena_prompt": "Я рассматриваю предложение по оптимизации флота для своих агентов: «{title}». {description} Рекомендуемое действие: {action}. {focus}",
     "open_lab": "Открыть Lab",
     "open_lab_hint": "Протестировать альтернативные модели для «{persona}» в Lab",
-    "title": "Оптимизация флота"
+    "title": "Оптимизация флота",
+    "label_action": "Действие",
+    "label_agent": "Агент",
+    "label_impact": "Влияние",
+    "severity_critical": "Срочно",
+    "severity_info": "Наблюдение",
+    "severity_warning": "Рекомендуется"
   },
   "focused_decision": {
     "accept": "Принять",
@@ -1099,7 +1105,8 @@
     "stat_total_runs": "Всего запусков",
     "subtitle": "Рейтинг производительности всех агентов",
     "this_agent": "Этот агент",
-    "title": "Рейтинг агентов"
+    "title": "Рейтинг агентов",
+    "sort_hint": "Нажмите на метрику для сортировки"
   },
   "llm_spend": {
     "by_source": "Расходы по уровню",

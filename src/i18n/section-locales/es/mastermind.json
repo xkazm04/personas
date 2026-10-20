@@ -243,5 +243,7 @@
   "dim_label_security": "Seguridad",
   "dim_label_skills": "Habilidades",
   "dim_label_support": "Soporte",
-  "dim_label_tests": "Pruebas"
+  "dim_label_tests": "Pruebas",
+  "scan_dispatched_toast": "Análisis de ideas enviado ({label})",
+  "scan_drawer_label": "Análisis de ideas ({label})"
 }

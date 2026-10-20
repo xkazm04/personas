@@ -5398,7 +5398,22 @@
     "domain_revenue": "बिक्री और मार्केटिंग",
     "adopt_failed": "{name} नहीं खोला जा सका।",
     "adopt_no_template": "{name} के पास अपनाने के लिए कोई स्रोत टेम्पलेट नहीं है।",
-    "adopt_not_found": "{name} अभी तक टेम्पलेट गैलरी में नहीं है।"
+    "adopt_not_found": "{name} अभी तक टेम्पलेट गैलरी में नहीं है।",
+    "l2_all_domains": "सभी डोमेन",
+    "l2_col_capabilities": "क्षमताएँ",
+    "l2_col_focus": "फ़ोकस",
+    "l2_col_name": "नाम",
+    "l2_col_tools": "टूल",
+    "l2_col_type": "प्रकार",
+    "l2_counts": "{templates} टेम्पलेट · {recipes} रेसिपी",
+    "l2_filter_all": "सभी",
+    "l2_filter_placeholder": "नाम से फ़िल्टर करें…",
+    "l2_filter_recipes": "रेसिपी",
+    "l2_filter_templates": "टेम्पलेट",
+    "l2_kind_recipe": "रेसिपी",
+    "l2_kind_template": "टेम्पलेट",
+    "l2_no_matches": "कोई मिलान नहीं।",
+    "l2_shown": "{total} में से {shown} दिखाए गए"
   },
   "feedback_labels": {
     "accurate_prompt": "सटीक प्रॉम्प्ट",
@@ -6397,7 +6412,9 @@
     "dim_label_security": "सुरक्षा",
     "dim_label_skills": "कौशल",
     "dim_label_support": "सहायता",
-    "dim_label_tests": "टेस्ट"
+    "dim_label_tests": "टेस्ट",
+    "scan_dispatched_toast": "आइडिया स्कैन भेजा गया ({label})",
+    "scan_drawer_label": "आइडिया स्कैन ({label})"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "क्षमता जोड़ें",
@@ -8872,7 +8889,9 @@
     "waiting_for_output": "आउटपुट का इंतज़ार…",
     "what_testing_checks": "टेस्टिंग क्या जाँचती है:",
     "what_to_explore": "क्या एक्सप्लोर करें",
-    "your_agent_fallback": "आपका एजेंट"
+    "your_agent_fallback": "आपका एजेंट",
+    "approve_failed": "{name} को स्वीकृत नहीं किया जा सका। आप इसे बाद में कनेक्टर्स से स्वीकृत कर सकते हैं।",
+    "execution_ended": "निष्पादन {status}"
   },
   "overview": {
     "activity_timeline": {
@@ -9518,7 +9537,13 @@
       "ask_athena_prompt": "मैं अपने एजेंट्स के लिए एक फ्लीट अनुकूलन सुझाव की समीक्षा कर रहा हूँ: \"{title}\"। {description} सुझाया गया कार्य: {action}। {focus}",
       "open_lab": "लैब खोलें",
       "open_lab_hint": "लैब में {persona} के लिए वैकल्पिक मॉडल परखें",
-      "title": "फ्लीट अनुकूलन"
+      "title": "फ्लीट अनुकूलन",
+      "label_action": "कार्रवाई",
+      "label_agent": "एजेंट",
+      "label_impact": "प्रभाव",
+      "severity_critical": "अत्यावश्यक",
+      "severity_info": "अंतर्दृष्टि",
+      "severity_warning": "सुझाया गया"
     },
     "focused_decision": {
       "accept": "स्वीकार करें",
@@ -9975,7 +10000,8 @@
       "stat_total_runs": "कुल रन",
       "subtitle": "सभी एजेंटों में प्रदर्शन रैंकिंग",
       "this_agent": "यह एजेंट",
-      "title": "एजेंट लीडरबोर्ड"
+      "title": "एजेंट लीडरबोर्ड",
+      "sort_hint": "क्रमबद्ध करने के लिए किसी मीट्रिक पर क्लिक करें"
     },
     "llm_spend": {
       "by_source": "स्तर के अनुसार लागत",
@@ -20351,7 +20377,11 @@
         "thu": "Thu",
         "tue": "Tue",
         "wed": "Wed"
-      }
+      },
+      "channel_email": "ईमेल",
+      "channel_inbox": "इनबॉक्स",
+      "channel_title_bar": "टाइटल बार",
+      "petals_header": "पंखुड़ियाँ"
     },
     "banners": {
       "adoption_in_progress": "टेम्पलेट अपनाना जारी है",
@@ -20750,7 +20780,10 @@
       "ready_to_deploy_hint": "सभी कनेक्टर कॉन्फ़िगर वाले टेम्पलेट",
       "template_details_tabs_aria": "टेम्पलेट विवरण",
       "triggers": "ट्रिगर",
-      "use_cases": "उपयोग मामले"
+      "use_cases": "उपयोग मामले",
+      "cred_default_name": "{name} क्रेडेंशियल",
+      "cred_healthcheck_failed": "हेल्थचेक विफल रहा",
+      "cred_test_failed": "कनेक्शन परीक्षण विफल रहा"
     },
     "generation": {
       "batch_all": "सभी ({count})",

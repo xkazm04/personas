@@ -371,14 +371,14 @@ export function useAdoptionDimensionModel(props: PersonaLayoutAdoptionModelProps
     const out: AdoptionConnectorCard[] = [];
     const seen = new Set<string>();
     for (const ch of notificationChannels) {
-      const card = resolveChannelCard(ch);
+      const card = resolveChannelCard(ch, t);
       const k = `${card.key}:${ch.credential_id ?? ''}`;
       if (seen.has(k)) continue;
       seen.add(k);
       out.push(card);
     }
     return out;
-  }, [notificationChannels]);
+  }, [notificationChannels, t]);
 
   const answeredByDim = useMemo<Partial<Record<GlyphDimension, string[]>>>(() => {
     const byDim: Partial<Record<GlyphDimension, string[]>> = {};

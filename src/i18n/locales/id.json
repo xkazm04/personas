@@ -5398,7 +5398,22 @@
     "domain_revenue": "Penjualan & Pemasaran",
     "adopt_failed": "Tidak dapat membuka {name}.",
     "adopt_no_template": "{name} tidak punya templat sumber untuk diadopsi.",
-    "adopt_not_found": "{name} belum ada di galeri templat."
+    "adopt_not_found": "{name} belum ada di galeri templat.",
+    "l2_all_domains": "Semua domain",
+    "l2_col_capabilities": "Kapabilitas",
+    "l2_col_focus": "Fokus",
+    "l2_col_name": "Nama",
+    "l2_col_tools": "Alat",
+    "l2_col_type": "Tipe",
+    "l2_counts": "{templates} templat · {recipes} resep",
+    "l2_filter_all": "Semua",
+    "l2_filter_placeholder": "Filter berdasarkan nama…",
+    "l2_filter_recipes": "Resep",
+    "l2_filter_templates": "Templat",
+    "l2_kind_recipe": "Resep",
+    "l2_kind_template": "Templat",
+    "l2_no_matches": "Tidak ada yang cocok.",
+    "l2_shown": "{shown} dari {total} ditampilkan"
   },
   "feedback_labels": {
     "accurate_prompt": "Prompt akurat",
@@ -6397,7 +6412,9 @@
     "dim_label_security": "Keamanan",
     "dim_label_skills": "Skill",
     "dim_label_support": "Dukungan",
-    "dim_label_tests": "Tes"
+    "dim_label_tests": "Tes",
+    "scan_dispatched_toast": "Pemindaian ide dikirim ({label})",
+    "scan_drawer_label": "Pemindaian Ide ({label})"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "Tambah kemampuan",
@@ -8872,7 +8889,9 @@
     "waiting_for_output": "Menunggu output…",
     "what_testing_checks": "Apa yang diperiksa pengujian:",
     "what_to_explore": "Apa yang perlu dijelajahi",
-    "your_agent_fallback": "Agen Anda"
+    "your_agent_fallback": "Agen Anda",
+    "approve_failed": "Tidak dapat menyetujui {name}. Anda dapat menyetujuinya nanti dari Konektor.",
+    "execution_ended": "Eksekusi {status}"
   },
   "overview": {
     "activity_timeline": {
@@ -9518,7 +9537,13 @@
       "ask_athena_prompt": "Saya sedang meninjau saran optimasi armada untuk agen saya: \"{title}\". {description} Tindakan yang disarankan: {action}. {focus}",
       "open_lab": "Buka Lab",
       "open_lab_hint": "Uji model alternatif untuk {persona} di Lab",
-      "title": "Optimasi armada"
+      "title": "Optimasi armada",
+      "label_action": "Tindakan",
+      "label_agent": "Agen",
+      "label_impact": "Dampak",
+      "severity_critical": "Mendesak",
+      "severity_info": "Wawasan",
+      "severity_warning": "Disarankan"
     },
     "focused_decision": {
       "accept": "Terima",
@@ -9975,7 +10000,8 @@
       "stat_total_runs": "Total proses",
       "subtitle": "Peringkat kinerja di semua agen",
       "this_agent": "Agen ini",
-      "title": "Papan peringkat agen"
+      "title": "Papan peringkat agen",
+      "sort_hint": "Klik metrik untuk mengurutkan"
     },
     "llm_spend": {
       "by_source": "Biaya per tier",
@@ -20351,7 +20377,11 @@
         "thu": "Thu",
         "tue": "Tue",
         "wed": "Wed"
-      }
+      },
+      "channel_email": "Email",
+      "channel_inbox": "Kotak masuk",
+      "channel_title_bar": "Bilah judul",
+      "petals_header": "Kelopak"
     },
     "banners": {
       "adoption_in_progress": "Adopsi templat sedang berlangsung",
@@ -20750,7 +20780,10 @@
       "ready_to_deploy_hint": "Templat dengan semua konektor dikonfigurasi",
       "template_details_tabs_aria": "Detail templat",
       "triggers": "Pemicu",
-      "use_cases": "Kasus penggunaan"
+      "use_cases": "Kasus penggunaan",
+      "cred_default_name": "Kredensial {name}",
+      "cred_healthcheck_failed": "Pemeriksaan kesehatan gagal",
+      "cred_test_failed": "Uji koneksi gagal"
     },
     "generation": {
       "batch_all": "Semua ({count})",

@@ -243,5 +243,7 @@
   "dim_label_security": "보안",
   "dim_label_skills": "스킬",
   "dim_label_support": "지원",
-  "dim_label_tests": "테스트"
+  "dim_label_tests": "테스트",
+  "scan_dispatched_toast": "아이디어 스캔을 시작했습니다({label})",
+  "scan_drawer_label": "아이디어 스캔({label})"
 }

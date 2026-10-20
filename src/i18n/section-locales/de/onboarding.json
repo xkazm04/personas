@@ -607,5 +607,7 @@
   "waiting_for_output": "Warte auf Ausgabe…",
   "what_testing_checks": "Was Tests überprüfen:",
   "what_to_explore": "Was zu erkunden ist",
-  "your_agent_fallback": "Ihr Agent"
+  "your_agent_fallback": "Ihr Agent",
+  "approve_failed": "{name} konnte nicht genehmigt werden. Sie können es später unter Konnektoren genehmigen.",
+  "execution_ended": "Ausführung {status}"
 }

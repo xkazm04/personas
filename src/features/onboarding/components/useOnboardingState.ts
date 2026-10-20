@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from "@/stores/systemStore";
 import { useVaultStore } from "@/stores/vaultStore";
 import { useAgentStore } from "@/stores/agentStore";
@@ -75,6 +76,7 @@ function countTemplateLoad(phase: TemplateLoadPhase, source: 'trending' | 'fallb
 }
 
 export function useOnboardingState() {
+  const { t, tx } = useTranslation();
   const onboardingActive = useSystemStore((s) => s.onboardingActive);
   const onboardingStep = useSystemStore((s) => s.onboardingStep);
   const onboardingStepCompleted = useSystemStore((s) => s.onboardingStepCompleted);
@@ -177,12 +179,12 @@ export function useOnboardingState() {
       // re-enabling the button with no feedback violates least-surprise.
       toastCatch(
         `useOnboardingState:approveApp:${connectorName}`,
-        `Could not approve ${connectorName}. You can approve it later from Connectors.`,
+        tx(t.onboarding.approve_failed, { name: connectorName }),
       )(err);
     } finally {
       setApprovingApp(null);
     }
-  }, []);
+  }, [t, tx]);
 
   const handleNextFromAppearance = useCallback(() => {
     trackInteraction('onboarding', 'step_complete', 'appearance');

@@ -607,5 +607,7 @@
   "agent_promoted_hint": "Your first agent is live. The tour is almost complete!",
   "skip_build": "Skip build for now",
   "dark_themes": "Dark Themes",
-  "light_themes": "Light Themes"
+  "light_themes": "Light Themes",
+  "approve_failed": "Could not approve {name}. You can approve it later from Connectors.",
+  "execution_ended": "Execution {status}"
 }

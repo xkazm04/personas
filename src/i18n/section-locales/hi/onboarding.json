@@ -607,5 +607,7 @@
   "waiting_for_output": "आउटपुट का इंतज़ार…",
   "what_testing_checks": "टेस्टिंग क्या जाँचती है:",
   "what_to_explore": "क्या एक्सप्लोर करें",
-  "your_agent_fallback": "आपका एजेंट"
+  "your_agent_fallback": "आपका एजेंट",
+  "approve_failed": "{name} को स्वीकृत नहीं किया जा सका। आप इसे बाद में कनेक्टर्स से स्वीकृत कर सकते हैं।",
+  "execution_ended": "निष्पादन {status}"
 }

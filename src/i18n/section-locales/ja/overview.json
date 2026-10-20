@@ -642,7 +642,13 @@
     "ask_athena_prompt": "エージェントのフリート最適化の提案を確認しています:「{title}」。{description} 推奨アクション:{action}。{focus}",
     "open_lab": "ラボを開く",
     "open_lab_hint": "Labで{persona}の代替モデルをテストする",
-    "title": "フリート最適化"
+    "title": "フリート最適化",
+    "label_action": "アクション",
+    "label_agent": "エージェント",
+    "label_impact": "影響",
+    "severity_critical": "緊急",
+    "severity_info": "インサイト",
+    "severity_warning": "提案"
   },
   "focused_decision": {
     "accept": "受諾",
@@ -1099,7 +1105,8 @@
     "stat_total_runs": "総実行数",
     "subtitle": "すべてのエージェントのパフォーマンスランキング",
     "this_agent": "このエージェント",
-    "title": "エージェントリーダーボード"
+    "title": "エージェントリーダーボード",
+    "sort_hint": "指標をクリックして並べ替え"
   },
   "llm_spend": {
     "by_source": "種別別コスト",

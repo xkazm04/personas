@@ -642,7 +642,13 @@
     "ask_athena_prompt": "أراجع اقتراح تحسين أسطول لوكلائي: «{title}». {description} الإجراء المقترح: {action}. {focus}",
     "open_lab": "فتح المختبر",
     "open_lab_hint": "اختبر نماذج بديلة لـ {persona} في المختبر",
-    "title": "تحسين الأسطول"
+    "title": "تحسين الأسطول",
+    "label_action": "الإجراء",
+    "label_agent": "الوكيل",
+    "label_impact": "التأثير",
+    "severity_critical": "عاجل",
+    "severity_info": "رؤية",
+    "severity_warning": "مقترح"
   },
   "focused_decision": {
     "accept": "قبول",
@@ -1099,7 +1105,8 @@
     "stat_total_runs": "إجمالي التشغيلات",
     "subtitle": "تصنيفات الأداء عبر جميع الوكلاء",
     "this_agent": "هذا الوكيل",
-    "title": "لوحة صدارة الوكلاء"
+    "title": "لوحة صدارة الوكلاء",
+    "sort_hint": "انقر على مقياس للفرز"
   },
   "llm_spend": {
     "by_source": "التكلفة حسب المستوى",

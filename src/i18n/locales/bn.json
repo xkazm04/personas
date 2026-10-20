@@ -5398,7 +5398,22 @@
     "domain_revenue": "বিক্রয় ও বিপণন",
     "adopt_failed": "{name} খোলা যায়নি।",
     "adopt_no_template": "{name}-এর গ্রহণ করার মতো কোনো উৎস টেমপ্লেট নেই।",
-    "adopt_not_found": "{name} এখনও টেমপ্লেট গ্যালারিতে নেই।"
+    "adopt_not_found": "{name} এখনও টেমপ্লেট গ্যালারিতে নেই।",
+    "l2_all_domains": "সব ডোমেন",
+    "l2_col_capabilities": "সক্ষমতা",
+    "l2_col_focus": "ফোকাস",
+    "l2_col_name": "নাম",
+    "l2_col_tools": "টুল",
+    "l2_col_type": "ধরন",
+    "l2_counts": "{templates}টি টেমপ্লেট · {recipes}টি রেসিপি",
+    "l2_filter_all": "সব",
+    "l2_filter_placeholder": "নাম দিয়ে ফিল্টার করুন…",
+    "l2_filter_recipes": "রেসিপি",
+    "l2_filter_templates": "টেমপ্লেট",
+    "l2_kind_recipe": "রেসিপি",
+    "l2_kind_template": "টেমপ্লেট",
+    "l2_no_matches": "কোনো মিল নেই।",
+    "l2_shown": "{total}টির মধ্যে {shown}টি দেখানো হচ্ছে"
   },
   "feedback_labels": {
     "accurate_prompt": "নির্ভুল প্রম্পট",
@@ -6397,7 +6412,9 @@
     "dim_label_security": "নিরাপত্তা",
     "dim_label_skills": "স্কিল",
     "dim_label_support": "সহায়তা",
-    "dim_label_tests": "টেস্ট"
+    "dim_label_tests": "টেস্ট",
+    "scan_dispatched_toast": "আইডিয়া স্ক্যান পাঠানো হয়েছে ({label})",
+    "scan_drawer_label": "আইডিয়া স্ক্যান ({label})"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "সক্ষমতা যোগ করুন",
@@ -8872,7 +8889,9 @@
     "waiting_for_output": "আউটপুটের অপেক্ষায়…",
     "what_testing_checks": "পরীক্ষা কী যাচাই করে:",
     "what_to_explore": "কী অন্বেষণ করবেন",
-    "your_agent_fallback": "আপনার এজেন্ট"
+    "your_agent_fallback": "আপনার এজেন্ট",
+    "approve_failed": "{name} অনুমোদন করা যায়নি। আপনি পরে কানেক্টর থেকে এটি অনুমোদন করতে পারবেন।",
+    "execution_ended": "এক্সিকিউশন {status}"
   },
   "overview": {
     "activity_timeline": {
@@ -9518,7 +9537,13 @@
       "ask_athena_prompt": "আমি আমার এজেন্টগুলির জন্য একটি ফ্লিট অপ্টিমাইজেশন পরামর্শ পর্যালোচনা করছি: \"{title}\"। {description} প্রস্তাবিত পদক্ষেপ: {action}। {focus}",
       "open_lab": "Lab খুলুন",
       "open_lab_hint": "Lab-এ {persona}-এর জন্য বিকল্প মডেল পরীক্ষা করুন",
-      "title": "ফ্লিট অপ্টিমাইজেশন"
+      "title": "ফ্লিট অপ্টিমাইজেশন",
+      "label_action": "পদক্ষেপ",
+      "label_agent": "এজেন্ট",
+      "label_impact": "প্রভাব",
+      "severity_critical": "জরুরি",
+      "severity_info": "অন্তর্দৃষ্টি",
+      "severity_warning": "প্রস্তাবিত"
     },
     "focused_decision": {
       "accept": "গ্রহণ করুন",
@@ -9975,7 +10000,8 @@
       "stat_total_runs": "মোট রান",
       "subtitle": "সব এজেন্ট জুড়ে পারফরম্যান্স র্যাংকিং",
       "this_agent": "এই এজেন্ট",
-      "title": "এজেন্ট লিডারবোর্ড"
+      "title": "এজেন্ট লিডারবোর্ড",
+      "sort_hint": "সাজাতে একটি মেট্রিকে ক্লিক করুন"
     },
     "llm_spend": {
       "by_source": "স্তর অনুযায়ী খরচ",
@@ -20351,7 +20377,11 @@
         "thu": "Thu",
         "tue": "Tue",
         "wed": "Wed"
-      }
+      },
+      "channel_email": "ইমেল",
+      "channel_inbox": "ইনবক্স",
+      "channel_title_bar": "টাইটেল বার",
+      "petals_header": "পাপড়ি"
     },
     "banners": {
       "adoption_in_progress": "টেমপ্লেট অ্যাডপশন চলছে",
@@ -20750,7 +20780,10 @@
       "ready_to_deploy_hint": "সব সংযোগকারী কনফিগার করা টেমপ্লেট",
       "template_details_tabs_aria": "টেমপ্লেট বিবরণ",
       "triggers": "ট্রিগার",
-      "use_cases": "ব্যবহারের ক্ষেত্র"
+      "use_cases": "ব্যবহারের ক্ষেত্র",
+      "cred_default_name": "{name} ক্রেডেনশিয়াল",
+      "cred_healthcheck_failed": "হেলথচেক ব্যর্থ হয়েছে",
+      "cred_test_failed": "সংযোগ পরীক্ষা ব্যর্থ হয়েছে"
     },
     "generation": {
       "batch_all": "সব ({count})",
