@@ -19,6 +19,7 @@
 import { KitHost } from '@/features/shared/components/kit';
 import { ContentBox } from '@/features/shared/components/layout/ContentLayout';
 
+import { useLifecycleReconcile } from './journey/useLifecycleReconcile';
 import { LifecycleViewProvider } from './lifecycleView/context';
 import { TimeTravelProvider } from './lifecycleView/history/timeTravel';
 import { LensBody, useLensRoute } from './lifecycleView/lens/LensBody';
@@ -28,6 +29,8 @@ import { useLifecycleView } from './lifecycleView/useLifecycleView';
 
 export default function LifecyclePage() {
   const [route, dispatch] = useLensRoute();
+  // A dropped lifecycle push heals on entry, focus and re-show, not on the next write.
+  useLifecycleReconcile();
   const model = useLifecycleView(route.plane === 'project' ? route.projectId : null);
 
   return (
