@@ -210,24 +210,44 @@ pub(crate) fn approve_pairing_core(
         "prefix": resp.record.key_prefix,
     })
     .to_string();
-    let _ = settings_audit_log::insert(
-        db,
-        "api_keys",
-        &resp.record.name,
-        "pair",
-        None,
-        Some(&after),
-        Some(source),
-    );
+    audit_pairing(db, &resp.record.name, "pair", Some(&after), source);
     Ok((resp.record.id.clone(), resp.record.parsed_scopes()))
+}
+
+/// Best-effort Settings > History row for a pairing decision. A failed insert
+/// must not turn a made decision into an error, but it must not vanish either.
+fn audit_pairing(
+    db: &crate::db::DbPool,
+    key: &str,
+    action: &str,
+    after: Option<&str>,
+    source: &str,
+) {
+    if let Err(e) =
+        settings_audit_log::insert(db, "api_keys", key, action, None, after, Some(source))
+    {
+        tracing::warn!(error = %e, action, "settings_audit_log insert failed for pairing decision");
+    }
+}
+
+/// The reject half of the pairing ceremony. Records the decision (a security
+/// decision belongs in Settings > History) before marking the nonce rejected,
+/// since the pending entry is the only place the origin is known.
+pub(crate) fn reject_pairing_core(db: &crate::db::DbPool, nonce: &str, source: &str) {
+    let key = match pairing::pending_origin(nonce) {
+        Some((origin, _)) => origin,
+        None => "unknown-origin".to_string(),
+    };
+    let after = serde_json::json!({ "origin": key }).to_string();
+    pairing::set_rejected(nonce);
+    audit_pairing(db, &key, "reject_pairing", Some(&after), source);
 }
 
 /// Reject a pending pairing — the cloud app's claim then returns 403.
 #[tauri::command]
 #[requires(privileged)]
 pub fn reject_pairing(state: State<'_, Arc<AppState>>, nonce: String) -> Result<(), AppError> {
-    let _ = &state;
-    pairing::set_rejected(&nonce);
+    reject_pairing_core(&state.db, &nonce, "ui");
     Ok(())
 }
 
@@ -239,14 +259,28 @@ pub fn revoke_pairing(state: State<'_, Arc<AppState>>, key_id: String) -> Result
     repo::revoke(&state.db, &key_id)?;
     management_api::load_paired_origins(&state.db);
     tracing::info!(api_key_id = %key_id, "pairing revoked");
-    let _ = settings_audit_log::insert(
-        &state.db,
-        "api_keys",
-        &key_id,
-        "revoke_pairing",
-        None,
-        None,
-        Some("ui"),
-    );
+    audit_pairing(&state.db, &key_id, "revoke_pairing", None, "ui");
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn reject_pairing_leaves_an_audit_row_naming_the_origin() {
+        let db = crate::db::init_test_db().expect("test db");
+        let nonce = "nonce-reject-audit-0123456789abcdef";
+        pairing::register("https://reject.example", vec![], nonce, "Cloud").unwrap();
+
+        reject_pairing_core(&db, nonce, "ui");
+
+        let rows = settings_audit_log::list(&db, 50, Some("api_keys")).unwrap();
+        let row = rows
+            .iter()
+            .find(|r| r.action == "reject_pairing")
+            .expect("reject_pairing must be audited");
+        assert_eq!(row.setting_key, "https://reject.example");
+        assert_eq!(row.actor.as_deref(), Some("ui"));
+    }
 }
