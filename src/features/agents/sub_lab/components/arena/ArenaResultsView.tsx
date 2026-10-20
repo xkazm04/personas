@@ -42,7 +42,18 @@ function scoreBg(score: number): string {
   return 'from-red-500/20 to-red-500/5';
 }
 
-function ScoreBar({ value, label, icon: Icon }: { value: number; label: string; icon: typeof Target }) {
+function ScoreBar({ value, label, icon: Icon }: { value: number | null; label: string; icon: typeof Target }) {
+  if (value == null) {
+    // Never scored (sandbox runs carry no tool accuracy): show it as absent, not a red 0.
+    return (
+      <div className="flex items-center justify-between">
+        <span className="flex items-center gap-1.5 typo-caption text-foreground">
+          <Icon className="w-3 h-3" />{label}
+        </span>
+        <span className="typo-caption text-foreground">{'–'}</span>
+      </div>
+    );
+  }
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between">
@@ -78,7 +89,7 @@ function buildSummary(aggregates: ArenaModelAggregate[], _bestModelId: string | 
   if (best.avgOutputQuality >= 60) {
     summary += ` Output quality was ${scoreLabel(best.avgOutputQuality).toLowerCase()} (${best.avgOutputQuality}/100).`;
   }
-  if (best.avgToolAccuracy < 30 && best.avgOutputQuality > 40) {
+  if (best.toolAccuracyScored && best.avgToolAccuracy < 30 && best.avgOutputQuality > 40) {
     summary += ' Tool usage was limited — the model relied more on its own knowledge than available tools.';
   }
   return summary;
@@ -218,7 +229,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
 
                   {/* Individual score bars */}
                   <div className="space-y-2">
-                    <ScoreBar value={agg.avgToolAccuracy} label="Tool Usage" icon={Target} />
+                    <ScoreBar value={agg.toolAccuracyScored ? agg.avgToolAccuracy : null} label="Tool Usage" icon={Target} />
                     <ScoreBar value={agg.avgOutputQuality} label="Output Quality" icon={FileText} />
                     <ScoreBar value={agg.avgProtocolCompliance} label="Protocol" icon={Shield} />
                   </div>

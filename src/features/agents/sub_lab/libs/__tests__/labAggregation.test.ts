@@ -190,6 +190,8 @@ describe('composite over partially measured dimensions', () => {
     const sandboxed = out.aggregates.find((a) => a.modelId === 'sandboxed')!;
     expect(sandboxed.compositeScore).toBe(80);
     expect(out.bestModelId).toBe('sandboxed');
+    // The 0 in avgToolAccuracy is a placeholder; the modal must not draw it as a score.
+    expect(sandboxed.toolAccuracyScored).toBe(false);
   });
 
   it('applies the same rule to A/B and Matrix', () => {

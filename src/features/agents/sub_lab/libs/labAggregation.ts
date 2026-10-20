@@ -77,6 +77,9 @@ export interface ArenaModelAggregate {
   avgToolAccuracy: number;
   avgOutputQuality: number;
   avgProtocolCompliance: number;
+  /** False when no row scored tool accuracy (sandbox runs): `avgToolAccuracy`
+   *  is then a placeholder 0, not a measurement, and must not render as one. */
+  toolAccuracyScored: boolean;
   compositeScore: number;
   totalCost: number;
   /** Prompt + completion tokens across the group. Cost is price-weighted and
@@ -117,7 +120,7 @@ export function aggregateArenaResults(results: LabArenaResult[]): ArenaAggregati
 
   const aggregates: ArenaModelAggregate[] = modelOrder.map((mid) => {
     const acc = modelAccums.get(mid)!;
-    return { modelId: mid, provider: acc.provider, ...finalizeAccum(acc) };
+    return { modelId: mid, provider: acc.provider, toolAccuracyScored: acc.toolAccuracyCount > 0, ...finalizeAccum(acc) };
   });
   aggregates.sort((a, b) => b.compositeScore - a.compositeScore);
 
