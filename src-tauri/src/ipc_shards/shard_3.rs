@@ -235,8 +235,6 @@ pub(super) fn shard(
         commands::infrastructure::bridge_manifest::bridge_manifest_list_all,
         #[cfg(feature = "desktop")]
         commands::infrastructure::bridge_manifest::bridge_manifest_describe,
-        #[cfg(feature = "desktop")]
-        commands::infrastructure::bridge_manifest::bridge_manifest_dispatch,
         // Connector Explorer -- reverse-engineering CLI factory (v1)
         commands::design::connector_explorer::connector_explorer_explore,
         // Provider-CLI auth readiness (vercel/netlify/wrangler/flyctl/railway/gh)
