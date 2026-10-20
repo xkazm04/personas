@@ -59,6 +59,34 @@ describe('PrBridge prepare failure', () => {
   });
 });
 
+describe('PrBridge prepare soft failure', () => {
+  const open = () => {
+    render(<PrBridge task={task} />);
+    fireEvent.click(screen.getByRole('button', { name: /ship as draft pr/i }));
+    fireEvent.click(screen.getByRole('button', { name: /prepare branch/i }));
+  };
+
+  it('a failed checkout reports its stderr and never commits', async () => {
+    createBranch.mockResolvedValue({ success: false, message: 'fatal: a branch named x already exists' });
+    open();
+    await waitFor(() => expect(addToast).toHaveBeenCalled());
+    const [message, kind] = addToast.mock.calls[0]!;
+    expect(kind).toBe('error');
+    expect(message).toContain('already exists');
+    expect(commitChanges).not.toHaveBeenCalled();
+  });
+
+  it('a failed commit is not toasted as prepared', async () => {
+    createBranch.mockResolvedValue({ success: true, message: '' });
+    commitChanges.mockResolvedValue({ success: false, message: 'nothing to commit' });
+    open();
+    await waitFor(() => expect(addToast).toHaveBeenCalled());
+    const [message, kind] = addToast.mock.calls[0]!;
+    expect(kind).toBe('error');
+    expect(message).toContain('nothing to commit');
+  });
+});
+
 describe('PrBridge prepare consent', () => {
   it('lists the dirty files and commits nothing until the operator confirms', async () => {
     getGitStatus.mockResolvedValue({ changedFiles: [' M src/a.ts', '?? notes.txt'] });

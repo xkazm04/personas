@@ -387,9 +387,13 @@ export function PrBridge({ task }: { task: DevTask }) {
     if (!project) return;
     setPreparing(true);
     try {
-      await createBranch(project.id, content.branchName);
+      // The backend answers a failed git step with Ok{success:false, message: stderr},
+      // not a rejection, so an unread result reported a failed checkout as prepared.
+      const branch = await createBranch(project.id, content.branchName);
+      if (!branch.success) throw new Error(branch.message);
       // Exactly the confirmed files; with none listed, the old stage-all (a no-op commit).
-      await commitChanges(project.id, content.commitMessage, true, paths.length ? paths : undefined);
+      const commit = await commitChanges(project.id, content.commitMessage, true, paths.length ? paths : undefined);
+      if (!commit.success) throw new Error(commit.message);
       addToast(tx(dt.pr_bridge_branch_prepared, { branch: content.branchName }), 'success');
       markDone('prepare');
     } catch (err) {
