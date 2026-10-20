@@ -5,7 +5,7 @@ import type { ScheduleEntry } from './scheduleHelpers';
 import { silentCatch } from '@/lib/silentCatch';
 import { createLatestWins } from '@/stores/util/latestWins';
 
-// The recent-runs history command caps at 168h / 200 rows; a month view whose
+// The recent-runs history command caps at 168h (2100 rows per trigger); a month view whose
 // past portion reaches further back simply gets no run records for the older
 // slots, which then render honestly as 'past-unknown'.
 const RECENT_RUNS_MAX_HOURS = 168;
