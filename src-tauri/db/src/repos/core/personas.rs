@@ -4291,7 +4291,7 @@ mod tests {
         let conn = pool.get()?;
         let left: Vec<String> = conn
             .prepare("SELECT id FROM exposed_resources ORDER BY id")?
-            .query_map([], |r| r.get(0))?
+            .query_map([], |r| r.get("id"))?
             .collect::<Result<_, _>>()?;
         assert_eq!(left, vec!["persona-other", "template-exp1"]);
         Ok(())

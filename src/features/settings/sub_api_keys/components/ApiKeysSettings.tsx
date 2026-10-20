@@ -398,7 +398,7 @@ export function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete, onAudit }: Ap
             disabled={actioning}
             className={`inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption transition-colors disabled:opacity-50 ${
               confirmRevoke
-                ? 'text-amber-400 bg-amber-400/10 hover:bg-amber-400/20'
+                ? 'text-status-warning bg-status-warning/10 hover:bg-status-warning/20'
                 : 'text-foreground hover:text-amber-400 hover:bg-amber-400/10'
             }`}
             title={s.revoke_tooltip}

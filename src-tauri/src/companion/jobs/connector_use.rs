@@ -31,8 +31,8 @@ const HTTP_TIMEOUT: Duration = Duration::from_secs(20);
 /// connectors use (UUIDs, snowflakes, hex thread ids, repo slugs) is ASCII
 /// alphanumeric plus `-_.`, so that is all that is allowed.
 fn safe_path_segment<'a>(value: &'a str, name: &str) -> Result<&'a str, AppError> {
-    let ok = !value.is_empty()
-        && value != "."
+    personas_core::validation::require_non_empty(name, value)?;
+    let ok = value != "."
         && value != ".."
         && value.len() <= 200
         && value

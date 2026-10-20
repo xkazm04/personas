@@ -113,7 +113,13 @@ pub async fn validate_url_safety_async(url: &str) -> Result<(), String> {
     let url = url.to_owned();
     tokio::task::spawn_blocking(move || validate_url_safety(&url))
         .await
-        .map_err(|e| format!("URL safety check failed: {e}"))?
+        .map_err(|e| {
+            if e.is_panic() {
+                "URL safety check panicked".to_owned()
+            } else {
+                format!("URL safety check failed: {e}")
+            }
+        })?
 }
 
 /// Validate that a URL is safe for outbound HTTP requests.
