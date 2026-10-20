@@ -135,7 +135,7 @@ Never gate a surface on a loading flag. Render the static chrome — header, fil
 
 | Path | What's wrong |
 |---|---|
-| `home/sub_welcome/WelcomeLayout.tsx:65` · `agents/sub_editor/components/EditorBody.tsx:182` · `agents/sub_design/DesignHub.tsx:102` · `plugins/fleet/FleetPage.tsx:88` · `settings/components/SettingsPage.tsx:84` | `fallback={<SuspenseFallback/>}` → empty centred `py-12` box (spinner is null). |
+| `home/sub_welcome/WelcomeLayout.tsx:65` · `agents/sub_editor/components/EditorBody.tsx:182` · `agents/sub_design/DesignHub.tsx:102` · `plugins/fleet/FleetPage.tsx:88` (`settings/components/SettingsPage.tsx` retired from this list 2026-10-20: its tabs use `RouteChunkSkeleton`) | `fallback={<SuspenseFallback/>}` → empty centred `py-12` box (spinner is null). |
 | `schedules/components/SchedulesOverlay.tsx` (was `SchedulesOverlay.tsx:356`) | Centred "loading calendar" text + null spinner at route level — **resolved 2026-09-17**: a delayed ghost under the permanent header. |
 | `overview/sub_health/components/PersonaHealthDashboard.tsx:149` | Centred `py-16` text block. |
 | `personas/sub_foundry/CreatePersonaEntry.tsx:28` | Full-height empty div. |
