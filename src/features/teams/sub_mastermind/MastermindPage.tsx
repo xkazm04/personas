@@ -618,7 +618,7 @@ function MastermindInner() {
     if (!scanPopup || busySlugs.has(scanPopup.slug) || agentKeys.length === 0) return;
     const slug = scanPopup.slug;
     ideaScans.begin(slug);
-    const label = agentKeys.length === 1 ? agentKeys[0] : tx(t.common.agent_count_other, { count: agentKeys.length });
+    const label = agentKeys.length === 1 ? (agentKeys[0] ?? '') : tx(t.common.agent_count_other, { count: agentKeys.length });
     try {
       const { scan_id } = await runScan(slug, agentKeys, {
         // Empty scope = whole project, which is exactly what run_scan expects.
