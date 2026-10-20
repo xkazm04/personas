@@ -18,6 +18,7 @@ import { useDeploymentTest } from '../hooks/useDeploymentTest';
 import { useConfirmedRemoteAction } from '../hooks/useConfirmedRemoteAction';
 import { ConfirmDestructiveModal } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Button } from '@/features/shared/components/buttons';
 import EmptyState, { NoResults } from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 
@@ -159,15 +160,15 @@ export function UnifiedDeploymentDashboard() {
       className="flex items-center justify-between gap-3 px-6 py-2 typo-body text-foreground border-b border-status-error/30 bg-status-error/10"
     >
       <span>{failureMessage}</span>
-      <button
-        type="button"
+      <Button
+        variant="link"
+        size="xs"
         data-testid="deployments-load-retry"
         onClick={handleRefresh}
-        disabled={isRefreshing}
-        className="typo-caption text-primary hover:text-primary/80 disabled:opacity-40 transition-colors cursor-pointer"
+        loading={isRefreshing}
       >
         {t.common.retry}
-      </button>
+      </Button>
     </div>
   ) : null;
 
