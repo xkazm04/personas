@@ -4865,19 +4865,18 @@ mod stdout_line_clip_tests {
 
     async fn read_one(payload: Vec<u8>) -> Option<(String, Option<Clip>)> {
         let (client, mut server) = tokio::io::duplex(16 * 1024);
-        tokio::spawn(async move {
+        // The handle is held and aborted once the read returns: the writer
+        // parks forever so the reader sees no EOF before the line arrives.
+        let writer = tokio::spawn(async move {
             let _ = server.write_all(&payload).await;
-            let _ = server
-                .write_all(
-                    b"
-",
-                )
-                .await;
+            let _ = server.write_all(b"\n").await;
             let _ = server.flush().await;
             std::future::pending::<()>().await;
         });
         let mut reader = BufReader::new(client);
-        read_stdout_line(&mut reader).await.unwrap()
+        let got = read_stdout_line(&mut reader).await.unwrap();
+        writer.abort();
+        got
     }
 
     #[tokio::test]
