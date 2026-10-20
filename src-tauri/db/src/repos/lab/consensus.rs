@@ -115,8 +115,9 @@ pub fn create_result(
             let id = uuid::Uuid::new_v4().to_string();
             let now = chrono::Utc::now().to_rfc3339();
 
-            let conn = pool.get()?;
-            let result = conn.query_row(
+            let mut conn = pool.get()?;
+            let tx = conn.transaction()?;
+            let result = tx.query_row(
             // Tool calls now write only to the lab_tool_calls child table
             // (see write_tool_calls_child_rows below). The parent-table JSON
             // columns are dropped in step 7 of this ADR.
@@ -153,12 +154,13 @@ pub fn create_result(
         )
         .map_err(AppError::Database)?;
             super::write_tool_calls_child_rows(
-                &conn,
+                &tx,
                 "consensus",
                 &result.id,
                 input.base.tool_calls_expected.as_ref(),
                 input.base.tool_calls_actual.as_ref(),
-            );
+            )?;
+            tx.commit()?;
             Ok(result)
         }
     )

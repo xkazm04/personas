@@ -174,11 +174,12 @@ pub fn create_result(
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
 
-        let conn = pool.conn("test_runs::create_result")?;
+        let mut conn = pool.conn("test_runs::create_result")?;
+        let tx = conn.transaction()?;
         // Tool calls now write only to the lab_tool_calls child table (see
         // write_tool_calls_child_rows below). The parent-table JSON columns are
         // dropped in step 7 of the lab-tool-calls-child-table ADR.
-        let result = conn
+        let result = tx
             .query_row(
                 "INSERT INTO persona_test_results
             (id, test_run_id, scenario_name, model_id, provider, status,
@@ -210,12 +211,13 @@ pub fn create_result(
             )
             .map_err(AppError::Database)?;
         crate::repos::lab::write_tool_calls_child_rows(
-            &conn,
+            &tx,
             "test_run",
             &result.id,
             input.tool_calls_expected.as_ref(),
             input.tool_calls_actual.as_ref(),
-        );
+        )?;
+        tx.commit()?;
         Ok(result)
     })
 }
@@ -273,7 +275,7 @@ pub fn batch_create_results(
                 &result.id,
                 input.tool_calls_expected.as_ref(),
                 input.tool_calls_actual.as_ref(),
-            );
+            )?;
             results.push(result);
         }
         tx.commit()?;
