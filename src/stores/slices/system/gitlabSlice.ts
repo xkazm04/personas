@@ -542,11 +542,12 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
 
       // Refresh version list
       if (persona?.name) {
+        // A failed re-read keeps the last list: `[]` here read as "no versions".
         const versions = await gitlabListPersonaVersions(projectId, persona.name).catch((err) => {
           silentCatch("stores/slices/system/gitlabSlice:gitlabDeployPersonaVersions")(err);
-          return [];
+          return null;
         });
-        set({ gitlabPersonaVersions: versions });
+        if (versions) set({ gitlabPersonaVersions: versions });
       }
 
       return result;
@@ -566,11 +567,13 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
     try {
       const result = await gitlabRollbackPersona(projectId, personaName, targetTag);
       // Refresh versions after rollback
+      // A failed re-read keeps the last list: `[]` here read as "no versions"
+      // right after a rollback that landed.
       const versions = await gitlabListPersonaVersions(projectId, personaName).catch((err) => {
         silentCatch("stores/slices/system/gitlabSlice:gitlabRollbackPersonaVersions")(err);
-        return [];
+        return null;
       });
-      set({ gitlabPersonaVersions: versions, gitlabRollingBack: false });
+      set(versions ? { gitlabPersonaVersions: versions, gitlabRollingBack: false } : { gitlabRollingBack: false });
       storeBus.emit('toast', {
         message: `Rolled back ${personaName} to ${targetTag}`,
         type: "success",
@@ -639,11 +642,14 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
     try {
       const result = await gitlabRollbackFromHistory(projectId, deploymentId);
       // Refresh history after rollback
+      // A failed re-read keeps the last trail instead of blanking it.
       const history = await gitlabListDeploymentHistory(projectId).catch((err) => {
         silentCatch("stores/slices/system/gitlabSlice:gitlabRollbackFromHistoryList")(err);
-        return [];
+        return null;
       });
-      set({ gitlabDeploymentHistory: history, gitlabRollingBackFromHistory: false });
+      set(history
+        ? { gitlabDeploymentHistory: history, gitlabRollingBackFromHistory: false }
+        : { gitlabRollingBackFromHistory: false });
       storeBus.emit('toast', { message: "Rolled back to previous deployment", type: "success" });
       emitDeploymentEvent({ eventType: 'deploy_succeeded', target: 'gitlab', detail: `rollback-from-history:${deploymentId}` });
       return result;
