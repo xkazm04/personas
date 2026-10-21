@@ -30203,12 +30203,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/scraper/useScraperData.ts:95 The editor checks preview evidence locally, but the persistence and scheduling action accepts enabled configurations without requiring that evidence.",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
-          "evaluatedRevision": 53,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/scraper/useScrapeForm.ts:230 the preview-proven refusal for an armed scrape lives only in the editor hook; src-tauri/engine/src/scraper.rs:528 config_save defaults enabled to true and :539 schedules it with no preview evidence, so any other caller arms an unproven selector on cron",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54,
+          "revisionsBehind": 1
         },
         {
           "subject": "wizard-flows",
@@ -30720,12 +30719,11 @@
           "changedAt": "2026-10-14",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/features/shared/chrome/sidebar/SidebarLevel1.tsx:198 the only 'gate' is tier visibility (plan entitlement), and src/features/shared/chrome/CliReadinessBanner.tsx:12 the CLI-readiness 'gate' is presentation only and refuses nothing; no quality standard is enforced in this context",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
-          "evaluatedRevision": 53,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/shared/chrome/sidebar/SidebarLevel1.tsx:200 the context's only gating is tier/dev visibility (plan entitlement, also FooterSectionNav.tsx:40 passesGates) and src/features/shared/chrome/CliReadinessBanner.tsx:12 is presentation only; nothing here refuses a change, artifact or advancement against a quality standard",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54,
+          "revisionsBehind": 1
         },
         {
           "subject": "long-form-reading-surface",
@@ -36886,12 +36884,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/templates/sub_recipes/components/RecipeDetailPanel.tsx:50 the adopt button is gated by a second, weaker evaluator (connector slugs vs all of CONNECTOR_META, useEligibility.ts:18) than the backend gate (tool catalog + unverifiable requirements), so the UI advertises adoptable recipes the gate would refuse and then adopts them without asking it",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
-          "evaluatedRevision": 53,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/templates/sub_recipes/components/RecipeDetailPanel.tsx:50 adopt is gated by a slug-only evaluator over all of CONNECTOR_META (useEligibility.ts:17), and libs/useAdoption.ts:62 writes the use case via mutateUseCases without ever reaching the backend refusal at src-tauri/src/commands/recipes/recipe_adoption.rs:86, so recipes the tool-catalog gate calls Incompatible are adopted",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54,
+          "revisionsBehind": 1
         },
         {
           "subject": "test-harness",
@@ -39581,12 +39578,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/vault/sub_credentials/components/forms/CredentialEditForm.tsx:27 The connector design-check path supplies transport errors without a probe state, so the form renders them as failed probes instead of preserving a could-not-run outcome.",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
-          "evaluatedRevision": 53,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/src/commands/credentials/credential_design.rs:280 a design-healthcheck transport error returns Ok{success:false} with no probe state, useCredentialHealth.ts:240 forwards no state, and src/lib/credentials/healthState.ts:110 resolves it to failed, so could-not-reach renders in CredentialEditForm as a rejected key and blocks save (CredentialTemplateForm.tsx:189)",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54,
+          "revisionsBehind": 1
         },
         {
           "subject": "sql-console",

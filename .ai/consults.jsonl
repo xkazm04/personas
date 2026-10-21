@@ -1711,3 +1711,7 @@
 {"ts":"2026-10-21T12:22:32Z","bundle":"software-engineering","subjects":["terminal-multiplexing"],"techniques":["keystroke-injection"],"deviations":1}
 {"ts":"2026-10-21T12:22:32Z","bundle":"software-engineering","subjects":["terminal-multiplexing"],"techniques":["keystroke-injection"],"deviations":1}
 {"ts":"2026-10-21T12:22:32Z","bundle":"software-engineering","subjects":["terminal-multiplexing"],"techniques":["keystroke-injection"],"deviations":1}
+{"ts":"2026-10-21T12:17:01Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":["gate-laddering","severity-by-construction"],"deviations":1}
+{"ts":"2026-10-21T12:17:01Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":["policy-projection","gate-laddering"],"deviations":1}
+{"ts":"2026-10-21T12:17:01Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":["unmeasurable-criteria","refusal-names-a-reachable-remedy"],"deviations":1}
+{"ts":"2026-10-21T12:17:01Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":[],"deviations":0}
