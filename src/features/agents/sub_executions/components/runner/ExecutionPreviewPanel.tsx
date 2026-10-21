@@ -3,6 +3,7 @@ import { Eye, DollarSign, Brain, Wrench, Zap, AlertTriangle, ChevronDown, Chevro
 import { previewExecution, type ExecutionPreview } from '@/api/agents/executions';
 import { useTranslation } from '@/i18n/useTranslation';
 import { fmtCost as fmtCostBase, fmtTokens as fmtTokensBase } from '../../libs/comparisonHelpers';
+import { extractMessage } from '@/lib/silentCatch';
 
 interface ExecutionPreviewPanelProps {
   personaId: string;
@@ -28,7 +29,7 @@ export function ExecutionPreviewPanel({ personaId, inputData, useCaseId }: Execu
       const result = await previewExecution(personaId, inputData, useCaseId);
       setPreview(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(extractMessage(err));
     } finally {
       setLoading(false);
     }
