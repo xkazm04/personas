@@ -316,8 +316,8 @@
         }
       ],
       "baseline": {
-        "files": 36,
-        "matches": 36
+        "files": 33,
+        "matches": 33
       },
       "floor": 4000
     },
@@ -685,8 +685,8 @@
         }
       ],
       "baseline": {
-        "files": 14,
-        "matches": 16
+        "files": 13,
+        "matches": 15
       },
       "floor": 4000
     },
@@ -727,8 +727,8 @@
         }
       ],
       "baseline": {
-        "files": 41,
-        "matches": 596
+        "files": 40,
+        "matches": 591
       },
       "floor": 1500
     },
@@ -1499,8 +1499,8 @@
         }
       ],
       "baseline": {
-        "files": 25,
-        "matches": 25
+        "files": 22,
+        "matches": 22
       },
       "floor": 4000
     },
@@ -2470,15 +2470,15 @@
         ".rs"
       ],
       "signal": {
-        "pattern": "Command::new\\s*\\(\\s*&(?:cli_args\\.command|cmd_program|command|program|binary)\\s*\\)(?:(?!force_subscription_auth|CLI_SUBSCRIPTION_RESERVED_ENV|Command::new)[\\s\\S]){0,2000}?\\.\\s*spawn\\s*\\(\\s*\\)(?:(?!Command::new)[\\s\\S]){0,400}?[Cc]laude",
+        "pattern": "Command::new\\s*\\(\\s*&?(?:cli_args\\.command|cmd_program|command|program|binary)\\s*\\)(?:(?!force_subscription_auth|CLI_SUBSCRIPTION_RESERVED_ENV|Command::new)[\\s\\S]){0,2000}?\\.\\s*spawn\\s*\\(\\s*\\)(?:(?!Command::new)[\\s\\S]){0,400}?[Cc]laude",
         "flags": "g",
         "ignoreCommentLines": true,
         "description": "a resolved-binary child process that identifies itself as the Claude CLI on its own spawn-error path, launched with NEITHER force_subscription_auth() NOR an inline CLI_SUBSCRIPTION_RESERVED_ENV loop anywhere between Command::new and .spawn(). PROXY FOR the stack-free condition: a model call is launched without stating which billing identity pays for it, so it inherits whatever credential happens to be in the process environment. PRECISION 5/5, every match opened and confirmed. The negative-tempered middle is what makes this a fact rather than a taste judgement: the SAME anchor with the middle inverted to REQUIRE the strip scores 12 matches across 10 files, and the two halves partition 17 of the anchor's 18 raw matches (the 18th, bridge_manifest/mod.rs:298, is a generic desktop-bridge binary that reaches .output() rather than .spawn()) - so the count measures the STRIP, not 'how many CLI spawns exist'. The trap this rule exists to see through: four of the five violating sites DO run `for key in &cli_args.env_removals { cmd.env_remove(key) }`, which reads like billing hygiene and is not - build_cli_args populates env_removals with CLAUDECODE / CLAUDE_CODE / DISABLE_PROMPT_CACHING* only (cli_args.rs:184-199) and never the three auth vars, so the loop that looks like the guard is not the guard. RECALL is deliberately partial: ocr/mod.rs:579 spawns the same call through Command::new(\"cmd\") on Windows and is invisible to a resolved-binary anchor; a site whose strip arrives more than 2000 chars after Command::new would read as compliant. PRECONDITION (must be re-derived per repo): this repo bills a Claude CLI subprocess against either an OAuth subscription or a pay-as-you-go API account, and the API path is selected by three INHERITED env vars (ANTHROPIC_API_KEY / ANTHROPIC_AUTH_TOKEN / ANTHROPIC_BASE_URL, cli_process.rs:36-40) that must be stripped per spawn. A repo that calls a hosted SDK with an explicit client object has the SAME condition wearing different syntax and scores ZERO here - which is what all four sibling repos audited for this path do, and why none of them has this rule."
       },
       "exclude": [],
       "baseline": {
-        "files": 4,
-        "matches": 4
+        "files": 3,
+        "matches": 3
       },
       "floor": 900
     },
@@ -3190,6 +3190,10 @@
         "description": "A type-member declaration whose NAME begins with a non-measurement word (estimate/estimated/projected/projection/forecast/predicted/approx/synthetic/simulated) and whose ANNOTATION is a bare `number`. PROXY FOR the stack-free condition: provenance lives in the identifier, and an identifier does not survive an arithmetic operator — so an estimate and a measurement of the same quantity are the same type and will be added, averaged and rendered alike. WHAT THE MATCH COSTS, executed rather than reasoned: src-tauri/engine/src/cost.rs:84-102 declares `estimated_input_tokens: u64` (= text.len() / a CHARS_PER_TOKEN constant of 3.8), `estimated_total_cost: f64` (= those tokens x a hardcoded model->price table), `monthly_spend: f64` (a real DB read) and `budget_limit: f64` (config) as four indistinguishable numbers eighteen lines apart; ExecutionPreviewPanel.tsx:72-75 then computes `((preview.monthly_spend + preview.estimated_total_cost) / preview.budget_limit) * 100` and gates the overBudget (>100) and nearBudget (>80) warnings on the result. A MEASUREMENT AND A CHARACTER-COUNT HEURISTIC ARE SUMMED, AND THE SUM GATES TWO SAFETY WARNINGS. PRECISION 20/20 on the stated condition, every match hand-read. SIX of the eleven files are ts-rs bindings, i.e. the wire contract itself (ExecutionPreview.ts:22,26,30; ExecutionDashboardData.ts:9; NightRun.ts:29 where projectedCostUsd sits beside monthSpendUsd; PerformanceDigest.ts:46; RoutingClaim.ts:8), so the collapse happens at the boundary and every consumer inherits it. TWO INDEPENDENT IMPLEMENTATIONS RECONCILE AT 20 with identical per-file line sets: this regex, and a line-oriented member classifier that steps LEFT from every ':' over an optional '?' and an identifier and RIGHT over the annotation head, importing nothing from lib/engine.mjs. AGREEMENT IS WEAK EVIDENCE HERE AND IS REPORTED AS SUCH: both key on the same word list, so recall is bounded identically. A second-vocabulary probe (runway|eta|burnRate|heuristic|inferred|derived|assumed|allocated|extrapolated|hypothetical) returned 37 hits in 30 files of which ~4 are genuine misses -- etaMs (artist/sub_media_studio/types.ts:262), derived_quality_score (bindings/TemplatePerformance.ts:6), and burn_rate on bindings/ExecutionDashboardData.ts:9, WHICH IS THE SAME LINE AS A MATCH. True recall ~20/24 ~83%. LEGAL FIX: a newtype that withholds the dangerous freedom rather than the value -- an `Estimated<T>` / `Estimate` with a private field and no Add<f64> impl, so summing an estimate with a measurement stops compiling until somebody decides. Ship it where it is TOTAL (ExecutionPreview has ONE construction site at engine/src/cost.rs:106 and one consumer, so the wrapper reaches everything); the general form does not meet the corpus's Q3 today because src/lib/ contains no shared numeric wrapper -- see the path's Gap 2. CONVERGENT: ascent's src/lib/integrations/providers.ts:11 `type Fidelity = 'measured' | 'allocated' | 'simulated'` is persisted (prisma/schema.prisma:764) and rendered (FidelityBadge, aiShared.tsx:28) and its `allocated` arm names the proxy mechanism outright; vibeman's db/models/types.ts:26 `progress_source?: 'manual' | 'inferred' | 'hybrid'`; brainiac's DemoResult<T>{data,live}. Three repos, three domains, one shape, no shared document. WHAT THIS RULE CANNOT SEE, stated so nobody trusts it further: it does NOT see whether the PIXEL discloses -- that condition is an absence adjacent to a presence AND, in this repo, the marker and the value share a vocabulary (`e.estimated_no_trace` is a disclosure string and `preview.estimated_total_cost` is a value; both are `x.estimated*` in JSX). A render-side candidate was built, run through the real engine, and measured at 26 matches with 50% precision, FIVE of whose false positives were the disclosure strings themselves; it is refused in this path's Section 9 with the numbers. It also cannot see the Rust half (9 matches over 953 .rs files, too small to ratchet) nor a provenance union consumed by testing an untrusted arm (KPIDashboard.tsx:161, a relation between a CHECK constraint and a render, not a string). PORTABILITY WARNING: ascent -- the repo with the best provenance types in the cohort -- would score ZERO here, because it puts the estimate-ness in a sibling union rather than in the identifier. Do NOT silence a match by renaming the field to drop the estimate word: that removes the only provenance the value currently has."
       },
       "exclude": [
+        {
+          "path": "src/features/teams/sub_factory/passport/improve/useAnchoredPopover.ts",
+          "reason": "estimatedHeight is the anchored popover's height hint in CSS pixels, used to place the panel before its first layout measurement and never shown to a user - a layout hint has no provenance to disclose (the GroupedVirtualList / contextMapPerf precedent; backlog drain 2026-10-21, 153e0d8625)"
+        },
         {
           "path": "src/features/shared/components/display/GroupedVirtualList.tsx",
           "reason": "estimateItemSize is a virtualizer row-height hint in CSS pixels, never a value shown to a user — a layout measurement has no provenance to disclose"
