@@ -18039,7 +18039,11 @@
           "revision": 22,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/lib/personas/parsers/workflowPipeline.ts:228 an imported workflow's Wait/Approval node (classified manual_review at src/lib/personas/platformDefinitions.ts:369) becomes a numbered step the model is told to execute in order, with 'attempt to continue' on failure (:233) and only a Manual Review capability label (:241) the model may choose to emit (src-tauri/src/engine/dispatch.rs:1016) - the source platform's structural human gate is translated into a prompt request the gated party can skip",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9",
+          "evaluatedRevision": 22
         },
         {
           "subject": "translation-pipeline-topology",
@@ -21457,7 +21461,11 @@
           "revision": 22,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/overview/sub_missionControl/cards/AttentionLoopCard.tsx:100 the context's only write is the operator flipping the default-off autonomous_attention_loop config switch (:13); it holds no pending decision, decision surface or continuation - the loop's scope, ceilings and per-pass ledger live in src-tauri/src/engine/subscription/attention.rs:28 outside this context; the rest is a read-only readings dashboard",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9",
+          "evaluatedRevision": 22
         },
         {
           "subject": "eval-harness",
@@ -39401,7 +39409,11 @@
           "revision": 22,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/commands/credentials/rotation.rs:140 the context's consequential acts (rotate now, rotation policies, gateway membership) are performed by the operator themself through privileged commands and audited (:151); no machine pauses here for a human verdict, and the one consent surface, src/features/vault/sub_credentials/components/gateway/PendingAuthModal.tsx:1, has no caller in src - the OAuth consent itself is held by the provider",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9",
+          "evaluatedRevision": 22
         },
         {
           "subject": "agent-memory",

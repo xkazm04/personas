@@ -1737,3 +1737,6 @@
 {"ts":"2026-10-21T12:31:00Z","bundle":"software-engineering","subjects":["settings"],"techniques":["settings-audit-and-history"],"deviations":1}
 {"ts":"2026-10-21T12:31:00Z","bundle":"software-engineering","subjects":["settings"],"techniques":["key-registry"],"deviations":0}
 {"ts":"2026-10-21T12:31:00Z","bundle":"software-engineering","subjects":["settings"],"techniques":["typed-accessors","setting-kinds"],"deviations":1}
+{"ts":"2026-10-21T12:28:56Z","bundle":"software-engineering","subjects":["hitl-approval"],"techniques":["gate-state-machines","handoff-is-a-declared-door","fail-closed-profile-for-headless","decision-records"],"deviations":1}
+{"ts":"2026-10-21T12:28:56Z","bundle":"software-engineering","subjects":["hitl-approval"],"techniques":["unattended-mode"],"deviations":0}
+{"ts":"2026-10-21T12:28:56Z","bundle":"software-engineering","subjects":["hitl-approval"],"techniques":["consent-gates"],"deviations":0}

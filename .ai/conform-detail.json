@@ -27934,73 +27934,85 @@
       "context": "vault-credentials-components-features",
       "subject": "hitl-approval",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T21:54:13.271Z",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:28:56.000Z",
+      "worker": "ce241f77-a3cb-4463-8e67-ee8254b4dd7c",
       "techniques": [
+        {
+          "technique": "consent-gates",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/components/gateway/PendingAuthModal.tsx:1 JIT OAuth consent is granted at the provider's own page; the modal is unwired (no importer in src), so an authorization_required error surfaces as an ordinary failure - closed, not open"
+        },
         {
           "technique": "gate-state-machines",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_credentials/components/gateway/PendingAuthModal.tsx:52 Pending gate state is held in ephemeral React useState rather than durable storage surviving restarts."
+          "evidence": "src/features/vault/sub_credentials/components/gateway/PendingAuthModal.tsx:52 Pending gate state is held in ephemeral React useState rather than durable storage surviving restarts.",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "resume-after-decision",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_credentials/components/gateway/PendingAuthModal.tsx:46 Continuation relies on in-memory onRetry callback closure instead of a durable, self-sufficient paused execution record."
+          "evidence": "src/features/vault/sub_credentials/components/gateway/PendingAuthModal.tsx:46 Continuation relies on in-memory onRetry callback closure instead of a durable, self-sufficient paused execution record.",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "decision-records",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_credentials/components/gateway/PendingAuthModal.tsx:70 No immutable decision record is recorded capturing decider identity, timestamp, version, or what was shown."
-        },
-        {
-          "technique": "consent-gates",
-          "verdict": "deviation",
-          "evidence": "src/features/vault/sub_credentials/components/gateway/PendingAuthModal.tsx:104 Consent prompt discloses only the bare tool name without disclosing bound parameters, scope, cost, or reversibility."
+          "evidence": "src/features/vault/sub_credentials/components/gateway/PendingAuthModal.tsx:70 No immutable decision record is recorded capturing decider identity, timestamp, version, or what was shown.",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "human-performed-steps",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_credentials/components/gateway/PendingAuthModal.tsx:118 External OAuth authentication is provided as static prose instructions without executable runbook step verification."
+          "evidence": "src/features/vault/sub_credentials/components/gateway/PendingAuthModal.tsx:118 External OAuth authentication is provided as static prose instructions without executable runbook step verification.",
+          "carriedFrom": "2026-10-16"
         }
-      ],
-      "withdrawn": {
-        "worker": "4e5a7732-9d8d-4998-b746-58324069b6a8",
-        "state": "deviation",
-        "at": "2026-10-16T21:54:47.443307+00:00",
-        "reason": "reviewer (sonnet): PendingAuthModal.tsx sits in components/gateway/, which is not among this context's files (all under components/features/). The verdict is about a different context. The modal also only relays an external OAuth consent URL, so the decision is not made there."
-      }
+      ]
     },
     "7826a48f-5883-4f26-8476-c3c515bda745/hitl-approval": {
       "context": "lib-personas",
       "subject": "hitl-approval",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T21:54:13.271Z",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:28:56.000Z",
+      "worker": "ce241f77-a3cb-4463-8e67-ee8254b4dd7c",
       "techniques": [
         {
           "technique": "gate-state-machines",
           "verdict": "deviation",
-          "evidence": "src/lib/personas/parsers/workflowPipeline.ts:241 Protocol capabilities detected from foreign workflows are retained only as advisory metadata without creating runtime execution gates."
+          "evidence": "src/lib/personas/parsers/workflowPipeline.ts:228 the approval node is rendered into the instructions as a step to perform, not into a durable pending state the executor must pass; a prompt step is a gate the machine can open"
+        },
+        {
+          "technique": "handoff-is-a-declared-door",
+          "verdict": "deviation",
+          "evidence": "src/lib/personas/platformDefinitions.ts:369 the source's declared approval node maps to protocol manual_review, which at runtime is a model-requested ProtocolMessage (src-tauri/src/engine/dispatch.rs:1016); the declared door becomes a universal model-optional ask"
+        },
+        {
+          "technique": "fail-closed-profile-for-headless",
+          "verdict": "deviation",
+          "evidence": "src/lib/personas/parsers/workflowPipeline.ts:233 the generated errorHandling tells the unattended persona to continue past any failed step, including the step that stood for a human confirmation"
+        },
+        {
+          "technique": "decision-records",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/personas/parsers/workflowPipeline.ts:111 the context is a pure parse-to-AgentIR function; it records nothing and decides nothing"
         },
         {
           "technique": "author-advisories-yield-to-the-users-mode",
           "verdict": "deviation",
-          "evidence": "src/lib/personas/platformDefinitions.ts:369 External author approval and wait patterns are normalized into manual review capabilities without evaluating or yielding to the executing user's policy mode."
+          "evidence": "src/lib/personas/platformDefinitions.ts:369 External author approval and wait patterns are normalized into manual review capabilities without evaluating or yielding to the executing user's policy mode.",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "truncated-verdict-space",
           "verdict": "deviation",
-          "evidence": "src/lib/personas/templates/seedTemplates.ts:89 Seeded design reviews are automatically minted with positive status 'passed' without a human decision record."
+          "evidence": "src/lib/personas/templates/seedTemplates.ts:89 Seeded design reviews are automatically minted with positive status 'passed' without a human decision record.",
+          "carriedFrom": "2026-10-16"
         }
       ],
-      "withdrawn": {
-        "worker": "4e5a7732-9d8d-4998-b746-58324069b6a8",
-        "state": "deviation",
-        "at": "2026-10-16T21:54:47.552929+00:00",
-        "reason": "reviewer (sonnet): Line 228 of workflowPipeline.ts is a generic 'execute the steps in order' prompt and does not mention approval or wait steps. I found no code showing that protocol_capabilities are never turned into gates. The seedTemplates.ts:89 technique is in templates/, which is outside this context's file list."
-      }
+      "registryProposal": "Possible technique gap: no hitl-approval technique names the import/translation case - converting another platform's structural approval node into this system's vocabulary must preserve it as a gate (or refuse/flag the import), not lower it to a capability label; gate-state-machines covers the outcome but its use_when does not trigger on importers."
     },
     "a1223fbb-1e53-471b-9829-075cce8014f8/hitl-approval": {
       "context": "lab-arena",
@@ -31048,6 +31060,23 @@
           "evidence": "src-tauri/src/engine/pipeline_executor.rs:154 evaluate_condition is a pure function of (condition, predecessor output) exercised without doubles by unit tests from :1373"
         }
       ]
+    },
+    "c413de7d-1182-4abc-8a08-9c8832254c62/hitl-approval": {
+      "context": "overview-director",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:28:56.000Z",
+      "worker": "ce241f77-a3cb-4463-8e67-ee8254b4dd7c",
+      "techniques": [
+        {
+          "technique": "unattended-mode",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_missionControl/cards/AttentionLoopCard.tsx:100 the switch is a permanent configuration default (the technique's 'heavier decision, separately visible' case); its scope/ceiling/ledger realization belongs to the engine context; note set_app_setting writes no audit row for the flip (src-tauri/src/commands/infrastructure/settings.rs:137)"
+        }
+      ],
+      "registryProposal": "Context drift: the context is named overview-director but src/features/overview/sub_director no longer exists in git; only sub_missionControl remains, so the hitl-approval match (driven by 'triage', 'batch-review', 'DirectorVerdict' keywords) rests on deleted code."
     }
   }
 }
