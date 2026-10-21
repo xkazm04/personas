@@ -92,19 +92,24 @@
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T09:34:58.000Z",
-      "worker": "d6999eee-2a8f-4d51-95be-400f7116a285",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:20:17.000Z",
+      "worker": "8ff65c57-5dca-4cd4-a1ca-c477699f8e43",
       "techniques": [
         {
-          "technique": "session-registry",
-          "verdict": "not realized: consumer-owned status vocabulary",
-          "evidence": "src/features/fleet/monitor/channels/types.ts:21"
+          "technique": "evidence-outranks-a-liveness-claim",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_collab/useTeamChannel.ts:55 an expired staleness budget lands on absence (persona reads as idle) rather than on unknown, the exact landing the technique forbids"
         },
         {
           "technique": "absent-status-passthrough",
-          "verdict": "not realized: expiry yields absence not unknown",
-          "evidence": "src/features/teams/sub_collab/useTeamChannel.ts:67"
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_collab/useTeamChannel.ts:25 PresenceStatus has no 'not stated / unknown' member, so the projector has nowhere honest to put an unobserved state"
+        },
+        {
+          "technique": "session-registry",
+          "verdict": "deviation",
+          "evidence": "src/features/fleet/monitor/channels/types.ts:21 PresenceMap hand-restates the status union a second time instead of Map<string, PresenceStatus>"
         }
       ],
       "superseded": [
@@ -121,6 +126,13 @@
           "evaluatedAt": "2026-10-10T11:26:21.000Z",
           "worker": "bcd9e9fb-7483-4daf-916f-0868b1f7a42d",
           "reason": "replaced by d6999eee-2a8f-4d51-95be-400f7116a285"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_collab/useTeamChannel.ts:67 derivePresence marks 'working' only while step_running is under PRESENCE_WORK_WINDOW_MS old and otherwise sets nothing, so an expired window silently drops the persona to no-presence instead of an unknown/lost state; src/features/fleet/monitor/channels/types.ts:21 re-declares the ad-hoc 'working'|'waiting' union as PresenceMap, a second status vocabulary beside the registry's. Re-verified at both lines against rev 26.",
+          "evaluatedAt": "2026-10-14T09:34:58.000Z",
+          "worker": "d6999eee-2a8f-4d51-95be-400f7116a285",
+          "reason": "replaced by 8ff65c57-5dca-4cd4-a1ca-c477699f8e43"
         }
       ]
     },
@@ -129,17 +141,17 @@
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T00:00:00.000Z",
-      "worker": "324fd756-14c3-41e3-98ac-77bdb11352dd",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:20:17.000Z",
+      "worker": "8ff65c57-5dca-4cd4-a1ca-c477699f8e43",
       "techniques": [
         {
           "technique": "session-registry",
-          "verdict": "not-applicable",
-          "evidence": "src/features/fleet/monitor/monitorModel.ts:125 states are keyed by the closed ActiveProcessStatus, a different registry (persona executions) than the fleet session registry"
+          "verdict": "conformant",
+          "evidence": "src/features/fleet/monitor/monitorModel.ts:125 PROCESS_STATUS_META: Record<ActiveProcessStatus, ...> forces a compile error on a new status; the fold at :363 derives from counts over that union"
         }
       ],
-      "registryProposal": "Matcher paired the Fleet Monitor (persona-execution cards) with fleet-orchestration on the word 'fleet'; route by precondition (a registry of autonomous CLI sessions) instead.",
+      "registryProposal": "A read-only consumer view (a monitor folding a registry's closed vocabulary into card colours) meets the subject's one consumer obligation but cannot reach the evidence floor (half of 19 techniques), so it can only be judged not-applicable. The golden path could state whether consumer-only surfaces are governed by session-registry's consumer rule alone, which would make 'conformant' reachable for them.",
       "superseded": [
         {
           "state": "deviation",
@@ -147,6 +159,13 @@
           "evaluatedAt": "2026-10-12T17:45:22.732Z",
           "worker": "0b6f836d-b418-4311-9a91-fd30c9d76e08",
           "reason": "replaced by 324fd756-14c3-41e3-98ac-77bdb11352dd"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/fleet/monitor/monitorModel.ts:25 ExecState is a card-colour fold of the persona-execution ActiveProcessStatus (closed union at src/stores/slices/processActivitySlice.ts:10-19, switched at monitorModel.ts:336, exhaustive PROCESS_STATUS_META at :125); the monitor shows personas, never FleetSessionState rows, so there is no session registry whose vocabulary it could fail to derive from. Prior deviation (parallel union vs fleet registry) withdrawn on re-read.",
+          "evaluatedAt": "2026-10-14T00:00:00.000Z",
+          "worker": "324fd756-14c3-41e3-98ac-77bdb11352dd",
+          "reason": "replaced by 8ff65c57-5dca-4cd4-a1ca-c477699f8e43"
         }
       ]
     },
@@ -14981,19 +15000,19 @@
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T00:00:00.000Z",
-      "worker": "324fd756-14c3-41e3-98ac-77bdb11352dd",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:20:17.000Z",
+      "worker": "8ff65c57-5dca-4cd4-a1ca-c477699f8e43",
       "techniques": [
         {
           "technique": "result-harvest",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_executions/libs/useBulkRerun.ts:260 no terminal 'timed out / cut off' account; roster does not sum to terminal states"
+          "evidence": "src/features/agents/sub_executions/libs/useBulkRerun.ts:260 a member still running at the deadline stays 'running' (the comment at :201 says 'stays pending'; the code set 'running' at :235) and phase becomes 'completed' at :318: no timed-out/cut-off account, so accounts do not sum to the roster with predicates"
         },
         {
           "technique": "parallel-dispatch",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_executions/libs/useBulkRerun.ts:244 key derived from the attempt (Date.now), not the work"
+          "evidence": "src/features/agents/sub_executions/libs/useBulkRerun.ts:244 the idempotency key is per attempt (Date.now()), not per work item, so a re-issued batch double-dispatches the same members"
         }
       ],
       "superseded": [
@@ -15010,6 +15029,13 @@
           "evaluatedAt": "2026-10-10T11:26:21.000Z",
           "worker": "bcd9e9fb-7483-4daf-916f-0868b1f7a42d",
           "reason": "replaced by 324fd756-14c3-41e3-98ac-77bdb11352dd"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_executions/libs/useBulkRerun.ts:260 a member past the poll deadline or cancelled returns early with its status left 'running' (set at :235; BulkRunStatus at :39 has no timed-out/cut-off class) and src/features/agents/sub_executions/components/list/BulkRerunReport.tsx:220 renders it as running after the cohort is done, so the roster never accounts a cut-off member; the idempotency key at :244 embeds Date.now() (the attempt, not the work) so a repeated batch is not deduped. Re-judged against rev 26: anchors all hold.",
+          "evaluatedAt": "2026-10-14T00:00:00.000Z",
+          "worker": "324fd756-14c3-41e3-98ac-77bdb11352dd",
+          "reason": "replaced by 8ff65c57-5dca-4cd4-a1ca-c477699f8e43"
         }
       ]
     },
@@ -15018,19 +15044,19 @@
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T00:00:00.000Z",
-      "worker": "324fd756-14c3-41e3-98ac-77bdb11352dd",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:20:17.000Z",
+      "worker": "8ff65c57-5dca-4cd4-a1ca-c477699f8e43",
       "techniques": [
         {
           "technique": "brief-carries-the-session",
           "verdict": "deviation",
-          "evidence": "src/features/notepad/plan/ShipDispatch.tsx:37 brief omits invariants and blind spots"
+          "evidence": "src/features/notepad/plan/ShipDispatch.tsx:66 the criterion brief carries scope ('surgical, scoped to these contexts') but no restated invariants and no 'you cannot see the conversation that produced this' line"
         },
         {
           "technique": "parallel-dispatch",
           "verdict": "deviation",
-          "evidence": "src/features/teams/sub_factory/passport/passportFleet.tsx:66 key stamped after spawn, not at admission"
+          "evidence": "src/features/teams/sub_factory/passport/passportFleet.tsx:66 spawnSession into the shared repo root with no declared write set or isolated worktree; identity is stamped by a separate renameSession at :67, so the dedupe key checked at :64 is not minted with the session"
         }
       ],
       "superseded": [
@@ -15047,6 +15073,13 @@
           "evaluatedAt": "2026-10-10T11:26:21.000Z",
           "worker": "bcd9e9fb-7483-4daf-916f-0868b1f7a42d",
           "reason": "replaced by 324fd756-14c3-41e3-98ac-77bdb11352dd"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/notepad/plan/ShipDispatch.tsx:129 dispatches a write-capable Fleet worker into the shared repo root with a goal brief (text at :37-50, step 2 'implement it') that restates no invariant (commit/push/branch discipline, write scope) and never says what the worker cannot see; dispatchRowToFleet spawns then names in two steps (src/features/teams/sub_factory/passport/passportFleet.tsx:66-67), so a failed rename leaves an anonymous worker the derived-key check at :64 cannot find and a retry spawns a duplicate. Re-judged against rev 26: still true.",
+          "evaluatedAt": "2026-10-14T00:00:00.000Z",
+          "worker": "324fd756-14c3-41e3-98ac-77bdb11352dd",
+          "reason": "replaced by 8ff65c57-5dca-4cd4-a1ca-c477699f8e43"
         }
       ]
     },

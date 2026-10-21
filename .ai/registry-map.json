@@ -3554,10 +3554,10 @@
           "changedAt": "2026-10-13",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/agents/sub_executions/libs/useBulkRerun.ts:260 a member past the poll deadline or cancelled returns early with its status left 'running' (set at :235; BulkRunStatus at :39 has no timed-out/cut-off class) and src/features/agents/sub_executions/components/list/BulkRerunReport.tsx:220 renders it as running after the cohort is done, so the roster never accounts a cut-off member; the idempotency key at :244 embeds Date.now() (the attempt, not the work) so a repeated batch is not deduped. Re-judged against rev 26: anchors all hold.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
-          "evaluatedRevision": 26,
+          "evidence": "src/features/agents/sub_executions/libs/useBulkRerun.ts:260 a member past the poll deadline returns early with status left 'running' (set at :235; BulkRunStatus :39 has no timed-out/cut-off class) while the batch phase flips to 'completed' at :318, so the roster never accounts the cut-off member; the idempotency key at :244 embeds Date.now() so a repeated batch is not deduped. Re-judged against rev 28.",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28,
           "revisionsBehind": 0
         },
         {
@@ -12952,10 +12952,10 @@
           "changedAt": "2026-10-13",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/teams/sub_collab/useTeamChannel.ts:67 derivePresence marks 'working' only while step_running is under PRESENCE_WORK_WINDOW_MS old and otherwise sets nothing, so an expired window silently drops the persona to no-presence instead of an unknown/lost state; src/features/fleet/monitor/channels/types.ts:21 re-declares the ad-hoc 'working'|'waiting' union as PresenceMap, a second status vocabulary beside the registry's. Re-verified at both lines against rev 26.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
-          "evaluatedRevision": 26,
+          "evidence": "src/features/teams/sub_collab/useTeamChannel.ts:55 derivePresence sets 'working' only inside PRESENCE_WORK_WINDOW_MS (:35) and otherwise sets nothing, so an expired budget silently becomes no-presence instead of unknown; src/features/fleet/monitor/channels/types.ts:21 re-declares the 'working'|'waiting' union as PresenceMap instead of deriving from PresenceStatus (useTeamChannel.ts:25). Anchor moved from :67 to :55 after the 2026-10-19 refactor; re-judged against rev 28.",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28,
           "revisionsBehind": 0
         },
         {
@@ -13152,10 +13152,10 @@
           "changedAt": "2026-10-13",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/features/fleet/monitor/monitorModel.ts:25 ExecState is a card-colour fold of the persona-execution ActiveProcessStatus (closed union at src/stores/slices/processActivitySlice.ts:10-19, switched at monitorModel.ts:336, exhaustive PROCESS_STATUS_META at :125); the monitor shows personas, never FleetSessionState rows, so there is no session registry whose vocabulary it could fail to derive from. Prior deviation (parallel union vs fleet registry) withdrawn on re-read.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
-          "evaluatedRevision": 26,
+          "evidence": "src/features/fleet/monitor/monitorModel.ts:25 ExecState is a display fold of the persona-execution ActiveProcessStatus (closed union src/stores/slices/processActivitySlice.ts:19, exhaustively keyed in PROCESS_STATUS_META at monitorModel.ts:125); the shell registers, dispatches, sweeps and harvests nothing, so the subject's precondition (owning a session fleet) is unmet. Re-judged against rev 28; the one consumer-side rule (derive from the closed vocabulary) is met.",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28,
           "revisionsBehind": 0
         },
         {
@@ -19960,10 +19960,10 @@
           "changedAt": "2026-10-13",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/notepad/plan/ShipDispatch.tsx:129 dispatches a write-capable Fleet worker into the shared repo root with a goal brief (text at :37-50, step 2 'implement it') that restates no invariant (commit/push/branch discipline, write scope) and never says what the worker cannot see; dispatchRowToFleet spawns then names in two steps (src/features/teams/sub_factory/passport/passportFleet.tsx:66-67), so a failed rename leaves an anonymous worker the derived-key check at :64 cannot find and a retry spawns a duplicate. Re-judged against rev 26: still true.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
-          "evaluatedRevision": 26,
+          "evidence": "src/features/notepad/plan/ShipDispatch.tsx:129 dispatches a write-capable Fleet worker into project.root_path (the shared repo root) with a criterion brief (e.g. :66-71 'fix them... run tests') that restates no invariant (commit/push/branch discipline) and never says what the worker cannot see; dispatchRowToFleet spawns then names in two steps (src/features/teams/sub_factory/passport/passportFleet.tsx:66-67), so a failed rename leaves an anonymous worker the key check at :64 cannot find and a retry spawns a duplicate. Corrects prior evidence: the goal brief (:31) dispatches via ShipMilestoneComposer.tsx:161, not :129. Re-judged against rev 28.",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28,
           "revisionsBehind": 0
         },
         {
