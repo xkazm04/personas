@@ -27,7 +27,7 @@ export interface GlyphFullLayoutProps {
   onPromote: () => void;
   onPromoteForce?: () => void;
   onRejectTest?: () => void;
-  onRefine?: (prompt: string) => void | Promise<void>;
+  onRefine?: (prompt: string) => void | boolean | Promise<void | boolean>;
   onViewAgent: () => void;
   buildError: string | null;
   testOutputLines?: string[];

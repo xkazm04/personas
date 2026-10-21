@@ -18,7 +18,7 @@ import { listen } from "@tauri-apps/api/event";
 import { EventName } from "@/lib/eventRegistry";
 import { answerBuildQuestion, cancelBuildSession, promoteBuildDraft, testBuildDraft } from "@/api/agents/buildSession";
 import { sendAppNotification } from "@/api/system/system";
-import { extractMessage, silentCatch } from "@/lib/silentCatch";
+import { extractMessage, silentCatch, toastCatch } from "@/lib/silentCatch";
 import { useSystemStore } from "@/stores/systemStore";
 import {
   updatePersona,
@@ -245,20 +245,26 @@ export function useLifecycle({
   // Sends a _refine message through the build session conversation
 
   const handleRefine = useCallback(
-    async (feedback: string) => {
+    // Resolves `true` once the refine was sent, `false` when it was not (wrong
+    // phase, or the send failed and was toasted). A composer that cleared its
+    // text on Send uses the `false` to put the user's feedback back.
+    async (feedback: string): Promise<boolean> => {
       const state = useAgentStore.getState();
-      if (state.buildPhase !== "draft_ready" && state.buildPhase !== "test_complete") return;
+      if (state.buildPhase !== "draft_ready" && state.buildPhase !== "test_complete") return false;
 
       const sessionId = state.buildSessionId;
-      if (!sessionId) return;
+      if (!sessionId) return false;
 
       // Reset test state before refining
       useAgentStore.getState().handleRejectTest();
 
       try {
         await answerBuildQuestion(sessionId, "_refine", feedback);
+        return true;
       } catch (err) {
         logger.error("Refinement failed", { error: err });
+        toastCatch("lifecycle:refine")(err);
+        return false;
       }
     },
     [],

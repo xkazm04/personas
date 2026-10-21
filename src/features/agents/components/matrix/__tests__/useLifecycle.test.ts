@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
+import { useToastStore } from "@/stores/toastStore";
 
 // ---------------------------------------------------------------------------
 // Mocks -- must be before import of the module under test
@@ -517,6 +518,27 @@ describe("useLifecycle", () => {
       });
 
       expect(mockHandleRejectTest).toHaveBeenCalled();
+    });
+
+    it("a failed refine toasts an error and reports false so the composer can keep the text", async () => {
+      setStoreState({
+        buildPhase: "draft_ready",
+        buildSessionId: "session-123",
+      });
+      mockAnswerBuildQuestion.mockRejectedValueOnce({ error: "session gone", kind: "NotFound" });
+      useToastStore.setState({ toasts: [] });
+
+      const { result } = renderHook(() =>
+        useLifecycle({ personaId: "persona-1" }),
+      );
+
+      let outcome: unknown;
+      await act(async () => {
+        outcome = await result.current.handleRefine("keep this text");
+      });
+
+      expect(outcome).toBe(false);
+      expect(useToastStore.getState().toasts.some((x) => x.type === "error")).toBe(true);
     });
 
     it("only callable when buildPhase is draft_ready or test_complete", async () => {

@@ -19,6 +19,8 @@ import {
   type PersonaCapability,
 } from '@/lib/personas/capabilities';
 
+import { sendRefine, type RefineHandler } from './refineSend';
+
 interface PersonaLayoutBuildProps {
   buildPhase: BuildPhase | null;
   completeness: number;
@@ -32,7 +34,7 @@ interface PersonaLayoutBuildProps {
   onApproveTestAnyway: () => void;
   onRejectTest?: () => void;
   onDeleteDraft?: () => void;
-  onRefine?: (prompt: string) => void | Promise<void>;
+  onRefine?: RefineHandler;
   onViewAgent: () => void;
   templateName: string;
   testOutputLines?: string[];
@@ -424,7 +426,10 @@ export function PersonaLayoutBuild({
       onSend={(text) => {
         setRefineOpen(false);
         setRefineText('');
-        void onRefine?.(text);
+        void sendRefine(text, onRefine, (kept) => {
+          setRefineText(kept);
+          setRefineOpen(true);
+        });
       }}
     />
   ) : activeQuestion ? (
