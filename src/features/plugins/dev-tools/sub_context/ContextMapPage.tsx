@@ -447,7 +447,11 @@ export default function ContextMapPage() {
   }, [activeProjectId, activeProject?.name, addToast, t.plugins.dev_tools.context_plan_created, t.plugins.dev_tools.context_plan_failed]);
 
   const handleCancelScan = useCallback(async () => {
-    if (activeScanId) await cancelScanCodebase(activeScanId);
+    // The operator asked to stop: settle the UI even when the backend call
+    // rejects, otherwise the overlay stays up and the rejection is unhandled.
+    if (activeScanId) {
+      try { await cancelScanCodebase(activeScanId); } catch (err) { silentCatch('ContextMapPage:cancelScan')(err); }
+    }
     useOverviewStore.getState().processEnded('context_scan', 'cancelled');
     useNotificationCenterStore.getState().addProcessNotification({
       processType: 'context-scan',
