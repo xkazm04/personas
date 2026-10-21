@@ -1728,3 +1728,8 @@
 {"ts":"2026-10-21T12:27:58Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":["relevance-floors","retrieval-triggering","embedding-lifecycle","hybrid-lane-fusion"],"deviations":1}
 {"ts":"2026-10-21T12:27:58Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":["relevance-floors","retrieval-evaluation"],"deviations":1}
 {"ts":"2026-10-21T12:27:58Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":["chunking-and-indexing"],"deviations":1}
+{"ts":"2026-10-21T12:29:00Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["authentication-and-scoping","tool-schema-design","server-composition"],"deviations":1,"context":"mcp-server"}
+{"ts":"2026-10-21T12:29:00Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["tool-schema-design","authentication-and-scoping","server-composition"],"deviations":1,"context":"companion-brain"}
+{"ts":"2026-10-21T12:29:00Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["tool-schema-design","untrusted-result-handling"],"deviations":1,"context":"output-stream-parser"}
+{"ts":"2026-10-21T12:29:00Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["first-party-agent-is-a-principal","authentication-and-scoping","tool-identity-vs-tool-name","tool-schema-design"],"deviations":1,"context":"webhook-ingestion"}
+{"ts":"2026-10-21T12:29:00Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["tool-schema-design","untrusted-result-handling","client-integration"],"deviations":0,"context":"vault-shared-playground"}

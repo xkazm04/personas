@@ -4209,79 +4209,90 @@
       "subject": "mcp-tools",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T16:43:31.515Z",
-      "worker": "385a776a-618f-431b-81f3-f0b0aabb190e",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:29:00.000Z",
+      "worker": "6e4b8795-7c67-4326-af94-42a1bd7ea0db",
       "techniques": [
-        {
-          "technique": "ambient-selection-is-not-an-argument",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/mcp_server/tools.rs:804 Persona execution names an explicit identity rather than the GUI's active selection."
-        },
         {
           "technique": "authentication-and-scoping",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/mcp_server/auth.rs:86 MCP_REQUIRED_SCOPE is personas:execute for every tool; per-persona and read-only grants cannot satisfy this door."
-        },
-        {
-          "technique": "catalog-projection-modes",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/mcp_server/tools.rs:775 No external catalog-budget refusal or projection-mode requirement was evidenced."
-        },
-        {
-          "technique": "client-integration",
-          "verdict": "deviation",
-          "evidence": "src-tauri/src/mcp_server/install.rs:122 The installer writes or replaces the spawn configuration without first showing the exact executable and arguments."
-        },
-        {
-          "technique": "command-audit-by-position",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/mcp_server/install.rs:36 This installer selects its own executable rather than auditing a person-configured command string."
-        },
-        {
-          "technique": "egress-argument-gating",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/mcp_server/tools.rs:1190 This is a publisher-owned tool argument surface, not a host recipient gate over third-party schemas."
-        },
-        {
-          "technique": "first-party-agent-is-a-principal",
-          "verdict": "conformant",
-          "evidence": "src-tauri/src/mcp_server/mod.rs:103 The bundled CLI sidecar reaches the same token-authorized public dispatcher as external clients; its shared broad credential is a separate authentication deviation."
-        },
-        {
-          "technique": "fluent-syntax-bounded-grammar",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/mcp_server/tools.rs:939 The file tool accepts structured path and content fields rather than a command notation."
-        },
-        {
-          "technique": "sanctioned-session-state",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/mcp_bin.rs:3 The sidecar has one process and pipe, without replica-affinity routing."
-        },
-        {
-          "technique": "sealed-continuation-state",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/mcp_server/tools.rs:1884 Execution IDs reference persisted server state rather than carrying intermediate state."
-        },
-        {
-          "technique": "server-composition",
-          "verdict": "deviation",
-          "evidence": "src-tauri/src/mcp_server/tools.rs:1191 Dispatch is a hand-maintained name switch, separate from list_tools' declaration array; listing, handlers, and validation do not derive from one registry."
-        },
-        {
-          "technique": "tool-identity-vs-tool-name",
-          "verdict": "deviation",
-          "evidence": "src-tauri/src/mcp_server/auth.rs:84 Persisted tool references use mutable names, while the inspected listing and result definitions provide no rename-stable tool identifier."
+          "evidence": "src-tauri/src/mcp_server/auth.rs:86 single omnibus scope for every tool, read and write alike; the token is a master key over the whole catalog"
         },
         {
           "technique": "tool-schema-design",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/mcp_server/tools.rs:1229 Unknown tools become the same isError result as handler failures, although the standard routes unknown-tool failures through the protocol channel."
+          "evidence": "src-tauri/src/mcp_server/tools.rs:1229 unknown tool falls through to Err -> isError:true result (a machinery failure on the model's channel); grep finds zero \"annotations\" in tools.rs, so no read-only/destructive verdict is published"
+        },
+        {
+          "technique": "server-composition",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/mcp_server/mod.rs:103 one dispatch door: every tools/call is authorized and audited before tools::call_tool, and handler Errs become in-band results"
+        },
+        {
+          "technique": "ambient-selection-is-not-an-argument",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/mcp_server/tools.rs:804 Persona execution names an explicit identity rather than the GUI's active selection.",
+          "carriedFrom": "2026-10-12"
+        },
+        {
+          "technique": "catalog-projection-modes",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/mcp_server/tools.rs:775 No external catalog-budget refusal or projection-mode requirement was evidenced.",
+          "carriedFrom": "2026-10-12"
+        },
+        {
+          "technique": "client-integration",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/mcp_server/install.rs:122 The installer writes or replaces the spawn configuration without first showing the exact executable and arguments.",
+          "carriedFrom": "2026-10-12"
+        },
+        {
+          "technique": "command-audit-by-position",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/mcp_server/install.rs:36 This installer selects its own executable rather than auditing a person-configured command string.",
+          "carriedFrom": "2026-10-12"
+        },
+        {
+          "technique": "egress-argument-gating",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/mcp_server/tools.rs:1190 This is a publisher-owned tool argument surface, not a host recipient gate over third-party schemas.",
+          "carriedFrom": "2026-10-12"
+        },
+        {
+          "technique": "first-party-agent-is-a-principal",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/mcp_server/mod.rs:103 The bundled CLI sidecar reaches the same token-authorized public dispatcher as external clients; its shared broad credential is a separate authentication deviation.",
+          "carriedFrom": "2026-10-12"
+        },
+        {
+          "technique": "fluent-syntax-bounded-grammar",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/mcp_server/tools.rs:939 The file tool accepts structured path and content fields rather than a command notation.",
+          "carriedFrom": "2026-10-12"
+        },
+        {
+          "technique": "sanctioned-session-state",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/mcp_bin.rs:3 The sidecar has one process and pipe, without replica-affinity routing.",
+          "carriedFrom": "2026-10-12"
+        },
+        {
+          "technique": "sealed-continuation-state",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/mcp_server/tools.rs:1884 Execution IDs reference persisted server state rather than carrying intermediate state.",
+          "carriedFrom": "2026-10-12"
+        },
+        {
+          "technique": "tool-identity-vs-tool-name",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/mcp_server/auth.rs:84 Persisted tool references use mutable names, while the inspected listing and result definitions provide no rename-stable tool identifier.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "write-freshness-gate",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/mcp_server/tools.rs:326 The handler overwrites existing files without a read-result hash precondition or a serialized freshness-check-and-write section."
+          "evidence": "src-tauri/src/mcp_server/tools.rs:326 The handler overwrites existing files without a read-result hash precondition or a serialized freshness-check-and-write section.",
+          "carriedFrom": "2026-10-12"
         }
       ],
       "superseded": [
@@ -4291,6 +4302,13 @@
           "evaluatedAt": "2026-09-23",
           "worker": null,
           "reason": "replaced by 385a776a-618f-431b-81f3-f0b0aabb190e"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/mcp_server/auth.rs:86 Every tool call requires the exact broad personas:execute scope, rejecting per-persona grants and preventing authorization from reflecting each operation's actual privilege.",
+          "evaluatedAt": "2026-10-12T16:43:31.515Z",
+          "worker": "385a776a-618f-431b-81f3-f0b0aabb190e",
+          "reason": "replaced by 6e4b8795-7c67-4326-af94-42a1bd7ea0db"
         }
       ]
     },
@@ -4555,54 +4573,71 @@
       "subject": "mcp-tools",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T16:43:31.515Z",
-      "worker": "385a776a-618f-431b-81f3-f0b0aabb190e",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:29:00.000Z",
+      "worker": "6e4b8795-7c67-4326-af94-42a1bd7ea0db",
       "techniques": [
+        {
+          "technique": "first-party-agent-is-a-principal",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:1793 the product's own agents call with the system credential rather than a per-persona grant"
+        },
         {
           "technique": "authentication-and-scoping",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/runner/mod.rs:1762 Runs reuse the cached system key holding personas:read, personas:execute, and proxy rather than receiving separately attributable, narrowly scoped consumer credentials."
+          "evidence": "src-tauri/engine/src/cli_mcp_config.rs:168 one shared token per process rather than a per-consumer capability token"
+        },
+        {
+          "technique": "tool-identity-vs-tool-name",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/mcp_tools.rs:952 audit tool_id is derived from the mutable tool name"
+        },
+        {
+          "technique": "tool-schema-design",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/engine/mcp_tools.rs:946 a server isError result is recorded as tool_error, distinct from a transport/protocol Err"
         },
         {
           "technique": "catalog-projection-modes",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/engine/src/cli_mcp_config.rs:265 This configuration ensures the bundled catalog is loaded; no external catalog-budget refusal was evidenced."
+          "evidence": "src-tauri/engine/src/cli_mcp_config.rs:265 This configuration ensures the bundled catalog is loaded; no external catalog-budget refusal was evidenced.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "command-audit-by-position",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/engine/src/cli_mcp_config.rs:261 This configuration selects the bundled binary rather than admitting a person-configured arbitrary MCP command."
-        },
-        {
-          "technique": "first-party-agent-is-a-principal",
-          "verdict": "conformant",
-          "evidence": "src-tauri/engine/src/cli_mcp_config.rs:168 The first-party CLI authenticates at the public MCP door rather than invoking handlers through a private exclusion-based admission path; sharing the credential violates authentication-and-scoping separately."
+          "evidence": "src-tauri/engine/src/cli_mcp_config.rs:261 This configuration selects the bundled binary rather than admitting a person-configured arbitrary MCP command.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "fluent-syntax-bounded-grammar",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/engine/src/cli_mcp_config.rs:262 The sidecar configuration uses structured launch arguments rather than a model-authored notation."
+          "evidence": "src-tauri/engine/src/cli_mcp_config.rs:262 The sidecar configuration uses structured launch arguments rather than a model-authored notation.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "sanctioned-session-state",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/engine/src/cli_mcp_config.rs:260 The run owns a local sidecar connection rather than routing across server replicas."
+          "evidence": "src-tauri/engine/src/cli_mcp_config.rs:260 The run owns a local sidecar connection rather than routing across server replicas.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "sealed-continuation-state",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/engine/src/pairing.rs:13 The pairing lane retains server-side claim state rather than giving callers a state-carrying continuation."
+          "evidence": "src-tauri/engine/src/pairing.rs:13 The pairing lane retains server-side claim state rather than giving callers a state-carrying continuation.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "server-composition",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/engine/src/cli_mcp_config.rs:277 This path configures a client registration; the actual server composition is assessed in mcp-server."
+          "evidence": "src-tauri/engine/src/cli_mcp_config.rs:277 This path configures a client registration; the actual server composition is assessed in mcp-server.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "write-freshness-gate",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/mcp_server/tools.rs:326 The drive_write_text tool exposed to these runs overwrites existing artifacts without proving that the model read their current contents."
+          "evidence": "src-tauri/src/mcp_server/tools.rs:326 The drive_write_text tool exposed to these runs overwrites existing artifacts without proving that the model read their current contents.",
+          "carriedFrom": "2026-10-12"
         }
       ],
       "superseded": [
@@ -4612,6 +4647,13 @@
           "evaluatedAt": "2026-09-23",
           "worker": null,
           "reason": "replaced by 385a776a-618f-431b-81f3-f0b0aabb190e"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:1762 Persona runs receive the process-wide system credential, so their MCP calls share broad authority and one credential audit identity.",
+          "evaluatedAt": "2026-10-12T16:43:31.515Z",
+          "worker": "385a776a-618f-431b-81f3-f0b0aabb190e",
+          "reason": "replaced by 6e4b8795-7c67-4326-af94-42a1bd7ea0db"
         }
       ]
     },
@@ -23450,61 +23492,75 @@
       "subject": "mcp-tools",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T09:13:49.230Z",
-      "worker": "e9f4508d-11ec-4a51-a331-f8825876648b",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:29:00.000Z",
+      "worker": "6e4b8795-7c67-4326-af94-42a1bd7ea0db",
       "techniques": [
         {
           "technique": "tool-schema-design",
-          "verdict": "deviation: argument-validation failures and recoverable timeouts are protocol errors, not in-band results (pending.rs:17-19 itself says the session should 'continue with its best guess')",
-          "evidence": "src-tauri/src/companion/orchestration/mcp/handlers.rs:267"
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/orchestration/mcp/handlers.rs:267 argument validation routed to the protocol channel (same at :186, :226, :354, :556, :560); :328 recoverable timeout as internal_error"
         },
         {
           "technique": "authentication-and-scoping",
-          "verdict": "realized: tools/call requires a per-session token minted at spawn (mod.rs:92) and released on session exit (mod.rs:101); listing open by policy, execution authenticates",
-          "evidence": "src-tauri/src/companion/orchestration/mcp/mod.rs:262"
+          "verdict": "realized",
+          "evidence": "src-tauri/src/companion/orchestration/mcp/mod.rs:92 per-fleet-session token minted, released on exit (:101) and checked at the call door (:310) while list/discover stay open"
+        },
+        {
+          "technique": "server-composition",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/companion/orchestration/mcp/mod.rs:258 tools/list advertises cache terms; tools/call goes through one require_session door"
         },
         {
           "technique": "client-integration",
           "verdict": "realized (server half of consent): approval reads the declared decision field and defaults to denied; wait bounded by a 10 min TTL",
-          "evidence": "src-tauri/src/companion/orchestration/mcp/handlers.rs:392"
-        },
-        {
-          "technique": "server-composition",
-          "verdict": "realized: one dispatch door with session check before handler dispatch; discovery carries ttlMs/cacheScope",
-          "evidence": "src-tauri/src/companion/orchestration/mcp/mod.rs:234"
+          "evidence": "src-tauri/src/companion/orchestration/mcp/handlers.rs:392",
+          "carriedFrom": "2026-10-14"
         },
         {
           "technique": "suspendable-request-classes",
           "verdict": "partial: held-call design rather than terminate/resume; bounded by TTL and cancelled on session exit",
-          "evidence": "src-tauri/src/companion/orchestration/mcp/pending.rs:136"
+          "evidence": "src-tauri/src/companion/orchestration/mcp/pending.rs:136",
+          "carriedFrom": "2026-10-14"
         }
       ],
-      "registryProposal": "Pairing is 'probable'; judged because this context holds the actual MCP server (the strong-ranked commands-companion holds only a Tauri door)."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/orchestration/mcp/handlers.rs:267 reports an empty tool argument as JSON-RPC -32602 (same at :186,:226,:354,:556,:560) and :329/:413 report an expired human wait as -32603 internal_error, so errors the calling model could correct or work around travel on the protocol channel instead of an in-band isError result; the tool descriptors (handlers.rs:20) publish no destructive/read-only annotations.",
+          "evaluatedAt": "2026-10-14T09:13:49.230Z",
+          "worker": "e9f4508d-11ec-4a51-a331-f8825876648b",
+          "reason": "replaced by 6e4b8795-7c67-4326-af94-42a1bd7ea0db"
+        }
+      ]
     },
     "a3b615d2-05d8-47bd-ad92-672c6b42b0f3/mcp-tools": {
       "context": "output-stream-parser",
       "subject": "mcp-tools",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T09:13:49.230Z",
-      "worker": "e9f4508d-11ec-4a51-a331-f8825876648b",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:29:00.000Z",
+      "worker": "6e4b8795-7c67-4326-af94-42a1bd7ea0db",
       "techniques": [
         {
           "technique": "tool-schema-design",
-          "verdict": "deviation: the in-band error flag is not honoured by this consumer ('the channel binds the consumer too')",
-          "evidence": "src-tauri/engine/src/parser.rs:387"
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/parser.rs:423 the in-band error channel is discarded on the consuming side - an isError result is recorded as an ordinary result (failure-not-empty-success)"
         },
         {
           "technique": "untrusted-result-handling",
-          "verdict": "partly realized: result text is size-capped for display (MAX_TOOL_RESULT_DISPLAY, :384) but carried as a bare 'Tool result:' line with no server provenance",
-          "evidence": "src-tauri/engine/src/parser.rs:384"
-        },
+          "verdict": "unknown",
+          "evidence": "src-tauri/engine/src/parser.rs:427 results are parsed for display/telemetry only, not re-fed to a model here; provenance fencing lives elsewhere"
+        }
+      ],
+      "superseded": [
         {
-          "technique": "tool-schema-design",
-          "verdict": "realized elsewhere in this context: direct and MCP-playground surfaces share a typed ToolErrorKind including an MCP isError mapping",
-          "evidence": "src-tauri/engine/src/tool_outcome.rs:51"
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/parser.rs:382 turns a tool_result block into StreamLineType::ToolResult{tool_use_id, content_preview} (:387-390) and never reads the block's is_error flag (the only is_error read is the final result line, :444), and the 'return' inside the block loop drops further parallel tool_results in the same message; failed and successful tool calls become the same row downstream.",
+          "evaluatedAt": "2026-10-14T09:13:49.230Z",
+          "worker": "e9f4508d-11ec-4a51-a331-f8825876648b",
+          "reason": "replaced by 6e4b8795-7c67-4326-af94-42a1bd7ea0db"
         }
       ]
     },
