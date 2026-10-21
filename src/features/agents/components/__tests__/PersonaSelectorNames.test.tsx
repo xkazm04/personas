@@ -29,11 +29,22 @@ describe('persona selector icon buttons', () => {
     expect(screen.getByRole('button', { name: 'Clear' })).toBeInTheDocument();
   });
 
-  it('names the dropdown clear-search button', () => {
-    render(<PersonaSelector value="" onChange={vi.fn()} personas={personas} />);
+  it('is keyboard operable: arrows move, Enter picks, Escape closes', () => {
+    const onChange = vi.fn();
+    render(<PersonaSelector value="" onChange={onChange} personas={personas} />);
     fireEvent.click(screen.getAllByRole('button')[0]!);
-    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Agent' } });
-    expect(screen.getByRole('button', { name: 'Clear' })).toBeInTheDocument();
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
+    // Searchable popup focuses row 0 ("All"); two ArrowDowns reach the second persona.
+    fireEvent.keyDown(document, { key: 'ArrowDown' });
+    fireEvent.keyDown(document, { key: 'ArrowDown' });
+    fireEvent.keyDown(document, { key: 'Enter' });
+    expect(onChange).toHaveBeenCalledWith('p-1');
+    expect(screen.queryByRole('listbox')).toBeNull();
+
+    fireEvent.click(screen.getAllByRole('button')[0]!);
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('listbox')).toBeNull();
   });
 
   it('names the column filter clear button', () => {
