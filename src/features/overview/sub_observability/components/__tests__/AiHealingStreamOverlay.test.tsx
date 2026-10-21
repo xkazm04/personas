@@ -52,3 +52,13 @@ describe('AiHealingStreamOverlay copy', () => {
     expect(container.querySelector('[title]')).toBeNull();
   });
 });
+
+// Colour by meaning: the overlay paints status through theme tokens, so a custom theme
+// recolours it. A raw Tailwind palette class (red-500, cyan-400, ...) ignores the theme.
+describe('AiHealingStreamOverlay colours', () => {
+  it.each(['diagnosing', 'applying', 'completed', 'failed'] as const)('uses no raw palette class in the %s phase', (phase) => {
+    const withDiagnosis: AiHealingState = { ...state(phase), diagnosis: 'Missing credential', fixesApplied: ['Rotated key'] };
+    const { container } = render(<AiHealingStreamOverlay healing={withDiagnosis} onDismiss={() => {}} />);
+    expect(container.innerHTML).not.toMatch(/\b(?:text|bg|border|from|to)-(?:red|emerald|amber|cyan)-\d{2,3}/);
+  });
+});
