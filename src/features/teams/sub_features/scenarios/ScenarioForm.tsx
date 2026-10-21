@@ -124,11 +124,13 @@ export function ScenarioForm({ useCaseId, scenario, onSubmit, onClose, t, tCommo
             )}
           >
             {({ close }) => (
-              <ul>
+              <ul role="presentation">
                 {SCENARIO_SCOPES.map((option) => (
-                  <li key={option}>
+                  <li key={option} role="presentation">
                     <button
                       type="button"
+                      role="option"
+                      aria-selected={option === scope}
                       onClick={() => { setScope(option); close(); }}
                       className="w-full rounded-interactive px-2 py-1.5 text-left typo-body text-foreground hover:bg-secondary/60 focus-ring"
                     >

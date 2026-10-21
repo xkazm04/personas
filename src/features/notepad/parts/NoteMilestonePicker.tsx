@@ -111,6 +111,8 @@ export function NoteMilestonePicker({ projectId, disabled, onPick, onCreate }: {
         <div className="py-1 min-w-[16rem]">
           <button
             type="button"
+            role="option"
+            aria-selected={false}
             onClick={() => { onCreate(); close(); }}
             className={`w-full text-left px-3 py-2 typo-caption flex items-center gap-2 transition-colors hover:bg-secondary/50 focus-ring ${focusIndex === 0 ? 'bg-secondary/50' : ''}`}
             data-testid="notepad-milestone-new"
@@ -135,6 +137,8 @@ export function NoteMilestonePicker({ projectId, disabled, onPick, onCreate }: {
             <button
               key={m.id}
               type="button"
+              role="option"
+              aria-selected={false}
               onClick={() => { onPick(m.id); close(); }}
               className={`w-full text-left px-3 py-2 typo-caption flex items-center gap-2 min-w-0 transition-colors hover:bg-secondary/50 focus-ring ${focusIndex === i + 1 ? 'bg-secondary/50' : ''}`}
             >

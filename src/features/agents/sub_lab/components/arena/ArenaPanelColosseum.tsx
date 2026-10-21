@@ -642,6 +642,8 @@ function UseCasePopover({
               <button
                 key={opt.value}
                 type="button"
+                role="option"
+                aria-selected={active}
                 onClick={() => {
                   onSelect(opt.value === '__all__' ? null : opt.value);
                   close();
