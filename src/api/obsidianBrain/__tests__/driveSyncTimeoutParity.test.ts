@@ -1,8 +1,8 @@
 // `obsidian_drive_push_sync` / `obsidian_drive_pull_sync` run inline and make
 // sequential Google calls per file (push_to_drive / pull_from_drive in
-// src-tauri/src/commands/obsidian_brain/drive.rs) on a client with no request
-// deadline, so the backend budget grows with the vault and has no constant to
-// mirror. The wrapper therefore has to wait as long as the ceiling tauriInvoke
+// src-tauri/src/commands/obsidian_brain/drive.rs). Each call has its own
+// deadline (build_drive_client) but the sync as a whole grows with the vault,
+// so the backend budget has no constant to mirror. The wrapper therefore has to wait as long as the ceiling tauriInvoke
 // gives other blocking mutations, not the 90 s default. Both facts are read
 // from source at run time: if the backend gains a deadline or goes parallel,
 // this test names the number to revisit. Lives under __tests__/, which tsc
@@ -41,12 +41,12 @@ function longMutationCeilingMs(): number {
   return Number(m![1]) * 60_000;
 }
 
-function assertBackendIsUnbounded(): void {
+function assertBackendIsSequentialWithPerCallDeadline(): void {
   const src = stripComments(
     readFileSync(resolve(process.cwd(), 'src-tauri/src/commands/obsidian_brain/drive.rs'), 'utf8'),
   );
-  // No request deadline on the Drive client ...
-  expect(fnBody(src, 'drive_client')).not.toMatch(/\.timeout\(/);
+  // A per-call deadline on the Drive client (a stalled call fails, never hangs) ...
+  expect(fnBody(src, 'build_drive_client')).toMatch(/\.timeout\(/);
   // ... and every file is awaited one after another, never joined.
   for (const fn of ['push_to_drive', 'pull_from_drive']) {
     const body = fnBody(src, fn);
@@ -71,7 +71,7 @@ describe('Obsidian Drive sync IPC timeout parity', () => {
     ['obsidian_drive_push_sync', () => obsidianDrivePushSync()],
     ['obsidian_drive_pull_sync', () => obsidianDrivePullSync(['Personas'])],
   ] as const)('%s waits for the blocking-mutation ceiling', async (cmd, call) => {
-    assertBackendIsUnbounded();
+    assertBackendIsSequentialWithPerCallDeadline();
     await call();
     expect(calls[0]![0]).toBe(cmd);
     expect(resolvedTimeoutMs(calls[0]!)).toBeGreaterThanOrEqual(longMutationCeilingMs());

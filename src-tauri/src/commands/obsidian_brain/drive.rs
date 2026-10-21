@@ -22,6 +22,7 @@
 
 use std::collections::HashMap;
 use std::path::{Component, Path};
+use std::time::Duration;
 
 /// Validate that a Google Drive `file.name` is safe to use as a local filename.
 ///
@@ -76,6 +77,11 @@ use crate::error::AppError;
 
 use super::markdown::compute_content_hash;
 use super::vault_fs::{relative_path, walk_markdown_files, ErrorPolicy, WalkOptions};
+
+/// Per-request ceiling for one Drive call (a single note up/download).
+const DRIVE_REQUEST_TIMEOUT: Duration = Duration::from_secs(120);
+/// Connection-establishment ceiling for the Drive client.
+const DRIVE_CONNECT_TIMEOUT: Duration = Duration::from_secs(15);
 
 // ============================================================================
 // Types
@@ -194,11 +200,15 @@ fn drive_err(e: impl std::fmt::Display) -> AppError {
 /// compile-time `googleapis.com` literal, and the token rides in
 /// `Authorization`, which reqwest strips across a host change.
 ///
-/// KNOWN GAP, left as-is by the Wave-2 `http` lane because closing it is a
-/// behaviour change rather than a client swap: this builder states NO
-/// `.timeout()`, so a stalled Google connection hangs the sync with no
-/// deadline (golden path `outbound-http-call.md` §7.C).
+/// Every request carries a per-call deadline ([`DRIVE_REQUEST_TIMEOUT`]) so a
+/// stalled Google connection fails that one file instead of hanging the whole
+/// sequential sync. The sync as a whole stays unbounded (it grows with the
+/// vault); the IPC wrapper waits the 30-minute ceiling for that reason.
 fn drive_client(token: &str) -> Result<reqwest::Client, AppError> {
+    build_drive_client(token, DRIVE_REQUEST_TIMEOUT)
+}
+
+fn build_drive_client(token: &str, timeout: Duration) -> Result<reqwest::Client, AppError> {
     let mut headers = reqwest::header::HeaderMap::new();
     headers.insert(
         reqwest::header::AUTHORIZATION,
@@ -207,6 +217,8 @@ fn drive_client(token: &str) -> Result<reqwest::Client, AppError> {
     );
     reqwest::Client::builder()
         .default_headers(headers)
+        .connect_timeout(DRIVE_CONNECT_TIMEOUT)
+        .timeout(timeout)
         .build()
         .map_err(drive_err)
 }
@@ -851,4 +863,44 @@ fn walk_markdown_files_relative(
         .into_iter()
         .map(|path| (relative_path(dir, &path), path))
         .collect())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Test-only: outer guard so a missing client deadline fails, not hangs.
+    const OUTER_GUARD: Duration = Duration::from_secs(5);
+    const TEST_DEADLINE: Duration = Duration::from_millis(200);
+    const IPC_CEILING: Duration = Duration::from_secs(10 * 60);
+
+    /// A Drive call against a server that accepts and never answers must fail
+    /// at the client deadline instead of hanging the sequential sync.
+    #[tokio::test]
+    async fn stalled_drive_call_fails_at_the_client_deadline() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        let _held = tokio::spawn(async move {
+            // Hold the accepted socket open without ever replying.
+            let _conn = listener.accept().await;
+            tokio::time::sleep(Duration::from_secs(30)).await;
+        });
+        let client = build_drive_client("t", TEST_DEADLINE).unwrap();
+        // The outer guard keeps a missing client deadline a failure, not a hang.
+        let res = tokio::time::timeout(
+            OUTER_GUARD,
+            client.get(format!("http://{addr}/stall")).send(),
+        )
+        .await
+        .expect("the client deadline must fire before the 5 s outer guard");
+        let err = res.unwrap_err();
+        assert!(err.is_timeout(), "expected a timeout, got {err}");
+    }
+
+    #[test]
+    fn production_deadlines_stay_far_below_the_ipc_ceiling() {
+        // One stalled call must fail well inside the 30 min wrapper budget.
+        assert!(DRIVE_REQUEST_TIMEOUT < IPC_CEILING);
+        assert!(DRIVE_CONNECT_TIMEOUT < DRIVE_REQUEST_TIMEOUT);
+    }
 }
