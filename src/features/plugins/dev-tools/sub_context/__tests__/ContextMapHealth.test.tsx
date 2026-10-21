@@ -32,6 +32,7 @@ const REPORT = {
   project_id: 'p',
   generated_at: 't',
   balanced: false,
+  disk_verified: true,
   totals: {
     groups: 25,
     contexts: 208,
@@ -89,6 +90,14 @@ describe('ContextMapHealth — the surface that finally calls the detector', () 
     expect(screen.getByText('ctx_audit_attention')).toBeInTheDocument();
     // The Rust `message` sentence is Layer-1 text and must never reach the DOM.
     expect(screen.queryByText('ignored')).not.toBeInTheDocument();
+  });
+
+  it('does not grade an unwalked project root as within policy', async () => {
+    auditContexts.mockResolvedValue({ ...REPORT, balanced: true, disk_verified: false, findings: [] });
+    render(<ContextMapHealth projectId="p" />);
+    fireEvent.click(screen.getByText('ctx_audit_run'));
+    expect(await screen.findByText('ctx_audit_unverified')).toBeInTheDocument();
+    expect(screen.queryByText('ctx_audit_balanced')).not.toBeInTheDocument();
   });
 
   it('plans the repair as a dry run and writes nothing until confirmed', async () => {

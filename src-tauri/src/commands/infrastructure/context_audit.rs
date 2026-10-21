@@ -99,6 +99,12 @@ pub struct ContextAuditReport {
     pub generated_at: String,
     /// True when there are no `error`/`warn` findings — the map is within policy.
     pub balanced: bool,
+    /// True when the disk-backed checks (dangling, stale, unmapped) actually ran
+    /// against a walked project root. False means only the structural checks
+    /// ran, and `balanced` says nothing about the files: a moved or unreadable
+    /// repo must not read as a healthy map.
+    #[serde(default)]
+    pub disk_verified: bool,
     pub totals: ContextAuditTotals,
     pub findings: Vec<ContextAuditFinding>,
 }
@@ -423,6 +429,7 @@ pub fn audit(
         project_id: project_id.to_string(),
         generated_at: chrono::Utc::now().to_rfc3339(),
         balanced,
+        disk_verified: existing_files.is_some(),
         totals: ContextAuditTotals {
             groups: groups.len(),
             contexts: contexts.len(),
@@ -759,6 +766,22 @@ mod tests {
             MAX_UNMAPPED_FINDINGS
         );
         assert!(has(&r, "unmapped_file_truncated"));
+    }
+
+    /// A report is only `disk_verified` when the walk supplied a tree; a walk
+    /// that failed or came back empty reaches `audit` as `None` and must say so.
+    #[test]
+    fn a_report_without_a_walked_tree_is_not_disk_verified() {
+        let c = ctx("alpha", &["src/a.rs"], &[]);
+        let none = audit("p", &[], &[c.clone()], None, None, None);
+        assert!(
+            !none.disk_verified,
+            "no tree walked: structural checks only"
+        );
+
+        let existing: HashSet<String> = ["src/a.rs".to_string()].into_iter().collect();
+        let some = audit("p", &[], &[c], Some(&existing), None, None);
+        assert!(some.disk_verified);
     }
 
     /// Without a disk walk there is no tree to compare against, so the check

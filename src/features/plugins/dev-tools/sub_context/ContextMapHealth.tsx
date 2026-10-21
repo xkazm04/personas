@@ -145,8 +145,15 @@ export function ContextMapHealth({ projectId }: { projectId: string }) {
         <Stethoscope className="w-3.5 h-3.5 text-amber-400/80 flex-shrink-0" />
         <span className="typo-card-label">{t.ctx_audit_title}</span>
         {report && (
-          <StatusBadge variant={report.balanced ? 'success' : 'warning'} pill>
-            {report.balanced ? t.ctx_audit_balanced : t.ctx_audit_attention}
+          <StatusBadge
+            variant={!report.balanced ? 'warning' : report.disk_verified ? 'success' : 'neutral'}
+            pill
+          >
+            {!report.balanced
+              ? t.ctx_audit_attention
+              : report.disk_verified
+                ? t.ctx_audit_balanced
+                : t.ctx_audit_unverified}
           </StatusBadge>
         )}
         {report && (

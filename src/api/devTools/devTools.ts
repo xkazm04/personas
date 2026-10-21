@@ -663,6 +663,8 @@ export interface ContextAuditReport {
   project_id: string;
   generated_at: string;
   balanced: boolean;
+  /** False when the project root could not be walked: only structural checks ran, so `balanced` proves nothing about the files. */
+  disk_verified: boolean;
   totals: ContextAuditTotals;
   findings: ContextAuditFinding[];
 }
@@ -671,6 +673,7 @@ const EMPTY_AUDIT: ContextAuditReport = {
   project_id: "",
   generated_at: "",
   balanced: true,
+  disk_verified: false,
   totals: {
     groups: 0,
     contexts: 0,
