@@ -21,7 +21,6 @@ use crate::db::models::{CreatePersonaEventInput, PersonaEvent};
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::resources::cloud_webhook_watermarks as watermark_repo;
 use crate::db::DbPool;
-use crate::engine::crypto;
 use crate::error::AppError;
 
 // ---------------------------------------------------------------------------
@@ -510,42 +509,13 @@ fn publish_and_upsert_watermark(
     trigger_id: &str,
     fired_at: &str,
 ) -> Result<PersonaEvent, AppError> {
-    let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
-    let project_id = input.project_id.unwrap_or_else(|| "default".into());
-
-    // Encrypt payload at rest if present
-    let (stored_payload, payload_iv) = match &input.payload {
-        Some(plaintext) if !plaintext.is_empty() => match crypto::encrypt_for_db(plaintext) {
-            Ok((ct, iv)) => (Some(ct), Some(iv)),
-            Err(e) => {
-                tracing::warn!("Failed to encrypt event payload, storing plaintext: {}", e);
-                (Some(plaintext.clone()), None)
-            }
-        },
-        other => (other.clone(), None),
-    };
 
     let mut conn = pool.get()?;
     let tx = conn.transaction().map_err(AppError::Database)?;
 
-    tx.execute(
-        "INSERT INTO persona_events
-         (id, project_id, event_type, source_type, source_id, target_persona_id, payload, payload_iv, use_case_id, status, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'pending', ?10)",
-        params![
-            id,
-            project_id,
-            input.event_type,
-            input.source_type,
-            input.source_id,
-            input.target_persona_id,
-            stored_payload,
-            payload_iv,
-            input.use_case_id,
-            now,
-        ],
-    ).map_err(AppError::Database)?;
+    // Same validation + encryption + INSERT as every other ingestion path.
+    let id = event_repo::publish_in(&tx, &input)?;
 
     tx.execute(
         "INSERT INTO cloud_webhook_watermarks (trigger_id, last_seen_ts, updated_at)

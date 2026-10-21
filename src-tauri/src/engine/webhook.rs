@@ -23,7 +23,6 @@ use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::resources::triggers as trigger_repo;
 use crate::db::repos::resources::webhook_log as webhook_log_repo;
 use crate::db::DbPool;
-use crate::engine::crypto;
 use crate::engine::rate_limiter::{RateLimiter, WEBHOOK_TRIGGER_WINDOW};
 use crate::engine::tier::TierConfig;
 use crate::error::AppError;
@@ -595,6 +594,18 @@ async fn process_webhook(
                 },
             )
         }
+        Err(AppError::Validation(msg)) => {
+            tracing::warn!(trigger_id = %trigger_id, "Webhook rejected by event validation: {}", msg);
+            (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                no_headers(),
+                WebhookResponse {
+                    accepted: false,
+                    event_id: None,
+                    error: Some(msg),
+                },
+            )
+        }
         Err(e) => {
             tracing::error!(trigger_id = %trigger_id, "Failed to process webhook: {}", e);
             (
@@ -658,20 +669,7 @@ fn mark_triggered_and_publish(
     expected_version: i32,
     input: CreatePersonaEventInput,
 ) -> Result<PersonaEvent, AppError> {
-    let event_id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
-    let project_id = input.project_id.unwrap_or_else(|| "default".into());
-
-    let (stored_payload, payload_iv) = match &input.payload {
-        Some(plaintext) if !plaintext.is_empty() => match crypto::encrypt_for_db(plaintext) {
-            Ok((ct, iv)) => (Some(ct), Some(iv)),
-            Err(e) => {
-                tracing::warn!("Failed to encrypt event payload, storing plaintext: {}", e);
-                (Some(plaintext.clone()), None)
-            }
-        },
-        other => (other.clone(), None),
-    };
 
     let mut conn = pool.get()?;
     let tx = conn.transaction().map_err(AppError::Database)?;
@@ -680,25 +678,9 @@ fn mark_triggered_and_publish(
     // received this external webhook" record and must always be persisted.
     // A genuine DB error here aborts the transaction and surfaces as an
     // error (HTTP 500 / DLQ) so the delivery is retried rather than lost.
-    tx.execute(
-        "INSERT INTO persona_events
-         (id, project_id, event_type, source_type, source_id, target_persona_id,
-          payload, payload_iv, use_case_id, status, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'pending', ?10)",
-        params![
-            event_id,
-            project_id,
-            input.event_type,
-            input.source_type,
-            input.source_id,
-            input.target_persona_id,
-            stored_payload,
-            payload_iv,
-            input.use_case_id,
-            now,
-        ],
-    )
-    .map_err(AppError::Database)?;
+    // The shared insert validates the type strings and the 64 KB payload cap
+    // (so /webhook and the smee path agree) before anything is written.
+    let event_id = event_repo::publish_in(&tx, &input)?;
 
     // Best-effort trigger bookkeeping. The optimistic-concurrency (CAS) guard
     // still prevents this webhook from advancing trigger metadata that a
@@ -759,6 +741,29 @@ mod tests {
         assert_eq!(body["status"], "ok");
         assert_eq!(body["service"], "personas-webhook");
         assert_eq!(body["timestamp"], 1_767_323_045_000_i64);
+    }
+
+    /// The 1 MB body limit admits payloads the bus refuses (64 KB cap). A
+    /// signed 70 KB delivery must be rejected as a validation error, not stored.
+    #[tokio::test]
+    async fn signed_delivery_over_the_bus_payload_cap_is_rejected() {
+        let (state, id) = rate_limited_state(10);
+        let body = Bytes::from(format!(r#"{{"blob":"{}"}}"#, "a".repeat(70 * 1024)));
+        let mut mac = HmacSha256::new_from_slice(b"s3cret").unwrap();
+        mac.update(&body);
+        let sig = format!("sha256={}", hex::encode(mac.finalize().into_bytes()));
+        let mut headers = HeaderMap::new();
+        headers.insert("x-hub-signature-256", HeaderValue::from_str(&sig).unwrap());
+        let (status, _, resp) = process_webhook(&state, &id, &headers, &body).await;
+        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{:?}", resp.error);
+        assert!(!resp.accepted);
+        let conn = crate::db::PoolExt::conn(&state.pool, "test:webhook-cap").unwrap();
+        let n: i64 = conn
+            .query_row("SELECT COUNT(*) AS n FROM persona_events", [], |r| {
+                r.get("n")
+            })
+            .unwrap();
+        assert_eq!(n, 0, "an oversized delivery must not reach the bus");
     }
 
     fn rate_limited_state(max: usize) -> (WebhookState, String) {

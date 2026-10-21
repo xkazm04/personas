@@ -190,36 +190,53 @@ row_mapper!(row_to_subscription -> PersonaEventSubscription {
 // Events
 // ============================================================================
 
+/// Validate (type strings, 64 KB payload cap), encrypt and INSERT one pending
+/// event on a connection the caller owns, returning its id.
+///
+/// This is the single INSERT every ingestion path goes through. A caller that
+/// needs the event row to commit together with other writes (a webhook's
+/// trigger bookkeeping, the cloud relay's watermark) passes its open
+/// `Transaction` (it derefs to `Connection`) and reads the row back with
+/// `get_by_id` after the commit; `publish` is the autocommit case.
+pub fn publish_in(
+    conn: &rusqlite::Connection,
+    input: &CreatePersonaEventInput,
+) -> Result<String, AppError> {
+    validate_event_input(input)?;
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().to_rfc3339();
+    let project_id = input.project_id.as_deref().unwrap_or("default");
+
+    // Encrypt payload at rest if present
+    let (stored_payload, payload_iv) = encrypt_optional_payload(&input.payload);
+
+    let mut stmt = conn.prepare_cached(
+        "INSERT INTO persona_events
+         (id, project_id, event_type, source_type, source_id, target_persona_id, payload, payload_iv, use_case_id, status, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'pending', ?10)",
+    )?;
+    stmt.execute(params![
+        id,
+        project_id,
+        input.event_type,
+        input.source_type,
+        input.source_id,
+        input.target_persona_id,
+        stored_payload,
+        payload_iv,
+        input.use_case_id,
+        now,
+    ])?;
+    Ok(id)
+}
+
 pub fn publish(pool: &DbPool, input: CreatePersonaEventInput) -> Result<PersonaEvent, AppError> {
-    validate_event_input(&input)?;
-
     timed_query!("persona_events", "persona_events::publish", {
-        let id = uuid::Uuid::new_v4().to_string();
-        let now = chrono::Utc::now().to_rfc3339();
-        let project_id = input.project_id.unwrap_or_else(|| "default".into());
-
-        // Encrypt payload at rest if present
-        let (stored_payload, payload_iv) = encrypt_optional_payload(&input.payload);
-
-        let conn = pool.conn("events::publish")?;
-        let mut stmt = conn.prepare_cached(
-            "INSERT INTO persona_events
-             (id, project_id, event_type, source_type, source_id, target_persona_id, payload, payload_iv, use_case_id, status, created_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'pending', ?10)",
-        )?;
-        stmt.execute(params![
-            id,
-            project_id,
-            input.event_type,
-            input.source_type,
-            input.source_id,
-            input.target_persona_id,
-            stored_payload,
-            payload_iv,
-            input.use_case_id,
-            now,
-        ])?;
-
+        let id = {
+            let conn = pool.conn("events::publish")?;
+            publish_in(&conn, &input)?
+        };
         get_by_id(pool, &id)
     })
 }
@@ -1886,6 +1903,37 @@ mod tests {
     /// fails at runtime on the first row; this is the only gate that sees it.
     /// It also pins the ALTER-added columns — `payload_iv`, `use_case_id`,
     /// `retry_count` — which no fresh-install DDL alone would prove present.
+    /// `publish_in` is the one INSERT every ingestion path shares, so it owns
+    /// the payload cap: an oversized payload is a validation error and writes
+    /// nothing, while a payload at the cap lands inside the caller's transaction.
+    #[test]
+    fn publish_in_enforces_the_payload_cap_inside_a_transaction() {
+        let pool = crate::init_test_db().unwrap();
+        let mut conn = pool.conn("test:publish_in").unwrap();
+        let input = |len: usize| CreatePersonaEventInput {
+            event_type: "webhook_received".into(),
+            source_type: "webhook".into(),
+            project_id: None,
+            source_id: None,
+            target_persona_id: None,
+            payload: Some("x".repeat(len)),
+            use_case_id: None,
+        };
+        let tx = conn.transaction().unwrap();
+        let err = publish_in(&tx, &input(MAX_PAYLOAD_BYTES + 1)).unwrap_err();
+        assert!(matches!(err, AppError::Validation(_)), "{err:?}");
+        let ok = publish_in(&tx, &input(MAX_PAYLOAD_BYTES)).unwrap();
+        tx.commit().unwrap();
+        let n: i64 = conn
+            .query_row("SELECT COUNT(*) AS n FROM persona_events", [], |r| {
+                r.get("n")
+            })
+            .unwrap();
+        assert_eq!(n, 1);
+        drop(conn);
+        assert!(get_by_id(&pool, &ok).is_ok());
+    }
+
     #[test]
     fn every_projection_prepares_against_the_real_schema() {
         let pool = crate::init_test_db().unwrap();
