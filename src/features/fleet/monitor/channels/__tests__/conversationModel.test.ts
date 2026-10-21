@@ -240,7 +240,7 @@ describe('nextPromptBatch', () => {
 
   it('folds a run of consecutive plain prompts into ONE body', () => {
     const batch = nextPromptBatch([q('a', { text: 'one' }), q('b', { text: 'two' })]);
-    expect(batch).toEqual({ ids: ['a', 'b'], body: 'one\n\ntwo', goal: false });
+    expect(batch).toEqual({ ids: ['a', 'b'], body: 'one\n\ntwo', goal: false, afterPost: [] });
   });
 
   it('never folds a goal — routing decomposes one goal, not two concatenated', () => {
@@ -248,6 +248,7 @@ describe('nextPromptBatch', () => {
       ids: ['a'],
       body: 'a',
       goal: true,
+      afterPost: [],
     });
   });
 

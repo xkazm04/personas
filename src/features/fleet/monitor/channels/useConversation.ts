@@ -164,11 +164,11 @@ export function useConversation(teamId: string | null, focusItemId?: string | nu
    * ------------------------------------------------------------------------ */
 
   /** Accept a prompt. Returns the row key so the caller can pose against it. */
-  const enqueue = useCallback((text: string, goal: boolean): string | null => {
+  const enqueue = useCallback((text: string, goal: boolean, onPosted?: () => void): string | null => {
     const body = text.trim();
     if (!body) return null;
     const id = `q-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-    setQueue((q) => [...q, { id, text: body, goal, phase: 'queued' }]);
+    setQueue((q) => [...q, { id, text: body, goal, phase: 'queued', onPosted }]);
     const key = `queued:${id}`;
     setPinKey(key);
     return key;
@@ -233,7 +233,12 @@ export function useConversation(teamId: string | null, focusItemId?: string | nu
       : sendChannelDirective(teamId, batch.body);
 
     run.then(
-      () => settle(true),
+      () => {
+        settle(true);
+        // Only a landed directive summons anyone: the handoff rides the drain's
+        // success, not the keystroke that enqueued it.
+        for (const cb of batch.afterPost) cb();
+      },
       (e: unknown) => {
         settle(false);
         // The row carries the failure; the toast carries the reason. Both,

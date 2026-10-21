@@ -18,6 +18,10 @@ export interface QueuedPrompt {
   /** A goal ROUTES (decompose → proposal card); a plain prompt POSTS. */
   goal: boolean;
   phase: 'queued' | 'sending' | 'failed';
+  /** Runs once, after the directive this prompt rode in on was POSTED. Never
+   *  on a failed post, and never at enqueue time: a follow-on side effect (the
+   *  @athena handoff) must not announce a line that is not in the channel. */
+  onPosted?: () => void;
 }
 
 /** What the drain should do next: one post, covering one or more prompts. */
@@ -25,6 +29,8 @@ export interface PromptBatch {
   ids: string[];
   body: string;
   goal: boolean;
+  /** The `onPosted` hooks of every prompt folded into this batch. */
+  afterPost: Array<() => void>;
 }
 
 /**
@@ -46,7 +52,7 @@ export function nextPromptBatch(queue: QueuedPrompt[]): PromptBatch | null {
   const head = queue.findIndex((p) => p.phase === 'queued');
   if (head < 0) return null;
   const first = queue[head]!;
-  if (first.goal) return { ids: [first.id], body: first.text, goal: true };
+  if (first.goal) return { ids: [first.id], body: first.text, goal: true, afterPost: first.onPosted ? [first.onPosted] : [] };
 
   const run: QueuedPrompt[] = [];
   for (let i = head; i < queue.length; i++) {
@@ -54,5 +60,7 @@ export function nextPromptBatch(queue: QueuedPrompt[]): PromptBatch | null {
     if (p.phase !== 'queued' || p.goal) break;
     run.push(p);
   }
-  return { ids: run.map((p) => p.id), body: run.map((p) => p.text).join('\n\n'), goal: false };
+  return { ids: run.map((p) => p.id), body: run.map((p) => p.text).join('\n\n'), goal: false,
+    afterPost: run.flatMap((p) => (p.onPosted ? [p.onPosted] : [])),
+  };
 }

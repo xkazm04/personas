@@ -45,7 +45,7 @@ export function ConversationComposer({
   teamName: string;
   members: ChannelMember[];
   /** Accepts always. `goal` picks the outbox lane: route (decompose) or post. */
-  onSubmit: (text: string, goal: boolean) => void;
+  onSubmit: (text: string, goal: boolean, onPosted?: () => void) => void;
 }) {
   const { t, tx } = useTranslation();
   const m = t.monitor;
@@ -56,19 +56,21 @@ export function ConversationComposer({
     const text = draft.trim();
     if (!text) return;
     // Nothing is gated on an in-flight post: the outbox holds the order.
-    onSubmit(isGoal ? goalText(text) : text, isGoal);
-    setDraft('');
-    if (!isGoal && /@athena\b/i.test(text)) {
-      // Athena replies INTO the channel rather than into her own panel.
-      useAthenaStore.getState().setPendingPrompt({
+    // Athena replies INTO the channel rather than into her own panel. She is
+    // summoned only once the directive has posted (the outbox may hold it behind
+    // others or fail it), so she never answers a line that is absent.
+    const summonAthena = !isGoal && /@athena\b/i.test(text)
+      ? () => useAthenaStore.getState().setPendingPrompt({
         text: `You were tagged in the ${teamName} team channel (team_id: ${teamId}). The user wrote:
 
 "${text}"
 
 Respond by posting a short reply INTO that team's channel via your post_team_message capability.`,
         autoSend: true,
-      });
-    }
+      })
+      : undefined;
+    onSubmit(isGoal ? goalText(text) : text, isGoal, summonAthena);
+    setDraft('');
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
