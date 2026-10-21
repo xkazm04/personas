@@ -129,5 +129,6 @@
   "palette_agent_disabled": "Agent deaktiviert",
   "palette_agent_enabled": "Agent aktiviert",
   "palette_health_complete": "Zustandsprüfung abgeschlossen",
+  "palette_health_issues": "Die Zustandsprüfung hat Probleme gefunden",
   "palette_toggle_failed": "Agent konnte nicht umgeschaltet werden"
 }

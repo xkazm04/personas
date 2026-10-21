@@ -129,5 +129,6 @@
   "palette_agent_disabled": "Đã tắt tác nhân",
   "palette_agent_enabled": "Đã bật tác nhân",
   "palette_health_complete": "Hoàn tất kiểm tra tình trạng",
+  "palette_health_issues": "Kiểm tra tình trạng đã phát hiện vấn đề",
   "palette_toggle_failed": "Không thể chuyển trạng thái tác nhân"
 }

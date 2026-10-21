@@ -18,7 +18,7 @@ import {
   fuzzyMatch, fuzzyScore, entryScore, trackRecent, getRecentAgentIds,
   agentItem, credentialItem, templateItem, automationItem,
   agentActionItems, type AgentActionCallbacks,
-  reachablePaletteSections,
+  reachablePaletteSections, healthCheckToastTone,
 } from '@/features/shared/chrome/commandPaletteUtils';
 import { executePersona } from '@/api/agents/executions';
 import { duplicatePersona } from '@/api/agents/personas';
@@ -133,9 +133,10 @@ export default function CommandPalette() {
     },
     onHealthCheck: () => {
       systemHealthCheck().then(
-        () => {
+        (report) => {
           setSidebarSection('overview');
-          addToast(t.chrome.palette_health_complete, 'success');
+          const tone = healthCheckToastTone(report);
+          addToast(tone === 'success' ? t.chrome.palette_health_complete : t.chrome.palette_health_issues, tone);
         },
         () => addToast(t.agents.health_check.check_failed, 'error'),
       );

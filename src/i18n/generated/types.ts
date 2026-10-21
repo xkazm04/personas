@@ -2697,6 +2697,7 @@ export type Translations = {
     palette_agent_disabled: string;
     palette_toggle_failed: string;
     palette_health_complete: string;
+    palette_health_issues: string;
   };
   sidebar: {
     home: string;

@@ -3513,6 +3513,7 @@
     "palette_agent_disabled": "Agente desactivado",
     "palette_agent_enabled": "Agente activado",
     "palette_health_complete": "Comprobación de estado completada",
+    "palette_health_issues": "La comprobación de estado encontró problemas",
     "palette_toggle_failed": "No se pudo cambiar el agente"
   },
   "cockpit": {

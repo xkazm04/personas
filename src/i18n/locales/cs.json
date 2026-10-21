@@ -3513,6 +3513,7 @@
     "palette_agent_disabled": "Agent vypnut",
     "palette_agent_enabled": "Agent zapnut",
     "palette_health_complete": "Kontrola stavu dokončena",
+    "palette_health_issues": "Kontrola stavu našla problémy",
     "palette_toggle_failed": "Nepodařilo se přepnout agenta"
   },
   "cockpit": {

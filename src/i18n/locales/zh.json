@@ -3513,6 +3513,7 @@
     "palette_agent_disabled": "已停用代理",
     "palette_agent_enabled": "已启用代理",
     "palette_health_complete": "健康检查完成",
+    "palette_health_issues": "健康检查发现问题",
     "palette_toggle_failed": "无法切换代理"
   },
   "cockpit": {

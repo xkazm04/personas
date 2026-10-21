@@ -129,5 +129,6 @@
   "palette_agent_enabled": "Agent enabled",
   "palette_agent_disabled": "Agent disabled",
   "palette_toggle_failed": "Failed to toggle agent",
-  "palette_health_complete": "Health check complete"
+  "palette_health_complete": "Health check complete",
+  "palette_health_issues": "Health check found issues"
 }

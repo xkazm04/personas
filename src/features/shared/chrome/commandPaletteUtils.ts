@@ -1,4 +1,5 @@
 import type { SidebarSection, CredentialMetadata } from '@/lib/types/types';
+import type { SystemHealthReport } from '@/lib/bindings/SystemHealthReport';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import type { PersonaAutomation } from '@/lib/bindings/PersonaAutomation';
@@ -295,3 +296,14 @@ export function agentActionItems(
   return items;
 }
 
+
+// -- Health check verdict ----------------------------------------------
+
+/**
+ * Toast tone for a finished palette health check. The report's `allOk` is the
+ * verdict; a palette that toasts success over a failing machine tells the user
+ * nothing is wrong when something is.
+ */
+export function healthCheckToastTone(report: Pick<SystemHealthReport, 'allOk'>): 'success' | 'warning' {
+  return report.allOk ? 'success' : 'warning';
+}

@@ -129,5 +129,6 @@
   "palette_agent_disabled": "에이전트를 비활성화했습니다",
   "palette_agent_enabled": "에이전트를 활성화했습니다",
   "palette_health_complete": "상태 점검 완료",
+  "palette_health_issues": "상태 점검에서 문제가 발견되었습니다",
   "palette_toggle_failed": "에이전트를 전환하지 못했습니다"
 }

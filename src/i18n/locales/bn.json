@@ -3513,6 +3513,7 @@
     "palette_agent_disabled": "এজেন্ট নিষ্ক্রিয় করা হয়েছে",
     "palette_agent_enabled": "এজেন্ট সক্রিয় করা হয়েছে",
     "palette_health_complete": "স্বাস্থ্য পরীক্ষা সম্পন্ন",
+    "palette_health_issues": "স্বাস্থ্য পরীক্ষায় সমস্যা পাওয়া গেছে",
     "palette_toggle_failed": "এজেন্ট টগল করা যায়নি"
   },
   "cockpit": {

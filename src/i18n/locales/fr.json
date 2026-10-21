@@ -3513,6 +3513,7 @@
     "palette_agent_disabled": "Agent désactivé",
     "palette_agent_enabled": "Agent activé",
     "palette_health_complete": "Vérification de l'état terminée",
+    "palette_health_issues": "La vérification de l'état a détecté des problèmes",
     "palette_toggle_failed": "Impossible de basculer l'agent"
   },
   "cockpit": {

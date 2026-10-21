@@ -129,5 +129,6 @@
   "palette_agent_disabled": "تم تعطيل الوكيل",
   "palette_agent_enabled": "تم تفعيل الوكيل",
   "palette_health_complete": "اكتمل فحص السلامة",
+  "palette_health_issues": "وجد فحص السلامة مشكلات",
   "palette_toggle_failed": "تعذّر تبديل حالة الوكيل"
 }

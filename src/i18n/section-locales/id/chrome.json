@@ -129,5 +129,6 @@
   "palette_agent_disabled": "Agen dinonaktifkan",
   "palette_agent_enabled": "Agen diaktifkan",
   "palette_health_complete": "Pemeriksaan kesehatan selesai",
+  "palette_health_issues": "Pemeriksaan kesehatan menemukan masalah",
   "palette_toggle_failed": "Gagal mengubah agen"
 }
