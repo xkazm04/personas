@@ -11784,8 +11784,12 @@
           "revision": 16,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 3
+          "state": "not-applicable",
+          "priorNotApplicable": 3,
+          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:228 sort is a caller-owned onSort callback; none of the 32 context files runs an async operation, IPC call or shared write, so no operation reachable twice lives here (UI races are client-state per concurrency-guards.md:39)",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:ccc991958e998a93",
+          "evaluatedRevision": 16
         },
         {
           "subject": "sql-console",

@@ -32919,6 +32919,27 @@
         }
       ],
       "registryProposal": "lib-utils is a consolidated grab-bag (cron presets, animation, crash persistence, fetch caches, apiError); error-handling governs only 5 of its 17 files, so a whole-context verdict is driven by apiError.ts. Consider letting conform verdicts scope to a file subset for consolidated contexts."
+    },
+    "739b6d67-2c36-41ee-9794-a74bc0b25cfd/concurrency-guards": {
+      "context": "display-table-primitives",
+      "subject": "concurrency-guards",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:38:07.000Z",
+      "worker": "d504f76f-900c-49d5-aacd-c186e1d12156",
+      "techniques": [
+        {
+          "technique": "guard-key-design",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:107 onRowClick is forwarded to the caller; the primitive owns no operation identity to key"
+        },
+        {
+          "technique": "single-flight-primitives",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:228 sort neither runs nor persists anything itself; no in-flight work exists to single-flight"
+        }
+      ]
     }
   }
 }
