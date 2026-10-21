@@ -170,93 +170,16 @@ fn build_backlink_map(notes: &[NoteEntry]) -> HashMap<String, Vec<usize>> {
     map
 }
 
-fn tokenize(text: &str) -> Vec<String> {
-    let mut tokens = Vec::new();
-    let mut current = String::new();
-    for ch in text.chars() {
-        if ch.is_alphanumeric() || ch == '_' {
-            current.extend(ch.to_lowercase());
-        } else if !current.is_empty() {
-            tokens.push(std::mem::take(&mut current));
-        }
-    }
-    if !current.is_empty() {
-        tokens.push(current);
-    }
-    tokens
-}
+use crate::utils::vault_search::{snippet_for, tokenize};
 
-/// Compute TF-IDF scores for each note against the query terms.
-///
-/// `tf` is per-document term frequency. `idf` is `ln((N + 1) / (df + 1)) + 1`
-/// (smoothed Robertson IDF — the +1s avoid division-by-zero on rare terms in
-/// small vaults). Title hits get a flat +5 boost so a query like "stoicism"
-/// surfaces a `Stoicism MOC.md` note even when its body never repeats the term.
+/// TF-IDF scores per note against the query terms (shared scorer in
+/// `personas_core::utils::vault_search`).
 fn tfidf_scores(notes: &[NoteEntry], query_terms: &[String]) -> Vec<f32> {
-    let doc_count = notes.len().max(1) as f32;
-    let mut doc_freq: HashMap<String, u32> = HashMap::new();
-    let tokenized: Vec<HashMap<String, u32>> = notes
+    let docs: Vec<(&str, &str)> = notes
         .iter()
-        .map(|n| {
-            let mut tf: HashMap<String, u32> = HashMap::new();
-            for tok in tokenize(&n.body) {
-                *tf.entry(tok).or_insert(0) += 1;
-            }
-            for tok in tf.keys() {
-                *doc_freq.entry(tok.clone()).or_insert(0) += 1;
-            }
-            tf
-        })
+        .map(|n| (n.title.as_str(), n.body.as_str()))
         .collect();
-
-    let idf: HashMap<&String, f32> = query_terms
-        .iter()
-        .map(|term| {
-            let df = *doc_freq.get(term).unwrap_or(&0) as f32;
-            let val = ((doc_count + 1.0) / (df + 1.0)).ln() + 1.0;
-            (term, val)
-        })
-        .collect();
-
-    tokenized
-        .iter()
-        .enumerate()
-        .map(|(i, tf)| {
-            let title_lc = notes[i].title.to_lowercase();
-            let mut score = 0.0_f32;
-            for term in query_terms {
-                let f = *tf.get(term).unwrap_or(&0) as f32;
-                score += f * idf.get(term).copied().unwrap_or(0.0);
-                if title_lc.contains(term) {
-                    score += 5.0;
-                }
-            }
-            score
-        })
-        .collect()
-}
-
-fn snippet_for(body: &str, query_lc: &str) -> String {
-    let body_lc = body.to_lowercase();
-    let Some(pos) = body_lc.find(query_lc) else {
-        return body.chars().take(160).collect();
-    };
-    // Snap both byte offsets to char boundaries: `pos - 60` and `pos + len +
-    // 100` land mid-character in any non-ASCII note (Czech, emoji, CJK), and
-    // slicing there panicked the search command. The MCP sidecar's mirror of
-    // this function (`mcp_server/vault.rs`) already had the fix; this copy
-    // drifted.
-    let start = crate::utils::text::floor_char_boundary(body, pos.saturating_sub(60));
-    let end =
-        crate::utils::text::ceil_char_boundary(body, (pos + query_lc.len() + 100).min(body.len()));
-    let mut s = body[start..end].replace('\n', " ");
-    if start > 0 {
-        s.insert(0, '…');
-    }
-    if end < body.len() {
-        s.push('…');
-    }
-    s
+    crate::utils::vault_search::tfidf_scores(&docs, query_terms)
 }
 
 /// Assert that an already-absolute `target` path (as legitimately passed by

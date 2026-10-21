@@ -1,6 +1,7 @@
 pub mod process;
 pub mod sanitization;
 pub mod text;
+pub mod vault_search;
 
 /// The crate's ONE strict boolean env parser (absent degrades, malformed is
 /// loud). Before this, each reader had its own vocabulary — `crypto.rs`
