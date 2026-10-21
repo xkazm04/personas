@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useShallow } from 'zustand/react/shallow';
 import { SIDEBAR_ICONS } from '@/features/shared/chrome/sidebar/SidebarIcons';
-import { BadgeSlot, type BadgeDefinition } from '@/features/shared/chrome/sidebar/BadgeSlot';
+import { BadgeSlot, isInteractiveSlot, type BadgeDefinition } from '@/features/shared/chrome/sidebar/BadgeSlot';
 import { OrbitDots } from '@/features/shared/chrome/sidebar/OrbitDots';
 import { useSidebarAgentActivity } from '@/hooks/sidebar/useSidebarAgentActivity';
 import { useSystemStore } from "@/stores/systemStore";
@@ -270,10 +270,15 @@ export default function SidebarLevel1({
                   {t.sidebar.soon_badge}
                 </span>
               )}
-              {badgesBySection[section.id] != null && (
+              {/* Passive badges stay inside; a clickable one is a control, so it
+                  renders beside the button (below), never nested in it. */}
+              {badgesBySection[section.id] != null && !isInteractiveSlot(badgesBySection[section.id]!) && (
                 <BadgeSlot badges={badgesBySection[section.id]!} />
               )}
             </button>
+            {badgesBySection[section.id] != null && isInteractiveSlot(badgesBySection[section.id]!) && (
+              <BadgeSlot badges={badgesBySection[section.id]!} />
+            )}
             {section.id === 'personas' && agentActivities.length > 0 && (
               <OrbitDots activities={agentActivities} />
             )}
