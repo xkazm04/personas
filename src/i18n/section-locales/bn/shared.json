@@ -356,5 +356,17 @@
   "rows_show_all": "সবগুলো দেখান ({count})",
   "rows_show_fewer": "কম দেখান",
   "rows_showing_all": "সবগুলো দেখানো হচ্ছে ({count})",
-  "rows_showing_first": "প্রথম {count}টি দেখানো হচ্ছে"
+  "rows_showing_first": "প্রথম {count}টি দেখানো হচ্ছে",
+  "business_outcome": {
+    "value_delivered_label": "সম্পন্ন",
+    "value_delivered_title": "পার্সোনা বাস্তব কাজ করেছে: ব্যবহারযোগ্য আউটপুট তৈরি, বার্তা পাঠানো বা অবস্থা পরিবর্তন।",
+    "no_input_available_label": "ইনপুট নেই",
+    "no_input_available_title": "সফলভাবে চলেছে কিন্তু প্রক্রিয়া করার কিছু ছিল না: শুধু প্রস্তুতি/স্ট্যাটাস রিপোর্ট দিয়েছে।",
+    "precondition_failed_label": "অবরুদ্ধ",
+    "precondition_failed_title": "প্রয়োজনীয় কানেক্টর, ক্রেডেনশিয়াল বা পূর্বশর্ত অনুপস্থিত বা নষ্ট। অবরোধ সরাতে সেটআপ ঠিক করুন।",
+    "partial_label": "আংশিক",
+    "partial_title": "কিছু কাজ করেছে, সব নয়: রেট লিমিট, সাময়িক ত্রুটি, বা কিছু আইটেমে ফিল্ড অনুপস্থিত।",
+    "unknown_label": "-",
+    "unknown_title": "কোনো ব্যবসায়িক ফলাফল জানানো হয়নি (পুরনো এক্সিকিউশন, অথবা মডেল মূল্যায়ন দেয়নি)।"
+  }
 }

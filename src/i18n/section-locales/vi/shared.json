@@ -356,5 +356,17 @@
   "rows_show_all": "Hiện tất cả {count}",
   "rows_show_fewer": "Ẩn bớt",
   "rows_showing_all": "Đang hiện tất cả {count}",
-  "rows_showing_first": "Đang hiện {count} mục đầu"
+  "rows_showing_first": "Đang hiện {count} mục đầu",
+  "business_outcome": {
+    "value_delivered_label": "Đã hoàn thành",
+    "value_delivered_title": "Persona đã tạo ra kết quả thực tế: sản phẩm có thể dùng ngay, tin nhắn đã gửi hoặc trạng thái đã thay đổi.",
+    "no_input_available_label": "Không có đầu vào",
+    "no_input_available_title": "Chạy bình thường nhưng không có gì để xử lý: chỉ phát ra báo cáo sẵn sàng/trạng thái.",
+    "precondition_failed_label": "Bị chặn",
+    "precondition_failed_title": "Thiếu hoặc hỏng trình kết nối, thông tin xác thực hoặc điều kiện tiên quyết cần thiết. Hãy sửa cấu hình để gỡ chặn.",
+    "partial_label": "Một phần",
+    "partial_title": "Chỉ hoàn thành một phần công việc: giới hạn tốc độ, lỗi tạm thời hoặc thiếu trường ở một số mục.",
+    "unknown_label": "-",
+    "unknown_title": "Không có kết quả kinh doanh nào được báo cáo (lần chạy cũ, hoặc mô hình không đưa ra đánh giá)."
+  }
 }

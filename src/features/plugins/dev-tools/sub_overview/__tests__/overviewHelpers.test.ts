@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import en from '@/i18n/locales/en.json';
 import { activityJumpTarget, buildTodayActivity, computeVitalTones, formatErr, type ActivityKind } from '../overviewHelpers';
 import type { MonitoringStats, RepoStats } from '../adapters';
 import type { DevScan } from '@/lib/bindings/DevScan';
@@ -61,6 +62,8 @@ const TODAY_AT_NOON = new Date('2026-05-16T12:00:00Z').toISOString();
 // of local TZ (startOfToday uses local midnight).
 const YESTERDAY = new Date('2026-05-14T12:00:00Z').toISOString();
 
+const COPY = en.project_overview;
+
 describe('buildTodayActivity', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -75,6 +78,7 @@ describe('buildTodayActivity', () => {
       [makeScan({ created_at: YESTERDAY })],
       [makeTask({ created_at: YESTERDAY })],
       [makeSignal({ created_at: YESTERDAY })],
+      COPY,
     );
     expect(events).toEqual([]);
   });
@@ -84,6 +88,7 @@ describe('buildTodayActivity', () => {
       [makeScan({ created_at: TODAY_AT_NOON, scan_type: 'a,b,c', idea_count: 7 })],
       [],
       [],
+      COPY,
     );
     expect(events).toHaveLength(1);
     expect(events[0]!.kind).toBe<ActivityKind>('scan_run');
@@ -98,6 +103,7 @@ describe('buildTodayActivity', () => {
       [],
       [makeTask({ id: 'task-x', title: 'Build it', created_at: created, completed_at: completed, status: 'complete' })],
       [],
+      COPY,
     );
     const kinds = events.map((e) => e.kind).sort();
     expect(kinds).toEqual(['task_completed', 'task_created']);
@@ -113,6 +119,7 @@ describe('buildTodayActivity', () => {
         completed_at: TODAY_AT_NOON,
       })],
       [],
+      COPY,
     );
     // Filter to just completion-side events; the task may also emit
     // task_created if its created_at is interpreted as today in local TZ.
@@ -126,6 +133,7 @@ describe('buildTodayActivity', () => {
       [],
       [],
       [makeSignal({ created_at: TODAY_AT_NOON, message: 'Goal progressed', delta: 15 })],
+      COPY,
     );
     expect(events[0]!.label).toContain('Goal progressed');
     expect(events[0]!.label).toContain('+15%');
@@ -136,6 +144,7 @@ describe('buildTodayActivity', () => {
       [],
       [],
       [makeSignal({ created_at: TODAY_AT_NOON, message: null, signal_type: 'milestone' })],
+      COPY,
     );
     expect(events[0]!.label).toContain('milestone');
   });
@@ -152,6 +161,7 @@ describe('buildTodayActivity', () => {
       ],
       [],
       [],
+      COPY,
     );
     expect(events.map((e) => e.id)).toEqual(['scan-s2', 'scan-s1', 'scan-s3']);
   });
@@ -160,7 +170,7 @@ describe('buildTodayActivity', () => {
     const scans = Array.from({ length: 50 }, (_, i) =>
       makeScan({ id: `s${i}`, created_at: new Date(FIXED_NOW - i * 1000).toISOString() }),
     );
-    const events = buildTodayActivity(scans, [], []);
+    const events = buildTodayActivity(scans, [], [], COPY);
     expect(events).toHaveLength(30);
   });
 
@@ -169,6 +179,7 @@ describe('buildTodayActivity', () => {
       [makeScan({ created_at: 'not a date' })],
       [makeTask({ created_at: 'also bad' })],
       [makeSignal({ created_at: '' })],
+      COPY,
     );
     expect(events).toEqual([]);
   });
@@ -240,5 +251,31 @@ describe('activityJumpTarget', () => {
     expect(activityJumpTarget({ ...base, kind: 'task_failed', sourceId: 't1' })).toBe('task');
     expect(activityJumpTarget({ ...base, kind: 'goal_signal', sourceId: 'g1' })).toBe('goal');
     expect(activityJumpTarget({ ...base, kind: 'task_created' })).toBeNull();
+  });
+});
+
+describe('buildTodayActivity labels follow the catalog', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(FIXED_NOW);
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('builds scan and task labels from the copy it is given, not English literals', () => {
+    const marker = {
+      today_scan: 'S[{agents}|{ideas}]',
+      today_agents_one: 'A1[{count}]', today_agents_other: 'AN[{count}]',
+      today_ideas_one: 'I1[{count}]', today_ideas_other: 'IN[{count}]',
+      today_task_created: 'TC[{title}]', today_task_failed: 'TF[{title}]', today_task_completed: 'TD[{title}]',
+    };
+    const events = buildTodayActivity(
+      [makeScan({ created_at: TODAY_AT_NOON, scan_type: 'a,b', idea_count: 1 })],
+      [makeTask({ title: 'T', created_at: YESTERDAY, completed_at: TODAY_AT_NOON, status: 'failed' })],
+      [],
+      marker,
+    );
+    expect(events.map((e) => e.label).sort()).toEqual(['S[AN[2]|I1[1]]', 'TF[T]']);
   });
 });

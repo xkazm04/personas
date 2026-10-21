@@ -5557,7 +5557,14 @@
     "view_logs": "Журналы",
     "yesterday": "вчера",
     "your_tier": "(ваш)",
-    "agent_pipeline_title": "Конвейер для {agent} на {ref}: {status}"
+    "agent_pipeline_title": "Конвейер для {agent} на {ref}: {status}",
+    "pipeline_count_one": "{count} конвейер",
+    "pipeline_count_other": "{count} конвейеров",
+    "notify_title_success": "Конвейер выполнен успешно",
+    "notify_title_failed": "Сбой конвейера",
+    "notify_title_canceled": "Конвейер отменён",
+    "notify_title_other": "Конвейер: {status}",
+    "notify_body": "Конвейер #{id} для {ref} теперь в состоянии: {status}"
   },
   "home": {
     "commander": "Командир",
@@ -12921,7 +12928,12 @@
       "task_title_placeholder": "Название задачи…",
       "heal_all_window_only": "Не удалось загрузить полный список неудачных задач, поэтому восстановлены только видимые.",
       "heal_hidden_failed": "{count} неудачных задач находятся вне этого представления.",
-      "heal_show_failed": "Показать их"
+      "heal_show_failed": "Показать их",
+      "output_lines_one": "{count} строка",
+      "output_lines_other": "{count} строк",
+      "output_streaming": "потоковый вывод",
+      "output_show_rendered": "Переключить на отрисованный markdown",
+      "output_show_raw": "Переключить на исходный журнал"
     },
     "dev_scanner": {
       "clear_all_btn": "Очистить все",
@@ -14289,7 +14301,10 @@
         "view_switcher_aria": "Вид"
       },
       "kb_ingest_complete": "Индексация завершена",
-      "kb_ingest_progress_n": "Индексируется {done} из {total}"
+      "kb_ingest_progress_n": "Индексируется {done} из {total}",
+      "ocr_duration": "{ms} мс",
+      "ocr_token_count": "{count} токенов",
+      "ocr_empty": "(пусто)"
     },
     "fleet_quick_dispatch": {
       "chip_remove": "Убрать {label}",
@@ -16852,7 +16867,26 @@
     "vital_jump_monitor": "Показать детали мониторинга",
     "vital_jump_repo": "Открыть в подключённом репозитории",
     "vital_jump_setup": "Настроить это подключение",
-    "vital_updated_label": "обновлено"
+    "vital_updated_label": "обновлено",
+    "mp_pushed": "отправлено {when}",
+    "mp_creds_need_url_one": "Найдена {count} учётная запись, нужен URL репозитория",
+    "mp_creds_need_url_other": "Найдено учётных записей: {count}, нужен URL репозитория",
+    "mp_no_repo_credential": "Нет учётных данных GitHub/GitLab",
+    "mp_unresolved": "Нерешённых: {count}",
+    "mp_needs_project_link": "нужна привязка проекта",
+    "mp_no_sentry_credential": "Нет учётных данных Sentry",
+    "err_unknown_provider": "Не удалось определить провайдера репозитория по URL: {url}",
+    "err_parse_github": "Не удалось разобрать URL GitHub: {url}",
+    "err_parse_gitlab": "Не удалось разобрать URL GitLab: {url}",
+    "err_with_credential": "{error} (учётные данные «{name}», {type})",
+    "today_scan": "Сканирование: {agents} → {ideas}",
+    "today_agents_one": "{count} агент",
+    "today_agents_other": "{count} агентов",
+    "today_ideas_one": "{count} идея",
+    "today_ideas_other": "{count} идей",
+    "today_task_created": "Задача создана: {title}",
+    "today_task_failed": "Задача завершилась ошибкой: {title}",
+    "today_task_completed": "Задача выполнена: {title}"
   },
   "radio": {
     "auto_resume_description": "Если эта функция включена, последняя воспроизводящая станция запускается автоматически при первой загрузке радио после открытия приложения. По умолчанию выключено.",
@@ -18930,7 +18964,19 @@
     "rows_show_all": "Показать все ({count})",
     "rows_show_fewer": "Показать меньше",
     "rows_showing_all": "Показаны все ({count})",
-    "rows_showing_first": "Показаны первые {count}"
+    "rows_showing_first": "Показаны первые {count}",
+    "business_outcome": {
+      "value_delivered_label": "Выполнено",
+      "value_delivered_title": "Персона выполнила реальную работу: создала готовый результат, отправила сообщение или изменила состояние.",
+      "no_input_available_label": "Нет входных данных",
+      "no_input_available_title": "Запуск прошёл без ошибок, но обрабатывать было нечего: выдан только отчёт о готовности/состоянии.",
+      "precondition_failed_label": "Заблокировано",
+      "precondition_failed_title": "Отсутствует или не работает нужный коннектор, учётные данные или предусловие. Исправьте настройку, чтобы снять блокировку.",
+      "partial_label": "Частично",
+      "partial_title": "Выполнена только часть работы: ограничение частоты, временная ошибка или отсутствующие поля у некоторых элементов.",
+      "unknown_label": "-",
+      "unknown_title": "Бизнес-результат не сообщён (более старый запуск или модель не выдала оценку)."
+    }
   },
   "sharing": {
     "access_level_label": "Уровень доступа",
@@ -24023,7 +24069,8 @@
       "use_console_hint": "Используйте вкладку «Консоль» для просмотра значения этого ключа.",
       "write": "Запись",
       "write_mode": "Режим записи",
-      "suggestion_api_tables": "Покажи таблицы в этой базе и число записей в каждой"
+      "suggestion_api_tables": "Покажи таблицы в этой базе и число записей в каждой",
+      "rename_failed": "Не удалось переименовать учётные данные. Прежнее имя сохранено."
     },
     "delete_dialog": {
       "cannot_undo": "Это действие нельзя отменить.",

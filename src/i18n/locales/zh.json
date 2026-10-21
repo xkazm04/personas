@@ -5557,7 +5557,14 @@
     "view_logs": "日志",
     "yesterday": "昨天",
     "your_tier": "（您的）",
-    "agent_pipeline_title": "{ref} 上 {agent} 的流水线：{status}"
+    "agent_pipeline_title": "{ref} 上 {agent} 的流水线：{status}",
+    "pipeline_count_one": "{count} 个流水线",
+    "pipeline_count_other": "{count} 个流水线",
+    "notify_title_success": "流水线成功",
+    "notify_title_failed": "流水线失败",
+    "notify_title_canceled": "流水线已取消",
+    "notify_title_other": "流水线 {status}",
+    "notify_body": "{ref} 上的流水线 #{id} 现在状态为 {status}"
   },
   "home": {
     "commander": "指挥官",
@@ -12921,7 +12928,12 @@
       "task_title_placeholder": "任务标题…",
       "heal_all_window_only": "无法加载完整的失败任务列表，因此只修复了屏幕上的任务。",
       "heal_hidden_failed": "还有 {count} 个失败任务在当前视图之外。",
-      "heal_show_failed": "显示它们"
+      "heal_show_failed": "显示它们",
+      "output_lines_one": "{count} 行",
+      "output_lines_other": "{count} 行",
+      "output_streaming": "流式输出中",
+      "output_show_rendered": "切换到渲染后的 Markdown",
+      "output_show_raw": "切换到原始日志"
     },
     "dev_scanner": {
       "clear_all_btn": "清除全部",
@@ -14289,7 +14301,10 @@
         "view_switcher_aria": "视图"
       },
       "kb_ingest_complete": "索引完成",
-      "kb_ingest_progress_n": "正在索引 {total} 项中的 {done} 项"
+      "kb_ingest_progress_n": "正在索引 {total} 项中的 {done} 项",
+      "ocr_duration": "{ms} 毫秒",
+      "ocr_token_count": "{count} 个 token",
+      "ocr_empty": "（空）"
     },
     "fleet_quick_dispatch": {
       "chip_remove": "移除 {label}",
@@ -16852,7 +16867,26 @@
     "vital_jump_monitor": "显示监控详情",
     "vital_jump_repo": "在已连接的仓库中打开",
     "vital_jump_setup": "设置此连接",
-    "vital_updated_label": "已更新"
+    "vital_updated_label": "已更新",
+    "mp_pushed": "推送于 {when}",
+    "mp_creds_need_url_one": "找到 {count} 个凭据，需要仓库 URL",
+    "mp_creds_need_url_other": "找到 {count} 个凭据，需要仓库 URL",
+    "mp_no_repo_credential": "没有 GitHub/GitLab 凭据",
+    "mp_unresolved": "{count} 个未解决",
+    "mp_needs_project_link": "需要关联项目",
+    "mp_no_sentry_credential": "没有 Sentry 凭据",
+    "err_unknown_provider": "无法从 URL 识别仓库提供方：{url}",
+    "err_parse_github": "无法解析 GitHub URL：{url}",
+    "err_parse_gitlab": "无法解析 GitLab URL：{url}",
+    "err_with_credential": "{error}（凭据“{name}”，{type}）",
+    "today_scan": "扫描：{agents} → {ideas}",
+    "today_agents_one": "{count} 个智能体",
+    "today_agents_other": "{count} 个智能体",
+    "today_ideas_one": "{count} 个想法",
+    "today_ideas_other": "{count} 个想法",
+    "today_task_created": "任务已创建：{title}",
+    "today_task_failed": "任务失败：{title}",
+    "today_task_completed": "任务已完成：{title}"
   },
   "radio": {
     "auto_resume_description": "启用后，在应用程序打开后第一次加载收音机时，最后播放的电台会自动启动。默认关闭。",
@@ -18930,7 +18964,19 @@
     "rows_show_all": "显示全部 {count} 项",
     "rows_show_fewer": "收起",
     "rows_showing_all": "正在显示全部 {count} 项",
-    "rows_showing_first": "正在显示前 {count} 项"
+    "rows_showing_first": "正在显示前 {count} 项",
+    "business_outcome": {
+      "value_delivered_label": "已交付",
+      "value_delivered_title": "角色完成了实际工作：产出了可用成果、发送了消息或修改了状态。",
+      "no_input_available_label": "无输入",
+      "no_input_available_title": "运行正常，但没有可处理的内容：仅输出了就绪/状态报告。",
+      "precondition_failed_label": "已阻塞",
+      "precondition_failed_title": "缺少或损坏了必需的连接器、凭据或前置条件。请修复配置以解除阻塞。",
+      "partial_label": "部分完成",
+      "partial_title": "完成了部分工作但未全部完成：触发速率限制、临时错误，或部分条目缺少字段。",
+      "unknown_label": "-",
+      "unknown_title": "未报告业务结果（较早的执行，或模型未输出评估）。"
+    }
   },
   "sharing": {
     "access_level_label": "访问级别",
@@ -24023,7 +24069,8 @@
       "use_console_hint": "使用控制台标签检查此键的值。",
       "write": "写入",
       "write_mode": "写入模式",
-      "suggestion_api_tables": "列出该 base 中的表以及每个表的记录数"
+      "suggestion_api_tables": "列出该 base 中的表以及每个表的记录数",
+      "rename_failed": "无法重命名凭据。旧名称仍然保留。"
     },
     "delete_dialog": {
       "cannot_undo": "此操作无法撤销。",

@@ -5557,7 +5557,14 @@
     "view_logs": "Registros",
     "yesterday": "ayer",
     "your_tier": "(el tuyo)",
-    "agent_pipeline_title": "Pipeline de {agent} en {ref}: {status}"
+    "agent_pipeline_title": "Pipeline de {agent} en {ref}: {status}",
+    "pipeline_count_one": "{count} pipeline",
+    "pipeline_count_other": "{count} pipelines",
+    "notify_title_success": "Pipeline réussi",
+    "notify_title_failed": "Pipeline en échec",
+    "notify_title_canceled": "Pipeline annulé",
+    "notify_title_other": "Pipeline {status}",
+    "notify_body": "El pipeline #{id} en {ref} ahora está en estado {status}"
   },
   "home": {
     "commander": "Comandante",
@@ -12921,7 +12928,12 @@
       "task_title_placeholder": "Título de tarea…",
       "heal_all_window_only": "No se pudo cargar la lista completa de tareas fallidas, así que solo se repararon las visibles.",
       "heal_hidden_failed": "{count} tareas fallidas están fuera de esta vista.",
-      "heal_show_failed": "Mostrarlas"
+      "heal_show_failed": "Mostrarlas",
+      "output_lines_one": "{count} línea",
+      "output_lines_other": "{count} líneas",
+      "output_streaming": "en directo",
+      "output_show_rendered": "Cambiar a markdown renderizado",
+      "output_show_raw": "Cambiar al registro sin procesar"
     },
     "dev_scanner": {
       "clear_all_btn": "Limpiar todo",
@@ -14289,7 +14301,10 @@
         "view_switcher_aria": "Vista"
       },
       "kb_ingest_complete": "Indexación finalizada",
-      "kb_ingest_progress_n": "Indexando {done} de {total}"
+      "kb_ingest_progress_n": "Indexando {done} de {total}",
+      "ocr_duration": "{ms} ms",
+      "ocr_token_count": "{count} tokens",
+      "ocr_empty": "(vacío)"
     },
     "fleet_quick_dispatch": {
       "chip_remove": "Quitar {label}",
@@ -16852,7 +16867,26 @@
     "vital_jump_monitor": "Mostrar detalles de monitorización",
     "vital_jump_repo": "Abrir en el repositorio conectado",
     "vital_jump_setup": "Configurar esta conexión",
-    "vital_updated_label": "actualizado"
+    "vital_updated_label": "actualizado",
+    "mp_pushed": "enviado {when}",
+    "mp_creds_need_url_one": "{count} credencial encontrada, falta la URL del repositorio",
+    "mp_creds_need_url_other": "{count} credenciales encontradas, falta la URL del repositorio",
+    "mp_no_repo_credential": "Sin credencial de GitHub/GitLab",
+    "mp_unresolved": "{count} sin resolver",
+    "mp_needs_project_link": "falta vincular el proyecto",
+    "mp_no_sentry_credential": "Sin credencial de Sentry",
+    "err_unknown_provider": "No se puede detectar el proveedor del repositorio a partir de la URL: {url}",
+    "err_parse_github": "No se pudo analizar la URL de GitHub: {url}",
+    "err_parse_gitlab": "No se pudo analizar la URL de GitLab: {url}",
+    "err_with_credential": "{error} (credencial \"{name}\", {type})",
+    "today_scan": "Análisis: {agents} → {ideas}",
+    "today_agents_one": "{count} agente",
+    "today_agents_other": "{count} agentes",
+    "today_ideas_one": "{count} idea",
+    "today_ideas_other": "{count} ideas",
+    "today_task_created": "Tarea creada: {title}",
+    "today_task_failed": "Tarea fallida: {title}",
+    "today_task_completed": "Tarea completada: {title}"
   },
   "radio": {
     "auto_resume_description": "Cuando está activado, la última estación reproducida se inicia automáticamente la primera vez que se carga la radio después de que se abre la aplicación. Desactivado de forma predeterminada.",
@@ -18930,7 +18964,19 @@
     "rows_show_all": "Mostrar los {count}",
     "rows_show_fewer": "Mostrar menos",
     "rows_showing_all": "Mostrando los {count}",
-    "rows_showing_first": "Mostrando los primeros {count}"
+    "rows_showing_first": "Mostrando los primeros {count}",
+    "business_outcome": {
+      "value_delivered_label": "Entregado",
+      "value_delivered_title": "La persona realizó trabajo real: un artefacto accionable, un mensaje enviado o un estado modificado.",
+      "no_input_available_label": "Sin entrada",
+      "no_input_available_title": "Se ejecutó sin errores pero no había nada que procesar: solo emitió un informe de disponibilidad/estado.",
+      "precondition_failed_label": "Bloqueado",
+      "precondition_failed_title": "Falta o está roto un conector, una credencial o una condición previa necesaria. Corrige la configuración para desbloquear.",
+      "partial_label": "Parcial",
+      "partial_title": "Hizo parte del trabajo pero no todo: límite de frecuencia, error transitorio o campos que faltan en algunos elementos.",
+      "unknown_label": "-",
+      "unknown_title": "No se informó ningún resultado de negocio (ejecución antigua, o el modelo no emitió la evaluación)."
+    }
   },
   "sharing": {
     "access_level_label": "Nivel de acceso",
@@ -24023,7 +24069,8 @@
       "use_console_hint": "Usa la pestaña Consola para inspeccionar el valor de esta clave.",
       "write": "Escritura",
       "write_mode": "Modo escritura",
-      "suggestion_api_tables": "Muestra las tablas de esta base y cuántos registros tiene cada una"
+      "suggestion_api_tables": "Muestra las tablas de esta base y cuántos registros tiene cada una",
+      "rename_failed": "No se pudo cambiar el nombre de la credencial. El nombre anterior sigue guardado."
     },
     "delete_dialog": {
       "cannot_undo": "Esta acción no se puede deshacer.",

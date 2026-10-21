@@ -1358,7 +1358,12 @@
     "task_title_placeholder": "Název úkolu…",
     "heal_all_window_only": "Nepodařilo se načíst celý seznam neúspěšných úloh, opraveny byly jen ty na obrazovce.",
     "heal_hidden_failed": "{count} neúspěšných úloh je mimo toto zobrazení.",
-    "heal_show_failed": "Zobrazit je"
+    "heal_show_failed": "Zobrazit je",
+    "output_lines_one": "{count} řádek",
+    "output_lines_other": "{count} řádků",
+    "output_streaming": "streamování",
+    "output_show_rendered": "Přepnout na vykreslený markdown",
+    "output_show_raw": "Přepnout na nezpracovaný log"
   },
   "dev_scanner": {
     "clear_all_btn": "Vymazat vše",
@@ -2726,7 +2731,10 @@
       "view_switcher_aria": "Zobrazení"
     },
     "kb_ingest_complete": "Indexování dokončeno",
-    "kb_ingest_progress_n": "Indexuje se {done} z {total}"
+    "kb_ingest_progress_n": "Indexuje se {done} z {total}",
+    "ocr_duration": "{ms} ms",
+    "ocr_token_count": "{count} tokenů",
+    "ocr_empty": "(prázdné)"
   },
   "fleet_quick_dispatch": {
     "chip_remove": "Odebrat {label}",

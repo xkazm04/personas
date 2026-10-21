@@ -1358,7 +1358,12 @@
     "task_title_placeholder": "任务标题…",
     "heal_all_window_only": "无法加载完整的失败任务列表，因此只修复了屏幕上的任务。",
     "heal_hidden_failed": "还有 {count} 个失败任务在当前视图之外。",
-    "heal_show_failed": "显示它们"
+    "heal_show_failed": "显示它们",
+    "output_lines_one": "{count} 行",
+    "output_lines_other": "{count} 行",
+    "output_streaming": "流式输出中",
+    "output_show_rendered": "切换到渲染后的 Markdown",
+    "output_show_raw": "切换到原始日志"
   },
   "dev_scanner": {
     "clear_all_btn": "清除全部",
@@ -2726,7 +2731,10 @@
       "view_switcher_aria": "视图"
     },
     "kb_ingest_complete": "索引完成",
-    "kb_ingest_progress_n": "正在索引 {total} 项中的 {done} 项"
+    "kb_ingest_progress_n": "正在索引 {total} 项中的 {done} 项",
+    "ocr_duration": "{ms} 毫秒",
+    "ocr_token_count": "{count} 个 token",
+    "ocr_empty": "（空）"
   },
   "fleet_quick_dispatch": {
     "chip_remove": "移除 {label}",

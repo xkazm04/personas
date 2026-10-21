@@ -356,5 +356,17 @@
   "rows_show_all": "Tampilkan semua {count}",
   "rows_show_fewer": "Tampilkan lebih sedikit",
   "rows_showing_all": "Menampilkan semua {count}",
-  "rows_showing_first": "Menampilkan {count} pertama"
+  "rows_showing_first": "Menampilkan {count} pertama",
+  "business_outcome": {
+    "value_delivered_label": "Terkirim",
+    "value_delivered_title": "Persona menghasilkan pekerjaan nyata: artefak yang dapat ditindaklanjuti, pesan terkirim, atau perubahan status.",
+    "no_input_available_label": "Tanpa input",
+    "no_input_available_title": "Berjalan lancar tetapi tidak ada yang diproses: hanya mengeluarkan laporan kesiapan/status.",
+    "precondition_failed_label": "Terblokir",
+    "precondition_failed_title": "Konektor, kredensial, atau prasyarat yang diperlukan hilang atau rusak. Perbaiki penyiapan untuk membuka blokir.",
+    "partial_label": "Sebagian",
+    "partial_title": "Sebagian pekerjaan selesai, tidak semua: batas laju, galat sementara, atau bidang hilang pada beberapa item.",
+    "unknown_label": "-",
+    "unknown_title": "Tidak ada hasil bisnis yang dilaporkan (eksekusi lama, atau model tidak mengeluarkan penilaian)."
+  }
 }

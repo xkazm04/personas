@@ -356,5 +356,17 @@
   "rows_show_all": "Alle {count} anzeigen",
   "rows_show_fewer": "Weniger anzeigen",
   "rows_showing_all": "Alle {count} werden angezeigt",
-  "rows_showing_first": "Die ersten {count} werden angezeigt"
+  "rows_showing_first": "Die ersten {count} werden angezeigt",
+  "business_outcome": {
+    "value_delivered_label": "Geliefert",
+    "value_delivered_title": "Die Persona hat echte Arbeit geleistet: ein verwertbares Ergebnis, eine gesendete Nachricht oder einen geänderten Zustand.",
+    "no_input_available_label": "Keine Eingabe",
+    "no_input_available_title": "Lief fehlerfrei, hatte aber nichts zu verarbeiten: gab nur einen Bereitschafts-/Statusbericht aus.",
+    "precondition_failed_label": "Blockiert",
+    "precondition_failed_title": "Ein erforderlicher Connector, Zugangsdaten oder eine Voraussetzung fehlen oder sind defekt. Korrigieren Sie die Einrichtung, um die Blockade zu lösen.",
+    "partial_label": "Teilweise",
+    "partial_title": "Nur ein Teil der Arbeit wurde erledigt: Ratenlimit, vorübergehender Fehler oder fehlende Felder bei einigen Einträgen.",
+    "unknown_label": "-",
+    "unknown_title": "Kein Geschäftsergebnis gemeldet (ältere Ausführung, oder das Modell hat die Bewertung nicht ausgegeben)."
+  }
 }

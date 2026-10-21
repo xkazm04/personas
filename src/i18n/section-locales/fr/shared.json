@@ -356,5 +356,17 @@
   "rows_show_all": "Tout afficher ({count})",
   "rows_show_fewer": "Afficher moins",
   "rows_showing_all": "Affichage des {count}",
-  "rows_showing_first": "Affichage des {count} premiers"
+  "rows_showing_first": "Affichage des {count} premiers",
+  "business_outcome": {
+    "value_delivered_label": "Livré",
+    "value_delivered_title": "La persona a produit un travail concret : un livrable exploitable, un message envoyé ou un état modifié.",
+    "no_input_available_label": "Aucune entrée",
+    "no_input_available_title": "Exécution sans erreur mais rien à traiter : seul un rapport d'état a été émis.",
+    "precondition_failed_label": "Bloqué",
+    "precondition_failed_title": "Un connecteur, un identifiant ou une condition préalable requis est manquant ou défaillant. Corrigez la configuration pour débloquer.",
+    "partial_label": "Partiel",
+    "partial_title": "Une partie du travail seulement : limite de débit, erreur transitoire ou champs manquants sur certains éléments.",
+    "unknown_label": "-",
+    "unknown_title": "Aucun résultat métier n'a été signalé (exécution plus ancienne, ou le modèle n'a pas émis l'évaluation)."
+  }
 }

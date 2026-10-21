@@ -550,7 +550,8 @@
     "use_console_hint": "Usa la pestaña Consola para inspeccionar el valor de esta clave.",
     "write": "Escritura",
     "write_mode": "Modo escritura",
-    "suggestion_api_tables": "Muestra las tablas de esta base y cuántos registros tiene cada una"
+    "suggestion_api_tables": "Muestra las tablas de esta base y cuántos registros tiene cada una",
+    "rename_failed": "No se pudo cambiar el nombre de la credencial. El nombre anterior sigue guardado."
   },
   "delete_dialog": {
     "cannot_undo": "Esta acción no se puede deshacer.",

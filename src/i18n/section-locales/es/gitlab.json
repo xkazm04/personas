@@ -121,5 +121,12 @@
   "view_logs": "Registros",
   "yesterday": "ayer",
   "your_tier": "(el tuyo)",
-  "agent_pipeline_title": "Pipeline de {agent} en {ref}: {status}"
+  "agent_pipeline_title": "Pipeline de {agent} en {ref}: {status}",
+  "pipeline_count_one": "{count} pipeline",
+  "pipeline_count_other": "{count} pipelines",
+  "notify_title_success": "Pipeline réussi",
+  "notify_title_failed": "Pipeline en échec",
+  "notify_title_canceled": "Pipeline annulé",
+  "notify_title_other": "Pipeline {status}",
+  "notify_body": "El pipeline #{id} en {ref} ahora está en estado {status}"
 }

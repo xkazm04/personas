@@ -1358,7 +1358,12 @@
     "task_title_placeholder": "Titre de la tâche…",
     "heal_all_window_only": "La liste complète des tâches en échec n’a pas pu être chargée : seules celles à l’écran ont été réparées.",
     "heal_hidden_failed": "{count} tâches en échec sont hors de cette vue.",
-    "heal_show_failed": "Les afficher"
+    "heal_show_failed": "Les afficher",
+    "output_lines_one": "{count} ligne",
+    "output_lines_other": "{count} lignes",
+    "output_streaming": "en flux",
+    "output_show_rendered": "Passer au markdown rendu",
+    "output_show_raw": "Passer au journal brut"
   },
   "dev_scanner": {
     "clear_all_btn": "Tout désélectionner",
@@ -2726,7 +2731,10 @@
       "view_switcher_aria": "Affichage"
     },
     "kb_ingest_complete": "Indexation terminée",
-    "kb_ingest_progress_n": "Indexation de {done} sur {total}"
+    "kb_ingest_progress_n": "Indexation de {done} sur {total}",
+    "ocr_duration": "{ms} ms",
+    "ocr_token_count": "{count} tokens",
+    "ocr_empty": "(vide)"
   },
   "fleet_quick_dispatch": {
     "chip_remove": "Retirer {label}",

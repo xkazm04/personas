@@ -28,7 +28,7 @@ interface GitOpsVersionHistoryProps {
 }
 
 export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [selectedPersonaName, setSelectedPersonaName] = useState<string>('');
   const [confirmRollback, setConfirmRollback] = useState<string | null>(null);
   const [showBranches, setShowBranches] = useState(false);
@@ -123,7 +123,7 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
               <GitBranch className="w-4 h-4 text-amber-400" />
               {t.gitlab.environment_branches}
               <span className="ml-auto typo-caption text-foreground">
-                {branches.length} branch{branches.length !== 1 ? 'es' : ''}
+                {tx(branches.length === 1 ? t.gitlab.branch_count_one : t.gitlab.branch_count_other, { count: branches.length })}
               </span>
             </button>
 

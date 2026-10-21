@@ -96,7 +96,7 @@ function writeTileOrder(projectId: string, order: TileId[]): void {
  *     the layout.
  */
 export default function ProjectOverviewPage() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const po = t.project_overview;
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
@@ -145,8 +145,8 @@ export default function ProjectOverviewPage() {
       .catch(silentCatch('ProjectOverviewPage:todayTasks'));
   }, [activeProjectId, fetchScansForToday]);
   const todayActivity = useMemo(
-    () => buildTodayActivity(storeScans, todayTasks, storeSignals),
-    [storeScans, todayTasks, storeSignals],
+    () => buildTodayActivity(storeScans, todayTasks, storeSignals, t.project_overview),
+    [storeScans, todayTasks, storeSignals, t.project_overview],
   );
 
   const setPendingTaskFocusId = useSystemStore((s) => s.setPendingTaskFocusId);
@@ -406,16 +406,16 @@ export default function ProjectOverviewPage() {
                   <>
                     <MetaPill icon={GitBranch} text={repoStats.defaultBranch} />
                     {repoStats.lastPushAt && (
-                      <MetaPill text={`pushed ${formatRelativeTime(repoStats.lastPushAt)}`} />
+                      <MetaPill text={tx(t.project_overview.mp_pushed, { when: formatRelativeTime(repoStats.lastPushAt) })} />
                     )}
                     {activeRepoCredId && credentials.find((c) => c.id === activeRepoCredId) && (
                       <MetaPill icon={Key} text={credentials.find((c) => c.id === activeRepoCredId)!.name} dim />
                     )}
                   </>
                 ) : repoState === 'unmapped' && repoCreds.length > 0 ? (
-                  <MetaPill icon={Key} text={`${repoCreds.length} credential(s) found — needs repo URL`} tone="warning" />
+                  <MetaPill icon={Key} text={tx(repoCreds.length === 1 ? t.project_overview.mp_creds_need_url_one : t.project_overview.mp_creds_need_url_other, { count: repoCreds.length })} tone="warning" />
                 ) : repoState === 'empty' ? (
-                  <MetaPill text="No GitHub/GitLab credential" tone="neutral" />
+                  <MetaPill text={t.project_overview.mp_no_repo_credential} tone="neutral" />
                 ) : null
               }
               actions={
@@ -473,14 +473,14 @@ export default function ProjectOverviewPage() {
               meta={
                 monitorLinked ? (
                   <>
-                    <MetaPill icon={Bug} text={`${monitorStats!.unresolvedIssues ?? '—'} unresolved`} tone={unresolvedTone} />
+                    <MetaPill icon={Bug} text={tx(t.project_overview.mp_unresolved, { count: monitorStats!.unresolvedIssues ?? '—' })} tone={unresolvedTone} />
                     <MetaPill text={splitSentrySlug(activeProject.monitoring_project_slug)[1] ?? '-'} dim />
                     {monitoringCred && <MetaPill icon={Key} text={monitoringCred.name} dim />}
                   </>
                 ) : monitorState === 'unmapped' ? (
-                  <MetaPill text="needs project link" tone="warning" />
+                  <MetaPill text={t.project_overview.mp_needs_project_link} tone="warning" />
                 ) : monitorState === 'empty' ? (
-                  <MetaPill text="No Sentry credential" tone="neutral" />
+                  <MetaPill text={t.project_overview.mp_no_sentry_credential} tone="neutral" />
                 ) : null
               }
               actions={

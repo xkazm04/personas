@@ -7157,6 +7157,7 @@ export type Translations = {
       delete_query_title: string;
       delete_query_body: string;
       filtered_count: string;
+      rename_failed: string;
     };
     dependencies: {
       simulate_revocation: string;
@@ -16453,6 +16454,25 @@ export type Translations = {
     try_auto_discovery: string;
     enter_slugs_manually: string;
     connections_heading: string;
+    mp_pushed: string;
+    mp_creds_need_url_one: string;
+    mp_creds_need_url_other: string;
+    mp_no_repo_credential: string;
+    mp_unresolved: string;
+    mp_needs_project_link: string;
+    mp_no_sentry_credential: string;
+    err_unknown_provider: string;
+    err_parse_github: string;
+    err_parse_gitlab: string;
+    err_with_credential: string;
+    today_scan: string;
+    today_agents_one: string;
+    today_agents_other: string;
+    today_ideas_one: string;
+    today_ideas_other: string;
+    today_task_created: string;
+    today_task_failed: string;
+    today_task_completed: string;
   };
   plugins: {
     fleet_quick_dispatch: {
@@ -17222,6 +17242,9 @@ export type Translations = {
         path_hint: string;
         search_focus: string;
       };
+      ocr_duration: string;
+      ocr_token_count: string;
+      ocr_empty: string;
     };
     artist: {
       title: string;
@@ -19709,6 +19732,11 @@ export type Translations = {
       heal_hidden_failed: string;
       heal_show_failed: string;
       heal_all_window_only: string;
+      output_lines_one: string;
+      output_lines_other: string;
+      output_streaming: string;
+      output_show_rendered: string;
+      output_show_raw: string;
     };
     dev_scanner: {
       run_scan_btn: string;
@@ -22456,6 +22484,13 @@ export type Translations = {
     status_canceled: string;
     status_warning: string;
     agent_pipeline_title: string;
+    pipeline_count_one: string;
+    pipeline_count_other: string;
+    notify_title_success: string;
+    notify_title_failed: string;
+    notify_title_canceled: string;
+    notify_title_other: string;
+    notify_body: string;
   };
   pipeline: {
     preset: {
@@ -23286,6 +23321,18 @@ export type Translations = {
     rich_markdown: {
       invalid_block: string;
       unknown_block: string;
+    };
+    business_outcome: {
+      value_delivered_label: string;
+      value_delivered_title: string;
+      no_input_available_label: string;
+      no_input_available_title: string;
+      precondition_failed_label: string;
+      precondition_failed_title: string;
+      partial_label: string;
+      partial_title: string;
+      unknown_label: string;
+      unknown_title: string;
     };
   };
   releases: {

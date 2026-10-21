@@ -5557,7 +5557,14 @@
     "view_logs": "Logy",
     "yesterday": "včera",
     "your_tier": "(tvoje)",
-    "agent_pipeline_title": "Pipeline pro {agent} na větvi {ref}: {status}"
+    "agent_pipeline_title": "Pipeline pro {agent} na větvi {ref}: {status}",
+    "pipeline_count_one": "{count} pipeline",
+    "pipeline_count_other": "{count} pipelines",
+    "notify_title_success": "Pipeline byl úspěšný",
+    "notify_title_failed": "Pipeline selhal",
+    "notify_title_canceled": "Pipeline byl zrušen",
+    "notify_title_other": "Pipeline {status}",
+    "notify_body": "Pipeline #{id} na {ref} má nyní stav {status}"
   },
   "home": {
     "commander": "Veliteli/Velitelko",
@@ -12921,7 +12928,12 @@
       "task_title_placeholder": "Název úkolu…",
       "heal_all_window_only": "Nepodařilo se načíst celý seznam neúspěšných úloh, opraveny byly jen ty na obrazovce.",
       "heal_hidden_failed": "{count} neúspěšných úloh je mimo toto zobrazení.",
-      "heal_show_failed": "Zobrazit je"
+      "heal_show_failed": "Zobrazit je",
+      "output_lines_one": "{count} řádek",
+      "output_lines_other": "{count} řádků",
+      "output_streaming": "streamování",
+      "output_show_rendered": "Přepnout na vykreslený markdown",
+      "output_show_raw": "Přepnout na nezpracovaný log"
     },
     "dev_scanner": {
       "clear_all_btn": "Vymazat vše",
@@ -14289,7 +14301,10 @@
         "view_switcher_aria": "Zobrazení"
       },
       "kb_ingest_complete": "Indexování dokončeno",
-      "kb_ingest_progress_n": "Indexuje se {done} z {total}"
+      "kb_ingest_progress_n": "Indexuje se {done} z {total}",
+      "ocr_duration": "{ms} ms",
+      "ocr_token_count": "{count} tokenů",
+      "ocr_empty": "(prázdné)"
     },
     "fleet_quick_dispatch": {
       "chip_remove": "Odebrat {label}",
@@ -16852,7 +16867,26 @@
     "vital_jump_monitor": "Zobrazit podrobnosti monitorování",
     "vital_jump_repo": "Otevřít v připojeném repozitáři",
     "vital_jump_setup": "Nastavit toto připojení",
-    "vital_updated_label": "aktualizováno"
+    "vital_updated_label": "aktualizováno",
+    "mp_pushed": "odesláno {when}",
+    "mp_creds_need_url_one": "Nalezen {count} přihlašovací údaj, je potřeba URL repozitáře",
+    "mp_creds_need_url_other": "Nalezeno {count} přihlašovacích údajů, je potřeba URL repozitáře",
+    "mp_no_repo_credential": "Žádné přihlašovací údaje GitHub/GitLab",
+    "mp_unresolved": "{count} nevyřešeno",
+    "mp_needs_project_link": "chybí propojení s projektem",
+    "mp_no_sentry_credential": "Žádné přihlašovací údaje Sentry",
+    "err_unknown_provider": "Z adresy URL nelze zjistit poskytovatele repozitáře: {url}",
+    "err_parse_github": "Adresu GitHub se nepodařilo zpracovat: {url}",
+    "err_parse_gitlab": "Adresu GitLab se nepodařilo zpracovat: {url}",
+    "err_with_credential": "{error} (přihlašovací údaje „{name}“, {type})",
+    "today_scan": "Sken: {agents} → {ideas}",
+    "today_agents_one": "{count} agent",
+    "today_agents_other": "{count} agentů",
+    "today_ideas_one": "{count} nápad",
+    "today_ideas_other": "{count} nápadů",
+    "today_task_created": "Úkol vytvořen: {title}",
+    "today_task_failed": "Úkol selhal: {title}",
+    "today_task_completed": "Úkol dokončen: {title}"
   },
   "radio": {
     "auto_resume_description": "Když je zapnutá, při prvním načtení rádia po otevření aplikace se automaticky spustí naposledy hrající stanice. Ve výchozím nastavení vypnuto.",
@@ -18930,7 +18964,19 @@
     "rows_show_all": "Zobrazit vše ({count})",
     "rows_show_fewer": "Zobrazit méně",
     "rows_showing_all": "Zobrazeno vše ({count})",
-    "rows_showing_first": "Zobrazeno prvních {count}"
+    "rows_showing_first": "Zobrazeno prvních {count}",
+    "business_outcome": {
+      "value_delivered_label": "Dodáno",
+      "value_delivered_title": "Persona odvedla skutečnou práci: použitelný výstup, odeslanou zprávu nebo změněný stav.",
+      "no_input_available_label": "Žádný vstup",
+      "no_input_available_title": "Proběhlo bez chyb, ale nebylo co zpracovat: vydalo pouze zprávu o připravenosti/stavu.",
+      "precondition_failed_label": "Blokováno",
+      "precondition_failed_title": "Chybí nebo je porušen požadovaný konektor, přihlašovací údaje či předpoklad. Opravte nastavení, aby se blokace uvolnila.",
+      "partial_label": "Částečně",
+      "partial_title": "Část práce byla hotová, ne všechna: limit četnosti, přechodná chyba nebo chybějící pole u některých položek.",
+      "unknown_label": "-",
+      "unknown_title": "Nebyl nahlášen žádný obchodní výsledek (starší spuštění, nebo model hodnocení nevydal)."
+    }
   },
   "sharing": {
     "access_level_label": "Úroveň přístupu",
@@ -24023,7 +24069,8 @@
       "use_console_hint": "K zobrazení hodnoty použijte záložku Konzole.",
       "write": "Zápis",
       "write_mode": "Režim zápisu",
-      "suggestion_api_tables": "Vypiš tabulky v této bázi a počet záznamů v každé z nich"
+      "suggestion_api_tables": "Vypiš tabulky v této bázi a počet záznamů v každé z nich",
+      "rename_failed": "Přihlašovací údaje se nepodařilo přejmenovat. Původní název zůstává uložen."
     },
     "delete_dialog": {
       "cannot_undo": "Tuto akci nelze vzít zpět.",

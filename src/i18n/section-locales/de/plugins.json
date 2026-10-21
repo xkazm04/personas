@@ -1358,7 +1358,12 @@
     "task_title_placeholder": "Aufgabentitel…",
     "heal_all_window_only": "Die vollständige Fehlerliste konnte nicht geladen werden, deshalb wurden nur die sichtbaren Aufgaben geheilt.",
     "heal_hidden_failed": "{count} fehlgeschlagene Aufgaben liegen außerhalb dieser Ansicht.",
-    "heal_show_failed": "Anzeigen"
+    "heal_show_failed": "Anzeigen",
+    "output_lines_one": "{count} Zeile",
+    "output_lines_other": "{count} Zeilen",
+    "output_streaming": "Streaming",
+    "output_show_rendered": "Zu gerendertem Markdown wechseln",
+    "output_show_raw": "Zum Rohprotokoll wechseln"
   },
   "dev_scanner": {
     "clear_all_btn": "Alle abwählen",
@@ -2726,7 +2731,10 @@
       "view_switcher_aria": "Ansicht"
     },
     "kb_ingest_complete": "Indexierung abgeschlossen",
-    "kb_ingest_progress_n": "{done} von {total} werden indexiert"
+    "kb_ingest_progress_n": "{done} von {total} werden indexiert",
+    "ocr_duration": "{ms} ms",
+    "ocr_token_count": "{count} Tokens",
+    "ocr_empty": "(leer)"
   },
   "fleet_quick_dispatch": {
     "chip_remove": "{label} entfernen",

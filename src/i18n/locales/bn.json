@@ -5557,7 +5557,14 @@
     "view_logs": "লগ",
     "yesterday": "গতকাল",
     "your_tier": "(আপনার)",
-    "agent_pipeline_title": "{ref}-এ {agent}-এর পাইপলাইন: {status}"
+    "agent_pipeline_title": "{ref}-এ {agent}-এর পাইপলাইন: {status}",
+    "pipeline_count_one": "{count}টি পাইপলাইন",
+    "pipeline_count_other": "{count}টি পাইপলাইন",
+    "notify_title_success": "পাইপলাইন সফল হয়েছে",
+    "notify_title_failed": "পাইপলাইন ব্যর্থ হয়েছে",
+    "notify_title_canceled": "পাইপলাইন বাতিল হয়েছে",
+    "notify_title_other": "পাইপলাইন {status}",
+    "notify_body": "{ref}-এ পাইপলাইন #{id} এখন {status}"
   },
   "home": {
     "commander": "কমান্ডার",
@@ -12921,7 +12928,12 @@
       "task_title_placeholder": "টাস্ক শিরোনাম…",
       "heal_all_window_only": "ব্যর্থ কাজের পুরো তালিকা লোড করা যায়নি, তাই কেবল পর্দায় থাকা কাজগুলোই সারানো হয়েছে।",
       "heal_hidden_failed": "{count}টি ব্যর্থ কাজ এই ভিউয়ের বাইরে রয়েছে।",
-      "heal_show_failed": "সেগুলি দেখান"
+      "heal_show_failed": "সেগুলি দেখান",
+      "output_lines_one": "{count}টি লাইন",
+      "output_lines_other": "{count}টি লাইন",
+      "output_streaming": "স্ট্রিমিং",
+      "output_show_rendered": "রেন্ডার করা মার্কডাউনে যান",
+      "output_show_raw": "র লগে যান"
     },
     "dev_scanner": {
       "clear_all_btn": "সব সাফ করুন",
@@ -14289,7 +14301,10 @@
         "view_switcher_aria": "ভিউ"
       },
       "kb_ingest_complete": "ইনডেক্সিং সম্পন্ন",
-      "kb_ingest_progress_n": "{total}-এর মধ্যে {done}টি ইনডেক্স করা হচ্ছে"
+      "kb_ingest_progress_n": "{total}-এর মধ্যে {done}টি ইনডেক্স করা হচ্ছে",
+      "ocr_duration": "{ms} মি.সে.",
+      "ocr_token_count": "{count}টি টোকেন",
+      "ocr_empty": "(খালি)"
     },
     "fleet_quick_dispatch": {
       "chip_remove": "{label} সরান",
@@ -16852,7 +16867,26 @@
     "vital_jump_monitor": "মনিটরিং বিবরণ দেখান",
     "vital_jump_repo": "সংযুক্ত রিপোজিটরিতে খুলুন",
     "vital_jump_setup": "এই সংযোগ সেট আপ করুন",
-    "vital_updated_label": "আপডেট হয়েছে"
+    "vital_updated_label": "আপডেট হয়েছে",
+    "mp_pushed": "{when} পুশ করা হয়েছে",
+    "mp_creds_need_url_one": "{count}টি ক্রেডেনশিয়াল পাওয়া গেছে, রিপোজিটরি URL প্রয়োজন",
+    "mp_creds_need_url_other": "{count}টি ক্রেডেনশিয়াল পাওয়া গেছে, রিপোজিটরি URL প্রয়োজন",
+    "mp_no_repo_credential": "কোনো GitHub/GitLab ক্রেডেনশিয়াল নেই",
+    "mp_unresolved": "{count}টি অমীমাংসিত",
+    "mp_needs_project_link": "প্রজেক্ট লিঙ্ক প্রয়োজন",
+    "mp_no_sentry_credential": "কোনো Sentry ক্রেডেনশিয়াল নেই",
+    "err_unknown_provider": "URL থেকে রিপোজিটরি প্রোভাইডার শনাক্ত করা যায়নি: {url}",
+    "err_parse_github": "GitHub URL পার্স করা যায়নি: {url}",
+    "err_parse_gitlab": "GitLab URL পার্স করা যায়নি: {url}",
+    "err_with_credential": "{error} (ক্রেডেনশিয়াল \"{name}\", {type})",
+    "today_scan": "স্ক্যান: {agents} → {ideas}",
+    "today_agents_one": "{count}টি এজেন্ট",
+    "today_agents_other": "{count}টি এজেন্ট",
+    "today_ideas_one": "{count}টি আইডিয়া",
+    "today_ideas_other": "{count}টি আইডিয়া",
+    "today_task_created": "টাস্ক তৈরি হয়েছে: {title}",
+    "today_task_failed": "টাস্ক ব্যর্থ হয়েছে: {title}",
+    "today_task_completed": "টাস্ক সম্পন্ন হয়েছে: {title}"
   },
   "radio": {
     "auto_resume_description": "যখন চালু হয়, অ্যাপটি খোলার পর প্রথমবার রেডিও লোড হলে শেষ-বাজানো স্টেশনটি স্বয়ংক্রিয়ভাবে শুরু হয়। ডিফল্টরূপে বন্ধ।",
@@ -18930,7 +18964,19 @@
     "rows_show_all": "সবগুলো দেখান ({count})",
     "rows_show_fewer": "কম দেখান",
     "rows_showing_all": "সবগুলো দেখানো হচ্ছে ({count})",
-    "rows_showing_first": "প্রথম {count}টি দেখানো হচ্ছে"
+    "rows_showing_first": "প্রথম {count}টি দেখানো হচ্ছে",
+    "business_outcome": {
+      "value_delivered_label": "সম্পন্ন",
+      "value_delivered_title": "পার্সোনা বাস্তব কাজ করেছে: ব্যবহারযোগ্য আউটপুট তৈরি, বার্তা পাঠানো বা অবস্থা পরিবর্তন।",
+      "no_input_available_label": "ইনপুট নেই",
+      "no_input_available_title": "সফলভাবে চলেছে কিন্তু প্রক্রিয়া করার কিছু ছিল না: শুধু প্রস্তুতি/স্ট্যাটাস রিপোর্ট দিয়েছে।",
+      "precondition_failed_label": "অবরুদ্ধ",
+      "precondition_failed_title": "প্রয়োজনীয় কানেক্টর, ক্রেডেনশিয়াল বা পূর্বশর্ত অনুপস্থিত বা নষ্ট। অবরোধ সরাতে সেটআপ ঠিক করুন।",
+      "partial_label": "আংশিক",
+      "partial_title": "কিছু কাজ করেছে, সব নয়: রেট লিমিট, সাময়িক ত্রুটি, বা কিছু আইটেমে ফিল্ড অনুপস্থিত।",
+      "unknown_label": "-",
+      "unknown_title": "কোনো ব্যবসায়িক ফলাফল জানানো হয়নি (পুরনো এক্সিকিউশন, অথবা মডেল মূল্যায়ন দেয়নি)।"
+    }
   },
   "sharing": {
     "access_level_label": "অ্যাক্সেস স্তর",
@@ -24023,7 +24069,8 @@
       "use_console_hint": "এই কীটির মান পরীক্ষা করতে কনসোল ট্যাব ব্যবহার করুন।",
       "write": "রাইট",
       "write_mode": "রাইট মোড",
-      "suggestion_api_tables": "এই বেসের টেবিলগুলি এবং প্রতিটিতে কতগুলি রেকর্ড আছে দেখান"
+      "suggestion_api_tables": "এই বেসের টেবিলগুলি এবং প্রতিটিতে কতগুলি রেকর্ড আছে দেখান",
+      "rename_failed": "ক্রেডেনশিয়ালের নাম পরিবর্তন করা যায়নি। পুরনো নামটি এখনও সংরক্ষিত আছে।"
     },
     "delete_dialog": {
       "cannot_undo": "এই পদক্ষেপ পূর্বাবস্থায় ফেরানো যাবে না।",

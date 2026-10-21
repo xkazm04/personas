@@ -1358,7 +1358,12 @@
     "task_title_placeholder": "Tiêu đề tác vụ…",
     "heal_all_window_only": "Không tải được toàn bộ danh sách tác vụ thất bại, nên chỉ các tác vụ trên màn hình được khắc phục.",
     "heal_hidden_failed": "{count} tác vụ thất bại nằm ngoài khung nhìn này.",
-    "heal_show_failed": "Hiển thị"
+    "heal_show_failed": "Hiển thị",
+    "output_lines_one": "{count} dòng",
+    "output_lines_other": "{count} dòng",
+    "output_streaming": "đang phát trực tiếp",
+    "output_show_rendered": "Chuyển sang markdown đã dựng",
+    "output_show_raw": "Chuyển sang nhật ký thô"
   },
   "dev_scanner": {
     "clear_all_btn": "Xóa tất cả",
@@ -2726,7 +2731,10 @@
       "view_switcher_aria": "Chế độ xem"
     },
     "kb_ingest_complete": "Đã lập chỉ mục xong",
-    "kb_ingest_progress_n": "Đang lập chỉ mục {done} trên {total}"
+    "kb_ingest_progress_n": "Đang lập chỉ mục {done} trên {total}",
+    "ocr_duration": "{ms} ms",
+    "ocr_token_count": "{count} token",
+    "ocr_empty": "(trống)"
   },
   "fleet_quick_dispatch": {
     "chip_remove": "Xóa {label}",

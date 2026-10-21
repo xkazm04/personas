@@ -5557,7 +5557,14 @@
     "view_logs": "Protokolle",
     "yesterday": "gestern",
     "your_tier": "(Ihres)",
-    "agent_pipeline_title": "Pipeline für {agent} auf {ref}: {status}"
+    "agent_pipeline_title": "Pipeline für {agent} auf {ref}: {status}",
+    "pipeline_count_one": "{count} Pipeline",
+    "pipeline_count_other": "{count} Pipelines",
+    "notify_title_success": "Pipeline erfolgreich",
+    "notify_title_failed": "Pipeline fehlgeschlagen",
+    "notify_title_canceled": "Pipeline abgebrochen",
+    "notify_title_other": "Pipeline {status}",
+    "notify_body": "Pipeline #{id} auf {ref} hat jetzt den Status {status}"
   },
   "home": {
     "commander": "Commander",
@@ -12921,7 +12928,12 @@
       "task_title_placeholder": "Aufgabentitel…",
       "heal_all_window_only": "Die vollständige Fehlerliste konnte nicht geladen werden, deshalb wurden nur die sichtbaren Aufgaben geheilt.",
       "heal_hidden_failed": "{count} fehlgeschlagene Aufgaben liegen außerhalb dieser Ansicht.",
-      "heal_show_failed": "Anzeigen"
+      "heal_show_failed": "Anzeigen",
+      "output_lines_one": "{count} Zeile",
+      "output_lines_other": "{count} Zeilen",
+      "output_streaming": "Streaming",
+      "output_show_rendered": "Zu gerendertem Markdown wechseln",
+      "output_show_raw": "Zum Rohprotokoll wechseln"
     },
     "dev_scanner": {
       "clear_all_btn": "Alle abwählen",
@@ -14289,7 +14301,10 @@
         "view_switcher_aria": "Ansicht"
       },
       "kb_ingest_complete": "Indexierung abgeschlossen",
-      "kb_ingest_progress_n": "{done} von {total} werden indexiert"
+      "kb_ingest_progress_n": "{done} von {total} werden indexiert",
+      "ocr_duration": "{ms} ms",
+      "ocr_token_count": "{count} Tokens",
+      "ocr_empty": "(leer)"
     },
     "fleet_quick_dispatch": {
       "chip_remove": "{label} entfernen",
@@ -16852,7 +16867,26 @@
     "vital_jump_monitor": "Überwachungsdetails anzeigen",
     "vital_jump_repo": "Im verbundenen Repository öffnen",
     "vital_jump_setup": "Diese Verbindung einrichten",
-    "vital_updated_label": "aktualisiert"
+    "vital_updated_label": "aktualisiert",
+    "mp_pushed": "gepusht {when}",
+    "mp_creds_need_url_one": "{count} Zugangsdaten gefunden, Repository-URL erforderlich",
+    "mp_creds_need_url_other": "{count} Zugangsdaten gefunden, Repository-URL erforderlich",
+    "mp_no_repo_credential": "Keine GitHub/GitLab-Zugangsdaten",
+    "mp_unresolved": "{count} ungelöst",
+    "mp_needs_project_link": "Projektverknüpfung erforderlich",
+    "mp_no_sentry_credential": "Keine Sentry-Zugangsdaten",
+    "err_unknown_provider": "Repository-Anbieter konnte aus der URL nicht erkannt werden: {url}",
+    "err_parse_github": "GitHub-URL konnte nicht ausgewertet werden: {url}",
+    "err_parse_gitlab": "GitLab-URL konnte nicht ausgewertet werden: {url}",
+    "err_with_credential": "{error} (Zugangsdaten „{name}“, {type})",
+    "today_scan": "Scan: {agents} → {ideas}",
+    "today_agents_one": "{count} Agent",
+    "today_agents_other": "{count} Agents",
+    "today_ideas_one": "{count} Idee",
+    "today_ideas_other": "{count} Ideen",
+    "today_task_created": "Aufgabe erstellt: {title}",
+    "today_task_failed": "Aufgabe fehlgeschlagen: {title}",
+    "today_task_completed": "Aufgabe abgeschlossen: {title}"
   },
   "radio": {
     "auto_resume_description": "Wenn diese Option aktiviert ist, startet der zuletzt wiedergegebene Sender automatisch, wenn das Radio zum ersten Mal geladen wird, nachdem die App geöffnet wurde. Standardmäßig deaktiviert.",
@@ -18930,7 +18964,19 @@
     "rows_show_all": "Alle {count} anzeigen",
     "rows_show_fewer": "Weniger anzeigen",
     "rows_showing_all": "Alle {count} werden angezeigt",
-    "rows_showing_first": "Die ersten {count} werden angezeigt"
+    "rows_showing_first": "Die ersten {count} werden angezeigt",
+    "business_outcome": {
+      "value_delivered_label": "Geliefert",
+      "value_delivered_title": "Die Persona hat echte Arbeit geleistet: ein verwertbares Ergebnis, eine gesendete Nachricht oder einen geänderten Zustand.",
+      "no_input_available_label": "Keine Eingabe",
+      "no_input_available_title": "Lief fehlerfrei, hatte aber nichts zu verarbeiten: gab nur einen Bereitschafts-/Statusbericht aus.",
+      "precondition_failed_label": "Blockiert",
+      "precondition_failed_title": "Ein erforderlicher Connector, Zugangsdaten oder eine Voraussetzung fehlen oder sind defekt. Korrigieren Sie die Einrichtung, um die Blockade zu lösen.",
+      "partial_label": "Teilweise",
+      "partial_title": "Nur ein Teil der Arbeit wurde erledigt: Ratenlimit, vorübergehender Fehler oder fehlende Felder bei einigen Einträgen.",
+      "unknown_label": "-",
+      "unknown_title": "Kein Geschäftsergebnis gemeldet (ältere Ausführung, oder das Modell hat die Bewertung nicht ausgegeben)."
+    }
   },
   "sharing": {
     "access_level_label": "Zugriffsebene",
@@ -24023,7 +24069,8 @@
       "use_console_hint": "Konsolenreiter verwenden, um den Wert dieses Schlüssels zu inspizieren.",
       "write": "Schreiben",
       "write_mode": "Schreibmodus",
-      "suggestion_api_tables": "Liste die Tabellen in dieser Base und die Anzahl der Datensätze je Tabelle"
+      "suggestion_api_tables": "Liste die Tabellen in dieser Base und die Anzahl der Datensätze je Tabelle",
+      "rename_failed": "Die Zugangsdaten konnten nicht umbenannt werden. Der alte Name ist weiterhin gespeichert."
     },
     "delete_dialog": {
       "cannot_undo": "Diese Aktion kann nicht rückgängig gemacht werden.",

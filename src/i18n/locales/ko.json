@@ -5557,7 +5557,14 @@
     "view_logs": "로그",
     "yesterday": "어제",
     "your_tier": "(현재 등급)",
-    "agent_pipeline_title": "{ref}의 {agent} 파이프라인: {status}"
+    "agent_pipeline_title": "{ref}의 {agent} 파이프라인: {status}",
+    "pipeline_count_one": "{count}개 파이프라인",
+    "pipeline_count_other": "{count}개 파이프라인",
+    "notify_title_success": "파이프라인 성공",
+    "notify_title_failed": "파이프라인 실패",
+    "notify_title_canceled": "파이프라인 취소됨",
+    "notify_title_other": "파이프라인 {status}",
+    "notify_body": "{ref}의 파이프라인 #{id} 상태가 {status}(으)로 바뀌었습니다"
   },
   "home": {
     "commander": "사령관",
@@ -12921,7 +12928,12 @@
       "task_title_placeholder": "작업 제목…",
       "heal_all_window_only": "실패한 작업 전체 목록을 불러오지 못해 화면에 보이는 작업만 복구했습니다.",
       "heal_hidden_failed": "{count}개의 실패한 작업이 이 화면 밖에 있습니다.",
-      "heal_show_failed": "보기"
+      "heal_show_failed": "보기",
+      "output_lines_one": "{count}줄",
+      "output_lines_other": "{count}줄",
+      "output_streaming": "스트리밍 중",
+      "output_show_rendered": "렌더링된 마크다운으로 전환",
+      "output_show_raw": "원본 로그로 전환"
     },
     "dev_scanner": {
       "clear_all_btn": "전체 해제",
@@ -14289,7 +14301,10 @@
         "view_switcher_aria": "보기"
       },
       "kb_ingest_complete": "색인 생성 완료",
-      "kb_ingest_progress_n": "{total}개 중 {done}개 색인 중"
+      "kb_ingest_progress_n": "{total}개 중 {done}개 색인 중",
+      "ocr_duration": "{ms}ms",
+      "ocr_token_count": "토큰 {count}개",
+      "ocr_empty": "(비어 있음)"
     },
     "fleet_quick_dispatch": {
       "chip_remove": "{label} 제거",
@@ -16852,7 +16867,26 @@
     "vital_jump_monitor": "모니터링 세부정보 표시",
     "vital_jump_repo": "연결된 저장소에서 열기",
     "vital_jump_setup": "이 연결 설정",
-    "vital_updated_label": "업데이트됨"
+    "vital_updated_label": "업데이트됨",
+    "mp_pushed": "{when} 푸시됨",
+    "mp_creds_need_url_one": "자격 증명 {count}개 발견, 저장소 URL 필요",
+    "mp_creds_need_url_other": "자격 증명 {count}개 발견, 저장소 URL 필요",
+    "mp_no_repo_credential": "GitHub/GitLab 자격 증명 없음",
+    "mp_unresolved": "미해결 {count}건",
+    "mp_needs_project_link": "프로젝트 연결 필요",
+    "mp_no_sentry_credential": "Sentry 자격 증명 없음",
+    "err_unknown_provider": "URL에서 저장소 제공자를 감지할 수 없습니다: {url}",
+    "err_parse_github": "GitHub URL을 분석할 수 없습니다: {url}",
+    "err_parse_gitlab": "GitLab URL을 분석할 수 없습니다: {url}",
+    "err_with_credential": "{error} (자격 증명 \"{name}\", {type})",
+    "today_scan": "스캔: {agents} → {ideas}",
+    "today_agents_one": "에이전트 {count}개",
+    "today_agents_other": "에이전트 {count}개",
+    "today_ideas_one": "아이디어 {count}개",
+    "today_ideas_other": "아이디어 {count}개",
+    "today_task_created": "작업 생성됨: {title}",
+    "today_task_failed": "작업 실패: {title}",
+    "today_task_completed": "작업 완료: {title}"
   },
   "radio": {
     "auto_resume_description": "켜져 있으면 앱이 열린 후 라디오가 처음 로드될 때 마지막 재생 스테이션이 자동으로 시작됩니다. 기본적으로 꺼져 있습니다.",
@@ -18930,7 +18964,19 @@
     "rows_show_all": "모두 보기 ({count})",
     "rows_show_fewer": "간략히 보기",
     "rows_showing_all": "모두 표시 중 ({count})",
-    "rows_showing_first": "처음 {count}개 표시 중"
+    "rows_showing_first": "처음 {count}개 표시 중",
+    "business_outcome": {
+      "value_delivered_label": "전달됨",
+      "value_delivered_title": "페르소나가 실제 작업을 수행했습니다. 활용 가능한 결과물 생성, 메시지 전송 또는 상태 변경 등입니다.",
+      "no_input_available_label": "입력 없음",
+      "no_input_available_title": "정상적으로 실행됐지만 처리할 항목이 없었습니다. 준비 상태/상태 보고서만 출력했습니다.",
+      "precondition_failed_label": "차단됨",
+      "precondition_failed_title": "필요한 커넥터, 자격 증명 또는 사전 조건이 없거나 손상되었습니다. 설정을 수정해 차단을 해제하세요.",
+      "partial_label": "부분",
+      "partial_title": "작업의 일부만 수행했습니다. 속도 제한, 일시적 오류 또는 일부 항목의 누락된 필드가 원인입니다.",
+      "unknown_label": "-",
+      "unknown_title": "보고된 비즈니스 결과가 없습니다(이전 실행이거나 모델이 평가를 출력하지 않음)."
+    }
   },
   "sharing": {
     "access_level_label": "접근 수준",
@@ -24023,7 +24069,8 @@
       "use_console_hint": "이 키의 값을 확인하려면 콘솔 탭을 사용하세요.",
       "write": "쓰기",
       "write_mode": "쓰기 모드",
-      "suggestion_api_tables": "이 베이스의 테이블과 각 테이블의 레코드 수를 보여줘"
+      "suggestion_api_tables": "이 베이스의 테이블과 각 테이블의 레코드 수를 보여줘",
+      "rename_failed": "자격 증명 이름을 바꾸지 못했습니다. 이전 이름은 그대로 저장되어 있습니다."
     },
     "delete_dialog": {
       "cannot_undo": "이 작업은 취소할 수 없습니다.",

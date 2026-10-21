@@ -21,7 +21,7 @@ interface GitLabPipelineViewerProps {
 }
 
 export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [expandedJobId, setExpandedJobId] = useState<number | null>(null);
 
   const pipelines = useSystemStore((s) => s.gitlabPipelines);
@@ -84,7 +84,7 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
       {/* Header actions */}
       <div className="flex items-center justify-between">
         <p className="typo-body text-foreground">
-          {pipelines.length > 0 ? `${pipelines.length} pipeline(s)` : t.gitlab.no_pipelines}
+          {pipelines.length > 0 ? tx(pipelines.length === 1 ? t.gitlab.pipeline_count_one : t.gitlab.pipeline_count_other, { count: pipelines.length }) : t.gitlab.no_pipelines}
         </p>
         <div className="flex items-center gap-2">
           <Button

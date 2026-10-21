@@ -5557,7 +5557,14 @@
     "view_logs": "Log",
     "yesterday": "kemarin",
     "your_tier": "(milik Anda)",
-    "agent_pipeline_title": "Pipeline untuk {agent} di {ref}: {status}"
+    "agent_pipeline_title": "Pipeline untuk {agent} di {ref}: {status}",
+    "pipeline_count_one": "{count} pipeline",
+    "pipeline_count_other": "{count} pipeline",
+    "notify_title_success": "Pipeline Berhasil",
+    "notify_title_failed": "Pipeline Gagal",
+    "notify_title_canceled": "Pipeline Dibatalkan",
+    "notify_title_other": "Pipeline {status}",
+    "notify_body": "Pipeline #{id} pada {ref} sekarang berstatus {status}"
   },
   "home": {
     "commander": "Komandan",
@@ -12921,7 +12928,12 @@
       "task_title_placeholder": "Judul tugas…",
       "heal_all_window_only": "Daftar tugas gagal yang lengkap tidak bisa dimuat, jadi hanya tugas di layar yang diperbaiki.",
       "heal_hidden_failed": "{count} tugas gagal berada di luar tampilan ini.",
-      "heal_show_failed": "Tampilkan"
+      "heal_show_failed": "Tampilkan",
+      "output_lines_one": "{count} baris",
+      "output_lines_other": "{count} baris",
+      "output_streaming": "streaming",
+      "output_show_rendered": "Beralih ke markdown yang dirender",
+      "output_show_raw": "Beralih ke log mentah"
     },
     "dev_scanner": {
       "clear_all_btn": "Hapus semua",
@@ -14289,7 +14301,10 @@
         "view_switcher_aria": "Tampilan"
       },
       "kb_ingest_complete": "Pengindeksan selesai",
-      "kb_ingest_progress_n": "Mengindeks {done} dari {total}"
+      "kb_ingest_progress_n": "Mengindeks {done} dari {total}",
+      "ocr_duration": "{ms} md",
+      "ocr_token_count": "{count} token",
+      "ocr_empty": "(kosong)"
     },
     "fleet_quick_dispatch": {
       "chip_remove": "Hapus {label}",
@@ -16852,7 +16867,26 @@
     "vital_jump_monitor": "Tampilkan detail pemantauan",
     "vital_jump_repo": "Buka di repositori yang terhubung",
     "vital_jump_setup": "Siapkan koneksi ini",
-    "vital_updated_label": "diperbarui"
+    "vital_updated_label": "diperbarui",
+    "mp_pushed": "di-push {when}",
+    "mp_creds_need_url_one": "{count} kredensial ditemukan, perlu URL repositori",
+    "mp_creds_need_url_other": "{count} kredensial ditemukan, perlu URL repositori",
+    "mp_no_repo_credential": "Tidak ada kredensial GitHub/GitLab",
+    "mp_unresolved": "{count} belum terselesaikan",
+    "mp_needs_project_link": "perlu tautan proyek",
+    "mp_no_sentry_credential": "Tidak ada kredensial Sentry",
+    "err_unknown_provider": "Tidak dapat mendeteksi penyedia repositori dari URL: {url}",
+    "err_parse_github": "Tidak dapat mengurai URL GitHub: {url}",
+    "err_parse_gitlab": "Tidak dapat mengurai URL GitLab: {url}",
+    "err_with_credential": "{error} (kredensial \"{name}\", {type})",
+    "today_scan": "Pindai: {agents} → {ideas}",
+    "today_agents_one": "{count} agen",
+    "today_agents_other": "{count} agen",
+    "today_ideas_one": "{count} ide",
+    "today_ideas_other": "{count} ide",
+    "today_task_created": "Tugas dibuat: {title}",
+    "today_task_failed": "Tugas gagal: {title}",
+    "today_task_completed": "Tugas selesai: {title}"
   },
   "radio": {
     "auto_resume_description": "Jika aktif, stasiun yang terakhir diputar akan dimulai secara otomatis saat radio pertama kali dimuat setelah aplikasi dibuka. Mati secara default.",
@@ -18930,7 +18964,19 @@
     "rows_show_all": "Tampilkan semua {count}",
     "rows_show_fewer": "Tampilkan lebih sedikit",
     "rows_showing_all": "Menampilkan semua {count}",
-    "rows_showing_first": "Menampilkan {count} pertama"
+    "rows_showing_first": "Menampilkan {count} pertama",
+    "business_outcome": {
+      "value_delivered_label": "Terkirim",
+      "value_delivered_title": "Persona menghasilkan pekerjaan nyata: artefak yang dapat ditindaklanjuti, pesan terkirim, atau perubahan status.",
+      "no_input_available_label": "Tanpa input",
+      "no_input_available_title": "Berjalan lancar tetapi tidak ada yang diproses: hanya mengeluarkan laporan kesiapan/status.",
+      "precondition_failed_label": "Terblokir",
+      "precondition_failed_title": "Konektor, kredensial, atau prasyarat yang diperlukan hilang atau rusak. Perbaiki penyiapan untuk membuka blokir.",
+      "partial_label": "Sebagian",
+      "partial_title": "Sebagian pekerjaan selesai, tidak semua: batas laju, galat sementara, atau bidang hilang pada beberapa item.",
+      "unknown_label": "-",
+      "unknown_title": "Tidak ada hasil bisnis yang dilaporkan (eksekusi lama, atau model tidak mengeluarkan penilaian)."
+    }
   },
   "sharing": {
     "access_level_label": "Tingkat akses",
@@ -24023,7 +24069,8 @@
       "use_console_hint": "Gunakan tab Konsol untuk memeriksa nilai kunci ini.",
       "write": "Tulis",
       "write_mode": "Mode tulis",
-      "suggestion_api_tables": "Tampilkan tabel di base ini dan berapa banyak record di masing-masing"
+      "suggestion_api_tables": "Tampilkan tabel di base ini dan berapa banyak record di masing-masing",
+      "rename_failed": "Tidak dapat mengganti nama kredensial. Nama lama masih tersimpan."
     },
     "delete_dialog": {
       "cannot_undo": "Tindakan ini tidak dapat dibatalkan.",

@@ -5557,7 +5557,14 @@
     "view_logs": "Journaux",
     "yesterday": "hier",
     "your_tier": "(le vôtre)",
-    "agent_pipeline_title": "Pipeline de {agent} sur {ref} : {status}"
+    "agent_pipeline_title": "Pipeline de {agent} sur {ref} : {status}",
+    "pipeline_count_one": "{count} pipeline",
+    "pipeline_count_other": "{count} pipelines",
+    "notify_title_success": "Pipeline réussi",
+    "notify_title_failed": "Pipeline en échec",
+    "notify_title_canceled": "Pipeline annulé",
+    "notify_title_other": "Pipeline {status}",
+    "notify_body": "Le pipeline #{id} sur {ref} est maintenant au statut {status}"
   },
   "home": {
     "commander": "Commandant",
@@ -12921,7 +12928,12 @@
       "task_title_placeholder": "Titre de la tâche…",
       "heal_all_window_only": "La liste complète des tâches en échec n’a pas pu être chargée : seules celles à l’écran ont été réparées.",
       "heal_hidden_failed": "{count} tâches en échec sont hors de cette vue.",
-      "heal_show_failed": "Les afficher"
+      "heal_show_failed": "Les afficher",
+      "output_lines_one": "{count} ligne",
+      "output_lines_other": "{count} lignes",
+      "output_streaming": "en flux",
+      "output_show_rendered": "Passer au markdown rendu",
+      "output_show_raw": "Passer au journal brut"
     },
     "dev_scanner": {
       "clear_all_btn": "Tout désélectionner",
@@ -14289,7 +14301,10 @@
         "view_switcher_aria": "Affichage"
       },
       "kb_ingest_complete": "Indexation terminée",
-      "kb_ingest_progress_n": "Indexation de {done} sur {total}"
+      "kb_ingest_progress_n": "Indexation de {done} sur {total}",
+      "ocr_duration": "{ms} ms",
+      "ocr_token_count": "{count} tokens",
+      "ocr_empty": "(vide)"
     },
     "fleet_quick_dispatch": {
       "chip_remove": "Retirer {label}",
@@ -16852,7 +16867,26 @@
     "vital_jump_monitor": "Afficher les détails de surveillance",
     "vital_jump_repo": "Ouvrir dans le dépôt connecté",
     "vital_jump_setup": "Configurer cette connexion",
-    "vital_updated_label": "mis à jour"
+    "vital_updated_label": "mis à jour",
+    "mp_pushed": "poussé {when}",
+    "mp_creds_need_url_one": "{count} identifiant trouvé, URL du dépôt requise",
+    "mp_creds_need_url_other": "{count} identifiants trouvés, URL du dépôt requise",
+    "mp_no_repo_credential": "Aucun identifiant GitHub/GitLab",
+    "mp_unresolved": "{count} non résolus",
+    "mp_needs_project_link": "lien de projet requis",
+    "mp_no_sentry_credential": "Aucun identifiant Sentry",
+    "err_unknown_provider": "Impossible de détecter le fournisseur du dépôt à partir de l'URL : {url}",
+    "err_parse_github": "Impossible d'analyser l'URL GitHub : {url}",
+    "err_parse_gitlab": "Impossible d'analyser l'URL GitLab : {url}",
+    "err_with_credential": "{error} (identifiant « {name} », {type})",
+    "today_scan": "Analyse : {agents} → {ideas}",
+    "today_agents_one": "{count} agent",
+    "today_agents_other": "{count} agents",
+    "today_ideas_one": "{count} idée",
+    "today_ideas_other": "{count} idées",
+    "today_task_created": "Tâche créée : {title}",
+    "today_task_failed": "Tâche en échec : {title}",
+    "today_task_completed": "Tâche terminée : {title}"
   },
   "radio": {
     "auto_resume_description": "Lorsqu’elle est activée, la dernière station diffusée démarre automatiquement la première fois que la radio se charge après l’ouverture de l’application. Désactivé par défaut.",
@@ -18930,7 +18964,19 @@
     "rows_show_all": "Tout afficher ({count})",
     "rows_show_fewer": "Afficher moins",
     "rows_showing_all": "Affichage des {count}",
-    "rows_showing_first": "Affichage des {count} premiers"
+    "rows_showing_first": "Affichage des {count} premiers",
+    "business_outcome": {
+      "value_delivered_label": "Livré",
+      "value_delivered_title": "La persona a produit un travail concret : un livrable exploitable, un message envoyé ou un état modifié.",
+      "no_input_available_label": "Aucune entrée",
+      "no_input_available_title": "Exécution sans erreur mais rien à traiter : seul un rapport d'état a été émis.",
+      "precondition_failed_label": "Bloqué",
+      "precondition_failed_title": "Un connecteur, un identifiant ou une condition préalable requis est manquant ou défaillant. Corrigez la configuration pour débloquer.",
+      "partial_label": "Partiel",
+      "partial_title": "Une partie du travail seulement : limite de débit, erreur transitoire ou champs manquants sur certains éléments.",
+      "unknown_label": "-",
+      "unknown_title": "Aucun résultat métier n'a été signalé (exécution plus ancienne, ou le modèle n'a pas émis l'évaluation)."
+    }
   },
   "sharing": {
     "access_level_label": "Niveau d’accès",
@@ -24023,7 +24069,8 @@
       "use_console_hint": "Utilisez la console pour exécuter des requêtes.",
       "write": "Écriture",
       "write_mode": "Mode écriture",
-      "suggestion_api_tables": "Liste les tables de cette base et le nombre d'enregistrements de chacune"
+      "suggestion_api_tables": "Liste les tables de cette base et le nombre d'enregistrements de chacune",
+      "rename_failed": "Impossible de renommer l'identifiant. L'ancien nom est toujours enregistré."
     },
     "delete_dialog": {
       "cannot_undo": "Cette action est irréversible.",

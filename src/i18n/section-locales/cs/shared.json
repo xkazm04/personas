@@ -356,5 +356,17 @@
   "rows_show_all": "Zobrazit vše ({count})",
   "rows_show_fewer": "Zobrazit méně",
   "rows_showing_all": "Zobrazeno vše ({count})",
-  "rows_showing_first": "Zobrazeno prvních {count}"
+  "rows_showing_first": "Zobrazeno prvních {count}",
+  "business_outcome": {
+    "value_delivered_label": "Dodáno",
+    "value_delivered_title": "Persona odvedla skutečnou práci: použitelný výstup, odeslanou zprávu nebo změněný stav.",
+    "no_input_available_label": "Žádný vstup",
+    "no_input_available_title": "Proběhlo bez chyb, ale nebylo co zpracovat: vydalo pouze zprávu o připravenosti/stavu.",
+    "precondition_failed_label": "Blokováno",
+    "precondition_failed_title": "Chybí nebo je porušen požadovaný konektor, přihlašovací údaje či předpoklad. Opravte nastavení, aby se blokace uvolnila.",
+    "partial_label": "Částečně",
+    "partial_title": "Část práce byla hotová, ne všechna: limit četnosti, přechodná chyba nebo chybějící pole u některých položek.",
+    "unknown_label": "-",
+    "unknown_title": "Nebyl nahlášen žádný obchodní výsledek (starší spuštění, nebo model hodnocení nevydal)."
+  }
 }

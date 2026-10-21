@@ -550,7 +550,8 @@
     "use_console_hint": "Gunakan tab Konsol untuk memeriksa nilai kunci ini.",
     "write": "Tulis",
     "write_mode": "Mode tulis",
-    "suggestion_api_tables": "Tampilkan tabel di base ini dan berapa banyak record di masing-masing"
+    "suggestion_api_tables": "Tampilkan tabel di base ini dan berapa banyak record di masing-masing",
+    "rename_failed": "Tidak dapat mengganti nama kredensial. Nama lama masih tersimpan."
   },
   "delete_dialog": {
     "cannot_undo": "Tindakan ini tidak dapat dibatalkan.",

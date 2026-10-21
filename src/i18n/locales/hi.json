@@ -5557,7 +5557,14 @@
     "view_logs": "लॉग",
     "yesterday": "कल",
     "your_tier": "(आपका)",
-    "agent_pipeline_title": "{ref} पर {agent} की पाइपलाइन: {status}"
+    "agent_pipeline_title": "{ref} पर {agent} की पाइपलाइन: {status}",
+    "pipeline_count_one": "{count} पाइपलाइन",
+    "pipeline_count_other": "{count} पाइपलाइनें",
+    "notify_title_success": "पाइपलाइन सफल रही",
+    "notify_title_failed": "पाइपलाइन विफल रही",
+    "notify_title_canceled": "पाइपलाइन रद्द की गई",
+    "notify_title_other": "पाइपलाइन {status}",
+    "notify_body": "{ref} पर पाइपलाइन #{id} अब {status} है"
   },
   "home": {
     "commander": "कमांडर",
@@ -12921,7 +12928,12 @@
       "task_title_placeholder": "कार्य शीर्षक…",
       "heal_all_window_only": "विफल कार्यों की पूरी सूची लोड नहीं हो सकी, इसलिए केवल स्क्रीन पर दिख रहे कार्य ही ठीक किए गए।",
       "heal_hidden_failed": "{count} विफल कार्य इस दृश्य से बाहर हैं।",
-      "heal_show_failed": "उन्हें दिखाएँ"
+      "heal_show_failed": "उन्हें दिखाएँ",
+      "output_lines_one": "{count} पंक्ति",
+      "output_lines_other": "{count} पंक्तियाँ",
+      "output_streaming": "स्ट्रीमिंग",
+      "output_show_rendered": "रेंडर किए गए मार्कडाउन पर जाएँ",
+      "output_show_raw": "रॉ लॉग पर जाएँ"
     },
     "dev_scanner": {
       "clear_all_btn": "सभी साफ़ करें",
@@ -14289,7 +14301,10 @@
         "view_switcher_aria": "व्यू"
       },
       "kb_ingest_complete": "इंडेक्सिंग पूरी हुई",
-      "kb_ingest_progress_n": "{total} में से {done} इंडेक्स हो रहे हैं"
+      "kb_ingest_progress_n": "{total} में से {done} इंडेक्स हो रहे हैं",
+      "ocr_duration": "{ms} मि.से.",
+      "ocr_token_count": "{count} टोकन",
+      "ocr_empty": "(खाली)"
     },
     "fleet_quick_dispatch": {
       "chip_remove": "{label} हटाएं",
@@ -16852,7 +16867,26 @@
     "vital_jump_monitor": "मॉनिटरिंग विवरण दिखाएं",
     "vital_jump_repo": "कनेक्टेड रिपॉजिटरी में खोलें",
     "vital_jump_setup": "यह कनेक्शन सेट करें",
-    "vital_updated_label": "अपडेट किया गया"
+    "vital_updated_label": "अपडेट किया गया",
+    "mp_pushed": "{when} को पुश किया",
+    "mp_creds_need_url_one": "{count} क्रेडेंशियल मिला, रिपॉजिटरी URL चाहिए",
+    "mp_creds_need_url_other": "{count} क्रेडेंशियल मिले, रिपॉजिटरी URL चाहिए",
+    "mp_no_repo_credential": "GitHub/GitLab क्रेडेंशियल नहीं है",
+    "mp_unresolved": "{count} अनसुलझे",
+    "mp_needs_project_link": "प्रोजेक्ट लिंक चाहिए",
+    "mp_no_sentry_credential": "Sentry क्रेडेंशियल नहीं है",
+    "err_unknown_provider": "URL से रिपॉजिटरी प्रदाता की पहचान नहीं हो सकी: {url}",
+    "err_parse_github": "GitHub URL पार्स नहीं हो सका: {url}",
+    "err_parse_gitlab": "GitLab URL पार्स नहीं हो सका: {url}",
+    "err_with_credential": "{error} (क्रेडेंशियल \"{name}\", {type})",
+    "today_scan": "स्कैन: {agents} → {ideas}",
+    "today_agents_one": "{count} एजेंट",
+    "today_agents_other": "{count} एजेंट",
+    "today_ideas_one": "{count} आइडिया",
+    "today_ideas_other": "{count} आइडिया",
+    "today_task_created": "कार्य बनाया गया: {title}",
+    "today_task_failed": "कार्य विफल हुआ: {title}",
+    "today_task_completed": "कार्य पूरा हुआ: {title}"
   },
   "radio": {
     "auto_resume_description": "चालू होने पर, ऐप खुलने के बाद पहली बार रेडियो लोड होने पर अंतिम-प्लेइंग स्टेशन स्वचालित रूप से प्रारंभ हो जाता है। डिफ़ॉल्ट रूप से बंद.",
@@ -18930,7 +18964,19 @@
     "rows_show_all": "सभी {count} दिखाएँ",
     "rows_show_fewer": "कम दिखाएँ",
     "rows_showing_all": "सभी {count} दिखाए जा रहे हैं",
-    "rows_showing_first": "पहले {count} दिखाए जा रहे हैं"
+    "rows_showing_first": "पहले {count} दिखाए जा रहे हैं",
+    "business_outcome": {
+      "value_delivered_label": "पूर्ण",
+      "value_delivered_title": "पर्सोना ने वास्तविक काम किया: उपयोगी आउटपुट बनाया, संदेश भेजा या स्थिति बदली।",
+      "no_input_available_label": "कोई इनपुट नहीं",
+      "no_input_available_title": "बिना त्रुटि चला, लेकिन प्रोसेस करने को कुछ नहीं था: केवल तत्परता/स्थिति रिपोर्ट जारी की।",
+      "precondition_failed_label": "अवरुद्ध",
+      "precondition_failed_title": "आवश्यक कनेक्टर, क्रेडेंशियल या पूर्व-शर्त गायब या खराब है। अवरोध हटाने के लिए सेटअप ठीक करें।",
+      "partial_label": "आंशिक",
+      "partial_title": "कुछ काम किया, सब नहीं: दर सीमा, अस्थायी त्रुटि, या कुछ आइटम में फ़ील्ड गायब।",
+      "unknown_label": "-",
+      "unknown_title": "कोई व्यावसायिक परिणाम रिपोर्ट नहीं हुआ (पुराना निष्पादन, या मॉडल ने आकलन नहीं दिया)।"
+    }
   },
   "sharing": {
     "access_level_label": "पहुंच स्तर",
@@ -24023,7 +24069,8 @@
       "use_console_hint": "इस key का मूल्य देखने के लिए Console टैब उपयोग करें।",
       "write": "राइट",
       "write_mode": "राइट मोड",
-      "suggestion_api_tables": "इस बेस की तालिकाएँ और हर एक में कितने रिकॉर्ड हैं, दिखाएँ"
+      "suggestion_api_tables": "इस बेस की तालिकाएँ और हर एक में कितने रिकॉर्ड हैं, दिखाएँ",
+      "rename_failed": "क्रेडेंशियल का नाम बदला नहीं जा सका। पुराना नाम अब भी सहेजा हुआ है।"
     },
     "delete_dialog": {
       "cannot_undo": "यह कार्रवाई पूर्ववत नहीं की जा सकती।",

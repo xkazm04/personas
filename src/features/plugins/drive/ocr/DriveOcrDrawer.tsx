@@ -41,7 +41,7 @@ type Backend = "gemini" | "claude";
 const DEFAULT_OUTPUT_SUFFIX = ".ocr.txt";
 
 export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const announce = useAnnounce();
   const [phase, setPhase] = useState<Phase>("input");
@@ -288,13 +288,13 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
                   {t.plugins.drive.ocr_done}
                 </span>
                 <span className="typo-caption text-foreground tabular-nums ml-auto">
-                  {result.document.duration_ms}ms
+                  {tx(t.plugins.drive.ocr_duration, { ms: result.document.duration_ms })}
                   {result.document.token_count !== null &&
-                    ` \u2022 ${result.document.token_count} tokens`}
+                    ` \u2022 ${tx(t.plugins.drive.ocr_token_count, { count: result.document.token_count })}`}
                 </span>
               </div>
               <pre className="max-h-96 overflow-auto rounded-card border border-primary/15 bg-background/70 p-3 typo-body font-mono text-foreground whitespace-pre-wrap break-words">
-                {result.document.extracted_text || "(empty)"}
+                {result.document.extracted_text || t.plugins.drive.ocr_empty}
               </pre>
               {saved && (
                 <div className="flex items-center gap-2 rounded-input bg-emerald-500/15 border border-emerald-500/35 px-3 py-1.5 typo-body text-emerald-100">

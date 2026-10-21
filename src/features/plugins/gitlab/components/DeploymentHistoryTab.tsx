@@ -26,7 +26,7 @@ interface DeploymentHistoryTabProps {
 }
 
 export function DeploymentHistoryTab({ projectId }: DeploymentHistoryTabProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [filterPersonaId, setFilterPersonaId] = useState<string>('');
   const [confirmRollback, setConfirmRollback] = useState<string | null>(null);
 
@@ -112,7 +112,7 @@ export function DeploymentHistoryTab({ projectId }: DeploymentHistoryTabProps) {
         <History className="w-4 h-4 text-amber-400" />
         <h3 className="typo-body text-foreground">{t.gitlab.deployment_timeline}</h3>
         <span className="ml-auto typo-caption text-foreground">
-          {history.length} deployment{history.length !== 1 ? 's' : ''}
+          {tx(history.length === 1 ? t.gitlab.deployment_count_one : t.gitlab.deployment_count_other, { count: history.length })}
         </span>
       </div>
 
@@ -178,7 +178,7 @@ function DeploymentRow({
   onRollback,
   onCancelRollback,
 }: DeploymentRowProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const timeAgo = formatRelativeTime(record.createdAt, '-', { dateFallbackDays: 30 });
   const isRollback = !!record.rolledBackFrom;
 
@@ -242,7 +242,7 @@ function DeploymentRow({
             {record.credentialsProvisioned > 0 && (
               <p className="typo-caption text-foreground mt-1 flex items-center gap-1">
                 <KeyRound className="w-3 h-3 text-orange-400/70" />
-                {record.credentialsProvisioned} credential{record.credentialsProvisioned !== 1 ? 's' : ''} provisioned
+                {tx(record.credentialsProvisioned === 1 ? t.gitlab.credential_provisioned_count_one : t.gitlab.credential_provisioned_count_other, { count: record.credentialsProvisioned })}
               </p>
             )}
 

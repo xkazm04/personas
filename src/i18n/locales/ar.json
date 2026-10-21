@@ -5557,7 +5557,14 @@
     "view_logs": "السجلات",
     "yesterday": "أمس",
     "your_tier": "(مستواك)",
-    "agent_pipeline_title": "خط الأنابيب الخاص بـ {agent} على {ref}: {status}"
+    "agent_pipeline_title": "خط الأنابيب الخاص بـ {agent} على {ref}: {status}",
+    "pipeline_count_one": "{count} مسار",
+    "pipeline_count_other": "{count} مسارات",
+    "notify_title_success": "نجح المسار",
+    "notify_title_failed": "فشل المسار",
+    "notify_title_canceled": "تم إلغاء المسار",
+    "notify_title_other": "المسار {status}",
+    "notify_body": "المسار #{id} على {ref} أصبح الآن {status}"
   },
   "home": {
     "commander": "القائد",
@@ -12921,7 +12928,12 @@
       "task_title_placeholder": "عنوان المهمة…",
       "heal_all_window_only": "تعذّر تحميل قائمة المهام الفاشلة كاملة، لذلك تمت معالجة المهام الظاهرة على الشاشة فقط.",
       "heal_hidden_failed": "{count} مهمة فاشلة خارج هذا العرض.",
-      "heal_show_failed": "اعرضها"
+      "heal_show_failed": "اعرضها",
+      "output_lines_one": "{count} سطر",
+      "output_lines_other": "{count} أسطر",
+      "output_streaming": "بث مباشر",
+      "output_show_rendered": "التبديل إلى Markdown المعروض",
+      "output_show_raw": "التبديل إلى السجل الخام"
     },
     "dev_scanner": {
       "clear_all_btn": "إلغاء تحديد الكل",
@@ -14289,7 +14301,10 @@
         "view_switcher_aria": "العرض"
       },
       "kb_ingest_complete": "اكتملت الفهرسة",
-      "kb_ingest_progress_n": "جارٍ فهرسة {done} من {total}"
+      "kb_ingest_progress_n": "جارٍ فهرسة {done} من {total}",
+      "ocr_duration": "{ms} مللي ثانية",
+      "ocr_token_count": "{count} رمز",
+      "ocr_empty": "(فارغ)"
     },
     "fleet_quick_dispatch": {
       "chip_remove": "إزالة {label}",
@@ -16852,7 +16867,26 @@
     "vital_jump_monitor": "عرض تفاصيل المراقبة",
     "vital_jump_repo": "فتح في المستودع المتصل",
     "vital_jump_setup": "إعداد هذا الاتصال",
-    "vital_updated_label": "آخر تحديث"
+    "vital_updated_label": "آخر تحديث",
+    "mp_pushed": "آخر دفع {when}",
+    "mp_creds_need_url_one": "تم العثور على {count} بيانات اعتماد، ويلزم عنوان URL للمستودع",
+    "mp_creds_need_url_other": "تم العثور على {count} من بيانات الاعتماد، ويلزم عنوان URL للمستودع",
+    "mp_no_repo_credential": "لا توجد بيانات اعتماد لـ GitHub/GitLab",
+    "mp_unresolved": "{count} غير محلولة",
+    "mp_needs_project_link": "يلزم ربط المشروع",
+    "mp_no_sentry_credential": "لا توجد بيانات اعتماد لـ Sentry",
+    "err_unknown_provider": "تعذّر تحديد مزوّد المستودع من عنوان URL: {url}",
+    "err_parse_github": "تعذّر تحليل عنوان GitHub: {url}",
+    "err_parse_gitlab": "تعذّر تحليل عنوان GitLab: {url}",
+    "err_with_credential": "{error} (بيانات الاعتماد \"{name}\"، {type})",
+    "today_scan": "فحص: {agents} ← {ideas}",
+    "today_agents_one": "{count} وكيل",
+    "today_agents_other": "{count} وكلاء",
+    "today_ideas_one": "{count} فكرة",
+    "today_ideas_other": "{count} أفكار",
+    "today_task_created": "تم إنشاء المهمة: {title}",
+    "today_task_failed": "فشلت المهمة: {title}",
+    "today_task_completed": "اكتملت المهمة: {title}"
   },
   "radio": {
     "auto_resume_description": "عند التشغيل، تبدأ آخر محطة تشغيل تلقائيًا في المرة الأولى التي يتم فيها تحميل الراديو بعد فتح التطبيق. إيقاف بشكل افتراضي.",
@@ -18930,7 +18964,19 @@
     "rows_show_all": "عرض الكل ({count})",
     "rows_show_fewer": "عرض أقل",
     "rows_showing_all": "يتم عرض الكل ({count})",
-    "rows_showing_first": "يتم عرض أول {count}"
+    "rows_showing_first": "يتم عرض أول {count}",
+    "business_outcome": {
+      "value_delivered_label": "تم التسليم",
+      "value_delivered_title": "أنجزت الشخصية عملًا فعليًا: مخرجًا قابلًا للاستخدام أو رسالة مرسلة أو حالة معدّلة.",
+      "no_input_available_label": "لا مدخلات",
+      "no_input_available_title": "اكتمل التشغيل بسلاسة لكن لم يكن هناك ما يُعالَج: صدر تقرير جاهزية/حالة فقط.",
+      "precondition_failed_label": "محظور",
+      "precondition_failed_title": "موصّل أو بيانات اعتماد أو شرط مسبق مطلوب مفقود أو معطّل. أصلح الإعداد لإزالة الحظر.",
+      "partial_label": "جزئي",
+      "partial_title": "أنجز جزءًا من العمل فقط: حد معدّل الطلبات أو خطأ مؤقت أو حقول ناقصة في بعض العناصر.",
+      "unknown_label": "-",
+      "unknown_title": "لم يُبلَّغ عن أي نتيجة عمل (تنفيذ أقدم، أو لم يُصدر النموذج التقييم)."
+    }
   },
   "sharing": {
     "access_level_label": "مستوى الوصول",
@@ -24023,7 +24069,8 @@
       "use_console_hint": "استخدم تبويب وحدة التحكم لفحص قيمة هذا المفتاح.",
       "write": "كتابة",
       "write_mode": "وضع الكتابة",
-      "suggestion_api_tables": "اعرض الجداول في هذه القاعدة وعدد السجلات في كل منها"
+      "suggestion_api_tables": "اعرض الجداول في هذه القاعدة وعدد السجلات في كل منها",
+      "rename_failed": "تعذّرت إعادة تسمية بيانات الاعتماد. الاسم القديم ما زال محفوظًا."
     },
     "delete_dialog": {
       "cannot_undo": "لا يمكن التراجع عن هذا الإجراء.",

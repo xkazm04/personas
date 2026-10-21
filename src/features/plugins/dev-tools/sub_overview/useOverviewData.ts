@@ -18,6 +18,7 @@ import {
 import { formatErr } from './overviewHelpers';
 import { silentCatch } from '@/lib/silentCatch';
 import { createLatestWins } from '@/stores/util/latestWins';
+import { useTranslation, interpolate as tx } from '@/i18n/useTranslation';
 
 export type ConnectionState = 'empty' | 'unmapped' | 'connected' | 'loading' | 'error';
 
@@ -94,6 +95,10 @@ export function repoConnectorOptions(
  * the same in-flight requests + cached results.
  */
 export function useOverviewData() {
+  // Read at error time through a ref so a language switch never re-runs the stats loaders.
+  const { t } = useTranslation();
+  const copyRef = useRef(t.project_overview);
+  copyRef.current = t.project_overview;
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const activeProject = useSystemStore((s) =>
     s.projects.find((p) => p.id === s.activeProjectId),
@@ -163,7 +168,7 @@ export function useOverviewData() {
 
     if (!provider) {
       setRepoState('error');
-      setRepoError(`Cannot detect repo provider from URL: ${url}`);
+      setRepoError(tx(copyRef.current.err_unknown_provider, { url }));
       return;
     }
 
@@ -183,11 +188,11 @@ export function useOverviewData() {
       let stats: RepoStats;
       if (provider === 'github') {
         const parsed = parseGitHubUrl(url);
-        if (!parsed) { setRepoState('error'); setRepoError(`Could not parse GitHub URL: ${url}`); return; }
+        if (!parsed) { setRepoState('error'); setRepoError(tx(copyRef.current.err_parse_github, { url })); return; }
         stats = await fetchGitHubStats(cred.id, parsed.owner, parsed.repo);
       } else {
         const parsed = parseGitLabUrl(url);
-        if (!parsed) { setRepoState('error'); setRepoError(`Could not parse GitLab URL: ${url}`); return; }
+        if (!parsed) { setRepoState('error'); setRepoError(tx(copyRef.current.err_parse_gitlab, { url })); return; }
         stats = await fetchGitLabStats(cred.id, parsed.path);
       }
       if (!repoWins.isCurrent(token)) return;
@@ -198,7 +203,7 @@ export function useOverviewData() {
     } catch (err) {
       if (!repoWins.isCurrent(token)) return;
       setRepoState('error');
-      setRepoError(`${formatErr(err)} — using credential "${cred.name}" (${cred.serviceType})`);
+      setRepoError(tx(copyRef.current.err_with_credential, { error: formatErr(err), name: cred.name, type: cred.serviceType }));
     }
   }, [repoUrl, activeProjectId, credentials, credLoaded, pinnedRepoCredId, repoWins]);
 

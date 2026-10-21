@@ -1358,7 +1358,12 @@
     "task_title_placeholder": "عنوان المهمة…",
     "heal_all_window_only": "تعذّر تحميل قائمة المهام الفاشلة كاملة، لذلك تمت معالجة المهام الظاهرة على الشاشة فقط.",
     "heal_hidden_failed": "{count} مهمة فاشلة خارج هذا العرض.",
-    "heal_show_failed": "اعرضها"
+    "heal_show_failed": "اعرضها",
+    "output_lines_one": "{count} سطر",
+    "output_lines_other": "{count} أسطر",
+    "output_streaming": "بث مباشر",
+    "output_show_rendered": "التبديل إلى Markdown المعروض",
+    "output_show_raw": "التبديل إلى السجل الخام"
   },
   "dev_scanner": {
     "clear_all_btn": "إلغاء تحديد الكل",
@@ -2726,7 +2731,10 @@
       "view_switcher_aria": "العرض"
     },
     "kb_ingest_complete": "اكتملت الفهرسة",
-    "kb_ingest_progress_n": "جارٍ فهرسة {done} من {total}"
+    "kb_ingest_progress_n": "جارٍ فهرسة {done} من {total}",
+    "ocr_duration": "{ms} مللي ثانية",
+    "ocr_token_count": "{count} رمز",
+    "ocr_empty": "(فارغ)"
   },
   "fleet_quick_dispatch": {
     "chip_remove": "إزالة {label}",

@@ -356,5 +356,17 @@
   "rows_show_all": "显示全部 {count} 项",
   "rows_show_fewer": "收起",
   "rows_showing_all": "正在显示全部 {count} 项",
-  "rows_showing_first": "正在显示前 {count} 项"
+  "rows_showing_first": "正在显示前 {count} 项",
+  "business_outcome": {
+    "value_delivered_label": "已交付",
+    "value_delivered_title": "角色完成了实际工作：产出了可用成果、发送了消息或修改了状态。",
+    "no_input_available_label": "无输入",
+    "no_input_available_title": "运行正常，但没有可处理的内容：仅输出了就绪/状态报告。",
+    "precondition_failed_label": "已阻塞",
+    "precondition_failed_title": "缺少或损坏了必需的连接器、凭据或前置条件。请修复配置以解除阻塞。",
+    "partial_label": "部分完成",
+    "partial_title": "完成了部分工作但未全部完成：触发速率限制、临时错误，或部分条目缺少字段。",
+    "unknown_label": "-",
+    "unknown_title": "未报告业务结果（较早的执行，或模型未输出评估）。"
+  }
 }

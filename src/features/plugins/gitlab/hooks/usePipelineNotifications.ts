@@ -3,6 +3,7 @@ import { isPermissionGranted, requestPermission, sendNotification } from '@tauri
 import type { GitLabPipeline } from '@/lib/bindings/GitLabPipeline';
 import { useNotificationCenterStore } from '@/stores/notificationCenterStore';
 import { silentCatch } from '@/lib/silentCatch';
+import { useTranslation, interpolate as tx } from '@/i18n/useTranslation';
 
 
 // ---------------------------------------------------------------------------
@@ -54,12 +55,15 @@ const TERMINAL_STATUSES: Record<string, keyof Pick<PipelineNotificationPrefs, 'o
   canceled: 'onCanceled',
 };
 
-function statusEmoji(status: string): string {
+type GitLabCopy = ReturnType<typeof useTranslation>['t']['gitlab'];
+
+/** OS-notification title for a terminal pipeline status, in the UI language. */
+function notificationTitle(copy: GitLabCopy, status: string): string {
   switch (status) {
-    case 'success': return 'Pipeline Succeeded';
-    case 'failed': return 'Pipeline Failed';
-    case 'canceled': return 'Pipeline Canceled';
-    default: return `Pipeline ${status}`;
+    case 'success': return copy.notify_title_success;
+    case 'failed': return copy.notify_title_failed;
+    case 'canceled': return copy.notify_title_canceled;
+    default: return tx(copy.notify_title_other, { status });
   }
 }
 
@@ -82,6 +86,10 @@ export function usePipelineNotifications(pipelines: GitLabPipeline[], projectId?
   const prevStatusesRef = useRef<Map<number, string>>(new Map());
   const permissionCheckedRef = useRef(false);
   const permissionGrantedRef = useRef(false);
+  // Read through a ref at send time so a language switch never re-runs the status-diff effect.
+  const { t } = useTranslation();
+  const copyRef = useRef(t.gitlab);
+  copyRef.current = t.gitlab;
 
   // Check permission once on mount
   useEffect(() => {
@@ -130,8 +138,8 @@ export function usePipelineNotifications(pipelines: GitLabPipeline[], projectId?
         // Desktop notification (requires OS permission)
         if (permissionGrantedRef.current) {
           sendNotification({
-            title: statusEmoji(pipeline.status),
-            body: `Pipeline #${pipeline.id} on ${pipeline.ref} is now ${pipeline.status}`,
+            title: notificationTitle(copyRef.current, pipeline.status),
+            body: tx(copyRef.current.notify_body, { id: pipeline.id, ref: pipeline.ref, status: pipeline.status }),
             sound: prefs.sound ? 'default' : undefined,
           });
         }

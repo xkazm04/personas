@@ -1358,7 +1358,12 @@
     "task_title_placeholder": "कार्य शीर्षक…",
     "heal_all_window_only": "विफल कार्यों की पूरी सूची लोड नहीं हो सकी, इसलिए केवल स्क्रीन पर दिख रहे कार्य ही ठीक किए गए।",
     "heal_hidden_failed": "{count} विफल कार्य इस दृश्य से बाहर हैं।",
-    "heal_show_failed": "उन्हें दिखाएँ"
+    "heal_show_failed": "उन्हें दिखाएँ",
+    "output_lines_one": "{count} पंक्ति",
+    "output_lines_other": "{count} पंक्तियाँ",
+    "output_streaming": "स्ट्रीमिंग",
+    "output_show_rendered": "रेंडर किए गए मार्कडाउन पर जाएँ",
+    "output_show_raw": "रॉ लॉग पर जाएँ"
   },
   "dev_scanner": {
     "clear_all_btn": "सभी साफ़ करें",
@@ -2726,7 +2731,10 @@
       "view_switcher_aria": "व्यू"
     },
     "kb_ingest_complete": "इंडेक्सिंग पूरी हुई",
-    "kb_ingest_progress_n": "{total} में से {done} इंडेक्स हो रहे हैं"
+    "kb_ingest_progress_n": "{total} में से {done} इंडेक्स हो रहे हैं",
+    "ocr_duration": "{ms} मि.से.",
+    "ocr_token_count": "{count} टोकन",
+    "ocr_empty": "(खाली)"
   },
   "fleet_quick_dispatch": {
     "chip_remove": "{label} हटाएं",

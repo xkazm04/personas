@@ -27,6 +27,15 @@ import type { DevScan } from '@/lib/bindings/DevScan';
 import type { DevTask } from '@/lib/bindings/DevTask';
 import type { DevGoalSignal } from '@/lib/bindings/DevGoalSignal';
 import { silentCatch } from '@/lib/silentCatch';
+import { interpolate } from '@/i18n/useTranslation';
+import type { Translations } from '@/i18n/en';
+
+/** The slice of the `project_overview` catalog the Today feed labels read. */
+export type TodayCopy = Pick<
+  Translations['project_overview'],
+  | 'today_scan' | 'today_agents_one' | 'today_agents_other' | 'today_ideas_one' | 'today_ideas_other'
+  | 'today_task_created' | 'today_task_failed' | 'today_task_completed'
+>;
 
 
 export type ActivityKind =
@@ -67,6 +76,7 @@ export function buildTodayActivity(
   scans: DevScan[],
   tasks: DevTask[],
   signals: DevGoalSignal[],
+  copy: TodayCopy,
 ): ActivityEvent[] {
   const since = startOfToday();
   const events: (ActivityEvent & { _ts: number })[] = [];
@@ -80,7 +90,10 @@ export function buildTodayActivity(
       id: `scan-${s.id}`,
       kind: 'scan_run',
       timestamp: s.created_at,
-      label: `Scan: ${agentCount} agent${agentCount === 1 ? '' : 's'} → ${s.idea_count} idea${s.idea_count === 1 ? '' : 's'}`,
+      label: interpolate(copy.today_scan, {
+        agents: interpolate(agentCount === 1 ? copy.today_agents_one : copy.today_agents_other, { count: agentCount }),
+        ideas: interpolate(s.idea_count === 1 ? copy.today_ideas_one : copy.today_ideas_other, { count: s.idea_count }),
+      }),
     });
   }
 
@@ -92,7 +105,7 @@ export function buildTodayActivity(
         id: `task-created-${task.id}`,
         kind: 'task_created',
         timestamp: task.created_at,
-        label: `Task created: ${task.title}`,
+        label: interpolate(copy.today_task_created, { title: task.title }),
         sourceId: task.id,
       });
     }
@@ -104,7 +117,7 @@ export function buildTodayActivity(
         id: `task-end-${task.id}`,
         kind: isFail ? 'task_failed' : 'task_completed',
         timestamp: task.completed_at!,
-        label: `Task ${isFail ? 'failed' : 'completed'}: ${task.title}`,
+        label: interpolate(isFail ? copy.today_task_failed : copy.today_task_completed, { title: task.title }),
         sourceId: task.id,
       });
     }

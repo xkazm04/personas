@@ -356,5 +356,17 @@
   "rows_show_all": "Mostrar los {count}",
   "rows_show_fewer": "Mostrar menos",
   "rows_showing_all": "Mostrando los {count}",
-  "rows_showing_first": "Mostrando los primeros {count}"
+  "rows_showing_first": "Mostrando los primeros {count}",
+  "business_outcome": {
+    "value_delivered_label": "Entregado",
+    "value_delivered_title": "La persona realizó trabajo real: un artefacto accionable, un mensaje enviado o un estado modificado.",
+    "no_input_available_label": "Sin entrada",
+    "no_input_available_title": "Se ejecutó sin errores pero no había nada que procesar: solo emitió un informe de disponibilidad/estado.",
+    "precondition_failed_label": "Bloqueado",
+    "precondition_failed_title": "Falta o está roto un conector, una credencial o una condición previa necesaria. Corrige la configuración para desbloquear.",
+    "partial_label": "Parcial",
+    "partial_title": "Hizo parte del trabajo pero no todo: límite de frecuencia, error transitorio o campos que faltan en algunos elementos.",
+    "unknown_label": "-",
+    "unknown_title": "No se informó ningún resultado de negocio (ejecución antigua, o el modelo no emitió la evaluación)."
+  }
 }

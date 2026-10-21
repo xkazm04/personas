@@ -121,5 +121,12 @@
   "view_logs": "Logy",
   "yesterday": "včera",
   "your_tier": "(tvoje)",
-  "agent_pipeline_title": "Pipeline pro {agent} na větvi {ref}: {status}"
+  "agent_pipeline_title": "Pipeline pro {agent} na větvi {ref}: {status}",
+  "pipeline_count_one": "{count} pipeline",
+  "pipeline_count_other": "{count} pipelines",
+  "notify_title_success": "Pipeline byl úspěšný",
+  "notify_title_failed": "Pipeline selhal",
+  "notify_title_canceled": "Pipeline byl zrušen",
+  "notify_title_other": "Pipeline {status}",
+  "notify_body": "Pipeline #{id} na {ref} má nyní stav {status}"
 }

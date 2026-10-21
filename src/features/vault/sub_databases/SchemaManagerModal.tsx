@@ -72,10 +72,10 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
       // that closed the editor and left the user staring at the old name.
       toastCatch(
         'SchemaManagerModal:saveName',
-        `Could not rename credential. ${trimmed !== credential.name ? 'The old name is still saved.' : ''}`.trim(),
+        db.rename_failed,
       )(err);
     }
-  }, [credential.id, credential.name, editName]);
+  }, [credential.id, credential.name, editName, db.rename_failed]);
 
   const fetchDbSchemaTables = useVaultStore((s) => s.fetchDbSchemaTables);
   const fetchDbSavedQueries = useVaultStore((s) => s.fetchDbSavedQueries);

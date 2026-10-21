@@ -7150,7 +7150,8 @@
       "remove_favorite": "Remove from favorites",
       "delete_query_title": "Delete saved query?",
       "delete_query_body": "\"{title}\" and its query text will be removed. This action cannot be undone.",
-      "filtered_count": "{matched} of {total}"
+      "filtered_count": "{matched} of {total}",
+      "rename_failed": "Could not rename credential. The old name is still saved."
     },
     "dependencies": {
       "simulate_revocation": "Simulate Revocation",
@@ -16446,7 +16447,26 @@
     "sentry_discovery_failed": "Sentry discovery failed: {error}",
     "try_auto_discovery": "Try auto-discovery again",
     "enter_slugs_manually": "Enter slugs manually instead",
-    "connections_heading": "Connections"
+    "connections_heading": "Connections",
+    "mp_pushed": "pushed {when}",
+    "mp_creds_need_url_one": "{count} credential found, needs repo URL",
+    "mp_creds_need_url_other": "{count} credentials found, need repo URL",
+    "mp_no_repo_credential": "No GitHub/GitLab credential",
+    "mp_unresolved": "{count} unresolved",
+    "mp_needs_project_link": "needs project link",
+    "mp_no_sentry_credential": "No Sentry credential",
+    "err_unknown_provider": "Cannot detect repo provider from URL: {url}",
+    "err_parse_github": "Could not parse GitHub URL: {url}",
+    "err_parse_gitlab": "Could not parse GitLab URL: {url}",
+    "err_with_credential": "{error} (credential \"{name}\", {type})",
+    "today_scan": "Scan: {agents} → {ideas}",
+    "today_agents_one": "{count} agent",
+    "today_agents_other": "{count} agents",
+    "today_ideas_one": "{count} idea",
+    "today_ideas_other": "{count} ideas",
+    "today_task_created": "Task created: {title}",
+    "today_task_failed": "Task failed: {title}",
+    "today_task_completed": "Task completed: {title}"
   },
   "plugins": {
     "fleet_quick_dispatch": {
@@ -17215,7 +17235,10 @@
         "path_placeholder": "Type a path and press Enter",
         "path_hint": "Esc to cancel",
         "search_focus": "Search"
-      }
+      },
+      "ocr_duration": "{ms}ms",
+      "ocr_token_count": "{count} tokens",
+      "ocr_empty": "(empty)"
     },
     "artist": {
       "title": "Artist",
@@ -19702,7 +19725,12 @@
       "cancel_all_error": "Could not cancel tasks",
       "heal_hidden_failed": "{count} failed tasks are outside this view.",
       "heal_show_failed": "Show them",
-      "heal_all_window_only": "Could not load the full failed list, so only the tasks on screen were healed."
+      "heal_all_window_only": "Could not load the full failed list, so only the tasks on screen were healed.",
+      "output_lines_one": "{count} line",
+      "output_lines_other": "{count} lines",
+      "output_streaming": "streaming",
+      "output_show_rendered": "Switch to rendered markdown",
+      "output_show_raw": "Switch to raw log"
     },
     "dev_scanner": {
       "run_scan_btn": "Run Scan (",
@@ -22449,7 +22477,14 @@
     "status_failed": "Failed",
     "status_canceled": "Canceled",
     "status_warning": "Completed with warning",
-    "agent_pipeline_title": "Pipeline for {agent} on {ref}: {status}"
+    "agent_pipeline_title": "Pipeline for {agent} on {ref}: {status}",
+    "pipeline_count_one": "{count} pipeline",
+    "pipeline_count_other": "{count} pipelines",
+    "notify_title_success": "Pipeline Succeeded",
+    "notify_title_failed": "Pipeline Failed",
+    "notify_title_canceled": "Pipeline Canceled",
+    "notify_title_other": "Pipeline {status}",
+    "notify_body": "Pipeline #{id} on {ref} is now {status}"
   },
   "pipeline": {
     "preset": {
@@ -23280,6 +23315,18 @@
     "rich_markdown": {
       "invalid_block": "The {name} block could not be shown ({reason}). It is kept below as written.",
       "unknown_block": "\"{name}\" is not a known tag, so it is shown as written."
+    },
+    "business_outcome": {
+      "value_delivered_label": "Delivered",
+      "value_delivered_title": "Persona produced real work: an actionable artifact, a sent message, or modified state.",
+      "no_input_available_label": "No input",
+      "no_input_available_title": "Ran cleanly but had nothing to process: emitted a readiness/status report only.",
+      "precondition_failed_label": "Blocked",
+      "precondition_failed_title": "A required connector, credential, or precondition is missing or broken. Fix the setup to unblock.",
+      "partial_label": "Partial",
+      "partial_title": "Did some of the work but not all: rate limit, transient error, or missing fields on some items.",
+      "unknown_label": "-",
+      "unknown_title": "No business outcome reported (older execution, or the model did not emit the assessment)."
     }
   },
   "releases": {

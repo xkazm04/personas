@@ -550,7 +550,8 @@
     "use_console_hint": "K zobrazení hodnoty použijte záložku Konzole.",
     "write": "Zápis",
     "write_mode": "Režim zápisu",
-    "suggestion_api_tables": "Vypiš tabulky v této bázi a počet záznamů v každé z nich"
+    "suggestion_api_tables": "Vypiš tabulky v této bázi a počet záznamů v každé z nich",
+    "rename_failed": "Přihlašovací údaje se nepodařilo přejmenovat. Původní název zůstává uložen."
   },
   "delete_dialog": {
     "cannot_undo": "Tuto akci nelze vzít zpět.",

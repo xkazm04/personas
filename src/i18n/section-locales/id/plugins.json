@@ -1358,7 +1358,12 @@
     "task_title_placeholder": "Judul tugas…",
     "heal_all_window_only": "Daftar tugas gagal yang lengkap tidak bisa dimuat, jadi hanya tugas di layar yang diperbaiki.",
     "heal_hidden_failed": "{count} tugas gagal berada di luar tampilan ini.",
-    "heal_show_failed": "Tampilkan"
+    "heal_show_failed": "Tampilkan",
+    "output_lines_one": "{count} baris",
+    "output_lines_other": "{count} baris",
+    "output_streaming": "streaming",
+    "output_show_rendered": "Beralih ke markdown yang dirender",
+    "output_show_raw": "Beralih ke log mentah"
   },
   "dev_scanner": {
     "clear_all_btn": "Hapus semua",
@@ -2726,7 +2731,10 @@
       "view_switcher_aria": "Tampilan"
     },
     "kb_ingest_complete": "Pengindeksan selesai",
-    "kb_ingest_progress_n": "Mengindeks {done} dari {total}"
+    "kb_ingest_progress_n": "Mengindeks {done} dari {total}",
+    "ocr_duration": "{ms} md",
+    "ocr_token_count": "{count} token",
+    "ocr_empty": "(kosong)"
   },
   "fleet_quick_dispatch": {
     "chip_remove": "Hapus {label}",

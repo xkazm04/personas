@@ -1358,7 +1358,12 @@
     "task_title_placeholder": "টাস্ক শিরোনাম…",
     "heal_all_window_only": "ব্যর্থ কাজের পুরো তালিকা লোড করা যায়নি, তাই কেবল পর্দায় থাকা কাজগুলোই সারানো হয়েছে।",
     "heal_hidden_failed": "{count}টি ব্যর্থ কাজ এই ভিউয়ের বাইরে রয়েছে।",
-    "heal_show_failed": "সেগুলি দেখান"
+    "heal_show_failed": "সেগুলি দেখান",
+    "output_lines_one": "{count}টি লাইন",
+    "output_lines_other": "{count}টি লাইন",
+    "output_streaming": "স্ট্রিমিং",
+    "output_show_rendered": "রেন্ডার করা মার্কডাউনে যান",
+    "output_show_raw": "র লগে যান"
   },
   "dev_scanner": {
     "clear_all_btn": "সব সাফ করুন",
@@ -2726,7 +2731,10 @@
       "view_switcher_aria": "ভিউ"
     },
     "kb_ingest_complete": "ইনডেক্সিং সম্পন্ন",
-    "kb_ingest_progress_n": "{total}-এর মধ্যে {done}টি ইনডেক্স করা হচ্ছে"
+    "kb_ingest_progress_n": "{total}-এর মধ্যে {done}টি ইনডেক্স করা হচ্ছে",
+    "ocr_duration": "{ms} মি.সে.",
+    "ocr_token_count": "{count}টি টোকেন",
+    "ocr_empty": "(খালি)"
   },
   "fleet_quick_dispatch": {
     "chip_remove": "{label} সরান",

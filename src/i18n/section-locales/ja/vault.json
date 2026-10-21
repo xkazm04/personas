@@ -550,7 +550,8 @@
     "use_console_hint": "コンソールタブでこのキーの値を確認してください。",
     "write": "書き込み",
     "write_mode": "書き込みモード",
-    "suggestion_api_tables": "このベースのテーブルと、それぞれのレコード件数を一覧表示して"
+    "suggestion_api_tables": "このベースのテーブルと、それぞれのレコード件数を一覧表示して",
+    "rename_failed": "認証情報の名前を変更できませんでした。以前の名前はそのまま保存されています。"
   },
   "delete_dialog": {
     "cannot_undo": "この操作は元に戻せません。",

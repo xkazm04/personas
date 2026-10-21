@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from 'react';
 import { Code2, FileText } from 'lucide-react';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { RichMarkdown } from '@/features/shared/components/editors/RichMarkdown';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface TaskOutputPanelProps {
   taskId: string;
@@ -10,6 +11,7 @@ interface TaskOutputPanelProps {
 }
 
 export function TaskOutputPanel({ taskId: _taskId, lines, isRunning }: TaskOutputPanelProps) {
+  const { t, tx } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [viewMode, setViewMode] = useState<'raw' | 'rendered'>('raw');
 
@@ -26,19 +28,19 @@ export function TaskOutputPanel({ taskId: _taskId, lines, isRunning }: TaskOutpu
   return (
     <div className="mt-2 border border-border/20 rounded-card overflow-hidden bg-background/80">
       <div className="flex items-center justify-between px-2.5 py-1 bg-secondary/30 border-b border-border/15">
-        <span className="text-[10px] font-mono text-foreground">{lines.length} lines</span>
+        <span className="text-[10px] font-mono text-foreground">{tx(lines.length === 1 ? t.plugins.dev_runner.output_lines_one : t.plugins.dev_runner.output_lines_other, { count: lines.length })}</span>
         <div className="flex items-center gap-1.5">
           {isRunning && (
             <span className="flex items-center gap-1 text-[10px] text-emerald-400/70">
               <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
-              streaming
+              {t.plugins.dev_runner.output_streaming}
             </span>
           )}
           <button
             type="button"
             onClick={() => setViewMode(viewMode === 'raw' ? 'rendered' : 'raw')}
             className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors"
-            title={viewMode === 'raw' ? 'Switch to rendered markdown' : 'Switch to raw log'}
+            title={viewMode === 'raw' ? t.plugins.dev_runner.output_show_rendered : t.plugins.dev_runner.output_show_raw}
           >
             {viewMode === 'raw' ? (
               <FileText className="w-3 h-3" />

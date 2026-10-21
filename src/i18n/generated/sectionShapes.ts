@@ -642,7 +642,8 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "terminal_extra": {},
     "use_cases_extra": {},
     "kanban": {},
-    "rich_markdown": {}
+    "rich_markdown": {},
+    "business_outcome": {}
   },
   "releases": {
     "whats_new": {}

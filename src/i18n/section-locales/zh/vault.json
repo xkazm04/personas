@@ -550,7 +550,8 @@
     "use_console_hint": "使用控制台标签检查此键的值。",
     "write": "写入",
     "write_mode": "写入模式",
-    "suggestion_api_tables": "列出该 base 中的表以及每个表的记录数"
+    "suggestion_api_tables": "列出该 base 中的表以及每个表的记录数",
+    "rename_failed": "无法重命名凭据。旧名称仍然保留。"
   },
   "delete_dialog": {
     "cannot_undo": "此操作无法撤销。",

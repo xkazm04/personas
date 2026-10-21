@@ -564,7 +564,8 @@
     "remove_favorite": "Remove from favorites",
     "delete_query_title": "Delete saved query?",
     "delete_query_body": "\"{title}\" and its query text will be removed. This action cannot be undone.",
-    "filtered_count": "{matched} of {total}"
+    "filtered_count": "{matched} of {total}",
+    "rename_failed": "Could not rename credential. The old name is still saved."
   },
   "dependencies": {
     "simulate_revocation": "Simulate Revocation",

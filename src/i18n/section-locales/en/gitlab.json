@@ -121,5 +121,12 @@
   "status_failed": "Failed",
   "status_canceled": "Canceled",
   "status_warning": "Completed with warning",
-  "agent_pipeline_title": "Pipeline for {agent} on {ref}: {status}"
+  "agent_pipeline_title": "Pipeline for {agent} on {ref}: {status}",
+  "pipeline_count_one": "{count} pipeline",
+  "pipeline_count_other": "{count} pipelines",
+  "notify_title_success": "Pipeline Succeeded",
+  "notify_title_failed": "Pipeline Failed",
+  "notify_title_canceled": "Pipeline Canceled",
+  "notify_title_other": "Pipeline {status}",
+  "notify_body": "Pipeline #{id} on {ref} is now {status}"
 }

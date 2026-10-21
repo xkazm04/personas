@@ -121,5 +121,12 @@
   "view_logs": "日志",
   "yesterday": "昨天",
   "your_tier": "（您的）",
-  "agent_pipeline_title": "{ref} 上 {agent} 的流水线：{status}"
+  "agent_pipeline_title": "{ref} 上 {agent} 的流水线：{status}",
+  "pipeline_count_one": "{count} 个流水线",
+  "pipeline_count_other": "{count} 个流水线",
+  "notify_title_success": "流水线成功",
+  "notify_title_failed": "流水线失败",
+  "notify_title_canceled": "流水线已取消",
+  "notify_title_other": "流水线 {status}",
+  "notify_body": "{ref} 上的流水线 #{id} 现在状态为 {status}"
 }

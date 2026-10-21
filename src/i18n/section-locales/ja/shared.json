@@ -356,5 +356,17 @@
   "rows_show_all": "すべて表示（{count}件）",
   "rows_show_fewer": "表示を減らす",
   "rows_showing_all": "すべて表示中（{count}件）",
-  "rows_showing_first": "最初の{count}件を表示中"
+  "rows_showing_first": "最初の{count}件を表示中",
+  "business_outcome": {
+    "value_delivered_label": "完了",
+    "value_delivered_title": "ペルソナは実際の成果を出しました。利用可能な成果物の作成、メッセージの送信、状態の変更などです。",
+    "no_input_available_label": "入力なし",
+    "no_input_available_title": "正常に実行されましたが、処理対象がありませんでした。準備状況/ステータスのレポートのみを出力しました。",
+    "precondition_failed_label": "ブロック",
+    "precondition_failed_title": "必要なコネクタ、認証情報、または前提条件がないか、壊れています。設定を修正してブロックを解除してください。",
+    "partial_label": "一部完了",
+    "partial_title": "作業の一部のみ完了しました。レート制限、一時的なエラー、または一部の項目でフィールドが不足しています。",
+    "unknown_label": "-",
+    "unknown_title": "ビジネス成果は報告されていません(古い実行、またはモデルが評価を出力しませんでした)。"
+  }
 }

@@ -1358,7 +1358,12 @@
     "task_title_placeholder": "작업 제목…",
     "heal_all_window_only": "실패한 작업 전체 목록을 불러오지 못해 화면에 보이는 작업만 복구했습니다.",
     "heal_hidden_failed": "{count}개의 실패한 작업이 이 화면 밖에 있습니다.",
-    "heal_show_failed": "보기"
+    "heal_show_failed": "보기",
+    "output_lines_one": "{count}줄",
+    "output_lines_other": "{count}줄",
+    "output_streaming": "스트리밍 중",
+    "output_show_rendered": "렌더링된 마크다운으로 전환",
+    "output_show_raw": "원본 로그로 전환"
   },
   "dev_scanner": {
     "clear_all_btn": "전체 해제",
@@ -2726,7 +2731,10 @@
       "view_switcher_aria": "보기"
     },
     "kb_ingest_complete": "색인 생성 완료",
-    "kb_ingest_progress_n": "{total}개 중 {done}개 색인 중"
+    "kb_ingest_progress_n": "{total}개 중 {done}개 색인 중",
+    "ocr_duration": "{ms}ms",
+    "ocr_token_count": "토큰 {count}개",
+    "ocr_empty": "(비어 있음)"
   },
   "fleet_quick_dispatch": {
     "chip_remove": "{label} 제거",

@@ -356,5 +356,17 @@
   "rows_show_all": "عرض الكل ({count})",
   "rows_show_fewer": "عرض أقل",
   "rows_showing_all": "يتم عرض الكل ({count})",
-  "rows_showing_first": "يتم عرض أول {count}"
+  "rows_showing_first": "يتم عرض أول {count}",
+  "business_outcome": {
+    "value_delivered_label": "تم التسليم",
+    "value_delivered_title": "أنجزت الشخصية عملًا فعليًا: مخرجًا قابلًا للاستخدام أو رسالة مرسلة أو حالة معدّلة.",
+    "no_input_available_label": "لا مدخلات",
+    "no_input_available_title": "اكتمل التشغيل بسلاسة لكن لم يكن هناك ما يُعالَج: صدر تقرير جاهزية/حالة فقط.",
+    "precondition_failed_label": "محظور",
+    "precondition_failed_title": "موصّل أو بيانات اعتماد أو شرط مسبق مطلوب مفقود أو معطّل. أصلح الإعداد لإزالة الحظر.",
+    "partial_label": "جزئي",
+    "partial_title": "أنجز جزءًا من العمل فقط: حد معدّل الطلبات أو خطأ مؤقت أو حقول ناقصة في بعض العناصر.",
+    "unknown_label": "-",
+    "unknown_title": "لم يُبلَّغ عن أي نتيجة عمل (تنفيذ أقدم، أو لم يُصدر النموذج التقييم)."
+  }
 }

@@ -5557,7 +5557,14 @@
     "view_logs": "Nhật ký",
     "yesterday": "hôm qua",
     "your_tier": "(của bạn)",
-    "agent_pipeline_title": "Pipeline của {agent} trên {ref}: {status}"
+    "agent_pipeline_title": "Pipeline của {agent} trên {ref}: {status}",
+    "pipeline_count_one": "{count} pipeline",
+    "pipeline_count_other": "{count} pipeline",
+    "notify_title_success": "Pipeline thành công",
+    "notify_title_failed": "Pipeline thất bại",
+    "notify_title_canceled": "Pipeline đã bị hủy",
+    "notify_title_other": "Pipeline {status}",
+    "notify_body": "Pipeline #{id} trên {ref} hiện có trạng thái {status}"
   },
   "home": {
     "commander": "Chỉ huy",
@@ -12921,7 +12928,12 @@
       "task_title_placeholder": "Tiêu đề tác vụ…",
       "heal_all_window_only": "Không tải được toàn bộ danh sách tác vụ thất bại, nên chỉ các tác vụ trên màn hình được khắc phục.",
       "heal_hidden_failed": "{count} tác vụ thất bại nằm ngoài khung nhìn này.",
-      "heal_show_failed": "Hiển thị"
+      "heal_show_failed": "Hiển thị",
+      "output_lines_one": "{count} dòng",
+      "output_lines_other": "{count} dòng",
+      "output_streaming": "đang phát trực tiếp",
+      "output_show_rendered": "Chuyển sang markdown đã dựng",
+      "output_show_raw": "Chuyển sang nhật ký thô"
     },
     "dev_scanner": {
       "clear_all_btn": "Xóa tất cả",
@@ -14289,7 +14301,10 @@
         "view_switcher_aria": "Chế độ xem"
       },
       "kb_ingest_complete": "Đã lập chỉ mục xong",
-      "kb_ingest_progress_n": "Đang lập chỉ mục {done} trên {total}"
+      "kb_ingest_progress_n": "Đang lập chỉ mục {done} trên {total}",
+      "ocr_duration": "{ms} ms",
+      "ocr_token_count": "{count} token",
+      "ocr_empty": "(trống)"
     },
     "fleet_quick_dispatch": {
       "chip_remove": "Xóa {label}",
@@ -16852,7 +16867,26 @@
     "vital_jump_monitor": "Hiển thị chi tiết giám sát",
     "vital_jump_repo": "Mở trong kho lưu trữ đã kết nối",
     "vital_jump_setup": "Thiết lập kết nối này",
-    "vital_updated_label": "đã cập nhật"
+    "vital_updated_label": "đã cập nhật",
+    "mp_pushed": "đã push {when}",
+    "mp_creds_need_url_one": "Tìm thấy {count} thông tin xác thực, cần URL kho lưu trữ",
+    "mp_creds_need_url_other": "Tìm thấy {count} thông tin xác thực, cần URL kho lưu trữ",
+    "mp_no_repo_credential": "Không có thông tin xác thực GitHub/GitLab",
+    "mp_unresolved": "{count} chưa xử lý",
+    "mp_needs_project_link": "cần liên kết dự án",
+    "mp_no_sentry_credential": "Không có thông tin xác thực Sentry",
+    "err_unknown_provider": "Không thể nhận diện nhà cung cấp kho lưu trữ từ URL: {url}",
+    "err_parse_github": "Không thể phân tích URL GitHub: {url}",
+    "err_parse_gitlab": "Không thể phân tích URL GitLab: {url}",
+    "err_with_credential": "{error} (thông tin xác thực \"{name}\", {type})",
+    "today_scan": "Quét: {agents} → {ideas}",
+    "today_agents_one": "{count} tác tử",
+    "today_agents_other": "{count} tác tử",
+    "today_ideas_one": "{count} ý tưởng",
+    "today_ideas_other": "{count} ý tưởng",
+    "today_task_created": "Đã tạo tác vụ: {title}",
+    "today_task_failed": "Tác vụ thất bại: {title}",
+    "today_task_completed": "Đã hoàn thành tác vụ: {title}"
   },
   "radio": {
     "auto_resume_description": "Khi được bật, đài phát lần cuối sẽ tự động khởi động vào lần tải đài đầu tiên sau khi ứng dụng mở. Tắt theo mặc định.",
@@ -18930,7 +18964,19 @@
     "rows_show_all": "Hiện tất cả {count}",
     "rows_show_fewer": "Ẩn bớt",
     "rows_showing_all": "Đang hiện tất cả {count}",
-    "rows_showing_first": "Đang hiện {count} mục đầu"
+    "rows_showing_first": "Đang hiện {count} mục đầu",
+    "business_outcome": {
+      "value_delivered_label": "Đã hoàn thành",
+      "value_delivered_title": "Persona đã tạo ra kết quả thực tế: sản phẩm có thể dùng ngay, tin nhắn đã gửi hoặc trạng thái đã thay đổi.",
+      "no_input_available_label": "Không có đầu vào",
+      "no_input_available_title": "Chạy bình thường nhưng không có gì để xử lý: chỉ phát ra báo cáo sẵn sàng/trạng thái.",
+      "precondition_failed_label": "Bị chặn",
+      "precondition_failed_title": "Thiếu hoặc hỏng trình kết nối, thông tin xác thực hoặc điều kiện tiên quyết cần thiết. Hãy sửa cấu hình để gỡ chặn.",
+      "partial_label": "Một phần",
+      "partial_title": "Chỉ hoàn thành một phần công việc: giới hạn tốc độ, lỗi tạm thời hoặc thiếu trường ở một số mục.",
+      "unknown_label": "-",
+      "unknown_title": "Không có kết quả kinh doanh nào được báo cáo (lần chạy cũ, hoặc mô hình không đưa ra đánh giá)."
+    }
   },
   "sharing": {
     "access_level_label": "Cấp độ truy cập",
@@ -24023,7 +24069,8 @@
       "use_console_hint": "Dùng tab Bảng điều khiển để kiểm tra giá trị của khóa này.",
       "write": "Ghi",
       "write_mode": "Chế độ ghi",
-      "suggestion_api_tables": "Liệt kê các bảng trong base này và số bản ghi của từng bảng"
+      "suggestion_api_tables": "Liệt kê các bảng trong base này và số bản ghi của từng bảng",
+      "rename_failed": "Không thể đổi tên thông tin xác thực. Tên cũ vẫn được lưu."
     },
     "delete_dialog": {
       "cannot_undo": "Thao tác này không thể hoàn tác.",

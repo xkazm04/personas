@@ -765,7 +765,10 @@
       "path_placeholder": "Type a path and press Enter",
       "path_hint": "Esc to cancel",
       "search_focus": "Search"
-    }
+    },
+    "ocr_duration": "{ms}ms",
+    "ocr_token_count": "{count} tokens",
+    "ocr_empty": "(empty)"
   },
   "artist": {
     "title": "Artist",
@@ -3252,7 +3255,12 @@
     "cancel_all_error": "Could not cancel tasks",
     "heal_hidden_failed": "{count} failed tasks are outside this view.",
     "heal_show_failed": "Show them",
-    "heal_all_window_only": "Could not load the full failed list, so only the tasks on screen were healed."
+    "heal_all_window_only": "Could not load the full failed list, so only the tasks on screen were healed.",
+    "output_lines_one": "{count} line",
+    "output_lines_other": "{count} lines",
+    "output_streaming": "streaming",
+    "output_show_rendered": "Switch to rendered markdown",
+    "output_show_raw": "Switch to raw log"
   },
   "dev_scanner": {
     "run_scan_btn": "Run Scan (",
