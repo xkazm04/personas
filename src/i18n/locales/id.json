@@ -2806,6 +2806,7 @@
       "building": "Membangun",
       "degraded": "Menurun",
       "disabled": "Dinonaktifkan",
+      "dormant": "Belum pernah dijalankan",
       "draft": "Draf",
       "failing": "Gagal",
       "healthy": "Sehat"

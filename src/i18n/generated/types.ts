@@ -5539,6 +5539,7 @@ export type Translations = {
       healthy: string;
       degraded: string;
       failing: string;
+      dormant: string;
       building: string;
     };
     editor_chrome: {

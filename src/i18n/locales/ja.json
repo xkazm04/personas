@@ -2806,6 +2806,7 @@
       "building": "ビルド中",
       "degraded": "劣化",
       "disabled": "無効",
+      "dormant": "未実行",
       "draft": "下書き",
       "failing": "障害",
       "healthy": "正常"

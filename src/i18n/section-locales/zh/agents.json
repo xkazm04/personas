@@ -2800,6 +2800,7 @@
     "building": "构建中",
     "degraded": "降级",
     "disabled": "已禁用",
+    "dormant": "尚未运行",
     "draft": "草稿",
     "failing": "故障",
     "healthy": "健康"

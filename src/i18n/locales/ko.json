@@ -2806,6 +2806,7 @@
       "building": "빌드 중",
       "degraded": "저하됨",
       "disabled": "비활성",
+      "dormant": "실행 기록 없음",
       "draft": "초안",
       "failing": "실패",
       "healthy": "정상"

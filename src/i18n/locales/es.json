@@ -2806,6 +2806,7 @@
       "building": "Construyendo",
       "degraded": "Degradado",
       "disabled": "Desactivado",
+      "dormant": "Sin ejecuciones",
       "draft": "Borrador",
       "failing": "Fallando",
       "healthy": "Saludable"

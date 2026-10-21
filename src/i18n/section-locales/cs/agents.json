@@ -2800,6 +2800,7 @@
     "building": "Sestavování",
     "degraded": "Omezeno",
     "disabled": "Vypnuto",
+    "dormant": "Zatím bez běhů",
     "draft": "Návrh",
     "failing": "Chybné",
     "healthy": "V pořádku"

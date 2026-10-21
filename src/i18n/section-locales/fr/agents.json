@@ -2800,6 +2800,7 @@
     "building": "En construction",
     "degraded": "Dégradé",
     "disabled": "Désactivé",
+    "dormant": "Jamais exécuté",
     "draft": "Brouillon",
     "failing": "En échec",
     "healthy": "Sain"

@@ -2800,6 +2800,7 @@
     "building": "Wird erstellt",
     "degraded": "Beeinträchtigt",
     "disabled": "Deaktiviert",
+    "dormant": "Noch nie gelaufen",
     "draft": "Entwurf",
     "failing": "Fehlerhaft",
     "healthy": "Gesund"

@@ -2506,6 +2506,7 @@
     "healthy": "Healthy",
     "degraded": "Degraded",
     "failing": "Failing",
+    "dormant": "No runs yet",
     "building": "Building"
   },
   "editor_chrome": {

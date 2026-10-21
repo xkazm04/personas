@@ -70,7 +70,8 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
     { value: 'healthy', label: t.agents.status.healthy },
     { value: 'degraded', label: t.agents.status.degraded },
     { value: 'failing', label: t.agents.status.failing },
-  ], [t.agents.overview_columns.all_health, t.agents.status.healthy, t.agents.status.degraded, t.agents.status.failing]);
+    { value: 'dormant', label: t.agents.status.dormant },
+  ], [t.agents.overview_columns.all_health, t.agents.status.healthy, t.agents.status.degraded, t.agents.status.failing, t.agents.status.dormant]);
 
   const connectorOptions = useMemo<FilterOption[]>(
     () => [
