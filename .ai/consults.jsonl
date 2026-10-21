@@ -1864,3 +1864,5 @@
 {"ts":"2026-10-21T17:37:26Z","bundle":"software-engineering","subjects":["data-access"],"techniques":["repo-testing","layering-rules","batching-and-n-plus-one"],"deviations":0}
 {"ts":"2026-10-21T17:36:40Z","bundle":"software-engineering","subjects":["error-handling"],"techniques":["taxonomy-design","structured-propagation","crash-capture","error-doors","swallowed-error-prevention","user-facing-mapping"],"deviations":1}
 {"ts":"2026-10-21T17:38:07Z","bundle":"software-engineering","subjects":["concurrency-guards"],"techniques":["guard-key-design","single-flight-primitives"],"deviations":0}
+{"ts":"2026-10-21T17:39:43Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":["retrieval-triggering","relevance-floors"],"deviations":0}
+{"ts":"2026-10-21T17:39:43Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":["hybrid-lane-fusion"],"deviations":0}

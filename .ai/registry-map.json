@@ -32896,12 +32896,11 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/stores/systemStore.ts:2 top-level Zustand stores for UI chrome, cloud, toasts, palette and IPC wrappers - no query over a corpus, no lanes, floors or ranking anywhere in the context; client-state governs",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:9f05c1f381f9d83f",
-          "evaluatedRevision": 17,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/stores/systemStore.ts:2 UI-chrome/cloud/onboarding Zustand stores plus IPC wrappers - no query over a corpus too large to hand over whole, the golden path's precondition; the palette's 'ranked by relevance' lives in the palette component, this store holds only open/scope state (src/stores/commandPaletteStore.ts:18) - re-judged against rev 19",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:a49d27f889212d3f",
+          "evaluatedRevision": 19,
+          "revisionsBehind": 2
         },
         {
           "subject": "translation-quality-measurement",
@@ -33853,12 +33852,11 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/stores/agentStore.ts:6 composes agent-domain slices under zustand persist with a deduped localStorage adapter - persistence and selection state, no query, corpus or ranking; client-state governs",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:9f05c1f381f9d83f",
-          "evaluatedRevision": 17,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/stores/agentStore.ts:2 agent-domain slice composition under zustand persist with a deduped storage adapter - persistence and selection state, no query, corpus, lanes or ranking; client-state governs - re-judged against rev 19",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:a49d27f889212d3f",
+          "evaluatedRevision": 19,
+          "revisionsBehind": 2
         },
         {
           "subject": "client-state",

@@ -13840,11 +13840,30 @@
       "subject": "retrieval",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T01:40:16.000Z",
-      "worker": "bc76142d-231d-4f9d-a063-f2a2572c26d1",
-      "techniques": [],
-      "registryProposal": "Matcher scored this on the words store/stores/slice, which retrieval uses for vector stores; the governing subject is client-state."
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:39:43.000Z",
+      "worker": "02871dcf-727d-4dfc-9d58-e6b2a8be6bf3",
+      "techniques": [
+        {
+          "technique": "retrieval-triggering",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/systemStore.ts:2 no retrieval call site in the context; athenaRecallSynthesisEnabled at :156 is a persisted settings flag, not a trigger decision"
+        },
+        {
+          "technique": "relevance-floors",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/commandPaletteStore.ts:18 palette store is open-state only; no ranked slice produced here"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/stores/systemStore.ts:2 top-level Zustand stores for UI chrome, cloud, toasts, palette and IPC wrappers - no query over a corpus, no lanes, floors or ranking anywhere in the context; client-state governs",
+          "evaluatedAt": "2026-10-10T01:40:16.000Z",
+          "worker": "bc76142d-231d-4f9d-a063-f2a2572c26d1",
+          "reason": "replaced by 02871dcf-727d-4dfc-9d58-e6b2a8be6bf3"
+        }
+      ]
     },
     "532bbf10-3fd3-4b57-a8ea-95a957645697/retrieval": {
       "context": "stores-slices-overview",
@@ -13889,10 +13908,25 @@
       "subject": "retrieval",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T01:40:16.000Z",
-      "worker": "bc76142d-231d-4f9d-a063-f2a2572c26d1",
-      "techniques": []
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:39:43.000Z",
+      "worker": "02871dcf-727d-4dfc-9d58-e6b2a8be6bf3",
+      "techniques": [
+        {
+          "technique": "hybrid-lane-fusion",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/agentStore.ts:2 no lanes or scores anywhere in the nine context files (grep embed|vector|bm25|rerank|relevance|similarity: zero hits)"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/stores/agentStore.ts:6 composes agent-domain slices under zustand persist with a deduped localStorage adapter - persistence and selection state, no query, corpus or ranking; client-state governs",
+          "evaluatedAt": "2026-10-10T01:40:16.000Z",
+          "worker": "bc76142d-231d-4f9d-a063-f2a2572c26d1",
+          "reason": "replaced by 02871dcf-727d-4dfc-9d58-e6b2a8be6bf3"
+        }
+      ]
     },
     "647d6a54-3813-4149-bbf7-2d96a57a77c7/retrieval": {
       "context": "vault-databases-tabs",
