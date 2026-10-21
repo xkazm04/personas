@@ -287,8 +287,8 @@
         "description": "ONE object literal that holds BOTH an English `label:` string AND a colour utility class. PROXY FOR the stack-free condition \"the human-readable name of a closed-vocabulary member is authored at the same site as its presentation, so it can never be translated and the vocabulary has no single home\". PRECONDITION (measured, must be re-derived per repo): this repo writes badge/status config as flat single-level object entries on one line, with the key spelled `label` and colours as Tailwind utilities. Where a repo formats those entries across lines with nested objects, or names the key `title`/`text`, or uses CSS-in-JS, this pattern scores ZERO while the condition is present at full scale — the same failure the portability test measured for `tables.md` and `form-field-and-validation.md`. Sibling evidence that the CONDITION is universal but the SHAPE is not: personas-web's shared badge is `label: \"Queued\"` beside `bgColor` at StatusBadge.tsx:11 (would match), brainiac's is a separate `STATUS_LABEL` table with the colour resolved through band() at kb-data.ts:42 (would NOT match, same defect). Legal destinations: `tokenLabel(t, category, token)` for the label + `STATUS_PALETTE` / `StatusBadge variant` for the colour."
       },
       "baseline": {
-        "files": 25,
-        "matches": 156
+        "files": 24,
+        "matches": 151
       },
       "floor": 4000
     },
@@ -685,8 +685,8 @@
         }
       ],
       "baseline": {
-        "files": 21,
-        "matches": 27
+        "files": 14,
+        "matches": 16
       },
       "floor": 4000
     },
@@ -727,8 +727,8 @@
         }
       ],
       "baseline": {
-        "files": 43,
-        "matches": 620
+        "files": 41,
+        "matches": 596
       },
       "floor": 1500
     },
@@ -1135,8 +1135,8 @@
         "description": "a tracing macro whose FIRST argument is the message string (so no structured field precedes it) and whose message contains a format placeholder, meaning the record's variable content is interpolated into the message text rather than attached as a field. PROXY FOR the stack-free condition: a log record's whole identifying content is baked into a per-occurrence string, so N occurrences of one event become N distinct messages that can be neither grouped by event nor filtered by value. Measured 2026-08-14 at HEAD: 288 matches across 67 of 963 .rs files. TWO INDEPENDENT IMPLEMENTATIONS RECONCILE EXACTLY - this regex and a paren-matching argument splitter that tokenizes strings/comments and classifies each call's arguments both report 288 matches in the same 67 files with ZERO disagreeing files, so precision on the condition is 288/288. The compliant sibling form is used 2,118 times in the same tree (1,724 with a constant message plus fields, 394 with fields but a still-interpolated message), so this is a minority deviation from an established in-repo convention, not a migration. The optional (target|name|parent): prefix is load-bearing: without it the pattern misses exactly 5 sites, all of them tracing's pseudo-arguments (src/lib.rs:514-516 is the WebView console bridge re-emitting every frontend console line as a fully opaque \"{}\" passthrough; src/engine/mcp_tools.rs:2108 does the same for MCP server stderr). The fill class excludes the double-quote and the newline so a match can never run past the end of its own string literal into surrounding code - the cost is a false NEGATIVE for a placeholder sitting on a backslash-continued second line, which makes the count a floor rather than an estimate. {{ is excluded by the negative lookahead because an escaped literal brace is not interpolation. Zero matches sit in a test or build.rs file, so no exclude entry exists and no stale exemption can accumulate. PRECONDITION (must be re-derived per repo): this repo logs through the tracing crate, whose macros take structured key-value fields BEFORE the message, so 'field or no field' is a positional property a regex can see. A repo using a logger whose call is log.warn({persona_id}, 'msg') or logger.warn('msg', {ctx}) has the SAME condition wearing markup where position carries no meaning, and this pattern scores ZERO against it while the condition is present - personas-cloud is exactly that repo (194 pino-style logger.<level>( calls, zero tracing macros). A repo whose logger accepts only a formatted string has the condition designed in and needs a different instrument entirely. LEGAL FIX: move each interpolated value out of the message and into a field, leaving the message a constant - tracing::warn!(\"Failed to store master key: {}\", e) becomes tracing::warn!(error = %e, \"Failed to store master key\"). Use % for Display and ? for Debug. src-tauri/db/src/backup.rs:107 is the shape to copy. Do NOT silence a match by deleting the log call, and do NOT silence it by moving the interpolation into a format! argument - both trade this condition for a worse one."
       },
       "baseline": {
-        "files": 80,
-        "matches": 257
+        "files": 79,
+        "matches": 255
       },
       "floor": 700
     },
@@ -1359,8 +1359,8 @@
         "description": "a string interpolation closed by an English elapsed suffix and the word `ago`, or a bare `return 'just now'`. PROXY FOR the stack-free condition: the closed, universal vocabulary of elapsed time — a set every locale already has a canonical form for, including its plural rules and word order — is authored per call site in one natural language, so it can be neither translated nor made consistent with the other places that authored it. The interpolation anchor is load-bearing: it restricts matches to a LADDER RUNG (a computed count plus a unit) rather than to prose containing the word `ago`; dropping it to a bare \\bago\\b admits 11 more files of comments and sentences (measured). Measured population: 28 independent elapsed ladders exist in this repo, every one located and read — 12 hardcoded English (including lib/utils/formatters.ts:41, the SHARED one behind 100 <RelativeTime> tags and 69 direct calls), 4 unit-letter-only, 2 partly translated, 7 fully translated each with its OWN key namespace, and 3 using Intl.RelativeTimeFormat of which one passes the app language. The catalog side is the receipt: 48 rung strings across 14 namespaces, fully translated into all 13 non-English locales (611 strings for one four-rung vocabulary), spelled with 9 different placeholder names, ALREADY DRIFTED per locale (Czech `před {n}min` in plugins.fleet vs `před {minutes}m` in common.staleness), and 11 of the keys have no code consumer at all — 143 translated strings that render nowhere, invisible to check-coverage.mjs because they are present in every locale. Precision 47/47 on a full read: all 47 are English elapsed phrases. 45 of the 47 are ladder rungs whose fix is this path's; 2 (provenance.ts:78, populateDispatch.ts:124) are English sentences that happen to contain an elapsed phrase, whose fix is i18n-string-authoring.md's — recorded rather than excluded because both readings agree the string is wrong. Deliberately NOT matched: the English fallbacks behind a translated lookup (`t?.x ?? 'just now'`), because those render only when a key is missing. PRECONDITION (measured, must be re-derived per repo): this repo writes an elapsed label as a template literal ending in `ago` and its lowest rung as the literal `just now`. A repo whose ladder returns `il y a {n} min`, or spells the rung `Ns`/`Nm` with no word at all (this repo already has 4 such, and brainiac/console has 2 of 7), scores zero while the condition is present — which is why this rule is the SECOND of the two and not the first. LEGAL FIX, in order: (1) replace lib/utils/formatters.ts:41's ladder body with `new Intl.RelativeTimeFormat(activeLanguage(), { numeric: 'auto', style: 'narrow' })`, which retires 47 catalog keys across 14 locales and gets plural categories and word order right in languages nobody here speaks — LiveRoadmapStatusPill.tsx:30 is the working precedent and it also clamps the future, which 2 of these ladders fail to do (`-45s ago` at PersonaHealthDashboard.tsx:74 and StatusPageView.tsx:45); (2) then delete each local ladder in favour of <RelativeTime> or formatRelativeTime. Doing (2) first consolidates 28 English ladders into 1 English ladder, which is progress but not a fix."
       },
       "baseline": {
-        "files": 6,
-        "matches": 12
+        "files": 5,
+        "matches": 11
       },
       "floor": 4000
     },
@@ -2831,8 +2831,8 @@
         "description": "a timeout application (`tokio::time::timeout(...)` or a reqwest `.timeout(...)`) whose duration is a numeric literal written inline at the application site. PROXY FOR the stack-free condition: the bound on this operation has no name, so nothing else can reference it, no other bound can be derived from it, and no test can assert its ordering against the bound that wraps it. Compliant form: a named `const`, which the positive control counts."
       },
       "baseline": {
-        "files": 35,
-        "matches": 58
+        "files": 34,
+        "matches": 57
       },
       "floor": 900
     },
@@ -3485,8 +3485,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 3,
-        "matches": 3
+        "files": 1,
+        "matches": 1
       },
       "floor": 900
     },
@@ -3793,8 +3793,8 @@
         }
       ],
       "baseline": {
-        "files": 23,
-        "matches": 31
+        "files": 22,
+        "matches": 30
       },
       "floor": 2000
     },
@@ -4455,7 +4455,7 @@
         ".tsx"
       ],
       "signal": {
-        "pattern": "<(?:UnifiedTable|DataGrid)(?:<(?:[^<>]|<[^<>]*>)*>)?(?:(?!\\browHeight\\b|\\bpageSize\\b|\\bsimplified\\b)(?:=>|>=|<=|[^<>])){0,4000}?/>",
+        "pattern": "<(?:UnifiedTable|DataGrid)(?![A-Za-z0-9_])(?:<(?:[^<>]|<[^<>]*>)*>)?(?:(?!\\browHeight\\b|\\bpageSize\\b|\\bsimplified\\b)(?:=>|>=|<=|[^<>])){0,4000}?/>",
         "flags": "g",
         "ignoreCommentLines": true,
         "description": "A render of one of the two shared table primitives whose opening tag names NO bound on how many rows enter the DOM - no rowHeight (UnifiedTable's windowing switch), no pageSize (DataGrid's page slice), no simplified (which forces DataGrid to 5). PROXY FOR the stack-free condition: a list container is handed a collection whose length is decided by data and is never told how many of those rows may render, so the surface's cost is a function of how successful the product has been. THE DEFAULTS ARE THE DEFECT: UnifiedTable.tsx:446 is `rowHeight = 0` and :523 is `const useVirtual = rowHeight > 0`, so silence selects the branch at :674 that maps EVERY row into the DOM with no scroll container of its own; DataGrid.tsx:155 is `pageSize = 0` and :227-231 is `if (effectivePageSize <= 0) return data`. This is the contract's fifth section-9 failure mode - a primitive with a mandatory-but-forgettable argument - reproduced at a second primitive. MEASURED 2026-08-17 at e21dfeb0d: 12 files / 12 matches across 2,104 .tsx files under src. THE POPULATION PARTITIONS EXACTLY: the anchor (any render of either primitive) matches 22 sites in 20 files = 12 violating + 10 compliant (the positive control, 9 files, one of which carries two renders) + the 2 primitives themselves, excluded below. MEASURED BY EXECUTION, not by reading: UnifiedTable's two body branches (:638-694) were transcribed statement-for-statement into a jsdom 29.1.1 + React 19.2.6 harness using the real @tanstack/react-virtual 3.13.26 and the repo's own useVirtualList verbatim, and driven over rows from a READ-ONLY COPY of the operator's live 347 MB personas.db (copied 2026-08-17 08:54 UTC with the app running, never opened for write, deleted after). Same rows, same columns, differing only in whether rowHeight was passed, median of 5 after warm-up: 100 rows -> 99.1 ms / 801 DOM elements vs 28.8 ms / 186; 500 -> 509.5 ms / 4,001 vs 29.2 / 186; 1,306 -> 1,324.3 ms / 10,449 vs 32.7 / 186; 2,188 -> 1,878.0 ms / 17,505 vs 28.3 / 186; 4,974 -> 2,517.0 ms / 24,871 vs 20.9 / 117; 6,535 (every memory the operator has) -> 4,462.6 ms and 52,281 DOM elements vs 28.7 ms and 186; 9,803 (the whole credential audit log) -> 4,517.2 ms / 49,016 vs 22.5 / 117. That is 3x to 201x wall time and 4x to 419x DOM elements, and the windowed branch mounts 23 rows at EVERY N. The DOM counts are exact and portable; the milliseconds are jsdom's, which performs no layout or paint, so they are a LOWER BOUND on a real engine. rowHeight ALSO SILENTLY GATES THREE UNRELATED PROPS - executed: with rowHeight omitted the component renders no scroll container, so scrollRestoreKey cannot bind (:532 attaches the ref only on the virtual branch at :639), useEndReached has no node to watch (:537), and the groupBy sticky-header path is unreachable (:527, `grouped = !!groupBy && useVirtual`). The source says so at :529-531: 'No-op when scrollRestoreKey is undefined or the table isn't virtualized'. No call site trips that today, so it is a loaded trap rather than a live defect. PRECISION hand-verified 12/12 on the stated condition, every match opened and tabulated with its data source in section 7 D1: ToolPerformancePanel.tsx:208 (bounded upstream at DEFAULT_LIMIT = 8), RecipeOverviewTab.tsx:63 (a recipe's input schema), PairedDevicesPanel.tsx:171, DatabaseListView.tsx:116 (25 db credentials - and the DataGrid whose four siblings all pass a pageSize), ProjectManagerPage.tsx:490 (14 projects), ActivityList.tsx:174 (listExecutions(personaId, 50) merged with reviews and memories; the top persona holds 292 memories), LabVersionsTable.tsx:325, RunHistoryView.tsx:118 (list_eval_runs takes NO limit), GroundingTable.tsx:73, AthenaSpendSection.tsx:141, RemoteJobsPanel.tsx:122, and SurfaceRenderer.tsx:312 - the last of which renders a table whose ROW COUNT COMES OUT OF A LANGUAGE MODEL, the one input in this app nobody bounds by reviewing the code. On the stricter question 'can this exceed a viewport on the operator's data today' it is 8 of 12; the four bounded-upstream sites are kept in deliberately, because the condition is that the CALL SITE names no bound and each is one product decision away from being long. TWO INDEPENDENT IMPLEMENTATIONS AGREED ON THE ANCHOR (22 sites in 20 files) AND ON THE PARTITION (12 violating / 10 compliant) - after disagreeing twice, and both disagreements were matcher bugs, not facts. Implementation #1, a standalone brace-matching JSX scanner, first reported only 2 of 17 UnifiedTable sites as virtualized because a TSX generic argument (`<UnifiedTable<PersonaEvent>`) closed the opening tag at its own `>` and truncated every prop list; and this census pattern first missed ToolPerformancePanel.tsx:208 entirely because a prop value contains `errPct >= 10` and the `>` in `>=` fell outside the `(?:=>|[^<>])` unit. Both were found by cross-checking the two counts, neither by reading. ZERO SITE OVERLAP with all 157 committed rules, re-measured by re-running each of the 76 rules whose roots and extensions can reach src/**/*.tsx and intersecting at file:line - not assumed. NO RULE IN THE REGISTRY KEYS ON WINDOWING, PAGING, LOAD-MORE, SCROLL RESTORATION OR ROW COUNTS AT ALL; this territory was entirely ungated. The largest FILE overlap is 5 of 12 with typo-token-overpainted (824 files) and native-title-tooltip (571 files), which reach 17% and 12% of the .tsx tree - co-location, not duplication. The nearest neighbours by subject are at 0 files AND 0 sites: hand-rolled-row-stagger (list-entrance-stagger.md) owns the cascade's timing, call-site-text-match (filtering-and-search.md) owns the predicate, stateless-disclosure-control (expandable-row.md) owns the disclosure control, absent-entity-count-as-zero (aggregate-count-display.md) owns the number. DISCLOSED RECALL GAP, and it contains this document's own second headline: the pattern asks whether a bound is NAMED ON THIS ELEMENT, not whether the list is bounded and certainly not whether what the list claims is true, so it CANNOT SEE LlmCallsTable.tsx, which passes rowHeight={52} and scores COMPLIANT while declaring four sortable columns (:178,:231,:245,:259) with a persisted tableId (:315) over a window paged 50 at a time to a client ceiling of 500 (overviewSlice.ts:149-150) and appended by onEndReached (:319). Replayed against the operator's real 2,188 executions with the cost column sorted descending: the top row reads $2.5254 at page 1 and $3.7646 at the client's own 500-row ceiling, against a corpus maximum of $7.1604, with 0 of the true top 10 present AT EVERY PAGE; and when page 2 lands, 50 of 50 rendered rows change position, the largest displacement is 49 rows, and the row at mid-viewport drops 13 - against a control with no client sort where 0 of 50 move. It equally cannot see MemoriesPageDense.tsx:356, which hand-rolls its list outside both primitives and renders 100 of 6,535 memories (500 while searching) from memorySlice.ts:111 with offset literal 0 and no row 101 - a surface whose windowing was DELIBERATELY REMOVED, per MemoriesPage.tsx:5-8: 'the earlier Baseline virtualized-list layout ... were retired'. True recall over surfaces carrying this condition is about 12 of 30-plus and it misses the two worst, which is the honest thing to say about a signal keyed on a PROP'S PRESENCE when half the condition is a RELATION between an ordering and a paging key (section 8 Gap 1). It also cannot see the 66 `.slice(0, N).map(` render caps in 54 files, half of which disclose nothing, nor the 162 distinct list-container component names across 175 definitions of which only these 22 call sites go through a primitive that HAS a bound to set - 12.6%. PRECONDITION (must be re-derived per repo): this repo expresses a list container as a JSX element and a bound as a prop on it. A repo whose list is a Vue <n-data-table>, a server-rendered template loop, a React Native FlatList without windowSize, or a Blazor <Virtualize> scores a structural zero here while carrying the condition at scale - measured in the sibling checkouts, where 3 of the 4 UI repos have NO virtualization at all and a fourth declares react-virtuoso in package.json and imports it at zero sites. Do NOT silence a match by passing `rowHeight={0}` or `pageSize={0}` to mean 'unbounded' without also writing down why, and do NOT silence it by moving the table off the shared primitive - that is what happened to Memories and it made the tree worse while every count would have improved. THE HONEST FIX IS THE DEFAULT, NOT THE CALL SITES: default rowHeight to the density's real row height (44 comfortable / 36 compact, values that already exist in densityTokens) and DataGrid's pageSize to 25 the way FacetedDecisionTable.tsx:105 already does for its three consumers - one line per primitive, reaching all 12 sites with no call-site edit. WHEN THAT LANDS THIS RULE SHOULD BE DELETED, not baselined at 0."
