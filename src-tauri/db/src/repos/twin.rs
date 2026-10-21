@@ -718,8 +718,11 @@ pub fn record_interaction(
     create_memory: bool,
 ) -> Result<TwinCommunication, AppError> {
     let conn = pool.get()?;
-    record_interaction_on(
-        &conn,
+    // One transaction: when the caller asked for a pending memory, the
+    // communication row and the memory land together or not at all.
+    let tx = conn.unchecked_transaction()?;
+    let comm = record_interaction_on(
+        &tx,
         twin_id,
         channel,
         direction,
@@ -728,7 +731,9 @@ pub fn record_interaction(
         summary,
         key_facts_json,
         create_memory,
-    )
+    )?;
+    tx.commit()?;
+    Ok(comm)
 }
 
 /// [`record_interaction`] on a caller's connection (or transaction), so the
@@ -780,7 +785,10 @@ pub fn record_interaction_on(
         let title = contact_handle
             .map(|h| format!("{direction} with {h} on {channel}"))
             .or_else(|| Some(format!("{direction} on {channel}")));
-        let _ = create_pending_memory_on(
+        // Propagated, not dropped: the caller asked for both rows, so a failed
+        // memory insert must be visible (and roll back the communication when
+        // the caller's connection is a transaction).
+        create_pending_memory_on(
             conn,
             twin_id,
             Some(channel),
@@ -788,7 +796,7 @@ pub fn record_interaction_on(
             title.as_deref(),
             3,
             Some(&id),
-        );
+        )?;
     }
 
     conn.query_row(
@@ -1784,6 +1792,41 @@ mod tests {
     }
 
     use super::*;
+
+    /// A requested pending memory that cannot be written must surface as an
+    /// error, and must not leave the communication half-recorded.
+    #[test]
+    fn a_failed_pending_memory_insert_is_an_error_and_rolls_back_the_communication() {
+        let pool = crate::init_test_db().expect("init test db");
+        let twin =
+            create_profile(&pool, "Memory Fail Twin", None, None, None, None).expect("profile");
+        pool.get()
+            .unwrap()
+            .execute_batch(
+                "CREATE TRIGGER fail_pending_memory BEFORE INSERT ON twin_pending_memories                  BEGIN SELECT RAISE(ABORT, 'forced failure'); END;",
+            )
+            .unwrap();
+
+        let r = record_interaction(&pool, &twin.id, "email", "in", None, "hi", None, None, true);
+        assert!(r.is_err(), "the memory write failed; the call must say so");
+
+        let n: i64 = pool
+            .get()
+            .unwrap()
+            .query_row(
+                "SELECT COUNT(*) AS n FROM twin_communications WHERE twin_id = ?1",
+                params![twin.id],
+                |row| row.get("n"),
+            )
+            .unwrap();
+        assert_eq!(n, 0, "no half-recorded communication");
+
+        // Without a requested memory the same database still records.
+        record_interaction(
+            &pool, &twin.id, "email", "in", None, "hi", None, None, false,
+        )
+        .expect("no memory requested, nothing to fail");
+    }
 
     /// Every projection const must name columns that actually exist on a
     /// migrated database. This is the check the compiler cannot make: a
