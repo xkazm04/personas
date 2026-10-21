@@ -592,9 +592,13 @@ pub fn list_global_items(
 /// Aggregate execution counts by high-level status bucket, optionally
 /// filtered to a single persona. Returns precise server-side totals so the
 /// Activity filter badges do not depend on how many rows have been paged in.
+///
+/// `since` (RFC3339) bounds the count to the same window the list is cut at, so
+/// "N recorded" never counts runs the ledger cannot page to.
 pub fn count_all_global(
     pool: &DbPool,
     persona_id: Option<&str>,
+    since: Option<&str>,
 ) -> Result<ExecutionCounts, AppError> {
     timed_query!(
         "persona_executions",
@@ -605,8 +609,14 @@ pub fn count_all_global(
                 "SELECT status, COUNT(*) AS n FROM persona_executions \
              WHERE (input_data IS NULL OR input_data NOT LIKE '%\"_ops\"%')",
             );
-            if persona_id.is_some() {
-                sql.push_str(" AND persona_id = ?1");
+            let mut binds: Vec<&str> = Vec::new();
+            if let Some(pid) = persona_id {
+                binds.push(pid);
+                sql.push_str(&format!(" AND persona_id = ?{}", binds.len()));
+            }
+            if let Some(cutoff) = since {
+                binds.push(cutoff);
+                sql.push_str(&format!(" AND created_at >= ?{}", binds.len()));
             }
             sql.push_str(" GROUP BY status");
 
@@ -616,12 +626,7 @@ pub fn count_all_global(
                 Ok((row.get::<_, String>("status")?, row.get::<_, i64>("n")?))
             };
 
-            let iter: Box<dyn Iterator<Item = rusqlite::Result<(String, i64)>>> =
-                if let Some(pid) = persona_id {
-                    Box::new(stmt.query_map(params![pid], map_row)?)
-                } else {
-                    Box::new(stmt.query_map([], map_row)?)
-                };
+            let iter = stmt.query_map(rusqlite::params_from_iter(binds), map_row)?;
 
             for row in iter {
                 let (status, n) = row.map_err(AppError::Database)?;
@@ -3279,7 +3284,7 @@ mod tests {
                 .unwrap();
         }
 
-        let counts = count_all_global(&pool, Some(&persona_id)).unwrap();
+        let counts = count_all_global(&pool, Some(&persona_id), None).unwrap();
         let n = ExecutionState::ALL_VARIANTS.len() as i64;
         assert_eq!(counts.total, n, "every row must be counted exactly once");
         assert_eq!(
@@ -4163,16 +4168,40 @@ mod tests {
         )
         .unwrap();
 
-        let counts = count_all_global(&pool, None).unwrap();
+        let counts = count_all_global(&pool, None, None).unwrap();
         assert_eq!(counts.total, 4);
         assert_eq!(counts.running, 3, "2 queued + 1 running are all in flight");
         assert_eq!(counts.completed, 1);
         assert_eq!(counts.failed, 0);
 
         // The per-persona filter path must agree with the unfiltered one.
-        let scoped = count_all_global(&pool, Some(&persona_id)).unwrap();
+        let scoped = count_all_global(&pool, Some(&persona_id), None).unwrap();
         assert_eq!(scoped.running, 3);
         assert_eq!(scoped.total, 4);
+    }
+
+    /// The count shares the list's window: a run older than the cutoff is in
+    /// neither, so "N recorded" can be paged to in full.
+    #[test]
+    fn counts_stop_at_the_same_cutoff_as_the_list() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Window Agent");
+        let old = create(&pool, &persona_id, None, None, None, None).unwrap();
+        create(&pool, &persona_id, None, None, None, None).unwrap();
+        pool.conn("executions::test")
+            .unwrap()
+            .execute(
+                "UPDATE persona_executions SET created_at = '2020-01-01T00:00:00+00:00' WHERE id = ?1",
+                params![old.id],
+            )
+            .unwrap();
+
+        assert_eq!(count_all_global(&pool, None, None).unwrap().total, 2);
+        let cutoff = (chrono::Utc::now() - chrono::Duration::days(30)).to_rfc3339();
+        let windowed = count_all_global(&pool, None, Some(&cutoff)).unwrap();
+        assert_eq!(windowed.total, 1, "the 2020 run is outside the window");
+        let listed = list_global_items(&pool, None, None, None, None, Some(&cutoff)).unwrap();
+        assert_eq!(listed.len() as i64, windowed.total);
     }
 
     // =====================================================================
