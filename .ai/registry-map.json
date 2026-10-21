@@ -22530,8 +22530,8 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/overview/sub_observability/libs/useGlobalAlertEvaluator.ts:53 still evaluates every rule against an UNSCOPED 1-day bundle (and useObservabilityData.ts:70 against the tab's range/persona) under the one rule.id cooldown the scoped Rust evaluator also reads, so a wrong-scope client fire mutes the correct server alert for an hour",
-          "evaluatedAt": "2026-10-16",
+          "evidence": "src/features/overview/sub_observability/libs/useGlobalAlertEvaluator.ts:53 still fetches an UNSCOPED 1-day bundle (and useObservabilityData.ts:70 evaluates against the tab's range/persona) for every rule, under the rule.id cooldown the persona-scoped Rust evaluator also reads, so a wrong-scope client fire both misreports the value and mutes the correct server alert for an hour",
+          "evaluatedAt": "2026-10-21",
           "evaluatedAgainst": "sha256-b2:183ec8b74ed943d6",
           "evaluatedRevision": 5,
           "revisionsBehind": 2
@@ -32317,8 +32317,8 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/stores/slices/overview/alertSlice.ts:450 evaluateRule still ignores rule.persona_id and runs on whatever snapshot the caller passed, then :431 shares the rule.id cooldown with the scoped server evaluator, so a wrong-scope client fire misreports the value and suppresses the true alert",
-          "evaluatedAt": "2026-10-16",
+          "evidence": "src/stores/slices/overview/alertSlice.ts:467 evaluateRule still ignores rule.persona_id and runs on whatever snapshot the caller passed, then :448 reads the rule.id cooldown shared with the scoped server evaluator, so a wrong-scope client fire misreports the value and suppresses the true alert",
+          "evaluatedAt": "2026-10-21",
           "evaluatedAgainst": "sha256-b2:183ec8b74ed943d6",
           "evaluatedRevision": 5
         },

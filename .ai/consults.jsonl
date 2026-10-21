@@ -1744,3 +1744,5 @@
 {"ts":"2026-10-21T12:31:38.099Z","bundle":"software-engineering","subjects":["multi-project"],"techniques":["portfolio-drill-hierarchy","passive-signal-ingestion"],"deviations":1}
 {"ts":"2026-10-21T12:31:38.099Z","bundle":"software-engineering","subjects":["multi-project"],"techniques":["portfolio-drill-hierarchy","per-project-tabs-and-state"],"deviations":1}
 {"ts":"2026-10-21T12:31:38.099Z","bundle":"software-engineering","subjects":["multi-project"],"techniques":["portfolio-drill-hierarchy"],"deviations":0}
+{"ts":"2026-10-21T12:31:48Z","bundle":"llm-observability","subjects":["breach-alerting-and-attribution"],"techniques":["scoped-dedup-keys","top-contributor-attribution","off-request-path-delivery","identity-scope-attribution-refusal","notification-channel-security"],"deviations":2}
+{"ts":"2026-10-21T12:31:48Z","bundle":"llm-observability","subjects":["breach-alerting-and-attribution"],"techniques":["scoped-dedup-keys","top-contributor-attribution","off-request-path-delivery","identity-scope-attribution-refusal","notification-channel-security"],"deviations":2}
