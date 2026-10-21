@@ -2619,7 +2619,11 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_connectors/libs/useAutomationSetup.ts:10 the context binds vault credentials and configures external SaaS automations over authenticated API calls; it loads no third-party code, unpacks nothing, declares no permission manifest and scans no history",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:f5666db1094acd9f",
+          "evaluatedRevision": 6
         },
         {
           "subject": "agent-memory",
@@ -7463,7 +7467,11 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/commands/design/n8n_transform/cli_runner.rs:891 the transform agent runs in an isolated temp cwd, so no tree's rules travel in, and the imported n8n JSON is data with no shipped script; the context crosses no lockfile, archive, permission manifest, history or code-loading boundary (built-in template integrity is a catalog-load gate, src-tauri/src/commands/design/template_adopt.rs:44)",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:f5666db1094acd9f",
+          "evaluatedRevision": 6
         },
         {
           "subject": "agent-instruction-files",
@@ -26469,7 +26477,11 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_projects/ProjectModal.tsx:422 the post-create 'Scan codebase' step launches a context scan that spawns a --dangerously-skip-permissions claude with cwd = the newly attached repo root (src-tauri/src/commands/infrastructure/context_generation.rs:1628), so that repo's CLAUDE.md and .claude/settings.json hooks run with no digest approval - a planted hook in an attached repo executes on the first read",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:f5666db1094acd9f",
+          "evaluatedRevision": 6
         },
         {
           "subject": "docs-sync",
@@ -41481,7 +41493,11 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/tool_runner.rs:567 every script tool runs 'npx tsx <script>' with no version, so tsx is resolved (and on a machine without it, fetched from the registry) at run time outside any lockfile or policy gate - an unpinned dependency executing persona tool code",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:f5666db1094acd9f",
+          "evaluatedRevision": 6
         },
         {
           "subject": "prompt-assembly",

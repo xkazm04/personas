@@ -31665,6 +31665,91 @@
         }
       ],
       "registryProposal": "Coverage: teams-kpis is a technique-shaped resonance, not a hole. It matched on the token 'provenance' (kpiMeasurementProvenance.ts surfaces evidence behind internal metrics), which is measurement-honesty / metric-surface-contract doctrine; public-claim-provenance's precondition (an outward reader who cannot check) fails. Route by precondition: consider measurement-honesty for this context."
+    },
+    "c5f662f2-458b-4b5d-b03b-e4acf8f54049/supply-chain": {
+      "context": "plugins-dev-tools-projects",
+      "subject": "supply-chain",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:37:40.000Z",
+      "worker": "14a97262-073d-4ee7-89ec-06703a023530",
+      "techniques": [
+        {
+          "technique": "reading-is-not-running",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/context_generation.rs:701 the code itself records that the scan root picks the CLAUDE.md and settings.json hooks the agent obeys; the guard confines the cwd to the registered root but approves nothing inside it, and src-tauri/engine/src/prompt/cli_args.rs:107 disables permissions"
+        },
+        {
+          "technique": "archive-extraction-safety",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_projects/GitHubRepoSelector.tsx:108 repo attach lists repos over the GitHub API; nothing is downloaded or unpacked"
+        },
+        {
+          "technique": "permission-manifest-scoping",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_projects/ProjectModal.tsx:422 the surface edits project rows and starts a scan; it declares no capability, CSP or allowlist"
+        }
+      ]
+    },
+    "767b2bb5-4662-4be1-ad24-c881ac334016/supply-chain": {
+      "context": "webhook-ingestion",
+      "subject": "supply-chain",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:37:40.000Z",
+      "worker": "14a97262-073d-4ee7-89ec-06703a023530",
+      "techniques": [
+        {
+          "technique": "verification-scope",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/tool_runner.rs:568 'tsx' is passed bare to npx; a tool subcommand that downloads is an unpinned dependency whatever it calls itself"
+        },
+        {
+          "technique": "dependency-policy-gates",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/tool_runner.rs:567 the runtime-resolved tsx never appears in the resolved graph the repo's deny/audit gates read"
+        },
+        {
+          "technique": "reading-is-not-running",
+          "verdict": "realized",
+          "evidence": "src-tauri/engine/src/cli_mcp_config.rs:215 the sidecar deliberately refuses to auto-merge a target repo's .claude/settings.json mcpServers, because that would spawn an untrusted command with no consent"
+        }
+      ],
+      "registryProposal": "webhook-ingestion is a consolidated grab-bag (tool_runner, cli_mcp_config, template_checksums sit under it); the supply-chain crossings found here are not about webhooks, so a context split would route them better"
+    },
+    "5d4b913e-4384-49d7-8854-5c7ddac7e19e/supply-chain": {
+      "context": "commands-design",
+      "subject": "supply-chain",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:37:40.000Z",
+      "worker": "14a97262-073d-4ee7-89ec-06703a023530",
+      "techniques": [
+        {
+          "technique": "reading-is-not-running",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/design/n8n_transform/cli_runner.rs:889 cwd is a temp dir precisely so .claude/ and CLAUDE.md from any project are not picked up; no tree is opened"
+        },
+        {
+          "technique": "archive-extraction-safety",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/design/template_adopt.rs:44 templates are bundled first-party JSON checked at catalog load; nothing is downloaded or unpacked"
+        }
+      ],
+      "registryProposal": "the n8n transform feeds user-supplied workflow JSON to a --dangerously-skip-permissions agent; that injection risk belongs to prompt-safety, which is not paired with this context and should be judged there"
+    },
+    "fbfcd99a-a333-42da-b85e-2ec1f560b4be/supply-chain": {
+      "context": "agents-connectors",
+      "subject": "supply-chain",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:37:40.000Z",
+      "worker": "14a97262-073d-4ee7-89ec-06703a023530",
+      "techniques": []
     }
   }
 }
