@@ -2279,6 +2279,23 @@ mod tests {
         );
     }
 
+    /// A legacy `processed` row is a settled event. The mapper used to read it
+    /// as `Pending`, so the event log listed finished work as queued.
+    #[test]
+    fn legacy_processed_row_is_listed_as_settled_not_pending() {
+        let pool = init_test_db().unwrap();
+        let id = publish_terminal(&pool, "legacy", PersonaEventStatus::Completed);
+        pool.conn("events::legacy_status_tests")
+            .unwrap()
+            .execute(
+                "UPDATE persona_events SET status = 'processed' WHERE id = ?1",
+                params![id],
+            )
+            .unwrap();
+        let got = get_by_id(&pool, &id).unwrap();
+        assert_eq!(got.status, PersonaEventStatus::Completed);
+    }
+
     /// The backstop shares the protect-list, not the old allowlist: a cap of 0
     /// removes every settled row — `delivered` included — and nothing protected.
     #[test]

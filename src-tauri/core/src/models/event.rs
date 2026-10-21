@@ -33,7 +33,7 @@ pub enum PersonaEventStatus {
 }
 
 impl PersonaEventStatus {
-    /// Parse a status string from the database. Unknown values fall back to `Pending`.
+    /// Parse a status string from the database. `processed` (legacy rows) reads as `Completed`; other unknown values fall back to `Pending`.
     pub fn from_db(s: &str) -> Self {
         match s {
             "pending" => Self::Pending,
@@ -44,6 +44,10 @@ impl PersonaEventStatus {
             "failed" => Self::Failed,
             "dead_letter" => Self::DeadLetter,
             "discarded" => Self::Discarded,
+            // The live table holds `processed` for settled rows written before
+            // the current vocabulary. It is a finished state: reading it as
+            // `Pending` showed done rows as queued work in every reader.
+            "processed" => Self::Completed,
             other => {
                 tracing::warn!(
                     "Unknown PersonaEventStatus '{}', defaulting to Pending",
@@ -247,6 +251,15 @@ pub struct UpdateEventSubscriptionInput {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn legacy_processed_status_reads_as_a_terminal_state() {
+        assert_eq!(
+            PersonaEventStatus::from_db("processed"),
+            PersonaEventStatus::Completed
+        );
+        assert!(!PersonaEventStatus::from_db("processed").is_retention_protected());
+    }
 
     fn event(source_type: &str, source_id: Option<&str>) -> PersonaEvent {
         PersonaEvent {
