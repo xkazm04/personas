@@ -39,6 +39,7 @@ const CASCADE_ROWS = 14;
  */
 export function ScraperControlRoom({ data, onNew, onEdit }: ScraperVariantProps) {
   const { t } = useTranslation();
+  const sc = t.plugins.scraper;
   // Which dataset's records are open below the strip. The chips carried a
   // count and nothing behind it; this is the operator's handoff after a run.
   const [openDataset, setOpenDataset] = useState<string | null>(null);
@@ -65,13 +66,13 @@ export function ScraperControlRoom({ data, onNew, onEdit }: ScraperVariantProps)
       {/* Stat bar — static chrome, always renders. */}
       <div className="flex items-center justify-between rounded-card border border-primary/10 bg-secondary/30 px-5 py-4">
         <div className="flex items-center gap-8">
-          <StatChip label="Scrapes" value={data.configs.length} />
-          <StatChip label="Scheduled" value={scheduled} accent="info" />
-          <StatChip label="Datasets" value={data.datasets.length} />
-          <StatChip label="Records" value={totalRecords} accent="success" />
+          <StatChip label={sc.stat_scrapes} value={data.configs.length} />
+          <StatChip label={sc.stat_scheduled} value={scheduled} accent="info" />
+          <StatChip label={sc.stat_datasets} value={data.datasets.length} />
+          <StatChip label={sc.stat_records} value={totalRecords} accent="success" />
         </div>
         <Button variant="primary" onClick={onNew}>
-          <Plus className="size-4" /> New scrape
+          <Plus className="size-4" /> {sc.new_scrape}
         </Button>
       </div>
 
@@ -114,7 +115,7 @@ export function ScraperControlRoom({ data, onNew, onEdit }: ScraperVariantProps)
       {data.datasets.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
           <span className="typo-label text-muted-foreground flex items-center gap-1.5">
-            <Database className="size-3.5" /> Datasets
+            <Database className="size-3.5" /> {sc.stat_datasets}
           </span>
           {data.datasets.map((d) => {
             const open = openDataset === d.name;
@@ -171,7 +172,7 @@ function Row({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const fields = ruleFields(config.rules);
   const status = parseStatus(config.lastStatus, datasetCount);
 
@@ -217,7 +218,7 @@ function Row({
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
           {!config.enabled && (
-            <span className="size-1.5 rounded-full bg-muted-foreground/40" title="Disabled" />
+            <span className="size-1.5 rounded-full bg-muted-foreground/40" title={t.common.disabled} />
           )}
           <span className="text-foreground">{config.name}</span>
         </div>
@@ -256,16 +257,16 @@ function Row({
       </td>
       <td className="px-4 py-3">
         <div className="flex items-center justify-end gap-1 opacity-70 transition-opacity group-hover:opacity-100">
-          <AsyncButton variant="ghost" size="sm" isLoading={testing} onClick={runTest} title="Dry-run — no records saved">
-            <FlaskConical className="size-3.5" /> Test
+          <AsyncButton variant="ghost" size="sm" isLoading={testing} onClick={runTest} title={t.plugins.scraper.test_tip}>
+            <FlaskConical className="size-3.5" /> {t.common.test}
           </AsyncButton>
           <AsyncButton variant="secondary" size="sm" isLoading={running} onClick={onRun}>
-            <Play className="size-3.5" /> Run
+            <Play className="size-3.5" /> {t.plugins.scraper.run}
           </AsyncButton>
-          <Button variant="ghost" size="sm" onClick={onEdit} aria-label="Edit">
+          <Button variant="ghost" size="sm" onClick={onEdit} aria-label={t.common.edit}>
             <Pencil className="size-3.5" />
           </Button>
-          <Button variant="ghost" size="sm" onClick={onDelete} aria-label="Delete">
+          <Button variant="ghost" size="sm" onClick={onDelete} aria-label={t.common.delete}>
             <Trash2 className="size-3.5" />
           </Button>
         </div>
@@ -276,7 +277,7 @@ function Row({
         <td colSpan={7} className="bg-background/30 px-4 pb-3">
           <div className="rounded-interactive border border-primary/10 bg-secondary/15 p-3">
             <div className="mb-2 flex items-center gap-1.5 typo-label text-muted-foreground">
-              <FlaskConical className="size-3.5" /> Test extraction — dry run, nothing saved
+              <FlaskConical className="size-3.5" /> {t.plugins.scraper.test_heading}
             </div>
             {testError !== null ? (
               <div className="flex items-start gap-2 typo-caption text-status-error">
@@ -284,7 +285,7 @@ function Row({
                 <span>{inlineErrorCopy(t, testError)}</span>
               </div>
             ) : testing ? (
-              <span className="typo-caption text-muted-foreground">Fetching {config.urls[0]}…</span>
+              <span className="typo-caption text-muted-foreground">{tx(t.plugins.scraper.test_fetching, { url: config.urls[0] ?? '' })}</span>
             ) : testRows ? (
               <PreviewResults rows={testRows} fieldNames={fields} />
             ) : null}
@@ -363,11 +364,12 @@ function FieldChips({ fields }: { fields: string[] }) {
 }
 
 function EmptyRow({ onNew }: { onNew: () => void }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col items-center gap-3 rounded-card border border-dashed border-primary/15 py-16">
-      <p className="typo-body text-muted-foreground">No scrapes yet — define a URL + extraction rules to start.</p>
+      <p className="typo-body text-muted-foreground">{t.plugins.scraper.empty_title}</p>
       <Button variant="primary" onClick={onNew}>
-        <Plus className="size-4" /> New scrape
+        <Plus className="size-4" /> {t.plugins.scraper.new_scrape}
       </Button>
     </div>
   );
@@ -375,15 +377,17 @@ function EmptyRow({ onNew }: { onNew: () => void }) {
 
 /** Column header row — shared by the real table and the ghost table so the swap moves nothing. */
 function TableHead() {
+  const { t } = useTranslation();
+  const sc = t.plugins.scraper;
   return (
     <thead>
       <tr className="border-b border-primary/10 bg-secondary/20 typo-label text-muted-foreground">
-        <th className="px-4 py-2.5 typo-caption font-mono uppercase tracking-widest text-foreground">Scrape</th>
-        <th className="px-4 py-2.5 typo-caption font-mono uppercase tracking-widest text-foreground">Sources</th>
-        <th className="px-4 py-2.5 typo-caption font-mono uppercase tracking-widest text-foreground">Fields</th>
-        <th className="px-4 py-2.5 typo-caption font-mono uppercase tracking-widest text-foreground">Schedule</th>
-        <th className="px-4 py-2.5 typo-caption font-mono uppercase tracking-widest text-foreground">Last run</th>
-        <th className="px-4 py-2.5 typo-caption font-mono uppercase tracking-widest text-foreground">Status</th>
+        <th className="px-4 py-2.5 typo-caption font-mono uppercase tracking-widest text-foreground">{sc.col_scrape}</th>
+        <th className="px-4 py-2.5 typo-caption font-mono uppercase tracking-widest text-foreground">{sc.col_sources}</th>
+        <th className="px-4 py-2.5 typo-caption font-mono uppercase tracking-widest text-foreground">{sc.col_fields}</th>
+        <th className="px-4 py-2.5 typo-caption font-mono uppercase tracking-widest text-foreground">{sc.col_schedule}</th>
+        <th className="px-4 py-2.5 typo-caption font-mono uppercase tracking-widest text-foreground">{sc.col_last_run}</th>
+        <th className="px-4 py-2.5 typo-caption font-mono uppercase tracking-widest text-foreground">{t.common.status}</th>
         <th className="px-4 py-2.5 typo-caption font-mono uppercase tracking-widest text-foreground" />
       </tr>
     </thead>

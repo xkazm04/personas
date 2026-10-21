@@ -600,7 +600,10 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "dev_context": {},
     "obsidian": {},
     "research_lab": {},
-    "scraper": {},
+    "scraper": {
+      "step_labels": {},
+      "step_hints": {}
+    },
     "contest": {
       "ledger": {
         "state": {},

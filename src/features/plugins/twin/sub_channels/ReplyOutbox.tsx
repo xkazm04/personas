@@ -32,7 +32,7 @@ import { Collapse } from '@/features/shared/components/display/Collapse';
 const STEER_CHIPS = ['steerShorter', 'steerWarmer', 'steerFormal', 'steerQuestion'] as const;
 
 export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[]; reuseRequest?: ReuseRequest | null }) {
-  const { t: tFull } = useTranslation();
+  const { t: tFull, tx } = useTranslation();
   const tc = tFull.twin.channels;
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const replyDraft = useSystemStore((s) => s.twinReplyDraft);
@@ -151,7 +151,7 @@ export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[
         toneChannel === 'auto' ? undefined : toneChannel,
       );
     } catch (err) {
-      setLocalError(err instanceof Error ? err.message : typeof err === 'string' ? err : 'Failed to draft reply');
+      setLocalError(err instanceof Error ? err.message : typeof err === 'string' ? err : tc.outboxDraftFailed);
     }
   };
 
@@ -188,7 +188,7 @@ export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[
       setInbound('');
       setDirections('');
     } catch (err) {
-      setLocalError(err instanceof Error ? err.message : typeof err === 'string' ? err : 'Failed to record reply');
+      setLocalError(err instanceof Error ? err.message : typeof err === 'string' ? err : tc.outboxRecordFailed);
     } finally {
       setApproving(false);
     }
@@ -208,40 +208,33 @@ export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[
           <Inbox className="w-4 h-4 text-violet-300" />
         </div>
         <div className="min-w-0">
-          {/* eslint-disable custom/no-hardcoded-jsx-text */}
-          <h3 className="typo-section-title">Reply outbox</h3>
-          <p className="typo-caption text-foreground">
-            Draft a channel-appropriate reply, review it, then approve to log it as a sent message. Nothing is sent
-            automatically.
-          </p>
-          {/* eslint-enable custom/no-hardcoded-jsx-text */}
+          <h3 className="typo-section-title">{tc.outboxTitle}</h3>
+          <p className="typo-caption text-foreground">{tc.outboxDesc}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="Channel">
+        <Field label={tc.outboxChannel}>
           <ThemedSelect
             options={channelOptions}
             value={channelType}
             onValueChange={(v) => setChannelType(v as TwinChannelKind)}
-            placeholder={activeChannels.length === 0 ? 'No active channels' : 'Select channel'}
+            placeholder={activeChannels.length === 0 ? tc.outboxNoActiveChannels : tc.outboxSelectChannel}
           />
         </Field>
-        <Field label="Contact (optional)">
+        <Field label={tc.outboxContact}>
           {contactOptions.length > 0 ? (
             <ThemedSelect
               filterable
               options={contactOptions}
               value={contactHandle}
               onValueChange={setContactHandle}
-              // eslint-disable-next-line custom/no-hardcoded-jsx-text
-              placeholder="Pick a contact"
+              placeholder={tc.outboxPickContact}
             />
           ) : (
             <input
               type="text"
-              // eslint-disable-next-line custom/no-hardcoded-jsx-text
-              placeholder="Contact handle"
+              placeholder={tc.outboxContactHandle}
               value={contactHandle}
               onChange={(e) => setContactHandle(e.target.value)}
               className={INPUT_FIELD}
@@ -258,11 +251,10 @@ export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[
       <ContactThread twinId={activeTwinId} channel={channelType} contactHandle={contactHandle} onReplyTo={setInbound} />
 
       <div className="mt-3">
-        <Field label="Inbound message (optional)">
+        <Field label={tc.outboxInbound}>
           <textarea
             rows={2}
-            // eslint-disable-next-line custom/no-hardcoded-jsx-text
-            placeholder="Paste the message you're replying to…"
+            placeholder={tc.outboxInboundPlaceholder}
             value={inbound}
             onChange={(e) => setInbound(e.target.value)}
             className={`${INPUT_FIELD} resize-y`}
@@ -271,11 +263,10 @@ export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[
       </div>
 
       <div className="mt-3">
-        <Field label="Directions (optional)">
+        <Field label={tc.outboxDirections}>
           <input
             type="text"
-            // eslint-disable-next-line custom/no-hardcoded-jsx-text
-            placeholder="e.g. keep it short, warmer tone"
+            placeholder={tc.outboxDirectionsPlaceholder}
             value={directions}
             onChange={(e) => setDirections(e.target.value)}
             className={INPUT_FIELD}
@@ -305,7 +296,7 @@ export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[
       <div className="flex justify-end mt-3">
         <Button onClick={() => void handleGenerate()} disabled={!canGenerate} size="sm" variant="accent" tone="agent">
           {drafting ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Sparkles className="w-4 h-4 mr-1.5" />}
-          {drafting ? 'Drafting…' : replyDraft ? 'Regenerate' : 'Generate draft'}
+          {drafting ? tc.outboxDrafting : replyDraft ? tc.outboxRegenerate : tc.outboxGenerate}
         </Button>
       </div>
 
@@ -313,8 +304,10 @@ export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[
         <Field
           label={
             draftContext
-              ? `Draft reply for ${draftContext.channel}${draftContext.contactHandle ? ` → ${draftContext.contactHandle}` : ''} — edit before approving`
-              : 'Draft reply — edit before approving'
+              ? draftContext.contactHandle
+                ? tx(tc.outboxDraftLabelTo, { channel: draftContext.channel, contact: draftContext.contactHandle })
+                : tx(tc.outboxDraftLabelChannel, { channel: draftContext.channel })
+              : tc.outboxDraftLabel
           }
         >
           <textarea
@@ -327,7 +320,7 @@ export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[
         <div className="flex justify-end gap-2 mt-3">
           <Button onClick={clearDraft} variant="ghost" size="sm" disabled={approving}>
             <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-            Discard
+            {tc.outboxDiscard}
           </Button>
           <Button
             onClick={() => setConfirmSend(true)}
@@ -337,7 +330,7 @@ export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[
             tone="success"
           >
             {approving ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Send className="w-4 h-4 mr-1.5" />}
-            {approving ? 'Recording…' : 'Approve & log'}
+            {approving ? tc.outboxRecording : tc.outboxApprove}
           </Button>
         </div>
       </Collapse>
@@ -346,14 +339,15 @@ export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[
 
       {confirmSend && (
         <ConfirmDialog
-          // eslint-disable-next-line custom/no-hardcoded-jsx-text
-          title="Log this reply as sent by you?"
+          title={tc.outboxConfirmTitle}
           body={
             draftContext
-              ? `This records an outbound reply attributed to you on ${draftContext.channel}${draftContext.contactHandle ? ` → ${draftContext.contactHandle}` : ''}.`
-              : 'This records an outbound reply attributed to you.'
+              ? draftContext.contactHandle
+                ? tx(tc.outboxConfirmBodyTo, { channel: draftContext.channel, contact: draftContext.contactHandle })
+                : tx(tc.outboxConfirmBodyChannel, { channel: draftContext.channel })
+              : tc.outboxConfirmBody
           }
-          confirmLabel="Approve & log"
+          confirmLabel={tc.outboxApprove}
           onConfirm={() => {
             setConfirmSend(false);
             void handleApprove();

@@ -24,17 +24,16 @@ import { countProductiveRows, fieldsToRuleSet, type ScrapeForm } from './useScra
  */
 export interface StepMeta {
   id: 'source' | 'extract' | 'preview' | 'output' | 'schedule';
-  label: string;
   icon: LucideIcon;
-  hint: string;
 }
 
 export const STEPS: StepMeta[] = [
-  { id: 'source', label: 'Source', icon: Globe, hint: 'Which pages to fetch' },
-  { id: 'extract', label: 'Extract', icon: FileSearch, hint: 'Fields to pull from each page' },
-  { id: 'preview', label: 'Preview', icon: FlaskConical, hint: 'Test the rules on the live page' },
-  { id: 'output', label: 'Output', icon: Database, hint: 'Where records land' },
-  { id: 'schedule', label: 'Schedule', icon: Clock, hint: 'When it runs' },
+  // Label and hint copy: t.plugins.scraper.step_labels[id] / step_hints[id].
+  { id: 'source', icon: Globe },
+  { id: 'extract', icon: FileSearch },
+  { id: 'preview', icon: FlaskConical },
+  { id: 'output', icon: Database },
+  { id: 'schedule', icon: Clock },
 ];
 
 /** Is a step "complete" enough to be considered configured? */
@@ -65,35 +64,37 @@ function Labeled({ label, children }: { label: string; children: React.ReactNode
 }
 
 export function SourceStep({ form }: { form: ScrapeForm }) {
+  const { t, tx } = useTranslation();
+  const sc = t.plugins.scraper;
   return (
     <div className="flex flex-col gap-4">
-      <Labeled label="Title — short + recognizable">
+      <Labeled label={sc.field_title}>
         <input
           className={INPUT_FIELD}
           value={form.name}
           onChange={(e) => form.setName(e.target.value)}
-          placeholder="Competitor price watch"
+          placeholder={sc.field_title_placeholder}
         />
       </Labeled>
-      <Labeled label="Description — a one-line overview of the use case (optional)">
+      <Labeled label={sc.field_description}>
         <input
           className={INPUT_FIELD}
           value={form.description}
           onChange={(e) => form.setDescription(e.target.value)}
-          placeholder="Track daily price + stock on our 3 rivals’ product pages."
+          placeholder={sc.field_description_placeholder}
         />
       </Labeled>
-      <Labeled label="URLs — one per line">
+      <Labeled label={sc.field_urls}>
         <textarea
           className={`${INPUT_FIELD} min-h-[88px] resize-y font-mono`}
           value={form.urls}
           onChange={(e) => form.setUrls(e.target.value)}
-          placeholder="https://example.com/product/123"
+          placeholder={sc.field_urls_placeholder}
         />
       </Labeled>
       {form.urlList.length > 0 && (
         <p className="typo-caption text-muted-foreground">
-          {form.urlList.length} URL{form.urlList.length === 1 ? '' : 's'} · fetched over HTTP (no browser).
+          {tx(form.urlList.length === 1 ? sc.urls_summary_one : sc.urls_summary_other, { count: form.urlList.length })}
         </p>
       )}
     </div>
@@ -150,8 +151,8 @@ export function PreviewStep({ form }: { form: ScrapeForm }) {
             ? t.plugins.scraper.preview_needs_input
             : tx(t.plugins.scraper.preview_hint, { url: form.urlList[0] ?? '' })}
         </span>
-        <AsyncButton variant="primary" size="sm" disabled={disabled} loadingText="Fetching…" onClick={run}>
-          <Play className="size-3.5" /> Run preview
+        <AsyncButton variant="primary" size="sm" disabled={disabled} loadingText={t.plugins.scraper.preview_fetching} onClick={run}>
+          <Play className="size-3.5" /> {t.plugins.scraper.preview_run}
         </AsyncButton>
       </div>
 
@@ -188,10 +189,11 @@ export function PreviewStep({ form }: { form: ScrapeForm }) {
 }
 
 export function OutputStep({ form }: { form: ScrapeForm }) {
+  const { t } = useTranslation();
   const fieldNames = form.fields.map((f) => f.name.trim()).filter(Boolean);
   return (
     <div className="flex flex-col gap-4">
-      <Labeled label="Dataset — where change-detected records are stored">
+      <Labeled label={t.plugins.scraper.field_dataset}>
         <input
           className={INPUT_FIELD}
           value={form.dataset}
@@ -199,7 +201,7 @@ export function OutputStep({ form }: { form: ScrapeForm }) {
           placeholder="products"
         />
       </Labeled>
-      <Labeled label="Key field (optional) — dedupe records by this field instead of the URL">
+      <Labeled label={t.plugins.scraper.field_key}>
         <input
           className={`${INPUT_FIELD} font-mono`}
           value={form.keyField}
@@ -218,10 +220,10 @@ export function OutputStep({ form }: { form: ScrapeForm }) {
 }
 
 export function ScheduleStep({ form }: { form: ScrapeForm }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   return (
     <div className="flex flex-col gap-4">
-      <Labeled label="Schedule — 5-field cron, UTC (leave blank for manual only)">
+      <Labeled label={t.plugins.scraper.field_schedule}>
         <input
           className={`${INPUT_FIELD} font-mono`}
           value={form.cron}
@@ -230,12 +232,12 @@ export function ScheduleStep({ form }: { form: ScrapeForm }) {
         />
       </Labeled>
       <p className="typo-caption text-muted-foreground">
-        Runs <span className="text-foreground">{cadenceLabel(form.cron.trim() || null).toLowerCase()}</span>.
+        {tx(t.plugins.scraper.schedule_runs, { cadence: cadenceLabel(form.cron.trim() || null).toLowerCase() })}
       </p>
       <AccessibleToggle
         checked={form.enabled}
         onChange={() => form.setEnabled(!form.enabled)}
-        label="Enabled — scheduled runs fire automatically"
+        label={t.plugins.scraper.field_enabled}
       />
       {/* Arming is the step that needs proof; parking a draft never does. */}
       {form.enabled && !form.previewProven && (

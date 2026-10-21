@@ -80,7 +80,7 @@ export function TriageRulesPanel({ projectId }: TriageRulesPanelProps) {
         <Zap className="w-3 h-3" />
         {t.plugins.dev_triage.auto_triage_rules}
         {rules.length > 0 && (
-          <span className="ml-auto text-foreground">{rules.length} rule{rules.length !== 1 ? 's' : ''}</span>
+          <span className="ml-auto text-foreground">{tx(rules.length === 1 ? t.plugins.dev_triage.rules_count_one : t.plugins.dev_triage.rules_count_other, { count: rules.length })}</span>
         )}
       </button>
 
@@ -126,7 +126,9 @@ export function TriageRulesPanel({ projectId }: TriageRulesPanelProps) {
           {/* The run's outcome: rules that fired are a success. */}
           {runResult && (
             <div className={`px-2.5 py-1.5 typo-caption rounded-interactive border ${TONE_CHIP.success}`}>
-              Applied {runResult.applied} rule{runResult.applied !== 1 ? 's' : ''} -- {runResult.ideas_affected} idea{runResult.ideas_affected !== 1 ? 's' : ''} triaged
+              {tx(runResult.applied === 1 ? t.plugins.dev_triage.run_applied_one : t.plugins.dev_triage.run_applied_other, { count: runResult.applied })}
+              {' · '}
+              {tx(runResult.ideas_affected === 1 ? t.plugins.dev_triage.run_triaged_one : t.plugins.dev_triage.run_triaged_other, { count: runResult.ideas_affected })}
             </div>
           )}
         </div>

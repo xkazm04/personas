@@ -11,7 +11,8 @@ interface EffortRiskFilterProps {
 }
 
 type PresetTone = 'success' | 'warning' | 'error';
-interface Preset { label: string; range: [number, number]; tone: PresetTone; icon: LucideIcon }
+type PresetKey = 'preset_quick_wins' | 'preset_moderate' | 'preset_heavy' | 'preset_safe' | 'preset_risky';
+interface Preset { labelKey: PresetKey; range: [number, number]; tone: PresetTone; icon: LucideIcon }
 
 // A band is a status: a quick or safe band is good news, a heavy or risky one is bad news.
 // Bands partition the stored 1-5 scale (`personas_core::models::IDEA_SCALE_MAX`).
@@ -20,14 +21,14 @@ interface Preset { label: string; range: [number, number]; tone: PresetTone; ico
 // the ones the rule suggestions mine on: quick is <= 2, heavy and risky are >= 4.
 export const LEVEL_PRESETS: Record<'effort' | 'risk', Preset[]> = {
   effort: [
-    { label: 'Quick Wins', range: [1, 2], tone: 'success', icon: Zap },
-    { label: 'Moderate', range: [3, 3], tone: 'warning', icon: Gauge },
-    { label: 'Heavy', range: [4, 5], tone: 'error', icon: ShieldAlert },
+    { labelKey: 'preset_quick_wins', range: [1, 2], tone: 'success', icon: Zap },
+    { labelKey: 'preset_moderate', range: [3, 3], tone: 'warning', icon: Gauge },
+    { labelKey: 'preset_heavy', range: [4, 5], tone: 'error', icon: ShieldAlert },
   ],
   risk: [
-    { label: 'Safe', range: [1, 2], tone: 'success', icon: ShieldCheck },
-    { label: 'Moderate', range: [3, 3], tone: 'warning', icon: Shield },
-    { label: 'Risky', range: [4, 5], tone: 'error', icon: ShieldAlert },
+    { labelKey: 'preset_safe', range: [1, 2], tone: 'success', icon: ShieldCheck },
+    { labelKey: 'preset_moderate', range: [3, 3], tone: 'warning', icon: Shield },
+    { labelKey: 'preset_risky', range: [4, 5], tone: 'error', icon: ShieldAlert },
   ],
 };
 
@@ -65,12 +66,13 @@ function PresetGroup({ heading, presets, range, onChange }: {
         {presets.map((p) => {
           const isActive = rangesEqual(range, p.range);
           const Icon = p.icon;
+          const label = t.plugins.dev_triage[p.labelKey];
           return (
-            <Tooltip key={p.label} content={p.label}>
+            <Tooltip key={p.labelKey} content={label}>
               {/* A preset tile, not a Button: a square icon toggle whose pressed state carries its band's status. */}
               <button
                 type="button"
-                aria-label={p.label}
+                aria-label={label}
                 aria-pressed={isActive}
                 onClick={() => onChange(isActive ? ALL_RANGE : p.range)}
                 className={`flex-1 flex items-center justify-center p-2 rounded-card border transition-colors ${isActive ? `ring-2 ring-inset ring-current/40 ${ACTIVE[p.tone]}` : INACTIVE}`}
@@ -86,10 +88,11 @@ function PresetGroup({ heading, presets, range, onChange }: {
 }
 
 export function EffortRiskFilter({ effortRange, riskRange, onEffortChange, onRiskChange }: EffortRiskFilterProps) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-3">
-      <PresetGroup heading="Effort" presets={LEVEL_PRESETS.effort} range={effortRange} onChange={onEffortChange} />
-      <PresetGroup heading="Risk" presets={LEVEL_PRESETS.risk} range={riskRange} onChange={onRiskChange} />
+      <PresetGroup heading={t.plugins.dev_triage.level_effort} presets={LEVEL_PRESETS.effort} range={effortRange} onChange={onEffortChange} />
+      <PresetGroup heading={t.plugins.dev_triage.level_risk} presets={LEVEL_PRESETS.risk} range={riskRange} onChange={onRiskChange} />
     </div>
   );
 }

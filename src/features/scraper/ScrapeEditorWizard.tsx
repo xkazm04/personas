@@ -55,7 +55,7 @@ export function ScrapeEditorWizard({ form, isEdit, saving, onCancel, onSave }: E
                   >
                     {done ? <Check className="size-3" /> : i + 1}
                   </span>
-                  <span className="typo-caption">{s.label}</span>
+                  <span className="typo-caption">{t.plugins.scraper.step_labels[s.id]}</span>
                 </button>
               </li>
             );
@@ -68,9 +68,9 @@ export function ScrapeEditorWizard({ form, isEdit, saving, onCancel, onSave }: E
         <div className="border-b border-primary/10 px-6 py-4">
           <div className="flex items-center gap-2">
             <current.icon className="size-4 text-status-info" />
-            <span className="text-foreground">{current.label}</span>
+            <span className="text-foreground">{t.plugins.scraper.step_labels[current.id]}</span>
           </div>
-          <p className="typo-caption text-muted-foreground mt-0.5">{current.hint}</p>
+          <p className="typo-caption text-muted-foreground mt-0.5">{t.plugins.scraper.step_hints[current.id]}</p>
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-5">
