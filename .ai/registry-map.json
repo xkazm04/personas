@@ -3927,8 +3927,12 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 8
+          "state": "not-applicable",
+          "priorNotApplicable": 8,
+          "evidence": "src/features/agents/quick-answer/triage/triageTypes.ts:4 a unified inbox where a human decides queued reviews, ideas and questions; it measures no system against scenarios (the answer/question/metric match is vocabulary only)",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+          "evaluatedRevision": 37
         },
         {
           "subject": "test-harness",
@@ -19156,8 +19160,12 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 8
+          "state": "not-applicable",
+          "priorNotApplicable": 8,
+          "evidence": "src/features/agents/sub_model_config/libs/compareHelpers.ts:6 the A/B model compare panel was deleted (d71e0eb948); the context now holds only a tier price table, which runs no scenarios and scores nothing",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+          "evaluatedRevision": 37
         },
         {
           "subject": "agent-instruction-files",
@@ -25890,8 +25898,12 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 8
+          "state": "not-applicable",
+          "priorNotApplicable": 8,
+          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/LifecyclePage.tsx:2 the context's files are the Lifecycle development-practice lens, not prompt competitions; nothing here runs variants against scenarios or ranks them",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+          "evaluatedRevision": 37
         },
         {
           "subject": "mcp-tools",
@@ -29327,7 +29339,11 @@
           "changedAt": "2026-09-29",
           "confidence": "probable",
           "priorNotApplicable": 8,
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/core/src/models/test_suite.rs:30 TestSuiteScenario's only identity is a mutable name with no stable id or content version, and src-tauri/core/src/models/lab.rs:101 LabResultBase records eval_method but no judge model, rubric or packet version, so the shared result contract cannot keep a score series on one scenario version or one instrument",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+          "evaluatedRevision": 37
         },
         {
           "subject": "agent-memory",

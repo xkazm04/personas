@@ -1690,3 +1690,7 @@
 {"ts":"2026-10-21T12:16:30Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["consolidation"],"deviations":1}
 {"ts":"2026-10-21T12:16:30Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["recall-injection","exposure-is-not-credit"],"deviations":1}
 {"ts":"2026-10-21T12:16:30Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["consolidation","memory-governance"],"deviations":1}
+{"ts":"2026-10-21T12:18:39Z","bundle":"software-engineering","subjects":["eval-harness"],"techniques":["scenario-design","judge-stability","comparison-modes","failure-signatures-beside-the-pass-rate"],"deviations":1}
+{"ts":"2026-10-21T12:18:39Z","bundle":"software-engineering","subjects":["eval-harness"],"techniques":[],"deviations":0}
+{"ts":"2026-10-21T12:18:39Z","bundle":"software-engineering","subjects":["eval-harness"],"techniques":[],"deviations":0}
+{"ts":"2026-10-21T12:18:39Z","bundle":"software-engineering","subjects":["eval-harness"],"techniques":[],"deviations":0}
