@@ -15900,7 +15900,11 @@
           "revision": 3,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/hooks/realtime/emitDeploymentEvent.ts:2 Context searches found no talking-avatar terms, while the inspected hooks handle deployment, execution, relay and navigation state, so their event sharing does not trigger face-synchronization requirements.",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:f96c1d7ea0398677",
+          "evaluatedRevision": 3
         },
         {
           "subject": "mcp-tools",
@@ -16361,7 +16365,11 @@
           "revision": 3,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/useProgressiveReveal.ts:9 Context searches found no talking-avatar terms, and the inspected modules implement list mounting, accessibility and DOM interactions, so speech-driven avatar requirements do not apply.",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:f96c1d7ea0398677",
+          "evaluatedRevision": 3
         },
         {
           "subject": "agent-runtime-assembly",
@@ -22312,7 +22320,11 @@
           "revision": 3,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/overview/shared/emptyStatePrototype/MotionEmptyState.tsx:10 Context searches found no talking-avatar terms, and these modules render static illustrations and entry-only execution motifs, so speech synchronization and avatar motion requirements do not apply.",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:f96c1d7ea0398677",
+          "evaluatedRevision": 3
         },
         {
           "subject": "quality-gates",
@@ -32520,7 +32532,11 @@
           "revision": 3,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/shared/glyph/GlyphCard.tsx:44 Context searches found no talking-avatar terms, and the sigils visualize capabilities through navigation, hover and selection, so their geometric shapes and transitions do not establish a speech-driven presence.",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:f96c1d7ea0398677",
+          "evaluatedRevision": 3
         },
         {
           "subject": "mcp-tools",
