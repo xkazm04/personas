@@ -1724,3 +1724,7 @@
 {"ts":"2026-10-21T12:26:12Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["marked-unverifiable-region","seams-and-adapters","locality-and-leverage"],"deviations":1}
 {"ts":"2026-10-21T12:26:12Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["module-depth","seams-and-adapters","marked-unverifiable-region"],"deviations":1}
 {"ts":"2026-10-21T12:26:12Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["module-depth","io-free-core"],"deviations":1}
+{"ts":"2026-10-21T12:27:58Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":["hybrid-lane-fusion","relevance-floors"],"deviations":1}
+{"ts":"2026-10-21T12:27:58Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":["relevance-floors","retrieval-triggering","embedding-lifecycle","hybrid-lane-fusion"],"deviations":1}
+{"ts":"2026-10-21T12:27:58Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":["relevance-floors","retrieval-evaluation"],"deviations":1}
+{"ts":"2026-10-21T12:27:58Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":["chunking-and-indexing"],"deviations":1}
