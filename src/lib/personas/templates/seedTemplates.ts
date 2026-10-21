@@ -9,9 +9,29 @@ import type { TemplateCatalogEntry } from '@/lib/types/templateTypes';
 import type { LocaleCode } from '@/i18n/locales.manifest';
 import { useI18nStore } from '@/stores/i18nStore';
 import { batchImportDesignReviews, deleteStaleSeedTemplates } from '@/api/overview/reviews';
+import recipeIndex from '@/features/templates/sub_explore/recipeIndex.generated.json';
 import { computeContentHashSync, registerBuiltinContentHash } from '@/lib/templates/templateVerification';
 
 const SEED_RUN_ID = 'seed-category-v1';
+
+/** recipe id -> the trigger kind the recipe recommends (v3 `recommendedTrigger`). */
+const RECIPE_TRIGGER_KIND: ReadonlyMap<string, string> = new Map(
+  (recipeIndex as ReadonlyArray<{ id: string; recommendedTrigger: string | null }>).flatMap((r) =>
+    r.recommendedTrigger ? [[r.id, r.recommendedTrigger] as [string, string]] : [],
+  ),
+);
+
+/**
+ * A use case's trigger. Inline v3 use cases carry `suggested_trigger`; after the
+ * recipe migration most are `{ recipe_ref: { id } }` pointers whose trigger lives
+ * on the recipe, so resolve it there or the compare view counts 0 triggers.
+ */
+function useCaseTriggerType(uc: NonNullable<TemplateCatalogEntry['payload']['use_cases']>[number]): string {
+  const inline = uc.suggested_trigger?.trigger_type;
+  if (inline) return inline;
+  const ref = (uc as { recipe_ref?: { id?: unknown } }).recipe_ref;
+  return typeof ref?.id === 'string' ? (RECIPE_TRIGGER_KIND.get(ref.id) ?? '') : '';
+}
 
 export interface SeedReviewInput {
   test_case_id: string;
@@ -40,9 +60,7 @@ function templateToReviewInput(template: TemplateCatalogEntry, runId: string): S
   const v3Connectors = personaObj?.connectors
     ? personaObj.connectors.map((c) => c?.name ?? '').filter(Boolean)
     : [];
-  const v3Triggers = useCases
-    .map((uc) => uc.suggested_trigger?.trigger_type ?? '')
-    .filter(Boolean);
+  const v3Triggers = useCases.map(useCaseTriggerType).filter(Boolean);
 
   const legacyConnectors = payload.suggested_connectors?.map((c) => c.name) ?? [];
   const legacyTriggers = payload.suggested_triggers?.map((t) => t.trigger_type) ?? [];
