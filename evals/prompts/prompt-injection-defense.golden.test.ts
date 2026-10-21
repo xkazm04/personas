@@ -86,8 +86,10 @@ describe("prompt-injection defense — escapeForPrompt", () => {
   it("escapes triple backticks and horizontal-rule delimiters", () => {
     expect(escapeForPrompt(fx.escapeCases.codeFence)).not.toContain("```");
     const ruled = escapeForPrompt(fx.escapeCases.sectionRule);
-    expect(ruled).not.toMatch(/^---$/m); // the exact 3-dash section rule no longer stands alone
-    expect(ruled).toContain("------"); // rewritten to the escaped, non-structural form
+    // No line may still be a horizontal-rule delimiter of ANY length: the old
+    // rewrite to "------" was itself a delimiter (fixed in 35e908aba5).
+    expect(ruled).not.toMatch(/^-{3,}$/m);
+    expect(ruled).toContain("\\---"); // backslash-escaped, so it reads as text
   });
 
   it("neutralizes template-variable syntax only when opted in", () => {
