@@ -221,6 +221,9 @@ export function CloudWebhooksTab() {
           </div>
         </div>
 
+        {/* Degraded relay: the backend reports listing failures and timeouts here */}
+        {relay.error && <InlineErrorBanner severity="warning" message={relay.error} />}
+
         {/* Header + Create button */}
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-mono text-foreground uppercase tracking-wider">
