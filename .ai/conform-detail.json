@@ -3003,21 +3003,23 @@
       "subject": "deployment-contract",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:51:28.000Z",
-      "worker": "e3be0a26-9882-4372-b8b6-1436b4ef6c80",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:46:18.000Z",
+      "worker": "7ab03a8f-c0ff-40ff-8c5d-4268ea469d61",
       "techniques": [
-        {
-          "technique": "environment-promotion",
-          "verdict": "deviation",
-          "evidence": "src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:58 the proof obligation is discharged against the local runtime, not the named deployed environment"
-        },
         {
           "technique": "deploy-gate-coupling",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:59 status 'pass' is derived from a local execution, so a verdict about one target is shown on another's card (failure-not-empty-success)"
+          "evidence": "src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:64 the verifying check targets the local runtime, not the address the deployment serves (technique: point the check at what production serves)"
+        },
+        {
+          "technique": "environment-promotion",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:58 the proof obligation is discharged against the local runtime, not the named deployed environment",
+          "carriedFrom": "2026-10-16"
         }
       ],
+      "registryProposal": "Map hygiene, not corpus: contexts plugins-artist-hooks and plugins-artist-gallery point at files no longer in the tree (artist plugin removed) yet still carry deployment-contract pairs matched on asset/assets; a context rescan + map rebuild should retire them",
       "superseded": [
         {
           "state": "deviation",
@@ -3039,6 +3041,13 @@
           "evaluatedAt": "2026-10-12T12:45:09.000Z",
           "worker": "320c92f9-9ce8-401d-b621-cbab8db339de",
           "reason": "replaced by e3be0a26-9882-4372-b8b6-1436b4ef6c80"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:58 re-confirmed 2026-10-16: the deployment smoke test runs local executePersona, not the endpoint the card advertises (src/features/agents/sub_deployment/components/cloud/DeploymentCard.tsx:44) although src/api/system/cloud.ts:49 cloudExecutePersona exists - a pass describes the local twin, never the deployed build",
+          "evaluatedAt": "2026-10-16T17:51:28.000Z",
+          "worker": "e3be0a26-9882-4372-b8b6-1436b4ef6c80",
+          "reason": "replaced by 7ab03a8f-c0ff-40ff-8c5d-4268ea469d61"
         }
       ]
     },
@@ -11841,19 +11850,20 @@
       "subject": "deployment-contract",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:51:28.000Z",
-      "worker": "e3be0a26-9882-4372-b8b6-1436b4ef6c80",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:46:18.000Z",
+      "worker": "7ab03a8f-c0ff-40ff-8c5d-4268ea469d61",
       "techniques": [
         {
           "technique": "environment-promotion",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/gitlab.rs:1288 rollback is a rebuild from current state, the rule says roll back by re-pointing to the last known-good build"
+          "evidence": "src-tauri/src/commands/infrastructure/gitlab.rs:1288 no-snapshot rollback redeploys current persona state; the technique requires rollback by re-pointing to the last known-good build"
         },
         {
           "technique": "deploy-gate-coupling",
           "verdict": "deviation",
-          "evidence": "src/features/plugins/gitlab/components/GitOpsVersionHistory.tsx:63 the rolled-back definition was never verified; 'which build is serving and what was its verdict' is not answerable"
+          "evidence": "src/features/plugins/gitlab/components/GitOpsVersionHistory.tsx:63 the rolled-back definition was never verified; 'which build is serving and what was its verdict' is not answerable",
+          "carriedFrom": "2026-10-16"
         }
       ],
       "superseded": [
@@ -11870,6 +11880,13 @@
           "evaluatedAt": "2026-10-12T12:45:09.000Z",
           "worker": "320c92f9-9ce8-401d-b621-cbab8db339de",
           "reason": "replaced by e3be0a26-9882-4372-b8b6-1436b4ef6c80"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/gitlab.rs:1277 re-confirmed 2026-10-16 (anchor moved from :1282): rollback offered at src/features/plugins/gitlab/components/DeploymentHistoryTab.tsx:55 rebuilds the agent from the snapshot prompt plus CURRENT tools/model, and with no snapshot falls back to current persona state (gitlab.rs:1288); same rebuild at gitlab.rs:989 - rollback ships a never-run artifact instead of re-pointing to the last known-good one",
+          "evaluatedAt": "2026-10-16T17:51:28.000Z",
+          "worker": "e3be0a26-9882-4372-b8b6-1436b4ef6c80",
+          "reason": "replaced by 7ab03a8f-c0ff-40ff-8c5d-4268ea469d61"
         }
       ]
     },
