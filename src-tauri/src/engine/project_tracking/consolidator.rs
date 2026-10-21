@@ -477,6 +477,8 @@ async fn call_sonnet_oneshot(prompt: &str) -> Result<PulseEnvelope, AppError> {
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
+        // Belt and braces for any drop path that bypasses the explicit kill below.
+        .kill_on_drop(true)
         .env("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "1");
     // No console window on Windows (desktop-heap / 0xC0000142 guard).
     crate::companion::session::apply_no_console_window(&mut cmd);
@@ -532,7 +534,17 @@ async fn call_sonnet_oneshot(prompt: &str) -> Result<PulseEnvelope, AppError> {
         Ok::<(), AppError>(())
     };
 
-    timeout(CONSOLIDATOR_TIMEOUT, collect).await.map_err(|_| {
+    let collected = timeout(CONSOLIDATOR_TIMEOUT, collect).await;
+    if collected.is_err() {
+        // A hung CLI (spawned with --dangerously-skip-permissions) must not
+        // outlive the call: kill it (which also reaps it) and stop the stderr
+        // reader, which would otherwise wait on a pipe nobody closes.
+        if let Err(e) = child.kill().await {
+            warn!(error = %e, "project-tracking: could not kill the timed-out claude child");
+        }
+        stderr_handle.abort();
+    }
+    collected.map_err(|_| {
         AppError::Internal(format!(
             "project-tracking consolidator timed out after {:?}",
             CONSOLIDATOR_TIMEOUT
