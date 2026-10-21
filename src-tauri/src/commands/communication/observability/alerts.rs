@@ -25,6 +25,15 @@ fn reject_always_true_rule(operator: AlertOperator, threshold: f64) -> Result<()
     Ok(())
 }
 
+/// The operator + threshold an update would leave stored, run through
+/// `reject_always_true_rule`.
+fn check_merged_rule(existing: &AlertRule, input: &UpdateAlertRuleInput) -> Result<(), AppError> {
+    reject_always_true_rule(
+        input.operator.unwrap_or(existing.operator),
+        input.threshold.unwrap_or(existing.threshold),
+    )
+}
+
 #[tauri::command]
 #[instrument(skip(state))]
 pub fn list_alert_rules(state: State<'_, Arc<AppState>>) -> Result<Vec<AlertRule>, AppError> {
@@ -62,13 +71,13 @@ pub fn update_alert_rule(
                 "Threshold must be a finite number".into(),
             ));
         }
-        // Guard the degenerate always-true case when this update sets both the
-        // operator and the threshold. (A threshold-only edit can't be validated
-        // here without the existing operator; create-time validation covers the
-        // common path.)
-        if let Some(op) = input.operator {
-            reject_always_true_rule(op, t)?;
-        }
+    }
+    // Validate the rule as it will be STORED: an edit carrying only the operator
+    // or only the threshold (the inline-edit path) is checked against the saved
+    // other half, so no single-field edit can create an always-firing rule.
+    if input.operator.is_some() || input.threshold.is_some() {
+        let existing = alert_repo::get_alert_rule(&state.db, &id)?;
+        check_merged_rule(&existing, &input)?;
     }
     alert_repo::update_alert_rule(&state.db, &id, input)
 }
@@ -126,4 +135,51 @@ pub fn dismiss_fired_alert(state: State<'_, Arc<AppState>>, id: String) -> Resul
 pub fn clear_fired_alerts(state: State<'_, Arc<AppState>>) -> Result<(), AppError> {
     require_auth_sync(&state)?;
     alert_repo::clear_fired_alerts(&state.db)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::models::{AlertMetric, AlertSeverity};
+
+    fn rule(operator: AlertOperator, threshold: f64) -> AlertRule {
+        AlertRule {
+            id: "r1".into(),
+            name: "rule".into(),
+            metric: AlertMetric::Executions,
+            operator,
+            threshold,
+            severity: AlertSeverity::Warning,
+            persona_id: None,
+            enabled: true,
+            created_at: "2026-10-20T00:00:00Z".into(),
+            updated_at: "2026-10-20T00:00:00Z".into(),
+        }
+    }
+
+    fn edit(operator: Option<AlertOperator>, threshold: Option<f64>) -> UpdateAlertRuleInput {
+        UpdateAlertRuleInput {
+            name: None,
+            metric: None,
+            operator,
+            threshold,
+            severity: None,
+            persona_id: None,
+            enabled: None,
+        }
+    }
+
+    #[test]
+    fn a_threshold_only_edit_is_checked_against_the_saved_operator() {
+        let saved = rule(AlertOperator::Gte, 5.0);
+        assert!(check_merged_rule(&saved, &edit(None, Some(0.0))).is_err());
+        assert!(check_merged_rule(&saved, &edit(None, Some(7.0))).is_ok());
+    }
+
+    #[test]
+    fn an_operator_only_edit_is_checked_against_the_saved_threshold() {
+        let saved = rule(AlertOperator::Lt, 0.0);
+        assert!(check_merged_rule(&saved, &edit(Some(AlertOperator::Gte), None)).is_err());
+        assert!(check_merged_rule(&saved, &edit(Some(AlertOperator::Gt), None)).is_ok());
+    }
 }
