@@ -10102,7 +10102,14 @@
       "dismiss_suggestion": "Отклонить предложение",
       "memory_insights": "Аналитика памяти",
       "suggestions": "Предложений: {count}",
-      "suggestions_one": "{count} предложение"
+      "suggestions_one": "{count} предложение",
+      "kind_throttle": "Правило ограничения",
+      "kind_schedule": "Изменение расписания",
+      "kind_alert": "Правило оповещения",
+      "kind_config": "Изменение конфигурации",
+      "kind_routing": "Правило маршрутизации",
+      "rules_restored_from_session": "Не удалось прочитать сохранённые правила действий памяти, они восстановлены из этой сессии.",
+      "rules_unreadable": "Не удалось прочитать сохранённые правила действий памяти, возможно, их придётся создать заново."
     },
     "memory_card": {
       "cancel": "Отмена",
@@ -10132,7 +10139,14 @@
       "resolved_toast": "Противоречие снято",
       "retire_blocked_core_toast": "Основное (закреплённое) воспоминание нельзя архивировать — разберите это противоречие вручную",
       "scanned_scope": "среди {count} последних воспоминаний",
-      "vs": "против"
+      "vs": "против",
+      "kind_duplicate": "Дубликат",
+      "kind_contradiction": "Противоречие",
+      "kind_superseded": "Устарело",
+      "reason_contradiction": "Возможно противоречивые указания по одной теме (пересечение тем {pct}%)",
+      "reason_duplicate_cross_agent": "Почти одинаковые воспоминания разных агентов (сходство {pct}%)",
+      "reason_duplicate_same_agent": "Почти одинаковые воспоминания одного агента (сходство {pct}%)",
+      "reason_superseded": "Более новое воспоминание может заменить старое по той же теме (пересечение {pct}%)"
     },
     "memory_detail": {
       "category_label": "Категория",
@@ -13060,6 +13074,7 @@
       "cross_project_map": "Межпроектная карта",
       "cross_project_title": "Межпроектная карта метаданных",
       "ctx_audit_attention": "Требует внимания",
+      "ctx_audit_unverified": "Не проверено: файлы проекта недоступны",
       "ctx_audit_balanced": "Соответствует политике",
       "ctx_audit_failed": "Не удалось выполнить аудит.",
       "ctx_audit_kind_dangling_file_path": "Привязанный файл отсутствует на диске",

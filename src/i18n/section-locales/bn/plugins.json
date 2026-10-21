@@ -1488,6 +1488,7 @@
     "cross_project_map": "ক্রস-প্রকল্প মানচিত্র",
     "cross_project_title": "ক্রস-প্রকল্প মেটাডেটা মানচিত্র",
     "ctx_audit_attention": "মনোযোগ প্রয়োজন",
+    "ctx_audit_unverified": "যাচাই করা হয়নি: প্রকল্পের ফাইল অ্যাক্সেস করা যায়নি",
     "ctx_audit_balanced": "নীতির মধ্যে আছে",
     "ctx_audit_failed": "নিরীক্ষা চালানো যায়নি।",
     "ctx_audit_kind_dangling_file_path": "ম্যাপ করা ফাইলটি ডিস্কে পাওয়া যায়নি",

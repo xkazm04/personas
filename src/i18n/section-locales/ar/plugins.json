@@ -1488,6 +1488,7 @@
     "cross_project_map": "خريطة عبر المشاريع",
     "cross_project_title": "خريطة البيانات الوصفية عبر المشاريع",
     "ctx_audit_attention": "يحتاج إلى انتباه",
+    "ctx_audit_unverified": "لم يتم التحقق: تعذّر الوصول إلى ملفات المشروع",
     "ctx_audit_balanced": "ضمن السياسة",
     "ctx_audit_failed": "تعذّر تشغيل التدقيق.",
     "ctx_audit_kind_dangling_file_path": "الملف المرتبط مفقود من القرص",

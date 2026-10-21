@@ -1199,7 +1199,14 @@
     "dismiss_suggestion": "رفض الاقتراح",
     "memory_insights": "رؤى الذاكرة",
     "suggestions": "{count} اقتراحات",
-    "suggestions_one": "{count} اقتراح"
+    "suggestions_one": "{count} اقتراح",
+    "kind_throttle": "قاعدة تحديد المعدل",
+    "kind_schedule": "تعديل الجدول",
+    "kind_alert": "قاعدة تنبيه",
+    "kind_config": "تغيير الإعدادات",
+    "kind_routing": "قاعدة التوجيه",
+    "rules_restored_from_session": "تعذّرت قراءة قواعد إجراءات الذاكرة المحفوظة وتمت استعادتها من هذه الجلسة.",
+    "rules_unreadable": "تعذّرت قراءة قواعد إجراءات الذاكرة المحفوظة وقد تحتاج إلى إعادة إنشائها."
   },
   "memory_card": {
     "cancel": "إلغاء",
@@ -1229,7 +1236,14 @@
     "resolved_toast": "تمت معالجة التعارض",
     "retire_blocked_core_toast": "لا يمكن أرشفة ذكرى أساسية مثبّتة — عالِج هذا التعارض يدويًا",
     "scanned_scope": "ضمن أحدث {count} ذكرى",
-    "vs": "مقابل"
+    "vs": "مقابل",
+    "kind_duplicate": "مكرّر",
+    "kind_contradiction": "تناقض",
+    "kind_superseded": "تم استبداله",
+    "reason_contradiction": "تعليمات قد تكون متناقضة حول الموضوع نفسه (تداخل الموضوع {pct}%)",
+    "reason_duplicate_cross_agent": "ذكريات شبه مكررة بين وكلاء مختلفين (تشابه {pct}%)",
+    "reason_duplicate_same_agent": "ذكريات شبه مكررة داخل الوكيل نفسه (تشابه {pct}%)",
+    "reason_superseded": "قد تحل الذاكرة الأحدث محل ذاكرة أقدم حول الموضوع نفسه (تداخل {pct}%)"
   },
   "memory_detail": {
     "category_label": "الفئة",

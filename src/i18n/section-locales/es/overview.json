@@ -1199,7 +1199,14 @@
     "dismiss_suggestion": "Descartar sugerencia",
     "memory_insights": "Perspectivas de memoria",
     "suggestions": "{count} sugerencias",
-    "suggestions_one": "{count} sugerencia"
+    "suggestions_one": "{count} sugerencia",
+    "kind_throttle": "Regla de limitación",
+    "kind_schedule": "Ajuste de programación",
+    "kind_alert": "Regla de alerta",
+    "kind_config": "Cambio de configuración",
+    "kind_routing": "Regla de enrutamiento",
+    "rules_restored_from_session": "No se pudieron leer tus reglas de acción de memoria guardadas y se restauraron desde esta sesión.",
+    "rules_unreadable": "No se pudieron leer tus reglas de acción de memoria guardadas y quizá haya que volver a crearlas."
   },
   "memory_card": {
     "cancel": "Cancelar",
@@ -1229,7 +1236,14 @@
     "resolved_toast": "Conflicto resuelto",
     "retire_blocked_core_toast": "No se puede archivar un recuerdo esencial (fijado): resuelve este conflicto a mano",
     "scanned_scope": "en las {count} memorias más recientes",
-    "vs": "vs"
+    "vs": "vs",
+    "kind_duplicate": "Duplicado",
+    "kind_contradiction": "Contradicción",
+    "kind_superseded": "Reemplazado",
+    "reason_contradiction": "Instrucciones posiblemente contradictorias sobre el mismo tema ({pct} % de solapamiento)",
+    "reason_duplicate_cross_agent": "Recuerdos casi duplicados entre distintos agentes ({pct} % de similitud)",
+    "reason_duplicate_same_agent": "Recuerdos casi duplicados dentro del mismo agente ({pct} % de similitud)",
+    "reason_superseded": "Un recuerdo más reciente puede reemplazar a uno anterior sobre el mismo tema ({pct} % de solapamiento)"
   },
   "memory_detail": {
     "category_label": "Categoría",

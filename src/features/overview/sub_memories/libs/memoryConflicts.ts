@@ -10,13 +10,22 @@ import {
 
 export type ConflictKind = 'duplicate' | 'contradiction' | 'superseded';
 
+export type ConflictReasonKey =
+  | 'contradiction'
+  | 'duplicate_cross_agent'
+  | 'duplicate_same_agent'
+  | 'superseded';
+
 export interface MemoryConflict {
   id: string;
   kind: ConflictKind;
   similarity: number;
   memoryA: PersonaMemory;
   memoryB: PersonaMemory;
-  reason: string;
+  /** Which sentence to show; the copy lives in t.overview.memory_conflict.reason_*. */
+  reasonKey: ConflictReasonKey;
+  /** Percentage interpolated into the reason sentence. */
+  reasonPct: number;
 }
 
 export type ConflictResolution = 'merge' | 'keep_a' | 'keep_b' | 'dismiss';
@@ -142,7 +151,7 @@ export function detectConflicts(memories: PersonaMemory[]): MemoryConflict[] {
       // redundancy, however similar the two texts read.
       if (topic >= CONTRADICTION_TOPIC_THRESHOLD && hasContradictionSignal(contentA, contentB)) {
         conflicts.push({ id: pairKey, kind: 'contradiction', similarity: topic, memoryA: a, memoryB: b,
-          reason: `Potentially contradictory instructions on the same topic (${Math.round(topic * 100)}% topic overlap)` });
+          reasonKey: 'contradiction', reasonPct: Math.round(topic * 100) });
         continue;
       }
 
@@ -154,7 +163,7 @@ export function detectConflicts(memories: PersonaMemory[]): MemoryConflict[] {
         if (sim >= DUPLICATE_THRESHOLD) {
           const crossPersona = a.persona_id !== b.persona_id;
           conflicts.push({ id: pairKey, kind: 'duplicate', similarity: sim, memoryA: a, memoryB: b,
-            reason: crossPersona ? `Near-duplicate memories across different agents (${Math.round(sim * 100)}% similar)` : `Near-duplicate memories within the same agent (${Math.round(sim * 100)}% similar)` });
+            reasonKey: crossPersona ? 'duplicate_cross_agent' : 'duplicate_same_agent', reasonPct: Math.round(sim * 100) });
           continue;
         }
       }
@@ -165,7 +174,7 @@ export function detectConflicts(memories: PersonaMemory[]): MemoryConflict[] {
           const older = new Date(a.created_at) < new Date(b.created_at) ? a : b;
           const newer = older === a ? b : a;
           conflicts.push({ id: pairKey, kind: 'superseded', similarity: topic, memoryA: newer, memoryB: older,
-            reason: `Newer memory may supersede an older one on the same topic (${Math.round(topic * 100)}% overlap)` });
+            reasonKey: 'superseded', reasonPct: Math.round(topic * 100) });
         }
       }
     }

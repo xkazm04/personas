@@ -1488,6 +1488,7 @@
     "cross_project_map": "Projektübergreifende Karte",
     "cross_project_title": "Projektübergreifende Metadaten-Karte",
     "ctx_audit_attention": "Erfordert Aufmerksamkeit",
+    "ctx_audit_unverified": "Nicht geprüft: Projektdateien nicht erreichbar",
     "ctx_audit_balanced": "Vorgabe erfüllt",
     "ctx_audit_failed": "Die Prüfung konnte nicht ausgeführt werden.",
     "ctx_audit_kind_dangling_file_path": "Zugeordnete Datei fehlt auf der Festplatte",

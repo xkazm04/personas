@@ -1199,7 +1199,14 @@
     "dismiss_suggestion": "পরামর্শ বরখাস্ত করুন",
     "memory_insights": "স্মৃতির অন্তর্দৃষ্টি",
     "suggestions": "{count}টি পরামর্শ",
-    "suggestions_one": "{count}টি পরামর্শ"
+    "suggestions_one": "{count}টি পরামর্শ",
+    "kind_throttle": "থ্রটল নিয়ম",
+    "kind_schedule": "সময়সূচি সমন্বয়",
+    "kind_alert": "সতর্কতা নিয়ম",
+    "kind_config": "কনফিগারেশন পরিবর্তন",
+    "kind_routing": "রাউটিং নিয়ম",
+    "rules_restored_from_session": "আপনার সংরক্ষিত মেমরি-অ্যাকশন নিয়মগুলো পড়া যায়নি এবং এই সেশন থেকে পুনরুদ্ধার করা হয়েছে।",
+    "rules_unreadable": "আপনার সংরক্ষিত মেমরি-অ্যাকশন নিয়মগুলো পড়া যায়নি এবং নতুন করে তৈরি করতে হতে পারে।"
   },
   "memory_card": {
     "cancel": "বাতিল",
@@ -1229,7 +1236,14 @@
     "resolved_toast": "দ্বন্দ্ব মিটেছে",
     "retire_blocked_core_toast": "মূল (পিন করা) স্মৃতি সংরক্ষণাগারে পাঠানো যাবে না — এই দ্বন্দ্ব নিজে মেটান",
     "scanned_scope": "সাম্প্রতিকতম {count}টি স্মৃতির মধ্যে",
-    "vs": "বনাম"
+    "vs": "বনাম",
+    "kind_duplicate": "ডুপ্লিকেট",
+    "kind_contradiction": "বিরোধ",
+    "kind_superseded": "প্রতিস্থাপিত",
+    "reason_contradiction": "একই বিষয়ে সম্ভাব্য পরস্পরবিরোধী নির্দেশ (বিষয়ের মিল {pct}%)",
+    "reason_duplicate_cross_agent": "ভিন্ন এজেন্টের মধ্যে প্রায় অভিন্ন স্মৃতি (মিল {pct}%)",
+    "reason_duplicate_same_agent": "একই এজেন্টের মধ্যে প্রায় অভিন্ন স্মৃতি (মিল {pct}%)",
+    "reason_superseded": "নতুন স্মৃতি একই বিষয়ের পুরোনো স্মৃতিকে প্রতিস্থাপন করতে পারে (মিল {pct}%)"
   },
   "memory_detail": {
     "category_label": "বিভাগ",

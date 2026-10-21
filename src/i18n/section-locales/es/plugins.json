@@ -1488,6 +1488,7 @@
     "cross_project_map": "Mapa Entre Proyectos",
     "cross_project_title": "Mapa de Metadatos entre Proyectos",
     "ctx_audit_attention": "Requiere atención",
+    "ctx_audit_unverified": "No verificado: archivos del proyecto inaccesibles",
     "ctx_audit_balanced": "Dentro de la política",
     "ctx_audit_failed": "No se pudo ejecutar la auditoría.",
     "ctx_audit_kind_dangling_file_path": "El archivo asignado falta en el disco",

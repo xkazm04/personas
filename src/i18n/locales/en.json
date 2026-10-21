@@ -10244,7 +10244,14 @@
       "dismiss_suggestion": "Dismiss suggestion",
       "memory_insights": "Memory Insights",
       "suggestions": "{count} suggestions",
-      "suggestions_one": "{count} suggestion"
+      "suggestions_one": "{count} suggestion",
+      "kind_throttle": "Throttle Rule",
+      "kind_schedule": "Schedule Adjustment",
+      "kind_alert": "Alert Rule",
+      "kind_config": "Config Change",
+      "kind_routing": "Routing Rule",
+      "rules_restored_from_session": "Your saved memory-action rules could not be read and were restored from this session.",
+      "rules_unreadable": "Your saved memory-action rules could not be read and may need to be re-created."
     },
     "memory_conflict": {
       "memory_a": "Memory A",
@@ -10269,7 +10276,14 @@
       "count_contradiction_one": "{count} contradiction",
       "count_duplicate": "{count} duplicates",
       "count_duplicate_one": "{count} duplicate",
-      "count_superseded": "{count} superseded"
+      "count_superseded": "{count} superseded",
+      "kind_duplicate": "Duplicate",
+      "kind_contradiction": "Contradiction",
+      "kind_superseded": "Superseded",
+      "reason_contradiction": "Potentially contradictory instructions on the same topic ({pct}% topic overlap)",
+      "reason_duplicate_cross_agent": "Near-duplicate memories across different agents ({pct}% similar)",
+      "reason_duplicate_same_agent": "Near-duplicate memories within the same agent ({pct}% similar)",
+      "reason_superseded": "Newer memory may supersede an older one on the same topic ({pct}% overlap)"
     },
     "observability_charts": {
       "cost_over_time": "Cost Over Time",
@@ -18136,6 +18150,7 @@
       "ctx_audit_never_run": "Not checked yet. The audit looks for references naming no context, mapped files missing from disk, and contexts outside the size policy. It only reports — it never changes the map.",
       "ctx_audit_balanced": "Within policy",
       "ctx_audit_attention": "Needs attention",
+      "ctx_audit_unverified": "Not verified: project files unreachable",
       "ctx_audit_scope": "{contexts} contexts in {groups} groups",
       "ctx_audit_failed": "The audit could not run.",
       "ctx_audit_more_not_listed": "More findings not listed",

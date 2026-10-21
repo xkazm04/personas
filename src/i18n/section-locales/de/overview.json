@@ -1199,7 +1199,14 @@
     "dismiss_suggestion": "Vorschlag verwerfen",
     "memory_insights": "Erinnerungs-Einblicke",
     "suggestions": "{count} Vorschläge",
-    "suggestions_one": "{count} Vorschlag"
+    "suggestions_one": "{count} Vorschlag",
+    "kind_throttle": "Drosselungsregel",
+    "kind_schedule": "Zeitplananpassung",
+    "kind_alert": "Alarmregel",
+    "kind_config": "Konfigurationsänderung",
+    "kind_routing": "Routing-Regel",
+    "rules_restored_from_session": "Deine gespeicherten Memory-Aktionsregeln konnten nicht gelesen werden und wurden aus dieser Sitzung wiederhergestellt.",
+    "rules_unreadable": "Deine gespeicherten Memory-Aktionsregeln konnten nicht gelesen werden und müssen eventuell neu erstellt werden."
   },
   "memory_card": {
     "cancel": "Abbrechen",
@@ -1229,7 +1236,14 @@
     "resolved_toast": "Konflikt geklärt",
     "retire_blocked_core_toast": "Eine Kern-Erinnerung (angeheftet) lässt sich nicht archivieren — bitte manuell klären",
     "scanned_scope": "in den {count} neuesten Erinnerungen",
-    "vs": "vs"
+    "vs": "vs",
+    "kind_duplicate": "Duplikat",
+    "kind_contradiction": "Widerspruch",
+    "kind_superseded": "Überholt",
+    "reason_contradiction": "Möglicherweise widersprüchliche Anweisungen zum selben Thema ({pct} % Themenüberschneidung)",
+    "reason_duplicate_cross_agent": "Nahezu identische Erinnerungen verschiedener Agenten ({pct} % ähnlich)",
+    "reason_duplicate_same_agent": "Nahezu identische Erinnerungen desselben Agenten ({pct} % ähnlich)",
+    "reason_superseded": "Die neuere Erinnerung könnte eine ältere zum selben Thema ablösen ({pct} % Überschneidung)"
   },
   "memory_detail": {
     "category_label": "Kategorie",

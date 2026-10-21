@@ -10102,7 +10102,14 @@
       "dismiss_suggestion": "提案を却下",
       "memory_insights": "メモリインサイト",
       "suggestions": "{count}件の提案",
-      "suggestions_one": "{count}件の提案"
+      "suggestions_one": "{count}件の提案",
+      "kind_throttle": "スロットル ルール",
+      "kind_schedule": "スケジュール調整",
+      "kind_alert": "アラート ルール",
+      "kind_config": "設定変更",
+      "kind_routing": "ルーティング ルール",
+      "rules_restored_from_session": "保存済みのメモリ アクション ルールを読み取れなかったため、このセッションから復元しました。",
+      "rules_unreadable": "保存済みのメモリ アクション ルールを読み取れませんでした。再作成が必要な場合があります。"
     },
     "memory_card": {
       "cancel": "キャンセル",
@@ -10132,7 +10139,14 @@
       "resolved_toast": "矛盾を解消しました",
       "retire_blocked_core_toast": "コア（固定）の記憶はアーカイブできません — この矛盾は手動で解消してください",
       "scanned_scope": "最新 {count} 件のメモリ内",
-      "vs": "対"
+      "vs": "対",
+      "kind_duplicate": "重複",
+      "kind_contradiction": "矛盾",
+      "kind_superseded": "置き換え済み",
+      "reason_contradiction": "同じトピックに矛盾する可能性のある指示があります(トピックの重なり {pct}%)",
+      "reason_duplicate_cross_agent": "異なるエージェント間でほぼ重複する記憶です(類似度 {pct}%)",
+      "reason_duplicate_same_agent": "同じエージェント内でほぼ重複する記憶です(類似度 {pct}%)",
+      "reason_superseded": "新しい記憶が同じトピックの古い記憶に取って代わる可能性があります(重なり {pct}%)"
     },
     "memory_detail": {
       "category_label": "カテゴリ",
@@ -13060,6 +13074,7 @@
       "cross_project_map": "クロスプロジェクトマップ",
       "cross_project_title": "クロスプロジェクトメタデータマップ",
       "ctx_audit_attention": "要確認",
+      "ctx_audit_unverified": "未検証: プロジェクトのファイルにアクセスできません",
       "ctx_audit_balanced": "方針を満たしています",
       "ctx_audit_failed": "監査を実行できませんでした。",
       "ctx_audit_kind_dangling_file_path": "割り当て済みファイルがディスク上に見つかりません",

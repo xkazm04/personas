@@ -1488,6 +1488,7 @@
     "cross_project_map": "Межпроектная карта",
     "cross_project_title": "Межпроектная карта метаданных",
     "ctx_audit_attention": "Требует внимания",
+    "ctx_audit_unverified": "Не проверено: файлы проекта недоступны",
     "ctx_audit_balanced": "Соответствует политике",
     "ctx_audit_failed": "Не удалось выполнить аудит.",
     "ctx_audit_kind_dangling_file_path": "Привязанный файл отсутствует на диске",

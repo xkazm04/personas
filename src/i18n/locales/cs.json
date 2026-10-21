@@ -10102,7 +10102,14 @@
       "dismiss_suggestion": "Zavřít návrh",
       "memory_insights": "Poznatky ze vzpomínek",
       "suggestions": "{count} návrhů",
-      "suggestions_one": "{count} návrh"
+      "suggestions_one": "{count} návrh",
+      "kind_throttle": "Pravidlo omezení",
+      "kind_schedule": "Úprava plánu",
+      "kind_alert": "Pravidlo upozornění",
+      "kind_config": "Změna konfigurace",
+      "kind_routing": "Pravidlo směrování",
+      "rules_restored_from_session": "Uložená pravidla akcí paměti se nepodařilo načíst a byla obnovena z této relace.",
+      "rules_unreadable": "Uložená pravidla akcí paměti se nepodařilo načíst a možná bude nutné je vytvořit znovu."
     },
     "memory_card": {
       "cancel": "Zrušit",
@@ -10132,7 +10139,14 @@
       "resolved_toast": "Konflikt vyřešen",
       "retire_blocked_core_toast": "Základní (připnutou) vzpomínku nelze archivovat — vyřešte konflikt ručně",
       "scanned_scope": "v {count} nejnovějších vzpomínkách",
-      "vs": "vs."
+      "vs": "vs.",
+      "kind_duplicate": "Duplikát",
+      "kind_contradiction": "Rozpor",
+      "kind_superseded": "Nahrazeno",
+      "reason_contradiction": "Možná protichůdné pokyny ke stejnému tématu (překryv tématu {pct} %)",
+      "reason_duplicate_cross_agent": "Téměř shodné vzpomínky různých agentů (podobnost {pct} %)",
+      "reason_duplicate_same_agent": "Téměř shodné vzpomínky téhož agenta (podobnost {pct} %)",
+      "reason_superseded": "Novější vzpomínka může nahradit starší ke stejnému tématu (překryv {pct} %)"
     },
     "memory_detail": {
       "category_label": "Kategorie",
@@ -13060,6 +13074,7 @@
       "cross_project_map": "Mapa napříč projekty",
       "cross_project_title": "Mapa metadat napříč projekty",
       "ctx_audit_attention": "Vyžaduje pozornost",
+      "ctx_audit_unverified": "Neověřeno: soubory projektu jsou nedostupné",
       "ctx_audit_balanced": "V souladu s politikou",
       "ctx_audit_failed": "Audit se nepodařilo spustit.",
       "ctx_audit_kind_dangling_file_path": "Mapovaný soubor na disku chybí",

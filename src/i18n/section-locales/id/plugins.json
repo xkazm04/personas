@@ -1488,6 +1488,7 @@
     "cross_project_map": "Peta lintas proyek",
     "cross_project_title": "Peta metadata lintas proyek",
     "ctx_audit_attention": "Perlu perhatian",
+    "ctx_audit_unverified": "Belum diverifikasi: berkas proyek tidak dapat diakses",
     "ctx_audit_balanced": "Sesuai kebijakan",
     "ctx_audit_failed": "Audit tidak dapat dijalankan.",
     "ctx_audit_kind_dangling_file_path": "Berkas terpetakan hilang dari disk",

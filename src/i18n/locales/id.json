@@ -10102,7 +10102,14 @@
       "dismiss_suggestion": "Abaikan saran",
       "memory_insights": "Wawasan memori",
       "suggestions": "{count} saran",
-      "suggestions_one": "{count} saran"
+      "suggestions_one": "{count} saran",
+      "kind_throttle": "Aturan pembatasan",
+      "kind_schedule": "Penyesuaian jadwal",
+      "kind_alert": "Aturan peringatan",
+      "kind_config": "Perubahan konfigurasi",
+      "kind_routing": "Aturan perutean",
+      "rules_restored_from_session": "Aturan tindakan memori tersimpan Anda tidak dapat dibaca dan dipulihkan dari sesi ini.",
+      "rules_unreadable": "Aturan tindakan memori tersimpan Anda tidak dapat dibaca dan mungkin perlu dibuat ulang."
     },
     "memory_card": {
       "cancel": "Batalkan",
@@ -10132,7 +10139,14 @@
       "resolved_toast": "Konflik diselesaikan",
       "retire_blocked_core_toast": "Memori inti (disematkan) tidak bisa diarsipkan — selesaikan konflik ini secara manual",
       "scanned_scope": "dalam {count} memori terbaru",
-      "vs": "vs"
+      "vs": "vs",
+      "kind_duplicate": "Duplikat",
+      "kind_contradiction": "Kontradiksi",
+      "kind_superseded": "Digantikan",
+      "reason_contradiction": "Instruksi yang mungkin bertentangan pada topik yang sama (tumpang tindih topik {pct}%)",
+      "reason_duplicate_cross_agent": "Memori yang hampir sama antar agen berbeda (kemiripan {pct}%)",
+      "reason_duplicate_same_agent": "Memori yang hampir sama dalam agen yang sama (kemiripan {pct}%)",
+      "reason_superseded": "Memori yang lebih baru mungkin menggantikan yang lebih lama pada topik yang sama (tumpang tindih {pct}%)"
     },
     "memory_detail": {
       "category_label": "Kategori",
@@ -13060,6 +13074,7 @@
       "cross_project_map": "Peta lintas proyek",
       "cross_project_title": "Peta metadata lintas proyek",
       "ctx_audit_attention": "Perlu perhatian",
+      "ctx_audit_unverified": "Belum diverifikasi: berkas proyek tidak dapat diakses",
       "ctx_audit_balanced": "Sesuai kebijakan",
       "ctx_audit_failed": "Audit tidak dapat dijalankan.",
       "ctx_audit_kind_dangling_file_path": "Berkas terpetakan hilang dari disk",

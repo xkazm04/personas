@@ -1488,6 +1488,7 @@
     "cross_project_map": "Carte inter-projets",
     "cross_project_title": "Carte de métadonnées inter-projets",
     "ctx_audit_attention": "Demande attention",
+    "ctx_audit_unverified": "Non vérifié : fichiers du projet inaccessibles",
     "ctx_audit_balanced": "Conforme à la politique",
     "ctx_audit_failed": "L’audit n’a pas pu être exécuté.",
     "ctx_audit_kind_dangling_file_path": "Le fichier associé est absent du disque",

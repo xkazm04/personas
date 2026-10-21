@@ -1488,6 +1488,7 @@
     "cross_project_map": "跨项目映射",
     "cross_project_title": "跨项目元数据映射",
     "ctx_audit_attention": "需要关注",
+    "ctx_audit_unverified": "未验证：无法访问项目文件",
     "ctx_audit_balanced": "符合策略",
     "ctx_audit_failed": "审计无法运行。",
     "ctx_audit_kind_dangling_file_path": "已映射的文件在磁盘上缺失",

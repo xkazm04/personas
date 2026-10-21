@@ -1662,6 +1662,7 @@
     "ctx_audit_never_run": "Not checked yet. The audit looks for references naming no context, mapped files missing from disk, and contexts outside the size policy. It only reports — it never changes the map.",
     "ctx_audit_balanced": "Within policy",
     "ctx_audit_attention": "Needs attention",
+    "ctx_audit_unverified": "Not verified: project files unreachable",
     "ctx_audit_scope": "{contexts} contexts in {groups} groups",
     "ctx_audit_failed": "The audit could not run.",
     "ctx_audit_more_not_listed": "More findings not listed",

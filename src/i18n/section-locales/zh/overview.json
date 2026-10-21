@@ -1199,7 +1199,14 @@
     "dismiss_suggestion": "忽略建议",
     "memory_insights": "记忆见解",
     "suggestions": "{count} 条建议",
-    "suggestions_one": "{count} 条建议"
+    "suggestions_one": "{count} 条建议",
+    "kind_throttle": "限流规则",
+    "kind_schedule": "计划调整",
+    "kind_alert": "告警规则",
+    "kind_config": "配置变更",
+    "kind_routing": "路由规则",
+    "rules_restored_from_session": "无法读取已保存的记忆操作规则,已从本次会话中恢复。",
+    "rules_unreadable": "无法读取已保存的记忆操作规则,可能需要重新创建。"
   },
   "memory_card": {
     "cancel": "取消",
@@ -1229,7 +1236,14 @@
     "resolved_toast": "冲突已处理",
     "retire_blocked_core_toast": "核心（已固定）记忆无法归档 — 请手动处理此冲突",
     "scanned_scope": "在最近 {count} 条记忆中",
-    "vs": "对比"
+    "vs": "对比",
+    "kind_duplicate": "重复",
+    "kind_contradiction": "矛盾",
+    "kind_superseded": "已被取代",
+    "reason_contradiction": "同一主题下可能存在相互矛盾的指令(主题重叠 {pct}%)",
+    "reason_duplicate_cross_agent": "不同智能体之间存在近乎重复的记忆(相似度 {pct}%)",
+    "reason_duplicate_same_agent": "同一智能体内存在近乎重复的记忆(相似度 {pct}%)",
+    "reason_superseded": "较新的记忆可能取代同一主题下较旧的记忆(重叠 {pct}%)"
   },
   "memory_detail": {
     "category_label": "类别",

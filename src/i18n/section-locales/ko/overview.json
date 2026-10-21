@@ -1199,7 +1199,14 @@
     "dismiss_suggestion": "제안 무시",
     "memory_insights": "메모리 인사이트",
     "suggestions": "{count}개 제안",
-    "suggestions_one": "{count}개 제안"
+    "suggestions_one": "{count}개 제안",
+    "kind_throttle": "제한 규칙",
+    "kind_schedule": "일정 조정",
+    "kind_alert": "알림 규칙",
+    "kind_config": "구성 변경",
+    "kind_routing": "라우팅 규칙",
+    "rules_restored_from_session": "저장된 메모리 작업 규칙을 읽을 수 없어 이 세션에서 복원했습니다.",
+    "rules_unreadable": "저장된 메모리 작업 규칙을 읽을 수 없어 다시 만들어야 할 수 있습니다."
   },
   "memory_card": {
     "cancel": "취소",
@@ -1229,7 +1236,14 @@
     "resolved_toast": "충돌을 처리했습니다",
     "retire_blocked_core_toast": "핵심(고정) 기억은 보관할 수 없습니다 — 이 충돌은 직접 처리하세요",
     "scanned_scope": "최근 메모리 {count}건 중",
-    "vs": "vs"
+    "vs": "vs",
+    "kind_duplicate": "중복",
+    "kind_contradiction": "모순",
+    "kind_superseded": "대체됨",
+    "reason_contradiction": "같은 주제에 서로 모순될 수 있는 지침입니다(주제 겹침 {pct}%)",
+    "reason_duplicate_cross_agent": "서로 다른 에이전트 간에 거의 중복되는 메모리입니다(유사도 {pct}%)",
+    "reason_duplicate_same_agent": "같은 에이전트 안에서 거의 중복되는 메모리입니다(유사도 {pct}%)",
+    "reason_superseded": "더 최근 메모리가 같은 주제의 이전 메모리를 대체할 수 있습니다(겹침 {pct}%)"
   },
   "memory_detail": {
     "category_label": "카테고리",

@@ -60,7 +60,7 @@ interface ConflictCardProps {
 }
 
 export default function ConflictCard({ conflict, personaMap, isActive, isProcessing, onToggle, onResolve }: ConflictCardProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const mc = t.overview.memory_conflict;
   const unknown = t.overview.memories_ui.unknown_persona;
   const nameA = personaMap.get(conflict.memoryA.persona_id) ?? unknown;
@@ -80,7 +80,7 @@ export default function ConflictCard({ conflict, personaMap, isActive, isProcess
   return (
     <div className={`rounded-modal border transition-colors ${isActive ? 'border-primary/25 bg-secondary/30' : 'border-primary/10 bg-background/30'}`}>
       <button type="button" onClick={onToggle} disabled={isProcessing} title={isProcessing ? mc.processing : undefined} className="w-full flex items-center gap-3 px-3 py-2.5 text-left cursor-pointer disabled:opacity-50">
-        {kindBadge(conflict.kind)}
+        {kindBadge(conflict.kind, mc[`kind_${conflict.kind}`])}
         <span className="typo-body text-foreground flex-1 truncate">
           {stripHtml(conflict.memoryA.title)}
           <span className="text-foreground mx-1.5">{mc.vs}</span>
@@ -93,7 +93,7 @@ export default function ConflictCard({ conflict, personaMap, isActive, isProcess
       {isActive && (
         <div className="animate-fade-slide-in overflow-hidden">
           <div className="px-3 pb-3 space-y-3 border-t border-primary/10 pt-3">
-            <p className="typo-caption text-foreground">{conflict.reason}</p>
+            <p className="typo-caption text-foreground">{tx(mc[`reason_${conflict.reasonKey}`], { pct: conflict.reasonPct })}</p>
             <div className="grid grid-cols-2 gap-2">
               <MemoryPreview label={t.overview.memory_conflict.memory_a} memory={conflict.memoryA} agentName={nameA} accent="blue" />
               <MemoryPreview label={t.overview.memory_conflict.memory_b} memory={conflict.memoryB} agentName={nameB} accent="amber" />

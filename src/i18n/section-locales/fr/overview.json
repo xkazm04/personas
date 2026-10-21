@@ -1199,7 +1199,14 @@
     "dismiss_suggestion": "Ignorer la suggestion",
     "memory_insights": "Insights mémoire",
     "suggestions": "{count} propositions",
-    "suggestions_one": "{count} proposition"
+    "suggestions_one": "{count} proposition",
+    "kind_throttle": "Règle de limitation",
+    "kind_schedule": "Ajustement de planification",
+    "kind_alert": "Règle d'alerte",
+    "kind_config": "Changement de configuration",
+    "kind_routing": "Règle de routage",
+    "rules_restored_from_session": "Vos règles d'action mémoire enregistrées n'ont pas pu être lues et ont été restaurées depuis cette session.",
+    "rules_unreadable": "Vos règles d'action mémoire enregistrées n'ont pas pu être lues et devront peut-être être recréées."
   },
   "memory_card": {
     "cancel": "Annuler",
@@ -1229,7 +1236,14 @@
     "resolved_toast": "Conflit réglé",
     "retire_blocked_core_toast": "Impossible d’archiver un souvenir essentiel (épinglé) — réglez ce conflit à la main",
     "scanned_scope": "parmi les {count} mémorisations les plus récentes",
-    "vs": "vs"
+    "vs": "vs",
+    "kind_duplicate": "Doublon",
+    "kind_contradiction": "Contradiction",
+    "kind_superseded": "Remplacé",
+    "reason_contradiction": "Instructions potentiellement contradictoires sur le même sujet ({pct} % de recouvrement)",
+    "reason_duplicate_cross_agent": "Souvenirs quasi identiques entre différents agents ({pct} % de similarité)",
+    "reason_duplicate_same_agent": "Souvenirs quasi identiques au sein du même agent ({pct} % de similarité)",
+    "reason_superseded": "Un souvenir plus récent peut remplacer un plus ancien sur le même sujet ({pct} % de recouvrement)"
   },
   "memory_detail": {
     "category_label": "Catégorie",

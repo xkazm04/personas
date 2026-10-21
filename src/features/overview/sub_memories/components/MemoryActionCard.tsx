@@ -41,7 +41,7 @@ function MemoryActionCardItem({ action, onDismiss }: MemoryActionCardProps) {
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex items-center gap-2">
             <span className={`typo-heading px-1.5 py-0.5 rounded-input ${meta.bgClass} ${meta.textClass}`}>
-              {meta.label}
+              {t.overview.memory_actions[`kind_${action.kind}`]}
             </span>
             <span className="typo-code text-foreground">{action.score}/10</span>
           </div>

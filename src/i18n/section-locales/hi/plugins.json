@@ -1488,6 +1488,7 @@
     "cross_project_map": "क्रॉस-प्रोजेक्ट मानचित्र",
     "cross_project_title": "क्रॉस-प्रोजेक्ट मेटाडेटा मानचित्र",
     "ctx_audit_attention": "ध्यान चाहिए",
+    "ctx_audit_unverified": "सत्यापित नहीं: प्रोजेक्ट फ़ाइलें पहुँच से बाहर",
     "ctx_audit_balanced": "नीति के भीतर",
     "ctx_audit_failed": "ऑडिट नहीं चल सका।",
     "ctx_audit_kind_dangling_file_path": "मैप की गई फ़ाइल डिस्क पर नहीं मिली",

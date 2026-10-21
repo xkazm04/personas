@@ -1488,6 +1488,7 @@
     "cross_project_map": "Mapa napříč projekty",
     "cross_project_title": "Mapa metadat napříč projekty",
     "ctx_audit_attention": "Vyžaduje pozornost",
+    "ctx_audit_unverified": "Neověřeno: soubory projektu jsou nedostupné",
     "ctx_audit_balanced": "V souladu s politikou",
     "ctx_audit_failed": "Audit se nepodařilo spustit.",
     "ctx_audit_kind_dangling_file_path": "Mapovaný soubor na disku chybí",

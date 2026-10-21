@@ -9,20 +9,20 @@ import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 
 export const KIND_CONFIG: Record<
   ConflictKind,
-  { label: string; color: string; bg: string; border: string; icon: typeof Copy }
+  { color: string; bg: string; border: string; icon: typeof Copy }
 > = {
-  duplicate: { label: 'Duplicate', color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', icon: Copy },
-  contradiction: { label: 'Contradiction', color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', icon: AlertTriangle },
-  superseded: { label: 'Superseded', color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', icon: ArrowRight },
+  duplicate: { color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', icon: Copy },
+  contradiction: { color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', icon: AlertTriangle },
+  superseded: { color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', icon: ArrowRight },
 };
 
-export function kindBadge(kind: ConflictKind) {
+export function kindBadge(kind: ConflictKind, label: string) {
   const cfg = KIND_CONFIG[kind];
   const Icon = cfg.icon;
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 typo-caption rounded-card border ${cfg.bg} ${cfg.color} ${cfg.border}`}>
       <Icon className="w-3 h-3" />
-      {cfg.label}
+      {label}
     </span>
   );
 }

@@ -1488,6 +1488,7 @@
     "cross_project_map": "Bản đồ liên dự án",
     "cross_project_title": "Bản đồ siêu dữ liệu liên dự án",
     "ctx_audit_attention": "Cần chú ý",
+    "ctx_audit_unverified": "Chưa xác minh: không truy cập được tệp dự án",
     "ctx_audit_balanced": "Đúng chính sách",
     "ctx_audit_failed": "Không thể chạy bản kiểm tra.",
     "ctx_audit_kind_dangling_file_path": "Tệp đã ánh xạ không còn trên đĩa",

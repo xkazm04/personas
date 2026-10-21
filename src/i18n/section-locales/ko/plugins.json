@@ -1488,6 +1488,7 @@
     "cross_project_map": "프로젝트 간 맵",
     "cross_project_title": "프로젝트 간 메타데이터 맵",
     "ctx_audit_attention": "확인 필요",
+    "ctx_audit_unverified": "확인되지 않음: 프로젝트 파일에 접근할 수 없음",
     "ctx_audit_balanced": "정책 충족",
     "ctx_audit_failed": "감사를 실행할 수 없습니다.",
     "ctx_audit_kind_dangling_file_path": "매핑된 파일이 디스크에 없습니다",
