@@ -7192,7 +7192,7 @@ Implements Athena's proactive outreach system — nudges she generates on her ow
 
 ### companion-ui-controls
 
-Specs for companion chat panel UI controls: autonomous mode toggle (A2), stop-button presence and click during streaming (A5), design cards rendering, stream-phase indicators (thinking/tool_use/reviewing), autonomous-marker rendering for system messages, and header control states. Uses bridge injection methods to avoid burning real LLM turns. [Consolidated 2026-08-04: absorbed twin-discord-e2e, artist-plugin-e2e, athena-guided-walkthrough, companion-backend-commands, companion-fleet-e2e, getting-started-tour-e2e, guided-tour-smoke, preset-adoption-e2e, sidebar-navigation-e2e, template-marathon-fixtures, adoption-bridge, artist-bridge, companion-build-workflow, companion-conversation, drive-plugin-e2e, fleet-plugin-e2e, performance-testing]
+Specs for companion chat panel UI controls: autonomous mode toggle (A2), stop-button presence and click during streaming (A5), design cards rendering, stream-phase indicators (thinking/tool_use/reviewing), autonomous-marker rendering for system messages, and header control states. Uses bridge injection methods to avoid burning real LLM turns. [Consolidated 2026-08-04: absorbed twin-discord-e2e, artist-plugin-e2e, athena-guided-walkthrough, companion-backend-commands, companion-fleet-e2e, getting-started-tour-e2e, guided-tour-smoke, preset-adoption-e2e, sidebar-navigation-e2e, template-marathon-fixtures, artist-bridge, companion-build-workflow, companion-conversation, drive-plugin-e2e, fleet-plugin-e2e, performance-testing]
 
 **Files:**
 - `tests/playwright/companion-autonomous-mode.spec.ts`
@@ -7222,7 +7222,6 @@ Specs for companion chat panel UI controls: autonomous mode toggle (A2), stop-bu
 - `tests/playwright/team-functionality.spec.ts`
 - `tests/playwright/template-marathon-fixtures.ts`
 - `tests/playwright/__tests__/template-marathon-fixtures.test.ts`
-- `tests/playwright/adoption-bridge.ts`
 - `tests/playwright/artist-bridge.ts`
 - `tests/playwright/companion-real-claude-workflow.spec.ts`
 - `tests/playwright/athena-conversation.spec.ts`

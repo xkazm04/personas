@@ -15,7 +15,7 @@
   "ruleIds": ["pinned-harness-endpoint"],
   "ruleIdsFrom": "section-9",
   "sections": [1,2,3,4,5,6,7,8,9],
-  "citationCount": 171,
+  "citationCount": 170,
   "triggers": [
     "\"I changed a UI thing — how do I actually see it work?\" / \"does this work in the real app?\"",
     "\"How do I drive the app from a script?\" / \"what's on port 17320?\"",
@@ -128,14 +128,6 @@
       "contexts": ["(`__tests__/template-marathon-fixtures.test.ts`) — a pure fixture test that never touches"],
       "resolvedFrom": "suffix",
       "verbatim": "__tests__/template-marathon-fixtures.test.ts"
-    },
-    "tests/playwright/adoption-bridge.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["18"],
-      "contexts": ["harness reads **`COMPANION_TEST_PORT`** (`companion-bridge.ts:23`, `adoption-bridge.ts:18`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "adoption-bridge.ts"
     },
     "tests/playwright/companion-bridge.ts": {"count":4,"sections":[2,3,7,8],"lines":["23"],"contexts":["actionable message); TypeScript gets it from `tests/playwright/companion-bridge.ts`. **Never"]},
     "tests/playwright/freeze-probe.mjs": {

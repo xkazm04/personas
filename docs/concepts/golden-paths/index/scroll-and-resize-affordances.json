@@ -34,6 +34,7 @@
       ],
       "resolved": false
     },
+    "IncidentTableHeader.tsx": {"count":1,"sections":[7],"lines":["56,70,84,98"],"contexts":["(`IncidentTableHeader.tsx:56,70,84,98`; `GlobalExecutionList.tsx:288-330`; `MessageList.tsx:219-253`)."],"resolved":false},
     "MessageList.tsx": {
       "count": 2,
       "sections": [7],
@@ -127,14 +128,6 @@
       "contexts": ["- `overview/sub_events/components/EventLogList.tsx:458` — a five-part key."],
       "resolvedFrom": "suffix",
       "verbatim": "overview/sub_events/components/EventLogList.tsx"
-    },
-    "src/features/overview/sub_incidents/components/IncidentTableHeader.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["56,70,84,98"],
-      "contexts": ["(`IncidentTableHeader.tsx:56,70,84,98`; `GlobalExecutionList.tsx:288-330`; `MessageList.tsx:219-253`)."],
-      "resolvedFrom": "basename",
-      "verbatim": "IncidentTableHeader.tsx"
     },
     "src/features/overview/sub_incidents/components/IncidentsInbox.tsx": {
       "count": 1,

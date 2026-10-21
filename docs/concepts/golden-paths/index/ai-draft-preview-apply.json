@@ -46,6 +46,15 @@
       ],
       "resolved": false
     },
+    "AutonomousLane.tsx": {
+      "count": 1,
+      "sections": [3],
+      "lines": ["56"],
+      "contexts": [
+        "| `src/features/shared/components/feedback/AthenaComposedBadge.tsx` | **the render half**, already shared, already translated, already rendered at **8** sites (`CockpitPanel.tsx:256`, `HomeLearning.t…"
+      ],
+      "resolved": false
+    },
     "GenerateHypothesesModal.tsx": {"count":2,"sections":[7],"lines":["111","114"],"contexts":["`GenerateHypothesesModal.tsx:111`, `ReplyOutbox.tsx:177`, `IdentityAtelier.tsx:68`,"],"resolved":false},
     "IdentityAtelier.tsx": {"count":1,"sections":[7],"lines":["68"],"contexts":["`GenerateHypothesesModal.tsx:111`, `ReplyOutbox.tsx:177`, `IdentityAtelier.tsx:68`,"],"resolved":false},
     "RecipeVersionsTab.tsx": {"count":1,"sections":[7],"lines":["78"],"contexts":["`ScrapeEditorModal.tsx:30`, `applyDesignResult.ts:87,94`, `RecipeVersionsTab.tsx:78`,"],"resolved":false},
@@ -308,16 +317,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "HomeLearning.tsx"
-    },
-    "src/features/overview/sub_incidents/components/AutonomousLane.tsx": {
-      "count": 1,
-      "sections": [3],
-      "lines": ["56"],
-      "contexts": [
-        "| `src/features/shared/components/feedback/AthenaComposedBadge.tsx` | **the render half**, already shared, already translated, already rendered at **8** sites (`CockpitPanel.tsx:256`, `HomeLearning.t…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "AutonomousLane.tsx"
     },
     "src/features/overview/sub_incidents/components/IncidentDiagnosisCard.tsx": {
       "count": 1,

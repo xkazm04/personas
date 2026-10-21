@@ -21,7 +21,7 @@
   "ruleIds": ["english-literal-os-notification","english-literal-os-notification-positive-control"],
   "ruleIdsFrom": "section-9",
   "sections": [0,1,2,3,4,5,6,7,8,9,10,11,12],
-  "citationCount": 98,
+  "citationCount": 99,
   "triggers": [],
   "citations": {
     "api/scan/stream/route.ts": {"count":1,"sections":[10],"lines":["216-219"],"contexts":["| `ascent` | **no** | \"notify\" throughout means **email** (`api/scan/stream/route.ts:216-219`) |"],"resolved":false},
@@ -47,6 +47,7 @@
     "scanNotification.repository.ts": {"count":1,"sections":[10],"lines":["12"],"contexts":["SQLite row (`commands/conductor_cmds.rs:124`, `scanNotification.repository.ts:12`,"],"resolved":false},
     "scanQueueWorker.ts": {"count":1,"sections":[10],"contexts":["5 fire sites in `scanQueueWorker.ts`). **The intent existed and was dropped**:"],"resolved":false},
     "scripts/census/lib/instruments/{stripComments,stripCfgTest}": {"count":1,"sections":[],"contexts":["`scripts/census/lib/instruments/{stripComments,stripCfgTest}`, one bespoke —"],"resolved":false,"isDir":true},
+    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["**Retired from `rules.json` 2026-10-21.** The backlog drain translated the"],"resolvedFrom":"basename","verbatim":"rules.json"},
     "src-tauri/Cargo.toml": {"count":1,"sections":[10],"contexts":["doctrine recognises. `vibeman` is a Tauri desktop app; its `src-tauri/Cargo.toml`"]},
     "src-tauri/capabilities/default.json": {
       "count": 1,

@@ -35,6 +35,7 @@
     },
     "engine/subscription.rs": {"count":2,"sections":[7,12],"lines":["3059"],"contexts":["| `engine/subscription.rs:3059` | `fleet` | bound to `promoted` ✅ |"],"resolved":false},
     "events.rs": {"count":1,"sections":[2],"lines":["974"],"contexts":["(`increment_retry_or_dead_letter`, `events.rs:974`)."],"resolved":false},
+    "groupIncidents.ts": {"count":1,"sections":[7],"lines":["5"],"contexts":["(`groupIncidents.ts:5`). The docstring says `source` answers *\"what kind of"],"resolved":false},
     "incremental.rs": {"count":1,"sections":[],"lines":["2686-2689"],"contexts":["`idx_ai_source` (`incremental.rs:2686-2689`) cover the inbox's filters — and"],"resolved":false},
     "scripts/census/check-corpus-integrity.mjs": {"count":1,"sections":[9],"contexts":["`check-corpus-integrity.mjs`: for each registered promoter, count the rows in"],"resolvedFrom":"basename","verbatim":"check-corpus-integrity.mjs"},
     "src-tauri/core/src/models/event.rs": {"count":3,"sections":[2,3],"lines":["16-23","16-33"],"contexts":["`src-tauri/core/src/models/event.rs` (the status machine),"]},
@@ -80,9 +81,17 @@
       "resolvedFrom": "basename",
       "verbatim": "IncidentsInbox.tsx"
     },
-    "src/features/overview/sub_incidents/libs/groupIncidents.ts": {"count":3,"sections":[3,7],"lines":["5"],"contexts":["`src/features/overview/sub_incidents/libs/groupIncidents.ts`,"]},
+    "src/features/overview/sub_incidents/libs/groupIncidents.ts": {"count":1,"sections":[],"contexts":["`src/features/overview/sub_incidents/libs/groupIncidents.ts`,"],"resolved":false},
     "src/features/triggers/sub_dead_letter/": {"count":1,"sections":[12],"contexts":["promoter, and did not know `src/features/triggers/sub_dead_letter/` existed. It"],"resolved":false,"isDir":true},
     "src/features/triggers/sub_dead_letter/DeadLetterTab.tsx": {"count":7,"sections":[2,3,12],"lines":["99-126","282-293"],"contexts":["`src/features/triggers/sub_dead_letter/DeadLetterTab.tsx` (877 lines),"]},
-    "src/i18n/locales/en.json": {"count":1,"sections":[7],"contexts":["`bucketFor`, a label resolver, and a token in `en.json`. Deferred (it changes a"],"resolvedFrom":"basename","verbatim":"en.json"}
+    "src/i18n/locales/en.json": {"count":1,"sections":[7],"contexts":["`bucketFor`, a label resolver, and a token in `en.json`. Deferred (it changes a"],"resolvedFrom":"basename","verbatim":"en.json"},
+    "sub_incidents/libs/groupIncidents.ts": {
+      "count": 1,
+      "sections": [3],
+      "contexts": [
+        "| `groupIncidents` (`sub_incidents/libs/groupIncidents.ts`) | Grouping with worst-severity-first ordering, volume tiebreak, and a sentinel bucket that always sinks. The mechanism is right; its lens l…"
+      ],
+      "resolved": false
+    }
   }
 }
