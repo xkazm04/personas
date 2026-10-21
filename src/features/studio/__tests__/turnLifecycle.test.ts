@@ -341,6 +341,49 @@ describe('Stop reads whether it actually stopped anything', () => {
     await vi.advanceTimersByTimeAsync(0);
     expect(useStudioStore.getState().runtimes[ID]?.busy).toBe(false);
   });
+
+  /** Start a turn, Stop it with nothing to interrupt, start a newer live turn. */
+  async function abandonThenRestart() {
+    let settleGhost!: { resolve: (v: unknown) => void; reject: (e: unknown) => void };
+    webbuildSessionSend.mockImplementationOnce(
+      () => new Promise((resolve, reject) => { settleGhost = { resolve, reject }; }),
+    );
+    seedRuntime({ autonomous: true });
+    void useStudioStore.getState().sendTurn(ID, 'go');
+    webbuildSessionStop.mockResolvedValue(false);
+    useStudioStore.getState().stopTurn(ID);
+    await vi.advanceTimersByTimeAsync(0);
+    webbuildSessionSend.mockImplementationOnce(() => new Promise(() => {}));
+    useStudioStore.setState((st) => ({
+      runtimes: { ...st.runtimes, [ID]: { ...st.runtimes[ID]!, autonomous: true } },
+    }));
+    void useStudioStore.getState().sendTurn(ID, 'again');
+    return settleGhost;
+  }
+
+  it('keeps an abandoned turn question, phases and autonomy flip off the live turn', async () => {
+    const ghost = await abandonThenRestart();
+    ghost.resolve(reply({ question: 'Pick a colour?', options: ['red'], area: 'theme', phases: MOCK_PHASES.slice(0, 1) }));
+    await vi.advanceTimersByTimeAsync(0);
+    const rt = useStudioStore.getState().runtimes[ID]!;
+    expect(rt.question).toBeNull();
+    expect(rt.options).toEqual([]);
+    expect(rt.decisionArea).toBeNull();
+    expect(rt.phases).toBe(MOCK_PHASES);
+    expect(rt.autonomous).toBe(true);
+    expect(rt.resumeAuto).toBe(false);
+    expect(rt.busy).toBe(true);
+  });
+
+  it('does not let an abandoned turn that fails stop the live autonomy', async () => {
+    const ghost = await abandonThenRestart();
+    ghost.reject(new Error('cli died'));
+    await vi.advanceTimersByTimeAsync(0);
+    const rt = useStudioStore.getState().runtimes[ID]!;
+    expect(rt.autonomous).toBe(true);
+    expect(rt.reply).toBeNull();
+    expect(rt.busy).toBe(true);
+  });
 });
 
 describe('rehydrate', () => {
