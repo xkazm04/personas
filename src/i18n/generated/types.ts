@@ -12824,6 +12824,9 @@ export type Translations = {
       commit_failed_toast: string;
       automations_title: string;
       automation_ran: string;
+      automation_requested: string;
+      automation_partial: string;
+      automation_held: string;
       automation_failed: string;
       automation_next: string;
       automation_idle: string;
