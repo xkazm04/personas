@@ -97,6 +97,7 @@ mod e67_mandate_envelope;
 mod e68_orphan_archive;
 mod e69_charter_mirror;
 mod e70_team_assignment_paused;
+mod e71_knowledge_annotation_types;
 
 mod c01_plugin_tables;
 mod c02_dev_goals_and_kpis;
@@ -190,6 +191,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e68_orphan_archive::run(conn)?;
     e69_charter_mirror::run(conn)?;
     e70_team_assignment_paused::run(conn)?;
+    e71_knowledge_annotation_types::run(conn)?;
 
     Ok(())
 }

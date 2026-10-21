@@ -2554,3 +2554,101 @@ fn team_assignment_status_admits_paused_after_the_rebuild() {
     .unwrap();
     conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
 }
+
+// ── e71: knowledge annotations are storable ─────────────────────────────────
+
+/// An install created before e71 carries a `knowledge_type` CHECK with only the
+/// five learned-pattern types, so `upsert_annotation` always failed. The
+/// rebuild must admit both annotation types (and still refuse an unknown one),
+/// keep learned rows, replay the indexes, and be a no-op on replay.
+#[test]
+fn knowledge_annotations_are_storable_after_the_rebuild() {
+    use crate::models::CreatePersonaInput;
+    use crate::repos::core::personas;
+    use crate::repos::execution::knowledge;
+
+    let pool = crate::init_test_db().unwrap();
+    let persona = personas::create(
+        &pool,
+        CreatePersonaInput {
+            name: "Annotator".into(),
+            system_prompt: "p".into(),
+            project_id: None,
+            description: None,
+            structured_prompt: None,
+            icon: None,
+            color: None,
+            enabled: Some(true),
+            max_concurrent: None,
+            timeout_ms: None,
+            model_profile: None,
+            max_budget_usd: None,
+            max_turns: None,
+            design_context: None,
+            lifecycle: None,
+            notification_channels: None,
+        },
+    )
+    .unwrap();
+    let pid = persona.id.clone();
+
+    {
+        let conn = crate::PoolExt::conn(&pool, "test:e71_legacy").unwrap();
+        // Reverse e71's transform over the production DDL to get the legacy shape.
+        rebuild_table_from_live_ddl(
+            &conn,
+            "execution_knowledge",
+            &|sql| {
+                let widened = "'model_performance','user_annotation','agent_annotation'";
+                assert_eq!(sql.matches(widened).count(), 1, "e71 ran on the fresh db");
+                Ok(sql.replacen(widened, "'model_performance'", 1))
+            },
+            "",
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO execution_knowledge (id, persona_id, knowledge_type, pattern_key, pattern_data)
+             VALUES ('k1', ?1, 'tool_sequence', 'learned', '{}')",
+            [&pid],
+        )
+        .unwrap();
+    }
+
+    let legacy = knowledge::upsert_annotation(&pool, &pid, "global", None, "note", "user", None);
+    assert!(
+        legacy.is_err(),
+        "the legacy shape refuses an annotation - otherwise this test proves nothing"
+    );
+
+    {
+        let conn = crate::PoolExt::conn(&pool, "test:e71_run").unwrap();
+        run_incremental(&conn).unwrap();
+        run_incremental(&conn).unwrap();
+    }
+
+    let user = knowledge::upsert_annotation(&pool, &pid, "global", None, "note", "user", None)
+        .expect("a user annotation is storable after the rebuild");
+    assert_eq!(user.knowledge_type, "user_annotation");
+    let agent = knowledge::upsert_annotation(&pool, &pid, "tool", Some("t"), "n2", "agent", None)
+        .expect("an agent annotation is storable after the rebuild");
+    assert_eq!(agent.knowledge_type, "agent_annotation");
+
+    let conn = crate::PoolExt::conn(&pool, "test:e71_after").unwrap();
+    assert!(conn
+        .execute(
+            "INSERT INTO execution_knowledge (id, persona_id, knowledge_type, pattern_key, pattern_data)
+             VALUES ('k2', ?1, 'bogus', 'x', '{}')",
+            [&pid],
+        )
+        .is_err());
+    let (learned, idx): (i64, i64) = conn
+        .query_row(
+            "SELECT (SELECT COUNT(*) FROM execution_knowledge WHERE id = 'k1') AS l,
+                    (SELECT COUNT(*) FROM sqlite_master
+                       WHERE type = 'index' AND name IN ('idx_ek_type','idx_ek_persona_type','idx_ek_scope','idx_ek_annotation')) AS i",
+            [],
+            |r| Ok((r.get("l")?, r.get("i")?)),
+        )
+        .unwrap();
+    assert_eq!((learned, idx), (1, 4), "learned row kept, indexes replayed");
+}

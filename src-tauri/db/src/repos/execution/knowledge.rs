@@ -686,6 +686,54 @@ mod tests {
         assert!(!rows[0].is_verified, "learned pattern must not be verified");
     }
 
+    /// Now that an annotation row can exist (e71 widened the type CHECK), the
+    /// positive path of the annotation doors: verify marks it verified at full
+    /// confidence, dismiss deletes it, and neither touches a learned pattern.
+    #[test]
+    fn annotation_doors_verify_and_dismiss_a_real_annotation_row() {
+        let (pool, persona_id) = setup();
+        upsert(
+            &pool,
+            &persona_id,
+            None,
+            "tool_sequence",
+            "learned",
+            "{}",
+            true,
+            0.0,
+            1.0,
+            "exec-1",
+        )
+        .unwrap();
+        let note = upsert_annotation(
+            &pool,
+            &persona_id,
+            "global",
+            None,
+            "prefer retries",
+            "user",
+            None,
+        )
+        .unwrap();
+        assert_eq!(note.knowledge_type, "user_annotation");
+        assert!(!note.is_verified);
+
+        verify_annotation(&pool, &note.id).unwrap();
+        let verified = list_for_persona(&pool, &persona_id, Some("user_annotation"), None).unwrap();
+        assert_eq!(verified.len(), 1);
+        assert!(verified[0].is_verified);
+        assert!((verified[0].confidence - 1.0).abs() < f64::EPSILON);
+
+        dismiss_annotation(&pool, &note.id).unwrap();
+        let rest = list_for_persona(&pool, &persona_id, None, None).unwrap();
+        assert_eq!(rest.len(), 1, "only the annotation is dismissed");
+        assert_eq!(rest[0].knowledge_type, "tool_sequence");
+        assert!(matches!(
+            dismiss_annotation(&pool, &note.id),
+            Err(AppError::NotFound(_))
+        ));
+    }
+
     /// The first test this file has ever had, and it FAILED on its first run
     /// with `NOT NULL constraint failed: execution_knowledge.avg_cost_usd` —
     /// which is the finding, not an accident.
