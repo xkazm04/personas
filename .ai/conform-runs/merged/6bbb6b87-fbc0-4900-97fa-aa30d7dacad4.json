@@ -1,0 +1,10 @@
+{"schema": "conform-run/1", "worker": "6bbb6b87-fbc0-4900-97fa-aa30d7dacad4", "subject": "rate-limiting",
+ "evaluatedAt": "2026-10-21T17:46:33Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "rate-limiting", "context": "059fdee0-40da-434a-a5cb-874bc9179a31", "reason": "already judged deviation 2026-10-21 against the current digest sha256-b2:c1ab95c98c885951 (revision 8, revisionsBehind 0); re-judging the same day would only duplicate a verdict"},
+  {"subject": "rate-limiting", "context": "f9c8b6b9-7a46-4c84-a31a-19356b174d10", "reason": "already judged deviation 2026-10-21 against the current digest sha256-b2:c1ab95c98c885951 (revision 8, revisionsBehind 0)"},
+  {"subject": "rate-limiting", "context": "767b2bb5-4662-4be1-ad24-c881ac334016", "reason": "already judged deviation 2026-10-21 against the current digest sha256-b2:c1ab95c98c885951 (revision 8, revisionsBehind 0)"},
+  {"subject": "rate-limiting", "context": "742be60e-3ddf-4160-b7cb-4c5cac5965a0", "reason": "context governance is weak (match on lexical tokens client/get/tokens only); the skill forbids judging weak pairs by default - coverage question for the registry, not a verdict"}
+ ],
+ "consults": []}
