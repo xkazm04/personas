@@ -202,6 +202,15 @@ pub fn publish_in(
     conn: &rusqlite::Connection,
     input: &CreatePersonaEventInput,
 ) -> Result<String, AppError> {
+    timed_query!("persona_events", "persona_events::publish_in", {
+        publish_in_untimed(conn, input)
+    })
+}
+
+fn publish_in_untimed(
+    conn: &rusqlite::Connection,
+    input: &CreatePersonaEventInput,
+) -> Result<String, AppError> {
     validate_event_input(input)?;
 
     let id = uuid::Uuid::new_v4().to_string();
