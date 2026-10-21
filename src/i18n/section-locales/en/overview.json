@@ -940,7 +940,9 @@
     "col_id": "ID",
     "execution_label": "Execution",
     "prev_p50": "Prev p50",
-    "prev_p95": "Prev p95"
+    "prev_p95": "Prev p95",
+    "range_last_days_one": "Last day",
+    "range_last_days_other": "Last {count} days"
   },
   "analytics_dashboard": {
     "issues_found": "{count} issues found",

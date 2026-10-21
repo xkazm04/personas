@@ -65,7 +65,9 @@
     "value_delivered_rate": "মূল্য-প্রদানের হার",
     "value_section_title": "ব্যবসায়িক মূল্য",
     "prev_p50": "আগের p50",
-    "prev_p95": "আগের p95"
+    "prev_p95": "আগের p95",
+    "range_last_days_one": "গত ১ দিন",
+    "range_last_days_other": "গত {count} দিন"
   },
   "analytics_dashboard": {
     "active_count": "{count}টি সক্রিয়",

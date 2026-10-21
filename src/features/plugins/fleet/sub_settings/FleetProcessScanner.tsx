@@ -4,6 +4,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { detectProcesses, killPid, resumeOrphan } from '@/api/fleet/fleet';
 import { toastCatch, silentCatch } from '@/lib/silentCatch';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import type { FleetDetectedProcess } from '@/lib/bindings/FleetDetectedProcess';
 import { countOrphans } from '../useFleetOrphanScan';
@@ -22,6 +23,7 @@ import { FleetSettingsCard } from './FleetSettingsCard';
  * Settings-tab badge.
  */
 export function FleetProcessScanner() {
+  const { t } = useTranslation();
   const [procs, setProcs] = useState<FleetDetectedProcess[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [killing, setKilling] = useState<number | null>(null);
@@ -69,7 +71,7 @@ export function FleetProcessScanner() {
         );
         if (!stillThere) {
           toastCatch('FleetProcessScanner:kill')(
-            new Error('That process already exited — the list has been refreshed.'),
+            new Error(t.plugins.fleet.process_gone_refreshed),
           );
           return;
         }
@@ -80,13 +82,13 @@ export function FleetProcessScanner() {
           return next;
         });
       } catch (e) {
-        toastCatch('FleetProcessScanner:kill', 'Failed to kill process')(e);
+        toastCatch('FleetProcessScanner:kill', t.plugins.fleet.process_kill_failed)(e);
       } finally {
         setKilling(null);
         setConfirm(null);
       }
     },
-    [apply, setOrphanCount],
+    [apply, setOrphanCount, t],
   );
 
   const doResume = useCallback(
@@ -97,12 +99,12 @@ export function FleetProcessScanner() {
         await resumeOrphan(p.pid, p.cwd);
         scan(); // orphan killed + re-adopted as a tracked session — refresh.
       } catch (e) {
-        toastCatch('FleetProcessScanner:resume', 'Could not resume — no transcript for that folder?')(e);
+        toastCatch('FleetProcessScanner:resume', t.plugins.fleet.process_resume_failed)(e);
       } finally {
         setResuming(null);
       }
     },
-    [scan],
+    [scan, t],
   );
 
   // Only interactive sessions are "terminals" worth managing; the app's own

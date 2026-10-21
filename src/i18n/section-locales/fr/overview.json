@@ -65,7 +65,9 @@
     "value_delivered_rate": "Taux de valeur livrée",
     "value_section_title": "Valeur métier",
     "prev_p50": "p50 préc.",
-    "prev_p95": "p95 préc."
+    "prev_p95": "p95 préc.",
+    "range_last_days_one": "Dernier jour",
+    "range_last_days_other": "{count} derniers jours"
   },
   "analytics_dashboard": {
     "active_count": "{count} actif(s)",

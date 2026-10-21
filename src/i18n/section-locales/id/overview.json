@@ -65,7 +65,9 @@
     "value_delivered_rate": "Tingkat nilai tersampaikan",
     "value_section_title": "Nilai bisnis",
     "prev_p50": "p50 sebelumnya",
-    "prev_p95": "p95 sebelumnya"
+    "prev_p95": "p95 sebelumnya",
+    "range_last_days_one": "1 hari terakhir",
+    "range_last_days_other": "{count} hari terakhir"
   },
   "analytics_dashboard": {
     "active_count": "{count} aktif",

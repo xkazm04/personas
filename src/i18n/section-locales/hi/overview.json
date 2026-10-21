@@ -65,7 +65,9 @@
     "value_delivered_rate": "मूल्य-वितरण दर",
     "value_section_title": "व्यावसायिक मूल्य",
     "prev_p50": "पिछला p50",
-    "prev_p95": "पिछला p95"
+    "prev_p95": "पिछला p95",
+    "range_last_days_one": "पिछला 1 दिन",
+    "range_last_days_other": "पिछले {count} दिन"
   },
   "analytics_dashboard": {
     "active_count": "{count} सक्रिय",

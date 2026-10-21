@@ -8968,7 +8968,9 @@
       "value_delivered_rate": "Tingkat nilai tersampaikan",
       "value_section_title": "Nilai bisnis",
       "prev_p50": "p50 sebelumnya",
-      "prev_p95": "p95 sebelumnya"
+      "prev_p95": "p95 sebelumnya",
+      "range_last_days_one": "1 hari terakhir",
+      "range_last_days_other": "{count} hari terakhir"
     },
     "analytics_dashboard": {
       "active_count": "{count} aktif",
@@ -14690,7 +14692,26 @@
       "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many",
       "state_queued": "Mengantre",
       "state_expired": "Waktu tunggu habis",
-      "pair_load_failed": "Tidak dapat memuat perangkat yang dipasangkan"
+      "pair_load_failed": "Tidak dapat memuat perangkat yang dipasangkan",
+      "wake_failed": "Gagal membangunkan sesi yang tertidur",
+      "spawn_failed": "Gagal memulai sesi Claude Code",
+      "kill_failed": "Gagal menghentikan sesi",
+      "approve_failed": "Gagal menyetujui tindakan",
+      "reject_failed": "Gagal menolak tindakan",
+      "athena_failed": "Gagal menghubungi Athena",
+      "apply_skill_failed": "Gagal menerapkan skill",
+      "debug_log_start_failed": "Gagal memulai log debug Fleet",
+      "debug_log_stop_failed": "Gagal menghentikan log debug Fleet",
+      "compact_failed": "Gagal memadatkan sesi",
+      "hooks_install_failed": "Gagal memasang hook Claude Code",
+      "hooks_uninstall_failed": "Gagal mencopot hook Claude Code",
+      "close_failed": "Gagal menutup sesi",
+      "process_gone_refreshed": "Proses itu sudah berhenti. Daftar telah dimuat ulang.",
+      "process_kill_failed": "Gagal menghentikan proses",
+      "process_resume_failed": "Tidak dapat melanjutkan. Tidak ada transkrip untuk folder itu?",
+      "tab_sessions": "Sesi",
+      "tab_activity": "Aktivitas",
+      "tab_settings": "Pengaturan"
     },
     "obsidian_brain_desc": "Hubungkan brankas Obsidian Anda untuk pengambilan pengetahuan, penelusuran catatan, dan sinkronisasi.",
     "obsidian_brain_label": "Obsidian Brain",

@@ -10076,6 +10076,8 @@ export type Translations = {
       execution_label: string;
       prev_p50: string;
       prev_p95: string;
+      range_last_days_one: string;
+      range_last_days_other: string;
     };
     analytics_dashboard: {
       issues_found: string;
@@ -16860,6 +16862,25 @@ export type Translations = {
       skills_applied_partial: string;
       state_queued: string;
       pair_load_failed: string;
+      wake_failed: string;
+      spawn_failed: string;
+      kill_failed: string;
+      approve_failed: string;
+      reject_failed: string;
+      athena_failed: string;
+      apply_skill_failed: string;
+      debug_log_start_failed: string;
+      debug_log_stop_failed: string;
+      compact_failed: string;
+      hooks_install_failed: string;
+      hooks_uninstall_failed: string;
+      close_failed: string;
+      process_gone_refreshed: string;
+      process_kill_failed: string;
+      process_resume_failed: string;
+      tab_sessions: string;
+      tab_activity: string;
+      tab_settings: string;
     };
     title: string;
     subtitle: string;

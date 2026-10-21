@@ -65,7 +65,9 @@
     "value_delivered_rate": "Доля реализованной ценности",
     "value_section_title": "Бизнес-ценность",
     "prev_p50": "Пред. p50",
-    "prev_p95": "Пред. p95"
+    "prev_p95": "Пред. p95",
+    "range_last_days_one": "Последний день",
+    "range_last_days_other": "Последние {count} дн."
   },
   "analytics_dashboard": {
     "active_count": "Активно: {count}",

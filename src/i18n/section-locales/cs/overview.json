@@ -65,7 +65,9 @@
     "value_delivered_rate": "Míra doručené hodnoty",
     "value_section_title": "Obchodní hodnota",
     "prev_p50": "Předchozí p50",
-    "prev_p95": "Předchozí p95"
+    "prev_p95": "Předchozí p95",
+    "range_last_days_one": "Poslední den",
+    "range_last_days_other": "Posledních {count} dní"
   },
   "analytics_dashboard": {
     "active_count": "{count} aktivních",

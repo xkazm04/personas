@@ -33,7 +33,7 @@ export function useFleetGridSessionOps(
       const sess = sessions.find((s) => s.id === id);
       addToast(tx(t.plugins.fleet.compact_toast, { name: sess?.name ?? sess?.projectLabel ?? '' }), 'success');
     } catch (e) {
-      toastCatch('FleetGridPage:compact', 'Failed to compact session')(e);
+      toastCatch('FleetGridPage:compact', t.plugins.fleet.compact_failed)(e);
     }
   }, [sessions, addToast, t, tx]);
 
@@ -61,10 +61,10 @@ export function useFleetGridSessionOps(
       refresh();
       return true;
     } catch (e) {
-      toastCatch('FleetGridPage:spawnTask', 'Failed to spawn Claude Code session')(e);
+      toastCatch('FleetGridPage:spawnTask', t.plugins.fleet.spawn_failed)(e);
       return false;
     }
-  }, [activeProject, refresh, setActiveSession]);
+  }, [activeProject, refresh, setActiveSession, t]);
 
   return { handleReply, handleCompact, handleHibernate, handleSpawnWithTask };
 }

@@ -8968,7 +8968,9 @@
       "value_delivered_rate": "価値提供率",
       "value_section_title": "ビジネス価値",
       "prev_p50": "前回 p50",
-      "prev_p95": "前回 p95"
+      "prev_p95": "前回 p95",
+      "range_last_days_one": "過去 1 日",
+      "range_last_days_other": "過去 {count} 日間"
     },
     "analytics_dashboard": {
       "active_count": "{count}件アクティブ",
@@ -14690,7 +14692,26 @@
       "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many",
       "state_queued": "キュー待ち",
       "state_expired": "待機切れ",
-      "pair_load_failed": "ペアリング済みデバイスを読み込めませんでした"
+      "pair_load_failed": "ペアリング済みデバイスを読み込めませんでした",
+      "wake_failed": "休止中のセッションを復帰できませんでした",
+      "spawn_failed": "Claude Code セッションを起動できませんでした",
+      "kill_failed": "セッションを終了できませんでした",
+      "approve_failed": "操作を承認できませんでした",
+      "reject_failed": "操作を却下できませんでした",
+      "athena_failed": "Athena に接続できませんでした",
+      "apply_skill_failed": "スキルを適用できませんでした",
+      "debug_log_start_failed": "Fleet のデバッグログを開始できませんでした",
+      "debug_log_stop_failed": "Fleet のデバッグログを停止できませんでした",
+      "compact_failed": "セッションを圧縮できませんでした",
+      "hooks_install_failed": "Claude Code フックをインストールできませんでした",
+      "hooks_uninstall_failed": "Claude Code フックをアンインストールできませんでした",
+      "close_failed": "セッションを閉じられませんでした",
+      "process_gone_refreshed": "そのプロセスはすでに終了しています。一覧を更新しました。",
+      "process_kill_failed": "プロセスを終了できませんでした",
+      "process_resume_failed": "再開できませんでした。このフォルダーにトランスクリプトがありませんか?",
+      "tab_sessions": "セッション",
+      "tab_activity": "アクティビティ",
+      "tab_settings": "設定"
     },
     "obsidian_brain_desc": "ナレッジの取得、ノートの閲覧、同期のためにObsidian vaultを接続します。",
     "obsidian_brain_label": "Obsidian Brain",

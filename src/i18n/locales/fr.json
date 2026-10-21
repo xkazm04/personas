@@ -8968,7 +8968,9 @@
       "value_delivered_rate": "Taux de valeur livrée",
       "value_section_title": "Valeur métier",
       "prev_p50": "p50 préc.",
-      "prev_p95": "p95 préc."
+      "prev_p95": "p95 préc.",
+      "range_last_days_one": "Dernier jour",
+      "range_last_days_other": "{count} derniers jours"
     },
     "analytics_dashboard": {
       "active_count": "{count} actif(s)",
@@ -14690,7 +14692,26 @@
       "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many",
       "state_queued": "En file",
       "state_expired": "Expiré",
-      "pair_load_failed": "Impossible de charger les appareils associés"
+      "pair_load_failed": "Impossible de charger les appareils associés",
+      "wake_failed": "Impossible de réveiller la session en veille",
+      "spawn_failed": "Impossible de lancer la session Claude Code",
+      "kill_failed": "Impossible de terminer la session",
+      "approve_failed": "Impossible d'approuver l'action",
+      "reject_failed": "Impossible de rejeter l'action",
+      "athena_failed": "Impossible de joindre Athena",
+      "apply_skill_failed": "Impossible d'appliquer le skill",
+      "debug_log_start_failed": "Impossible de démarrer le journal de débogage de Fleet",
+      "debug_log_stop_failed": "Impossible d'arrêter le journal de débogage de Fleet",
+      "compact_failed": "Impossible de compacter la session",
+      "hooks_install_failed": "Impossible d'installer les hooks Claude Code",
+      "hooks_uninstall_failed": "Impossible de désinstaller les hooks Claude Code",
+      "close_failed": "Impossible de fermer la session",
+      "process_gone_refreshed": "Ce processus s'est déjà terminé. La liste a été actualisée.",
+      "process_kill_failed": "Impossible de terminer le processus",
+      "process_resume_failed": "Reprise impossible. Aucune transcription pour ce dossier ?",
+      "tab_sessions": "Sessions",
+      "tab_activity": "Activité",
+      "tab_settings": "Paramètres"
     },
     "obsidian_brain_desc": "Connectez votre coffre-fort Obsidian pour la récupération de connaissances, la navigation dans les notes et la synchronisation.",
     "obsidian_brain_label": "Obsidian Brain",

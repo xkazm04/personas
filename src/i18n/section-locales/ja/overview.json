@@ -65,7 +65,9 @@
     "value_delivered_rate": "価値提供率",
     "value_section_title": "ビジネス価値",
     "prev_p50": "前回 p50",
-    "prev_p95": "前回 p95"
+    "prev_p95": "前回 p95",
+    "range_last_days_one": "過去 1 日",
+    "range_last_days_other": "過去 {count} 日間"
   },
   "analytics_dashboard": {
     "active_count": "{count}件アクティブ",

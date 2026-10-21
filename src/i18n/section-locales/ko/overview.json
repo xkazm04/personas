@@ -65,7 +65,9 @@
     "value_delivered_rate": "가치 전달률",
     "value_section_title": "비즈니스 가치",
     "prev_p50": "이전 p50",
-    "prev_p95": "이전 p95"
+    "prev_p95": "이전 p95",
+    "range_last_days_one": "최근 1일",
+    "range_last_days_other": "최근 {count}일"
   },
   "analytics_dashboard": {
     "active_count": "{count}개 활성",

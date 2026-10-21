@@ -8968,7 +8968,9 @@
       "value_delivered_rate": "معدل تسليم القيمة",
       "value_section_title": "القيمة التجارية",
       "prev_p50": "p50 السابق",
-      "prev_p95": "p95 السابق"
+      "prev_p95": "p95 السابق",
+      "range_last_days_one": "آخر يوم",
+      "range_last_days_other": "آخر {count} يومًا"
     },
     "analytics_dashboard": {
       "active_count": "{count} نشط",
@@ -14690,7 +14692,26 @@
       "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many",
       "state_queued": "في الطابور",
       "state_expired": "انتهت مهلة الانتظار",
-      "pair_load_failed": "تعذر تحميل الأجهزة المقترنة"
+      "pair_load_failed": "تعذر تحميل الأجهزة المقترنة",
+      "wake_failed": "تعذّر إيقاظ الجلسة النائمة",
+      "spawn_failed": "تعذّر بدء جلسة Claude Code",
+      "kill_failed": "تعذّر إنهاء الجلسة",
+      "approve_failed": "تعذّرت الموافقة على الإجراء",
+      "reject_failed": "تعذّر رفض الإجراء",
+      "athena_failed": "تعذّر الوصول إلى Athena",
+      "apply_skill_failed": "تعذّر تطبيق المهارة",
+      "debug_log_start_failed": "تعذّر بدء سجل تصحيح Fleet",
+      "debug_log_stop_failed": "تعذّر إيقاف سجل تصحيح Fleet",
+      "compact_failed": "تعذّر ضغط الجلسة",
+      "hooks_install_failed": "تعذّر تثبيت خطافات Claude Code",
+      "hooks_uninstall_failed": "تعذّر إلغاء تثبيت خطافات Claude Code",
+      "close_failed": "تعذّر إغلاق الجلسة",
+      "process_gone_refreshed": "انتهت هذه العملية بالفعل. تم تحديث القائمة.",
+      "process_kill_failed": "تعذّر إنهاء العملية",
+      "process_resume_failed": "تعذّر الاستئناف. ألا يوجد نص محادثة لهذا المجلد؟",
+      "tab_sessions": "الجلسات",
+      "tab_activity": "النشاط",
+      "tab_settings": "الإعدادات"
     },
     "obsidian_brain_desc": "ربط خزنة Obsidian الخاصة بك لاسترجاع المعرفة وتصفح الملاحظات والمزامنة.",
     "obsidian_brain_label": "دماغ Obsidian",

@@ -4380,5 +4380,6 @@
   "id:gitlab.pipeline_count_one",
   "id:gitlab.notify_title_other",
   "vi:gitlab.pipeline_count_one",
-  "vi:gitlab.notify_title_other"
+  "vi:gitlab.notify_title_other",
+  "fr:plugins.fleet.tab_sessions"
 ]

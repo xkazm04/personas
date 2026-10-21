@@ -65,7 +65,9 @@
     "value_delivered_rate": "价值交付率",
     "value_section_title": "业务价值",
     "prev_p50": "上期 p50",
-    "prev_p95": "上期 p95"
+    "prev_p95": "上期 p95",
+    "range_last_days_one": "最近 1 天",
+    "range_last_days_other": "最近 {count} 天"
   },
   "analytics_dashboard": {
     "active_count": "{count} 活跃",

@@ -70,12 +70,12 @@ export function useFleetOverlayActions() {
         setActiveSession(newId);
         refresh();
       } catch (e) {
-        toastCatch('useFleetOverlayActions:wake', 'Failed to wake the sleeping session')(e);
+        toastCatch('useFleetOverlayActions:wake', t.plugins.fleet.wake_failed)(e);
       } finally {
         wakingRef.current.delete(id);
       }
     },
-    [sessions, setActiveSession, refresh],
+    [sessions, setActiveSession, refresh, t],
   );
 
   const handleSpawn = useCallback(async () => {
@@ -86,11 +86,11 @@ export function useFleetOverlayActions() {
       setActiveSession(id);
       refresh();
     } catch (e) {
-      toastCatch('useFleetOverlayActions:spawn', 'Failed to spawn Claude Code session')(e);
+      toastCatch('useFleetOverlayActions:spawn', t.plugins.fleet.spawn_failed)(e);
     } finally {
       setSpawning(false);
     }
-  }, [activeProject, spawning, refresh, setActiveSession]);
+  }, [activeProject, spawning, refresh, setActiveSession, t]);
 
   // The tile's trash control is state-aware: a live session is KILLED (its
   // tile stays, as an exited tombstone), a tombstone is DISMISSED (removed —
@@ -102,27 +102,27 @@ export function useFleetOverlayActions() {
       if (tombstone) await removeSession(id);
       else await killSession(id);
     } catch (e) {
-      toastCatch('useFleetOverlayActions:kill', 'Failed to kill session')(e);
+      toastCatch('useFleetOverlayActions:kill', t.plugins.fleet.kill_failed)(e);
     }
-  }, [sessions]);
+  }, [sessions, t]);
 
   const handleApprove = useCallback(async (id: string) => {
     try {
       await companionApproveAction(id);
       removeApproval(id);
     } catch (e) {
-      toastCatch('useFleetOverlayActions:approve', 'Failed to approve action')(e);
+      toastCatch('useFleetOverlayActions:approve', t.plugins.fleet.approve_failed)(e);
     }
-  }, [removeApproval]);
+  }, [removeApproval, t]);
 
   const handleReject = useCallback(async (id: string) => {
     try {
       await companionRejectAction(id);
       removeApproval(id);
     } catch (e) {
-      toastCatch('useFleetOverlayActions:reject', 'Failed to reject action')(e);
+      toastCatch('useFleetOverlayActions:reject', t.plugins.fleet.reject_failed)(e);
     }
-  }, [removeApproval]);
+  }, [removeApproval, t]);
 
   // Ask Athena to reason about one stale session and (if there's a clear
   // winner) propose the next step. Tagged as a Fleet-originated request so it
@@ -132,7 +132,7 @@ export function useFleetOverlayActions() {
     try {
       await companionSendMessage(craftStalePrompt(session), false, false, false, 'Fleet');
     } catch (e) {
-      toastCatch('useFleetOverlayActions:askAthena', 'Failed to reach Athena')(e);
+      toastCatch('useFleetOverlayActions:askAthena', t.plugins.fleet.athena_failed)(e);
     } finally {
       setAskingAthena((prev) => {
         const next = new Set(prev);
@@ -140,7 +140,7 @@ export function useFleetOverlayActions() {
         return next;
       });
     }
-  }, []);
+  }, [t]);
 
   /** Apply a library skill to the focused session — writes `<command>⏎` to its PTY. */
   const handleApplySkill = useCallback(async (command: string) => {
@@ -153,7 +153,7 @@ export function useFleetOverlayActions() {
         'success',
       );
     } catch (e) {
-      toastCatch('useFleetOverlayActions:applySkill', 'Failed to apply skill')(e);
+      toastCatch('useFleetOverlayActions:applySkill', t.plugins.fleet.apply_skill_failed)(e);
     }
   }, [activeSessionId, sessions, addToast, t, tx]);
 

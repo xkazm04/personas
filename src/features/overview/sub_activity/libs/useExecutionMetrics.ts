@@ -5,7 +5,8 @@ import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overvi
 import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { mergePreviousPeriod } from '@/features/overview/sub_usage/libs/periodComparison';
 import { computePeriodTrends } from '@/features/overview/libs/computeTrends';
-import { resolveTimeRange, type TimeRange } from '@/lib/types/timeRange';
+import { formatTimeRangeLabel, type TimeRange } from '@/lib/types/timeRange';
+import { useTranslation } from '@/i18n/useTranslation';
 import { buildFetchWindow } from '@/features/overview/libs/fetchWindow';
 import { fmtDate, summarizeCurrentWindow } from './executionMetricsHelpers';
 
@@ -27,6 +28,7 @@ type TimeWindow = 1 | 7 | 30 | 90;
  *   `trends` (null when compare is disabled or chart data is empty).
  */
 export function useExecutionMetrics() {
+  const { t, tx, language } = useTranslation();
   const { dayRange, customDateRange, effectiveDays, compareEnabled, previousPeriodDays } = useOverviewFilterValues();
   const { setDayRange, setCustomDateRange, setCompareEnabled } = useOverviewFilterActions();
   const { data, loading, error, fetchExecutionDashboard } = useOverviewStore(useShallow((s) => ({
@@ -45,7 +47,17 @@ export function useExecutionMetrics() {
     }
     return { kind: 'rolling-days', days: effectiveDays };
   }, [customDateRange, effectiveDays]);
-  const activeRangeLabel = useMemo(() => resolveTimeRange(activeRange).label, [activeRange]);
+  const activeRangeLabel = useMemo(
+    () => formatTimeRangeLabel(
+      activeRange,
+      {
+        oneDay: t.overview.activity.range_last_days_one,
+        manyDays: (n) => tx(t.overview.activity.range_last_days_other, { count: n }),
+      },
+      language,
+    ),
+    [activeRange, t, tx, language],
+  );
 
   // Lifecycle fetch is handled by useExecutionDashboardPipeline; load is for manual retry.
   const load = useCallback(

@@ -97,9 +97,9 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
     try {
       await killSession(session.id);
     } catch (err) {
-      toastCatch('FleetSessionCard:close', 'Failed to close session')(err);
+      toastCatch('FleetSessionCard:close', f.close_failed)(err);
     }
-  }, [session.id]);
+  }, [session.id, f.close_failed]);
 
   const handleClose = useCallback(
     async (e: React.MouseEvent) => {
@@ -114,10 +114,10 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
         await removeSession(session.id);
         onRemovedLocal(session.id);
       } catch (err) {
-        toastCatch('FleetSessionCard:close', 'Failed to close session')(err);
+        toastCatch('FleetSessionCard:close', f.close_failed)(err);
       }
     },
-    [session.id, session.state, onRemovedLocal],
+    [session.id, session.state, onRemovedLocal, f.close_failed],
   );
 
   // PARK, DON'T KILL. The row's only process control was the X, so an operator

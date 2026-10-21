@@ -8968,7 +8968,9 @@
       "value_delivered_rate": "Tỷ lệ giá trị đạt được",
       "value_section_title": "Giá trị kinh doanh",
       "prev_p50": "p50 trước",
-      "prev_p95": "p95 trước"
+      "prev_p95": "p95 trước",
+      "range_last_days_one": "1 ngày qua",
+      "range_last_days_other": "{count} ngày qua"
     },
     "analytics_dashboard": {
       "active_count": "{count} đang hoạt động",
@@ -14690,7 +14692,26 @@
       "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many",
       "state_queued": "Đang chờ",
       "state_expired": "Hết hạn chờ",
-      "pair_load_failed": "Không thể tải các thiết bị đã ghép nối"
+      "pair_load_failed": "Không thể tải các thiết bị đã ghép nối",
+      "wake_failed": "Không thể đánh thức phiên đang ngủ",
+      "spawn_failed": "Không thể khởi động phiên Claude Code",
+      "kill_failed": "Không thể kết thúc phiên",
+      "approve_failed": "Không thể phê duyệt hành động",
+      "reject_failed": "Không thể từ chối hành động",
+      "athena_failed": "Không thể kết nối với Athena",
+      "apply_skill_failed": "Không thể áp dụng skill",
+      "debug_log_start_failed": "Không thể bắt đầu nhật ký gỡ lỗi Fleet",
+      "debug_log_stop_failed": "Không thể dừng nhật ký gỡ lỗi Fleet",
+      "compact_failed": "Không thể nén phiên",
+      "hooks_install_failed": "Không thể cài đặt hook Claude Code",
+      "hooks_uninstall_failed": "Không thể gỡ cài đặt hook Claude Code",
+      "close_failed": "Không thể đóng phiên",
+      "process_gone_refreshed": "Tiến trình đó đã thoát. Danh sách đã được làm mới.",
+      "process_kill_failed": "Không thể kết thúc tiến trình",
+      "process_resume_failed": "Không thể tiếp tục. Thư mục đó không có bản ghi?",
+      "tab_sessions": "Phiên",
+      "tab_activity": "Hoạt động",
+      "tab_settings": "Cài đặt"
     },
     "obsidian_brain_desc": "Kết nối vault Obsidian để truy xuất kiến thức, duyệt ghi chú và đồng bộ.",
     "obsidian_brain_label": "Obsidian Brain",

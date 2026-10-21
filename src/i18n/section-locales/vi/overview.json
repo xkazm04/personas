@@ -65,7 +65,9 @@
     "value_delivered_rate": "Tỷ lệ giá trị đạt được",
     "value_section_title": "Giá trị kinh doanh",
     "prev_p50": "p50 trước",
-    "prev_p95": "p95 trước"
+    "prev_p95": "p95 trước",
+    "range_last_days_one": "1 ngày qua",
+    "range_last_days_other": "{count} ngày qua"
   },
   "analytics_dashboard": {
     "active_count": "{count} đang hoạt động",

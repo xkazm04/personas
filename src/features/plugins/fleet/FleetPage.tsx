@@ -19,10 +19,10 @@ type InternalTab = 'grid' | 'activity' | 'settings';
 // Sessions is the home for every operation (spawn, kill, broadcast, terminal
 // view). Activity is the cross-session transcript feed (F2/P2.2). Settings
 // stays for hook uninstall + diagnostics; install lives in the Sessions pill.
-const TABS: { id: InternalTab; label: string; icon: typeof Terminal }[] = [
-  { id: 'grid', label: 'Sessions', icon: LayoutDashboard },
-  { id: 'activity', label: 'Activity', icon: Activity },
-  { id: 'settings', label: 'Settings', icon: SettingsIcon },
+const TABS: { id: InternalTab; labelKey: 'tab_sessions' | 'tab_activity' | 'tab_settings'; icon: typeof Terminal }[] = [
+  { id: 'grid', labelKey: 'tab_sessions', icon: LayoutDashboard },
+  { id: 'activity', labelKey: 'tab_activity', icon: Activity },
+  { id: 'settings', labelKey: 'tab_settings', icon: SettingsIcon },
 ];
 
 /**
@@ -92,7 +92,7 @@ export default function FleetPage() {
           now live in the left drawer (opened from the grid), not a tab. */}
       <div className="flex items-center gap-1 px-6 pt-5 pb-3 border-b border-primary/10">
         <Terminal className="w-5 h-5 text-primary mr-1" />
-        <h1 className="typo-heading text-foreground mr-3">Fleet</h1>
+        <h1 className="typo-heading text-foreground mr-3">{f.footer_title}</h1>
         {TABS.map((tabDef) => {
           const Icon = tabDef.icon;
           const active = tab === tabDef.id;
@@ -109,7 +109,7 @@ export default function FleetPage() {
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
-              {tabDef.label}
+              {f[tabDef.labelKey]}
             </button>
           );
         })}

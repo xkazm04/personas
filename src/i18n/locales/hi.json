@@ -8968,7 +8968,9 @@
       "value_delivered_rate": "मूल्य-वितरण दर",
       "value_section_title": "व्यावसायिक मूल्य",
       "prev_p50": "पिछला p50",
-      "prev_p95": "पिछला p95"
+      "prev_p95": "पिछला p95",
+      "range_last_days_one": "पिछला 1 दिन",
+      "range_last_days_other": "पिछले {count} दिन"
     },
     "analytics_dashboard": {
       "active_count": "{count} सक्रिय",
@@ -14690,7 +14692,26 @@
       "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many",
       "state_queued": "कतार में",
       "state_expired": "प्रतीक्षा समय समाप्त",
-      "pair_load_failed": "पेयर किए गए डिवाइस लोड नहीं हो सके"
+      "pair_load_failed": "पेयर किए गए डिवाइस लोड नहीं हो सके",
+      "wake_failed": "निष्क्रिय सत्र को जगाया नहीं जा सका",
+      "spawn_failed": "Claude Code सत्र शुरू नहीं हो सका",
+      "kill_failed": "सत्र समाप्त नहीं हो सका",
+      "approve_failed": "कार्रवाई स्वीकृत नहीं हो सकी",
+      "reject_failed": "कार्रवाई अस्वीकृत नहीं हो सकी",
+      "athena_failed": "Athena से संपर्क नहीं हो सका",
+      "apply_skill_failed": "स्किल लागू नहीं हो सका",
+      "debug_log_start_failed": "Fleet डीबग लॉग शुरू नहीं हो सका",
+      "debug_log_stop_failed": "Fleet डीबग लॉग बंद नहीं हो सका",
+      "compact_failed": "सत्र को संक्षिप्त नहीं किया जा सका",
+      "hooks_install_failed": "Claude Code हुक इंस्टॉल नहीं हो सके",
+      "hooks_uninstall_failed": "Claude Code हुक अनइंस्टॉल नहीं हो सके",
+      "close_failed": "सत्र बंद नहीं हो सका",
+      "process_gone_refreshed": "वह प्रक्रिया पहले ही समाप्त हो चुकी है। सूची ताज़ा कर दी गई है।",
+      "process_kill_failed": "प्रक्रिया समाप्त नहीं हो सकी",
+      "process_resume_failed": "फिर शुरू नहीं हो सका। क्या उस फ़ोल्डर के लिए कोई ट्रांसक्रिप्ट नहीं है?",
+      "tab_sessions": "सत्र",
+      "tab_activity": "गतिविधि",
+      "tab_settings": "सेटिंग्स"
     },
     "obsidian_brain_desc": "ज्ञान पुनर्प्राप्ति, नोट ब्राउज़िंग, और सिंक के लिए अपना Obsidian vault कनेक्ट करें।",
     "obsidian_brain_label": "Obsidian ब्रेन",

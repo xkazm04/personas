@@ -10069,7 +10069,9 @@
       "col_id": "ID",
       "execution_label": "Execution",
       "prev_p50": "Prev p50",
-      "prev_p95": "Prev p95"
+      "prev_p95": "Prev p95",
+      "range_last_days_one": "Last day",
+      "range_last_days_other": "Last {count} days"
     },
     "analytics_dashboard": {
       "issues_found": "{count} issues found",
@@ -16853,7 +16855,26 @@
       "_comment_skills_applied_partial": "Partial toast after the fan-out; the button now retries the misses",
       "skills_applied_partial": "Applied to {sent} of {total} — retry the rest from the drawer",
       "state_queued": "Queued",
-      "pair_load_failed": "Could not load paired devices"
+      "pair_load_failed": "Could not load paired devices",
+      "wake_failed": "Failed to wake the sleeping session",
+      "spawn_failed": "Failed to spawn Claude Code session",
+      "kill_failed": "Failed to kill session",
+      "approve_failed": "Failed to approve action",
+      "reject_failed": "Failed to reject action",
+      "athena_failed": "Failed to reach Athena",
+      "apply_skill_failed": "Failed to apply skill",
+      "debug_log_start_failed": "Failed to start the fleet debug log",
+      "debug_log_stop_failed": "Failed to stop the fleet debug log",
+      "compact_failed": "Failed to compact session",
+      "hooks_install_failed": "Failed to install Claude Code hooks",
+      "hooks_uninstall_failed": "Failed to uninstall Claude Code hooks",
+      "close_failed": "Failed to close session",
+      "process_gone_refreshed": "That process already exited. The list has been refreshed.",
+      "process_kill_failed": "Failed to kill process",
+      "process_resume_failed": "Could not resume. No transcript for that folder?",
+      "tab_sessions": "Sessions",
+      "tab_activity": "Activity",
+      "tab_settings": "Settings"
     },
     "title": "Plugins",
     "subtitle": "Extend your workspace with plugins. Toggle to show or hide from the sidebar.",

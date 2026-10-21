@@ -8968,7 +8968,9 @@
       "value_delivered_rate": "Míra doručené hodnoty",
       "value_section_title": "Obchodní hodnota",
       "prev_p50": "Předchozí p50",
-      "prev_p95": "Předchozí p95"
+      "prev_p95": "Předchozí p95",
+      "range_last_days_one": "Poslední den",
+      "range_last_days_other": "Posledních {count} dní"
     },
     "analytics_dashboard": {
       "active_count": "{count} aktivních",
@@ -14690,7 +14692,26 @@
       "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many",
       "state_queued": "Ve frontě",
       "state_expired": "Vypršelo",
-      "pair_load_failed": "Nepodařilo se načíst spárovaná zařízení"
+      "pair_load_failed": "Nepodařilo se načíst spárovaná zařízení",
+      "wake_failed": "Spící relaci se nepodařilo probudit",
+      "spawn_failed": "Relaci Claude Code se nepodařilo spustit",
+      "kill_failed": "Relaci se nepodařilo ukončit",
+      "approve_failed": "Akci se nepodařilo schválit",
+      "reject_failed": "Akci se nepodařilo zamítnout",
+      "athena_failed": "Athenu se nepodařilo oslovit",
+      "apply_skill_failed": "Skill se nepodařilo použít",
+      "debug_log_start_failed": "Ladicí protokol Fleet se nepodařilo spustit",
+      "debug_log_stop_failed": "Ladicí protokol Fleet se nepodařilo zastavit",
+      "compact_failed": "Relaci se nepodařilo zhustit",
+      "hooks_install_failed": "Hooky Claude Code se nepodařilo nainstalovat",
+      "hooks_uninstall_failed": "Hooky Claude Code se nepodařilo odinstalovat",
+      "close_failed": "Relaci se nepodařilo zavřít",
+      "process_gone_refreshed": "Tento proces už skončil. Seznam byl aktualizován.",
+      "process_kill_failed": "Proces se nepodařilo ukončit",
+      "process_resume_failed": "Obnovení se nezdařilo. Chybí přepis pro tuto složku?",
+      "tab_sessions": "Relace",
+      "tab_activity": "Aktivita",
+      "tab_settings": "Nastavení"
     },
     "obsidian_brain_desc": "Propoj svůj Obsidian vault pro získávání znalostí, procházení poznámek a synchronizaci.",
     "obsidian_brain_label": "Obsidian Brain",
