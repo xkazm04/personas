@@ -3,7 +3,7 @@ import { AlertTriangle, X, ExternalLink, RefreshCw, Terminal, UserCheck } from '
 import { AsyncButton, Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useVaultStore } from '@/stores/vaultStore';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, extractMessage } from '@/lib/silentCatch';
 import { resolveError } from '@/lib/errors/errorRegistry';
 import type { CliSpecInfo } from '@/api/auth/cliCapture';
 import { OAUTH_FIELD } from '@/features/vault/sub_catalog/components/design/CredentialDesignHelpers';
@@ -75,7 +75,7 @@ export function ReauthEntryRow({ entry, cliSpec, onNavigate, onDismiss, onRetryC
       if (mismatch) {
         setRowError(mismatch.detail ? `${rb.account_mismatch} (${mismatch.detail})` : rb.account_mismatch);
       } else {
-        setRowError(resolveError(err instanceof Error ? err.message : String(err)).message);
+        setRowError(resolveError(extractMessage(err)).message);
         silentCatch('ReauthEntryRow:persist')(err);
       }
     } finally {

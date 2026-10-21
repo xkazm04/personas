@@ -25,6 +25,7 @@ import { BaseModal } from '@/lib/ui/BaseModal';
 import { Button } from '@/features/shared/components/buttons';
 import { CARD_PADDING, SECTION_GAP } from '@/lib/utils/designTokens';
 import { useTranslation } from '@/i18n/useTranslation';
+import { extractMessage } from '@/lib/silentCatch';
 
 export interface PendingAuthDetails {
   credential_id: string;
@@ -59,7 +60,7 @@ export function PendingAuthModal({ details, onDismiss, onRetry }: PendingAuthMod
       setUrlOpened(true);
       setRetryError(null);
     } catch (e) {
-      setRetryError(`Failed to open authorization URL: ${String(e)}`);
+      setRetryError(`Failed to open authorization URL: ${extractMessage(e)}`);
     }
   }, [details.authorize_url]);
 

@@ -5,7 +5,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useIsDarkTheme } from '@/stores/themeStore';
 import type { TeamPreset } from '@/lib/bindings/TeamPreset';
 import { listTeamPresets } from '@/api/templates/teamPresets';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, extractMessage } from '@/lib/silentCatch';
 import { resolveError } from '@/lib/errors/errorRegistry';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
@@ -52,7 +52,7 @@ export default function PresetLibraryPage() {
       .then(setPresets)
       .catch((err) => {
         silentCatch('PresetLibraryPage:list')(err);
-        setLoadError(resolveError(err instanceof Error ? err.message : String(err)).message);
+        setLoadError(resolveError(extractMessage(err)).message);
       });
   }, []);
 

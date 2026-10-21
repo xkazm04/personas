@@ -9,7 +9,7 @@ vi.mock('@/i18n/useTranslation', () => ({
   useTranslation: () => ({ t, tx: (s: unknown) => String(s) }),
 }));
 vi.mock('@/stores/themeStore', () => ({ useIsDarkTheme: () => true }));
-vi.mock('@/lib/silentCatch', () => ({ silentCatch: () => () => {}, toastCatch: () => () => {} }));
+vi.mock('@/lib/silentCatch', async (orig) => ({ ...(await orig<typeof import('@/lib/silentCatch')>()), silentCatch: () => () => {}, toastCatch: () => () => {} }));
 vi.mock('./../PresetPreviewModal', () => ({ PresetPreviewModal: () => null }));
 vi.mock('@/hooks/utility/interaction/useProgressiveReveal', () => ({
   useRevealTracker: () => ({ hasEntered: () => true, markEntered: () => {} }),
