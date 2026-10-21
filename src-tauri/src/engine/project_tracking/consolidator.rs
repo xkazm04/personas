@@ -435,6 +435,9 @@ async fn run_cli_oneshot(
         // Belt and braces for any drop path that bypasses the explicit kill below.
         .kill_on_drop(true)
         .env("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "1");
+    // Bill the subscription, never an API key that happens to be in the
+    // app's environment (after every env override, per the helper's contract).
+    crate::engine::cli_process::force_subscription_auth(&mut cmd);
     // No console window on Windows (desktop-heap / 0xC0000142 guard).
     crate::companion::session::apply_no_console_window(&mut cmd);
     // Unix: lead our own process group so `kill_tree`'s group signal reaches
