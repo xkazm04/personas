@@ -416,6 +416,135 @@ fn build_prompt(
     s
 }
 
+/// Run the CLI once: pipe `prompt` to stdin, collect the assistant text from
+/// stream-json stdout, and give up after `deadline`. Split out of
+/// `call_sonnet_oneshot` so the timeout path can be driven by a fake binary.
+async fn run_cli_oneshot(
+    program: &str,
+    argv: &[String],
+    cwd: &std::path::Path,
+    prompt: &str,
+    deadline: Duration,
+) -> Result<String, AppError> {
+    let mut cmd = Command::new(program);
+    cmd.args(argv)
+        .current_dir(cwd)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        // Belt and braces for any drop path that bypasses the explicit kill below.
+        .kill_on_drop(true)
+        .env("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "1");
+    // No console window on Windows (desktop-heap / 0xC0000142 guard).
+    crate::companion::session::apply_no_console_window(&mut cmd);
+    // Unix: lead our own process group so `kill_tree`'s group signal reaches
+    // the CLI's children on timeout.
+    #[cfg(unix)]
+    cmd.process_group(0);
+    let mut child = cmd
+        .spawn()
+        .map_err(|e| AppError::Internal(format!("spawn claude (project-tracking): {e}")))?;
+    let pid = child.id();
+
+    if let Some(mut stdin) = child.stdin.take() {
+        stdin
+            .write_all(prompt.as_bytes())
+            .await
+            .map_err(|e| AppError::Internal(format!("write stdin: {e}")))?;
+        drop(stdin);
+    }
+
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| AppError::Internal("claude stdout missing".into()))?;
+    let stderr = child
+        .stderr
+        .take()
+        .ok_or_else(|| AppError::Internal("claude stderr missing".into()))?;
+
+    let stderr_buf = Arc::new(tokio::sync::Mutex::new(String::new()));
+    let stderr_handle = {
+        let buf = stderr_buf.clone();
+        tokio::spawn(async move {
+            let mut lines = BufReader::new(stderr).lines();
+            while let Ok(Some(line)) = lines.next_line().await {
+                let mut g = buf.lock().await;
+                if !g.is_empty() {
+                    g.push('\n');
+                }
+                g.push_str(&line);
+            }
+        })
+    };
+
+    let mut assistant_text = String::new();
+    let mut reader = BufReader::new(stdout).lines();
+
+    let collect = async {
+        while let Some(line) = reader
+            .next_line()
+            .await
+            .map_err(|e| AppError::Internal(format!("read stdout: {e}")))?
+        {
+            if let Some(delta) = extract_assistant_text(&line) {
+                assistant_text.push_str(&delta);
+            }
+        }
+        Ok::<(), AppError>(())
+    };
+
+    let collected = timeout(deadline, collect).await;
+    if collected.is_err() {
+        // A hung CLI (spawned with --dangerously-skip-permissions) must not
+        // outlive the call. `base_cli_invocation` can resolve to a Windows
+        // `cmd` wrapper, so a bare `child.kill()` ends only the wrapper and
+        // the real CLI survives: kill the whole tree FIRST, while the child is
+        // still owned and its parent links intact, then reap it and stop the
+        // stderr reader, which would otherwise wait on a pipe nobody closes.
+        if let Some(pid) = pid {
+            kill_tree_blocking(pid).await;
+        }
+        if let Err(e) = child.kill().await {
+            debug!(error = %e, "project-tracking: timed-out claude child already gone");
+        }
+        stderr_handle.abort();
+    }
+    collected.map_err(|_| {
+        AppError::Internal(format!(
+            "project-tracking consolidator timed out after {:?}",
+            deadline
+        ))
+    })??;
+
+    let _ = stderr_handle.await;
+    let status = child
+        .wait()
+        .await
+        .map_err(|e| AppError::Internal(format!("await claude: {e}")))?;
+    if !status.success() {
+        let err = stderr_buf.lock().await.clone();
+        return Err(AppError::Internal(format!(
+            "claude project-tracking exited {}: {}",
+            status.code().map(|c| c.to_string()).unwrap_or("?".into()),
+            err
+        )));
+    }
+
+    Ok(assistant_text)
+}
+
+/// Kill a timed-out run's whole process tree off the async worker (the kill
+/// command is a blocking subprocess). A failed kill is logged, never fatal: the
+/// timeout error the caller gets is the real outcome.
+async fn kill_tree_blocking(pid: u32) {
+    match tokio::task::spawn_blocking(move || crate::webbuild::devserver::kill_tree(pid)).await {
+        Ok(Ok(())) => {}
+        Ok(Err(e)) => warn!(pid, error = %e, "project-tracking: tree kill failed"),
+        Err(e) => warn!(pid, error = %e, "project-tracking: tree kill task did not finish"),
+    }
+}
+
 async fn call_sonnet_oneshot(prompt: &str) -> Result<PulseEnvelope, AppError> {
     // Run in an EMPTY scratch directory, not `$HOME`.
     //
@@ -471,100 +600,8 @@ async fn call_sonnet_oneshot(prompt: &str) -> Result<PulseEnvelope, AppError> {
         route.model.into(),
     ]);
 
-    let mut cmd = Command::new(&cmd_program);
-    cmd.args(&argv)
-        .current_dir(&cwd)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        // Belt and braces for any drop path that bypasses the explicit kill below.
-        .kill_on_drop(true)
-        .env("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "1");
-    // No console window on Windows (desktop-heap / 0xC0000142 guard).
-    crate::companion::session::apply_no_console_window(&mut cmd);
-    let mut child = cmd
-        .spawn()
-        .map_err(|e| AppError::Internal(format!("spawn claude (project-tracking): {e}")))?;
-
-    if let Some(mut stdin) = child.stdin.take() {
-        stdin
-            .write_all(prompt.as_bytes())
-            .await
-            .map_err(|e| AppError::Internal(format!("write stdin: {e}")))?;
-        drop(stdin);
-    }
-
-    let stdout = child
-        .stdout
-        .take()
-        .ok_or_else(|| AppError::Internal("claude stdout missing".into()))?;
-    let stderr = child
-        .stderr
-        .take()
-        .ok_or_else(|| AppError::Internal("claude stderr missing".into()))?;
-
-    let stderr_buf = Arc::new(tokio::sync::Mutex::new(String::new()));
-    let stderr_handle = {
-        let buf = stderr_buf.clone();
-        tokio::spawn(async move {
-            let mut lines = BufReader::new(stderr).lines();
-            while let Ok(Some(line)) = lines.next_line().await {
-                let mut g = buf.lock().await;
-                if !g.is_empty() {
-                    g.push('\n');
-                }
-                g.push_str(&line);
-            }
-        })
-    };
-
-    let mut assistant_text = String::new();
-    let mut reader = BufReader::new(stdout).lines();
-
-    let collect = async {
-        while let Some(line) = reader
-            .next_line()
-            .await
-            .map_err(|e| AppError::Internal(format!("read stdout: {e}")))?
-        {
-            if let Some(delta) = extract_assistant_text(&line) {
-                assistant_text.push_str(&delta);
-            }
-        }
-        Ok::<(), AppError>(())
-    };
-
-    let collected = timeout(CONSOLIDATOR_TIMEOUT, collect).await;
-    if collected.is_err() {
-        // A hung CLI (spawned with --dangerously-skip-permissions) must not
-        // outlive the call: kill it (which also reaps it) and stop the stderr
-        // reader, which would otherwise wait on a pipe nobody closes.
-        if let Err(e) = child.kill().await {
-            warn!(error = %e, "project-tracking: could not kill the timed-out claude child");
-        }
-        stderr_handle.abort();
-    }
-    collected.map_err(|_| {
-        AppError::Internal(format!(
-            "project-tracking consolidator timed out after {:?}",
-            CONSOLIDATOR_TIMEOUT
-        ))
-    })??;
-
-    let _ = stderr_handle.await;
-    let status = child
-        .wait()
-        .await
-        .map_err(|e| AppError::Internal(format!("await claude: {e}")))?;
-    if !status.success() {
-        let err = stderr_buf.lock().await.clone();
-        return Err(AppError::Internal(format!(
-            "claude project-tracking exited {}: {}",
-            status.code().map(|c| c.to_string()).unwrap_or("?".into()),
-            err
-        )));
-    }
-
+    let assistant_text =
+        run_cli_oneshot(&cmd_program, &argv, &cwd, prompt, CONSOLIDATOR_TIMEOUT).await?;
     parse_envelope(&assistant_text)
 }
 
@@ -659,6 +696,47 @@ fn _now() -> DateTime<Utc> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(windows)]
+    const TEST_TIMEOUT: Duration = Duration::from_millis(1000);
+    #[cfg(windows)]
+    const TEST_GRACE: Duration = Duration::from_secs(6);
+
+    #[cfg(windows)]
+    #[tokio::test]
+    async fn timeout_kills_the_grandchildren_too() {
+        // The fake CLI (a `.cmd`, like the Windows wrapper) starts a detached
+        // grandchild that writes a marker 3 s later, then idles. A root-only
+        // kill leaves the grandchild to write it.
+        let dir = tempfile::tempdir().unwrap();
+        let marker = dir.path().join("marker.txt");
+        let script = dir.path().join("fakeclaude.cmd");
+        std::fs::write(
+            &script,
+            format!(
+                "@echo off
+start /b cmd /c \"ping -n 4 127.0.0.1 >nul & echo x> \"{}\"\"
+ping -n 30 127.0.0.1 >nul
+",
+                marker.display()
+            ),
+        )
+        .unwrap();
+        let res = run_cli_oneshot(
+            script.to_str().unwrap(),
+            &[],
+            dir.path(),
+            "hi",
+            TEST_TIMEOUT,
+        )
+        .await;
+        assert!(res.is_err(), "run must time out");
+        tokio::time::sleep(TEST_GRACE).await;
+        assert!(
+            !marker.exists(),
+            "grandchild survived the timeout and kept writing"
+        );
+    }
 
     fn note(title: &str, summary: &str) -> EventPayload {
         EventPayload::Note {
