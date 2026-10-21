@@ -95,8 +95,11 @@ pub fn system_ops_create_automation(
 
     let id = uuid::Uuid::new_v4().to_string();
     let next_run_at = if trigger_kind == "schedule" {
-        cron.as_deref()
-            .and_then(|c| ops::compute_next_run_at(c, &id, timezone.as_deref()))
+        Some(schedule_next_run_at(
+            cron.as_deref().unwrap_or_default(),
+            &id,
+            timezone.as_deref(),
+        )?)
     } else {
         None
     };
@@ -117,6 +120,18 @@ pub fn system_ops_create_automation(
             unattended_mode: &unattended_mode,
         },
     )
+}
+
+/// First fire time of a schedule automation, or a Validation error when the cron
+/// is unparseable or never fires (e.g. `0 0 30 2 *`). `get_due_schedules` needs a
+/// non-null `next_run_at`, so accepting such a cron would create an automation
+/// reported as success that can never run.
+fn schedule_next_run_at(cron: &str, id: &str, timezone: Option<&str>) -> Result<String, AppError> {
+    ops::compute_next_run_at(cron, id, timezone).ok_or_else(|| {
+        AppError::Validation(format!(
+            "cron expression \"{cron}\" is invalid or never fires, so the automation would never run"
+        ))
+    })
 }
 
 #[tauri::command]
@@ -181,4 +196,22 @@ pub fn system_ops_report_outcome(
         )));
     }
     repo::mark_outcome(&state.db, &id, &status, detail.as_deref())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::schedule_next_run_at;
+
+    #[test]
+    fn a_cron_that_never_fires_is_refused() {
+        // Feb 30 does not exist.
+        let err = schedule_next_run_at("0 0 30 2 *", "auto-1", None).expect_err("never fires");
+        assert!(err.to_string().contains("never fires"));
+        assert!(schedule_next_run_at("not a cron", "auto-1", None).is_err());
+    }
+
+    #[test]
+    fn a_firing_cron_yields_its_next_run() {
+        assert!(schedule_next_run_at("0 9 * * *", "auto-1", None).is_ok());
+    }
 }
