@@ -59,6 +59,12 @@ export interface ConnectorStatus {
   credentialName: string | null;
   testing: boolean;
   result: ConnectorTestResult | null;
+  /**
+   * The last real verdict, kept while `result` holds an `unreachable` attempt.
+   * The attempt judged nothing, so it must not erase what the row last knew:
+   * the verdict and the attempt are two facts. Readiness still reads `result`.
+   */
+  lastVerdict?: ConnectorTestResult | null;
   /** Transient error from the last credential link attempt. */
   linkError: string | null;
 }

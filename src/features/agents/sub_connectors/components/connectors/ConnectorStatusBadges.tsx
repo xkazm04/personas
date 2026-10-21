@@ -125,6 +125,24 @@ function LastCheckedNote({ result, onRetest }: { result: ConnectorTestResult; on
   );
 }
 
+/**
+ * The last real verdict, shown beside an unreachable attempt. The attempt judged
+ * nothing, so the row keeps saying what it last actually knew.
+ */
+function LastVerdictNote({ verdict }: { verdict: ConnectorTestResult }) {
+  const { t } = useTranslation();
+  const label = verdict.state === 'unverifiable'
+    ? t.agents.connectors.status_unverifiable
+    : verdict.success ? t.agents.connectors.status_ready : t.agents.connectors.status_failed;
+  return (
+    <p data-testid="connector-last-verdict" className="typo-caption pl-4.5 flex items-center gap-1 text-foreground">
+      <span>{t.agents.connectors.st_last_checked}</span>
+      <span>{label}</span>
+      {verdict.testedAt && <RelativeTime timestamp={verdict.testedAt} />}
+    </p>
+  );
+}
+
 interface StatusResultProps {
   status: ConnectorStatus;
   onClearLinkError?: (connectorName: string) => void;
@@ -177,6 +195,7 @@ export function StatusResult({ status, onClearLinkError, onRetest }: StatusResul
             <p className="typo-body text-foreground pl-4.5">{t.agents.connectors.unreachable_hint}</p>
             {status.result.message && <p className="typo-body pl-4.5 break-all">{status.result.message}</p>}
             <LastCheckedNote result={status.result} onRetest={onRetest} />
+            {status.lastVerdict && <LastVerdictNote verdict={status.lastVerdict} />}
           </div>
         </div>
       )}

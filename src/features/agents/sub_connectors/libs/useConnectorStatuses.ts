@@ -10,7 +10,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { createLatestWins } from '@/stores/util/latestWins';
 import { connectorCategoryTags } from "@/lib/credentials/builtinConnectors";
 import type { ConnectorStatus, ConnectorReadiness, ConnectorTestResult } from './connectorTypes';
-import { deriveReadiness, restoreHealthcheck, isStaleResult, summarizeTestAll } from './connectorTypes';
+import { deriveReadiness, restoreHealthcheck, isStaleResult, isUnreachable, summarizeTestAll } from './connectorTypes';
 
 export function useConnectorStatuses() {
   const { t, tx } = useTranslation();
@@ -117,13 +117,28 @@ export function useConnectorStatuses() {
           credentialName: existing?.credentialName ?? linkedCred?.name ?? matchedCred?.name ?? null,
           testing: existing?.testing ?? false,
           result: existing?.result ?? restoreHealthcheck(resolvedCred),
+          lastVerdict: existing?.lastVerdict ?? null,
           linkError: existing?.linkError ?? null,
         };
       });
     });
   }, [personaId, requiredCredTypes, credentials, credentialLinks, credentialsByServiceType, credentialsByIdMap]);
 
-  useEffect(() => { void fetchCredentials().catch(toastCatch("useConnectorStatuses:initialFetchCredentials", "Failed to load credentials. Connector statuses may be incomplete.")); }, [fetchCredentials]);
+  // The vault slice exposes no loaded flag, so an empty list cannot tell "none"
+  // from "not yet". Track the first fetch here: until it settles an empty vault
+  // must not read as N missing connectors (the amber "execution blocked" banner
+  // flashed on every cold mount). A non-empty list is already proof of a load.
+  const [fetchSettled, setFetchSettled] = useState(false);
+  const credentialsLoaded = fetchSettled || credentials.length > 0;
+  useEffect(() => {
+    let live = true;
+    // A failed fetch is reported by toastCatch (it tells the user statuses may be
+    // incomplete); either way the attempt is over, so the claim can be shown.
+    void fetchCredentials()
+      .catch(toastCatch("useConnectorStatuses:initialFetchCredentials", "Failed to load credentials. Connector statuses may be incomplete."))
+      .finally(() => { if (live) setFetchSettled(true); });
+    return () => { live = false; };
+  }, [fetchCredentials]);
 
   useEffect(() => {
     lastAutoTestedCredentialRef.current.clear();
@@ -144,10 +159,21 @@ export function useConnectorStatuses() {
     inFlightTestsRef.current.add(name);
     const epoch = personaEpochRef.current;
     const token = epoch.current();
-    updateStatus(name, { testing: true, result: null });
+    // Clearing `result` for the spinner must not lose the last real verdict: keep
+    // it aside, so an unreachable attempt can be shown beside it.
+    setStatuses((prev) => prev.map((s) => {
+      if (s.name !== name) return s;
+      const verdict = s.result && !isUnreachable(s.result) ? s.result : s.lastVerdict ?? null;
+      return { ...s, testing: true, result: null, lastVerdict: verdict };
+    }));
     try {
       const result = await healthcheckCredential(credentialId);
-      if (epoch.isCurrent(token)) updateStatus(name, { testing: false, result });
+      if (epoch.isCurrent(token)) {
+        // A real verdict supersedes the kept one; an unreachable attempt does not.
+        updateStatus(name, isUnreachable(result)
+          ? { testing: false, result }
+          : { testing: false, result, lastVerdict: null });
+      }
       return result;
     } catch (err) {
       const result: ConnectorTestResult = {
@@ -283,8 +309,11 @@ export function useConnectorStatuses() {
       unlinked: 0, linked_untested: 0, healthy: 0, unverifiable: 0, unreachable: 0, unhealthy: 0,
     };
     for (const s of statuses) counts[deriveReadiness(s)]++;
+    // Before the vault has loaded every link resolves to null: that is "unknown",
+    // not "missing", so no count may claim execution is blocked yet.
+    if (!credentialsLoaded) counts.unlinked = 0;
     return counts;
-  }, [statuses]);
+  }, [statuses, credentialsLoaded]);
 
   /** Rows whose only evidence is a restored healthcheck older than the cutoff. */
   const staleCount = useMemo(
@@ -300,6 +329,7 @@ export function useConnectorStatuses() {
     credentials,
     testingAll,
     readinessCounts,
+    credentialsLoaded,
     fetchCredentials,
     testConnector,
     handleTestAll,

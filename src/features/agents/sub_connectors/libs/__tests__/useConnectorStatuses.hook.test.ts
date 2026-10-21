@@ -139,3 +139,52 @@ describe('useConnectorStatuses persona-scoped probes', () => {
     expect(result.current.statuses[0]?.result?.message).not.toBe('persona A probe');
   });
 });
+
+describe('useConnectorStatuses unreachable re-test', () => {
+  it('keeps the restored verdict beside an unreachable attempt', async () => {
+    healthcheckCredential.mockResolvedValueOnce({ success: false, message: 'dns failure', state: 'unreachable' });
+    const { result } = renderHook(() => useConnectorStatuses());
+    expect(result.current.statuses[0]?.result?.state).toBe('verified');
+
+    await act(async () => { await result.current.testConnector('github', 'cred-a'); });
+
+    const row = result.current.statuses[0];
+    expect(row?.result?.state).toBe('unreachable');
+    // The attempt and the last real verdict are two facts: the row holds both.
+    expect(row?.lastVerdict?.state).toBe('verified');
+    expect(row?.lastVerdict?.testedAt).toBe('2026-10-18T00:00:00Z');
+  });
+
+  it('a later real verdict replaces the kept one', async () => {
+    healthcheckCredential.mockResolvedValueOnce({ success: false, message: 'dns failure', state: 'unreachable' });
+    healthcheckCredential.mockResolvedValueOnce({ success: false, message: 'bad token', state: 'failed' });
+    const { result } = renderHook(() => useConnectorStatuses());
+    await act(async () => { await result.current.testConnector('github', 'cred-a'); });
+    await act(async () => { await result.current.testConnector('github', 'cred-a'); });
+    expect(result.current.statuses[0]?.result?.state).toBe('failed');
+    expect(result.current.statuses[0]?.lastVerdict).toBeNull();
+  });
+});
+
+describe('useConnectorStatuses cold vault', () => {
+  it('does not count rows as missing before the first credentials fetch resolves', async () => {
+    let resolveFetch!: () => void;
+    act(() => {
+      useVaultStore.setState({
+        credentials: [],
+        fetchCredentials: vi.fn().mockReturnValue(new Promise<void>((r) => { resolveFetch = r; })),
+      } as never);
+      useAgentStore.setState({ selectedPersona: persona('persona-cold', 'cred-a') } as never);
+    });
+    const { result } = renderHook(() => useConnectorStatuses());
+    expect(result.current.credentialsLoaded).toBe(false);
+    expect(result.current.readinessCounts.unlinked).toBe(0);
+
+    await act(async () => {
+      useVaultStore.setState({ credentials: [] } as never);
+      resolveFetch();
+    });
+    expect(result.current.credentialsLoaded).toBe(true);
+    expect(result.current.readinessCounts.unlinked).toBe(1);
+  });
+});
