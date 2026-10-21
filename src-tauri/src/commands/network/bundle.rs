@@ -319,13 +319,32 @@ pub fn resolve_share_deep_link(url: String) -> Result<ResolvedShareLink, AppErro
     share_link::resolve_deep_link(&url)
 }
 
+/// Where a share URL points and what it advertises: the HTTP fetch URL, the
+/// link's `hash=` (if any) and whether it was a `personas://share` deep link.
+/// Shared by the preview and import doors so both pin the same facts.
+struct ShareTarget {
+    http_url: String,
+    advertised_hash: Option<String>,
+    from_deep_link: bool,
+}
+
 /// Resolve a URL that might be a `personas://share` deep link or an HTTP URL.
-fn resolve_to_http_url(url: &str) -> Result<String, AppError> {
+fn resolve_share_target(url: &str) -> Result<ShareTarget, AppError> {
     if url.starts_with("personas://") {
         let resolved = share_link::resolve_deep_link(url)?;
-        Ok(resolved.http_url)
+        let advertised_hash = (!resolved.bundle_hash.is_empty()).then_some(resolved.bundle_hash);
+        Ok(ShareTarget {
+            http_url: resolved.http_url,
+            advertised_hash,
+            from_deep_link: true,
+        })
     } else {
-        Ok(url.to_string())
+        // A raw HTTP URL carries no advertised hash to pin against.
+        Ok(ShareTarget {
+            http_url: url.to_string(),
+            advertised_hash: None,
+            from_deep_link: false,
+        })
     }
 }
 
@@ -395,17 +414,11 @@ pub async fn import_from_share_link(
 ) -> Result<BundleImportResult, AppError> {
     require_privileged_sync(&state, "import_from_share_link")?;
 
-    // Resolve the deep link ourselves (rather than via resolve_to_http_url) so
-    // we can pin the advertised content hash — the previous code discarded it,
-    // leaving this the one import path without a TOCTOU guard.
-    let (http_url, advertised_hash, from_deep_link) = if url.starts_with("personas://") {
-        let resolved = share_link::resolve_deep_link(&url)?;
-        let hash = (!resolved.bundle_hash.is_empty()).then_some(resolved.bundle_hash);
-        (resolved.http_url, hash, true)
-    } else {
-        // A raw HTTP URL carries no advertised hash to pin against.
-        (url.clone(), None, false)
-    };
+    let ShareTarget {
+        http_url,
+        advertised_hash,
+        from_deep_link,
+    } = resolve_share_target(&url)?;
 
     // Commit the previewed bytes, not a second download: `preview_share_link`
     // cached what the user saw under `preview_id`. Only on a cache miss do we
@@ -460,8 +473,8 @@ pub async fn preview_share_link(
 ) -> Result<BundleImportPreview, AppError> {
     require_auth_sync(&state)?;
 
-    let http_url = resolve_to_http_url(&url)?;
-    let bytes = share_link::fetch_share_link(&http_url).await?;
+    let target = resolve_share_target(&url)?;
+    let bytes = share_link::fetch_share_link(&target.http_url).await?;
 
     if bytes.is_empty() {
         return Err(AppError::Validation(
@@ -469,13 +482,39 @@ pub async fn preview_share_link(
         ));
     }
 
+    // Refuse here exactly what `import_from_share_link` refuses, so a swapped
+    // bundle is never rendered in a preview that the import will then reject.
+    verify_share_link_hash(
+        &bytes,
+        target.advertised_hash.as_deref(),
+        target.from_deep_link,
+    )?;
+
     bundle::preview_bundle(&state.db, &bytes)
 }
 
 #[cfg(test)]
 mod share_link_hash_tests {
-    use super::verify_share_link_hash;
+    use super::{resolve_share_target, verify_share_link_hash};
     use sha2::Digest;
+
+    #[test]
+    fn share_target_carries_the_links_hash_for_the_preview_door() {
+        let t =
+            resolve_share_target("personas://share?token=tok&hash=abc123&host=10.0.0.5&port=1234")
+                .expect("deep link resolves");
+        assert_eq!(t.advertised_hash.as_deref(), Some("abc123"));
+        assert!(t.from_deep_link);
+        assert_eq!(t.http_url, "http://10.0.0.5:1234/share/tok");
+
+        let hashless = resolve_share_target("personas://share?token=tok").unwrap();
+        assert_eq!(hashless.advertised_hash, None);
+        assert!(hashless.from_deep_link);
+
+        let raw = resolve_share_target("http://10.0.0.5:1234/share/tok").unwrap();
+        assert_eq!(raw.advertised_hash, None);
+        assert!(!raw.from_deep_link);
+    }
 
     fn hash_of(bytes: &[u8]) -> String {
         hex::encode(sha2::Sha256::digest(bytes))
