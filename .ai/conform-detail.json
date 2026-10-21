@@ -33273,6 +33273,81 @@
         }
       ],
       "registryProposal": "The inbox polls every 30s (useIncidentsData.ts:117) while src/lib/eventRegistry.ts:1364 declares INCIDENT_RESOLVED; that is client-state invalidation-strategy territory, worth judging on the client-state pair rather than here."
+    },
+    "b0cf3902-0739-40a8-8c76-ae594f41421b/supply-chain": {
+      "context": "plugins-dev-tools-context",
+      "subject": "supply-chain",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:46:03.000Z",
+      "worker": "f4bdba73-fc7f-42e1-af0e-1e278013a948",
+      "techniques": [
+        {
+          "technique": "reading-is-not-running",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/context_generation.rs:1629 spawns the permission-disabled agent with exec_dir = root_path; the agent loads the tree's executing config (hooks, CLAUDE.md) with no approved digest, no revoke-on-change and no loud refusal"
+        },
+        {
+          "technique": "permission-manifest-scoping",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_context/ContextMapPage.tsx:410 the context declares no capability/CSP manifest; it only triggers the scan command"
+        }
+      ]
+    },
+    "e62cdb2d-a626-4a0b-afdf-ac3d7aada9f0/supply-chain": {
+      "context": "commands-core",
+      "subject": "supply-chain",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:46:03.000Z",
+      "worker": "f4bdba73-fc7f-42e1-af0e-1e278013a948",
+      "techniques": [
+        {
+          "technique": "unsafe-deserialization-off-by-default",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/core/import_export.rs:317 serde_json::from_str into a typed bundle - a data-only format with no object-construction encoding"
+        },
+        {
+          "technique": "archive-extraction-safety",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/core/import_export.rs:305 imports a single JSON file under a 5 MB cap; nothing is unpacked"
+        }
+      ]
+    },
+    "959baa73-f18f-42c8-8569-466939b9050d/supply-chain": {
+      "context": "notepad-plan",
+      "subject": "supply-chain",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:46:03.000Z",
+      "worker": "f4bdba73-fc7f-42e1-af0e-1e278013a948",
+      "techniques": [
+        {
+          "technique": "reading-is-not-running",
+          "verdict": "not-applicable",
+          "evidence": "src/features/notepad/plan/ShipDispatch.tsx:129 dispatch is an explicit execute verb behind a confirm button, not a read surface"
+        }
+      ]
+    },
+    "e61f931c-25d7-4532-9ec7-ab6f3fc377e2/supply-chain": {
+      "context": "lib-credentials",
+      "subject": "supply-chain",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:46:03.000Z",
+      "worker": "f4bdba73-fc7f-42e1-af0e-1e278013a948",
+      "techniques": [
+        {
+          "technique": "license-reach-follows-integration-form",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/credentials/connectorLicensing.ts:10 LicenseTier is personal/paid/enterprise SaaS plan tiering, not a code licence verdict"
+        }
+      ],
+      "registryProposal": "lexical resonance: 'licensing' here means SaaS plan tier, not a dependency licence; the matcher should not let licence vocabulary alone pull supply-chain onto connector catalogs"
     }
   }
 }

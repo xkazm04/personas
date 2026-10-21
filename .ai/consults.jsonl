@@ -1882,3 +1882,7 @@
 {"ts":"2026-10-21T17:45:01Z","bundle":"software-engineering","subjects":["client-fetch-cache"],"techniques":["warm-remount-caches","swr-design","cache-key-discipline","in-flight-dedup"],"deviations":1}
 {"ts":"2026-10-21T17:45:01Z","bundle":"software-engineering","subjects":["client-fetch-cache"],"techniques":["swr-design"],"deviations":1}
 {"ts":"2026-10-21T17:44:44Z","bundle":"software-engineering","subjects":["embedded-preview"],"techniques":["origin-validation","dev-server-registry","injected-instrumentation-with-fallback","preview-checkpoints","convention-discovery","cross-frame-protocol"],"deviations":3}
+{"ts":"2026-10-21T17:46:03Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["reading-is-not-running","permission-manifest-scoping"],"deviations":1}
+{"ts":"2026-10-21T17:46:03Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["unsafe-deserialization-off-by-default","archive-extraction-safety"],"deviations":0}
+{"ts":"2026-10-21T17:46:03Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["reading-is-not-running"],"deviations":0}
+{"ts":"2026-10-21T17:46:03Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["license-reach-follows-integration-form"],"deviations":0}

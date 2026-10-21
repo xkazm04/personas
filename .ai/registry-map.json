@@ -6979,7 +6979,11 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/commands/core/import_export.rs:317 the only inbound content is a size-capped (:305) .persona.json parsed as data-only JSON and schema-validated; no archive unpack, code loading, lockfile or permission manifest crosses this context",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:f5666db1094acd9f",
+          "evaluatedRevision": 6
         },
         {
           "subject": "agent-memory",
@@ -17652,7 +17656,11 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/lib/credentials/builtinConnectors.ts:32 connector definitions are first-party JSON seeds bundled at build time and connectorLicensing.ts:10 classifies SaaS pricing tiers, not dependency licences; the context crosses no dependency graph, archive, permission manifest or history boundary",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:f5666db1094acd9f",
+          "evaluatedRevision": 6
         },
         {
           "subject": "test-harness",
@@ -20636,7 +20644,11 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/notepad/plan/ShipDispatch.tsx:129 the only spawning act is an operator-confirmed Fleet dev-runner dispatch into the project's own root - an execution job armed knowingly (reading-is-not-running's stated exclusion, owned by ci-execution-trust); no lockfile, archive, manifest or code-loading crossing",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:f5666db1094acd9f",
+          "evaluatedRevision": 6
         },
         {
           "subject": "remediation-roadmaps",
@@ -26593,7 +26605,11 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_context/ContextMapPage.tsx:410 the Context Map 'Scan' runs a claude child in the project root (src-tauri/src/commands/infrastructure/context_generation.rs:1629) with --dangerously-skip-permissions (src-tauri/engine/src/prompt/cli_args.rs:107) and no digest approval, so a scanned repo's own CLAUDE.md and .claude/settings.json hooks execute under a read verb",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:f5666db1094acd9f",
+          "evaluatedRevision": 6
         },
         {
           "subject": "agent-runtime-assembly",
