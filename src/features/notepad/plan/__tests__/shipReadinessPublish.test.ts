@@ -15,7 +15,8 @@ import {
 } from '../shipReadinessPublish';
 
 const setAppSetting = vi.hoisted(() => vi.fn());
-vi.mock('@/api/system/settings', () => ({ setAppSetting }));
+const getAppSetting = vi.hoisted(() => vi.fn());
+vi.mock('@/api/system/settings', () => ({ setAppSetting, getAppSetting }));
 
 function vm(id: string, projectId: string): ShipMilestoneVM {
   return {
@@ -50,6 +51,8 @@ describe('publishShipReadiness', () => {
     vi.useFakeTimers();
     setAppSetting.mockReset();
     setAppSetting.mockResolvedValue(undefined);
+    getAppSetting.mockReset();
+    getAppSetting.mockResolvedValue(null);
     __resetShipReadinessPublisherForTests();
   });
   afterEach(() => {
@@ -73,6 +76,33 @@ describe('publishShipReadiness', () => {
 
     expect(lastPublishedIds().sort()).toEqual(['a-1', 'b-1']);
     expect(setAppSetting).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps other projects' persisted verdicts when the first publish after a restart is one project", async () => {
+    getAppSetting.mockResolvedValue(JSON.stringify({
+      version: 1,
+      publishedAt: '2026-10-20T10:00:00Z',
+      milestones: [
+        { id: 'a-1', projectId: 'p-a', verdict: 'go' },
+        { id: 'a-old', projectId: 'p-a', verdict: 'go' },
+        { id: 'b-1', projectId: 'p-b', verdict: 'nogo' },
+        { id: 'legacy-1', verdict: 'warn' },
+      ],
+    }));
+    publishShipReadiness([vm('a-1', 'p-a')]);
+    await vi.advanceTimersByTimeAsync(PUBLISH_DEBOUNCE_MS);
+
+    // p-a's republish replaces p-a's persisted entries (a-old was deleted);
+    // p-b and the pre-projectId entry survive until their own project republishes.
+    expect(lastPublishedIds().sort()).toEqual(['a-1', 'b-1', 'legacy-1']);
+  });
+
+  it('still publishes when the persisted document cannot be read', async () => {
+    getAppSetting.mockRejectedValue(new Error('db down'));
+    publishShipReadiness([vm('a-1', 'p-a')]);
+    await vi.advanceTimersByTimeAsync(PUBLISH_DEBOUNCE_MS);
+
+    expect(lastPublishedIds()).toEqual(['a-1']);
   });
 
   it('writes nothing for an unchanged document', async () => {
