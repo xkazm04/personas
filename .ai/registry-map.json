@@ -5738,7 +5738,11 @@
           "revision": 43,
           "changedAt": "2026-10-02",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "precondition unmet: a provider-policy settings UI that composes no prompt text - src/features/settings/sub_byom/components/ByomRoutingRules.tsx:3 works in RoutingRule/TaskComplexity, i.e. model selection, not prompt content",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "multi-provider-gateway-plane",
@@ -15056,7 +15060,11 @@
           "revision": 43,
           "changedAt": "2026-10-02",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "precondition unmet: these hooks own no assembler - src/hooks/design/core/useDesignConversation.ts:65 takes the user's raw instruction and stores it as a typed transcript message; the design prompt is rendered server-side (the 'typed inputs, not pre-rendered text' shape the standard asks callers for)",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "agent-runtime-assembly",
@@ -20002,7 +20010,11 @@
           "revision": 43,
           "changedAt": "2026-10-02",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/notepad/plan/shipAthena.ts:88 hand-writes the op names describe_note/describe_ship_milestone (and :91 show_ship_goals with its param shape) into Athena's turn, but the only mention-sync gate (src-tauri/src/companion/dispatcher/catalog.rs:914) checks the constitution, not these TS builders, so a renamed op ships here as a phantom instruction the dispatcher rejects",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "plan-entitlements",
@@ -29208,7 +29220,11 @@
           "revision": 43,
           "changedAt": "2026-10-02",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "precondition unmet: domain types only, no rendering code - src-tauri/core/src/models/recipe.rs:135 carries prompt_template as an opaque String and :158 rendered_prompt as a recorded result; interpolation and assembly live in the recipes commands (judged separately as commands-recipes)",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "test-harness",

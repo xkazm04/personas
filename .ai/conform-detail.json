@@ -30269,6 +30269,69 @@
         "at": "2026-10-20T21:28:58.600194+00:00",
         "reason": "reviewer (sonnet): TwinHero.tsx:47 does hold the literal external URL https://personas.dev/guide/twin, but the repo has no documentation catalog and no other reference to that /guide/ path, so I could not confirm that any catalog or published-docs set exists for the link to be checked against, or that docs changes cou"
       }
+    },
+    "959baa73-f18f-42c8-8569-466939b9050d/prompt-assembly": {
+      "context": "notepad-plan",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:15:03.000Z",
+      "worker": "aeab75e2-45e7-4efa-9fc6-1272d0c248a9",
+      "techniques": [
+        {
+          "technique": "capability-documentation",
+          "verdict": "deviation",
+          "evidence": "src/features/notepad/plan/shipAthena.ts:88 op mentions resolve today but nothing asserts they do (the test at src/features/notepad/plan/__tests__/shipAthena.test.ts:66 only checks the string is in the output); src/features/notepad/plan/ShipDispatch.tsx:49 likewise hand-writes POST /api/dev/goals/<goalId> and its body fields with no sync check against src-tauri/src/engine/management_api/ship.rs"
+        },
+        {
+          "technique": "task-envelope",
+          "verdict": "conformant",
+          "evidence": "src/features/notepad/plan/shipAthena.ts:88 opens on a locate pointer (which op reads the brief) with no expertise claim, and :91 states the done criterion (propose via the editable card); src/features/notepad/plan/ShipDispatch.tsx:47 ends the goal-assist brief on a MANUAL REVIEW self-check"
+        },
+        {
+          "technique": "layered-composition",
+          "verdict": "conformant",
+          "evidence": "src/features/notepad/plan/NotePlanContext.tsx:148 passes the builder's output straight to askAthena with nothing appended after it returns; each dispatch family has one builder in one file"
+        },
+        {
+          "technique": "variable-interpolation",
+          "verdict": "conformant",
+          "evidence": "src/features/notepad/plan/ShipDispatch.tsx:40 drops an absent description line rather than rendering an empty 'DETAIL:' (filtered at :50), and lists render as items (:64) - though :64 substitutes '?' for an unknown error count rather than failing loud"
+        }
+      ],
+      "registryProposal": "capability-documentation's mention sync is written for doctrine inside one assembler; this repo shows the side door it misses - a second language (TS UI builders) naming ops of a Rust registry, where the existing sync test cannot see the mentions. Worth a sentence: the sync check must cover every authored surface that names an op, across language boundaries."
+    },
+    "c5228746-931d-4733-9cf7-84519a2c9605/prompt-assembly": {
+      "context": "hooks-design",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:15:03.000Z",
+      "worker": "aeab75e2-45e7-4efa-9fc6-1272d0c248a9",
+      "techniques": []
+    },
+    "ae80cd74-5beb-4d76-ae0a-16a4b581a2df/prompt-assembly": {
+      "context": "recipe-build-models",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:15:03.000Z",
+      "worker": "aeab75e2-45e7-4efa-9fc6-1272d0c248a9",
+      "techniques": []
+    },
+    "94b0b4ea-9adb-44d7-8222-4e2345de455b/prompt-assembly": {
+      "context": "byom-provider-settings",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:15:03.000Z",
+      "worker": "aeab75e2-45e7-4efa-9fc6-1272d0c248a9",
+      "techniques": [],
+      "registryProposal": "lexical resonance: this strong pair (score 1199) is earned by routing/provider vocabulary; the governing subject is model-routing, not prompt-assembly. The matcher could down-weight prompt-assembly where no prompt/template/system-text token appears in the paths."
     }
   }
 }
