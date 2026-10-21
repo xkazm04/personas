@@ -5,7 +5,7 @@ use tauri::{AppHandle, Emitter};
 
 use crate::engine::event_registry::event_name;
 
-use super::client::CloudClient;
+use super::client::{is_terminal_execution_status, CloudClient};
 
 /// Result of a cloud execution polling loop.
 #[derive(Debug)]
@@ -14,6 +14,25 @@ pub struct CloudRunResult {
     pub error: Option<String>,
     pub duration_ms: u64,
     pub cost_usd: Option<f64>,
+}
+
+/// Ask the orchestrator to stop a run this desktop is about to stop watching.
+/// A run the desktop reports as ended must not keep executing (and billing) in
+/// the cloud, so every give-up exit that can still reach the orchestrator goes
+/// through here. Failure is logged, not fatal: the verdict is already decided.
+async fn cancel_abandoned_run(
+    client: &CloudClient,
+    local_execution_id: &str,
+    cloud_execution_id: &str,
+) {
+    if let Err(e) = client.cancel_execution(cloud_execution_id).await {
+        tracing::warn!(
+            execution_id = %local_execution_id,
+            cloud_execution_id = %cloud_execution_id,
+            error = %e,
+            "Failed to cancel cloud execution on orchestrator",
+        );
+    }
 }
 
 /// Poll the cloud orchestrator for execution output and emit Tauri events.
@@ -39,14 +58,7 @@ pub async fn run_cloud_execution(
 
     for _ in 0..max_polls {
         if cancelled.load(Ordering::Acquire) {
-            if let Err(e) = client.cancel_execution(&cloud_execution_id).await {
-                tracing::warn!(
-                    execution_id = %local_execution_id,
-                    cloud_execution_id = %cloud_execution_id,
-                    error = %e,
-                    "Failed to cancel cloud execution on orchestrator",
-                );
-            }
+            cancel_abandoned_run(&client, &local_execution_id, &cloud_execution_id).await;
             return CloudRunResult {
                 success: false,
                 error: Some("Cancelled".into()),
@@ -188,7 +200,7 @@ pub async fn run_cloud_execution(
                     cost_usd: poll.cost_usd,
                 };
             }
-            "failed" | "cancelled" | "error" => {
+            status if is_terminal_execution_status(status) => {
                 let _ = app.emit(
                     event_name::EXECUTION_STATUS,
                     serde_json::json!({
@@ -209,7 +221,9 @@ pub async fn run_cloud_execution(
         }
     }
 
-    // Timed out waiting for cloud execution
+    // Timed out waiting for cloud execution: the run is still going on the
+    // orchestrator, so stop it before reporting the desktop's verdict.
+    cancel_abandoned_run(&client, &local_execution_id, &cloud_execution_id).await;
     let _ = app.emit(
         event_name::EXECUTION_STATUS,
         serde_json::json!({
@@ -222,5 +236,51 @@ pub async fn run_cloud_execution(
         error: Some("Cloud execution timed out after polling limit".into()),
         duration_ms: 0,
         cost_usd: None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+    /// One-shot HTTP stub: answers the first request with 200 and returns the
+    /// request line it saw.
+    async fn serve_once() -> (String, tokio::task::JoinHandle<String>) {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind");
+        let base = format!("http://{}", listener.local_addr().expect("addr"));
+        let handle = tokio::spawn(async move {
+            let (mut sock, _) = listener.accept().await.expect("accept");
+            let mut buf = vec![0u8; 4096];
+            let n = sock.read(&mut buf).await.expect("read");
+            sock.write_all(
+                b"HTTP/1.1 200 OK
+content-length: 0
+connection: close
+
+",
+            )
+            .await
+            .expect("write");
+            String::from_utf8_lossy(&buf[..n])
+                .lines()
+                .next()
+                .unwrap_or("")
+                .to_string()
+        });
+        (base, handle)
+    }
+
+    #[tokio::test]
+    async fn an_abandoned_run_is_cancelled_on_the_orchestrator() {
+        let (base, seen) = serve_once().await;
+        let client = CloudClient::new(base, "key".into()).expect("client");
+        cancel_abandoned_run(&client, "local-1", "cloud-1").await;
+        assert_eq!(
+            seen.await.expect("server"),
+            "POST /api/executions/cloud-1/cancel HTTP/1.1"
+        );
     }
 }
