@@ -1,0 +1,8 @@
+{"schema": "conform-run/1", "worker": "f369f5cc-41b2-4bc3-a946-351c7acafb35", "subject": "companion-identity",
+ "evaluatedAt": "2026-10-21T17:47:54Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "companion-identity", "context": "2651f2ce-7fc1-4331-8b31-61e783e9746a", "reason": "companions-page is governance: weak and its match is lexical-only (companion, store); the skill never judges weak pairs by default - a coverage question, not a verdict"},
+  {"subject": "companion-identity", "context": "5ab49df3-3442-4ea6-a405-077dec64850d", "reason": "persona-core-codex is governance: weak and lexical-only (companion, identity, edits); persona identity edits are not the companion self-model, so judging would manufacture a deviation"}
+ ],
+ "consults": []}
