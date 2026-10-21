@@ -1878,3 +1878,4 @@
 {"ts":"2026-10-21T17:42:04Z","bundle":"software-engineering","subjects":["multi-project"],"techniques":["passive-signal-ingestion"],"deviations":1}
 {"ts":"2026-10-21T17:42:04Z","bundle":"software-engineering","subjects":["multi-project"],"techniques":["cross-project-comparison"],"deviations":1}
 {"ts":"2026-10-21T17:42:04Z","bundle":"software-engineering","subjects":["multi-project"],"techniques":["portfolio-drill-hierarchy"],"deviations":1}
+{"ts":"2026-10-21T17:43:00Z","bundle":"software-engineering","subjects":["adoption-measurement"],"techniques":["attribution-provenance-tiers","adoption-distribution-bands","dormancy-verdicts"],"deviations":0}

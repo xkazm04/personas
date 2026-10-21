@@ -38103,8 +38103,12 @@
           "revision": 3,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 5
+          "state": "not-applicable",
+          "priorNotApplicable": 5,
+          "evidence": "src/features/templates/sub_recipes/components/RecipeDetailPanel.tsx:46 'adopted' is a per-selected-persona boolean (source_recipe_id provenance, useAdoption.ts:19 owns attach/detach) - the surface never reports uptake of a practice across a population, so the precondition every technique shares (spread rate, bands, dormancy, before/after pairs) does not hold",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:502064804797857b",
+          "evaluatedRevision": 3
         }
       ],
       "governance": "governed"

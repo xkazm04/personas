@@ -33198,6 +33198,32 @@
         }
       ],
       "registryProposal": "client-integration's collision-management bullet covers two servers exporting one tool name but not the host's own prefix namespace colliding (two federation members given the same alias); worth a sentence that the prefix itself needs uniqueness at the door that mints it."
+    },
+    "e13cfc6c-f666-4959-81c0-2cfbc4815f04/adoption-measurement": {
+      "context": "templates-recipes",
+      "subject": "adoption-measurement",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:43:00.000Z",
+      "worker": "fac94cd8-474e-43a4-a472-5b9b4d88170c",
+      "techniques": [
+        {
+          "technique": "attribution-provenance-tiers",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_recipes/components/RecipesTableResults.tsx:21 adoptedRecipeIds is the selected persona's own observed attach set; no adoption number is displayed or exported"
+        },
+        {
+          "technique": "adoption-distribution-bands",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_recipes/components/RecipeDetailPanel.tsx:46 binary per-persona state; no eligible population or rate exists to band"
+        },
+        {
+          "technique": "dormancy-verdicts",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_recipes/libs/recipeStaleness.ts:1 the only lifecycle verdict is catalog-version staleness, not usage/dormancy; no use counter exists"
+        }
+      ]
     }
   }
 }
