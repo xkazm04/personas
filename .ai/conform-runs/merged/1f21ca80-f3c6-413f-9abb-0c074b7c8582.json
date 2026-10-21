@@ -1,0 +1,14 @@
+{"schema": "conform-run/1", "worker": "1f21ca80-f3c6-413f-9abb-0c074b7c8582", "subject": "multi-provider-gateway-plane",
+ "evaluatedAt": "2026-10-21T12:37:11Z",
+ "pairs": [{"context": "94b0b4ea-9adb-44d7-8222-4e2345de455b", "subject": "multi-provider-gateway-plane", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/engine/runner/mod.rs:2143 re-verified 2026-10-21 (anchors moved since 10-16): the remote-HTTP (Qwen/DashScope) branch returns run_http_execution after policy_decision is computed (src-tauri/src/engine/runner/mod.rs:2079) but before the failover chain's blocked_providers filter (src-tauri/engine/src/failover.rs:770) and the provider_audit insert (src-tauri/src/engine/runner/mod.rs:3832), while src/features/settings/sub_byom/components/ByomProviderList.tsx:37 lists Qwen beside policy-governed providers - a compliance-tagged persona can run on a blocked, unaudited upstream",
+   "techniques": [
+     {"technique": "strategy-tree-with-inherited-policy", "verdict": "deviation", "evidence": "src-tauri/src/engine/runner/mod.rs:2143 the HTTP upstream is a candidate outside the policy tree - the BYOM decision's blocked_providers is never applied to it, so the inherited policy does not reach every leaf"},
+     {"technique": "exclusive-authorship-of-a-measured-decision", "verdict": "deviation", "evidence": "src-tauri/src/engine/runner/mod.rs:3832 provider_audit (routing_rule/compliance_rule trail) is written only on the CLI failover path; the early return at :2143 leaves a remote run with no compliance record of which upstream served it"}
+   ]}],
+ "declined": [
+   {"subject": "multi-provider-gateway-plane", "context": "742be60e-3ddf-4160-b7cb-4c5cac5965a0", "reason": "weak-governed context (plugins-research-lab-shared) with priorNotApplicable=10 and an empty published path sample; per skill, weak pairs are a coverage question, not judged by default"},
+   {"subject": "multi-provider-gateway-plane", "context": "89d44c76-ec4c-4388-843e-503cf6ca2507", "reason": "weak-governed context (progress-transform: shared progress bar/loader components) with priorNotApplicable=10; matched on 'transform/multi/status' tokens only - coverage question, left unjudged"}
+ ],
+ "consults": [{"ts":"2026-10-21T12:37:11Z","bundle":"software-engineering","subjects":["multi-provider-gateway-plane"],"techniques":["strategy-tree-with-inherited-policy","exclusive-authorship-of-a-measured-decision"],"deviations":1}]}

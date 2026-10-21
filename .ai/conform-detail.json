@@ -11103,25 +11103,25 @@
       "subject": "multi-provider-gateway-plane",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:32:12.000Z",
-      "worker": "0d5e66a4-efce-4d91-87cb-3980714d8542",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:37:11.000Z",
+      "worker": "1f21ca80-f3c6-413f-9abb-0c074b7c8582",
       "techniques": [
         {
           "technique": "strategy-tree-with-inherited-policy",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/runner/mod.rs:2097 is_remote_http_provider branch dispatches outside the candidate tree, so the BYOM block/compliance policy at src-tauri/engine/src/failover.rs:770 is never inherited by it"
-        },
-        {
-          "technique": "policy-verdict-in-the-status-space",
-          "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/runner/mod.rs:2401 a chain emptied by policy surfaces as 'All providers failed or have open circuit breakers' - a denial reads as an outage"
+          "evidence": "src-tauri/src/engine/runner/mod.rs:2143 the HTTP upstream is a candidate outside the policy tree - the BYOM decision's blocked_providers is never applied to it, so the inherited policy does not reach every leaf"
         },
         {
           "technique": "exclusive-authorship-of-a-measured-decision",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/runner/mod.rs:2094 model_profile.provider routes to DashScope outside the policy decision; the compliance trail (:3767) never records the run",
-          "carriedFrom": "2026-10-12"
+          "evidence": "src-tauri/src/engine/runner/mod.rs:3832 provider_audit (routing_rule/compliance_rule trail) is written only on the CLI failover path; the early return at :2143 leaves a remote run with no compliance record of which upstream served it"
+        },
+        {
+          "technique": "policy-verdict-in-the-status-space",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:2401 a chain emptied by policy surfaces as 'All providers failed or have open circuit breakers' - a denial reads as an outage",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "router-versus-candidate-failure",
@@ -11151,6 +11151,13 @@
           "evaluatedAt": "2026-10-12T12:35:10.000Z",
           "worker": "738536c3-9f56-482c-9363-5c6212f5ce79",
           "reason": "replaced by 0d5e66a4-efce-4d91-87cb-3980714d8542"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:2115 re-verified 2026-10-16: the remote-HTTP (Qwen/DashScope) branch returns run_http_execution before the failover chain's blocked_providers filter (src-tauri/engine/src/failover.rs:770) and the provider_audit insert (src-tauri/src/engine/runner/mod.rs:3783), while src/features/settings/sub_byom/components/ByomProviderList.tsx:37 lists Qwen beside policy-governed providers - a compliance-tagged persona can run on an unblocked, unaudited upstream",
+          "evaluatedAt": "2026-10-16T17:32:12.000Z",
+          "worker": "0d5e66a4-efce-4d91-87cb-3980714d8542",
+          "reason": "replaced by 1f21ca80-f3c6-413f-9abb-0c074b7c8582"
         }
       ]
     },

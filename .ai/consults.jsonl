@@ -1766,3 +1766,4 @@
 {"ts":"2026-10-21T12:36:43Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":["sibling-floor-ownership","workspace-ancestry-isolation"],"deviations":1}
 {"ts":"2026-10-21T12:36:43Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":["workspace-ancestry-isolation"],"deviations":1}
 {"ts":"2026-10-21T12:36:43Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":["capability-before-steering","line-earning","context-reset-redelivery"],"deviations":1}
+{"ts":"2026-10-21T12:37:11Z","bundle":"software-engineering","subjects":["multi-provider-gateway-plane"],"techniques":["strategy-tree-with-inherited-policy","exclusive-authorship-of-a-measured-decision"],"deviations":1}
