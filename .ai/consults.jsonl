@@ -1850,3 +1850,8 @@
 {"ts":"2026-10-21T17:29:55Z","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":["parallel-dispatch"],"deviations":1}
 {"ts":"2026-10-21T17:29:55Z","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":["parallel-dispatch"],"deviations":1}
 {"ts":"2026-10-21T17:29:55Z","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":["absent-status-passthrough"],"deviations":1}
+{"ts":"2026-10-21T17:31:26Z","bundle":"software-engineering","subjects":["table"],"techniques":["sorting","loading-and-empty-states","export-escapes-for-its-consumer"],"deviations":1}
+{"ts":"2026-10-21T17:31:26Z","bundle":"software-engineering","subjects":["table"],"techniques":["client-server-split","filtering","sorting","loading-and-empty-states","performance"],"deviations":4}
+{"ts":"2026-10-21T17:31:26Z","bundle":"software-engineering","subjects":["table"],"techniques":[],"deviations":0}
+{"ts":"2026-10-21T17:31:26Z","bundle":"software-engineering","subjects":["table"],"techniques":[],"deviations":0}
+{"ts":"2026-10-21T17:31:26Z","bundle":"software-engineering","subjects":["table"],"techniques":[],"deviations":0}

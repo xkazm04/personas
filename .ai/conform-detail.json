@@ -32706,6 +32706,103 @@
           "evidence": "src/features/home/sub_welcome/useResumeContext.test.ts:21 clears localStorage per test; src/features/home/lib/usePausableInterval.test.ts:12 fake timers set and restored per test"
         }
       ]
+    },
+    "66bc7a14-bf15-41d7-8d9a-900aa670f47e/table": {
+      "context": "passport-wall-model",
+      "subject": "table",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:31:26.000Z",
+      "worker": "4fac4cdf-93e3-479d-a7c0-6697b24bc7d4",
+      "techniques": [
+        {
+          "technique": "sorting",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/passportModel.ts:325 localeCompare(name) with no locale argument and no identity.slug final term; the order is neither total nor reader-collated"
+        },
+        {
+          "technique": "loading-and-empty-states",
+          "verdict": "realized",
+          "evidence": "src/features/teams/sub_factory/passport/usePassportData.ts:374 the cold state starts loading:true (never empty-before-settled), and :471 a failed rescan keeps the loaded passports and sets error rather than clearing rows"
+        },
+        {
+          "technique": "export-escapes-for-its-consumer",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/passport/passportExport.ts:32 the only export is a markdown report of fixed label cells, not a CSV a spreadsheet opens"
+        },
+        {
+          "technique": "sorting",
+          "verdict": "note",
+          "evidence": "src/features/teams/sub_factory/passport/passportRows.ts:227 cellSortValue (the row-label sort key) has no production caller, only tests; ProjectsPassportWall sorts by score instead"
+        }
+      ]
+    },
+    "7901fd6c-0346-430b-aefe-fc4cd623b167/table": {
+      "context": "overview-usage-charts",
+      "subject": "table",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:31:26.000Z",
+      "worker": "4fac4cdf-93e3-479d-a7c0-6697b24bc7d4",
+      "techniques": [
+        {
+          "technique": "client-server-split",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:94 client filter below a server-truncated window (src-tauri/db/src/repos/resources/tool_audit_log.rs:144), unlabeled as within-window"
+        },
+        {
+          "technique": "filtering",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:94 the tool_type predicate is applied to 8 loaded rows, so a type with fewer runs than the top eight reads as absent"
+        },
+        {
+          "technique": "sorting",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:134 an absent avg_duration (rendered as an em dash) sorts as a real 0 ms, and the comparators carry no identity tiebreaker"
+        },
+        {
+          "technique": "loading-and-empty-states",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:67 error lands [] and renders the empty state at :206 (error is empty); :204 loading renders a blank box with no chrome, and every since/persona change re-enters it, hiding rendered rows"
+        },
+        {
+          "technique": "performance",
+          "verdict": "realized",
+          "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:98 the column model and sorted rows are memoised; the window is bounded server-side to 8 rows, no virtualization needed"
+        }
+      ]
+    },
+    "4eb0030b-e8a2-4993-bfab-81aee6943054/table": {
+      "context": "notepad-overview",
+      "subject": "table",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:31:26.000Z",
+      "worker": "4fac4cdf-93e3-479d-a7c0-6697b24bc7d4",
+      "techniques": []
+    },
+    "336089a8-bb18-449c-a62e-ca76b02097fb/table": {
+      "context": "test-bridge-core",
+      "subject": "table",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:31:26.000Z",
+      "worker": "4fac4cdf-93e3-479d-a7c0-6697b24bc7d4",
+      "techniques": []
+    },
+    "cbb061cf-5c61-49d4-80d8-98b8f9b40600/table": {
+      "context": "browser-webview-control",
+      "subject": "table",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:31:26.000Z",
+      "worker": "4fac4cdf-93e3-479d-a7c0-6697b24bc7d4",
+      "techniques": []
     }
   }
 }

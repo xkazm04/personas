@@ -5637,7 +5637,11 @@
           "revision": 14,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/browser/webview/WebviewPage.tsx:2 the context is an embedded page host (tab strip, address bar, approval bar); its only collection is the address-suggestion listbox at AddressSuggestions.tsx:49, a one-attribute list, not a comparison table.",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+          "evaluatedRevision": 14
         },
         {
           "subject": "agent-runtime-assembly",
@@ -20410,7 +20414,11 @@
           "revision": 14,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/notepad/overview/NoteOverview.tsx:14 the desk is a re-export of the journal and its notes render as identity-dominant cards one project at a time (:12); there is no column model or cross-record attribute comparison, the golden path's own 'cards, not a table' case.",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+          "evaluatedRevision": 14
         },
         {
           "subject": "chat-transcript",
@@ -23909,7 +23917,11 @@
           "revision": 14,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:94 the type filter and every column sort run over the backend's top-8-by-runs window (DEFAULT_LIMIT :22, tool_audit_log.rs:144 ORDER BY total_runs DESC LIMIT), so 'slowest tool' or a type filter answers only for the busiest eight while the panel claims 'per tool'; and a fetch failure sets rows [] (:67), rendering the no-data empty state at :206.",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+          "evaluatedRevision": 14
         },
         {
           "subject": "usage-limit-governance",
@@ -24113,7 +24125,11 @@
           "revision": 14,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/passportModel.ts:325 the matrix's default column order collates names with no reader locale and no identity tiebreaker, so two projects sharing a name fall in storage order and can swap columns between rescans; the wall ships in 14 locales.",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+          "evaluatedRevision": 14
         },
         {
           "subject": "cost-metering",
@@ -38184,7 +38200,11 @@
           "revision": 14,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "tests/playwright/template-marathon-bridge.ts:2 the context is Playwright helpers driving the app over the test-automation HTTP bridge; it renders no surface, so no table exists for the subject to govern.",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+          "evaluatedRevision": 14
         },
         {
           "subject": "companion-runtime",
