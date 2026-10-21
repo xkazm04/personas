@@ -76,7 +76,10 @@ export function useWhitelistActions(): WhitelistActions {
   const onRemove = useCallback(
     async (site: BrowserSite) => {
       try {
-        if (await browserApi.deleteSite(site.origin)) forgetSite(site.origin);
+        // `false` means the row was already gone (an agent or another window
+        // removed it): the ledger converges on Rust either way.
+        await browserApi.deleteSite(site.origin);
+        forgetSite(site.origin);
       } catch (err) {
         toastCatch('browser delete site', w.remove_failed)(err);
       }
