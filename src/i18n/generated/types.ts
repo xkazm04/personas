@@ -9211,7 +9211,6 @@ export type Translations = {
       all_personas: string;
     };
     incidents: {
-      stale_label: string;
       sort_newest: string;
       sort_oldest: string;
       a11y_position: string;
@@ -9236,7 +9235,6 @@ export type Translations = {
       guidance_default: string;
       groups_collapse_all: string;
       groups_expand_all: string;
-      group_no_persona: string;
       group_by_label: string;
       group_by_agent: string;
       group_by_severity: string;
@@ -9254,8 +9252,6 @@ export type Translations = {
       kpi_resolved: string;
       kpi_critical: string;
       distribution_aria: string;
-      filter_status_label: string;
-      filter_status_all: string;
       filter_status_open: string;
       filter_status_acknowledged: string;
       filter_status_resolved: string;
@@ -9267,7 +9263,6 @@ export type Translations = {
       filter_persona_label: string;
       filter_persona_any: string;
       col_incident: string;
-      col_days: string;
       filters_active_aria: string;
       filters_clear_all: string;
       action_acknowledge: string;
@@ -9332,7 +9327,6 @@ export type Translations = {
       noc_handled_by: string;
       noc_handled_title: string;
       noc_handled_empty: string;
-      noc_handled_continued: string;
       noc_evidence_label: string;
       noc_proposed_label: string;
       noc_proposal_pending: string;
