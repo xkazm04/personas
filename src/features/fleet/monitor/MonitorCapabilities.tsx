@@ -5,14 +5,15 @@
 // capability opens `MonitorRunSheet` prefilled with the charter's declared
 // sample; confirming fires `execute_persona` with whatever the operator left in
 // the field. The sigil then transitions to a disabled, animated in-progress
-// state and is locked for RUN_LOCK_MS so it can't be fired twice.
+// state for as long as THE RUN is live (its `execution:<id>` entry in
+// `activeProcesses`), so it can't be fired twice and never outlives the run.
 //
 // The prompt is the whole point: the sigil used to dispatch the sample and
 // nothing else, so the Monitor could only fire fixtures. Cancelling leaves the
 // sigil unlocked, and "Run sample" keeps the old one-click behaviour reachable
 // under a name that says what it sends.
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Play, Loader2 } from 'lucide-react';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
@@ -23,6 +24,8 @@ import {
   type PersonaCapability,
 } from '@/lib/personas/capabilities';
 import { useThemeStore } from '@/stores/themeStore';
+import { useOverviewStore } from '@/stores/overviewStore';
+import type { ActiveProcess } from '@/stores/slices/processActivitySlice';
 import { executePersona } from '@/api/agents/executions';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
@@ -31,8 +34,8 @@ import { MonitorRunSheet } from './MonitorRunSheet';
 
 const logger = createLogger('monitor-capabilities');
 
-/** Local lock — a capability can't be re-fired for this long after a run. */
-const RUN_LOCK_MS = 60_000;
+/** A run still counts as busy while its process is in one of these states. */
+const LIVE_STATUSES: ReadonlySet<ActiveProcess['status']> = new Set(['running', 'queued', 'input_required']);
 
 interface MonitorCapabilitiesProps {
   personaId: string;
@@ -46,16 +49,21 @@ export function MonitorCapabilities({ personaId, useCases }: MonitorCapabilities
   // and the health-label lookup.
   const cvdSafe = useThemeStore((s) => s.cvdSafe);
   const healthMeta = getHealthMeta(t);
-  const [executing, setExecuting] = useState<Set<string>>(new Set());
+  // `executePersona` resolves with a QUEUED row, so its resolution says nothing
+  // about whether the run is over. Busy is therefore two things: the dispatch
+  // call itself, and the run it returned, read off the live process map.
+  const [dispatching, setDispatching] = useState<Set<string>>(new Set());
+  const [runIds, setRunIds] = useState<Record<string, string>>({});
+  const activeProcesses = useOverviewStore((s) => s.activeProcesses);
   // The capability whose payload the operator is editing. Nothing is dispatched
   // and nothing is locked while this is set.
   const [prompting, setPrompting] = useState<PersonaCapability | null>(null);
-  const timers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
-  useEffect(() => {
-    const map = timers.current;
-    return () => { for (const tmr of map.values()) clearTimeout(tmr); };
-  }, []);
+  const isRunLive = (ucId: string): boolean => {
+    const runId = runIds[ucId];
+    const proc = runId ? activeProcesses[`execution:${runId}`] : undefined;
+    return proc !== undefined && LIVE_STATUSES.has(proc.status);
+  };
 
   /** The capability's declared run input, serialized. Charters keep it in
    *  `spec.sampleInput`, legacy design-context use cases in `sample_input`. */
@@ -65,30 +73,24 @@ export function MonitorCapabilities({ personaId, useCases }: MonitorCapabilities
   }, []);
 
   const run = useCallback(async (uc: PersonaCapability, input: string | undefined) => {
-    setExecuting((prev) => {
-      if (prev.has(uc.id)) return prev;
-      return new Set(prev).add(uc.id);
-    });
-    const release = () => setExecuting((prev) => {
+    const setBusy = (on: boolean) => setDispatching((prev) => {
       const next = new Set(prev);
-      next.delete(uc.id);
+      if (on) next.add(uc.id); else next.delete(uc.id);
       return next;
     });
-    const tmr = setTimeout(() => { release(); timers.current.delete(uc.id); }, RUN_LOCK_MS);
-    timers.current.set(uc.id, tmr);
+    setBusy(true);
     try {
-      await executePersona(personaId, undefined, input, uc.id);
+      const row = await executePersona(personaId, undefined, input, uc.id);
+      setRunIds((prev) => ({ ...prev, [uc.id]: row.id }));
     } catch (err) {
       logger.error('Quick-execute failed', { error: err, useCaseId: uc.id });
-      // The lock release is right — the run did NOT start, so the sigil must be
-      // pressable again. What was missing is the other half: releasing it in
-      // silence made a failed dispatch look identical to a run that started and
-      // finished, so the operator pressed once, saw the sigil settle, and
-      // believed work was underway. The toast is what tells them it was not.
-      clearTimeout(tmr);
-      timers.current.delete(uc.id);
-      release();
+      // The run did NOT start, so the sigil must be pressable again (the
+      // dispatch flag clears below). Releasing it in silence made a failed
+      // dispatch look identical to a run that started and finished, so the
+      // toast is what tells the operator it was not.
       toastCatch('MonitorCapabilities:quickExecute')(err);
+    } finally {
+      setBusy(false);
     }
   }, [personaId]);
 
@@ -111,7 +113,7 @@ export function MonitorCapabilities({ personaId, useCases }: MonitorCapabilities
       style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}
     >
       {useCases.map((uc) => {
-        const isExecuting = executing.has(uc.id);
+        const isExecuting = dispatching.has(uc.id) || isRunLive(uc.id);
         const runnable = uc.mode !== 'non_executable' && uc.health !== 'disabled';
         const disabled = isExecuting || !runnable;
         return (
