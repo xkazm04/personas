@@ -20,8 +20,9 @@
 //! once `obsidian_drive_*` commands are registered.
 #![allow(dead_code, private_interfaces)]
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::{Component, Path};
+use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
 
 /// Validate that a Google Drive `file.name` is safe to use as a local filename.
@@ -486,6 +487,50 @@ pub async fn save_manifest(
 // High-level sync operations (called by Tauri commands)
 // ============================================================================
 
+/// Vault names with a push or pull in flight (single-flight per vault).
+///
+/// Push and pull share one remote manifest, read at the start and rewritten at
+/// the end, so a second run that overlaps the first would upload the same
+/// files twice and the later `save_manifest` would overwrite the earlier one.
+fn sync_busy() -> &'static Mutex<HashSet<String>> {
+    static B: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
+    B.get_or_init(|| Mutex::new(HashSet::new()))
+}
+
+/// Claim on one vault's Drive sync, released on `Drop` so an early return or a
+/// panic cannot leave the vault refusing every later sync until restart.
+#[must_use = "dropping the claim releases it"]
+struct SyncClaim {
+    vault: String,
+}
+
+impl SyncClaim {
+    fn acquire(vault: &str) -> Result<Self, AppError> {
+        let inserted = sync_busy()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .insert(vault.to_string());
+        if inserted {
+            Ok(Self {
+                vault: vault.to_string(),
+            })
+        } else {
+            Err(AppError::Validation(format!(
+                "a Drive sync is already running for vault {vault:?}; wait for it to finish"
+            )))
+        }
+    }
+}
+
+impl Drop for SyncClaim {
+    fn drop(&mut self) {
+        sync_busy()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .remove(&self.vault);
+    }
+}
+
 /// Push local vault files to Google Drive.
 ///
 /// Walks the local vault directory, compares content hashes against the manifest,
@@ -496,6 +541,7 @@ pub async fn push_to_drive(
     vault_name: &str,
     folders_to_sync: &[String],
 ) -> Result<DriveSyncResult, AppError> {
+    let _claim = SyncClaim::acquire(vault_name)?;
     let client = drive_client(token)?;
     let vault_folder_id = ensure_vault_folder(&client, vault_name).await?;
     let (manifest_id, mut manifest) = load_manifest(&client, &vault_folder_id).await?;
@@ -649,6 +695,7 @@ pub async fn pull_from_drive(
     vault_name: &str,
     folders_to_sync: &[String],
 ) -> Result<DriveSyncResult, AppError> {
+    let _claim = SyncClaim::acquire(vault_name)?;
     let client = drive_client(token)?;
     let vault_folder_id = ensure_vault_folder(&client, vault_name).await?;
     let (manifest_id, mut manifest) = load_manifest(&client, &vault_folder_id).await?;
@@ -895,6 +942,23 @@ mod tests {
         .expect("the client deadline must fire before the 5 s outer guard");
         let err = res.unwrap_err();
         assert!(err.is_timeout(), "expected a timeout, got {err}");
+    }
+
+    /// A second sync of a vault that is already syncing is refused (not run
+    /// alongside), another vault is unaffected, and dropping the claim frees
+    /// the vault again.
+    #[test]
+    fn a_second_sync_of_the_same_vault_is_refused_until_the_first_ends() {
+        let first = SyncClaim::acquire("vault-single-flight-test").unwrap();
+        assert!(matches!(
+            SyncClaim::acquire("vault-single-flight-test"),
+            Err(AppError::Validation(_))
+        ));
+        let other = SyncClaim::acquire("vault-single-flight-other").unwrap();
+        drop(first);
+        let again = SyncClaim::acquire("vault-single-flight-test");
+        assert!(again.is_ok(), "released claim must free the vault");
+        drop(other);
     }
 
     #[test]
