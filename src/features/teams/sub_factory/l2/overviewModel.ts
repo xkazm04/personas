@@ -15,7 +15,8 @@ export interface Cell {
   kpiPct: number | null;
   dims: { errors: DimTone; cost: DimTone; kpi: DimTone };
   kind: FocusKind;
-  kpiCount: number;
+  /** Active KPIs on the context; null when the KPI read failed (not zero). */
+  kpiCount: number | null;
 }
 
 export interface CellGroup { id: string; name: string; cells: Cell[] }
@@ -62,7 +63,7 @@ export function buildCell(ctx: DevContext, data: FactoryL2Data, kpisByCtx: Map<s
     : kpiTone === 'unmeasured' || worst === 'unmeasured' ? 'setup'
     : 'ok';
 
-  return { ctx, errs, costUsd, kpiPct, dims, kind, kpiCount: ctxKpis.length };
+  return { ctx, errs, costUsd, kpiPct, dims, kind, kpiCount: data.kpisFailed ? null : ctxKpis.length };
 }
 
 /** Active KPIs per context. */
@@ -105,13 +106,13 @@ export function kindCounts(cells: readonly Cell[]): Record<FocusKind, number> {
 /**
  * A context's coverage counts. Both maps are built from rows that loaded
  * (active use cases, the project's goals), so a context missing from one has
- * none of them among those rows; a failed goals read also lands here as zero,
- * which the old cards showed the same way.
+ * none of them among those rows. A read that REJECTED is not zero: goals and
+ * proposals come back null so the surface shows a dash, not an answer.
  */
-export function coverageOf(data: FactoryL2Data, ctxId: string): { features: number; goals: number; proposals: number } {
+export function coverageOf(data: FactoryL2Data, ctxId: string): { features: number; goals: number | null; proposals: number | null } {
   return {
     features: data.featureCountByContext.get(ctxId) ?? 0,
-    goals: data.goalCountByContext.get(ctxId) ?? 0,
-    proposals: data.proposalsByContext.get(ctxId)?.length ?? 0,
+    goals: data.goalsFailed ? null : data.goalCountByContext.get(ctxId) ?? 0,
+    proposals: data.kpisFailed ? null : data.proposalsByContext.get(ctxId)?.length ?? 0,
   };
 }

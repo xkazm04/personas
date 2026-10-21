@@ -47,13 +47,13 @@ export function FactoryContextDetail({ cell, groupName, data, onDecide, onScan, 
             {
               k: w.L.worstKpi,
               v: cell.kpiPct == null ? null : `${cell.kpiPct}% ${w.L.ofTarget}`,
-              none: cell.kpiCount > 0 ? w.t.kpis.track_unmeasured : w.t.kpis.define_kpi,
+              none: cell.kpiCount == null ? '-' : cell.kpiCount > 0 ? w.t.kpis.track_unmeasured : w.t.kpis.define_kpi,
             },
-            { k: w.kpis, v: cell.kpiCount },
+            { k: w.kpis, v: cell.kpiCount, none: '-' },
             { k: w.errors, v: cell.errs, none: w.L.notWired },
             { k: w.cost, v: cell.costUsd == null ? null : <Numeric value={cell.costUsd} unit="usd" precision={2} />, none: w.L.notWired },
             { k: w.features, v: cov.features },
-            { k: w.goals, v: cov.goals },
+            { k: w.goals, v: cov.goals, none: '-' },
           ]}
         />
       </Section>

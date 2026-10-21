@@ -93,7 +93,7 @@ export function FactoryOverviewTab({ data }: { data: FactoryL2Data }) {
               draw: <UnitStrip size="m" label={w.contexts} segments={ORDER.map((k) => ({ n: n[k], ...FOCUS_MARK[k] }))} />,
             },
             { label: w.features, value: data.useCaseState.active.length },
-            { label: w.goals, value: [...data.goalCountByContext.values()].reduce((s, v) => s + v, 0) },
+            { label: w.goals, value: data.goalsFailed ? null : [...data.goalCountByContext.values()].reduce((s, v) => s + v, 0) },
             {
               label: w.L.proposed,
               value: proposedCtx + unassigned,
