@@ -2227,18 +2227,16 @@ html[data-motion="reduce"] .animate-channel-row-in {
 }
 
 /* Light: a lighter hand on the field, and its floor turns to success-green
-   (the gallery's light reading); dots at 18%. A custom theme on a light base
-   carries no `.dark` class and takes the same reading. */
-[data-theme^="light"] .monitor-surface,
-[data-theme="custom"]:not(.dark) .monitor-surface {
+   (the gallery's light reading); dots at 18%. A custom light theme is stamped
+   `light-custom`, so it takes the same reading. */
+[data-theme^="light"] .monitor-surface {
   background:
     radial-gradient(55% 60% at 8% 0%, color-mix(in srgb, var(--primary) 9%, transparent), transparent 70%),
     radial-gradient(45% 55% at 92% 18%, color-mix(in srgb, var(--accent) 7%, transparent), transparent 70%),
     radial-gradient(70% 55% at 55% 105%, color-mix(in srgb, var(--status-success) 6%, transparent), transparent 70%);
 }
 
-[data-theme^="light"] .monitor-surface::before,
-[data-theme="custom"]:not(.dark) .monitor-surface::before {
+[data-theme^="light"] .monitor-surface::before {
   background: radial-gradient(circle, color-mix(in srgb, var(--foreground) 18%, transparent) 0 1px, transparent 1.4px) 14px 14px / 28px 28px;
 }
 

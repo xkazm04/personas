@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { CustomThemeConfig } from '@/lib/theme/deriveCustomTheme';
-import { deriveCustomThemeVars, injectCustomThemeStyle, removeCustomThemeStyle } from '@/lib/theme/deriveCustomTheme';
+import { customThemeAttr, deriveCustomThemeVars, injectCustomThemeStyle, removeCustomThemeStyle } from '@/lib/theme/deriveCustomTheme';
 import { storeBus } from '@/lib/storeBus';
 import { DEFAULT_DENSITY, isDensity, type Density } from '@/lib/density';
 import { createDedupedJSONStorage } from './util/dedupedStorage';
@@ -140,13 +140,15 @@ function applyThemeToDOM(id: ThemeId, customConfig?: CustomThemeConfig | null) {
 
   // Inject or remove the custom theme stylesheet
   if (id === 'custom' && customConfig) {
-    injectCustomThemeStyle(deriveCustomThemeVars(customConfig));
+    injectCustomThemeStyle(deriveCustomThemeVars(customConfig), customThemeAttr(customConfig.baseMode));
   } else {
     removeCustomThemeStyle();
   }
 
   if (id === 'dark-midnight') {
     el.removeAttribute('data-theme');
+  } else if (id === 'custom' && customConfig) {
+    el.setAttribute('data-theme', customThemeAttr(customConfig.baseMode));
   } else {
     el.setAttribute('data-theme', id);
   }

@@ -5,6 +5,16 @@
  * CSS variable overrides that slot into the [data-theme="custom"] selector.
  */
 
+/**
+ * The `data-theme` value a custom theme is stamped with. A light base takes a
+ * `light-` name so the whole `[data-theme^="light"]` correction layer (palette
+ * text, primary-opacity boosts, contrast fixes) applies to it like the built-in
+ * light themes; a dark base keeps `custom`.
+ */
+export function customThemeAttr(baseMode: 'dark' | 'light'): 'custom' | 'light-custom' {
+  return baseMode === 'light' ? 'light-custom' : 'custom';
+}
+
 export interface CustomThemeConfig {
   baseMode: 'dark' | 'light';
   primaryColor: string;
@@ -201,7 +211,7 @@ export function deriveCustomThemeVars(config: CustomThemeConfig): Record<string,
 
 const STYLE_ID = 'persona-custom-theme';
 
-export function injectCustomThemeStyle(vars: Record<string, string>): void {
+export function injectCustomThemeStyle(vars: Record<string, string>, attr = 'custom'): void {
   const gradient = vars['--background-gradient'];
   const cssVars = { ...vars };
   delete cssVars['--background-gradient'];
@@ -212,7 +222,7 @@ export function injectCustomThemeStyle(vars: Record<string, string>): void {
 
   let extraRules = '';
   if (gradient) {
-    extraRules = `\nhtml[data-theme="custom"] {\n  background-image: ${gradient};\n  min-height: 100vh;\n}`;
+    extraRules = `\nhtml[data-theme="${attr}"] {\n  background-image: ${gradient};\n  min-height: 100vh;\n}`;
   }
 
   let el = document.getElementById(STYLE_ID) as HTMLStyleElement | null;
@@ -221,7 +231,7 @@ export function injectCustomThemeStyle(vars: Record<string, string>): void {
     el.id = STYLE_ID;
     document.head.appendChild(el);
   }
-  el.textContent = `[data-theme="custom"] {\n${cssText}\n}${extraRules}`;
+  el.textContent = `[data-theme="${attr}"] {\n${cssText}\n}${extraRules}`;
 }
 
 export function removeCustomThemeStyle(): void {

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 vi.mock('@/lib/theme/deriveCustomTheme', () => ({
+  customThemeAttr: (m: string) => (m === 'light' ? 'light-custom' : 'custom'),
   deriveCustomThemeVars: vi.fn().mockReturnValue({}),
   injectCustomThemeStyle: vi.fn(),
   removeCustomThemeStyle: vi.fn(),
