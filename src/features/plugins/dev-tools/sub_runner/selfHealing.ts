@@ -103,6 +103,32 @@ export function selectAutoHealTargets(
   });
 }
 
+/**
+ * The status an attempt chip should show. `handleHealTask` stamps `healing`
+ * and nothing ever moved it on, because a retry does not reset the failed row:
+ * it mints a NEW row (`parent_task_id` = the failed one, `attempt` + 1) and the
+ * original stays `failed`. So the outcome lives on the newest child, and the
+ * chip reads it from there instead of saying "Retrying" forever.
+ *
+ * Only a `healing` attempt is re-derived; with no child in the loaded window
+ * (or one still queued/running) it stays `healing`.
+ */
+export function settleAttemptStatus(
+  attempt: HealingAttempt,
+  tasks: readonly DevTask[],
+): HealingAttempt['status'] {
+  if (attempt.status !== 'healing') return attempt.status;
+  let latest: DevTask | null = null;
+  for (const tk of tasks) {
+    if (tk.parent_task_id !== attempt.taskId) continue;
+    if (!latest || tk.attempt > latest.attempt) latest = tk;
+  }
+  if (!latest) return 'healing';
+  if (latest.status === 'completed') return 'healed';
+  if (latest.status === 'failed' || latest.status === 'cancelled') return 'failed';
+  return 'healing';
+}
+
 // ---------------------------------------------------------------------------
 // Window-vs-queue reconciliation (sweep #388)
 // ---------------------------------------------------------------------------
