@@ -15,7 +15,7 @@
  */
 
 import { useAgentStore } from '../agentStore';
-import { parseDesignContext } from '@/features/agents/sub_lab/use-cases/UseCasesList';
+import { parseDesignContext } from '@/features/agents/shared/designContext';
 import type { DesignContextData, DesignUseCase } from '@/lib/types/frontendTypes';
 
 const EMPTY_USE_CASES: DesignUseCase[] = [];

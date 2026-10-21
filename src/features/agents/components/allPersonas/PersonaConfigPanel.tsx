@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, Fragment } from 'react';
 import { createLatestWins } from '@/stores/util/latestWins';
 import { RefreshCw, Globe, FolderOpen, User, Minus, AlertTriangle, Search, X, Layers, ChevronRight, CornerDownRight } from 'lucide-react';
 import { listPersonas, resolveEffectiveConfigBulk } from '@/api/agents/personas';
-import { parseDesignContext } from '@/features/agents/sub_lab/use-cases/UseCasesList';
+import { parseDesignContext } from '@/features/agents/shared/designContext';
 import { ConnectorIcon, getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import { formatModelShort } from '@/lib/utils/formatters';
 import type { Persona } from '@/lib/bindings/Persona';

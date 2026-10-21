@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Moon } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { runPersonaConsolidationNow } from '@/api/agents/personaBrain';
@@ -6,7 +6,6 @@ import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { useToastStore } from '@/stores/toastStore';
 import { toastCatch } from '@/lib/silentCatch';
 import { ProposalInbox } from './ProposalInbox';
-import { BrainDashboard } from '@/features/agents/sub_brain/BrainDashboard';
 
 /**
  * The Brain surface: the proposal inbox (the human gate), the abstracted
@@ -14,10 +13,22 @@ import { BrainDashboard } from '@/features/agents/sub_brain/BrainDashboard';
  * coverage — with the flat episode record demoted to a drill-down inside the
  * volume tile), and the manual consolidation trigger.
  *
+ * The dashboard itself is `sub_brain`'s and arrives through `renderDashboard`,
+ * composed by the Design hub (`sub_design/components/DesignLifePanels`).
+ * `sub_brain` already reads `sub_life`'s episode and attention surfaces, so
+ * importing it back from here made the two modules a cycle.
+ *
  * The self-model is NOT rendered here: WP6 moved the manifest to its own tab,
  * and mounting it in Brain too would show the same document twice.
  */
-export function BrainSection({ personaId }: { personaId: string }) {
+export function BrainSection({
+  personaId,
+  renderDashboard,
+}: {
+  personaId: string;
+  /** Renders the brain dashboard; `epoch` changes whenever it must remount and refetch. */
+  renderDashboard: (epoch: number) => ReactNode;
+}) {
   const { t } = useTranslation();
   const life = t.agents.life;
   const addToast = useToastStore((s) => s.addToast);
@@ -53,7 +64,7 @@ export function BrainSection({ personaId }: { personaId: string }) {
         personaId={personaId}
         onApplied={() => setDashboardEpoch((n) => n + 1)}
       />
-      <BrainDashboard key={dashboardEpoch} personaId={personaId} />
+      {renderDashboard(dashboardEpoch)}
     </div>
   );
 }
