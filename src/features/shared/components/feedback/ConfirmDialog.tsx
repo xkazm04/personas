@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "@/i18n/useTranslation";
 import { BaseModal } from "@/lib/ui/BaseModal";
+import { toastCatch } from "@/lib/silentCatch";
 
 interface ConfirmDialogProps {
   title: string;
@@ -41,6 +42,10 @@ export function ConfirmDialog({
     setBusy(true);
     try {
       await Promise.resolve(onConfirm());
+    } catch (err) {
+      // A rejected onConfirm (18 callers pass an async one) must reach the user,
+      // not escape the onClick as an unhandled rejection with the dialog just re-enabling.
+      toastCatch("ConfirmDialog:onConfirm")(err);
     } finally {
       // React 19 makes a state update after unmount a safe no-op, so this is
       // fine whether or not onConfirm closed the dialog. If it stayed open
