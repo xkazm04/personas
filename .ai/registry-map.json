@@ -6549,8 +6549,8 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/companion/approvals/approval_lifecycle.rs:374 the executor still matches the action as a &str (:223) ending in `other => Err(unknown action)`, so a kind added to ALLOWED_ACTIONS (src-tauri/src/companion/dispatcher/catalog.rs:11, now 60 entries after the mesh ops) without an arm compiles and fails only when approved; all 60 have arms today but tests pin membership only (dispatcher/tests.rs:583) (re-confirmed 2026-10-16)",
-          "evaluatedAt": "2026-10-16",
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_lifecycle.rs:374 the executor still matches the action as a &str (:223) ending in `other => Err(unknown action)`, so a kind added to ALLOWED_ACTIONS (src-tauri/src/companion/dispatcher/catalog.rs:11, 60 entries, all with arms today) without an arm compiles and fails only when approved; src-tauri/src/companion/dispatcher/tests.rs:583 still pins membership only (re-confirmed 2026-10-21)",
+          "evaluatedAt": "2026-10-21",
           "evaluatedAgainst": "sha256-b2:7a0b336cac31d173",
           "evaluatedRevision": 4,
           "revisionsBehind": 0
@@ -8332,8 +8332,8 @@
           "changedAt": "2026-09-23",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/companion/brain/cockpit.rs:3 lets compose_cockpit overwrite the singleton spec and src-tauri/src/commands/companion/consolidate.rs has get/pin/unpin but no cockpit reset, while dashboard.rs:176 reset_dashboard is still #[allow(dead_code)] with no command; a model-composed arrangement has no one-action way back to default (re-confirmed 2026-10-12)",
-          "evaluatedAt": "2026-10-12",
+          "evidence": "src-tauri/src/companion/brain/cockpit.rs:3 lets compose_cockpit overwrite the singleton spec and src-tauri/src/commands/companion/consolidate.rs:336 exposes get/pin/unpin with no cockpit reset, while src-tauri/src/companion/brain/dashboard.rs:176 reset_dashboard is still #[allow(dead_code)] with no command (untouched by the 10-19 dead-code sweep); a model-composed arrangement has no one-action way back to default (re-confirmed 2026-10-21)",
+          "evaluatedAt": "2026-10-21",
           "evaluatedAgainst": "sha256-b2:7a0b336cac31d173",
           "evaluatedRevision": 4,
           "revisionsBehind": 0
@@ -8920,8 +8920,8 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/api/companion.ts:425 still types the dev-op status as a bare string (tokens only in the :419 comment), so src/features/companions/athena/DevOpLedger.tsx:103 renders an unknown status as its raw token and :112 as a grey dot in a co-deployed bundle; a sixth backend status fails nothing (re-confirmed 2026-10-16)",
-          "evaluatedAt": "2026-10-16",
+          "evidence": "src/api/companion.ts:436 still types the dev-op status as a bare string (tokens only in the :430 comment), so src/features/companions/athena/DevOpLedger.tsx:103 renders an unknown status as its raw token and :112 as a grey dot in a co-deployed bundle; a sixth backend status fails nothing (re-confirmed 2026-10-21; anchor moved from :425)",
+          "evaluatedAt": "2026-10-21",
           "evaluatedAgainst": "sha256-b2:7a0b336cac31d173",
           "evaluatedRevision": 4,
           "revisionsBehind": 0
@@ -9069,8 +9069,8 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/companion/proactive/triggers.rs:75 collect_all still folds every trigger Err into an empty Vec with no log (also :328 and incident_triggers.rs:99), so a failed goal/backlog/incident read is indistinguishable from nothing-to-report and the tick warn at src-tauri/src/commands/companion/mod.rs:657 never sees it; conversation_resume latches at triggers.rs:207 before reading; credential_triggers.rs:106 is the in-repo contrast that logs (re-confirmed 2026-10-16; the 10-14 budget.rs change does not touch this)",
-          "evaluatedAt": "2026-10-16",
+          "evidence": "src-tauri/src/companion/proactive/triggers.rs:75 collect_all still folds every trigger Err into an empty Vec with no log (also :328 and src-tauri/src/companion/proactive/incident_triggers.rs:99), so a failed goal/backlog/incident read is indistinguishable from nothing-to-report and the tick warn at src-tauri/src/commands/companion/mod.rs:658 never sees it; conversation_resume latches at triggers.rs:207 before reading; credential_triggers.rs:106 is the in-repo contrast that logs (re-confirmed 2026-10-21; the 10-19/10-21 proactive fixes do not touch this)",
+          "evaluatedAt": "2026-10-21",
           "evaluatedAgainst": "sha256-b2:7a0b336cac31d173",
           "evaluatedRevision": 4,
           "revisionsBehind": 0

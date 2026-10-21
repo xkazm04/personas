@@ -1810,3 +1810,7 @@
 {"ts":"2026-10-21T12:46:48Z","bundle":"software-engineering","subjects":["codebase-scanning"],"techniques":["sensor-pipeline","incremental-scanning"],"deviations":2}
 {"ts":"2026-10-21T12:46:48Z","bundle":"software-engineering","subjects":["codebase-scanning"],"techniques":["sensor-pipeline","the-tree-is-not-the-population"],"deviations":2}
 {"ts":"2026-10-21T12:46:48Z","bundle":"software-engineering","subjects":["codebase-scanning"],"techniques":["sensor-pipeline"],"deviations":1}
+{"ts":"2026-10-21T12:47:00Z","bundle":"software-engineering","subjects":["companion-runtime"],"techniques":["action-catalog-single-source"],"deviations":1}
+{"ts":"2026-10-21T12:47:00Z","bundle":"software-engineering","subjects":["companion-runtime"],"techniques":["action-catalog-single-source"],"deviations":1}
+{"ts":"2026-10-21T12:47:00Z","bundle":"software-engineering","subjects":["companion-runtime"],"techniques":["action-catalog-single-source"],"deviations":1}
+{"ts":"2026-10-21T12:47:00Z","bundle":"software-engineering","subjects":["companion-runtime"],"techniques":["signal-economy-contract","autonomous-cycle-hosting"],"deviations":1}

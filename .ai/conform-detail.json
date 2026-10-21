@@ -3225,14 +3225,14 @@
       "subject": "companion-runtime",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:48:29.000Z",
-      "worker": "e5a005a2-7aa8-43d9-80d7-5a026c271c78",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:47:00.000Z",
+      "worker": "b4a6bb6b-a0a1-490d-b8be-f56800b32410",
       "techniques": [
         {
           "technique": "action-catalog-single-source",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/companion/approvals/approval_lifecycle.rs:374 string match with a runtime-shrug arm; no set-equality pin between catalog.rs:11 and the lifecycle arms"
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_lifecycle.rs:374 string match with a runtime `unknown action` arm instead of an executor derived from the one catalog declaration"
         }
       ],
       "superseded": [
@@ -3256,6 +3256,13 @@
           "evaluatedAt": "2026-10-12T12:33:40.000Z",
           "worker": "7ebfa425-34fb-4871-8a6e-9346b53e9173",
           "reason": "replaced by e5a005a2-7aa8-43d9-80d7-5a026c271c78"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_lifecycle.rs:374 the executor still matches the action as a &str (:223) ending in `other => Err(unknown action)`, so a kind added to ALLOWED_ACTIONS (src-tauri/src/companion/dispatcher/catalog.rs:11, now 60 entries after the mesh ops) without an arm compiles and fails only when approved; all 60 have arms today but tests pin membership only (dispatcher/tests.rs:583) (re-confirmed 2026-10-16)",
+          "evaluatedAt": "2026-10-16T17:48:29.000Z",
+          "worker": "e5a005a2-7aa8-43d9-80d7-5a026c271c78",
+          "reason": "replaced by b4a6bb6b-a0a1-490d-b8be-f56800b32410"
         }
       ]
     },
@@ -3294,14 +3301,14 @@
       "subject": "companion-runtime",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T12:33:40.000Z",
-      "worker": "7ebfa425-34fb-4871-8a6e-9346b53e9173",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:47:00.000Z",
+      "worker": "b4a6bb6b-a0a1-490d-b8be-f56800b32410",
       "techniques": [
         {
           "technique": "action-catalog-single-source",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/brain/dashboard.rs:176 restore function nothing calls is a mechanism, not a reset; no cockpit equivalent exists"
+          "evidence": "src-tauri/src/companion/brain/dashboard.rs:176 reset exists but is unreachable; 'anything a model can compose, a person can reset' unmet for cockpit and dashboard"
         }
       ],
       "superseded": [
@@ -3318,6 +3325,13 @@
           "evaluatedAt": "2026-10-10T02:10:24.000Z",
           "worker": "248886f3-87ba-4ad6-8ba3-4f8697ca03c4",
           "reason": "replaced by 7ebfa425-34fb-4871-8a6e-9346b53e9173"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/brain/cockpit.rs:3 lets compose_cockpit overwrite the singleton spec and src-tauri/src/commands/companion/consolidate.rs has get/pin/unpin but no cockpit reset, while dashboard.rs:176 reset_dashboard is still #[allow(dead_code)] with no command; a model-composed arrangement has no one-action way back to default (re-confirmed 2026-10-12)",
+          "evaluatedAt": "2026-10-12T12:33:40.000Z",
+          "worker": "7ebfa425-34fb-4871-8a6e-9346b53e9173",
+          "reason": "replaced by b4a6bb6b-a0a1-490d-b8be-f56800b32410"
         }
       ]
     },
@@ -5688,14 +5702,14 @@
       "subject": "companion-runtime",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:48:29.000Z",
-      "worker": "e5a005a2-7aa8-43d9-80d7-5a026c271c78",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:47:00.000Z",
+      "worker": "b4a6bb6b-a0a1-490d-b8be-f56800b32410",
       "techniques": [
         {
           "technique": "action-catalog-single-source",
           "verdict": "deviation",
-          "evidence": "src/features/companions/athena/DevOpLedger.tsx:112 co-deployed surface falls back instead of being exhaustive over a generated type"
+          "evidence": "src/features/companions/athena/DevOpLedger.tsx:103 tolerant fallback on a surface that ships with its producer, where the technique requires exhaustive"
         }
       ],
       "superseded": [
@@ -5719,6 +5733,13 @@
           "evaluatedAt": "2026-10-12T12:33:40.000Z",
           "worker": "7ebfa425-34fb-4871-8a6e-9346b53e9173",
           "reason": "replaced by e5a005a2-7aa8-43d9-80d7-5a026c271c78"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/api/companion.ts:425 still types the dev-op status as a bare string (tokens only in the :419 comment), so src/features/companions/athena/DevOpLedger.tsx:103 renders an unknown status as its raw token and :112 as a grey dot in a co-deployed bundle; a sixth backend status fails nothing (re-confirmed 2026-10-16)",
+          "evaluatedAt": "2026-10-16T17:48:29.000Z",
+          "worker": "e5a005a2-7aa8-43d9-80d7-5a026c271c78",
+          "reason": "replaced by b4a6bb6b-a0a1-490d-b8be-f56800b32410"
         }
       ]
     },
@@ -14389,19 +14410,19 @@
       "subject": "companion-runtime",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:48:29.000Z",
-      "worker": "e5a005a2-7aa8-43d9-80d7-5a026c271c78",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:47:00.000Z",
+      "worker": "b4a6bb6b-a0a1-490d-b8be-f56800b32410",
       "techniques": [
-        {
-          "technique": "autonomous-cycle-hosting",
-          "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/proactive/triggers.rs:75 failure folded to empty success (failure-not-empty-success)"
-        },
         {
           "technique": "signal-economy-contract",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/proactive/incident_triggers.rs:99 a failed read reports zero candidates, a count without its predicate"
+          "evidence": "src-tauri/src/companion/proactive/triggers.rs:75 unwrap_or_default erases a failed pressure read"
+        },
+        {
+          "technique": "autonomous-cycle-hosting",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/proactive/triggers.rs:207 latch set before the read, so a failed first read loses welcome-back for the process lifetime"
         },
         {
           "technique": "metered-llm-seam",
@@ -14417,6 +14438,13 @@
           "evaluatedAt": "2026-10-10T02:10:24.000Z",
           "worker": "248886f3-87ba-4ad6-8ba3-4f8697ca03c4",
           "reason": "replaced by e5a005a2-7aa8-43d9-80d7-5a026c271c78"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/proactive/triggers.rs:75 collect_all still folds every trigger Err into an empty Vec with no log (also :328 and incident_triggers.rs:99), so a failed goal/backlog/incident read is indistinguishable from nothing-to-report and the tick warn at src-tauri/src/commands/companion/mod.rs:657 never sees it; conversation_resume latches at triggers.rs:207 before reading; credential_triggers.rs:106 is the in-repo contrast that logs (re-confirmed 2026-10-16; the 10-14 budget.rs change does not touch this)",
+          "evaluatedAt": "2026-10-16T17:48:29.000Z",
+          "worker": "e5a005a2-7aa8-43d9-80d7-5a026c271c78",
+          "reason": "replaced by b4a6bb6b-a0a1-490d-b8be-f56800b32410"
         }
       ]
     },
