@@ -4,6 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useOverviewFilterValues } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { log } from '@/lib/log';
 import { buildFetchWindow, fetchWindowKey } from '@/features/overview/libs/fetchWindow';
+import { extractMessage } from '@/lib/silentCatch';
 
 /**
  * Single canonical fetch lifecycle for the overview section.
@@ -78,7 +79,7 @@ function settleAndReport(
       const result = results[i]!;
       if (result.status === 'rejected') {
         allOk = false;
-        const msg = result.reason instanceof Error ? result.reason.message : String(result.reason);
+        const msg = extractMessage(result.reason);
         log.error(`[${tag}] ${name} failed:`, result.reason);
         pipelineResults.push({ source: name, error: msg });
       } else {

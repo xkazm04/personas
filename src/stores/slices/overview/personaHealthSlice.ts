@@ -13,6 +13,7 @@ import { getHealthBundle } from "@/api/overview/health";
 import { log } from "@/lib/log";
 import { measureStoreAction } from "@/lib/utils/storePerf";
 import { computeGrade, computeHeartbeatScore } from "@/features/overview/sub_health/libs/compositeHealthScore";
+import { extractMessage } from '@/lib/silentCatch';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -319,7 +320,7 @@ export const createPersonaHealthSlice: StateCreator<OverviewStore, [], [], Perso
               }
               reasons[name] = null; // retry cleared it
             } catch (e) {
-              reasons[name] = e instanceof Error ? e.message : String(e);
+              reasons[name] = extractMessage(e);
             }
           }));
         }
@@ -507,7 +508,7 @@ export const createPersonaHealthSlice: StateCreator<OverviewStore, [], [], Perso
         });
       });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractMessage(err);
       log.warn('personaHealthSlice', 'computePersonaHealth failed', { error: msg });
       set({ healthError: msg, healthLoading: false });
     }

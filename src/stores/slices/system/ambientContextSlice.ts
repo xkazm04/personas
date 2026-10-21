@@ -19,7 +19,7 @@ import {
   getContextStreamStats,
 } from "@/api/system/ambientContext";
 import { reportError } from "../../storeTypes";
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, extractMessage } from '@/lib/silentCatch';
 
 
 export interface AmbientContextSlice {
@@ -97,7 +97,7 @@ export const createAmbientContextSlice: StateCreator<SystemStore, [], [], Ambien
       if (latestSnapshotPersonaId !== personaId) return;
       reportError(err, "Failed to fetch ambient context", set as (partial: { error: string }) => void, {
         severity: "state",
-        stateUpdates: { ambientError: err instanceof Error ? err.message : String(err) },
+        stateUpdates: { ambientError: extractMessage(err) },
       });
     }
   },

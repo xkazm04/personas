@@ -1,5 +1,5 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
-import { silentCatch } from "@/lib/silentCatch";
+import { silentCatch, extractMessage } from "@/lib/silentCatch";
 import type { SchedulerStats } from "@/lib/bindings/SchedulerStats";
 import type { SubscriptionHealth } from "@/lib/bindings/SubscriptionHealth";
 import type { BackfillResult } from "@/lib/bindings/BackfillResult";
@@ -118,7 +118,7 @@ export async function backfillAllMissedRuns(
       out.push({
         triggerId: row.triggerId,
         result: null,
-        error: err instanceof Error ? err.message : String(err),
+        error: extractMessage(err),
         cleared: false,
       });
     }
