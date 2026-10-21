@@ -52,7 +52,7 @@ describe('browse chip picker', () => {
   it.each([
     ['Beginner', 'difficulty', 'beginner'],
     ['Quick Setup', 'setup', 'quick'],
-    ['Communication', 'category', 'communication'],
+    ['templates.search.cat_communication', 'category', 'communication'],
   ])('adds a %s chip without typing a prefix', (label, type, value) => {
     const { addChip, input } = renderInput();
     fireEvent.focus(input);

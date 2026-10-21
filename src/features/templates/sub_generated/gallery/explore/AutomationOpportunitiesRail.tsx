@@ -75,13 +75,13 @@ function OpportunityCard({
           <GroupIcon className="w-4 h-4 text-amber-300/80" />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="typo-heading text-foreground/85">{group.label}</h3>
+          <h3 className="typo-heading text-foreground/85">{t.templates.search[group.labelKey]}</h3>
         </div>
         <button
           type="button"
           onClick={() => onSelectCategory(group.categories[0]!)}
           className="typo-body text-amber-400/60 hover:text-amber-400 transition-colors"
-          title={t.templates.opportunities.explore_templates.replace('{label}', group.label)}
+          title={t.templates.opportunities.explore_templates.replace('{label}', t.templates.search[group.labelKey])}
         >
           <ChevronRight className="w-4 h-4" />
         </button>

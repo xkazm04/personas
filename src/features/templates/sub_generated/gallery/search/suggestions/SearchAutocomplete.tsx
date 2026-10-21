@@ -3,7 +3,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { GraduationCap, Clock, type LucideIcon } from 'lucide-react';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import type { CategoryWithCount } from '@/api/overview/reviews';
-import { getCategoryMeta } from '../filters/searchConstants';
+import { categoryLabel, getCategoryMeta } from '../filters/searchConstants';
 import { DIFFICULTY_OPTIONS, SETUP_OPTIONS, DIFFICULTY_META, SETUP_META } from '../../../shared/templateComplexity';
 import type { QueryChip } from './useStructuredQuery';
 
@@ -73,7 +73,7 @@ export function SearchAutocomplete({
     const categoryGroup = (): SuggestionGroup => {
       const opts = availableCategories.slice(0, 10).map((cat) => {
         const meta = getCategoryMeta(cat.name);
-        return { value: cat.name, label: meta.label, icon: meta.icon, color: meta.color };
+        return { value: cat.name, label: categoryLabel(t, cat.name), icon: meta.icon, color: meta.color };
       });
       return { type: 'category', items: buildSuggestions(opts, activeChips, 'category', query) };
     };
@@ -93,7 +93,7 @@ export function SearchAutocomplete({
     if (prefix.startsWith('difficulty')) return [difficultyGroup()];
     if (prefix.startsWith('setup')) return [setupGroup()];
     return [];
-  }, [prefix, query, availableCategories, activeChips]);
+  }, [prefix, query, availableCategories, activeChips, t]);
 
   // Flattened for keyboard navigation: one focus index across every group.
   const suggestions = useMemo(() => groups.flatMap((g) => g.items), [groups]);

@@ -50,12 +50,12 @@ describe('category chip shared by the search input and the filter row', () => {
     const input = screen.getByTestId('template-search-input');
     const inputBox = input.parentElement!;
     fireEvent.focus(input);
-    fireEvent.click(screen.getByRole('option', { name: 'Communication' }));
+    fireEvent.click(screen.getByRole('option', { name: 'templates.search.cat_communication' }));
     expect(onCategory).toHaveBeenLastCalledWith(['communication']);
-    expect(inputChips()).toEqual(['Communication']);
+    expect(inputChips()).toEqual(['templates.search.cat_communication']);
 
     // The filter row paints the same category as its own chip with an X.
-    const rowLabel = screen.getAllByText('Communication').find((el) => !inputBox.contains(el))!;
+    const rowLabel = screen.getAllByText('templates.search.cat_communication').find((el) => !inputBox.contains(el))!;
     fireEvent.click(within(rowLabel.closest('span')!).getByRole('button'));
 
     expect(onCategory).toHaveBeenLastCalledWith([]);

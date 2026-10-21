@@ -1,6 +1,6 @@
 import { CheckCircle2, AlertCircle, FlaskConical, X } from 'lucide-react';
 import { getConnectorMeta, ConnectorIcon } from '@/lib/connectors/connectorMeta';
-import { getCategoryMeta } from './searchConstants';
+import { categoryLabel, getCategoryMeta } from './searchConstants';
 import { ARCH_CATEGORIES } from '../../../shared/architecturalCategories';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -28,6 +28,7 @@ export function FilterChips({
   const { t, tx } = useTranslation();
   const removeLabel = (label: string) => tx(t.templates.search.remove_filter_aria, { label });
   const activeCategoryMeta = selectedCategory ? getCategoryMeta(selectedCategory) : null;
+  const activeCategoryLabel = selectedCategory ? categoryLabel(t, selectedCategory) : '';
   const ActiveCategoryIcon = activeCategoryMeta?.icon ?? null;
 
   // "Drafts" is a dev-only filter: the chip appears only when draft (unpublished)
@@ -48,11 +49,11 @@ export function FilterChips({
       {selectedCategory && activeCategoryMeta && ActiveCategoryIcon && (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 flex-shrink-0">
           <ActiveCategoryIcon className="w-3 h-3" style={{ color: activeCategoryMeta.color }} />
-          {activeCategoryMeta.label}
+          {activeCategoryLabel}
           <button
             type="button"
             onClick={() => onCategoryFilterChange([])}
-            aria-label={removeLabel(activeCategoryMeta.label)}
+            aria-label={removeLabel(activeCategoryLabel)}
             className="ml-0.5 hover:text-white transition-colors"
           >
             <X className="w-3 h-3" aria-hidden="true" />

@@ -23,6 +23,7 @@ const t = new Proxy({}, {
         compare: COMPARE,
         card: { connectors_label: 'Connectors', triggers_label: 'Triggers', use_cases_label: 'Use cases' },
         list: { adoptions: 'Adoptions' },
+        search: new Proxy({}, { get: (_s, k) => String(k) }),
         complexity: { beginner: 'Beginner', intermediate: 'Intermediate', advanced: 'Advanced', minuteShort: '{minutes} min' },
         actions: { adopt: 'Adopt', try_it: 'Try it' },
       }

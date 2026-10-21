@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { ArrowUpDown, ChevronDown } from 'lucide-react';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { useViewportClampAbsolute } from '@/hooks/utility/interaction/useViewportClamp';
+import { useTranslation } from '@/i18n/useTranslation';
 import { SORT_OPTIONS } from './searchConstants';
 
 export function SortDropdown({
@@ -13,6 +14,7 @@ export function SortDropdown({
   sortDir: string;
   onSortChange: (sortBy: string, sortDir: string) => void;
 }) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
@@ -20,7 +22,7 @@ export function SortDropdown({
   useClickOutside(dropdownRef, isOpen, () => setIsOpen(false));
   const clampStyle = useViewportClampAbsolute(popupRef, isOpen);
 
-  const defaultOption = { value: 'created_at', label: 'Newest First', dir: 'desc' };
+  const defaultOption = SORT_OPTIONS[1]!;
   const currentOption = SORT_OPTIONS.find(
     (o) => {
       const optSort = o.value.replace(/_(?:asc|desc)$/, '');
@@ -36,7 +38,7 @@ export function SortDropdown({
         className="px-3 py-2 typo-body rounded-modal border border-primary/15 hover:bg-secondary/50 text-foreground transition-colors flex items-center gap-1.5"
       >
         <ArrowUpDown className="w-3.5 h-3.5" />
-        {currentOption.label}
+        {t.templates.search[currentOption.labelKey]}
         <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
@@ -59,7 +61,7 @@ export function SortDropdown({
                     : 'text-foreground hover:bg-primary/5'
                 }`}
               >
-                {option.label}
+                {t.templates.search[option.labelKey]}
               </button>
             );
           })}
