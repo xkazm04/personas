@@ -2137,5 +2137,15 @@
   "dc_pending_lead": "保留中のレビューはそれぞれ、詳細な内容とほかの判断と同じキー操作で、ディシジョンセンターに開きます。",
   "dc_pending_list_aria": "保留中のレビュー",
   "dc_select_review": "レビューを選択",
-  "dc_col_decision": "判断"
+  "dc_col_decision": "判断",
+  "ai_healing_overlay": {
+    "collapse": "折りたたむ",
+    "expand": "展開",
+    "status_complete": "完了",
+    "status_failed": "失敗",
+    "status_in_progress": "進行中",
+    "step_applying": "修正を適用中",
+    "step_completed": "完了",
+    "step_diagnosing": "診断中"
+  }
 }

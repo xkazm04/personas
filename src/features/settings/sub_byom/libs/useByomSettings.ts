@@ -19,7 +19,8 @@ import type {
   ProviderUsageStats,
   ProviderUsageTimeseries,
 } from '@/api/system/byom';
-import { validateByomPolicy, type PolicyWarning } from './byomHelpers';
+import { useTranslation } from '@/i18n/useTranslation';
+import { validateByomPolicy, type PolicyWarning, type PolicyWarningDescriber } from './byomHelpers';
 
 function groupByRuleIndex(
   warnings: PolicyWarning[],
@@ -75,6 +76,15 @@ function defaultPolicy(): ByomPolicy {
 export type ByomSection = 'policy' | 'keys' | 'routing' | 'compliance' | 'audit';
 
 export function useByomSettings() {
+  const { t, tx } = useTranslation();
+  const s = t.settings.byom;
+  // The effect below runs once on mount; it reads the latest catalog through this ref.
+  const sRef = useRef(s);
+  sRef.current = s;
+  const describeWarning = useCallback<PolicyWarningDescriber>(
+    (code, params) => tx(s[`policy_warn_${code}`], params),
+    [s, tx],
+  );
   const [policy, setPolicy] = useState<ByomPolicy>(defaultPolicy());
   const [loaded, setLoaded] = useState(false);
   /** Non-null when the stored policy JSON is corrupt and could not be parsed. */
@@ -111,7 +121,7 @@ export function useByomSettings() {
       // Surface this to the user instead of silently falling back to open-access.
       const msg = err && typeof err === 'object' && 'error' in err
         ? String((err as { error: string }).error)
-        : 'BYOM policy could not be loaded — the stored JSON may be corrupt.';
+        : sRef.current.policy_load_corrupt_fallback;
       setCorruptPolicyError(msg);
       setLoaded(true);
     });
@@ -140,16 +150,13 @@ export function useByomSettings() {
     // regression. Force the user to reload the panel (which retries the load)
     // before any write is permitted.
     if (!loaded || corruptPolicyError !== null) {
-      useToastStore.getState().addToast(
-        'Cannot save: the stored BYOM policy could not be loaded. Reload the panel before saving to avoid overwriting the on-disk policy with an empty default.',
-        'error',
-      );
+      useToastStore.getState().addToast(s.policy_toast_cannot_save_unloaded, 'error');
       return;
     }
-    const errors = validateByomPolicy(policy).filter((w) => w.severity === 'error');
+    const errors = validateByomPolicy(policy, describeWarning).filter((w) => w.severity === 'error');
     if (errors.length > 0) {
       useToastStore.getState().addToast(
-        `Cannot save: ${errors.length} blocking error${errors.length > 1 ? 's' : ''} in policy`,
+        tx(errors.length === 1 ? s.policy_toast_cannot_save_errors_one : s.policy_toast_cannot_save_errors_other, { count: errors.length }),
         'error',
       );
       return;
@@ -162,15 +169,15 @@ export function useByomSettings() {
       // Re-snapshot from the value we actually persisted to avoid dirty-state drift.
       savedSnapshotRef.current = snapshot;
       setSaveGeneration((g) => g + 1);
-      useToastStore.getState().addToast('Policy saved', 'success');
+      useToastStore.getState().addToast(s.policy_toast_saved, 'success');
     } catch (e) {
       Sentry.captureException(e);
-      useToastStore.getState().addToast(errMsg(e, 'Failed to save policy'), 'error');
+      useToastStore.getState().addToast(errMsg(e, s.policy_toast_save_failed), 'error');
     } finally {
       saveInFlightRef.current = false;
       setIsSaving(false);
     }
-  }, [policy, loaded, corruptPolicyError]);
+  }, [policy, loaded, corruptPolicyError, describeWarning, s, tx]);
 
   const handleReset = useCallback(async () => {
     try {
@@ -180,12 +187,12 @@ export function useByomSettings() {
       savedSnapshotRef.current = structuredClone(reset);
       setSaveGeneration((g) => g + 1);
       setCorruptPolicyError(null);
-      useToastStore.getState().addToast('Policy reset to defaults', 'success');
+      useToastStore.getState().addToast(s.policy_toast_reset, 'success');
     } catch (e) {
       Sentry.captureException(e);
-      useToastStore.getState().addToast(errMsg(e, 'Failed to reset policy'), 'error');
+      useToastStore.getState().addToast(errMsg(e, s.policy_toast_reset_failed), 'error');
     }
-  }, []);
+  }, [s]);
 
   const discardChanges = useCallback(() => {
     setPolicy(structuredClone(savedSnapshotRef.current));
@@ -255,7 +262,7 @@ export function useByomSettings() {
     }));
   }, []);
 
-  const policyWarnings = useMemo(() => validateByomPolicy(policy), [policy]);
+  const policyWarnings = useMemo(() => validateByomPolicy(policy, describeWarning), [policy, describeWarning]);
   const hasBlockingErrors = useMemo(() => policyWarnings.some((w) => w.severity === 'error'), [policyWarnings]);
 
   const routingWarnings = useMemo(() => groupByRuleIndex(policyWarnings, 'routing'), [policyWarnings]);

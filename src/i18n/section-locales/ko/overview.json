@@ -2137,5 +2137,15 @@
   "dc_pending_lead": "대기 중인 검토는 전체 내용과 다른 모든 결정과 같은 키와 함께 결정 센터에서 열립니다.",
   "dc_pending_list_aria": "대기 중인 검토",
   "dc_select_review": "검토 선택",
-  "dc_col_decision": "결정"
+  "dc_col_decision": "결정",
+  "ai_healing_overlay": {
+    "collapse": "접기",
+    "expand": "펼치기",
+    "status_complete": "완료",
+    "status_failed": "실패",
+    "status_in_progress": "진행 중",
+    "step_applying": "수정 적용 중",
+    "step_completed": "완료됨",
+    "step_diagnosing": "진단 중"
+  }
 }

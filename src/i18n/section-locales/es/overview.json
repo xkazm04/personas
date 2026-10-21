@@ -2137,5 +2137,15 @@
   "dc_pending_lead": "Cada revisión pendiente se abre en el Centro de decisiones, con su caso completo y las mismas teclas que cualquier otra decisión.",
   "dc_pending_list_aria": "Revisiones pendientes",
   "dc_select_review": "Seleccionar revisión",
-  "dc_col_decision": "Decisión"
+  "dc_col_decision": "Decisión",
+  "ai_healing_overlay": {
+    "collapse": "Contraer",
+    "expand": "Expandir",
+    "status_complete": "Completado",
+    "status_failed": "Fallido",
+    "status_in_progress": "En curso",
+    "step_applying": "Aplicando correcciones",
+    "step_completed": "Completado",
+    "step_diagnosing": "Diagnosticando"
+  }
 }

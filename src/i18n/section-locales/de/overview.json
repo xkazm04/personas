@@ -2137,5 +2137,15 @@
   "dc_pending_lead": "Jede offene Prüfung öffnet sich im Entscheidungszentrum, mit vollständigem Fall und denselben Tasten wie jede andere Entscheidung.",
   "dc_pending_list_aria": "Offene Prüfungen",
   "dc_select_review": "Prüfung auswählen",
-  "dc_col_decision": "Entscheidung"
+  "dc_col_decision": "Entscheidung",
+  "ai_healing_overlay": {
+    "collapse": "Einklappen",
+    "expand": "Ausklappen",
+    "status_complete": "Abgeschlossen",
+    "status_failed": "Fehlgeschlagen",
+    "status_in_progress": "In Bearbeitung",
+    "step_applying": "Korrekturen werden angewendet",
+    "step_completed": "Abgeschlossen",
+    "step_diagnosing": "Diagnose läuft"
+  }
 }

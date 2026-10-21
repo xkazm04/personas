@@ -2137,5 +2137,15 @@
   "dc_pending_lead": "تُفتح كل مراجعة معلّقة في مركز القرارات، بقضيتها الكاملة ومفاتيح كل قرار آخر نفسها.",
   "dc_pending_list_aria": "المراجعات المعلّقة",
   "dc_select_review": "تحديد المراجعة",
-  "dc_col_decision": "القرار"
+  "dc_col_decision": "القرار",
+  "ai_healing_overlay": {
+    "collapse": "طي",
+    "expand": "توسيع",
+    "status_complete": "اكتمل",
+    "status_failed": "فشل",
+    "status_in_progress": "قيد التنفيذ",
+    "step_applying": "تطبيق الإصلاحات",
+    "step_completed": "مكتمل",
+    "step_diagnosing": "التشخيص"
+  }
 }

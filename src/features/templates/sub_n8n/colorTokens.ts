@@ -57,16 +57,22 @@ export const TAG_COLORS: Record<ColorKey, string> = {
 /*  Domain-specific maps                                               */
 /* ------------------------------------------------------------------ */
 
+/** Catalog keys (templates.n8n) for the session status badge labels. */
+export type SessionStatusLabelKey =
+  | 'session_status_draft' | 'session_status_analyzing' | 'session_status_transforming'
+  | 'session_status_needs_input' | 'session_status_editing' | 'session_status_confirmed'
+  | 'session_status_failed' | 'session_status_interrupted';
+
 /** n8n session status badge styles. */
-export const SESSION_STATUS_STYLES: Record<SessionStatus, { bg: string; text: string; label: string }> = {
-  draft:            { bg: 'bg-zinc-500/15',    text: 'text-zinc-400',    label: 'Draft' },
-  analyzing:        { bg: 'bg-blue-500/15',    text: 'text-blue-400',    label: 'Analyzing' },
-  transforming:     { bg: 'bg-amber-500/15',   text: 'text-amber-400',   label: 'Transforming' },
-  awaiting_answers: { bg: 'bg-violet-500/15',  text: 'text-violet-400',  label: 'Needs Input' },
-  editing:          { bg: 'bg-violet-500/15',  text: 'text-violet-400',  label: 'Editing' },
-  confirmed:        { bg: 'bg-emerald-500/15', text: 'text-emerald-400', label: 'Confirmed' },
-  failed:           { bg: 'bg-red-500/15',     text: 'text-red-400',     label: 'Failed' },
-  interrupted:      { bg: 'bg-amber-500/15',   text: 'text-amber-400',   label: 'Interrupted' },
+export const SESSION_STATUS_STYLES: Record<SessionStatus, { bg: string; text: string; labelKey: SessionStatusLabelKey }> = {
+  draft:            { bg: 'bg-zinc-500/15',    text: 'text-zinc-400',    labelKey: 'session_status_draft' },
+  analyzing:        { bg: 'bg-blue-500/15',    text: 'text-blue-400',    labelKey: 'session_status_analyzing' },
+  transforming:     { bg: 'bg-amber-500/15',   text: 'text-amber-400',   labelKey: 'session_status_transforming' },
+  awaiting_answers: { bg: 'bg-violet-500/15',  text: 'text-violet-400',  labelKey: 'session_status_needs_input' },
+  editing:          { bg: 'bg-violet-500/15',  text: 'text-violet-400',  labelKey: 'session_status_editing' },
+  confirmed:        { bg: 'bg-emerald-500/15', text: 'text-emerald-400', labelKey: 'session_status_confirmed' },
+  failed:           { bg: 'bg-red-500/15',     text: 'text-red-400',     labelKey: 'session_status_failed' },
+  interrupted:      { bg: 'bg-amber-500/15',   text: 'text-amber-400',   labelKey: 'session_status_interrupted' },
 };
 
 /** Workflow platform badge colors. */

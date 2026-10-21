@@ -1,4 +1,5 @@
 import { AlertCircle, ChevronRight } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { FilePreview } from './n8nUploadTypes';
 
 export function PreviewCard({
@@ -10,6 +11,7 @@ export function PreviewCard({
   FileIcon: React.ComponentType<{ className?: string }>;
   onClick?: () => void;
 }) {
+  const { t, tx } = useTranslation();
   return (
     <>
       {preview && (
@@ -42,7 +44,7 @@ export function PreviewCard({
               )}
               <span className="typo-body text-foreground/90 truncate">{preview.workflowName}</span>
               <span className="typo-body text-foreground flex-shrink-0">
-                {preview.nodeCount > 0 && <>{preview.nodeCount} element{preview.nodeCount !== 1 ? 's' : ''} &middot; </>}
+                {preview.nodeCount > 0 && <>{tx(preview.nodeCount === 1 ? t.templates.n8n.preview_elements_one : t.templates.n8n.preview_elements_other, { count: preview.nodeCount })} &middot; </>}
                 {preview.fileSize}
               </span>
               <ChevronRight className="w-4 h-4 text-foreground flex-shrink-0 ml-auto" />

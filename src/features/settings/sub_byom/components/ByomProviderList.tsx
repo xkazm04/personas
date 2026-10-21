@@ -132,7 +132,7 @@ const ProviderUsageCard = memo(function ProviderUsageCard({
           <ProviderSparkline
             data={trends?.executions ?? []}
             color={SPARKLINE_COLORS.executions}
-            label="daily"
+            label={s.sparkline_daily}
           />
         </div>
         <div className="space-y-1">
@@ -141,7 +141,7 @@ const ProviderUsageCard = memo(function ProviderUsageCard({
           <ProviderSparkline
             data={trends?.cost ?? []}
             color={SPARKLINE_COLORS.cost}
-            label="daily"
+            label={s.sparkline_daily}
           />
         </div>
         <div className="space-y-1">
@@ -150,7 +150,7 @@ const ProviderUsageCard = memo(function ProviderUsageCard({
           <ProviderSparkline
             data={trends?.duration ?? []}
             color={SPARKLINE_COLORS.duration}
-            label="daily"
+            label={s.sparkline_daily}
           />
         </div>
       </div>

@@ -2137,5 +2137,15 @@
     "loop_off": "Attention loop is off",
     "no_schedule": "No scheduled runs",
     "per_day": "{value} per day"
+  },
+  "ai_healing_overlay": {
+    "status_failed": "Failed",
+    "status_complete": "Complete",
+    "status_in_progress": "In Progress",
+    "step_diagnosing": "Diagnosing",
+    "step_applying": "Applying Fixes",
+    "step_completed": "Completed",
+    "expand": "Expand",
+    "collapse": "Collapse"
   }
 }

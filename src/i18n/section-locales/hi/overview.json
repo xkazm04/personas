@@ -2137,5 +2137,15 @@
   "dc_pending_lead": "हर लंबित समीक्षा डिसीज़न सेंटर में अपने पूरे ब्योरे और अन्य निर्णयों जैसी ही कुंजियों के साथ खुलती है।",
   "dc_pending_list_aria": "लंबित समीक्षाएँ",
   "dc_select_review": "समीक्षा चुनें",
-  "dc_col_decision": "निर्णय"
+  "dc_col_decision": "निर्णय",
+  "ai_healing_overlay": {
+    "collapse": "संक्षिप्त करें",
+    "expand": "विस्तृत करें",
+    "status_complete": "पूर्ण",
+    "status_failed": "विफल",
+    "status_in_progress": "प्रगति में",
+    "step_applying": "सुधार लागू किए जा रहे हैं",
+    "step_completed": "पूर्ण हुआ",
+    "step_diagnosing": "निदान हो रहा है"
+  }
 }

@@ -2137,5 +2137,15 @@
   "dc_pending_lead": "প্রতিটি অপেক্ষমাণ রিভিউ ডিসিশন সেন্টারে খোলে, পূর্ণ বিবরণ ও অন্য সব সিদ্ধান্তের মতো একই কী নিয়ে।",
   "dc_pending_list_aria": "অপেক্ষমাণ রিভিউ",
   "dc_select_review": "রিভিউ বেছে নিন",
-  "dc_col_decision": "সিদ্ধান্ত"
+  "dc_col_decision": "সিদ্ধান্ত",
+  "ai_healing_overlay": {
+    "collapse": "সংকুচিত করুন",
+    "expand": "প্রসারিত করুন",
+    "status_complete": "সম্পন্ন",
+    "status_failed": "ব্যর্থ",
+    "status_in_progress": "চলমান",
+    "step_applying": "সমাধান প্রয়োগ করা হচ্ছে",
+    "step_completed": "সম্পন্ন হয়েছে",
+    "step_diagnosing": "নির্ণয় করা হচ্ছে"
+  }
 }

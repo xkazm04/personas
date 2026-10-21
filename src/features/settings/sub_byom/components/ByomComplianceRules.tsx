@@ -59,7 +59,7 @@ export function ByomComplianceRules({ rules, warnings, onAdd, onUpdate, onRemove
               if (ruleWarnings) {
                 for (const w of ruleWarnings) {
                   for (const prov of PROVIDER_OPTIONS) {
-                    if (w.message.includes(`"${prov.label}"`)) {
+                    if (w.provider === prov.id) {
                       const existing = warnedProviders.get(prov.id);
                       if (!existing || w.severity === 'error' || (w.severity === 'warning' && existing === 'info')) {
                         warnedProviders.set(prov.id, w.severity);

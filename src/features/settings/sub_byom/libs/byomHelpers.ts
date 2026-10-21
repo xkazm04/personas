@@ -41,6 +41,21 @@ export const ENGINE_LABELS: Record<string, string> = ENGINE_LABELS_BY_KIND;
 
 export type PolicyWarningSeverity = 'error' | 'warning' | 'info';
 
+/** Which validator finding a warning is; the wording lives in `t.settings.byom.policy_warn_<code>`. */
+export type PolicyWarningCode =
+  | 'blocked_unknown_provider'
+  | 'allowed_unknown_provider'
+  | 'compliance_fails_open'
+  | 'compliance_unknown_provider'
+  | 'compliance_allows_blocked'
+  | 'compliance_allows_unlisted'
+  | 'routing_unknown_provider'
+  | 'routing_targets_blocked'
+  | 'routing_targets_unlisted';
+
+/** Turns a finding into display text (a catalog lookup + interpolation, supplied by the caller). */
+export type PolicyWarningDescriber = (code: PolicyWarningCode, params: Record<string, string>) => string;
+
 export interface PolicyWarning {
   /** Severity of this warning */
   severity: PolicyWarningSeverity;
@@ -48,7 +63,11 @@ export interface PolicyWarning {
   ruleType: 'routing' | 'compliance' | 'top_level';
   /** Index of the rule within its array (for top_level warnings, the index in the offending provider array) */
   ruleIndex: number;
-  /** Human-readable warning message */
+  /** Which finding this is, so callers can branch on it without parsing `message`. */
+  code: PolicyWarningCode;
+  /** The known provider (EngineKind id) a per-provider finding is about, for chip highlighting. */
+  provider?: string;
+  /** Human-readable warning message, already localised by the describer passed to the validator. */
   message: string;
 }
 
@@ -57,9 +76,10 @@ export interface PolicyWarning {
  * This mirrors the Rust `ByomPolicy::validate()` logic so warnings
  * appear instantly on every edit without an IPC round-trip.
  */
-export function validateByomPolicy(policy: ByomPolicy): PolicyWarning[] {
+export function validateByomPolicy(policy: ByomPolicy, describe: PolicyWarningDescriber): PolicyWarning[] {
   const warnings: PolicyWarning[] = [];
   if (!policy.enabled) return warnings;
+  const label = (id: string) => ENGINE_LABELS[id] ?? id;
 
   const allowedSet = new Set(policy.allowed_providers.filter((p) => KNOWN_PROVIDERS.has(p)));
   const blockedSet = new Set(policy.blocked_providers.filter((p) => KNOWN_PROVIDERS.has(p)));
@@ -76,7 +96,8 @@ export function validateByomPolicy(policy: ByomPolicy): PolicyWarning[] {
         severity: 'error',
         ruleType: 'top_level',
         ruleIndex: i,
-        message: `Blocked providers contains unknown provider "${provider}" - it would be silently dropped and the block would not take effect (check for typos)`,
+        code: 'blocked_unknown_provider',
+        message: describe('blocked_unknown_provider', { provider }),
       });
     }
   }
@@ -86,7 +107,8 @@ export function validateByomPolicy(policy: ByomPolicy): PolicyWarning[] {
         severity: 'info',
         ruleType: 'top_level',
         ruleIndex: i,
-        message: `Allowed providers contains unknown provider "${provider}" - it will be ignored (check for typos)`,
+        code: 'allowed_unknown_provider',
+        message: describe('allowed_unknown_provider', { provider }),
       });
     }
   }
@@ -102,7 +124,8 @@ export function validateByomPolicy(policy: ByomPolicy): PolicyWarning[] {
         severity: 'warning',
         ruleType: 'compliance',
         ruleIndex: i,
-        message: `Compliance rule '${rule.name}' matches on a persona's template category, so it only restricts personas that have one. Personas without a category (manually created or legacy) are NOT restricted and can use any allowed provider - the control fails open for them.`,
+        code: 'compliance_fails_open',
+        message: describe('compliance_fails_open', { name: rule.name }),
       });
     }
     for (const provider of rule.allowed_providers) {
@@ -111,21 +134,26 @@ export function validateByomPolicy(policy: ByomPolicy): PolicyWarning[] {
           severity: 'info',
           ruleType: 'compliance',
           ruleIndex: i,
-          message: `References unknown provider "${provider}"`,
+          code: 'compliance_unknown_provider',
+          message: describe('compliance_unknown_provider', { provider }),
         });
       } else if (blockedSet.has(provider)) {
         warnings.push({
           severity: 'error',
           ruleType: 'compliance',
           ruleIndex: i,
-          message: `Allows "${ENGINE_LABELS[provider] ?? provider}" which is explicitly blocked - the block takes precedence`,
+          code: 'compliance_allows_blocked',
+          provider,
+          message: describe('compliance_allows_blocked', { provider: label(provider) }),
         });
       } else if (allowedSet.size > 0 && !allowedSet.has(provider)) {
         warnings.push({
           severity: 'warning',
           ruleType: 'compliance',
           ruleIndex: i,
-          message: `Allows "${ENGINE_LABELS[provider] ?? provider}" which is not in the top-level allowed list - this provider will be blocked`,
+          code: 'compliance_allows_unlisted',
+          provider,
+          message: describe('compliance_allows_unlisted', { provider: label(provider) }),
         });
       }
     }
@@ -140,21 +168,26 @@ export function validateByomPolicy(policy: ByomPolicy): PolicyWarning[] {
         severity: 'info',
         ruleType: 'routing',
         ruleIndex: i,
-        message: `Targets unknown provider "${provider}"`,
+        code: 'routing_unknown_provider',
+        message: describe('routing_unknown_provider', { provider }),
       });
     } else if (blockedSet.has(provider)) {
       warnings.push({
         severity: 'error',
         ruleType: 'routing',
         ruleIndex: i,
-        message: `Targets "${ENGINE_LABELS[provider] ?? provider}" which is explicitly blocked`,
+        code: 'routing_targets_blocked',
+        provider,
+        message: describe('routing_targets_blocked', { provider: label(provider) }),
       });
     } else if (allowedSet.size > 0 && !allowedSet.has(provider)) {
       warnings.push({
         severity: 'warning',
         ruleType: 'routing',
         ruleIndex: i,
-        message: `Targets "${ENGINE_LABELS[provider] ?? provider}" which is not in the top-level allowed list`,
+        code: 'routing_targets_unlisted',
+        provider,
+        message: describe('routing_targets_unlisted', { provider: label(provider) }),
       });
     }
   }

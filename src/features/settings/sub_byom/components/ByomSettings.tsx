@@ -43,7 +43,7 @@ export default function ByomSettings() {
         <ContentHeader
           icon={<Network className="w-5 h-5 text-violet-400" />}
           iconColor="violet"
-          title="BYOM"
+          title={s.title}
           subtitle={s.loading}
         />
       </ContentBox>
@@ -237,7 +237,7 @@ export default function ByomSettings() {
         isSaving={guard.isSaving}
         isOpen={guard.isOpen}
         onAction={guard.resolve}
-        changedSections={['BYOM Policy']}
+        changedSections={[s.policy_changed_section]}
       />
     </ContentBox>
   );

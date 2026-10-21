@@ -2137,5 +2137,15 @@
   "dc_pending_lead": "每个待审阅项都会在决策中心打开，附带完整背景，按键与其他所有决定一致。",
   "dc_pending_list_aria": "待审阅项",
   "dc_select_review": "选择审阅项",
-  "dc_col_decision": "决策"
+  "dc_col_decision": "决策",
+  "ai_healing_overlay": {
+    "collapse": "收起",
+    "expand": "展开",
+    "status_complete": "已完成",
+    "status_failed": "失败",
+    "status_in_progress": "进行中",
+    "step_applying": "正在应用修复",
+    "step_completed": "已完成",
+    "step_diagnosing": "正在诊断"
+  }
 }

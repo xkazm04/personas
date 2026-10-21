@@ -2137,5 +2137,15 @@
   "dc_pending_lead": "Каждое ожидающее ревью открывается в Центре решений с полным описанием и теми же клавишами, что и любое другое решение.",
   "dc_pending_list_aria": "Ожидающие ревью",
   "dc_select_review": "Выбрать ревью",
-  "dc_col_decision": "Решение"
+  "dc_col_decision": "Решение",
+  "ai_healing_overlay": {
+    "collapse": "Свернуть",
+    "expand": "Развернуть",
+    "status_complete": "Завершено",
+    "status_failed": "Сбой",
+    "status_in_progress": "В процессе",
+    "step_applying": "Применение исправлений",
+    "step_completed": "Завершено",
+    "step_diagnosing": "Диагностика"
+  }
 }

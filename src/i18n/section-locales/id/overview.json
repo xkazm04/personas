@@ -2137,5 +2137,15 @@
   "dc_pending_lead": "Setiap tinjauan tertunda dibuka di Pusat Keputusan, lengkap dengan kasusnya dan tombol yang sama seperti keputusan lainnya.",
   "dc_pending_list_aria": "Tinjauan tertunda",
   "dc_select_review": "Pilih tinjauan",
-  "dc_col_decision": "Keputusan"
+  "dc_col_decision": "Keputusan",
+  "ai_healing_overlay": {
+    "collapse": "Ciutkan",
+    "expand": "Perluas",
+    "status_complete": "Selesai",
+    "status_failed": "Gagal",
+    "status_in_progress": "Sedang Berjalan",
+    "step_applying": "Menerapkan Perbaikan",
+    "step_completed": "Selesai",
+    "step_diagnosing": "Mendiagnosis"
+  }
 }

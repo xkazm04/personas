@@ -2137,5 +2137,15 @@
   "dc_pending_lead": "Každá čekající revize se otevře v Centru rozhodnutí s celým podkladem a stejnými klávesami jako každé jiné rozhodnutí.",
   "dc_pending_list_aria": "Čekající revize",
   "dc_select_review": "Vybrat revizi",
-  "dc_col_decision": "Rozhodnutí"
+  "dc_col_decision": "Rozhodnutí",
+  "ai_healing_overlay": {
+    "collapse": "Sbalit",
+    "expand": "Rozbalit",
+    "status_complete": "Dokončeno",
+    "status_failed": "Selhalo",
+    "status_in_progress": "Probíhá",
+    "step_applying": "Aplikace oprav",
+    "step_completed": "Dokončeno",
+    "step_diagnosing": "Diagnostika"
+  }
 }

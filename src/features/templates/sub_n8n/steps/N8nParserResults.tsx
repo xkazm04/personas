@@ -49,7 +49,7 @@ export function N8nParserResults({
   onConfirmPlatform,
   rawWorkflowJson,
 }: N8nParserResultsProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const hasSelection = !!selectedToolIndices;
 
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -172,13 +172,13 @@ export function N8nParserResults({
       {hasSelection && (
         <div className="flex items-center gap-2 typo-code uppercase tracking-wider text-foreground">
           <span className={`px-2.5 py-1 rounded-modal border ${TAG_COLORS.blue}`}>
-            {toolCount} tools
+            {tx(t.templates.n8n.tools_count, { count: toolCount })}
           </span>
           <span className={`px-2.5 py-1 rounded-modal border ${TAG_COLORS.amber}`}>
-            {triggerCount} triggers
+            {tx(t.templates.n8n.triggers_count_summary, { count: triggerCount })}
           </span>
           <span className={`px-2.5 py-1 rounded-modal border ${TAG_COLORS.emerald}`}>
-            {connectorCount} connectors
+            {tx(t.templates.n8n.connectors_count_summary, { count: connectorCount })}
           </span>
           <span className="text-foreground ml-1">{t.templates.n8n.selected_for_import}</span>
         </div>

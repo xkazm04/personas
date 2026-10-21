@@ -55,7 +55,7 @@ const SessionCard = memo(function SessionCard({ session, isBusy, onLoad, onDelet
         </p>
         <div className="flex items-center gap-2 mt-1">
           <span className={`px-1.5 py-0.5 typo-body rounded-card ${style.bg} ${style.text}`}>
-            {style.label}
+            {t.templates.n8n[style.labelKey]}
           </span>
           <span className="typo-body text-foreground flex items-center gap-1">
             <Clock className="w-2.5 h-2.5" />
@@ -78,7 +78,7 @@ const SessionCard = memo(function SessionCard({ session, isBusy, onLoad, onDelet
         {interrupted ? (
           <span className="flex items-center gap-1 typo-body text-amber-400">
             <RotateCcw className="w-3 h-3" />
-            Retry
+            {t.templates.n8n.retry_label}
           </span>
         ) : (
           <ChevronRight className="w-4 h-4 text-foreground group-hover:text-muted-foreground" />
@@ -269,7 +269,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
               onClick={() => void fetchSessions()}
               className="px-3 py-1.5 typo-body rounded-modal border border-red-500/20 bg-red-500/10 text-red-300 hover:bg-red-500/20 transition-colors"
             >
-              Retry
+              {t.templates.n8n.retry_label}
             </button>
           </div>
         )}

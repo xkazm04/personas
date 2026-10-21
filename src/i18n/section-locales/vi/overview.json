@@ -2137,5 +2137,15 @@
   "dc_pending_lead": "Mỗi đánh giá đang chờ sẽ mở trong Trung tâm quyết định, với đầy đủ nội dung và cùng phím như mọi quyết định khác.",
   "dc_pending_list_aria": "Đánh giá đang chờ",
   "dc_select_review": "Chọn đánh giá",
-  "dc_col_decision": "Quyết định"
+  "dc_col_decision": "Quyết định",
+  "ai_healing_overlay": {
+    "collapse": "Thu gọn",
+    "expand": "Mở rộng",
+    "status_complete": "Hoàn tất",
+    "status_failed": "Thất bại",
+    "status_in_progress": "Đang thực hiện",
+    "step_applying": "Đang áp dụng bản sửa",
+    "step_completed": "Đã hoàn tất",
+    "step_diagnosing": "Đang chẩn đoán"
+  }
 }

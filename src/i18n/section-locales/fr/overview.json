@@ -2137,5 +2137,15 @@
   "dc_pending_lead": "Chaque revue en attente s'ouvre dans le Centre de décision, avec son dossier complet et les mêmes touches que toute autre décision.",
   "dc_pending_list_aria": "Revues en attente",
   "dc_select_review": "Sélectionner la revue",
-  "dc_col_decision": "Décision"
+  "dc_col_decision": "Décision",
+  "ai_healing_overlay": {
+    "collapse": "Réduire",
+    "expand": "Développer",
+    "status_complete": "Terminé",
+    "status_failed": "Échec",
+    "status_in_progress": "En cours",
+    "step_applying": "Application des correctifs",
+    "step_completed": "Terminé",
+    "step_diagnosing": "Diagnostic"
+  }
 }

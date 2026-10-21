@@ -388,7 +388,8 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
       "kinds": {}
     },
     "memories_ui": {},
-    "mission_layers": {}
+    "mission_layers": {},
+    "ai_healing_overlay": {}
   },
   "matrix_v3": {},
   "templates": {

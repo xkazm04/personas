@@ -3,6 +3,8 @@ import { Stethoscope, Search, Wrench, CheckCircle2, XCircle, ChevronDown, Chevro
 import type { AiHealingState, AiHealingPhase } from '@/hooks/execution/useAiHealingStream';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText } from '@/i18n/DebtText';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 
 function useElapsedTime(active: boolean): number {
@@ -39,11 +41,11 @@ function useElapsedTime(active: boolean): number {
   return elapsed;
 }
 
-const PHASE_STEPS: { phase: AiHealingPhase; label: string; icon: typeof Search }[] = [
-  { phase: 'diagnosing', label: 'Diagnosing', icon: Search },
-  { phase: 'applying', label: 'Applying Fixes', icon: Wrench },
-  { phase: 'completed', label: 'Completed', icon: CheckCircle2 },
-];
+const PHASE_STEPS = [
+  { phase: 'diagnosing', labelKey: 'step_diagnosing', icon: Search },
+  { phase: 'applying', labelKey: 'step_applying', icon: Wrench },
+  { phase: 'completed', labelKey: 'step_completed', icon: CheckCircle2 },
+] as const satisfies readonly { phase: AiHealingPhase; labelKey: string; icon: typeof Search }[];
 
 function phaseIndex(phase: AiHealingPhase): number {
   if (phase === 'started' || phase === 'diagnosing') return 0;
@@ -104,6 +106,7 @@ interface AiHealingStreamOverlayProps {
 
 export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOverlayProps) {
   const { t } = useTranslation();
+  const o = t.overview.ai_healing_overlay;
   const logRef = useRef<HTMLDivElement>(null);
   const [collapsed, setCollapsed] = useState(false);
   const activeIdx = useReachedStep(healing.phase);
@@ -135,33 +138,29 @@ export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOv
             )}
           </div>
           <span className="typo-heading text-foreground/90 uppercase typo-body">
-            <DebtText k="auto_ai_healing_2ec57639" /> {isFailed ? 'Failed' : isDone ? 'Complete' : 'In Progress'}
+            <DebtText k="auto_ai_healing_2ec57639" /> {isFailed ? o.status_failed : isDone ? o.status_complete : o.status_in_progress}
           </span>
           {isDone && elapsed > 0 && (
             <span className="typo-caption text-foreground">{elapsed}s</span>
           )}
-          {!isDone && (
-            <div className="w-3.5 h-3.5 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin" />
-          )}
         </div>
         <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => setCollapsed((c) => !c)}
-            className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
-            title={collapsed ? 'Expand' : 'Collapse'}
-          >
-            {collapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
-          </button>
-          {isDone && (
-            <button
-              type="button"
-              onClick={onDismiss}
-              className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
-              title={t.common.dismiss}
+          <Tooltip content={collapsed ? o.expand : o.collapse}>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => setCollapsed((c) => !c)}
+              aria-label={collapsed ? o.expand : o.collapse}
             >
-              <X className="w-3.5 h-3.5" />
-            </button>
+              {collapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+            </Button>
+          </Tooltip>
+          {isDone && (
+            <Tooltip content={t.common.dismiss}>
+              <Button variant="ghost" size="icon-sm" onClick={onDismiss} aria-label={t.common.dismiss}>
+                <X className="w-3.5 h-3.5" />
+              </Button>
+            </Tooltip>
           )}
         </div>
       </div>
@@ -204,7 +203,7 @@ export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOv
                         <Icon className="w-3 h-3" />
                       </div>
                       <span className={`typo-caption tracking-wide ${labelClass}`}>
-                        {step.label}
+                        {o[step.labelKey]}
                       </span>
                     </div>
                     {isCurrent && elapsed > 0 && (
