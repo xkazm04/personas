@@ -1,4 +1,4 @@
-use rusqlite::{params, Row};
+use rusqlite::{params, OptionalExtension, Row};
 use tracing::warn;
 
 use crate::models::{ExecutionKnowledge, KnowledgeGraphSummary};
@@ -68,13 +68,14 @@ pub fn upsert(
             let mut new_data: serde_json::Value = serde_json::from_str(pattern_data)
                 .unwrap_or_else(|_| serde_json::Value::Object(Default::default()));
 
+            // Only a missing row starts a fresh history; a real read error aborts.
             let existing: Option<String> = tx
             .query_row(
                 "SELECT pattern_data FROM execution_knowledge WHERE persona_id = ?1 AND knowledge_type = ?2 AND pattern_key = ?3",
                 params![persona_id, knowledge_type, pattern_key],
                 |row| row.get(0),
             )
-            .ok();
+            .optional()?;
 
             let mut recent: Vec<bool> = existing
                 .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
@@ -585,6 +586,67 @@ mod tests {
         .unwrap();
         let id = persona.id.clone();
         (pool, id)
+    }
+
+    /// A real read error on the prior row (here: a BLOB stored where the
+    /// `pattern_data` TEXT is read) must abort the upsert. Only a missing row
+    /// starts a fresh `recentResults` window; mapping every error to "no row"
+    /// restarted the sparkline while the counters kept accumulating.
+    #[test]
+    fn a_prior_row_read_error_aborts_the_upsert_instead_of_resetting_history() {
+        let (pool, persona_id) = setup();
+        for i in 0..3 {
+            upsert(
+                &pool,
+                &persona_id,
+                None,
+                "tool_sequence",
+                "k",
+                "{}",
+                true,
+                0.0,
+                1.0,
+                &format!("exec-{i}"),
+            )
+            .unwrap();
+        }
+        {
+            let conn = pool.conn("test:knowledge-blob").unwrap();
+            conn.execute(
+                "UPDATE execution_knowledge SET pattern_data = x'DEADBEEF' WHERE pattern_key = 'k'",
+                [],
+            )
+            .unwrap();
+        }
+        let res = upsert(
+            &pool,
+            &persona_id,
+            None,
+            "tool_sequence",
+            "k",
+            "{}",
+            false,
+            0.0,
+            1.0,
+            "exec-3",
+        );
+        assert!(
+            res.is_err(),
+            "a read error must propagate, not restart the window"
+        );
+        let conn = pool.conn("test:knowledge-blob-after").unwrap();
+        let (succ, fail): (i64, i64) = conn
+            .query_row(
+                "SELECT success_count AS s, failure_count AS f FROM execution_knowledge WHERE pattern_key = 'k'",
+                [],
+                |r| Ok((r.get("s")?, r.get("f")?)),
+            )
+            .unwrap();
+        assert_eq!(
+            (succ, fail),
+            (3, 0),
+            "counters must not advance on an aborted upsert"
+        );
     }
 
     #[test]
