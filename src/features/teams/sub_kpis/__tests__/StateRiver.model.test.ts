@@ -16,7 +16,7 @@ import {
 const WEEK = 7 * 86_400_000;
 
 function w(i: number, over: Partial<WeeklyState> = {}): WeeklyState {
-  return { week: i * WEEK, met: 0, onTrack: 0, offTrack: 0, measured: 0, partial: false, ...over };
+  return { week: i * WEEK, met: 0, onTrack: 0, offTrack: 0, measured: 0, unknown: 0, partial: false, ...over };
 }
 
 function kpi(id: string, project_id: string, current_value: number | null): DevKpi {

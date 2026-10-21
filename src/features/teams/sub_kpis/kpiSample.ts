@@ -85,6 +85,9 @@ export interface WeeklyState {
   offTrack: number;
   /** KPIs with at least one production measurement at or before week end. */
   measured: number;
+  /** KPIs whose fetched history was cut by the per-KPI read limit and starts
+   *  after this week ended: truncation, not absence. Never counted as dry. */
+  unknown: number;
   /** The current, still-open week. */
   partial: boolean;
 }
@@ -119,6 +122,13 @@ export function mondayOf(ms: number, timeZone: string): number {
   return monday - wallMs;
 }
 
+/** Epoch ms of the oldest fetched row when the read hit its limit, else -Infinity. */
+function truncationHorizon(rows: DevKpiMeasurement[], limit: number): number {
+  if (rows.length < limit) return -Infinity;
+  const times = rows.map(measuredAtMs).filter(Number.isFinite);
+  return times.length > 0 ? Math.min(...times) : -Infinity;
+}
+
 /**
  * Weekly state distribution of a KPI set, rebuilt from the append-only
  * measurement log: for each of the last `weeks` weeks, every KPI's latest
@@ -133,11 +143,15 @@ export function weeklyStateSeries(
   weeks = 12,
   now = Date.now(),
   timeZone = operatorTimeZone(),
+  perKpiLimit = Infinity,
 ): WeeklyState[] {
   const WEEK = 7 * 86_400_000;
   const thisMonday = mondayOf(now, timeZone);
-  const series: Array<{ kpi: DevKpi; pts: SamplePoint[] }> = kpis.map((kpi) => ({
+  const series: Array<{ kpi: DevKpi; pts: SamplePoint[]; horizon: number }> = kpis.map((kpi) => ({
     kpi,
+    // The bulk read keeps the newest `perKpiLimit` rows across ALL channels. A
+    // KPI that hit the limit has no history before its oldest returned row.
+    horizon: truncationHorizon(trends[kpi.id] ?? [], perKpiLimit),
     pts: (trends[kpi.id] ?? [])
       .filter((m) => (m.env ?? 'production') === 'production' && !NOT_DIRECTLY_MEASURED.has(m.source))
       .map((m) => ({ t: measuredAtMs(m), v: m.value }))
@@ -148,8 +162,9 @@ export function weeklyStateSeries(
   for (let i = weeks - 1; i >= 0; i--) {
     const week = thisMonday - i * WEEK;
     const end = week + WEEK;
-    const row: WeeklyState = { week, met: 0, onTrack: 0, offTrack: 0, measured: 0, partial: i === 0 };
-    for (const { kpi, pts } of series) {
+    const row: WeeklyState = { week, met: 0, onTrack: 0, offTrack: 0, measured: 0, unknown: 0, partial: i === 0 };
+    for (const { kpi, pts, horizon } of series) {
+      if (end <= horizon) { row.unknown += 1; continue; }
       let last: SamplePoint | undefined;
       for (const p of pts) { if (p.t < end) last = p; else break; }
       if (!last) continue;

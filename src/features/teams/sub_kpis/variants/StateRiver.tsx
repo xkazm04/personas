@@ -20,8 +20,8 @@ import { buildEstate } from '../estate/kpiEstate';
 import { EstateHeadline } from '../estate/EstateHeadline';
 import { KT } from '../estate/kpiType';
 import { useKpiAltitude } from '../estate/useKpiAltitude';
-import { weeklyStateSeries } from '../kpiSample';
-import { useLazyTrends } from '../useKpiOverview';
+import { operatorTimeZone, weeklyStateSeries } from '../kpiSample';
+import { TRENDS_PER_KPI, useLazyTrends } from '../useKpiOverview';
 import { planRiverIds } from './StateRiver.model';
 import { toRiverbed } from './river/riverbed';
 import { RiverbedChart } from './river/RiverbedChart';
@@ -50,7 +50,7 @@ export default function StateRiver({ overview, loading, onFocus }: KpiVariantPro
   const scopeKpis = altitude.project ? altitude.project.kpis : estate.kpis;
   const scopeTally = altitude.project ? altitude.project.tally : estate.tally;
   const mainBed = useMemo(
-    () => toRiverbed(weeklyStateSeries(scopeKpis, trends, WEEKS), scopeTally.total),
+    () => toRiverbed(weeklyStateSeries(scopeKpis, trends, WEEKS, Date.now(), operatorTimeZone(), TRENDS_PER_KPI), scopeTally.total),
     [scopeKpis, trends, scopeTally.total],
   );
 
@@ -74,7 +74,7 @@ export default function StateRiver({ overview, loading, onFocus }: KpiVariantPro
         }));
     return places.map((place) => ({
       ...place,
-      bed: toRiverbed(weeklyStateSeries(place.kpis, trends, WEEKS), place.tally.total),
+      bed: toRiverbed(weeklyStateSeries(place.kpis, trends, WEEKS, Date.now(), operatorTimeZone(), TRENDS_PER_KPI), place.tally.total),
     }));
   }, [estate, altitude.project, trends]);
 

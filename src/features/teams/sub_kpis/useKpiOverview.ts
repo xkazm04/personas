@@ -73,6 +73,9 @@ export function useKpiOverview(): { overview: KpiProjectRollup[]; loading: boole
   return { overview, loading: kpisLoading || groupsLoading };
 }
 
+/** Newest rows kept per KPI by the bulk read (all channels). */
+export const TRENDS_PER_KPI = 30;
+
 export type LazyTrendsStatus = 'idle' | 'loading' | 'ready' | 'failed';
 
 /**
@@ -83,7 +86,7 @@ export type LazyTrendsStatus = 'idle' | 'loading' | 'ready' | 'failed';
  */
 export function useLazyTrends(
   ids: string[],
-  perKpi = 30,
+  perKpi = TRENDS_PER_KPI,
 ): { trends: Record<string, DevKpiMeasurement[]>; status: LazyTrendsStatus; retry: () => void } {
   const key = useMemo(() => [...ids].sort().join(','), [ids]);
   const [state, setState] = useState<{ key: string; trends: Record<string, DevKpiMeasurement[]>; status: LazyTrendsStatus }>({

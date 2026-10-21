@@ -96,7 +96,7 @@ export function RiverbedChart({ bed, height }: { bed: Riverbed; height: number }
 
       {/* A dry week is a tick on the centreline: present, and empty. */}
       {points.map((p, i) =>
-        p.read === 0 ? (
+        p.read === 0 && p.unknown === 0 ? (
           <line
             key={p.week}
             x1={x(i)}

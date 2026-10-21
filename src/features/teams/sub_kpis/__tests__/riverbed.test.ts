@@ -8,7 +8,7 @@ const WEEK = 7 * 86_400_000;
 const MONDAY = Date.UTC(2026, 6, 6);
 
 function week(i: number, over: Partial<WeeklyState> = {}): WeeklyState {
-  return { week: MONDAY + i * WEEK, met: 0, onTrack: 0, offTrack: 0, measured: 0, partial: false, ...over };
+  return { week: MONDAY + i * WEEK, met: 0, onTrack: 0, offTrack: 0, measured: 0, unknown: 0, partial: false, ...over };
 }
 
 describe('toRiverbed', () => {
@@ -18,6 +18,10 @@ describe('toRiverbed', () => {
     expect(bed.points).toHaveLength(2);
   });
 
+  it('does not count a truncated-history week as dry', () => {
+    const bed = toRiverbed([week(0, { unknown: 2 }), week(1)], 2);
+    expect(bed.dryWeeks).toBe(1);
+  });
   it('counts a week with no reading as DRY, never as a zero verdict', () => {
     const bed = toRiverbed([week(0), week(1, { measured: 2, met: 2 }), week(2)], 10);
     expect(bed.dryWeeks).toBe(2);

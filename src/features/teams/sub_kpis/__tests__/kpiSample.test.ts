@@ -71,4 +71,17 @@ describe('weeklyStateSeries', () => {
     const rows = weeklyStateSeries([kpi], { a: [m('a', 1, 10, { env: 'test', source: 'simulation' })] }, 2, T0 + 14 * DAY, 'UTC');
     expect(rows.every((r) => r.measured === 0)).toBe(true);
   });
+  it('marks weeks before a truncated read horizon unknown, never dry', () => {
+    const now = T0 + 21 * DAY;
+    // Six rows survived a limit of six: the log may hold older ones that were cut.
+    const rows6 = [14, 15, 16, 17, 18, 19].map((d) => m('a', d, 10, d % 2 ? { env: 'local', source: 'simulation' } : {}));
+    const cut = weeklyStateSeries([kpi], { a: rows6 }, 5, now, 'UTC', 6);
+    expect(cut[0]!.unknown).toBe(1);
+    expect(cut[0]!.measured).toBe(0);
+    expect(cut[cut.length - 1]!.unknown).toBe(0);
+    expect(cut[cut.length - 1]!.measured).toBe(1);
+    // Under the limit nothing was cut, so the early weeks are honestly dry.
+    const whole = weeklyStateSeries([kpi], { a: rows6 }, 5, now, 'UTC', 7);
+    expect(whole.every((r) => r.unknown === 0)).toBe(true);
+  });
 });
