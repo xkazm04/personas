@@ -14815,8 +14815,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "strong",
-          "state": "unknown",
-          "priorNotApplicable": 20
+          "state": "not-applicable",
+          "priorNotApplicable": 20,
+          "evidence": "src/features/home/sub_cockpit/widgets/PersonaCreationOfferWidget.tsx:17 'narrates' means the widget calls startGuidance, which lives in src/features/companions/athena/athenaStore.ts; no file in the 31-file cockpit-widget context captures, transcribes, synthesizes or plays speech (grep for synthesize/companion_tts/speak is empty)",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23
         },
         {
           "subject": "module-design",
@@ -32862,8 +32866,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "strong",
-          "state": "unknown",
-          "priorNotApplicable": 20
+          "state": "deviation",
+          "priorNotApplicable": 20,
+          "evidence": "src/stores/systemStore.ts:151 persists athenaVoiceEngine raw (right: normalize on read) but the store exposes only the raw read, so src/features/companions/athena/sub_create/engine/useCreateAthenaEngine.ts:72 bypasses normalizeAthenaTtsEngine and a stored 'elevenlabs' writes the picked voice into the pocket slot while playback normalizes to kokoro",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23
         },
         {
           "subject": "mcp-tools",

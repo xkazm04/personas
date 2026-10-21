@@ -1,0 +1,29 @@
+{"schema": "conform-run/1", "worker": "2ca86bf8-ad6c-44c3-9d1b-323e26c12a06", "subject": "voice-io",
+ "evaluatedAt": "2026-10-21T17:55:41Z",
+ "pairs": [
+  {"context": "63a0a6fc-fa9a-453c-943d-4579b83f0ca3", "subject": "voice-io", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/stores/systemStore.ts:151 persists athenaVoiceEngine raw (right: normalize on read) but the store exposes only the raw read, so src/features/companions/athena/sub_create/engine/useCreateAthenaEngine.ts:72 bypasses normalizeAthenaTtsEngine and a stored 'elevenlabs' writes the picked voice into the pocket slot while playback normalizes to kokoro",
+   "techniques": [
+    {"technique": "engine-abstraction", "verdict": "deviation", "evidence": "src/stores/systemStore.ts:151 the retired-engine door (src/stores/slices/system/athenaSlice.ts:137) is optional, not the only read path: src/features/companions/athena/sub_create/variants/table/useTableFacts.ts:72 shows the raw stored engine name while :48 hand-normalizes inline as a second door; athenaSttEngine (src/stores/systemStore.ts:146) has no normalizer at all"},
+    {"technique": "on-device-vs-cloud", "verdict": "not-applicable", "evidence": "src/stores/systemStore.ts:146 the store only persists the STT engine choice; residency disclosure lives in the voice panel, outside this context"}
+   ],
+   "registryProposal": "src/stores/slices/system/athenaSlice.ts, which holds the voice-engine normalization door, belongs to no context in context-map.json, so no pair can judge the door itself; a context rescan should place it"},
+  {"context": "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f", "subject": "voice-io", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/home/sub_cockpit/widgets/PersonaCreationOfferWidget.tsx:17 'narrates' means the widget calls startGuidance, which lives in src/features/companions/athena/athenaStore.ts; no file in the 31-file cockpit-widget context captures, transcribes, synthesizes or plays speech (grep for synthesize/companion_tts/speak is empty)",
+   "techniques": []}
+ ],
+ "declined": [
+  {"subject": "voice-io", "context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba", "reason": "applicable but under the evidence floor: src/stores/slices/system/tourSlice.ts:219 authors tour narration for the ear (speech-ready-text, realized at authoring) and :224 makes a voiceless step a silent coach-mark (voice-ux-integration degradation), but the slice only holds data and those 2 of 21 techniques cannot make a conformant; the pipeline that speaks it is onboarding-components (already a deviation)"},
+  {"subject": "voice-io", "context": "3effd422-2610-4c8a-bc02-53aceafd827c", "reason": "deviation already re-judged 2026-10-21 against the current digest sha256-b2:29f8b158c4d44054 rev 23; nothing to re-judge"},
+  {"subject": "voice-io", "context": "9e46b252-8eb1-4a15-a627-f7e342f1d85a", "reason": "deviation already re-judged 2026-10-21 at rev 23 against the current digest"},
+  {"subject": "voice-io", "context": "5ed4c95e-037f-459e-ba3e-aa1300fd7504", "reason": "deviation already re-judged 2026-10-21 at rev 23 against the current digest"},
+  {"subject": "voice-io", "context": "bcb603ad-ce58-4b76-9623-aa99ace984af", "reason": "deviation already re-judged 2026-10-21 at rev 23 against the current digest"},
+  {"subject": "voice-io", "context": "aa2197a5-6b7c-46ff-a6cd-8172d2984f50", "reason": "deviation already re-judged 2026-10-21 at rev 23 against the current digest"},
+  {"subject": "voice-io", "context": "3f38546e-e970-4837-97f7-f0504aa32daf", "reason": "deviation already re-judged 2026-10-21 at rev 23 against the current digest"}
+ ],
+ "consults": [
+  {"ts": "2026-10-21T17:55:41Z", "bundle": "software-engineering", "subjects": ["voice-io"], "techniques": ["engine-abstraction", "on-device-vs-cloud"], "deviations": 1},
+  {"ts": "2026-10-21T17:55:41Z", "bundle": "software-engineering", "subjects": ["voice-io"], "techniques": [], "deviations": 0}
+ ]}

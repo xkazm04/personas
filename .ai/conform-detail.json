@@ -33401,6 +33401,38 @@
           "evidence": "src-tauri/src/cloud/runner.rs:57 run_cloud_execution takes the cloud_execution_id as an argument from memory; the rule 'persist the remote handle and lease before returning, poll from a background runtime outside the run with the store as truth' is unmet - polling is host-side (not model-visible), but the handle is not durable"
         }
       ]
+    },
+    "63a0a6fc-fa9a-453c-943d-4579b83f0ca3/voice-io": {
+      "context": "stores",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:55:41.000Z",
+      "worker": "2ca86bf8-ad6c-44c3-9d1b-323e26c12a06",
+      "techniques": [
+        {
+          "technique": "engine-abstraction",
+          "verdict": "deviation",
+          "evidence": "src/stores/systemStore.ts:151 the retired-engine door (src/stores/slices/system/athenaSlice.ts:137) is optional, not the only read path: src/features/companions/athena/sub_create/variants/table/useTableFacts.ts:72 shows the raw stored engine name while :48 hand-normalizes inline as a second door; athenaSttEngine (src/stores/systemStore.ts:146) has no normalizer at all"
+        },
+        {
+          "technique": "on-device-vs-cloud",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/systemStore.ts:146 the store only persists the STT engine choice; residency disclosure lives in the voice panel, outside this context"
+        }
+      ],
+      "registryProposal": "src/stores/slices/system/athenaSlice.ts, which holds the voice-engine normalization door, belongs to no context in context-map.json, so no pair can judge the door itself; a context rescan should place it"
+    },
+    "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f/voice-io": {
+      "context": "home-cockpit-widgets",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:55:41.000Z",
+      "worker": "2ca86bf8-ad6c-44c3-9d1b-323e26c12a06",
+      "techniques": []
     }
   }
 }

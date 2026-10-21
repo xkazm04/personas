@@ -1890,3 +1890,5 @@
 {"ts":"2026-10-21T17:48:30Z","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":["indeterminate-closure-on-interruption"],"deviations":1}
 {"ts":"2026-10-21T17:48:30Z","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":["bounded-projection-of-external-work"],"deviations":1}
 {"ts":"2026-10-21T17:48:30Z","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":["nested-run-is-not-its-parent"],"deviations":0}
+{"ts":"2026-10-21T17:55:41Z","bundle":"software-engineering","subjects":["voice-io"],"techniques":["engine-abstraction","on-device-vs-cloud"],"deviations":1}
+{"ts":"2026-10-21T17:55:41Z","bundle":"software-engineering","subjects":["voice-io"],"techniques":[],"deviations":0}
