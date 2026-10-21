@@ -1,0 +1,41 @@
+{"schema": "conform-run/1", "worker": "653c0fba-1ed8-4df4-8dbf-08729db6cd0b", "subject": "settings",
+ "evaluatedAt": "2026-10-21T12:31:00Z",
+ "pairs": [
+  {"context": "14c7d145-2166-454b-aee5-d69d9d527d79", "subject": "settings", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/lib/appearanceMirror.ts:165 rebuilds the durable appearance_preferences document from only the eleven members this build's snapshotAppearance knows and writes it whole (:166), so any member a newer build wrote is deleted by the next appearance change made in an older build",
+   "techniques": [
+    {"technique": "in-place-document-patch", "verdict": "deviation", "evidence": "src/lib/appearanceMirror.ts:166 writes the whole document from a fresh snapshot instead of patching the named members and preserving unknown ones"},
+    {"technique": "typed-accessors", "verdict": "realized", "evidence": "src/lib/appearanceMirror.ts:92 coerceAppearancePrefs parses the untrusted blob per member with a safe fallback rather than trusting the stored shape"}
+   ]},
+  {"context": "621caefc-8ae0-42e7-89b6-8e879ad62814", "subject": "settings", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/credentials/external_api_keys.rs:90 hard-deletes the key with no settings_audit_log insert while create (:45) and revoke (:77) write one, so the one irreversible key mutation is the only one missing from Settings > History",
+   "techniques": [
+    {"technique": "settings-audit-and-history", "verdict": "deviation", "evidence": "src-tauri/src/commands/credentials/external_api_keys.rs:90 delete path writes only a tracing line, no audit record"}
+   ]},
+  {"context": "97025c06-0d64-4025-8a1f-98b90ba1c233", "subject": "settings", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_model_config/libs/OllamaCloudPresets.ts:5 the context now holds only a base-URL constant and per-persona ModelProfile dropdown helpers (:37); the orphan ollama_api_key copy the prior deviation cited was deleted (0bb792cd50), so it reads and writes no app settings key - the raw literal survives outside this context at src/features/settings/sub_byom/components/ByomApiKeyManager.tsx:50",
+   "techniques": [
+    {"technique": "key-registry", "verdict": "not-applicable", "evidence": "src/features/agents/sub_model_config/libs/OllamaCloudPresets.ts:5 no settings key is named in this context any more"}
+   ]},
+  {"context": "7159d27d-86c2-43be-a83f-8b50c4c816be", "subject": "settings", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/settings/sub_limits/components/LimitsSettings.tsx:170 defaults monthly_cost_ceiling_usd to '0', which consumers read as 'no ceiling' (src-tauri/src/commands/infrastructure/overnight.rs:328), so an install that never opened Limits dispatches overnight work with no app-wide dollar ceiling: the fail-open inversion",
+   "techniques": [
+    {"technique": "typed-accessors", "verdict": "deviation", "evidence": "src-tauri/db/src/settings_keys.rs:636 MONTHLY_COST_CEILING_USD_DEFAULT = 0.0 means unlimited; a safety ceiling's absent value must fail closed"},
+    {"technique": "setting-kinds", "verdict": "deviation", "evidence": "src/features/settings/sub_limits/components/LimitsSettings.tsx:170 the ceiling is read through the same generic useAppSetting door as preferences, with no ceiling kind declaring its fail direction"}
+   ]}
+ ],
+ "declined": [
+  {"subject": "settings", "context": "cab45fee-e439-4bff-9924-217b1acc17f8", "reason": "plugins-artist-hooks: every entry point (src/features/plugins/artist/hooks/*) was deleted with the Artist plugin in 0697f13438 (tables retired by src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:1); there is no code to judge - a dead context the context map should drop, not a verdict"},
+  {"subject": "settings", "context": "b2d7acbc-0191-46e4-8a4d-87c229410c7e", "reason": "plugins-artist-media-studio-hooks: entry points under src/features/plugins/artist/sub_media_studio/hooks were deleted in 0697f13438; nothing left to judge"},
+  {"subject": "settings", "context": "742be60e-3ddf-4160-b7cb-4c5cac5965a0", "reason": "plugins-research-lab-shared is a weak row and its plugin was retired in the same commit 0697f13438; skipped by the weak-context rule"}
+ ],
+ "consults": [
+  {"ts": "2026-10-21T12:31:00Z", "bundle": "software-engineering", "subjects": ["settings"], "techniques": ["in-place-document-patch", "typed-accessors"], "deviations": 1},
+  {"ts": "2026-10-21T12:31:00Z", "bundle": "software-engineering", "subjects": ["settings"], "techniques": ["settings-audit-and-history"], "deviations": 1},
+  {"ts": "2026-10-21T12:31:00Z", "bundle": "software-engineering", "subjects": ["settings"], "techniques": ["key-registry"], "deviations": 0},
+  {"ts": "2026-10-21T12:31:00Z", "bundle": "software-engineering", "subjects": ["settings"], "techniques": ["typed-accessors", "setting-kinds"], "deviations": 1}
+ ]}

@@ -1733,3 +1733,7 @@
 {"ts":"2026-10-21T12:29:00Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["tool-schema-design","untrusted-result-handling"],"deviations":1,"context":"output-stream-parser"}
 {"ts":"2026-10-21T12:29:00Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["first-party-agent-is-a-principal","authentication-and-scoping","tool-identity-vs-tool-name","tool-schema-design"],"deviations":1,"context":"webhook-ingestion"}
 {"ts":"2026-10-21T12:29:00Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["tool-schema-design","untrusted-result-handling","client-integration"],"deviations":0,"context":"vault-shared-playground"}
+{"ts":"2026-10-21T12:31:00Z","bundle":"software-engineering","subjects":["settings"],"techniques":["in-place-document-patch","typed-accessors"],"deviations":1}
+{"ts":"2026-10-21T12:31:00Z","bundle":"software-engineering","subjects":["settings"],"techniques":["settings-audit-and-history"],"deviations":1}
+{"ts":"2026-10-21T12:31:00Z","bundle":"software-engineering","subjects":["settings"],"techniques":["key-registry"],"deviations":0}
+{"ts":"2026-10-21T12:31:00Z","bundle":"software-engineering","subjects":["settings"],"techniques":["typed-accessors","setting-kinds"],"deviations":1}

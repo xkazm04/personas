@@ -5472,18 +5472,29 @@
       "subject": "settings",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-5",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:31:00.000Z",
+      "worker": "653c0fba-1ed8-4df4-8dbf-08729db6cd0b",
       "techniques": [
         {
           "technique": "settings-audit-and-history",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/credentials/external_api_keys.rs:91 delete is unaudited; and create keys its record by the key's name (:49) while revoke keys it by id (:78), so one key's history is split across two identifiers."
+          "evidence": "src-tauri/src/commands/credentials/external_api_keys.rs:90 delete path writes only a tracing line, no audit record"
         },
         {
           "technique": "save-experience",
           "verdict": "conformant",
-          "evidence": "src/features/settings/sub_api_keys/components/ApiKeysSettings.tsx:322 delete is arm-then-confirm, and a failed delete is surfaced (:158) rather than swallowed."
+          "evidence": "src/features/settings/sub_api_keys/components/ApiKeysSettings.tsx:322 delete is arm-then-confirm, and a failed delete is surfaced (:158) rather than swallowed.",
+          "carriedFrom": "2026-09-23"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/credentials/external_api_keys.rs:91 hard-deletes the key with no settings_audit_log insert while create (:46) and revoke (:78) write one, so the one irreversible key mutation is the only one missing from Settings > History.",
+          "evaluatedAt": "2026-09-23",
+          "worker": null,
+          "reason": "replaced by 653c0fba-1ed8-4df4-8dbf-08729db6cd0b"
         }
       ]
     },
@@ -5985,49 +5996,76 @@
       "subject": "settings",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-5",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:31:00.000Z",
+      "worker": "653c0fba-1ed8-4df4-8dbf-08729db6cd0b",
       "techniques": [
         {
           "technique": "in-place-document-patch",
           "verdict": "deviation",
-          "evidence": "src/lib/appearanceMirror.ts:165 whole-document write from a known-member snapshot; hydrate does patch the live store in place through its setters (:138), but the write side drops unknown members."
+          "evidence": "src/lib/appearanceMirror.ts:166 writes the whole document from a fresh snapshot instead of patching the named members and preserving unknown ones"
         },
         {
           "technique": "typed-accessors",
-          "verdict": "conformant",
-          "evidence": "src-tauri/db/src/settings_keys.rs:1516 validates the stable enums at the write door, and src/lib/appearanceMirror.ts:92 coerces each field on read, keeping the current value when a field is invalid."
+          "verdict": "realized",
+          "evidence": "src/lib/appearanceMirror.ts:92 coerceAppearancePrefs parses the untrusted blob per member with a safe fallback rather than trusting the stored shape"
         },
         {
           "technique": "save-experience",
           "verdict": "deviation",
-          "evidence": "src/lib/appearanceMirror.ts:175 the 400 ms debounce is never flushed on close, and boot only pushes when no row exists (:211), so an edit lost in that window leaves the durable mirror stale until the next change."
+          "evidence": "src/lib/appearanceMirror.ts:175 the 400 ms debounce is never flushed on close, and boot only pushes when no row exists (:211), so an edit lost in that window leaves the durable mirror stale until the next change.",
+          "carriedFrom": "2026-09-23"
         }
       ],
-      "registryProposal": "The settings Boundaries section hands 'client-side persistence' to client-state. It should also say that a localStorage-authoritative value with a durable app_settings mirror is in scope; the prior not-applicable verdict came from reading that boundary without the mirror."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/lib/appearanceMirror.ts:165 rebuilds the durable appearance_preferences document from only the members this build knows and writes it whole (:166), so any appearance member a newer build wrote is deleted by the next change made in an older build.",
+          "evaluatedAt": "2026-09-23",
+          "worker": null,
+          "reason": "replaced by 653c0fba-1ed8-4df4-8dbf-08729db6cd0b"
+        }
+      ]
     },
     "7159d27d-86c2-43be-a83f-8b50c4c816be/settings": {
       "context": "settings-network",
       "subject": "settings",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-5",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:31:00.000Z",
+      "worker": "653c0fba-1ed8-4df4-8dbf-08729db6cd0b",
       "techniques": [
         {
           "technique": "typed-accessors",
           "verdict": "deviation",
-          "evidence": "src/features/settings/sub_limits/components/LimitsSettings.tsx:118 an absent or zero ceiling means unlimited (empty is also treated as 0, :99), where the rule is that an absent safety ceiling fails closed."
+          "evidence": "src-tauri/db/src/settings_keys.rs:636 MONTHLY_COST_CEILING_USD_DEFAULT = 0.0 means unlimited; a safety ceiling's absent value must fail closed"
+        },
+        {
+          "technique": "setting-kinds",
+          "verdict": "deviation",
+          "evidence": "src/features/settings/sub_limits/components/LimitsSettings.tsx:170 the ceiling is read through the same generic useAppSetting door as preferences, with no ceiling kind declaring its fail direction"
         },
         {
           "technique": "settings-audit-and-history",
           "verdict": "deviation",
-          "evidence": "src/features/settings/sub_history/components/SettingsHistoryTab.tsx:208 renders the raw key and raw serialized before/after values (:234) instead of display labels, and RecentChangeChip.tsx:50 shows a category's last change at any age, with no freshness horizon."
+          "evidence": "src/features/settings/sub_history/components/SettingsHistoryTab.tsx:208 renders the raw key and raw serialized before/after values (:234) instead of display labels, and RecentChangeChip.tsx:50 shows a category's last change at any age, with no freshness horizon.",
+          "carriedFrom": "2026-09-23"
         },
         {
           "technique": "key-registry",
           "verdict": "deviation",
-          "evidence": "src/features/settings/sub_limits/components/LimitsSettings.tsx:22 the key is a local string literal, not a shared constant; the Rust allowlist catches write typos, but a read typo silently returns the default."
+          "evidence": "src/features/settings/sub_limits/components/LimitsSettings.tsx:22 the key is a local string literal, not a shared constant; the Rust allowlist catches write typos, but a read typo silently returns the default.",
+          "carriedFrom": "2026-09-23"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/settings/sub_limits/components/LimitsSettings.tsx:118 defaults monthly_cost_ceiling_usd to '0', which every consumer reads as 'no ceiling' (src-tauri/src/commands/infrastructure/overnight.rs:328), so an install that never opened Limits dispatches overnight work with no app-wide dollar ceiling: the fail-open inversion.",
+          "evaluatedAt": "2026-09-23",
+          "worker": null,
+          "reason": "replaced by 653c0fba-1ed8-4df4-8dbf-08729db6cd0b"
         }
       ]
     },
@@ -13252,28 +13290,38 @@
       "context": "model-config",
       "subject": "settings",
       "bundle": "software-engineering",
-      "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T01:31:42.000Z",
-      "worker": "95fd1114-33fe-417c-9447-c34d6f891573",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:31:00.000Z",
+      "worker": "653c0fba-1ed8-4df4-8dbf-08729db6cd0b",
       "techniques": [
         {
           "technique": "key-registry",
-          "verdict": "deviation",
-          "evidence": "src/features/agents/sub_model_config/libs/OllamaCloudPresets.ts:6 caller-side key constant is neither generated from nor tested against the store allowlist, and is unused (0 importers) while the real call site passes a literal"
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_model_config/libs/OllamaCloudPresets.ts:5 no settings key is named in this context any more"
         },
         {
           "technique": "typed-accessors",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/sub_model_config/libs/compareHelpers.ts:63 the context's remaining code is static model catalogues; the useEffectiveConfig/ModelSelector settings surface was deleted (d71e0eb948, c7d45f0d55)"
+          "evidence": "src/features/agents/sub_model_config/libs/compareHelpers.ts:63 the context's remaining code is static model catalogues; the useEffectiveConfig/ModelSelector settings surface was deleted (d71e0eb948, c7d45f0d55)",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "save-experience",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/sub_model_config/libs/OllamaCloudPresets.ts:6 no save surface remains in this context; only two lib files are left"
+          "evidence": "src/features/agents/sub_model_config/libs/OllamaCloudPresets.ts:6 no save surface remains in this context; only two lib files are left",
+          "carriedFrom": "2026-10-10"
         }
       ],
-      "registryProposal": "The key this context names is a secret held in plaintext app_settings (src-tauri/db/src/settings_keys.rs:1357 states the column has no encryption hook). The golden path says 'secrets are not settings' only under Boundaries; no technique gives a decision rule or migration path for an existing secret-bearing key. A short technique section (or a pointer into credential-vault) on evicting a secret already in the settings store would make that boundary judgeable."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_model_config/libs/OllamaCloudPresets.ts:6 exports a second hand-written copy of the backend key ollama_api_key (src-tauri/db/src/settings_keys.rs:28) that nothing imports, while the only writer uses a raw literal (src/features/settings/sub_byom/components/ByomApiKeyManager.tsx:48): two vocabularies, so a backend rename leaves both compiling against an orphan key",
+          "evaluatedAt": "2026-10-10T01:31:42.000Z",
+          "worker": "95fd1114-33fe-417c-9447-c34d6f891573",
+          "reason": "replaced by 653c0fba-1ed8-4df4-8dbf-08729db6cd0b"
+        }
+      ]
     },
     "876c0b4e-6472-4544-a21b-56e7529fb6b3/settings": {
       "context": "vault-shared-vector",
