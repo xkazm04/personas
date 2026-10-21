@@ -6811,7 +6811,11 @@
           "revision": 26,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src-tauri/src/commands/contest/node.rs:542 drives the real contest instrument against a temp project and fails rather than skips under CI (:524, clone verified at .github/workflows/ci.yml:983); decisions are lifted into pure units (src-tauri/src/commands/contest/env.rs:30) and the one structural pin needles a full call (src-tauri/src/commands/contest/driver.rs:1413)",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:5521806124d93882",
+          "evaluatedRevision": 26
         },
         {
           "subject": "translation-quality-measurement",
@@ -15172,7 +15176,11 @@
           "revision": 26,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/home/sub_cockpit/defaultCockpit.test.ts:65 is named uses only registered widget kinds but asserts ids only (:67) and never reads cockpitWidgetRegistry (src/features/home/sub_cockpit/widgetRegistry.ts:96, a Record<string, ...> tsc cannot check), so a registry rename leaves the starter cockpit composing an unregistered kind with the suite green",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:5521806124d93882",
+          "evaluatedRevision": 26
         },
         {
           "subject": "session-resume",
@@ -32587,7 +32595,11 @@
           "revision": 26,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/browser/__tests__/pendingApproval.test.ts:5 claims the exact shape useDecisionQueue builds but holds a hand copy, while the real producer is src/features/companions/athena/decision/rosterDecisions.ts:111; emitting params as an object there makes every browser approval bar vanish (src/features/browser/webview/PendingApprovalBar.tsx:42) with the suite green",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:5521806124d93882",
+          "evaluatedRevision": 26
         },
         {
           "subject": "agent-memory",
@@ -33260,7 +33272,11 @@
           "revision": 26,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src/stores/slices/overview/__tests__/personaHealthSlice.bundle.test.ts:142 asserts which producer answered (proxy vs measured), the event slice pins its own pre-fix defect (src/stores/slices/overview/eventSlice.test.ts:66) in a per-test harness (:34), and the no-p2p build cell is exercised (src/stores/slices/network/networkSlice.test.ts:141)",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:5521806124d93882",
+          "evaluatedRevision": 26
         },
         {
           "subject": "cost-metering",

@@ -1841,3 +1841,7 @@
 {"ts":"2026-10-21T17:28:26Z","bundle":"software-engineering","subjects":["eval-harness"],"techniques":[],"deviations":0}
 {"ts":"2026-10-21T17:28:26Z","bundle":"software-engineering","subjects":["eval-harness"],"techniques":[],"deviations":0}
 {"ts":"2026-10-21T17:28:26Z","bundle":"software-engineering","subjects":["eval-harness"],"techniques":[],"deviations":0}
+{"ts":"2026-10-21T17:28:38.128Z","bundle":"software-engineering","subjects":["test-harness"],"techniques":["assert-through-the-reader","unreached-decisions-pin-nothing","negative-control-tests","pin-the-call-not-the-name","fixture-economics","isolation-lanes","derived-selection-must-be-measured"],"deviations":0}
+{"ts":"2026-10-21T17:28:38.128Z","bundle":"software-engineering","subjects":["test-harness"],"techniques":["unreached-decisions-pin-nothing","negative-control-tests","isolation-lanes","fixture-economics","configuration-axes-cross-the-ladder"],"deviations":0}
+{"ts":"2026-10-21T17:28:38.128Z","bundle":"software-engineering","subjects":["test-harness"],"techniques":["unreached-decisions-pin-nothing","isolation-lanes","pin-the-call-not-the-name"],"deviations":1}
+{"ts":"2026-10-21T17:28:38.128Z","bundle":"software-engineering","subjects":["test-harness"],"techniques":["unreached-decisions-pin-nothing","isolation-lanes"],"deviations":1}

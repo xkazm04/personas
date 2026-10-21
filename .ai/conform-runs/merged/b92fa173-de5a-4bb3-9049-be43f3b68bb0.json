@@ -1,0 +1,357 @@
+{
+  "schema": "conform-run/1",
+  "worker": "b92fa173-de5a-4bb3-9049-be43f3b68bb0",
+  "subject": "test-harness",
+  "evaluatedAt": "2026-10-21T17:28:38.128Z",
+  "evaluatedAgainst": "sha256-b2:5521806124d93882",
+  "evaluatedRevision": 26,
+  "pairs": [
+    {
+      "context": "e4b48fb7-3763-4955-8ea9-01fd48aa0cf7",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src-tauri/src/commands/contest/node.rs:542 drives the real contest instrument against a temp project and fails rather than skips under CI (:524, clone verified at .github/workflows/ci.yml:983); decisions are lifted into pure units (src-tauri/src/commands/contest/env.rs:30) and the one structural pin needles a full call (src-tauri/src/commands/contest/driver.rs:1413)",
+      "techniques": [
+        {
+          "technique": "assert-through-the-reader",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/contest/node.rs:542 init/plan/collect/status run through the real contest.mjs, not a stub of its output"
+        },
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/contest/env.rs:30 problems_of lifts the readiness decision out of the probe so env.rs:80 tests it without the machine"
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/contest/arena.rs:877 the regression test names the defect it closes (scanner read winner only) and asserts each verdict shape that was invisible"
+        },
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/contest/driver.rs:1413 the ordering pin needles the full call with its argument list, not a bare identifier"
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/contest/lineups.rs:62 uses the migrated init_test_db template, no hand-written schema"
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/contest/arena.rs:844 each filesystem test owns a tempdir; the instrument test builds its own temp project"
+        },
+        {
+          "technique": "derived-selection-must-be-measured",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/contest/node.rs:524 a missing prerequisite is a loud skip locally and a failure under CI, so the only contract test cannot pass vacuously"
+        },
+        {
+          "technique": "suite-partitioning",
+          "verdict": "not-applicable",
+          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context"
+        },
+        {
+          "technique": "history-driven-partitioning",
+          "verdict": "not-applicable",
+          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context"
+        },
+        {
+          "technique": "live-app-harness",
+          "verdict": "not-applicable",
+          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context"
+        },
+        {
+          "technique": "flake-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context"
+        },
+        {
+          "technique": "long-lane-certification",
+          "verdict": "not-applicable",
+          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context"
+        },
+        {
+          "technique": "gate-scope-is-not-report-scope",
+          "verdict": "not-applicable",
+          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context"
+        },
+        {
+          "technique": "dynamic-verifier-classes",
+          "verdict": "not-applicable",
+          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context"
+        },
+        {
+          "technique": "out-of-graph-artifacts",
+          "verdict": "not-applicable",
+          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context"
+        },
+        {
+          "technique": "context-starved-executor",
+          "verdict": "not-applicable",
+          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context"
+        },
+        {
+          "technique": "far-side-oracle",
+          "verdict": "not-applicable",
+          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context"
+        },
+        {
+          "technique": "verification-inherits-driver-reach",
+          "verdict": "not-applicable",
+          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context"
+        },
+        {
+          "technique": "mutation-lane-with-a-triaged-baseline",
+          "verdict": "not-applicable",
+          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context"
+        },
+        {
+          "technique": "constraint-injection-for-unreachable-tiers",
+          "verdict": "not-applicable",
+          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context"
+        },
+        {
+          "technique": "recorded-interaction-fixtures",
+          "verdict": "not-applicable",
+          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context"
+        },
+        {
+          "technique": "approval-snapshots-with-guarded-update",
+          "verdict": "not-applicable",
+          "evidence": "package.json:73 the Rust lane is defined by the shared runner script, not in this context"
+        }
+      ]
+    },
+    {
+      "context": "532bbf10-3fd3-4b57-a8ea-95a957645697",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/stores/slices/overview/__tests__/personaHealthSlice.bundle.test.ts:142 asserts which producer answered (proxy vs measured), the event slice pins its own pre-fix defect (src/stores/slices/overview/eventSlice.test.ts:66) in a per-test harness (:34), and the no-p2p build cell is exercised (src/stores/slices/network/networkSlice.test.ts:141)",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "realized",
+          "evidence": "src/stores/slices/overview/__tests__/personaHealthSlice.bundle.test.ts:142 successRateSource names the producer, so a fleet proxy cannot pass for a measured rate (:128)"
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "realized",
+          "evidence": "src/stores/slices/overview/eventSlice.test.ts:66 the test is shaped to fail on the pre-fix module-scoped Map"
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "realized",
+          "evidence": "src/stores/slices/pipeline/__tests__/channelSlice.test.ts:46 resets store state per test; src/stores/slices/overview/eventSlice.test.ts:34 builds an isolated slice per test"
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "realized",
+          "evidence": "src/stores/slices/overview/__tests__/personaHealthSlice.bundle.test.ts:56 the seed follows the Rust 0-1 fraction contract and records why the old 92 seed was wrong"
+        },
+        {
+          "technique": "configuration-axes-cross-the-ladder",
+          "verdict": "realized",
+          "evidence": "src/stores/slices/network/networkSlice.test.ts:141 the no-p2p build is driven as its own case, and :20 stops a rejecting mock from being read as that cell"
+        },
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/processActivitySlice.ts:456 the exhaustiveness invariant is enforced by a never default in source, no text pin is used"
+        },
+        {
+          "technique": "assert-through-the-reader",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/overview/eventSlice.test.ts:3 the slices emit no text for a foreign interpreter; IPC is mocked at the api seam"
+        },
+        {
+          "technique": "suite-partitioning",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context"
+        },
+        {
+          "technique": "history-driven-partitioning",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context"
+        },
+        {
+          "technique": "live-app-harness",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context"
+        },
+        {
+          "technique": "flake-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context"
+        },
+        {
+          "technique": "long-lane-certification",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context"
+        },
+        {
+          "technique": "gate-scope-is-not-report-scope",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context"
+        },
+        {
+          "technique": "dynamic-verifier-classes",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context"
+        },
+        {
+          "technique": "out-of-graph-artifacts",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context"
+        },
+        {
+          "technique": "context-starved-executor",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context"
+        },
+        {
+          "technique": "far-side-oracle",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context"
+        },
+        {
+          "technique": "verification-inherits-driver-reach",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context"
+        },
+        {
+          "technique": "mutation-lane-with-a-triaged-baseline",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context"
+        },
+        {
+          "technique": "constraint-injection-for-unreachable-tiers",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context"
+        },
+        {
+          "technique": "recorded-interaction-fixtures",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context"
+        },
+        {
+          "technique": "approval-snapshots-with-guarded-update",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context"
+        }
+      ]
+    },
+    {
+      "context": "0f1de245-e9ba-41df-9b6c-d9ccd91dfb4b",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/browser/__tests__/pendingApproval.test.ts:5 claims the exact shape useDecisionQueue builds but holds a hand copy, while the real producer is src/features/companions/athena/decision/rosterDecisions.ts:111; emitting params as an object there makes every browser approval bar vanish (src/features/browser/webview/PendingApprovalBar.tsx:42) with the suite green",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src/features/browser/__tests__/pendingApproval.test.ts:5 the claimed producer is never run; mutating rosterDecisions.ts:113 (params as a string) cannot turn this file red"
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "realized",
+          "evidence": "src/features/browser/whitelist/__tests__/useWhitelistActions.remove.test.tsx:30 mocks are reset per test"
+        },
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "realized",
+          "evidence": "src/features/browser/__tests__/structure.test.ts:55 the modal pin matches the JSX element so the explanatory header cannot satisfy or fail it; the executable rule is also run (src/features/browser/webview/__tests__/hostVisibility.test.ts:4)"
+        }
+      ]
+    },
+    {
+      "context": "4560e824-e952-45a9-8aef-fe88d721952e",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/home/sub_cockpit/defaultCockpit.test.ts:65 is named uses only registered widget kinds but asserts ids only (:67) and never reads cockpitWidgetRegistry (src/features/home/sub_cockpit/widgetRegistry.ts:96, a Record<string, ...> tsc cannot check), so a registry rename leaves the starter cockpit composing an unregistered kind with the suite green",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src/features/home/sub_cockpit/defaultCockpit.test.ts:65 the name overstates the claim; a searcher reads registry membership as checked"
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "realized",
+          "evidence": "src/features/home/sub_welcome/useResumeContext.test.ts:21 clears localStorage per test; src/features/home/lib/usePausableInterval.test.ts:12 fake timers set and restored per test"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "test-harness",
+      "context": "*",
+      "reason": "remaining unknown test-harness pairs are probable-confidence and mostly non-test UI/api contexts; 4 judged by budget, rest left for later runs; weak contexts not judged by rule"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-21T17:28:38.128Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "test-harness"
+      ],
+      "techniques": [
+        "assert-through-the-reader",
+        "unreached-decisions-pin-nothing",
+        "negative-control-tests",
+        "pin-the-call-not-the-name",
+        "fixture-economics",
+        "isolation-lanes",
+        "derived-selection-must-be-measured"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-21T17:28:38.128Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "test-harness"
+      ],
+      "techniques": [
+        "unreached-decisions-pin-nothing",
+        "negative-control-tests",
+        "isolation-lanes",
+        "fixture-economics",
+        "configuration-axes-cross-the-ladder"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-21T17:28:38.128Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "test-harness"
+      ],
+      "techniques": [
+        "unreached-decisions-pin-nothing",
+        "isolation-lanes",
+        "pin-the-call-not-the-name"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-21T17:28:38.128Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "test-harness"
+      ],
+      "techniques": [
+        "unreached-decisions-pin-nothing",
+        "isolation-lanes"
+      ],
+      "deviations": 1
+    }
+  ]
+}
