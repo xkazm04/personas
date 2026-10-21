@@ -1,0 +1,37 @@
+{
+ "schema": "conform-run/1",
+ "worker": "ed7e7c69-2a24-4070-9f38-45458e93deff",
+ "subject": "concurrent-vcs",
+ "evaluatedAt": "2026-10-21T21:25:47.643660+00:00",
+ "provider": "agy",
+ "model": "gemini-3.8-flash-high",
+ "pairs": [],
+ "declined": [
+  {
+   "subject": "concurrent-vcs",
+   "context": "settings-network",
+   "reason": "The settings-network context manages peer-to-peer network discovery, identity settings, enclave verification, and resource bundle export/import permissions (ExposureManager.tsx, BundleExportDialog.tsx); it contains no repository checkouts, git commands, worktree lifecycle management, staging index overrides, or commit verification workflows, so the concurrent-vcs subject does not apply."
+  },
+  {
+   "subject": "concurrent-vcs",
+   "context": "triggers-studio",
+   "reason": "The triggers-studio context provides an interactive visual patchbay canvas for wiring persona event triggers (StudioPatchbay.tsx, TriggerStudioCanvas.tsx); the term commit in libs/studioCommit.ts and StudioTriggerCommitModal.tsx refers to persisting draft UI routes as trigger records in SQLite via Tauri IPC, not creating git commits or managing concurrent VCS checkouts."
+  },
+  {
+   "subject": "concurrent-vcs",
+   "context": "fleet-session-grid",
+   "reason": "The fleet-session-grid context is a frontend terminal multiplexer and session status board for monitoring and controlling live Claude Code processes (FleetGridPage.tsx, FleetTerminalOverlay.tsx, FleetSessionCard.tsx); it manages PTY attachments and process signals, but executes no version control operations, branch integrations, intent ledgers, or commit-time guards (which are governed by .claude/CLAUDE.md, .claude/active-runs.md, and scripts/worktree-gc.mjs outside this context)."
+  },
+  {
+   "subject": "concurrent-vcs",
+   "context": "overview-memories",
+   "reason": "The overview-memories context manages user and agent memory records and provides an interface for resolving contradictory semantic claims made by AI personas (MemoryConflictReview.tsx, libs/memoryConflicts.ts); claims and conflicts here pertain entirely to factual statement divergence in SQLite, not filesystem path claims, git merge conflicts, or repository checkout concurrency."
+  },
+  {
+   "subject": "concurrent-vcs",
+   "context": "lab-shared-primitives",
+   "reason": "The lab-shared-primitives context provides shared UI display components (modals, progress strips, diff preview widgets, tabs) for evaluating AI agent prompt variations and outputs in the agent lab (DiffViewer.tsx, LabResultModal.tsx); it performs no git staging, repository operations, worktree creation, or concurrent VCS coordination."
+  }
+ ],
+ "consults": []
+}
