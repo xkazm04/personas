@@ -20246,7 +20246,11 @@
           "revision": 2,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/notepad/notepadStore.ts:771 Context and repository searches traced this archive action to application-owned note status changes, with no jsonl or capture_manifest matches under notepad, so third-party transcript preservation does not apply.",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:3e3f46ad2c0269f1",
+          "evaluatedRevision": 2
         },
         {
           "subject": "voice-io",

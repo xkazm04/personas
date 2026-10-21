@@ -34068,6 +34068,47 @@
           "evidence": "src/features/teams/sub_factory/passport/__tests__/usePassportData.test.tsx:57 CrossProjectMetadataMap requires cross_project and total_projects; this fixture omits both and names no dependency on runPassportBuild reading only the supplied fields."
         }
       ]
+    },
+    "738f591b-60e9-4701-b786-cf868db66c51/agent-session-archive": {
+      "context": "notepad-editor",
+      "subject": "agent-session-archive",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T23:23:49.769Z",
+      "worker": "ed3c4a75-6f66-4f30-9f27-99efed1de952",
+      "techniques": [
+        {
+          "technique": "capture-before-parse",
+          "verdict": "not-applicable",
+          "evidence": "src/features/notepad/NoteBody.tsx:56 The editor changes an application-owned note body rather than importing harness transcripts."
+        },
+        {
+          "technique": "declared-message-coordinates",
+          "verdict": "not-applicable",
+          "evidence": "src/features/notepad/NoteArchiveModal.tsx:107 Archive actions address notes, not citations into archived messages."
+        },
+        {
+          "technique": "ingest-disposition-accounting",
+          "verdict": "not-applicable",
+          "evidence": "src/features/notepad/parts/NoteMilestonePicker.tsx:74 The picker reads project milestones rather than inventories transcript sources."
+        },
+        {
+          "technique": "prefix-proof-retirement",
+          "verdict": "not-applicable",
+          "evidence": "src/features/notepad/NoteArchiveModal.tsx:114 This is an explicit note deletion action, not automatic retirement of transcript captures."
+        },
+        {
+          "technique": "queryable-surface-redaction",
+          "verdict": "not-applicable",
+          "evidence": "src/features/notepad/NoteBody.tsx:28 The workbench displays a note result summary rather than indexing archived transcript messages."
+        },
+        {
+          "technique": "root-relative-session-identity",
+          "verdict": "not-applicable",
+          "evidence": "src/features/notepad/NoteArchiveModal.tsx:93 The rendered archive contains note entities, not sessions identified by harness source paths."
+        }
+      ]
     }
   }
 }
