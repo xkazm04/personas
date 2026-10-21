@@ -11421,8 +11421,8 @@
           "changedAt": "2026-09-26",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:480 Grep for subject terms (scroll-bound, filmstrip, orientation-tax, sequence-as-spine) across this directory found zero occurrences because the module implements schema-driven in-app table and list presentation primitives rather than an explanatory narrative scroll sequence.",
-          "evaluatedAt": "2026-10-13",
+          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:4 declares the golden-standard table for in-app list views (task-bearing reader); no explanatory page for an uncommitted reader exists here, so the subject's precondition does not hold",
+          "evaluatedAt": "2026-10-21",
           "evaluatedAgainst": "sha256-b2:e93abcf9f70a6c36",
           "evaluatedRevision": 3,
           "revisionsBehind": 0
@@ -15949,8 +15949,8 @@
           "changedAt": "2026-09-26",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/hooks/utility/interaction/useProgressiveReveal.ts:78 Grep for subject terms (scroll-bound, filmstrip, orientation-tax, sequence-as-spine) across this directory found zero occurrences because the module provides generic interaction and accessibility utility hooks rather than an explanatory narrative scroll surface.",
-          "evaluatedAt": "2026-10-13",
+          "evidence": "src/hooks/utility/interaction/useProgressiveReveal.ts:6 'reveal' here staggers mounting of already-fetched table rows, not scroll-bound narrative progression; the context owns no explanatory page, so the precondition does not hold",
+          "evaluatedAt": "2026-10-21",
           "evaluatedAgainst": "sha256-b2:e93abcf9f70a6c36",
           "evaluatedRevision": 3,
           "revisionsBehind": 0
@@ -21617,8 +21617,8 @@
           "changedAt": "2026-09-26",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/overview/shared/emptyStatePrototype/types.ts:22 Grep for subject terms (scroll-bound, filmstrip, orientation-tax, sequence-as-spine) across this directory found zero occurrences because the module implements presentation prototypes for empty states in overview tabs rather than an explanatory narrative scroll surface.",
-          "evaluatedAt": "2026-10-13",
+          "evidence": "src/features/overview/shared/emptyStatePrototype/types.ts:5 the module is an empty-state variant system inside overview tabs (one motif per state), not a sequenced explanatory page, so the subject's precondition does not hold",
+          "evaluatedAt": "2026-10-21",
           "evaluatedAgainst": "sha256-b2:e93abcf9f70a6c36",
           "evaluatedRevision": 3,
           "revisionsBehind": 0
@@ -28034,8 +28034,8 @@
           "changedAt": "2026-09-26",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/plugins/radio/components/RadioPage.tsx:17 Grep for subject terms (scroll-bound, filmstrip, orientation-tax, sequence-as-spine) across this directory found zero occurrences because the module implements an internet and YouTube radio player interface inside the app shell rather than an explanatory narrative scroll surface.",
-          "evaluatedAt": "2026-10-13",
+          "evidence": "src/features/plugins/radio/components/RadioPage.tsx:12 the page is the Settings > Radio station-curation tab, a task surface, not an explanatory narrative page, so the subject's precondition does not hold",
+          "evaluatedAt": "2026-10-21",
           "evaluatedAgainst": "sha256-b2:e93abcf9f70a6c36",
           "evaluatedRevision": 3,
           "revisionsBehind": 0
