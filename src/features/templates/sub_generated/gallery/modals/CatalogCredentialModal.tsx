@@ -8,6 +8,8 @@ import type { ConnectorDefinition } from '@/lib/types/types';
 import { useTranslation } from '@/i18n/useTranslation';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { silentCatch, extractMessage } from '@/lib/silentCatch';
+import { useGoogleOAuth } from '@/features/vault/shared/hooks/useGoogleOAuth';
+import { OAUTH_FIELD } from '@/features/vault/sub_catalog/components/design/CredentialDesignHelpers';
 
 interface CatalogCredentialModalProps {
   connectorDefinition: ConnectorDefinition;
@@ -52,8 +54,13 @@ export function CatalogCredentialModal({
     success: boolean;
     message: string;
   } | null>(null);
-  const [isAuthorizingOAuth, setIsAuthorizingOAuth] = useState(false);
-  const [oauthCompletedAt] = useState<string | null>(null);
+  // Same consent flow the vault playground runs. Completion leaves a one-time
+  // session ref in the hook; it rides into onSave as `oauth_session_ref`, which
+  // createCredential splits out and the backend redeems (no token crosses IPC).
+  const googleOAuth = useGoogleOAuth({
+    onSuccess: () => setHealthcheckResult(null),
+    onError: (message) => setHealthcheckResult({ success: false, message }),
+  });
 
   const handleHealthcheck = useCallback(
     async (values: Record<string, string>) => {
@@ -103,10 +110,16 @@ export function CatalogCredentialModal({
     [connectorDefinition, failureMessage, t],
   );
 
-  const handleOAuthConsent = useCallback((_values: Record<string, string>) => {
-    setIsAuthorizingOAuth(true);
-    // OAuth flow would be handled here for Google connectors
-  }, []);
+  const handleOAuthConsent = useCallback((values: Record<string, string>) => {
+    const extraScopes = values.scopes?.trim() ? values.scopes.trim().split(/\s+/) : undefined;
+    setHealthcheckResult(null);
+    googleOAuth.startConsent(connectorDefinition.name, extraScopes);
+  }, [connectorDefinition.name, googleOAuth]);
+
+  const handleSave = useCallback((values: Record<string, string>) => {
+    const sessionRef = googleOAuth.getValues()[OAUTH_FIELD.SESSION_REF];
+    onSave(isGoogleTemplate && sessionRef ? { ...values, [OAUTH_FIELD.SESSION_REF]: sessionRef } : values);
+  }, [googleOAuth, isGoogleTemplate, onSave]);
 
   return (
     <BaseModal isOpen onClose={onClose} titleId="catalog-credential-title" maxWidthClass="max-w-2xl" panelClassName="max-h-[85vh] overflow-y-auto">
@@ -116,9 +129,11 @@ export function CatalogCredentialModal({
           onCredentialNameChange={setCredentialName}
           effectiveTemplateFields={effectiveTemplateFields}
           isGoogleTemplate={isGoogleTemplate}
-          isAuthorizingOAuth={isAuthorizingOAuth}
-          oauthCompletedAt={oauthCompletedAt}
-          onCreateCredential={onSave}
+          isAuthorizingOAuth={googleOAuth.isAuthorizing}
+          oauthCompletedAt={googleOAuth.completedAt}
+          oauthValues={googleOAuth.getValues()}
+          oauthPollingMessage={googleOAuth.message}
+          onCreateCredential={handleSave}
           onOAuthConsent={handleOAuthConsent}
           onCancel={onClose}
           onValuesChanged={() => {
