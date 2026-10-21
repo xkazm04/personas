@@ -55,19 +55,19 @@
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T00:00:00.000Z",
-      "worker": "324fd756-14c3-41e3-98ac-77bdb11352dd",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:29:55.000Z",
+      "worker": "a262eef9-13c9-41cd-b5f1-46253aa27a94",
       "techniques": [
         {
           "technique": "result-harvest",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/build_session/fanout.rs:1353 partial failure is not a first-class outcome; roster accounting absent"
+          "evidence": "src-tauri/src/engine/build_session/fanout.rs:1365 partial failure is not a first-class outcome: only total failure is refused"
         },
         {
           "technique": "brief-carries-the-session",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/build_session/fanout.rs:118 lane brief forces silent defaulting"
+          "evidence": "src-tauri/src/engine/build_session/fanout.rs:118 the lane brief orders 'do NOT ask clarifying questions - pick sensible defaults', giving the worker no failure channel for an unresolvable capability"
         }
       ],
       "superseded": [
@@ -84,6 +84,13 @@
           "evaluatedAt": "2026-10-12T11:58:27.000Z",
           "worker": "a7de2949-242a-4511-8cdd-ecd99cfa017e",
           "reason": "replaced by 324fd756-14c3-41e3-98ac-77bdb11352dd"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/fanout.rs:1353 a capability lane that fails while siblings succeed is only a tracing::warn, assemble_agent_ir (:958) ignores res.error, and only all-lanes-failed is refused (:1365), so a persona with silently unresolved capabilities reaches DraftReady with no partial account; the lane brief at :118 still orders 'do NOT ask clarifying questions - pick sensible defaults'. Re-judged against rev 26: still true.",
+          "evaluatedAt": "2026-10-14T00:00:00.000Z",
+          "worker": "324fd756-14c3-41e3-98ac-77bdb11352dd",
+          "reason": "replaced by a262eef9-13c9-41cd-b5f1-46253aa27a94"
         }
       ]
     },
@@ -6554,19 +6561,20 @@
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T00:00:00.000Z",
-      "worker": "324fd756-14c3-41e3-98ac-77bdb11352dd",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:29:55.000Z",
+      "worker": "a262eef9-13c9-41cd-b5f1-46253aa27a94",
       "techniques": [
         {
           "technique": "parallel-dispatch",
           "verdict": "deviation",
-          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/dispatch.ts:85 no key derived from the work, no duplicate check"
+          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/dispatch.ts:85 no key derived from the work (idea id) is checked or persisted; the technique treats an unnamed spawn as a failed dispatch"
         },
         {
           "technique": "session-registry",
           "verdict": "deviation",
-          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/dispatch.ts:85 task binding to the session is dropped"
+          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/dispatch.ts:85 task binding to the session is dropped",
+          "carriedFrom": "2026-10-14"
         }
       ],
       "superseded": [
@@ -6583,6 +6591,13 @@
           "evaluatedAt": "2026-10-10T11:26:21.000Z",
           "worker": "bcd9e9fb-7483-4daf-916f-0868b1f7a42d",
           "reason": "replaced by 324fd756-14c3-41e3-98ac-77bdb11352dd"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/dispatch.ts:85 spawns a Fleet session for a finding with no dispatch-key check (is one already running for this idea?) and discards the returned session id, so the task row created at :80 is never bound to the session; a re-fired signal opens a duplicate and nothing can find the session again. Re-judged against rev 26: still true.",
+          "evaluatedAt": "2026-10-14T00:00:00.000Z",
+          "worker": "324fd756-14c3-41e3-98ac-77bdb11352dd",
+          "reason": "replaced by a262eef9-13c9-41cd-b5f1-46253aa27a94"
         }
       ]
     },
@@ -17941,19 +17956,19 @@
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T00:00:00.000Z",
-      "worker": "324fd756-14c3-41e3-98ac-77bdb11352dd",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:29:55.000Z",
+      "worker": "a262eef9-13c9-41cd-b5f1-46253aa27a94",
       "techniques": [
         {
           "technique": "result-harvest",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/fleet_sessions.rs:327 roster member vanishes from the denominator instead of failing loudly"
+          "evidence": "src-tauri/db/src/repos/fleet_sessions.rs:327 a member that fails to map is dropped from the roster; the technique requires accounts to sum to the roster and a misfit to fail loudly"
         },
         {
           "technique": "durable-fleet-state",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/fleet_sessions.rs:255 restart recovery skips unreadable rows rather than surfacing them"
+          "evidence": "src-tauri/db/src/repos/fleet_sessions.rs:255 restart rehydration skips unreadable rows instead of declaring them, so a session vanishes on boot"
         }
       ],
       "superseded": [
@@ -17963,6 +17978,13 @@
           "evaluatedAt": "2026-10-12T11:58:27.000Z",
           "worker": "a7de2949-242a-4511-8cdd-ecd99cfa017e",
           "reason": "replaced by 324fd756-14c3-41e3-98ac-77bdb11352dd"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/fleet_sessions.rs:327 list_by_run, the harvest roster read by fleet_run_report (src-tauri/src/commands/fleet/commands.rs:587), drops any row failing map_row via filter_map(Result::ok), and list_rehydratable does the same on the restart path (:255), so a corrupt member silently leaves the run denominator and the fleet on boot, while the sibling queue read at :457-461 deliberately surfaces the same failure. Re-judged against rev 26: still true.",
+          "evaluatedAt": "2026-10-14T00:00:00.000Z",
+          "worker": "324fd756-14c3-41e3-98ac-77bdb11352dd",
+          "reason": "replaced by a262eef9-13c9-41cd-b5f1-46253aa27a94"
         }
       ]
     },
@@ -19815,14 +19837,14 @@
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T00:00:00.000Z",
-      "worker": "324fd756-14c3-41e3-98ac-77bdb11352dd",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:29:55.000Z",
+      "worker": "a262eef9-13c9-41cd-b5f1-46253aa27a94",
       "techniques": [
         {
           "technique": "absent-status-passthrough",
           "verdict": "deviation",
-          "evidence": "src/features/plugins/dev-tools/sub_runner/useTaskQueue.ts:60 absence laundered into 'queued'"
+          "evidence": "src/features/plugins/dev-tools/sub_runner/useTaskQueue.ts:77 a layer that did not observe the state substitutes queued instead of passing the absence through"
         }
       ],
       "superseded": [
@@ -19832,6 +19854,13 @@
           "evaluatedAt": "2026-10-12T17:45:22.732Z",
           "worker": "0b6f836d-b418-4311-9a91-fd30c9d76e08",
           "reason": "replaced by 324fd756-14c3-41e3-98ac-77bdb11352dd"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/useTaskQueue.ts:60 normalizeStatus maps any status outside TASK_STATUSES to 'queued', substituting an active waiting state for a value the transport did not state; unknown should pass through as unknown. Re-judged against rev 26: still true; the governing precondition (task rows driven through Fleet) is looser than for the session contexts.",
+          "evaluatedAt": "2026-10-14T00:00:00.000Z",
+          "worker": "324fd756-14c3-41e3-98ac-77bdb11352dd",
+          "reason": "replaced by a262eef9-13c9-41cd-b5f1-46253aa27a94"
         }
       ]
     },
@@ -24096,27 +24125,37 @@
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T07:54:31.000Z",
-      "worker": "212150d0-ab3d-4a68-8347-4345f31077f7",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:29:55.000Z",
+      "worker": "a262eef9-13c9-41cd-b5f1-46253aa27a94",
       "techniques": [
         {
           "technique": "parallel-dispatch",
-          "verdict": "deviation: no declared write set / disjointness proof at dispatch",
-          "evidence": "src/features/notepad/notepadActions.ts:186 cwd is the shared project root"
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/queue.rs:996 no write-set disjointness check at the one admission door; the technique makes overlap a dispatch-time rejection or a queueing decision"
         },
         {
           "technique": "inherited-state-provenance",
           "verdict": "deviation: a rejected-run re-dispatch re-enters the same repo and the brief carries only the operator's reason, not an inventory of what the previous attempt left (where from, how much, may-continue)",
-          "evidence": "src/features/notepad/notepadActions.ts:129 feedback section holds Reason and Comments only"
+          "evidence": "src/features/notepad/notepadActions.ts:129 feedback section holds Reason and Comments only",
+          "carriedFrom": "2026-10-14"
         },
         {
           "technique": "brief-carries-the-session",
           "verdict": "realized: the full requirement is written to disk before spawn and the skill is verified installed, not assumed",
-          "evidence": "src/features/notepad/notepadActions.ts:161 writeDispatchBrief precedes dispatch; :172 install outcome read and refused if not installed"
+          "evidence": "src/features/notepad/notepadActions.ts:161 writeDispatchBrief precedes dispatch; :172 install outcome read and refused if not installed",
+          "carriedFrom": "2026-10-14"
         }
       ],
-      "registryProposal": "parallel-dispatch could name the common single-writer-per-repo shape (one dispatch per note, key note:<id>) and say whether a per-dispatch dispatch_key alone satisfies the collision-domain rule when the cwd is shared."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/notepad/notepadActions.ts:186 dispatchNoteToFleet launches a write-capable /note-task session with cwd = project.root_path (the shared repo root) and declares no write set or isolated worktree, and the admission door (src-tauri/src/commands/fleet/queue.rs:982 door_verdict_for) checks cap/time/budget only, so two notes (or a note plus a hand-run session) dispatched into one repo can collide on files",
+          "evaluatedAt": "2026-10-14T07:54:31.000Z",
+          "worker": "212150d0-ab3d-4a68-8347-4345f31077f7",
+          "reason": "replaced by a262eef9-13c9-41cd-b5f1-46253aa27a94"
+        }
+      ]
     },
     "bcb603ad-ce58-4b76-9623-aa99ace984af/fleet-orchestration": {
       "context": "companion-proactive",

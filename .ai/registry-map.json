@@ -10461,12 +10461,11 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/db/src/repos/fleet_sessions.rs:327 list_by_run, the harvest roster read by fleet_run_report (src-tauri/src/commands/fleet/commands.rs:587), drops any row failing map_row via filter_map(Result::ok), and list_rehydratable does the same on the restart path (:255), so a corrupt member silently leaves the run denominator and the fleet on boot, while the sibling queue read at :457-461 deliberately surfaces the same failure. Re-judged against rev 26: still true.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src-tauri/db/src/repos/fleet_sessions.rs:327 list_by_run (the harvest roster read at src-tauri/src/commands/fleet/commands.rs:589) drops any row failing map_row via filter_map(Result::ok), as does list_rehydratable on restart (:255), so a corrupt member silently leaves the run denominator and the booted fleet while the queue read (:461) surfaces the same failure. Re-judged at rev 28: unchanged.",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28,
+          "revisionsBehind": 2
         },
         {
           "subject": "agent-instruction-files",
@@ -12026,13 +12025,12 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/engine/build_session/fanout.rs:1353 a capability lane that fails while siblings succeed is only a tracing::warn, assemble_agent_ir (:958) ignores res.error, and only all-lanes-failed is refused (:1365), so a persona with silently unresolved capabilities reaches DraftReady with no partial account; the lane brief at :118 still orders 'do NOT ask clarifying questions - pick sensible defaults'. Re-judged against rev 26: still true.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
-          "evaluatedRevision": 26,
+          "evidence": "src-tauri/src/engine/build_session/fanout.rs:1354 a capability lane that fails while siblings succeed is only a tracing::warn, assemble_agent_ir reads lanes (:958) without res.error, and only all-lanes-failed is refused (:1365), so a persona with silently unresolved capabilities reaches DraftReady with no partial account. Re-judged at rev 28: unchanged.",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28,
           "source": "retained",
-          "revisionsBehind": 2,
-          "stale": true
+          "revisionsBehind": 2
         },
         {
           "subject": "agent-instruction-files",
@@ -20062,12 +20060,11 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/notepad/notepadActions.ts:186 dispatchNoteToFleet launches a write-capable /note-task session with cwd = project.root_path (the shared repo root) and declares no write set or isolated worktree, and the admission door (src-tauri/src/commands/fleet/queue.rs:982 door_verdict_for) checks cap/time/budget only, so two notes (or a note plus a hand-run session) dispatched into one repo can collide on files",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/features/notepad/notepadActions.ts:186 dispatchNoteToFleet launches a write-capable /note-task session with cwd = project.root_path (the shared repo root), declares no write set or isolated workspace, and the admission door (src-tauri/src/commands/fleet/queue.rs:996 door_verdict_for) decides on cap, time gate, budget and queue order only, so two notes dispatched into one repo can collide on files. Re-judged at rev 28: unchanged.",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28,
+          "revisionsBehind": 2
         },
         {
           "subject": "native-shell-integration",
@@ -27579,12 +27576,11 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/dispatch.ts:85 spawns a Fleet session for a finding with no dispatch-key check (is one already running for this idea?) and discards the returned session id, so the task row created at :80 is never bound to the session; a re-fired signal opens a duplicate and nothing can find the session again. Re-judged against rev 26: still true.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/dispatch.ts:85 spawns a Fleet session for a finding with no dispatch-key check and discards the returned session id, so the task row created at :80 is never bound to the session; a re-fired signal opens a duplicate and nothing can find the session again. Re-judged at rev 28: unchanged.",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28,
+          "revisionsBehind": 2
         },
         {
           "subject": "agent-memory",
@@ -30615,12 +30611,11 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/plugins/dev-tools/sub_runner/useTaskQueue.ts:60 normalizeStatus maps any status outside TASK_STATUSES to 'queued', substituting an active waiting state for a value the transport did not state; unknown should pass through as unknown. Re-judged against rev 26: still true; the governing precondition (task rows driven through Fleet) is looser than for the session contexts.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/features/plugins/dev-tools/sub_runner/useTaskQueue.ts:77 normalizeStatus maps any status outside TASK_STATUSES (:16) to queued, substituting an active waiting state for a value the transport did not state. Re-judged at rev 28: unchanged; anchor moved from :60.",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28,
+          "revisionsBehind": 2
         },
         {
           "subject": "agent-memory",
