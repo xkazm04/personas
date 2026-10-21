@@ -7323,8 +7323,12 @@
           "revision": 8,
           "changedAt": "2026-10-09",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 8
+          "state": "not-applicable",
+          "priorNotApplicable": 8,
+          "evidence": "src-tauri/src/commands/curator/tick.rs:117 the Curator loop is a ReactiveSubscription ticked by the background lifecycle (:109) that dispatches headless workers which exit on their own (:728); stopping is enforced by a scheduler and brakes, not at an agent turn boundary, and the golden path routes scheduler-driven loops to background-jobs",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:b0eabf78abd856a4",
+          "evaluatedRevision": 8
         },
         {
           "subject": "quality-gates",

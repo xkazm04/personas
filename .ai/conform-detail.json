@@ -33713,6 +33713,28 @@
           "evidence": "src/features/plugins/dev-tools/sub_context/ScanOverlay.tsx:10 the \"overlay\" is an in-document log panel with no host import; nothing in the context places a native surface, reads a foreign app or synthesizes input"
         }
       ]
+    },
+    "33a96a83-6adc-42f7-b57c-839382bcef54/session-continuation": {
+      "context": "commands-curator",
+      "subject": "session-continuation",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T18:06:07.000Z",
+      "worker": "2ab6ca40-30d9-45ec-a3a7-5cc32ebc2765",
+      "techniques": [
+        {
+          "technique": "continuation-as-state",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:728 workers run headless and exit; no turn-boundary hook refuses a model stop"
+        },
+        {
+          "technique": "stuck-loop-detection",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:475 repeat suppression is a dispatch-level mark (one attempt per registry HEAD), not an in-session repair loop"
+        }
+      ],
+      "registryProposal": "technique-shaped resonance: stuck-loop-detection (\"a self-improvement loop keeps accepting negligible gains\") matches this scheduler-driven quality loop, whose one-attempt-per-HEAD mark (tick.rs:475) is a failure-identity stop at dispatch granularity. The subject precondition (in-session turn boundary) excludes it, so consider whether background-jobs loop-supervision should carry a cross-session equivalent"
     }
   }
 }
