@@ -1583,5 +1583,12 @@
   "dc_deck_kind_evidence": "Preuves",
   "dc_deck_kind_release": "Version",
   "dc_deck_no_lens": "Rien n'est écrit depuis cette carte.",
-  "dc_deck_yes_lens": "Ouvre le blueprint par-dessus le paquet ; les décisions s'y prennent."
+  "dc_deck_yes_lens": "Ouvre le blueprint par-dessus le paquet ; les décisions s'y prennent.",
+  "live_author_you": "Vous",
+  "live_author_athena": "Athena",
+  "live_author_director": "Directeur",
+  "live_event_directive": "directive",
+  "live_event_memory": "mémoire · {label}",
+  "orphan_unassigned": "Non assigné",
+  "orphan_unknown_persona": "Persona inconnue"
 }

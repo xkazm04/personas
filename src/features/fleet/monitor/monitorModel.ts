@@ -253,6 +253,13 @@ export interface MonitorBadgeCounts {
   messages: Record<string, number>;
 }
 
+/** Translated names for the cards of reviews/messages whose persona is gone. */
+export interface OrphanLabels { unassigned: string; unknownPersona: string }
+
+/** English fallback for callers that pass no labels (tests); the app passes the
+ *  active locale's `t.monitor.orphan_*` through `useMonitorFeeds`. */
+const DEFAULT_ORPHAN_LABELS: OrphanLabels = { unassigned: 'Unassigned', unknownPersona: 'Unknown persona' };
+
 /**
  * Build the full Monitor model: one card per persona (fleet-wide, including
  * idle personas) plus leftover app-level processes.
@@ -268,6 +275,7 @@ export function buildMonitorModel(
   activeProcesses: Record<string, ActiveProcess>,
   healthMap: Record<string, PersonaHealth>,
   badgeCounts?: MonitorBadgeCounts,
+  orphanLabels: OrphanLabels = DEFAULT_ORPHAN_LABELS,
 ): MonitorModel {
   const reviewsByPersona = groupBy(reviews, (r) => r.persona_id || 'unassigned');
   const messagesByPersona = groupBy(unreadMessages, (m) => m.persona_id || 'unassigned');
@@ -396,7 +404,7 @@ export function buildMonitorModel(
     const revs = reviewsByPersona.get(key) ?? [];
     const msgs = messagesByPersona.get(key) ?? [];
     const sample = revs[0];
-    const name = key === 'unassigned' ? 'Unassigned' : (sample?.persona_name || 'Unknown persona');
+    const name = key === 'unassigned' ? orphanLabels.unassigned : (sample?.persona_name || orphanLabels.unknownPersona);
     cards.push(makeCard(
       key, name, sample?.persona_icon ?? null, sample?.persona_color ?? null, null,
       revs, msgs, [], undefined,

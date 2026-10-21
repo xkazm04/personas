@@ -1591,6 +1591,13 @@ export type Translations = {
     dc_deck_yes_lens: string;
     dc_deck_no_lens: string;
     dc_deck_key_open_lens: string;
+    live_author_you: string;
+    live_author_athena: string;
+    live_author_director: string;
+    live_event_directive: string;
+    live_event_memory: string;
+    orphan_unassigned: string;
+    orphan_unknown_persona: string;
   };
   common: {
     unknown_error: string;
@@ -2698,6 +2705,30 @@ export type Translations = {
     palette_toggle_failed: string;
     palette_health_complete: string;
     palette_health_issues: string;
+    palette_run_agent: string;
+    palette_run_hint: string;
+    palette_enable_agent: string;
+    palette_disable_agent: string;
+    palette_state_on: string;
+    palette_state_off: string;
+    palette_duplicate_agent: string;
+    palette_duplicate_hint: string;
+    palette_quick_edit_agent: string;
+    palette_quick_edit_hint: string;
+    palette_open_agent: string;
+    palette_open_hint: string;
+    palette_health_check: string;
+    palette_health_check_hint: string;
+    palette_section_commands: string;
+    palette_section_agent_actions: string;
+    palette_section_recent_agents: string;
+    palette_section_agents: string;
+    palette_section_credentials: string;
+    palette_section_templates: string;
+    palette_section_automations: string;
+    palette_section_navigation: string;
+    palette_agent_updated: string;
+    palette_update_failed: string;
   };
   sidebar: {
     home: string;

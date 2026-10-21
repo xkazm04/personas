@@ -1583,5 +1583,12 @@
   "dc_deck_kind_evidence": "Bukti",
   "dc_deck_kind_release": "Rilis",
   "dc_deck_no_lens": "Tidak ada yang ditulis dari kartu ini.",
-  "dc_deck_yes_lens": "Membuka blueprint di atas dek; keputusan dibuat di sana."
+  "dc_deck_yes_lens": "Membuka blueprint di atas dek; keputusan dibuat di sana.",
+  "live_author_you": "Anda",
+  "live_author_athena": "Athena",
+  "live_author_director": "Direktur",
+  "live_event_directive": "arahan",
+  "live_event_memory": "memori · {label}",
+  "orphan_unassigned": "Belum ditetapkan",
+  "orphan_unknown_persona": "Persona tidak dikenal"
 }

@@ -3575,7 +3575,31 @@
     "palette_agent_enabled": "এজেন্ট সক্রিয় করা হয়েছে",
     "palette_health_complete": "স্বাস্থ্য পরীক্ষা সম্পন্ন",
     "palette_health_issues": "স্বাস্থ্য পরীক্ষায় সমস্যা পাওয়া গেছে",
-    "palette_toggle_failed": "এজেন্ট টগল করা যায়নি"
+    "palette_toggle_failed": "এজেন্ট টগল করা যায়নি",
+    "palette_run_agent": "{name} চালান",
+    "palette_run_hint": "তাৎক্ষণিকভাবে চালান",
+    "palette_enable_agent": "{name} চালু করুন",
+    "palette_disable_agent": "{name} বন্ধ করুন",
+    "palette_state_on": "বর্তমানে চালু",
+    "palette_state_off": "বর্তমানে বন্ধ",
+    "palette_duplicate_agent": "{name} ডুপ্লিকেট করুন",
+    "palette_duplicate_hint": "এজেন্ট ক্লোন করুন",
+    "palette_quick_edit_agent": "{name} দ্রুত সম্পাদনা",
+    "palette_quick_edit_hint": "বিবরণ ও মডেল",
+    "palette_open_agent": "{name} খুলুন",
+    "palette_open_hint": "সম্পূর্ণ এডিটর",
+    "palette_health_check": "হেলথ চেক চালান",
+    "palette_health_check_hint": "সিস্টেম ডায়াগনস্টিকস",
+    "palette_section_commands": "কমান্ড",
+    "palette_section_agent_actions": "এজেন্ট অ্যাকশন",
+    "palette_section_recent_agents": "সাম্প্রতিক এজেন্ট",
+    "palette_section_agents": "এজেন্ট",
+    "palette_section_credentials": "ক্রেডেনশিয়াল",
+    "palette_section_templates": "টেমপ্লেট",
+    "palette_section_automations": "অটোমেশন",
+    "palette_section_navigation": "নেভিগেশন",
+    "palette_agent_updated": "এজেন্ট আপডেট হয়েছে",
+    "palette_update_failed": "এজেন্ট আপডেট করা যায়নি"
   },
   "cockpit": {
     "inbox": {
@@ -8465,7 +8489,14 @@
     "dc_deck_kind_evidence": "প্রমাণ",
     "dc_deck_kind_release": "রিলিজ",
     "dc_deck_no_lens": "এই কার্ড থেকে কিছু লেখা হয় না।",
-    "dc_deck_yes_lens": "ডেকের উপরে ব্লুপ্রিন্ট খোলে; সিদ্ধান্ত সেখানেই হয়।"
+    "dc_deck_yes_lens": "ডেকের উপরে ব্লুপ্রিন্ট খোলে; সিদ্ধান্ত সেখানেই হয়।",
+    "live_author_you": "আপনি",
+    "live_author_athena": "Athena",
+    "live_author_director": "পরিচালক",
+    "live_event_directive": "নির্দেশ",
+    "live_event_memory": "স্মৃতি · {label}",
+    "orphan_unassigned": "অনির্ধারিত",
+    "orphan_unknown_persona": "অজানা পারসোনা"
   },
   "onboarding": {
     "adopt_button": "এজেন্ট সেটআপ করুন",

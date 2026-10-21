@@ -1583,5 +1583,12 @@
   "dc_deck_kind_release": "Release",
   "dc_deck_yes_lens": "Opens the blueprint over the deck; decisions happen there.",
   "dc_deck_no_lens": "Nothing is written from this card.",
-  "dc_deck_key_open_lens": "open the sheet; decisions happen there"
+  "dc_deck_key_open_lens": "open the sheet; decisions happen there",
+  "live_author_you": "You",
+  "live_author_athena": "Athena",
+  "live_author_director": "Director",
+  "live_event_directive": "directive",
+  "live_event_memory": "memory · {label}",
+  "orphan_unassigned": "Unassigned",
+  "orphan_unknown_persona": "Unknown persona"
 }

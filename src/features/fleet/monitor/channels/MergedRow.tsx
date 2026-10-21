@@ -8,9 +8,13 @@ import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
  * to live here rendered the merged Timeline, which moved to
  * `overview/sub_timeline` with its own row; nothing rendered this one. */
 
+/** Translated copy `resolveCompact` needs for the kinds that carry no label of
+ *  their own. `memory` is a template with a `{label}` slot. */
+export interface CompactLabels { directive: string; memory: string }
+
 /** Resolve the compact event label + tone + one-line message for any item.
  *  Exported so the live-mode corner overlay projects messages identically. */
-export function resolveCompact(item: TeamChannelItem): { event: string; tone: string; message: string | null; artifact: { url: string; label: string } | null; isError: boolean; alert: boolean } {
+export function resolveCompact(item: TeamChannelItem, labels: CompactLabels): { event: string; tone: string; message: string | null; artifact: { url: string; label: string } | null; isError: boolean; alert: boolean } {
   if (item.kind === 'step') {
     return {
       event: STEP_VERB[item.label] ?? item.label,
@@ -26,10 +30,10 @@ export function resolveCompact(item: TeamChannelItem): { event: string; tone: st
     return { event: item.label, tone: FAMILY_TEXT[eventFamily(item.label)] ?? FAMILY_TEXT.other!, message: summary, artifact, isError: false, alert: false };
   }
   if (item.kind === 'memory') {
-    return { event: `memory · ${item.label}`, tone: 'text-amber-300/80', message: item.body, artifact: null, isError: false, alert: false };
+    return { event: labels.memory.replace('{label}', item.label), tone: 'text-amber-300/80', message: item.body, artifact: null, isError: false, alert: false };
   }
   if (item.kind === 'directive') {
-    return { event: 'directive', tone: 'text-status-success', message: item.body, artifact: null, isError: false, alert: false };
+    return { event: labels.directive, tone: 'text-status-success', message: item.body, artifact: null, isError: false, alert: false };
   }
   // Every voiced author kind (persona / athena / director / slack) resolves from
   // the shared meta — which is why `slack` needs no special case here and, more

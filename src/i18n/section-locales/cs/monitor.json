@@ -1583,5 +1583,12 @@
   "dc_deck_kind_evidence": "Důkazy",
   "dc_deck_kind_release": "Vydání",
   "dc_deck_no_lens": "Z této karty se nic nezapisuje.",
-  "dc_deck_yes_lens": "Otevře blueprint nad balíčkem karet; rozhoduje se tam."
+  "dc_deck_yes_lens": "Otevře blueprint nad balíčkem karet; rozhoduje se tam.",
+  "live_author_you": "Vy",
+  "live_author_athena": "Athena",
+  "live_author_director": "Ředitel",
+  "live_event_directive": "pokyn",
+  "live_event_memory": "paměť · {label}",
+  "orphan_unassigned": "Nepřiřazeno",
+  "orphan_unknown_persona": "Neznámá persona"
 }

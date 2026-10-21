@@ -3575,7 +3575,31 @@
     "palette_agent_enabled": "已启用代理",
     "palette_health_complete": "健康检查完成",
     "palette_health_issues": "健康检查发现问题",
-    "palette_toggle_failed": "无法切换代理"
+    "palette_toggle_failed": "无法切换代理",
+    "palette_run_agent": "运行 {name}",
+    "palette_run_hint": "临时执行",
+    "palette_enable_agent": "启用 {name}",
+    "palette_disable_agent": "停用 {name}",
+    "palette_state_on": "当前已开启",
+    "palette_state_off": "当前已关闭",
+    "palette_duplicate_agent": "复制 {name}",
+    "palette_duplicate_hint": "克隆代理",
+    "palette_quick_edit_agent": "快速编辑 {name}",
+    "palette_quick_edit_hint": "描述与模型",
+    "palette_open_agent": "打开 {name}",
+    "palette_open_hint": "完整编辑器",
+    "palette_health_check": "运行健康检查",
+    "palette_health_check_hint": "系统诊断",
+    "palette_section_commands": "命令",
+    "palette_section_agent_actions": "代理操作",
+    "palette_section_recent_agents": "最近的代理",
+    "palette_section_agents": "代理",
+    "palette_section_credentials": "凭据",
+    "palette_section_templates": "模板",
+    "palette_section_automations": "自动化",
+    "palette_section_navigation": "导航",
+    "palette_agent_updated": "代理已更新",
+    "palette_update_failed": "更新代理失败"
   },
   "cockpit": {
     "inbox": {
@@ -8465,7 +8489,14 @@
     "dc_deck_kind_evidence": "证据",
     "dc_deck_kind_release": "发布",
     "dc_deck_no_lens": "此卡片不会写入任何内容。",
-    "dc_deck_yes_lens": "在卡片组上方打开蓝图；决定在那里做出。"
+    "dc_deck_yes_lens": "在卡片组上方打开蓝图；决定在那里做出。",
+    "live_author_you": "你",
+    "live_author_athena": "Athena",
+    "live_author_director": "总监",
+    "live_event_directive": "指令",
+    "live_event_memory": "记忆 · {label}",
+    "orphan_unassigned": "未分配",
+    "orphan_unknown_persona": "未知角色"
   },
   "onboarding": {
     "adopt_button": "设置智能体",

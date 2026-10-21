@@ -1583,5 +1583,12 @@
   "dc_deck_kind_evidence": "エビデンス",
   "dc_deck_kind_release": "リリース",
   "dc_deck_no_lens": "このカードからは何も書き込まれません。",
-  "dc_deck_yes_lens": "デッキの上にブループリントを開きます。決定はそこで行います。"
+  "dc_deck_yes_lens": "デッキの上にブループリントを開きます。決定はそこで行います。",
+  "live_author_you": "あなた",
+  "live_author_athena": "アテナ",
+  "live_author_director": "ディレクター",
+  "live_event_directive": "指示",
+  "live_event_memory": "メモリ · {label}",
+  "orphan_unassigned": "未割り当て",
+  "orphan_unknown_persona": "不明なペルソナ"
 }

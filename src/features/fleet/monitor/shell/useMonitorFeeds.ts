@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { MONITOR_REVIEW_LIMIT, useMonitorData } from '../useMonitorData';
 import { buildMonitorModel } from '../monitorModel';
 
@@ -37,6 +38,7 @@ import { buildMonitorModel } from '../monitorModel';
  * vs the other surfaces — is still the one the feeds gate on.)
  */
 export function useMonitorFeeds(isFleetView: boolean) {
+  const { t } = useTranslation();
   const feeds = useMemo(
     () => ({
       reviews: isFleetView,
@@ -62,8 +64,8 @@ export function useMonitorFeeds(isFleetView: boolean) {
     () => buildMonitorModel(personas, reviews, unreadMessages, activeProcesses, healthMap, {
       reviews: reviewBadgeCounts,
       messages: messageBadgeCounts,
-    }),
-    [personas, reviews, unreadMessages, activeProcesses, healthMap, reviewBadgeCounts, messageBadgeCounts],
+    }, { unassigned: t.monitor.orphan_unassigned, unknownPersona: t.monitor.orphan_unknown_persona }),
+    [personas, reviews, unreadMessages, activeProcesses, healthMap, reviewBadgeCounts, messageBadgeCounts, t],
   );
   return { monitorData, cards, systemProcesses };
 }

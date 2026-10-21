@@ -3575,7 +3575,31 @@
     "palette_agent_enabled": "Agen diaktifkan",
     "palette_health_complete": "Pemeriksaan kesehatan selesai",
     "palette_health_issues": "Pemeriksaan kesehatan menemukan masalah",
-    "palette_toggle_failed": "Gagal mengubah agen"
+    "palette_toggle_failed": "Gagal mengubah agen",
+    "palette_run_agent": "Jalankan {name}",
+    "palette_run_hint": "Jalankan sekali",
+    "palette_enable_agent": "Aktifkan {name}",
+    "palette_disable_agent": "Nonaktifkan {name}",
+    "palette_state_on": "Sedang aktif",
+    "palette_state_off": "Sedang nonaktif",
+    "palette_duplicate_agent": "Duplikat {name}",
+    "palette_duplicate_hint": "Gandakan agen",
+    "palette_quick_edit_agent": "Edit Cepat {name}",
+    "palette_quick_edit_hint": "Deskripsi & model",
+    "palette_open_agent": "Buka {name}",
+    "palette_open_hint": "Editor lengkap",
+    "palette_health_check": "Jalankan Pemeriksaan Kesehatan",
+    "palette_health_check_hint": "Diagnostik sistem",
+    "palette_section_commands": "Perintah",
+    "palette_section_agent_actions": "Aksi Agen",
+    "palette_section_recent_agents": "Agen Terbaru",
+    "palette_section_agents": "Agen",
+    "palette_section_credentials": "Kredensial",
+    "palette_section_templates": "Templat",
+    "palette_section_automations": "Otomasi",
+    "palette_section_navigation": "Navigasi",
+    "palette_agent_updated": "Agen diperbarui",
+    "palette_update_failed": "Gagal memperbarui agen"
   },
   "cockpit": {
     "inbox": {
@@ -8465,7 +8489,14 @@
     "dc_deck_kind_evidence": "Bukti",
     "dc_deck_kind_release": "Rilis",
     "dc_deck_no_lens": "Tidak ada yang ditulis dari kartu ini.",
-    "dc_deck_yes_lens": "Membuka blueprint di atas dek; keputusan dibuat di sana."
+    "dc_deck_yes_lens": "Membuka blueprint di atas dek; keputusan dibuat di sana.",
+    "live_author_you": "Anda",
+    "live_author_athena": "Athena",
+    "live_author_director": "Direktur",
+    "live_event_directive": "arahan",
+    "live_event_memory": "memori · {label}",
+    "orphan_unassigned": "Belum ditetapkan",
+    "orphan_unknown_persona": "Persona tidak dikenal"
   },
   "onboarding": {
     "adopt_button": "Siapkan agen",

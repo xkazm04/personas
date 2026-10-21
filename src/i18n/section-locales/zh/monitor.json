@@ -1583,5 +1583,12 @@
   "dc_deck_kind_evidence": "证据",
   "dc_deck_kind_release": "发布",
   "dc_deck_no_lens": "此卡片不会写入任何内容。",
-  "dc_deck_yes_lens": "在卡片组上方打开蓝图；决定在那里做出。"
+  "dc_deck_yes_lens": "在卡片组上方打开蓝图；决定在那里做出。",
+  "live_author_you": "你",
+  "live_author_athena": "Athena",
+  "live_author_director": "总监",
+  "live_event_directive": "指令",
+  "live_event_memory": "记忆 · {label}",
+  "orphan_unassigned": "未分配",
+  "orphan_unknown_persona": "未知角色"
 }

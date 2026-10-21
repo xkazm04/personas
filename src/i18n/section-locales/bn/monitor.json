@@ -1583,5 +1583,12 @@
   "dc_deck_kind_evidence": "প্রমাণ",
   "dc_deck_kind_release": "রিলিজ",
   "dc_deck_no_lens": "এই কার্ড থেকে কিছু লেখা হয় না।",
-  "dc_deck_yes_lens": "ডেকের উপরে ব্লুপ্রিন্ট খোলে; সিদ্ধান্ত সেখানেই হয়।"
+  "dc_deck_yes_lens": "ডেকের উপরে ব্লুপ্রিন্ট খোলে; সিদ্ধান্ত সেখানেই হয়।",
+  "live_author_you": "আপনি",
+  "live_author_athena": "Athena",
+  "live_author_director": "পরিচালক",
+  "live_event_directive": "নির্দেশ",
+  "live_event_memory": "স্মৃতি · {label}",
+  "orphan_unassigned": "অনির্ধারিত",
+  "orphan_unknown_persona": "অজানা পারসোনা"
 }

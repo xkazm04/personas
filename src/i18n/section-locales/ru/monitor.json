@@ -1583,5 +1583,12 @@
   "dc_deck_kind_evidence": "Подтверждение",
   "dc_deck_kind_release": "Релиз",
   "dc_deck_no_lens": "Из этой карточки ничего не записывается.",
-  "dc_deck_yes_lens": "Открывает чертеж поверх колоды; решения принимаются там."
+  "dc_deck_yes_lens": "Открывает чертеж поверх колоды; решения принимаются там.",
+  "live_author_you": "Вы",
+  "live_author_athena": "Афина",
+  "live_author_director": "Директор",
+  "live_event_directive": "директива",
+  "live_event_memory": "память · {label}",
+  "orphan_unassigned": "Не назначено",
+  "orphan_unknown_persona": "Неизвестная персона"
 }

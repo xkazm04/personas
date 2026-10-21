@@ -1583,5 +1583,12 @@
   "dc_deck_kind_evidence": "Evidencia",
   "dc_deck_kind_release": "Versión",
   "dc_deck_no_lens": "Nada se escribe desde esta tarjeta.",
-  "dc_deck_yes_lens": "Abre el plano sobre la baraja; las decisiones se toman allí."
+  "dc_deck_yes_lens": "Abre el plano sobre la baraja; las decisiones se toman allí.",
+  "live_author_you": "Tú",
+  "live_author_athena": "Athena",
+  "live_author_director": "Director",
+  "live_event_directive": "directiva",
+  "live_event_memory": "memoria · {label}",
+  "orphan_unassigned": "Sin asignar",
+  "orphan_unknown_persona": "Persona desconocida"
 }

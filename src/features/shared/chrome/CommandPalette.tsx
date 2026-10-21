@@ -224,7 +224,7 @@ export default function CommandPalette() {
       ...agentActionItems(personas, cbs, {
         run: paletteIcons.play, toggle: paletteIcons.toggle, duplicate: paletteIcons.copy,
         health: paletteIcons.health, edit: paletteIcons.pencil,
-      }),
+      }, { t, tx }),
     ];
     return { agentItems, credItems, templateItems, autoItems, navItems, commandItems };
   }, [personas, groupMap, credentials, recipes, automations, selectPersona, setSidebarSection, setIsCreatingPersona, paletteIcons, agentActions, paletteNavSections, t, tx]);
@@ -357,22 +357,22 @@ export default function CommandPalette() {
       if (sectionItems.length > 0) grouped.push({ kind, label, items: sectionItems });
     };
     if (isCommandMode) {
-      addSection('action', 'Commands');
-      addSection('agent-action', 'Agent Actions');
+      addSection('action', t.chrome.palette_section_commands);
+      addSection('agent-action', t.chrome.palette_section_agent_actions);
     } else {
       const settingsLabel = !searchQuery && scope === 'settings' ? searchT.recommended : searchT.section;
       // Settings lead when the palette was opened focused on settings;
       // otherwise they trail the entity/navigation results.
       if (scope === 'settings') addSection('setting', settingsLabel);
-      addSection('agent', !searchQuery && recentAgentIds.length > 0 ? 'Recent Agents' : 'Agents');
-      addSection('credential', 'Credentials');
-      addSection('template', 'Templates');
-      addSection('automation', 'Automations');
-      addSection('navigation', 'Navigation');
+      addSection('agent', !searchQuery && recentAgentIds.length > 0 ? t.chrome.palette_section_recent_agents : t.chrome.palette_section_agents);
+      addSection('credential', t.chrome.palette_section_credentials);
+      addSection('template', t.chrome.palette_section_templates);
+      addSection('automation', t.chrome.palette_section_automations);
+      addSection('navigation', t.chrome.palette_section_navigation);
       if (scope === 'all') addSection('setting', settingsLabel);
     }
     return grouped;
-  }, [items, isCommandMode, searchQuery, scope, searchT]);
+  }, [items, isCommandMode, searchQuery, scope, searchT, t]);
 
   // The rows in the order they are PAINTED. `sections` regroups `items` by
   // kind, so whenever ranking interleaves kinds (command mode: "Run Health
@@ -402,10 +402,10 @@ export default function CommandPalette() {
       partial.model_profile = JSON.stringify(profile);
     }
     storeUpdatePersona(id, partial as Parameters<typeof storeUpdatePersona>[1]).then(
-      () => { addToast('Agent updated', 'success'); close(); },
-      () => addToast('Failed to update agent', 'error'),
+      () => { addToast(t.chrome.palette_agent_updated, 'success'); close(); },
+      () => addToast(t.chrome.palette_update_failed, 'error'),
     );
-  }, [storeUpdatePersona, addToast, close, editingPersona]);
+  }, [storeUpdatePersona, addToast, close, editingPersona, t]);
 
   const executeItem = useCallback((item: PaletteItem) => {
     if (item.kind === 'agent') trackRecent(item.id.replace('agent:', ''));

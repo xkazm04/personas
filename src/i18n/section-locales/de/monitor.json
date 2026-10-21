@@ -1583,5 +1583,12 @@
   "dc_deck_kind_evidence": "Nachweis",
   "dc_deck_kind_release": "Veröffentlichung",
   "dc_deck_no_lens": "Von dieser Karte wird nichts geschrieben.",
-  "dc_deck_yes_lens": "Öffnet den Blueprint über dem Stapel; Entscheidungen fallen dort."
+  "dc_deck_yes_lens": "Öffnet den Blueprint über dem Stapel; Entscheidungen fallen dort.",
+  "live_author_you": "Sie",
+  "live_author_athena": "Athena",
+  "live_author_director": "Direktor",
+  "live_event_directive": "Anweisung",
+  "live_event_memory": "Gedächtnis · {label}",
+  "orphan_unassigned": "Nicht zugewiesen",
+  "orphan_unknown_persona": "Unbekannte Persona"
 }

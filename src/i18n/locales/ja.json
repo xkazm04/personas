@@ -3575,7 +3575,31 @@
     "palette_agent_enabled": "エージェントを有効にしました",
     "palette_health_complete": "ヘルスチェック完了",
     "palette_health_issues": "ヘルスチェックで問題が見つかりました",
-    "palette_toggle_failed": "エージェントを切り替えられませんでした"
+    "palette_toggle_failed": "エージェントを切り替えられませんでした",
+    "palette_run_agent": "{name} を実行",
+    "palette_run_hint": "アドホックに実行",
+    "palette_enable_agent": "{name} を有効化",
+    "palette_disable_agent": "{name} を無効化",
+    "palette_state_on": "現在オン",
+    "palette_state_off": "現在オフ",
+    "palette_duplicate_agent": "{name} を複製",
+    "palette_duplicate_hint": "エージェントをクローン",
+    "palette_quick_edit_agent": "{name} をクイック編集",
+    "palette_quick_edit_hint": "説明とモデル",
+    "palette_open_agent": "{name} を開く",
+    "palette_open_hint": "フルエディター",
+    "palette_health_check": "ヘルスチェックを実行",
+    "palette_health_check_hint": "システム診断",
+    "palette_section_commands": "コマンド",
+    "palette_section_agent_actions": "エージェント操作",
+    "palette_section_recent_agents": "最近のエージェント",
+    "palette_section_agents": "エージェント",
+    "palette_section_credentials": "認証情報",
+    "palette_section_templates": "テンプレート",
+    "palette_section_automations": "オートメーション",
+    "palette_section_navigation": "ナビゲーション",
+    "palette_agent_updated": "エージェントを更新しました",
+    "palette_update_failed": "エージェントを更新できませんでした"
   },
   "cockpit": {
     "inbox": {
@@ -8465,7 +8489,14 @@
     "dc_deck_kind_evidence": "エビデンス",
     "dc_deck_kind_release": "リリース",
     "dc_deck_no_lens": "このカードからは何も書き込まれません。",
-    "dc_deck_yes_lens": "デッキの上にブループリントを開きます。決定はそこで行います。"
+    "dc_deck_yes_lens": "デッキの上にブループリントを開きます。決定はそこで行います。",
+    "live_author_you": "あなた",
+    "live_author_athena": "アテナ",
+    "live_author_director": "ディレクター",
+    "live_event_directive": "指示",
+    "live_event_memory": "メモリ · {label}",
+    "orphan_unassigned": "未割り当て",
+    "orphan_unknown_persona": "不明なペルソナ"
   },
   "onboarding": {
     "adopt_button": "エージェントを設定",

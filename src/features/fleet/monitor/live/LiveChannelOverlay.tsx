@@ -12,6 +12,7 @@
 // entries for a note whose card is not on screen) are not: they carry decisions
 // waiting on the operator, not channel chatter, and they survive the toggle.
 
+import { useTranslation } from '@/i18n/useTranslation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import { usePipelineStore } from '@/stores/pipelineStore';
@@ -24,7 +25,7 @@ import type { Persona } from '@/lib/bindings/Persona';
 import { LiveCommsStack } from './LiveCommsStack';
 import { liveSourceFor, onExternalLiveMessage } from './liveExternal';
 import { useLiveLifetimes } from './useLiveLifetimes';
-import { projectChannelItem, type LiveMessage, type LiveVariantProps } from './liveModel';
+import { compactLabels, projectChannelItem, type LiveMessage, type LiveVariantProps } from './liveModel';
 
 const CAP = 30;        // bound the accumulated window
 const NEW_GRACE_MS = 8000; // an item this fresh at mount still pops (vs. silent history)
@@ -60,10 +61,12 @@ function LiveFeedSink({
   const seen = useRef<Set<string>>(new Set());
   const established = useRef(false);
   const mountAt = useRef(Date.now());
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (merged.length === 0) return;
     const now = Date.now();
+    const labels = compactLabels(t);
     const fresh: LiveMessage[] = [];
     for (const tg of merged) {
       const id = tg.item.id;
@@ -82,14 +85,14 @@ function LiveFeedSink({
       const isLive = established.current || (Number.isFinite(atMs) && atMs >= mountAt.current - NEW_GRACE_MS);
       if (isLive) {
         const persona = tg.item.personaId ? personaIndex.get(tg.item.personaId) : undefined;
-        fresh.push(projectChannelItem(tg, persona, now));
+        fresh.push(projectChannelItem(tg, persona, now, labels));
       }
     }
     established.current = true;
     if (fresh.length > 0) onNew(fresh);
     // Bound the dedupe set; the merged window is itself bounded.
     if (seen.current.size > 800) seen.current = new Set(merged.map((m) => m.item.id));
-  }, [merged, personaIndex, onNew]);
+  }, [merged, personaIndex, onNew, t]);
 
   return null;
 }

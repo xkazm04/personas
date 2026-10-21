@@ -3575,7 +3575,31 @@
     "palette_agent_enabled": "Agente activado",
     "palette_health_complete": "Comprobación de estado completada",
     "palette_health_issues": "La comprobación de estado encontró problemas",
-    "palette_toggle_failed": "No se pudo cambiar el agente"
+    "palette_toggle_failed": "No se pudo cambiar el agente",
+    "palette_run_agent": "Ejecutar {name}",
+    "palette_run_hint": "Ejecutar de inmediato",
+    "palette_enable_agent": "Activar {name}",
+    "palette_disable_agent": "Desactivar {name}",
+    "palette_state_on": "Activado actualmente",
+    "palette_state_off": "Desactivado actualmente",
+    "palette_duplicate_agent": "Duplicar {name}",
+    "palette_duplicate_hint": "Clonar agente",
+    "palette_quick_edit_agent": "Edición rápida de {name}",
+    "palette_quick_edit_hint": "Descripción y modelo",
+    "palette_open_agent": "Abrir {name}",
+    "palette_open_hint": "Editor completo",
+    "palette_health_check": "Ejecutar comprobación de estado",
+    "palette_health_check_hint": "Diagnóstico del sistema",
+    "palette_section_commands": "Comandos",
+    "palette_section_agent_actions": "Acciones de agentes",
+    "palette_section_recent_agents": "Agentes recientes",
+    "palette_section_agents": "Agentes",
+    "palette_section_credentials": "Credenciales",
+    "palette_section_templates": "Plantillas",
+    "palette_section_automations": "Automatizaciones",
+    "palette_section_navigation": "Navegación",
+    "palette_agent_updated": "Agente actualizado",
+    "palette_update_failed": "No se pudo actualizar el agente"
   },
   "cockpit": {
     "inbox": {
@@ -8465,7 +8489,14 @@
     "dc_deck_kind_evidence": "Evidencia",
     "dc_deck_kind_release": "Versión",
     "dc_deck_no_lens": "Nada se escribe desde esta tarjeta.",
-    "dc_deck_yes_lens": "Abre el plano sobre la baraja; las decisiones se toman allí."
+    "dc_deck_yes_lens": "Abre el plano sobre la baraja; las decisiones se toman allí.",
+    "live_author_you": "Tú",
+    "live_author_athena": "Athena",
+    "live_author_director": "Director",
+    "live_event_directive": "directiva",
+    "live_event_memory": "memoria · {label}",
+    "orphan_unassigned": "Sin asignar",
+    "orphan_unknown_persona": "Persona desconocida"
   },
   "onboarding": {
     "adopt_button": "Configurar agente",

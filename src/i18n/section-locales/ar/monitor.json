@@ -1583,5 +1583,12 @@
   "dc_deck_kind_evidence": "الأدلة",
   "dc_deck_kind_release": "الإصدار",
   "dc_deck_no_lens": "لا يُكتب شيء من هذه البطاقة.",
-  "dc_deck_yes_lens": "يفتح المخطط فوق المجموعة؛ القرارات تتم هناك."
+  "dc_deck_yes_lens": "يفتح المخطط فوق المجموعة؛ القرارات تتم هناك.",
+  "live_author_you": "أنت",
+  "live_author_athena": "Athena",
+  "live_author_director": "المدير",
+  "live_event_directive": "توجيه",
+  "live_event_memory": "ذاكرة · {label}",
+  "orphan_unassigned": "غير مُسند",
+  "orphan_unknown_persona": "شخصية غير معروفة"
 }

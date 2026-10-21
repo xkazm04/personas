@@ -1583,5 +1583,12 @@
   "dc_deck_kind_evidence": "साक्ष्य",
   "dc_deck_kind_release": "रिलीज़",
   "dc_deck_no_lens": "इस कार्ड से कुछ नहीं लिखा जाता।",
-  "dc_deck_yes_lens": "डेक के ऊपर ब्लूप्रिंट खोलता है; निर्णय वहीं होते हैं।"
+  "dc_deck_yes_lens": "डेक के ऊपर ब्लूप्रिंट खोलता है; निर्णय वहीं होते हैं।",
+  "live_author_you": "आप",
+  "live_author_athena": "Athena",
+  "live_author_director": "निदेशक",
+  "live_event_directive": "निर्देश",
+  "live_event_memory": "स्मृति · {label}",
+  "orphan_unassigned": "असाइन नहीं",
+  "orphan_unknown_persona": "अज्ञात पर्सोना"
 }

@@ -3575,7 +3575,31 @@
     "palette_agent_enabled": "Agent zapnut",
     "palette_health_complete": "Kontrola stavu dokončena",
     "palette_health_issues": "Kontrola stavu našla problémy",
-    "palette_toggle_failed": "Nepodařilo se přepnout agenta"
+    "palette_toggle_failed": "Nepodařilo se přepnout agenta",
+    "palette_run_agent": "Spustit {name}",
+    "palette_run_hint": "Jednorázově spustit",
+    "palette_enable_agent": "Zapnout {name}",
+    "palette_disable_agent": "Vypnout {name}",
+    "palette_state_on": "Právě zapnuto",
+    "palette_state_off": "Právě vypnuto",
+    "palette_duplicate_agent": "Duplikovat {name}",
+    "palette_duplicate_hint": "Naklonovat agenta",
+    "palette_quick_edit_agent": "Rychlá úprava {name}",
+    "palette_quick_edit_hint": "Popis a model",
+    "palette_open_agent": "Otevřít {name}",
+    "palette_open_hint": "Plný editor",
+    "palette_health_check": "Spustit kontrolu stavu",
+    "palette_health_check_hint": "Diagnostika systému",
+    "palette_section_commands": "Příkazy",
+    "palette_section_agent_actions": "Akce agentů",
+    "palette_section_recent_agents": "Nedávní agenti",
+    "palette_section_agents": "Agenti",
+    "palette_section_credentials": "Přihlašovací údaje",
+    "palette_section_templates": "Šablony",
+    "palette_section_automations": "Automatizace",
+    "palette_section_navigation": "Navigace",
+    "palette_agent_updated": "Agent aktualizován",
+    "palette_update_failed": "Agenta se nepodařilo aktualizovat"
   },
   "cockpit": {
     "inbox": {
@@ -8465,7 +8489,14 @@
     "dc_deck_kind_evidence": "Důkazy",
     "dc_deck_kind_release": "Vydání",
     "dc_deck_no_lens": "Z této karty se nic nezapisuje.",
-    "dc_deck_yes_lens": "Otevře blueprint nad balíčkem karet; rozhoduje se tam."
+    "dc_deck_yes_lens": "Otevře blueprint nad balíčkem karet; rozhoduje se tam.",
+    "live_author_you": "Vy",
+    "live_author_athena": "Athena",
+    "live_author_director": "Ředitel",
+    "live_event_directive": "pokyn",
+    "live_event_memory": "paměť · {label}",
+    "orphan_unassigned": "Nepřiřazeno",
+    "orphan_unknown_persona": "Neznámá persona"
   },
   "onboarding": {
     "adopt_button": "Nastavit agenta",

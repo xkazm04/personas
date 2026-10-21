@@ -1583,5 +1583,12 @@
   "dc_deck_kind_evidence": "Bằng chứng",
   "dc_deck_kind_release": "Phát hành",
   "dc_deck_no_lens": "Không có gì được ghi từ thẻ này.",
-  "dc_deck_yes_lens": "Mở bản thiết kế phía trên bộ thẻ; các quyết định diễn ra ở đó."
+  "dc_deck_yes_lens": "Mở bản thiết kế phía trên bộ thẻ; các quyết định diễn ra ở đó.",
+  "live_author_you": "Bạn",
+  "live_author_athena": "Athena",
+  "live_author_director": "Giám đốc",
+  "live_event_directive": "chỉ thị",
+  "live_event_memory": "bộ nhớ · {label}",
+  "orphan_unassigned": "Chưa gán",
+  "orphan_unknown_persona": "Persona không xác định"
 }

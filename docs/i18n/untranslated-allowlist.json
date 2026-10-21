@@ -4509,5 +4509,11 @@
   "ru:plugins.dev_tools.improve_why_gate_lint",
   "vi:plugins.dev_tools.improve_pop_production",
   "vi:plugins.dev_tools.improve_why_gate_lint",
-  "zh:plugins.dev_tools.improve_why_gate_lint"
+  "zh:plugins.dev_tools.improve_why_gate_lint",
+  "*:monitor.live_author_athena",
+  "de:chrome.palette_section_navigation",
+  "fr:chrome.palette_section_navigation",
+  "fr:chrome.palette_section_agents",
+  "fr:monitor.live_event_directive",
+  "es:monitor.live_author_director"
 ]
