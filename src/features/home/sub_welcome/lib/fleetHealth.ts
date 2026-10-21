@@ -9,7 +9,7 @@
  * rows are deliberately EXCLUDED from the denominator. The backend's
  * `get_metrics_summary` reports `totalExecutions = COUNT(*)` (all statuses),
  * `successfulExecutions` (status='completed') and `failedExecutions`
- * (status='failed') separately; "completed" === `successfulExecutions`.
+ * (status='failed' or 'incomplete', a stalled or reaped run) separately; "completed" === `successfulExecutions`.
  * Counting non-terminal rows in the denominator is wrong both ways: it dilutes
  * a real failure spike below the firing threshold AND paints a calm-but-low
  * green success rate during normal activity (e.g. 5 completed + 5 running would

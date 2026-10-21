@@ -527,6 +527,9 @@ pub fn get_summary_with_conn(
     get_summary_in_window(conn, &MetricsWindow::last_days(days), persona_id)
 }
 
+/// `failed_executions` counts `incomplete` (a stalled or reaped run) as well as
+/// `failed`, matching the execution dashboard: callers compute a success rate
+/// from `successful / (successful + failed)` and a dead run is not a success.
 pub fn get_summary_in_window(
     conn: &Connection,
     window: &MetricsWindow,
@@ -543,7 +546,7 @@ pub fn get_summary_in_window(
         "SELECT
             COUNT(*) as total_executions,
             COALESCE(SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END), 0) as successful,
-            COALESCE(SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END), 0) as failed,
+            COALESCE(SUM(CASE WHEN status IN ('failed', 'incomplete') THEN 1 ELSE 0 END), 0) as failed,
             COALESCE(SUM(cost_usd), 0.0) as total_cost,
             COUNT(DISTINCT persona_id) as active_personas
          FROM persona_executions
@@ -2865,6 +2868,32 @@ mod tests {
         assert_eq!(dash.successful_executions, 1);
         assert_eq!(dash.failed_executions, 2);
         assert!((dash.overall_success_rate - 1.0 / 3.0).abs() < 1e-9);
+        Ok(())
+    }
+
+    #[test]
+    fn summary_counts_incomplete_runs_as_failed() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let persona = create_test_persona(&pool, "summary-persona");
+        let at = (chrono::Utc::now() - chrono::Duration::hours(2))
+            .format("%Y-%m-%d %H:%M:%S")
+            .to_string();
+        let conn = pool.conn("execution_metrics::test")?;
+        for (id, status) in [
+            ("s-ok", "completed"),
+            ("s-inc", "incomplete"),
+            ("s-fail", "failed"),
+            ("s-cancel", "cancelled"),
+        ] {
+            conn.execute(
+                "INSERT INTO persona_executions (id, persona_id, status, cost_usd, created_at)
+                 VALUES (?1, ?2, ?3, 1.0, ?4)",
+                rusqlite::params![id, persona, status, at],
+            )?;
+        }
+        let s = get_summary_with_conn(&conn, 7, None)?;
+        assert_eq!(s.successful_executions, 1);
+        assert_eq!(s.failed_executions, 2, "failed + incomplete");
         Ok(())
     }
 
