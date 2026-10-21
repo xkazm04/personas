@@ -49,7 +49,7 @@ export function AgentPersonaRow({
           title={star.label}
           aria-label={star.label}
         >
-          <Star className={`w-3 h-3 ${star.isFavorite ? 'text-amber-400 fill-amber-400' : 'text-foreground/90'}`} aria-hidden="true" />
+          <Star className={`w-3 h-3 ${star.isFavorite ? 'text-status-warning fill-status-warning' : 'text-foreground/90'}`} aria-hidden="true" />
         </Button>
       )}
       {statusDot}
