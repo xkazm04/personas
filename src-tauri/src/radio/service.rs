@@ -66,6 +66,12 @@ impl RadioService {
             Err(_) => RadioState::default(),
         };
 
+        // A session that quit mid-song persisted Playing/Buffering, but no engine is
+        // running at boot. Report Paused so every reader agrees nothing is live.
+        if matches!(state.status, PlayStatus::Playing | PlayStatus::Buffering) {
+            state.status = PlayStatus::Paused;
+        }
+
         // Discard a persisted current_station_id that doesn't exist in the
         // current catalog (common after a station rename or removal between
         // releases).
@@ -273,6 +279,21 @@ mod tests {
     fn fresh() -> RadioService {
         let path = temp_dir().join(format!("radio_test_{}.json", uuid::Uuid::new_v4().simple()));
         RadioService::new(path)
+    }
+
+    #[test]
+    fn boot_never_restores_a_live_play_status() {
+        let path = temp_dir().join(format!("radio_test_{}.json", uuid::Uuid::new_v4().simple()));
+        for live in [PlayStatus::Playing, PlayStatus::Buffering] {
+            let persisted = RadioState {
+                status: live,
+                ..RadioState::default()
+            };
+            std::fs::write(&path, serde_json::to_string(&persisted).unwrap()).unwrap();
+            let svc = RadioService::new(path.clone());
+            assert!(matches!(svc.state().status, PlayStatus::Paused));
+        }
+        let _ = std::fs::remove_file(&path);
     }
 
     #[test]
