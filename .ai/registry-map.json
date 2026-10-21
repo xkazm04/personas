@@ -4431,12 +4431,11 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/api/__tests__/personas.test.ts:5 precondition unmet: these suites test the TS IPC wrappers by mocking the Tauri transport (mockInvoke, e.g. src/api/__tests__/executions.test.ts:26); no statement, mapping or store engine is under test here - repo-testing's real-engine rule belongs to the db crate's suite",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:b67182492821d592",
-          "evaluatedRevision": 18,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/api/__tests__/personas.test.ts:5 precondition unmet: the suites test the TS IPC wrappers against a mocked Tauri transport (mockInvoke at src/api/__tests__/executions.test.ts:26); no statement, row mapping or store engine is under test, so repo-testing belongs to the db crate suite",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:2dba94be6400dea1",
+          "evaluatedRevision": 19,
+          "revisionsBehind": 1
         }
       ],
       "governance": "governed"
@@ -32868,12 +32867,11 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/api/cloudSync.ts:11 precondition unmet: the context is Zustand store composition plus thin IPC wrappers that each name one backend operation (invokeWithTimeout('cloud_sync_status')); it owns no store, statement or row decoder, and its only direct persistence (src/stores/notificationCenterStore.ts:64) is a localStorage UI cache governed by client-state",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:b67182492821d592",
-          "evaluatedRevision": 18,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/api/cloudSync.ts:11 precondition unmet: Zustand store composition plus thin IPC wrappers that each name one backend operation; it owns no store, statement or row decoder, and its one direct persistence (src/stores/notificationCenterStore.ts:64) is a localStorage UI cache governed by client-state",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:2dba94be6400dea1",
+          "evaluatedRevision": 19,
+          "revisionsBehind": 1
         },
         {
           "subject": "retrieval",
@@ -33580,12 +33578,11 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/stores/slices/system/devToolsTaskSlice.ts:5 precondition unmet: these Zustand slices own no store, query language or row decoding and reach persistence only through typed IPC wrappers; where a slice holds many ids it already calls a set-shaped endpoint (src/stores/slices/system/devToolsProjectSlice.ts:404 listKpiMeasurementsBulk); the cloudSlice bulk loops target a remote deployment-control API, not a store",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:b67182492821d592",
-          "evaluatedRevision": 18,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/stores/slices/system/devToolsTaskSlice.ts:5 precondition unmet: the slices reach persistence only through typed IPC wrappers and own no query language or decoding; where a slice holds many ids it already calls a set-shaped endpoint (src/stores/slices/system/devToolsProjectSlice.ts:434 listKpiMeasurementsBulk), and the remaining localStorage writes are UI state",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:2dba94be6400dea1",
+          "evaluatedRevision": 19,
+          "revisionsBehind": 1
         },
         {
           "subject": "codebase-scanning",
@@ -33810,12 +33807,11 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/stores/slices/agents/personaSlice.ts:20 precondition unmet: the context owns no store or query language - persona data arrives only through typed IPC wrappers (set-shaped getPersonaSummaries at :262), and its one direct write (src/stores/util/dedupedStorage.ts:30) is a localStorage UI-preference blob, a client-state concern",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:b67182492821d592",
-          "evaluatedRevision": 18,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/stores/slices/agents/personaSlice.ts:21 precondition unmet: persona data arrives only through typed IPC wrappers (set-shaped getPersonaSummaries at :266); the one direct write (src/stores/util/dedupedStorage.ts:30) is a localStorage UI-preference blob, a client-state concern",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:2dba94be6400dea1",
+          "evaluatedRevision": 19,
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-runtime-assembly",
@@ -38167,12 +38163,11 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "tests/playwright/companion-bridge.ts:2 precondition unmet: the harness drives the running app over the test-automation HTTP server and never opens a store, builds a statement or decodes a row; repo-testing's real-engine rule belongs to the db crate suite",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:b67182492821d592",
-          "evaluatedRevision": 18,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "tests/playwright/companion-bridge.ts:2 precondition unmet: the harness drives the running app over the test-automation HTTP server and never opens a store, builds a statement or decodes a row; its query() calls are DOM selectors (:237)",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:2dba94be6400dea1",
+          "evaluatedRevision": 19,
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-memory",
@@ -41172,12 +41167,11 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/vault/sub_databases/__tests__/introspectionParity.test.ts:11 precondition unmet: live introspection runs in the backend's parameterized commands, so these suites test only frontend result parsers and a clipboard SELECT helper that is never executed (src/features/vault/sub_databases/introspectionQueries.ts:7) - no repository or store engine is under test",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:b67182492821d592",
-          "evaluatedRevision": 18,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/vault/sub_databases/__tests__/introspectionParity.test.ts:11 precondition unmet: live introspection runs in the backend parameterized commands, so these suites test frontend parsers and a clipboard SELECT helper that is never executed (src/features/vault/sub_databases/introspectionQueries.ts:7); no repository or store engine is under test",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:2dba94be6400dea1",
+          "evaluatedRevision": 19,
+          "revisionsBehind": 1
         },
         {
           "subject": "credential-vault",

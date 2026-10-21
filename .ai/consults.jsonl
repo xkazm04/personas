@@ -1856,3 +1856,9 @@
 {"ts":"2026-10-21T17:31:26Z","bundle":"software-engineering","subjects":["table"],"techniques":[],"deviations":0}
 {"ts":"2026-10-21T17:31:26Z","bundle":"software-engineering","subjects":["table"],"techniques":[],"deviations":0}
 {"ts":"2026-10-21T17:34:52Z","bundle":"software-engineering","subjects":["terminal-multiplexing"],"techniques":["pty-management"],"deviations":0}
+{"ts":"2026-10-21T17:37:26Z","bundle":"software-engineering","subjects":["data-access"],"techniques":["repo-testing","layering-rules","batching-and-n-plus-one"],"deviations":0}
+{"ts":"2026-10-21T17:37:26Z","bundle":"software-engineering","subjects":["data-access"],"techniques":["repo-testing","layering-rules","batching-and-n-plus-one"],"deviations":0}
+{"ts":"2026-10-21T17:37:26Z","bundle":"software-engineering","subjects":["data-access"],"techniques":["repo-testing","layering-rules","batching-and-n-plus-one"],"deviations":0}
+{"ts":"2026-10-21T17:37:26Z","bundle":"software-engineering","subjects":["data-access"],"techniques":["repo-testing","layering-rules","batching-and-n-plus-one"],"deviations":0}
+{"ts":"2026-10-21T17:37:26Z","bundle":"software-engineering","subjects":["data-access"],"techniques":["repo-testing","layering-rules","batching-and-n-plus-one"],"deviations":0}
+{"ts":"2026-10-21T17:37:26Z","bundle":"software-engineering","subjects":["data-access"],"techniques":["repo-testing","layering-rules","batching-and-n-plus-one"],"deviations":0}

@@ -7957,19 +7957,30 @@
       "subject": "data-access",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T16:31:00.000Z",
-      "worker": "a6beddbc-d977-484a-b82d-b5b70add603c",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:37:26.000Z",
+      "worker": "eaefbfe7-2f04-4164-af71-bc418a8db037",
       "techniques": [
         {
           "technique": "layering-rules",
           "verdict": "not-applicable",
-          "evidence": "src/stores/slices/agents/personaSlice.ts:20 imports named operations from @/api/agents/personas; no statement is built here"
+          "evidence": "src/stores/slices/agents/personaSlice.ts:20 imports named operations from @/api/agents/personas; no statement is built here",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "batching-and-n-plus-one",
           "verdict": "not-applicable",
-          "evidence": "src/stores/slices/agents/personaSlice.ts:262 list data is fetched in one set-shaped call; per-id getPersonaDetail is only used when a single persona is opened"
+          "evidence": "src/stores/slices/agents/personaSlice.ts:262 list data is fetched in one set-shaped call; per-id getPersonaDetail is only used when a single persona is opened",
+          "carriedFrom": "2026-10-09"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/stores/slices/agents/personaSlice.ts:20 precondition unmet: the context owns no store or query language - persona data arrives only through typed IPC wrappers (set-shaped getPersonaSummaries at :262), and its one direct write (src/stores/util/dedupedStorage.ts:30) is a localStorage UI-preference blob, a client-state concern",
+          "evaluatedAt": "2026-10-09T16:31:00.000Z",
+          "worker": "a6beddbc-d977-484a-b82d-b5b70add603c",
+          "reason": "replaced by eaefbfe7-2f04-4164-af71-bc418a8db037"
         }
       ]
     },
@@ -7978,39 +7989,58 @@
       "subject": "data-access",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T16:31:00.000Z",
-      "worker": "a6beddbc-d977-484a-b82d-b5b70add603c",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:37:26.000Z",
+      "worker": "eaefbfe7-2f04-4164-af71-bc418a8db037",
       "techniques": [
         {
           "technique": "repo-testing",
           "verdict": "not-applicable",
-          "evidence": "src/api/__tests__/personas.test.ts:5 the mocked seam is the IPC transport above the repository (a layer this repo owns), which the technique licenses; the engine is never mocked here because it is never reached"
+          "evidence": "src/api/__tests__/personas.test.ts:5 the mocked seam is the IPC transport above the repository (a layer this repo owns), which the technique licenses; the engine is never mocked here because it is never reached",
+          "carriedFrom": "2026-10-09"
         }
       ],
-      "registryProposal": "Coverage question: a frontend IPC-wrapper test suite matched data-access on the tokens tests/serialization/mock; test-harness (already paired) is the governing subject. Technique-shaped resonance with repo-testing's 'mock the layer you wrote' rule, not a data-layer context."
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/api/__tests__/personas.test.ts:5 precondition unmet: these suites test the TS IPC wrappers by mocking the Tauri transport (mockInvoke, e.g. src/api/__tests__/executions.test.ts:26); no statement, mapping or store engine is under test here - repo-testing's real-engine rule belongs to the db crate's suite",
+          "evaluatedAt": "2026-10-09T16:31:00.000Z",
+          "worker": "a6beddbc-d977-484a-b82d-b5b70add603c",
+          "reason": "replaced by eaefbfe7-2f04-4164-af71-bc418a8db037"
+        }
+      ]
     },
     "e1bc4bef-5cf0-4bc0-9b12-a26e88065857/data-access": {
       "context": "vault-database-tests",
       "subject": "data-access",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T16:31:00.000Z",
-      "worker": "a6beddbc-d977-484a-b82d-b5b70add603c",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:37:26.000Z",
+      "worker": "eaefbfe7-2f04-4164-af71-bc418a8db037",
       "techniques": [
         {
           "technique": "repo-testing",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_databases/__tests__/introspectionQueries.test.ts:17 text-equality is asserted on a copy-paste string whose spelling IS its contract, not on an executed statement, so the 'do not snapshot query text' rule does not reach it"
+          "evidence": "src/features/vault/sub_databases/__tests__/introspectionQueries.test.ts:17 text-equality is asserted on a copy-paste string whose spelling IS its contract, not on an executed statement, so the 'do not snapshot query text' rule does not reach it",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "query-construction",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_databases/introspectionQueries.ts:7 the only builder left in scope emits clipboard text; the executed hand-escape (TablesTab.tsx:42) is already a recorded deviation on vault-databases-tabs and lives outside this context"
+          "evidence": "src/features/vault/sub_databases/introspectionQueries.ts:7 the only builder left in scope emits clipboard text; the executed hand-escape (TablesTab.tsx:42) is already a recorded deviation on vault-databases-tabs and lives outside this context",
+          "carriedFrom": "2026-10-09"
         }
       ],
-      "registryProposal": "The governing subject for this context is sql-console (already paired, deviation); data-access matched on database/tests/query. The golden path's 'ad-hoc queries run by people' carve-out is the precondition test that routes it away."
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/vault/sub_databases/__tests__/introspectionParity.test.ts:11 precondition unmet: live introspection runs in the backend's parameterized commands, so these suites test only frontend result parsers and a clipboard SELECT helper that is never executed (src/features/vault/sub_databases/introspectionQueries.ts:7) - no repository or store engine is under test",
+          "evaluatedAt": "2026-10-09T16:31:00.000Z",
+          "worker": "a6beddbc-d977-484a-b82d-b5b70add603c",
+          "reason": "replaced by eaefbfe7-2f04-4164-af71-bc418a8db037"
+        }
+      ]
     },
     "d7525012-ab19-4b29-99bb-0d4b6b9e084b/terminal-multiplexing": {
       "context": "plugins-fleet-tests",
@@ -13524,10 +13554,19 @@
       "subject": "data-access",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T01:31:33.733Z",
-      "worker": "bd5abba4-e76b-472e-85a1-fe02de1d99c8",
-      "techniques": []
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:37:26.000Z",
+      "worker": "eaefbfe7-2f04-4164-af71-bc418a8db037",
+      "techniques": [],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "tests/playwright/companion-bridge.ts:2 precondition unmet: the harness drives the running app over the test-automation HTTP server and never opens a store, builds a statement or decodes a row; repo-testing's real-engine rule belongs to the db crate suite",
+          "evaluatedAt": "2026-10-10T01:31:33.733Z",
+          "worker": "bd5abba4-e76b-472e-85a1-fe02de1d99c8",
+          "reason": "replaced by eaefbfe7-2f04-4164-af71-bc418a8db037"
+        }
+      ]
     },
     "1ffb5765-de47-4f01-87ec-06732a63522c/data-access": {
       "context": "i18n-generated",
@@ -15828,14 +15867,15 @@
       "subject": "data-access",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T11:38:19.000Z",
-      "worker": "8839de9b-9ad2-4e19-862a-e3c630f43e4d",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:37:26.000Z",
+      "worker": "eaefbfe7-2f04-4164-af71-bc418a8db037",
       "techniques": [
         {
           "technique": "batching-and-n-plus-one",
           "verdict": "not-applicable",
-          "evidence": "src/stores/slices/system/devToolsProjectSlice.ts:404 the one many-id local read is already set-shaped; the rest of the subject governs the Rust data layer"
+          "evidence": "src/stores/slices/system/devToolsProjectSlice.ts:404 the one many-id local read is already set-shaped; the rest of the subject governs the Rust data layer",
+          "carriedFrom": "2026-10-10"
         }
       ],
       "superseded": [
@@ -15845,6 +15885,13 @@
           "evaluatedAt": "2026-10-06",
           "worker": null,
           "reason": "replaced by 8839de9b-9ad2-4e19-862a-e3c630f43e4d"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/stores/slices/system/devToolsTaskSlice.ts:5 precondition unmet: these Zustand slices own no store, query language or row decoding and reach persistence only through typed IPC wrappers; where a slice holds many ids it already calls a set-shaped endpoint (src/stores/slices/system/devToolsProjectSlice.ts:404 listKpiMeasurementsBulk); the cloudSlice bulk loops target a remote deployment-control API, not a store",
+          "evaluatedAt": "2026-10-10T11:38:19.000Z",
+          "worker": "8839de9b-9ad2-4e19-862a-e3c630f43e4d",
+          "reason": "replaced by eaefbfe7-2f04-4164-af71-bc418a8db037"
         }
       ]
     },
@@ -15853,22 +15900,32 @@
       "subject": "data-access",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T11:38:19.000Z",
-      "worker": "8839de9b-9ad2-4e19-862a-e3c630f43e4d",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:37:26.000Z",
+      "worker": "eaefbfe7-2f04-4164-af71-bc418a8db037",
       "techniques": [
         {
           "technique": "layering-rules",
           "verdict": "not-applicable",
-          "evidence": "src/api/cloudSync.ts:11 the wrappers are intent-named operations with no query text; the query language lives in src-tauri/db"
+          "evidence": "src/api/cloudSync.ts:11 the wrappers are intent-named operations with no query text; the query language lives in src-tauri/db",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "batching-and-n-plus-one",
           "verdict": "not-applicable",
-          "evidence": "src/stores/notificationCenterStore.ts:64 no per-id store reads in the context; persistence is one localStorage blob"
+          "evidence": "src/stores/notificationCenterStore.ts:64 no per-id store reads in the context; persistence is one localStorage blob",
+          "carriedFrom": "2026-10-10"
         }
       ],
-      "registryProposal": "The matcher paired data-access with this context because of the word 'stores' (Zustand), the same lexical resonance already judged not-applicable on stores-util and stores-slices-system. The localStorage load at src/stores/notificationCenterStore.ts:64 silently returns [] on a corrupt blob; that question belongs to client-state, which may be the missing pairing here."
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/api/cloudSync.ts:11 precondition unmet: the context is Zustand store composition plus thin IPC wrappers that each name one backend operation (invokeWithTimeout('cloud_sync_status')); it owns no store, statement or row decoder, and its only direct persistence (src/stores/notificationCenterStore.ts:64) is a localStorage UI cache governed by client-state",
+          "evaluatedAt": "2026-10-10T11:38:19.000Z",
+          "worker": "8839de9b-9ad2-4e19-862a-e3c630f43e4d",
+          "reason": "replaced by eaefbfe7-2f04-4164-af71-bc418a8db037"
+        }
+      ]
     },
     "55d6d7cb-b016-4d73-8386-b5c18beafdae/data-access": {
       "context": "vault-database-shell",
