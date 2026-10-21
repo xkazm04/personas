@@ -48,7 +48,8 @@ export function useFleetGridSessionOps(
     }
   }, [t]);
 
-  // Spawn seeded with a first task: the prompt rides as a positional argv, so
+  // Spawn seeded with a first task: the prompt rides as a positional argv (after a
+  // `--` when it starts with a dash, so claude never reads it as an option), so
   // the session starts working the moment it boots; `headless` routes to the
   // stream-json lane. Returns success so the modal keeps a failed draft.
   const handleSpawnWithTask = useCallback(async (prompt: string, headless: boolean): Promise<boolean> => {
@@ -56,7 +57,7 @@ export function useFleetGridSessionOps(
     try {
       const id = headless
         ? await spawnHeadlessSession(activeProject.root_path, prompt)
-        : await spawnSession(activeProject.root_path, [prompt]);
+        : await spawnSession(activeProject.root_path, prompt.startsWith('-') ? ['--', prompt] : [prompt]);
       setActiveSession(id);
       refresh();
       return true;

@@ -255,6 +255,52 @@ impl Utf8StreamDecoder {
     }
 }
 
+/// Literal-prompt separator a caller may put in `args`: everything after it is
+/// positional, however it starts. A task like "- fix tests" would otherwise be
+/// parsed by claude as an option.
+const LITERAL_ARGS_SEPARATOR: &str = "--";
+
+/// Order the caller's args and the variadic `--mcp-config` for claude's argv.
+/// `--mcp-config` greedily eats following non-flag tokens, so it normally goes
+/// last; when the caller marked a literal tail with `--`, it goes BEFORE the
+/// separator (a `--mcp-config` after it would become a positional prompt word).
+fn claude_argv_tail(args: &[String], mcp_config: Option<&str>) -> Vec<String> {
+    let split = args.iter().position(|a| a == LITERAL_ARGS_SEPARATOR);
+    let (head, tail) = match split {
+        Some(i) => args.split_at(i),
+        None => (args, &[][..]),
+    };
+    let mut out: Vec<String> = head.to_vec();
+    if let Some(p) = mcp_config {
+        out.push("--mcp-config".to_string());
+        out.push(p.to_string());
+    }
+    out.extend(tail.iter().cloned());
+    out
+}
+
+#[cfg(test)]
+mod argv_tail_tests {
+    use super::claude_argv_tail;
+
+    fn v(a: &[&str]) -> Vec<String> {
+        a.iter().map(|s| s.to_string()).collect()
+    }
+
+    #[test]
+    fn a_dash_led_task_stays_a_positional_after_the_separator() {
+        let out = claude_argv_tail(&v(&["--", "- fix tests"]), Some("/m.json"));
+        assert_eq!(out, v(&["--mcp-config", "/m.json", "--", "- fix tests"]));
+    }
+
+    #[test]
+    fn without_a_separator_mcp_config_still_goes_last() {
+        let out = claude_argv_tail(&v(&["do the thing"]), Some("/m.json"));
+        assert_eq!(out, v(&["do the thing", "--mcp-config", "/m.json"]));
+        assert_eq!(claude_argv_tail(&v(&["-p", "x"]), None), v(&["-p", "x"]));
+    }
+}
+
 #[cfg(test)]
 mod utf8_stream_tests {
     use super::Utf8StreamDecoder;
@@ -554,9 +600,6 @@ pub(super) fn spawn_session_with_identity(
         for a in &name_args {
             c.arg(a);
         }
-        for a in &args {
-            c.arg(a);
-        }
         // `--mcp-config <configs...>` is VARIADIC — it greedily consumes every
         // following non-flag token. Emitted before the positional prompt it eats
         // the prompt as a bogus config path, so claude exits 1 ("MCP config file
@@ -566,10 +609,12 @@ pub(super) fn spawn_session_with_identity(
         // the caller's args, so its only operand is the path. (forward-slash
         // conversion avoids `--mcp-config` parsing a double-escaped Windows path
         // as inline JSON.)
-        if let Some(p) = mcp.config_path.as_deref() {
-            let p_fwd = p.display().to_string().replace('\\', "/");
-            c.arg("--mcp-config");
-            c.arg(p_fwd);
+        let mcp_path = mcp
+            .config_path
+            .as_deref()
+            .map(|p| p.display().to_string().replace('\\', "/"));
+        for a in claude_argv_tail(&args, mcp_path.as_deref()) {
+            c.arg(a);
         }
         tracing::debug!(
             program = %claude_exe,
@@ -591,14 +636,11 @@ pub(super) fn spawn_session_with_identity(
         for a in &name_args {
             c.arg(a);
         }
-        for a in &args {
-            c.arg(a);
-        }
         // Variadic `--mcp-config` must come LAST, after the positional prompt —
         // see the windows branch above for the full rationale.
-        if let Some(p) = mcp.config_path.as_deref() {
-            c.arg("--mcp-config");
-            c.arg(p.as_os_str());
+        let mcp_path = mcp.config_path.as_deref().map(|p| p.display().to_string());
+        for a in claude_argv_tail(&args, mcp_path.as_deref()) {
+            c.arg(a);
         }
         c
     };
