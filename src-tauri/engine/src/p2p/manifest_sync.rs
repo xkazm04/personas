@@ -19,6 +19,9 @@ use personas_core::error::AppError;
 use personas_db::repos::resources::exposure as exposure_repo;
 use personas_db::DbPool;
 
+/// Bound on the whole open_stream + write + read exchange with one peer.
+const MANIFEST_EXCHANGE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(15);
+
 /// Maximum manifest entries accepted from a single peer.
 /// Prevents a malicious or misconfigured peer from causing unbounded DB inserts.
 const MAX_MANIFEST_ENTRIES: usize = 1000;
@@ -134,28 +137,40 @@ impl ManifestSync {
         }
     }
 
+    /// Run the network half of a sync under `limit`, counting BOTH an exchange
+    /// error and a timeout as a sync failure. A stalled peer (accepts the
+    /// connection, never answers) is the failure the timeout exists for; it used
+    /// to return before the counter so the dashboard omitted it.
+    async fn bounded_exchange<F>(
+        &self,
+        peer_id: &str,
+        limit: std::time::Duration,
+        exchange: F,
+    ) -> Result<Message, AppError>
+    where
+        F: std::future::Future<Output = Result<Message, AppError>>,
+    {
+        let outcome = tokio::time::timeout(limit, exchange)
+            .await
+            .map_err(|_| AppError::Internal(format!("Manifest sync timeout for peer {peer_id}")))
+            .and_then(|r| r);
+        if outcome.is_err() {
+            self.counters.sync_failures.fetch_add(1, Ordering::Relaxed);
+        }
+        outcome
+    }
+
     /// Request and sync a manifest from a specific peer.
     pub async fn sync_manifest(&self, peer_id: &str) -> Result<(), AppError> {
         let sync_start = std::time::Instant::now();
 
-        // Wrap all network I/O (open_stream + write + read) in a single timeout
-        // to prevent indefinite hangs on stalled peers that accept connections
-        // but never read/write data (e.g. malicious or network-partitioned peers).
-        let result = tokio::time::timeout(std::time::Duration::from_secs(15), async {
-            let (mut send, mut recv) = self.connections.open_stream(peer_id).await?;
-            protocol::write_message(&mut send, &Message::ManifestRequest).await?;
-            protocol::decode(&mut recv).await
-        })
-        .await
-        .map_err(|_| AppError::Internal(format!("Manifest sync timeout for peer {peer_id}")))?;
-
-        let response = match result {
-            Ok(r) => r,
-            Err(e) => {
-                self.counters.sync_failures.fetch_add(1, Ordering::Relaxed);
-                return Err(e);
-            }
-        };
+        let response = self
+            .bounded_exchange(peer_id, MANIFEST_EXCHANGE_TIMEOUT, async {
+                let (mut send, mut recv) = self.connections.open_stream(peer_id).await?;
+                protocol::write_message(&mut send, &Message::ManifestRequest).await?;
+                protocol::decode(&mut recv).await
+            })
+            .await?;
 
         match response {
             Message::ManifestResponse { resources } => {
@@ -460,6 +475,22 @@ mod tests {
     /// `expires_at` arrives as RFC3339 (`T`/`Z`); a raw compare against
     /// `datetime('now')` (space-separated) kept an exposure that expired a
     /// moment ago advertised until UTC midnight.
+    #[tokio::test]
+    async fn a_stalled_peer_exchange_is_counted_as_a_failure() {
+        let pool = personas_db::init_test_db().expect("test db");
+        let sync = sync_over(pool);
+        let err = sync
+            .bounded_exchange(
+                "StalledPeer01",
+                std::time::Duration::from_millis(20),
+                std::future::pending::<Result<Message, AppError>>(),
+            )
+            .await
+            .expect_err("a pending exchange must time out");
+        assert!(err.to_string().contains("timeout"));
+        assert_eq!(sync.counters.sync_failures.load(Ordering::Relaxed), 1);
+    }
+
     #[test]
     fn manifest_drops_an_exposure_that_expired_earlier_today() {
         let pool = personas_db::init_test_db().expect("test db");
