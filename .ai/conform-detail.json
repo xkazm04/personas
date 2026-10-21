@@ -23030,32 +23030,59 @@
       "context": "triggers-studio",
       "subject": "native-shell-integration",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-13",
-      "evaluatedTs": "2026-10-13T11:30:27.173Z",
+      "state": "conformant",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:55:31.762Z",
+      "worker": "8d819755-f96f-4df7-96ca-6e716addef91",
       "techniques": [
         {
           "technique": "native-owned-stream",
-          "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_smee_relay/SmeeRelayTab.tsx:73 The view throttles a list IPC after relays happen elsewhere. It does not hold the webhook connection, so there is no view-owned stream to relocate or time out."
+          "verdict": "realized",
+          "evidence": "src/features/triggers/sub_smee_relay/SmeeRelayTab.tsx:16 the smee SSE connection lives in the native engine; the view holds only a singleton status listener, no connection or reconnect state"
         },
         {
-          "technique": "capability-presence-contract",
+          "technique": "native-side-owns-the-target-set",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/infrastructure/system/mod.rs:28 open::that(url) with the scheme allow-listed at :20, never a shell string; executing calls (src/features/triggers/hooks/useTriggerOperations.ts:4 executePersona) take ids the native side resolves"
+        },
+        {
+          "technique": "non-stealing-overlay",
           "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_studio/libs/studioCommit.ts:2 Commit turns a draft into a backend trigger record. There is no per-host capability matrix."
+          "evidence": "src/features/triggers/sub_smee_relay/SmeeRelayTab.tsx:22 host reach is product commands plus the URL opener; modals are in-document, no native surface, foreign-app query, input synthesis or grant"
+        },
+        {
+          "technique": "query-transparent-overlay",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_smee_relay/SmeeRelayTab.tsx:22 host reach is product commands plus the URL opener; modals are in-document, no native surface, foreign-app query, input synthesis or grant"
+        },
+        {
+          "technique": "observer-perturbation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_smee_relay/SmeeRelayTab.tsx:22 host reach is product commands plus the URL opener; modals are in-document, no native surface, foreign-app query, input synthesis or grant"
+        },
+        {
+          "technique": "layout-resolved-input-synthesis",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_smee_relay/SmeeRelayTab.tsx:22 host reach is product commands plus the URL opener; modals are in-document, no native surface, foreign-app query, input synthesis or grant"
+        },
+        {
+          "technique": "unexported-capability-ladder",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_smee_relay/SmeeRelayTab.tsx:22 host reach is product commands plus the URL opener; modals are in-document, no native surface, foreign-app query, input synthesis or grant"
         },
         {
           "technique": "permission-gate-vector",
           "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_studio/system_ops/SystemEventAutomationsPanel.tsx:3 Rows are saved automations with an enable toggle, not separately granted host capabilities."
+          "evidence": "src/features/triggers/sub_smee_relay/SmeeRelayTab.tsx:22 host reach is product commands plus the URL opener; modals are in-document, no native surface, foreign-app query, input synthesis or grant"
+        },
+        {
+          "technique": "capability-presence-contract",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/libs/studioCommit.ts:2 Commit turns a draft into a backend trigger record. There is no per-host capability matrix.",
+          "carriedFrom": "2026-10-13"
         }
       ],
-      "withdrawn": {
-        "worker": "5776a53e-f892-4da5-8247-972bc619bce1",
-        "state": "not-applicable",
-        "at": "2026-10-13T11:31:32.275272+00:00",
-        "reason": "reviewer (sonnet): The studio palette in triggerStudioConstants.ts:32-34 offers host-observing trigger blocks (file_watcher, clipboard, app_focus), so \"no per-host capability\" and \"nothing host-level\" is contradicted, and the anchors cited (SmeeRelayTab, studioCommit header, SystemEventAutomationsPanel header) do not "
-      }
+      "registryProposal": "Missing pairing: webhook-ingestion (767b2bb5-4662-4be1-ad24-c881ac334016) owns src-tauri/src/engine/smee_relay.rs, the native side of this context's stream, and is not paired with native-shell-integration. Judged in passing it would be a native-owned-stream deviation: src-tauri/src/engine/smee_relay.rs:315 awaits stream.next() with no idle timeout derived from the producer heartbeat (the reqwest client at :254 sets no read timeout), so a half-open connection stalls forever while status reports connected:true; and the backoff reset at :49 keys on connection lifetime, not on a round that produced a frame. Add the pair and judge it."
     },
     "67c91bb4-f3ee-4aa0-91ca-e7097ac6b394/native-shell-integration": {
       "context": "fleet-session-grid",
@@ -33479,6 +33506,118 @@
           "technique": "workspace-ancestry-isolation",
           "verdict": "not-applicable",
           "evidence": "src-tauri/engine/src/prompt/cli_args.rs:111 the builder strips the CLI's dynamic cwd/git system-prompt sections but does not choose the cwd; the positional rule belongs to the caller that picks exec_dir"
+        }
+      ]
+    },
+    "a6843b83-43a1-4eab-ae40-26f23b949a0d/native-shell-integration": {
+      "context": "hooks-execution",
+      "subject": "native-shell-integration",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:55:31.762Z",
+      "worker": "8d819755-f96f-4df7-96ca-6e716addef91",
+      "techniques": [
+        {
+          "technique": "native-owned-stream",
+          "verdict": "realized",
+          "evidence": "src/hooks/execution/usePersonaExecution.ts:389 view subscribes to EXECUTION_STATUS emitted natively (src-tauri/src/engine/runner/mod.rs:737); disconnect only unlistens, reload replays the persisted transcript instead of holding a stream"
+        },
+        {
+          "technique": "native-side-owns-the-target-set",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/execution/usePersonaExecution.ts:20 the only command this context calls is a read (getExecutionLogLines) - information only, the technique discriminator excludes it"
+        },
+        {
+          "technique": "capability-presence-contract",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/execution/useCorrelatedCliStream.ts:2 the context uses only the event bus, which every host the app ships to provides; no host-specific capability is reached"
+        },
+        {
+          "technique": "non-stealing-overlay",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/execution/useCorrelatedCliStream.ts:2 the only host API imported is the event bus - no window, overlay, foreign-app query, input synthesis, grant or unexported symbol"
+        },
+        {
+          "technique": "query-transparent-overlay",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/execution/useCorrelatedCliStream.ts:2 the only host API imported is the event bus - no window, overlay, foreign-app query, input synthesis, grant or unexported symbol"
+        },
+        {
+          "technique": "observer-perturbation",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/execution/useCorrelatedCliStream.ts:2 the only host API imported is the event bus - no window, overlay, foreign-app query, input synthesis, grant or unexported symbol"
+        },
+        {
+          "technique": "layout-resolved-input-synthesis",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/execution/useCorrelatedCliStream.ts:2 the only host API imported is the event bus - no window, overlay, foreign-app query, input synthesis, grant or unexported symbol"
+        },
+        {
+          "technique": "unexported-capability-ladder",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/execution/useCorrelatedCliStream.ts:2 the only host API imported is the event bus - no window, overlay, foreign-app query, input synthesis, grant or unexported symbol"
+        },
+        {
+          "technique": "permission-gate-vector",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/execution/useCorrelatedCliStream.ts:2 the only host API imported is the event bus - no window, overlay, foreign-app query, input synthesis, grant or unexported symbol"
+        }
+      ]
+    },
+    "b0cf3902-0739-40a8-8c76-ae594f41421b/native-shell-integration": {
+      "context": "plugins-dev-tools-context",
+      "subject": "native-shell-integration",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:55:31.762Z",
+      "worker": "8d819755-f96f-4df7-96ca-6e716addef91",
+      "techniques": [
+        {
+          "technique": "native-side-owns-the-target-set",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/infrastructure/context_generation.rs:797 require_auth (:683) then confine_to_project_root - canonicalize, whole-component starts_with, refuse outside; the other crossings (src/features/plugins/dev-tools/sub_context/ContextMapHealth.tsx:90) send a project id, not a target"
+        },
+        {
+          "technique": "native-owned-stream",
+          "verdict": "realized",
+          "evidence": "src/features/plugins/dev-tools/sub_context/ContextMapPage.tsx:281 scan runs as a native background task and the page renders CONTEXT_GEN_OUTPUT/STATUS/COMPLETE events plus a status resync"
+        },
+        {
+          "technique": "capability-presence-contract",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_context/ContextMapPage.tsx:410 every crossing is a product command present on all hosts; no OS capability is offered or gated"
+        },
+        {
+          "technique": "non-stealing-overlay",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_context/ScanOverlay.tsx:10 the \"overlay\" is an in-document log panel with no host import; nothing in the context places a native surface, reads a foreign app or synthesizes input"
+        },
+        {
+          "technique": "query-transparent-overlay",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_context/ScanOverlay.tsx:10 the \"overlay\" is an in-document log panel with no host import; nothing in the context places a native surface, reads a foreign app or synthesizes input"
+        },
+        {
+          "technique": "observer-perturbation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_context/ScanOverlay.tsx:10 the \"overlay\" is an in-document log panel with no host import; nothing in the context places a native surface, reads a foreign app or synthesizes input"
+        },
+        {
+          "technique": "layout-resolved-input-synthesis",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_context/ScanOverlay.tsx:10 the \"overlay\" is an in-document log panel with no host import; nothing in the context places a native surface, reads a foreign app or synthesizes input"
+        },
+        {
+          "technique": "unexported-capability-ladder",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_context/ScanOverlay.tsx:10 the \"overlay\" is an in-document log panel with no host import; nothing in the context places a native surface, reads a foreign app or synthesizes input"
+        },
+        {
+          "technique": "permission-gate-vector",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_context/ScanOverlay.tsx:10 the \"overlay\" is an in-document log panel with no host import; nothing in the context places a native surface, reads a foreign app or synthesizes input"
         }
       ]
     }

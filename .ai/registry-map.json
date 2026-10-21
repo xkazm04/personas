@@ -15758,7 +15758,11 @@
           "revision": 4,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src/hooks/execution/usePersonaExecution.ts:389 execution output/status are produced by the native runner (src-tauri/src/engine/runner/mod.rs:737) and the hooks only subscribe on the local bus and render - no connection, reconnect or backoff state lives in the throttleable view",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
+          "evaluatedRevision": 4
         },
         {
           "subject": "hitl-approval",
@@ -26662,7 +26666,11 @@
           "revision": 4,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src-tauri/src/commands/infrastructure/context_generation.rs:797 the renderer-sent scan root (src/features/plugins/dev-tools/sub_context/ContextMapPage.tsx:410) is canonicalized and confined component-wise to the project's registered root before it becomes the cwd of a permission-disabled agent; scan output is native-owned and rendered from events",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
+          "evaluatedRevision": 4
         },
         {
           "subject": "sidecar-provisioning",
@@ -39112,7 +39120,11 @@
           "revision": 4,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src/features/triggers/sub_smee_relay/SmeeRelayTab.tsx:16 the relay stream is native-owned and the tab renders its status event; external links go through open_external_url, which allow-lists the scheme and hands one argument to the host open primitive (src-tauri/src/commands/infrastructure/system/mod.rs:28)",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
+          "evaluatedRevision": 4
         },
         {
           "subject": "concurrent-vcs",

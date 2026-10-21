@@ -1894,3 +1894,6 @@
 {"ts":"2026-10-21T17:55:41Z","bundle":"software-engineering","subjects":["voice-io"],"techniques":[],"deviations":0}
 {"ts":"2026-10-21T17:53:07Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":["workspace-ancestry-isolation","capability-before-steering","instruction-freshness"],"deviations":1}
 {"ts":"2026-10-21T17:53:07Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":["context-reset-redelivery","workspace-ancestry-isolation"],"deviations":0}
+{"ts":"2026-10-21T17:55:31.762Z","bundle":"software-engineering","subjects":["native-shell-integration"],"techniques":["native-owned-stream","native-side-owns-the-target-set","capability-presence-contract"],"deviations":0}
+{"ts":"2026-10-21T17:55:31.762Z","bundle":"software-engineering","subjects":["native-shell-integration"],"techniques":["native-side-owns-the-target-set","native-owned-stream","capability-presence-contract"],"deviations":0}
+{"ts":"2026-10-21T17:55:31.762Z","bundle":"software-engineering","subjects":["native-shell-integration"],"techniques":["native-owned-stream","native-side-owns-the-target-set"],"deviations":0}
