@@ -427,11 +427,11 @@ pub fn dispatch_event_automations(app: &AppHandle, pool: &DbPool, events: &[Pers
             continue; // never react to our own lifecycle events (loop guard)
         }
         for a in &autos {
-            if a.listen_event_type.as_deref() != Some(ev.event_type.as_str()) {
+            if !listens_to(a.listen_event_type.as_deref(), &ev.event_type) {
                 continue;
             }
             if let Some(filter) = a.source_filter.as_deref() {
-                if !source_matches(filter, ev.source_id.as_deref()) {
+                if !crate::engine::bus::source_filter_matches(filter, ev.source_id.as_deref()) {
                     continue;
                 }
             }
@@ -470,12 +470,28 @@ pub fn dispatch_event_automations(app: &AppHandle, pool: &DbPool, events: &[Pers
     }
 }
 
-/// Simple `prefix*` / exact wildcard match used by `source_filter`.
-fn source_matches(filter: &str, source_id: Option<&str>) -> bool {
-    let Some(src) = source_id else { return false };
-    if let Some(prefix) = filter.strip_suffix('*') {
-        src.starts_with(prefix)
-    } else {
-        src == filter
+/// Does an automation listening for `listen` fire on `event_type`? Compared in
+/// canonical form, exactly as persona listeners are on the bus, so a
+/// `signal_raised` automation fires on `signal.raised`.
+fn listens_to(listen: Option<&str>, event_type: &str) -> bool {
+    use crate::engine::bus::canonical_event_type;
+    listen.is_some_and(|l| canonical_event_type(l) == canonical_event_type(event_type))
+}
+
+#[cfg(test)]
+mod listen_tests {
+    use super::listens_to;
+
+    #[test]
+    fn separator_and_case_variants_of_one_event_type_match() {
+        assert!(listens_to(Some("signal_raised"), "signal.raised"));
+        assert!(listens_to(Some("signal.raised"), "Signal-Raised"));
+        assert!(listens_to(Some("signal.raised"), "signal.raised"));
+    }
+
+    #[test]
+    fn different_event_types_and_unset_listeners_do_not_match() {
+        assert!(!listens_to(Some("signal.raised"), "signal.cleared"));
+        assert!(!listens_to(None, "signal.raised"));
     }
 }
