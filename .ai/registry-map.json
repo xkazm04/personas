@@ -19944,7 +19944,11 @@
           "revision": 5,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/notepad/overview/NoteOverview.tsx:14 the desk is a re-export of the quest-log journal of note cards; no alternating human/machine turns exist, so the transcript precondition does not hold",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:5b4e7d399a4d924e",
+          "evaluatedRevision": 5
         }
       ],
       "governance": "governed"
@@ -20647,7 +20651,11 @@
           "revision": 5,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/onboarding/components/TourPanelBody.tsx:50 renders one scripted step from a static tour list; the narration is TTS of step text (useTourNarration.ts:12), not a machine turn reporting its own work",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:5b4e7d399a4d924e",
+          "evaluatedRevision": 5
         },
         {
           "subject": "job-coordination",
@@ -24331,7 +24339,11 @@
           "revision": 5,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/shared/glyph/persona-layout/PersonaLayout.tsx:10 a three-mode (view/adoption/scratch) sigil layout of capability rows; no conversation turns are rendered, so the precondition does not hold",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:5b4e7d399a4d924e",
+          "evaluatedRevision": 5
         },
         {
           "subject": "operator-surfaces-for-llm-spend",
@@ -35079,7 +35091,11 @@
           "revision": 5,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/PersonaLayoutBuild.tsx:199 build questions are answered per cell and the overlay advances or closes, so no transcript of turns is kept (same shape as agents-quick-answer, judged not-applicable)",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:5b4e7d399a4d924e",
+          "evaluatedRevision": 5
         },
         {
           "subject": "agent-runtime-assembly",
@@ -35790,7 +35806,11 @@
           "revision": 5,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/search/suggestions/useStructuredQuery.ts:39 a search box that parses free text into query chips; there are no turns or transcript, so the precondition does not hold",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:5b4e7d399a4d924e",
+          "evaluatedRevision": 5
         },
         {
           "subject": "agent-memory",
