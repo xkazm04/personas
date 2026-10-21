@@ -259,7 +259,7 @@ pub fn run() {
                 // dropped; kill them here too (bounded, so exit cannot hang).
                 tauri::async_runtime::block_on(async {
                     let _ = tokio::time::timeout(
-                        std::time::Duration::from_secs(2),
+                        engine::mcp_tools::STDIO_POOL_SHUTDOWN_BUDGET,
                         engine::mcp_tools::shutdown_stdio_pool(),
                     )
                     .await;

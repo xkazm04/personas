@@ -371,7 +371,7 @@ describe('background run completion', () => {
     useAgentStore.setState({
       backgroundExecutions: [{
         executionId: 'exec-bg', personaId: 'p-9', personaName: 'Bg', personaColor: '#000',
-        status: 'running', startedAt: new Date().toISOString(),
+        status: 'running', startedAt: '2026-10-20T12:00:00.000Z',
       }],
     });
 

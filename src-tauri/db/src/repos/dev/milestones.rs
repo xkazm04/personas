@@ -698,9 +698,9 @@ pub fn set_milestone_item(
         let conn = pool.get()?;
         let (after_cut, status): (bool, String) = conn
             .query_row(
-                "SELECT cut_at IS NOT NULL, status FROM dev_milestones WHERE id = ?1",
+                "SELECT cut_at IS NOT NULL AS after_cut, status FROM dev_milestones WHERE id = ?1",
                 params![milestone_id],
-                |row| Ok((row.get(0)?, row.get(1)?)),
+                |row| Ok((row.get("after_cut")?, row.get("status")?)),
             )
             .map_err(|e| match e {
                 rusqlite::Error::QueryReturnedNoRows => {
@@ -764,7 +764,7 @@ pub fn remove_milestone_item(
         .query_row(
             "SELECT status FROM dev_milestones WHERE id = ?1",
             params![milestone_id],
-            |row| row.get(0),
+            |row| row.get("status"),
         )
         .optional()?;
     if let Some(status) = status {

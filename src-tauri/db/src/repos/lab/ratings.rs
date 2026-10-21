@@ -431,7 +431,7 @@ mod status_vocabulary_tests {
     fn heuristic_fallback_rows_do_not_move_version_ratings() {
         let pool = crate::init_test_db().expect("test db");
         seed_arena_result(&pool, "passed", Some(80), Some(90));
-        let conn = pool.get().unwrap();
+        let conn = crate::PoolExt::conn(&pool, "test:ratings_fallback").expect("conn");
         conn.execute(
             "INSERT INTO lab_arena_results
                 (id, run_id, scenario_name, model_id, provider, status,

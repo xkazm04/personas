@@ -1052,6 +1052,17 @@ impl CliProcessDriver {
         })
     }
 
+    /// Spawn through the chokepoint and hand back the bare child, for a caller
+    /// that owns the process lifetime itself (a pool keyed by credential). The
+    /// child gets the same argv, stdio and kill_on_drop as every driver spawn;
+    /// only the driver's exec-dir cleanup is the caller's.
+    pub fn spawn_child(
+        cli_args: &CliArgs,
+        exec_dir: &PathBuf,
+    ) -> Result<tokio::process::Child, std::io::Error> {
+        Self::build_and_spawn(cli_args, exec_dir)
+    }
+
     /// Internal: configure and spawn a `tokio::process::Command` from `CliArgs`.
     ///
     /// stderr is sent to null to prevent buffer-full deadlocks on Windows
