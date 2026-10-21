@@ -388,6 +388,15 @@ fn validate_commit_paths(paths: &[String]) -> Result<Vec<String>, AppError> {
                 "commit path must be a plain relative path, got {raw:?}"
             )));
         }
+        // A drive prefix (`C:/x`, `C:x`) is only a prefix component on Windows;
+        // on Linux and macOS it parses as a plain relative name, so reject it by
+        // shape to keep the answer the same on every platform.
+        let mut chars = raw.chars();
+        if matches!((chars.next(), chars.next()), (Some(d), Some(':')) if d.is_ascii_alphabetic()) {
+            return Err(AppError::Validation(format!(
+                "commit path must stay inside the project root, got {raw:?}"
+            )));
+        }
         let mut parts: Vec<String> = Vec::new();
         for component in Path::new(raw).components() {
             match component {
