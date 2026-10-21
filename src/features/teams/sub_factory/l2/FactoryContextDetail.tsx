@@ -12,12 +12,14 @@ import { coverageOf, type Cell } from './overviewModel';
 
 const num = (v: number | null, unit: string) => (v != null ? `${v} ${unit}`.trim() : '-');
 
-export function FactoryContextDetail({ cell, groupName, data, onDecide, onNote, w }: {
+export function FactoryContextDetail({ cell, groupName, data, onDecide, onScan, scanning, w }: {
   cell: Cell | null;
   groupName: string;
   data: FactoryL2Data;
   onDecide: (k: DevKpi, status: 'active' | 'archived') => void;
-  onNote: (s: string) => void;
+  /** Run a KPI scan scoped to the selected context. */
+  onScan: (contextId: string) => void;
+  scanning: boolean;
   w: FactoryWords;
 }) {
   if (!cell) return <Section title={w.context} state="empty" empty={{ art: 'folder', title: w.L.noContexts }} />;
@@ -35,7 +37,7 @@ export function FactoryContextDetail({ cell, groupName, data, onDecide, onNote, 
       title={name}
       meta={<Meta parts={[cell.ctx.category, cell.ctx.name !== name ? cell.ctx.name : null]} />}
       actions={
-        <KitButton onClick={() => onNote(w.L.scanContextNote(name))} testId="factory-context-scan">{w.L.scanContext}</KitButton>
+        <KitButton onClick={() => { if (!scanning) onScan(cell.ctx.id); }} loading={scanning} testId="factory-context-scan">{w.L.scanContext}</KitButton>
       }
     >
       <Section level={2} title={w.t.common.status}>

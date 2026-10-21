@@ -74,11 +74,12 @@ export function useFactoryScans(data: FactoryL2Data, onNote: (s: string) => void
     return () => { mounted.current = false; };
   }, []);
 
-  const scanKpisNow = useCallback(async () => {
+  /** Scan for KPI proposals: the whole project, or one context when `contextId` is given. */
+  const scanKpisNow = useCallback(async (contextId?: string) => {
     if (!data.project) return;
     setKpiScanning(true);
     try {
-      const { scan_id } = await scanKpis(data.project.id);
+      const { scan_id } = await scanKpis(data.project.id, contextId);
       kpiScanId.current = scan_id;
       const st = await pollKpiScan(scan_id, { getStatus: getKpiScanStatus, alive: () => mounted.current });
       if (!mounted.current) return;

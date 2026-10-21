@@ -116,9 +116,11 @@ export async function recordKpiMeasurement(
   });
 }
 
-/** Start a KPI proposal scan; progress streams via KPI_SCAN_* events. */
-export async function scanKpis(projectId: string): Promise<{ scan_id: string }> {
-  return invoke<{ scan_id: string }>("dev_tools_scan_kpis", { projectId }, { timeoutMs: 30_000 });
+/** Start a KPI proposal scan; progress streams via KPI_SCAN_* events. A
+ *  `contextId` scopes it to that one context (the backend gates it on that
+ *  context's own proposal queue); omitted, the scan covers the project. */
+export async function scanKpis(projectId: string, contextId?: string): Promise<{ scan_id: string }> {
+  return invoke<{ scan_id: string }>("dev_tools_scan_kpis", { projectId, contextId: contextId ?? null }, { timeoutMs: 30_000 });
 }
 
 export async function cancelKpiScan(scanId: string): Promise<boolean> {
