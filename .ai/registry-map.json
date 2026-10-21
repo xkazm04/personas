@@ -7955,7 +7955,11 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/naming.rs:242 the one-turn session-titling CLI is spawned through spawn_claude_and_collect, which sets no working directory (src-tauri/src/commands/credentials/ai_artifact_flow.rs:455) and no --setting-sources, so every title call inherits the Personas process cwd's instruction-file ancestry and user-level hooks; naming.rs:164 already records that hook noise pollutes its output - an uncontrolled, unasserted loaded set",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:25b61236a62604b0",
+          "evaluatedRevision": 31
         },
         {
           "subject": "agent-memory",
@@ -29974,7 +29978,11 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/engine/src/prompt/cli_args.rs:102 this module is the assembler side - it composes the app-authored persona prompt and feeds it on stdin (-p -); it neither authors, places nor re-delivers a repo-owned instruction file, which the golden path names as the inverse subject (prompt-assembly); where the launch span is decided (exec_dir) lives in the runner, judged under engine-project-tracking",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:25b61236a62604b0",
+          "evaluatedRevision": 31
         },
         {
           "subject": "agent-cli-transport",

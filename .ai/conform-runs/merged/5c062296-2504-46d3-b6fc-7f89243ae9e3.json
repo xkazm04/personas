@@ -1,0 +1,95 @@
+{
+  "schema": "conform-run/1",
+  "worker": "5c062296-2504-46d3-b6fc-7f89243ae9e3",
+  "subject": "agent-instruction-files",
+  "evaluatedAt": "2026-10-21T17:53:07Z",
+  "pairs": [
+    {
+      "context": "2de6333f-8375-404b-8fdc-fe0fb15d4f95",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:25b61236a62604b0",
+      "evaluatedRevision": 31,
+      "evidence": "src-tauri/src/commands/fleet/naming.rs:242 the one-turn session-titling CLI is spawned through spawn_claude_and_collect, which sets no working directory (src-tauri/src/commands/credentials/ai_artifact_flow.rs:455) and no --setting-sources, so every title call inherits the Personas process cwd's instruction-file ancestry and user-level hooks; naming.rs:164 already records that hook noise pollutes its output - an uncontrolled, unasserted loaded set",
+      "techniques": [
+        {
+          "technique": "workspace-ancestry-isolation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/naming.rs:242 a utility session is launched wherever Personas was started (in dev, beneath this repo's CLAUDE.md floor) rather than from a span-empty directory, and nothing captures or asserts which briefs it loaded; the isolation instrument exists in the same module (src-tauri/src/commands/fleet/contest_seat.rs:155 --setting-sources project,local) but is not applied here"
+        },
+        {
+          "technique": "capability-before-steering",
+          "verdict": "realized",
+          "evidence": "src-tauri/engine/src/unattended.rs:83 the FLEET:DONE completion protocol the fleet's Finished state depends on is delivered with the spawn grant rather than left to each target repo's instruction file"
+        },
+        {
+          "technique": "instruction-freshness",
+          "verdict": "minor-drift",
+          "evidence": "src-tauri/src/commands/fleet/types.rs:52 doc comment still points readers at 'the target repo's CLAUDE.md fleet section' for the protocol, which now lives in the spawn grant (unattended.rs:83); a code comment, not an instruction file, so it does not by itself carry the verdict"
+        }
+      ],
+      "registryProposal": "workspace-ancestry-isolation's 'Where this bites' lists evaluation workspaces, self-modifying loops and scratch clones; it omits the commonest case in a host app: one-shot utility LLM calls (titling, classification, extraction) spawned through a coding-harness CLI with no cwd, which inherit the host process's launch directory and so load an instruction floor written for unrelated work. Worth a bullet and a rule: utility spawns pin a span-empty cwd and restrict setting sources."
+    },
+    {
+      "context": "969f50a2-b70d-41e3-b573-284a75a67425",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAgainst": "sha256-b2:25b61236a62604b0",
+      "evaluatedRevision": 31,
+      "evidence": "src-tauri/engine/src/prompt/cli_args.rs:102 this module is the assembler side - it composes the app-authored persona prompt and feeds it on stdin (-p -); it neither authors, places nor re-delivers a repo-owned instruction file, which the golden path names as the inverse subject (prompt-assembly); where the launch span is decided (exec_dir) lives in the runner, judged under engine-project-tracking",
+      "techniques": [
+        {
+          "technique": "context-reset-redelivery",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/prompt/resume_prompt.rs:9 resume deliberately sends only new input, the technique's 'stay quiet on a context-preserving reopen' shape - but for the app's own persona prompt, not for a harness-injected file"
+        },
+        {
+          "technique": "workspace-ancestry-isolation",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/prompt/cli_args.rs:111 the builder strips the CLI's dynamic cwd/git system-prompt sections but does not choose the cwd; the positional rule belongs to the caller that picks exec_dir"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "agent-instruction-files",
+      "context": "059fdee0-40da-434a-a5cb-874bc9179a31",
+      "reason": "engine-core-infrastructure: system_ops.rs only dispatches context_scan to commands/infrastructure/context_generation; the CLAUDE.md marker writer lives in workspace-governance, already judged deviation. Nothing in this context's paths authors or loads an instruction file on a read; left unknown rather than guessed"
+    },
+    {
+      "subject": "agent-instruction-files",
+      "context": "d7525012-ab19-4b29-99bb-0d4b6b9e084b",
+      "reason": "plugins-fleet-tests: a Vitest suite; its high score comes from the skill-library-drawer tests whose subject surface (fleet-session-grid) is already judged. Not read this run"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-21T17:53:07Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-instruction-files"
+      ],
+      "techniques": [
+        "workspace-ancestry-isolation",
+        "capability-before-steering",
+        "instruction-freshness"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-21T17:53:07Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-instruction-files"
+      ],
+      "techniques": [
+        "context-reset-redelivery",
+        "workspace-ancestry-isolation"
+      ],
+      "deviations": 0
+    }
+  ]
+}

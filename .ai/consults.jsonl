@@ -1892,3 +1892,5 @@
 {"ts":"2026-10-21T17:48:30Z","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":["nested-run-is-not-its-parent"],"deviations":0}
 {"ts":"2026-10-21T17:55:41Z","bundle":"software-engineering","subjects":["voice-io"],"techniques":["engine-abstraction","on-device-vs-cloud"],"deviations":1}
 {"ts":"2026-10-21T17:55:41Z","bundle":"software-engineering","subjects":["voice-io"],"techniques":[],"deviations":0}
+{"ts":"2026-10-21T17:53:07Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":["workspace-ancestry-isolation","capability-before-steering","instruction-freshness"],"deviations":1}
+{"ts":"2026-10-21T17:53:07Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":["context-reset-redelivery","workspace-ancestry-isolation"],"deviations":0}
