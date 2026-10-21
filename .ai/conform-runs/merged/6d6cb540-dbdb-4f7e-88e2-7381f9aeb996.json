@@ -1,0 +1,46 @@
+{"schema": "conform-run/1", "worker": "6d6cb540-dbdb-4f7e-88e2-7381f9aeb996", "subject": "mcp-tools",
+ "evaluatedAt": "2026-10-21T17:41:29Z",
+ "pairs": [
+  {"context": "621caefc-8ae0-42e7-89b6-8e879ad62814", "subject": "mcp-tools", "bundle": "software-engineering", "state": "deviation",
+   "evidence": "src/features/settings/sub_api_keys/components/ApiKeysSettings.tsx:97 hides every key whose NAME is in HIDDEN_KEY_NAMES ('system', :60) instead of by minted id, so a user key named 'system' vanishes from the list and is revoked by the startup sweep (src-tauri/src/engine/management_api.rs:872)",
+   "techniques": [
+    {"technique": "authentication-and-scoping", "verdict": "deviation", "evidence": "src/features/settings/sub_api_keys/components/ApiKeysSettings.tsx:97 key identity derived from the label, not the minted id; the name is compared, which the technique forbids"},
+    {"technique": "authentication-and-scoping", "verdict": "realized (scope floor)", "evidence": "src/features/settings/sub_api_keys/components/CreateApiKeyDialog.tsx:91 execute is granted per persona (personas:execute:persona:<id>), never a blanket scope; :50 defaults to a 90-day expiry"},
+    {"technique": "authentication-and-scoping", "verdict": "realized (attributable audit)", "evidence": "src/features/settings/sub_api_keys/components/ApiKeyAuditDrawer.tsx:55 the audit trail is fetched by keyId, not by name"}
+   ]},
+  {"context": "a7ece012-8300-4780-b286-b9cea81801fc", "subject": "mcp-tools", "bundle": "software-engineering", "state": "deviation",
+   "evidence": "src-tauri/core/src/models/tool_usage.rs:14 persisted usage identifies a tool only by tool_name while tools are renamable (src-tauri/core/src/models/tool.rs:147), so a rename splits its usage history into a death and a birth",
+   "techniques": [
+    {"technique": "tool-identity-vs-tool-name", "verdict": "deviation", "evidence": "src-tauri/core/src/models/tool_usage.rs:14 PersonaToolUsage stores tool_name with no id; ToolUsageSummary (:22) aggregates by it"},
+    {"technique": "tool-identity-vs-tool-name", "verdict": "deviation", "evidence": "src-tauri/core/src/models/tool_audit.rs:33 ToolPerformanceSummary aggregates by tool_name even though the audit entry carries tool_id (:10)"}
+   ]},
+  {"context": "0a6ae5fd-fb42-446c-9602-0d2abdd220d5", "subject": "mcp-tools", "bundle": "software-engineering", "state": "deviation",
+   "evidence": "src-tauri/src/engine/mcp_tools.rs:952 each playground call (src/features/vault/shared/playground/tabs/McpToolsTab.tsx:61) is audited under tool_id 'mcp:<cred>:<tool_name>', so an upstream rename splits the tool's audit identity",
+   "techniques": [
+    {"technique": "tool-identity-vs-tool-name", "verdict": "deviation", "evidence": "src-tauri/src/engine/mcp_tools.rs:952 audit identity is built from the mutable tool name"},
+    {"technique": "client-integration", "verdict": "deviation (consent seat)", "evidence": "src/lib/bindings/McpTool.ts:7 the tool type carries no annotations, so the playground row (src/features/vault/shared/playground/tabs/McpToolRow.tsx:46) cannot tier or flag a destructive tool before a one-click Run against a live account"},
+    {"technique": "untrusted-result-handling", "verdict": "realized", "evidence": "src/features/vault/shared/playground/tabs/McpToolResultDisplay.tsx:53 results render as inert <pre> text to a human, never fed to a model or as markup"}
+   ]},
+  {"context": "1092db16-982f-4d99-b71b-14e6cf704a4f", "subject": "mcp-tools", "bundle": "software-engineering", "state": "deviation",
+   "evidence": "src-tauri/src/commands/credentials/mcp_gateways.rs:40 the add-member door rejects '::' but never a display_name already used in the gateway, so two members export identical '<name>::tool' names and src-tauri/src/engine/mcp_tools.rs:869 silently routes calls to the first enabled one (the wrong credential)",
+   "techniques": [
+    {"technique": "client-integration", "verdict": "deviation (collision management)", "evidence": "src-tauri/src/commands/credentials/mcp_gateways.rs:40 federation prefix uniqueness is not enforced at the input boundary; the only UNIQUE is (gateway, member) at src-tauri/db/src/migrations/incremental/c01_plugin_tables.rs:78"},
+    {"technique": "authentication-and-scoping", "verdict": "deviation", "evidence": "src-tauri/src/commands/credentials/external_api_keys.rs:31 accepts any name including the reserved 'system', which the bootstrap sweep revokes by name (src-tauri/src/engine/management_api.rs:872)"},
+    {"technique": "server-composition", "verdict": "realized (one door)", "evidence": "src-tauri/src/commands/credentials/mcp_tools.rs:59 every MCP command passes the #[requires(privileged)] gate before reaching engine::mcp_tools"}
+   ],
+   "registryProposal": "client-integration's collision-management bullet covers two servers exporting one tool name but not the host's own prefix namespace colliding (two federation members given the same alias); worth a sentence that the prefix itself needs uniqueness at the door that mints it."}
+ ],
+ "declined": [
+  {"subject": "mcp-tools", "context": "3f38546e-e970-4837-97f7-f0504aa32daf", "reason": "strong unknown, but the context has no file_paths in context-map.json and an empty paths list in the map; nothing to anchor a verdict to"},
+  {"subject": "mcp-tools", "context": "0ecc70bc-a005-4ff8-9a98-f362d2a75f53", "reason": "stale not-applicable left for a later run (budget); likely still holds"},
+  {"subject": "mcp-tools", "context": "3effd422-2610-4c8a-bc02-53aceafd827c", "reason": "stale not-applicable left for a later run (budget)"},
+  {"subject": "mcp-tools", "context": "93359619-794a-4de7-a5bb-c7864e475fe7", "reason": "stale not-applicable left for a later run (budget)"},
+  {"subject": "mcp-tools", "context": "059fdee0-40da-434a-a5cb-874bc9179a31", "reason": "stale not-applicable left for a later run (budget)"},
+  {"subject": "mcp-tools", "context": "7826a48f-5883-4f26-8476-c3c515bda745", "reason": "stale not-applicable left for a later run (budget)"}
+ ],
+ "consults": [
+  {"ts": "2026-10-21T17:41:29Z", "bundle": "software-engineering", "subjects": ["mcp-tools"], "techniques": ["authentication-and-scoping"], "deviations": 1},
+  {"ts": "2026-10-21T17:41:29Z", "bundle": "software-engineering", "subjects": ["mcp-tools"], "techniques": ["tool-identity-vs-tool-name"], "deviations": 1},
+  {"ts": "2026-10-21T17:41:29Z", "bundle": "software-engineering", "subjects": ["mcp-tools"], "techniques": ["tool-identity-vs-tool-name", "client-integration", "untrusted-result-handling"], "deviations": 1},
+  {"ts": "2026-10-21T17:41:29Z", "bundle": "software-engineering", "subjects": ["mcp-tools"], "techniques": ["client-integration", "authentication-and-scoping", "server-composition"], "deviations": 1}
+ ]}

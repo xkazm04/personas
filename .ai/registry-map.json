@@ -4470,13 +4470,12 @@
           "changedAt": "2026-10-15",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/settings/sub_api_keys/components/ApiKeysSettings.tsx:88 hides every key whose NAME is 'system' (:51) and src-tauri/src/engine/management_api.rs:867 revokes any enabled key named 'system' at boot, yet src-tauri/src/commands/credentials/external_api_keys.rs:32 mints user keys with a free-form unchecked name - a user key called 'system' becomes an invisible bearer credential that is then silently revoked; the label is being used as identity.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:afba7a2b8c938ae1",
-          "evaluatedRevision": 31,
+          "evidence": "src/features/settings/sub_api_keys/components/ApiKeysSettings.tsx:97 hides every key whose NAME is in HIDDEN_KEY_NAMES ('system', :60) instead of by minted id, so a user key named 'system' vanishes from the list and is revoked by the startup sweep (src-tauri/src/engine/management_api.rs:872)",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34,
           "source": "conform",
-          "revisionsBehind": 3,
-          "stale": true
+          "revisionsBehind": 3
         },
         {
           "subject": "settings",
@@ -7146,7 +7145,11 @@
           "revision": 34,
           "changedAt": "2026-10-15",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/credentials/mcp_gateways.rs:40 the add-member door rejects '::' but never a display_name already used in the gateway, so two members export identical '<name>::tool' names and src-tauri/src/engine/mcp_tools.rs:869 silently routes calls to the first enabled one (the wrong credential)",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34
         },
         {
           "subject": "agent-browser-control",
@@ -20805,12 +20808,11 @@
           "changedAt": "2026-10-15",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/core/src/models/tool_usage.rs:14 The persisted usage model identifies tools by name, and name-based aggregation splits their history when tools are renamed.",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:afba7a2b8c938ae1",
-          "evaluatedRevision": 31,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src-tauri/core/src/models/tool_usage.rs:14 persisted usage identifies a tool only by tool_name while tools are renamable (src-tauri/core/src/models/tool.rs:147), so a rename splits its usage history into a death and a birth",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34,
+          "revisionsBehind": 3
         },
         {
           "subject": "agent-runtime-assembly",
@@ -41789,13 +41791,12 @@
           "changedAt": "2026-10-15",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/engine/mcp_tools.rs:920 Playground invocations persist an audit identifier containing the mutable tool name, so renaming a tool splits its audit identity.",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:afba7a2b8c938ae1",
-          "evaluatedRevision": 31,
+          "evidence": "src-tauri/src/engine/mcp_tools.rs:952 each playground call (src/features/vault/shared/playground/tabs/McpToolsTab.tsx:61) is audited under tool_id 'mcp:<cred>:<tool_name>', so an upstream rename splits the tool's audit identity",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34,
           "source": "conform",
-          "revisionsBehind": 3,
-          "stale": true
+          "revisionsBehind": 3
         },
         {
           "subject": "prompt-assembly",

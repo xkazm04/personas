@@ -4371,37 +4371,38 @@
       "subject": "mcp-tools",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T09:13:49.230Z",
-      "worker": "e9f4508d-11ec-4a51-a331-f8825876648b",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:41:29.000Z",
+      "worker": "6d6cb540-dbdb-4f7e-88e2-7381f9aeb996",
       "techniques": [
         {
           "technique": "authentication-and-scoping",
-          "verdict": "deviation: the identity rule (minted id, never the label) is broken for the bootstrap key - name 'system' is compared as authority at ApiKeysSettings.tsx:88 and management_api.rs:867 while names are neither unique nor reserved (external_api_keys.rs:32)",
-          "evidence": "src/features/settings/sub_api_keys/components/ApiKeysSettings.tsx:88"
+          "verdict": "deviation",
+          "evidence": "src/features/settings/sub_api_keys/components/ApiKeysSettings.tsx:97 key identity derived from the label, not the minted id; the name is compared, which the technique forbids"
         },
         {
           "technique": "authentication-and-scoping",
-          "verdict": "realized (per-consumer, floor-first): execute minted as personas:execute:persona:<id> per pick, default scope personas:build, default expiry 90 days",
-          "evidence": "src/features/settings/sub_api_keys/components/CreateApiKeyDialog.tsx:90"
+          "verdict": "realized (scope floor)",
+          "evidence": "src/features/settings/sub_api_keys/components/CreateApiKeyDialog.tsx:91 execute is granted per persona (personas:execute:persona:<id>), never a blanket scope; :50 defaults to a 90-day expiry"
         },
         {
           "technique": "authentication-and-scoping",
-          "verdict": "realized (audit keyed on minted id): the audit drawer fetches by keyId",
-          "evidence": "src/features/settings/sub_api_keys/components/ApiKeyAuditDrawer.tsx:54"
+          "verdict": "realized (attributable audit)",
+          "evidence": "src/features/settings/sub_api_keys/components/ApiKeyAuditDrawer.tsx:55 the audit trail is fetched by keyId, not by name"
         },
         {
           "technique": "client-integration",
           "verdict": "partly realized: token is placed in a copyable MCP config snippet (a credential store) with a 90-day default expiry and a revocation path, but a never-expires choice is offered",
-          "evidence": "src/features/settings/sub_api_keys/components/CreatedKeyDialog.tsx:57"
+          "evidence": "src/features/settings/sub_api_keys/components/CreatedKeyDialog.tsx:57",
+          "carriedFrom": "2026-10-14"
         },
         {
           "technique": "tool-identity-vs-tool-name",
           "verdict": "not-applicable: this UI publishes no tools and stores no tool references",
-          "evidence": "src/features/settings/sub_api_keys/libs/mcpServer.ts:8"
+          "evidence": "src/features/settings/sub_api_keys/libs/mcpServer.ts:8",
+          "carriedFrom": "2026-10-14"
         }
       ],
-      "registryProposal": "Cross-context note: the dialog mints per-persona execute scopes (CreateApiKeyDialog.tsx:90) but the MCP server accepts only the exact broad scope personas:execute (src-tauri/src/mcp_server/auth.rs:86), so the UI offers narrower grants than the tool surface can honour; the mcp-server deviation records the server half.",
       "superseded": [
         {
           "state": "conformant",
@@ -4409,6 +4410,13 @@
           "evaluatedAt": "2026-09-23",
           "worker": null,
           "reason": "replaced by e9f4508d-11ec-4a51-a331-f8825876648b"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/settings/sub_api_keys/components/ApiKeysSettings.tsx:88 hides every key whose NAME is 'system' (:51) and src-tauri/src/engine/management_api.rs:867 revokes any enabled key named 'system' at boot, yet src-tauri/src/commands/credentials/external_api_keys.rs:32 mints user keys with a free-form unchecked name - a user key called 'system' becomes an invisible bearer credential that is then silently revoked; the label is being used as identity.",
+          "evaluatedAt": "2026-10-14T09:13:49.230Z",
+          "worker": "e9f4508d-11ec-4a51-a331-f8825876648b",
+          "reason": "replaced by 6d6cb540-dbdb-4f7e-88e2-7381f9aeb996"
         }
       ]
     },
@@ -4417,94 +4425,108 @@
       "subject": "mcp-tools",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T16:43:31.515Z",
-      "worker": "385a776a-618f-431b-81f3-f0b0aabb190e",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:41:29.000Z",
+      "worker": "6d6cb540-dbdb-4f7e-88e2-7381f9aeb996",
       "techniques": [
+        {
+          "technique": "tool-identity-vs-tool-name",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/mcp_tools.rs:952 audit identity is built from the mutable tool name"
+        },
+        {
+          "technique": "client-integration",
+          "verdict": "deviation (consent seat)",
+          "evidence": "src/lib/bindings/McpTool.ts:7 the tool type carries no annotations, so the playground row (src/features/vault/shared/playground/tabs/McpToolRow.tsx:46) cannot tier or flag a destructive tool before a one-click Run against a live account"
+        },
+        {
+          "technique": "untrusted-result-handling",
+          "verdict": "realized",
+          "evidence": "src/features/vault/shared/playground/tabs/McpToolResultDisplay.tsx:53 results render as inert <pre> text to a human, never fed to a model or as markup"
+        },
         {
           "technique": "ambient-selection-is-not-an-argument",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:56 The invocation explicitly names the credential and tool."
+          "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:56 The invocation explicitly names the credential and tool.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "caller-differentiated-capability",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/shared/playground/tabs/ToolDetail.tsx:62 This is a human testing surface, not an agent option subset of a human command engine."
+          "evidence": "src/features/vault/shared/playground/tabs/ToolDetail.tsx:62 This is a human testing surface, not an agent option subset of a human command engine.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "catalog-projection-modes",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:36 The manual explorer has no evidenced externally imposed model tool-definition ceiling."
-        },
-        {
-          "technique": "client-integration",
-          "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/mcp_tools.rs:686 Gateway discovery logs member failures and returns only the merged list; the UI receives no degraded-member status and can display all-member failure as an honestly empty catalog."
+          "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:36 The manual explorer has no evidenced externally imposed model tool-definition ceiling.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "command-audit-by-position",
           "verdict": "conformant",
-          "evidence": "src-tauri/src/engine/mcp_tools.rs:1840 Spawn validation uses program-specific positional tables, retains transport reparsing protection, and has opposing refusal/admission corpus assertions including live configurations."
+          "evidence": "src-tauri/src/engine/mcp_tools.rs:1840 Spawn validation uses program-specific positional tables, retains transport reparsing protection, and has opposing refusal/admission corpus assertions including live configurations.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "egress-argument-gating",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/shared/playground/tabs/ToolDetail.tsx:62 The observed flow is a human composing a test invocation, not an agent host enforcing a sanctioned-recipient policy."
+          "evidence": "src/features/vault/shared/playground/tabs/ToolDetail.tsx:62 The observed flow is a human composing a test invocation, not an agent host enforcing a sanctioned-recipient policy.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "enumeration-without-a-scope",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:36 This enumerates a selected server's catalog, not caller-owned resumable-resource handles."
+          "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:36 This enumerates a selected server's catalog, not caller-owned resumable-resource handles.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "first-party-agent-is-a-principal",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/shared/playground/tabs/ToolDetail.tsx:62 The caller here is the human playground user."
+          "evidence": "src/features/vault/shared/playground/tabs/ToolDetail.tsx:62 The caller here is the human playground user.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "fluent-syntax-bounded-grammar",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:54 The form constructs JSON argument values rather than exposing a host-interpreted command grammar."
+          "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:54 The form constructs JSON argument values rather than exposing a host-interpreted command grammar.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "orchestration-to-tool-migration",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/shared/playground/tabs/ToolDetail.tsx:62 Manual testing does not move adaptive orchestration stages into model-controlled tools."
+          "evidence": "src/features/vault/shared/playground/tabs/ToolDetail.tsx:62 Manual testing does not move adaptive orchestration stages into model-controlled tools.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "sanctioned-session-state",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:56 Client connection reuse is not routing among state-holding server replicas."
+          "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:56 Client connection reuse is not routing among state-holding server replicas.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "sealed-continuation-state",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:56 This invocation flow does not carry sealed intermediate state between rounds."
+          "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:56 This invocation flow does not carry sealed intermediate state between rounds.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "server-composition",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:36 The playground consumes servers; it does not publish their tool registry or dispatch door."
-        },
-        {
-          "technique": "tool-identity-vs-tool-name",
-          "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/mcp_tools.rs:920 The persisted MCP audit ID changes with the addressable tool name; McpTool also retains no stable identifier from discovery."
+          "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:36 The playground consumes servers; it does not publish their tool registry or dispatch door.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "tool-schema-design",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/mcp_tools.rs:2829 parse_tool_result converts a JSON-RPC error into an ordinary flagged tool result, collapsing the protocol and in-band error channels despite the UI correctly preserving is_error."
-        },
-        {
-          "technique": "untrusted-result-handling",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/shared/playground/tabs/McpToolResultDisplay.tsx:53 This path displays results as text to a human rather than placing them into a model's instruction-bearing context."
+          "evidence": "src-tauri/src/engine/mcp_tools.rs:2829 parse_tool_result converts a JSON-RPC error into an ordinary flagged tool result, collapsing the protocol and in-band error channels despite the UI correctly preserving is_error.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "write-freshness-gate",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/shared/playground/tabs/ToolDetail.tsx:62 The playground's human testing flow is not a model editing a shared artifact using an earlier read."
+          "evidence": "src/features/vault/shared/playground/tabs/ToolDetail.tsx:62 The playground's human testing flow is not a model editing a shared artifact using an earlier read.",
+          "carriedFrom": "2026-10-12"
         }
       ],
       "superseded": [
@@ -4514,6 +4536,13 @@
           "evaluatedAt": "2026-09-23",
           "worker": null,
           "reason": "replaced by 385a776a-618f-431b-81f3-f0b0aabb190e"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/mcp_tools.rs:920 Playground invocations persist an audit identifier containing the mutable tool name, so renaming a tool splits its audit identity.",
+          "evaluatedAt": "2026-10-12T16:43:31.515Z",
+          "worker": "385a776a-618f-431b-81f3-f0b0aabb190e",
+          "reason": "replaced by 6d6cb540-dbdb-4f7e-88e2-7381f9aeb996"
         }
       ]
     },
@@ -4522,94 +4551,115 @@
       "subject": "mcp-tools",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T16:43:31.515Z",
-      "worker": "385a776a-618f-431b-81f3-f0b0aabb190e",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:41:29.000Z",
+      "worker": "6d6cb540-dbdb-4f7e-88e2-7381f9aeb996",
       "techniques": [
         {
-          "technique": "caller-differentiated-capability",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/tool_usage.rs:10 These records do not implement caller-specific command option surfaces."
-        },
-        {
-          "technique": "catalog-projection-modes",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/tool_usage.rs:22 Usage aggregation is not catalog projection under an external tool budget."
-        },
-        {
-          "technique": "client-integration",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/tool_audit.rs:8 An audit record does not implement installation, connection custody, or human consent."
-        },
-        {
-          "technique": "command-audit-by-position",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/tool_audit.rs:8 This context defines records rather than auditing MCP spawn commands."
-        },
-        {
-          "technique": "egress-argument-gating",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/tool_audit.rs:8 The models do not gate outbound tool arguments."
-        },
-        {
-          "technique": "enumeration-without-a-scope",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/external_api_key.rs:76 The per-key audit record has an explicit scope identity; it is not an unscopable handle-list endpoint."
-        },
-        {
-          "technique": "first-party-agent-is-a-principal",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/tool_audit.rs:13 Attribution fields do not constitute first-party agent admission."
-        },
-        {
-          "technique": "fluent-syntax-bounded-grammar",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/tool_usage.rs:10 No executable input notation is implemented by these analytics records."
-        },
-        {
-          "technique": "orchestration-to-tool-migration",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/tool_usage.rs:22 Analytics model definitions do not migrate orchestration stages."
-        },
-        {
-          "technique": "sanctioned-session-state",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/tool_usage.rs:12 An execution reference is not a replica-affinity ownership record."
-        },
-        {
-          "technique": "sealed-continuation-state",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/signing.rs:55 Document signature sidecars are not resumable protocol continuations."
-        },
-        {
-          "technique": "server-composition",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/tool_audit.rs:8 Domain records do not implement an MCP server registry or dispatcher."
-        },
-        {
-          "technique": "suspendable-request-classes",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/tool_audit.rs:8 These model declarations define no suspendable protocol operations."
+          "technique": "tool-identity-vs-tool-name",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/tool_usage.rs:14 PersonaToolUsage stores tool_name with no id; ToolUsageSummary (:22) aggregates by it"
         },
         {
           "technique": "tool-identity-vs-tool-name",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/execution/tool_usage.rs:167 The usage model stores only the tool name as its tool reference, and persisted history is aggregated by that mutable name."
+          "evidence": "src-tauri/core/src/models/tool_audit.rs:33 ToolPerformanceSummary aggregates by tool_name even though the audit entry carries tool_id (:10)"
+        },
+        {
+          "technique": "caller-differentiated-capability",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/tool_usage.rs:10 These records do not implement caller-specific command option surfaces.",
+          "carriedFrom": "2026-10-12"
+        },
+        {
+          "technique": "catalog-projection-modes",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/tool_usage.rs:22 Usage aggregation is not catalog projection under an external tool budget.",
+          "carriedFrom": "2026-10-12"
+        },
+        {
+          "technique": "client-integration",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/tool_audit.rs:8 An audit record does not implement installation, connection custody, or human consent.",
+          "carriedFrom": "2026-10-12"
+        },
+        {
+          "technique": "command-audit-by-position",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/tool_audit.rs:8 This context defines records rather than auditing MCP spawn commands.",
+          "carriedFrom": "2026-10-12"
+        },
+        {
+          "technique": "egress-argument-gating",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/tool_audit.rs:8 The models do not gate outbound tool arguments.",
+          "carriedFrom": "2026-10-12"
+        },
+        {
+          "technique": "enumeration-without-a-scope",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/external_api_key.rs:76 The per-key audit record has an explicit scope identity; it is not an unscopable handle-list endpoint.",
+          "carriedFrom": "2026-10-12"
+        },
+        {
+          "technique": "first-party-agent-is-a-principal",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/tool_audit.rs:13 Attribution fields do not constitute first-party agent admission.",
+          "carriedFrom": "2026-10-12"
+        },
+        {
+          "technique": "fluent-syntax-bounded-grammar",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/tool_usage.rs:10 No executable input notation is implemented by these analytics records.",
+          "carriedFrom": "2026-10-12"
+        },
+        {
+          "technique": "orchestration-to-tool-migration",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/tool_usage.rs:22 Analytics model definitions do not migrate orchestration stages.",
+          "carriedFrom": "2026-10-12"
+        },
+        {
+          "technique": "sanctioned-session-state",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/tool_usage.rs:12 An execution reference is not a replica-affinity ownership record.",
+          "carriedFrom": "2026-10-12"
+        },
+        {
+          "technique": "sealed-continuation-state",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/signing.rs:55 Document signature sidecars are not resumable protocol continuations.",
+          "carriedFrom": "2026-10-12"
+        },
+        {
+          "technique": "server-composition",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/tool_audit.rs:8 Domain records do not implement an MCP server registry or dispatcher.",
+          "carriedFrom": "2026-10-12"
+        },
+        {
+          "technique": "suspendable-request-classes",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/tool_audit.rs:8 These model declarations define no suspendable protocol operations.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "transport-selection",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/tool_usage.rs:10 This context does not choose or implement a protocol carrier."
+          "evidence": "src-tauri/core/src/models/tool_usage.rs:10 This context does not choose or implement a protocol carrier.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "untrusted-result-handling",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/tool_audit.rs:8 The audit model does not insert tool results into model context."
+          "evidence": "src-tauri/core/src/models/tool_audit.rs:8 The audit model does not insert tool results into model context.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "write-freshness-gate",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/signing.rs:11 A signature's file hash is not a model read-result mark or an artifact-write precondition."
+          "evidence": "src-tauri/core/src/models/signing.rs:11 A signature's file hash is not a model read-result mark or an artifact-write precondition.",
+          "carriedFrom": "2026-10-12"
         }
       ],
       "superseded": [
@@ -4619,6 +4669,13 @@
           "evaluatedAt": "2026-09-23",
           "worker": null,
           "reason": "replaced by 385a776a-618f-431b-81f3-f0b0aabb190e"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/core/src/models/tool_usage.rs:14 The persisted usage model identifies tools by name, and name-based aggregation splits their history when tools are renamed.",
+          "evaluatedAt": "2026-10-12T16:43:31.515Z",
+          "worker": "385a776a-618f-431b-81f3-f0b0aabb190e",
+          "reason": "replaced by 6d6cb540-dbdb-4f7e-88e2-7381f9aeb996"
         }
       ]
     },
@@ -33090,6 +33147,33 @@
           "evidence": "src/features/templates/sub_n8n/steps/N8nSessionList.tsx:172 user_answers asserted Record<string,string> after checking only that it is an object, and :14 isValidAgentIR certifies a full AgentIR from the presence of 'name' - guards named as validation that check far less than they claim"
         }
       ]
+    },
+    "1092db16-982f-4d99-b71b-14e6cf704a4f/mcp-tools": {
+      "context": "commands-credentials",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:41:29.000Z",
+      "worker": "6d6cb540-dbdb-4f7e-88e2-7381f9aeb996",
+      "techniques": [
+        {
+          "technique": "client-integration",
+          "verdict": "deviation (collision management)",
+          "evidence": "src-tauri/src/commands/credentials/mcp_gateways.rs:40 federation prefix uniqueness is not enforced at the input boundary; the only UNIQUE is (gateway, member) at src-tauri/db/src/migrations/incremental/c01_plugin_tables.rs:78"
+        },
+        {
+          "technique": "authentication-and-scoping",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/credentials/external_api_keys.rs:31 accepts any name including the reserved 'system', which the bootstrap sweep revokes by name (src-tauri/src/engine/management_api.rs:872)"
+        },
+        {
+          "technique": "server-composition",
+          "verdict": "realized (one door)",
+          "evidence": "src-tauri/src/commands/credentials/mcp_tools.rs:59 every MCP command passes the #[requires(privileged)] gate before reaching engine::mcp_tools"
+        }
+      ],
+      "registryProposal": "client-integration's collision-management bullet covers two servers exporting one tool name but not the host's own prefix namespace colliding (two federation members given the same alias); worth a sentence that the prefix itself needs uniqueness at the door that mints it."
     }
   }
 }

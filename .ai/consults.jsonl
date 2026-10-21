@@ -1871,3 +1871,7 @@
 {"ts":"2026-10-21T17:41:00Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["marked-unverifiable-region","module-depth"],"deviations":1}
 {"ts":"2026-10-21T17:41:00Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["module-depth","io-free-core","declarative-or-sequential"],"deviations":1}
 {"ts":"2026-10-21T17:41:00Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["module-depth","marked-unverifiable-region"],"deviations":1}
+{"ts":"2026-10-21T17:41:29Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["authentication-and-scoping"],"deviations":1}
+{"ts":"2026-10-21T17:41:29Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["tool-identity-vs-tool-name"],"deviations":1}
+{"ts":"2026-10-21T17:41:29Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["tool-identity-vs-tool-name","client-integration","untrusted-result-handling"],"deviations":1}
+{"ts":"2026-10-21T17:41:29Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["client-integration","authentication-and-scoping","server-composition"],"deviations":1}
