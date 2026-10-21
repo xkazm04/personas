@@ -20,7 +20,7 @@ import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
 import { useSystemStore } from '@/stores/systemStore';
 import { useVaultStore } from '@/stores/vaultStore';
 import { useTranslation } from '@/i18n/useTranslation';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, extractMessage } from '@/lib/silentCatch';
 import {
   POCKET_INSTALL_EVENT,
   companionTtsListPocketVoices,
@@ -76,7 +76,7 @@ export default function PocketVoicePanel() {
         setVoices(null);
       }
     } catch (e: unknown) {
-      setVoicesError(e instanceof Error ? e.message : String(e));
+      setVoicesError(extractMessage(e));
       silentCatch('pocket.status')(e);
     } finally {
       setStatusLoading(false);
@@ -277,7 +277,7 @@ function UploadVoiceBlock({ onAdded }: { onAdded: (v: PocketVoiceEntry) => void 
       setName('');
       onAdded(entry);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(extractMessage(e));
       silentCatch('pocket.voice.import')(e);
     } finally {
       setBusy('idle');

@@ -1,3 +1,4 @@
+import { extractMessage } from '@/lib/silentCatch';
 import { useState } from 'react';
 import { Bell, Loader2, Reply, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -83,7 +84,7 @@ export function ProactiveCard({
         onDismissed();
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(extractMessage(err));
       setBusy(null);
     }
   };

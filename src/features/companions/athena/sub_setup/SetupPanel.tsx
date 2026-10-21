@@ -18,7 +18,7 @@ import {
   projectTrackingSetMasterEnabled,
   projectTrackingRunNow,
 } from '@/api/companion/projectTracking';
-import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch, extractMessage } from '@/lib/silentCatch';
 import { AthenaStatusSection } from './AthenaStatusSection';
 
 // The two deep parts of the page load as their own chunks: the browser bridge
@@ -124,7 +124,7 @@ export default function SetupPanel() {
       setSensory(state);
       setSensoryLoadError(null);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractMessage(err);
       setSensoryLoadError(msg);
       silentCatch('companion_get_sensory_state')(err);
     }

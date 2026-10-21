@@ -4,7 +4,7 @@ import Button from '@/features/shared/components/buttons/Button';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { useTranslation } from '@/i18n/useTranslation';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, extractMessage } from '@/lib/silentCatch';
 import { companionDispatchFleetPlan, type FleetPlanRow } from '@/api/companion';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAthenaStore } from '../athenaStore';
@@ -109,7 +109,7 @@ export function AthenaFleetPlanCard({
         dispatchedRows: confirmedRows,
       });
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(extractMessage(err));
     } finally {
       setBusy(false);
     }

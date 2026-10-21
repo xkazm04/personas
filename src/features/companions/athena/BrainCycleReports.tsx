@@ -8,7 +8,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { createModuleCache, useModuleSubscription } from '@/hooks/utility/data/useModuleSubscription';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, extractMessage } from '@/lib/silentCatch';
 import { resolveError } from '@/lib/errors/errorRegistry';
 import {
   companionListCycleReports,
@@ -77,7 +77,7 @@ export function BrainCycleReports({ limit = DEFAULT_LIMIT }: { limit?: number })
         // whatever the user was actually doing. The inline state below is the
         // surface; Sentry still gets the event.
         if (!cancelled) {
-          setError(resolveError(err instanceof Error ? err.message : String(err)).message);
+          setError(resolveError(extractMessage(err)).message);
         }
         silentCatch('companion_list_cycle_reports')(err);
       });

@@ -2,7 +2,7 @@ import { Suspense, useCallback, useState } from 'react';
 import { Loader2, RadioTower, RefreshCw, Sparkles, TrendingDown } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, extractMessage } from '@/lib/silentCatch';
 import {
   companionDecayUnusedFacts,
   companionReembedMissing,
@@ -52,7 +52,7 @@ export default function MemoryPanel() {
       // Jump straight to the new reflection so the result is visible.
       setBrainView({ open: true, kind: 'reflection', id });
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractMessage(err);
       addToast(`${t.athena.reflection_failed}: ${msg}`, 'error');
       silentCatch('companion_run_reflection')(err);
     } finally {
@@ -71,7 +71,7 @@ export default function MemoryPanel() {
         'success',
       );
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractMessage(err);
       addToast(msg, 'error');
       silentCatch('companion_decay_unused_facts')(err);
     } finally {
@@ -99,7 +99,7 @@ export default function MemoryPanel() {
         );
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractMessage(err);
       addToast(msg, 'error');
       silentCatch('companion_reembed_missing')(err);
     } finally {

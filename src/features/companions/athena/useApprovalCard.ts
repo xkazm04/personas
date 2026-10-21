@@ -1,3 +1,4 @@
+import { extractMessage } from '@/lib/silentCatch';
 import { useCallback, useMemo, useState } from 'react';
 import {
   companionApproveAction,
@@ -56,7 +57,7 @@ export function useApprovalCard(
         }
         onResolved(approval.id, kind === 'approve' ? 'approved' : 'rejected');
       } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : String(err));
+        setError(extractMessage(err));
         setBusy(null);
       }
     },

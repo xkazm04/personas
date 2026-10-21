@@ -33,7 +33,7 @@ import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { createModuleCache, useModuleSubscription } from '@/hooks/utility/data/useModuleSubscription';
 import { useToastStore } from '@/stores/toastStore';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, extractMessage } from '@/lib/silentCatch';
 import { resolveError } from '@/lib/errors/errorRegistry';
 import {
   companionDeleteBrainItem,
@@ -591,7 +591,7 @@ function ListEmpty({ kind }: { kind: BrainKind }) {
       // also unmounts the empty state.
       setBrainView({ open: true, kind: 'reflection', id });
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractMessage(err);
       addToast(`${t.athena.reflection_failed}: ${msg}`, 'error');
       silentCatch('companion_run_reflection')(err);
       setRunning(false);
@@ -604,7 +604,7 @@ function ListEmpty({ kind }: { kind: BrainKind }) {
       await companionRunConsolidation();
       addToast(t.athena.brain_empty_consolidation_started, 'success');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractMessage(err);
       addToast(msg, 'error');
       silentCatch('companion_run_consolidation')(err);
     } finally {
@@ -695,7 +695,7 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
         if (!cancelled) setDetail(d);
       })
       .catch((err: unknown) => {
-        const msg = err instanceof Error ? err.message : String(err);
+        const msg = extractMessage(err);
         if (!cancelled) setError(msg);
         silentCatch(`companion_get_brain_item:${kind}:${id}`)(err);
       });
@@ -714,7 +714,7 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
       // After delete, drop back to the list view.
       setBrainView({ open: true, kind, id: null });
     } catch (err: unknown) {
-      setError(resolveError(err instanceof Error ? err.message : String(err)).message);
+      setError(resolveError(extractMessage(err)).message);
       silentCatch(`companion_delete_brain_item:${kind}:${id}`)(err);
     } finally {
       setDeleting(false);
@@ -733,7 +733,7 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
       setDetail((d) => (d ? { ...d, content: draft } : d));
       setEditing(false);
     } catch (err: unknown) {
-      setError(resolveError(err instanceof Error ? err.message : String(err)).message);
+      setError(resolveError(extractMessage(err)).message);
       silentCatch('companion_save_identity')(err);
     } finally {
       setSaving(false);

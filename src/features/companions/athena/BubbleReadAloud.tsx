@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AlertCircle, Loader2, Volume2, VolumeX } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, extractMessage } from '@/lib/silentCatch';
 import type { TtsSettings } from '@/api/companion';
 import { synthesize, play } from './voicePlayback';
 import type { ResolvedTtsVoice } from './useTtsVoiceSelection';
@@ -88,7 +88,7 @@ export function BubbleReadAloud({
       }
       setState('idle');
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
+      const message = extractMessage(err);
       setState({ kind: 'error', message });
       silentCatch('bubble_read_aloud_synthesize')(err);
     }

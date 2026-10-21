@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useDebounce } from '@/hooks/utility/timing/useDebounce';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, extractMessage } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import {
   companionListDesignDecisions,
@@ -63,7 +63,7 @@ export function useDesignDecisions() {
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : String(err));
+        setError(extractMessage(err));
         setLoading(false);
         silentCatch('companion_list_design_decisions')(err);
       });

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { readCuratorProcess } from '@/api/companions/curator';
 import type { CuratorProcess } from '@/lib/bindings/CuratorProcess';
 import { resolveError } from '@/lib/errors/errorRegistry';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, extractMessage } from '@/lib/silentCatch';
 
 /**
  * The page's one read. A single-slot module cache keeps the last reading so a remount (the page
@@ -38,7 +38,7 @@ export function useProcessData(): ProcessData {
       .catch((err: unknown) => {
         // Nobody pressed anything - the read fires on mount - so the failure is reported where
         // the spine would have been, not as a toast. Sentry still gets the event.
-        if (!cancelled) setError(resolveError(err instanceof Error ? err.message : String(err)).message);
+        if (!cancelled) setError(resolveError(extractMessage(err)).message);
         silentCatch('curator_process_read')(err);
       })
       .finally(() => {
