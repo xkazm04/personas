@@ -83,10 +83,10 @@ export function OrbitDots({ activities }: OrbitDotsProps) {
       {visible.map((a, i) => {
         const { x, y } = positionFor(i, slotCount);
         const meta = COLOR[a.type];
-        // Rendered as span+role="button" rather than <button>. SidebarLevel1
-        // wraps each section in a <button>, and nesting a real button inside
-        // is an HTML hydration error. Keyboard & a11y are preserved via
-        // role, tabIndex, and the onKeyDown handler below.
+        // span+role="button", positioned over the rail. SidebarLevel1 renders
+        // this overlay BESIDE the section <button> (a sibling), never inside
+        // it, so the controls are not nested interactive content. Keyboard &
+        // a11y come from role, tabIndex, and the onKeyDown handler below.
         return (
           <span
             key={a.id}

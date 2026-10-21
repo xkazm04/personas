@@ -10,6 +10,7 @@ import { useRecentAgents } from '@/hooks/agents/useRecentAgents';
 import { useSidebarAgentActivity, type AgentActivityType } from '@/hooks/sidebar/useSidebarAgentActivity';
 import { useCodebasePersonas } from '@/hooks/sidebar/useCodebasePersonas';
 import { cloudItems } from '@/features/shared/chrome/sidebar/sidebarData';
+import { AgentPersonaRow } from './AgentPersonaRow';
 import SidebarGroupNav, { childRowClass, type SidebarNavGroup } from '@/features/shared/chrome/sidebar/SidebarGroupNav';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
@@ -266,34 +267,23 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
     const grade = healthGrades[p.id];
     const status = statusLabel(grade, isRunning);
     return (
-      <button
-        type="button"
+      <AgentPersonaRow
         key={p.id}
-        {...getPrefetchProps(p.id)}
-        onClick={() => selectPersona(p.id)}
-        aria-current={isActive ? 'page' : undefined}
+        name={p.name}
+        nameClassName={isRunning && !isActive ? 'text-orange-300/90' : ''}
+        rowClassName={`${childRowClass(isActive)} ${isRunning && !isActive ? 'bg-orange-500/5' : ''}`}
+        selectProps={getPrefetchProps(p.id)}
+        onSelect={() => selectPersona(p.id)}
+        isActive={isActive}
         title={opts.tooltip ?? status}
-        className={`${childRowClass(isActive)} group ${isRunning && !isActive ? 'bg-orange-500/5' : ''}`}
-      >
-        <span className={`truncate min-w-0 flex-1 text-left ${isRunning && !isActive ? 'text-orange-300/90' : ''}`}>
-          {p.name}
-        </span>
-        {opts.trailing}
-        {opts.favorite && (
-          <span
-            role="button"
-            tabIndex={0}
-            onClick={(e) => { e.stopPropagation(); toggleFavorite(p.id); }}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); toggleFavorite(p.id); } }}
-            className="flex-shrink-0 p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-amber-500/10 rounded cursor-pointer"
-            title={favorites.has(p.id) ? t.shared.sidebar_extra.remove_favorites : t.shared.sidebar_extra.add_favorites}
-            aria-label={favorites.has(p.id) ? t.shared.sidebar_extra.remove_favorites : t.shared.sidebar_extra.add_favorites}
-          >
-            <Star className={`w-3 h-3 ${favorites.has(p.id) ? 'text-amber-400 fill-amber-400' : 'text-foreground/90'}`} aria-hidden="true" />
-          </span>
-        )}
-        <StatusDot grade={grade} isRunning={isRunning} label={status} />
-      </button>
+        trailing={opts.trailing}
+        star={opts.favorite ? {
+          isFavorite: favorites.has(p.id),
+          label: favorites.has(p.id) ? t.shared.sidebar_extra.remove_favorites : t.shared.sidebar_extra.add_favorites,
+          onToggle: () => toggleFavorite(p.id),
+        } : undefined}
+        statusDot={<StatusDot grade={grade} isRunning={isRunning} label={status} />}
+      />
     );
   };
 

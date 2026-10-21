@@ -208,10 +208,12 @@ export default function SidebarLevel1({
           const isDevSection = section.devOnly;
           const isDevModeSection = section.devModeOnly;
 
+          // The orbit dots are controls of their own, so they sit BESIDE the
+          // Agents button in a shared positioning wrapper, never inside it.
           return (
+            <div key={section.id} className="relative">
             <button
               type="button"
-              key={section.id}
               data-testid={`sidebar-${section.id}`}
               onClick={() => {
                 if (isDisabled) return;
@@ -271,10 +273,11 @@ export default function SidebarLevel1({
               {badgesBySection[section.id] != null && (
                 <BadgeSlot badges={badgesBySection[section.id]!} />
               )}
-              {section.id === 'personas' && agentActivities.length > 0 && (
-                <OrbitDots activities={agentActivities} />
-              )}
             </button>
+            {section.id === 'personas' && agentActivities.length > 0 && (
+              <OrbitDots activities={agentActivities} />
+            )}
+            </div>
           );
         })}
 
