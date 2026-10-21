@@ -162,6 +162,8 @@
   "grid_no_data": "কোনো ডেটা নেই",
   "grid_rows": "সারি",
   "grid_rows_per_page": "প্রতি পৃষ্ঠায় সারি",
+  "grid_prev_page": "আগের পৃষ্ঠা",
+  "grid_next_page": "পরের পৃষ্ঠা",
   "grid_showing": "{total}টির মধ্যে {start}–{end} আইটেম দেখানো হচ্ছে",
   "group_older": "পুরনো",
   "group_this_month": "এই মাস",

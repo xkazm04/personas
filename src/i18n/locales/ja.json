@@ -19047,6 +19047,8 @@
     "grid_no_data": "データなし",
     "grid_rows": "行",
     "grid_rows_per_page": "1ページの行数",
+    "grid_prev_page": "前のページ",
+    "grid_next_page": "次のページ",
     "grid_showing": "{total}件中{start}〜{end}件を表示",
     "group_older": "それ以前",
     "group_this_month": "今月",

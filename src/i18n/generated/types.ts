@@ -23244,6 +23244,8 @@ export type Translations = {
     grid_rows: string;
     grid_showing: string;
     grid_rows_per_page: string;
+    grid_prev_page: string;
+    grid_next_page: string;
     bulk_toolbar_aria: string;
     bulk_selected: string;
     bulk_clear_selection: string;

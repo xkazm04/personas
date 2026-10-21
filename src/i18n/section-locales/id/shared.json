@@ -162,6 +162,8 @@
   "grid_no_data": "Tidak ada data",
   "grid_rows": "Baris",
   "grid_rows_per_page": "Baris per halaman",
+  "grid_prev_page": "Halaman sebelumnya",
+  "grid_next_page": "Halaman berikutnya",
   "grid_showing": "Menampilkan {start}–{end} dari {total} item",
   "group_older": "Lebih lama",
   "group_this_month": "Bulan ini",

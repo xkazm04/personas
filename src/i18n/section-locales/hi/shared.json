@@ -162,6 +162,8 @@
   "grid_no_data": "कोई डेटा नहीं",
   "grid_rows": "पंक्तियां",
   "grid_rows_per_page": "प्रति पृष्ठ पंक्तियां",
+  "grid_prev_page": "पिछला पृष्ठ",
+  "grid_next_page": "अगला पृष्ठ",
   "grid_showing": "{total} आइटम में से {start}–{end} दिख रहे हैं",
   "group_older": "पुराने",
   "group_this_month": "इस महीने",

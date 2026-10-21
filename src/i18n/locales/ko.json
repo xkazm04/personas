@@ -19047,6 +19047,8 @@
     "grid_no_data": "데이터 없음",
     "grid_rows": "행",
     "grid_rows_per_page": "페이지당 행 수",
+    "grid_prev_page": "이전 페이지",
+    "grid_next_page": "다음 페이지",
     "grid_showing": "전체 {total}개 항목 중 {start}–{end}",
     "group_older": "이전",
     "group_this_month": "이번 달",

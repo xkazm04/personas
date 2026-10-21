@@ -19047,6 +19047,8 @@
     "grid_no_data": "Aucune donnée",
     "grid_rows": "Lignes",
     "grid_rows_per_page": "Lignes par page",
+    "grid_prev_page": "Page précédente",
+    "grid_next_page": "Page suivante",
     "grid_showing": "Affichage de {start}–{end} sur {total} éléments",
     "group_older": "Plus ancien",
     "group_this_month": "Ce mois-ci",

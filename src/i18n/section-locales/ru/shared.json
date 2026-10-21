@@ -162,6 +162,8 @@
   "grid_no_data": "Нет данных",
   "grid_rows": "Строки",
   "grid_rows_per_page": "Строк на странице",
+  "grid_prev_page": "Предыдущая страница",
+  "grid_next_page": "Следующая страница",
   "grid_showing": "Показано {start}–{end} из {total} элементов",
   "group_older": "Ранее",
   "group_this_month": "В этом месяце",

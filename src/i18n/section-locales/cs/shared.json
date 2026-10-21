@@ -162,6 +162,8 @@
   "grid_no_data": "Žádná data",
   "grid_rows": "Řádky",
   "grid_rows_per_page": "Řádků na stránku",
+  "grid_prev_page": "Předchozí stránka",
+  "grid_next_page": "Další stránka",
   "grid_showing": "Zobrazeno {start}–{end} z {total} položek",
   "group_older": "Starší",
   "group_this_month": "Tento měsíc",

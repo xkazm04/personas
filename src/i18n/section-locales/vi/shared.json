@@ -162,6 +162,8 @@
   "grid_no_data": "Không có dữ liệu",
   "grid_rows": "Hàng",
   "grid_rows_per_page": "Hàng mỗi trang",
+  "grid_prev_page": "Trang trước",
+  "grid_next_page": "Trang sau",
   "grid_showing": "Hiển thị {start}–{end} trong số {total} mục",
   "group_older": "Cũ hơn",
   "group_this_month": "Tháng này",

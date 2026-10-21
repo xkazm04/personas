@@ -19047,6 +19047,8 @@
     "grid_no_data": "Sin datos",
     "grid_rows": "Filas",
     "grid_rows_per_page": "Filas por página",
+    "grid_prev_page": "Página anterior",
+    "grid_next_page": "Página siguiente",
     "grid_showing": "Mostrando {start}–{end} de {total} elementos",
     "group_older": "Más antiguo",
     "group_this_month": "Este mes",

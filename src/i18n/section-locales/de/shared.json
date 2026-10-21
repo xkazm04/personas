@@ -162,6 +162,8 @@
   "grid_no_data": "Keine Daten",
   "grid_rows": "Zeilen",
   "grid_rows_per_page": "Zeilen pro Seite",
+  "grid_prev_page": "Vorherige Seite",
+  "grid_next_page": "Nächste Seite",
   "grid_showing": "{start}–{end} von {total} Elementen",
   "group_older": "Älter",
   "group_this_month": "Diesen Monat",

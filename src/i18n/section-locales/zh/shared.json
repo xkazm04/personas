@@ -162,6 +162,8 @@
   "grid_no_data": "无数据",
   "grid_rows": "行",
   "grid_rows_per_page": "每页行数",
+  "grid_prev_page": "上一页",
+  "grid_next_page": "下一页",
   "grid_showing": "显示 {start}–{end}，共 {total} 项",
   "group_older": "更早",
   "group_this_month": "本月",

@@ -162,6 +162,8 @@
   "grid_no_data": "لا توجد بيانات",
   "grid_rows": "صفوف",
   "grid_rows_per_page": "صفوف في الصفحة",
+  "grid_prev_page": "الصفحة السابقة",
+  "grid_next_page": "الصفحة التالية",
   "grid_showing": "عرض {start}–{end} من {total} عنصر",
   "group_older": "أقدم",
   "group_this_month": "هذا الشهر",

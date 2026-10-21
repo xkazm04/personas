@@ -16,6 +16,8 @@
   "grid_rows": "Rows",
   "grid_showing": "Showing {start}–{end} of {total} items",
   "grid_rows_per_page": "Rows per page",
+  "grid_prev_page": "Previous page",
+  "grid_next_page": "Next page",
   "bulk_toolbar_aria": "Bulk actions",
   "bulk_selected": "{count} selected",
   "bulk_clear_selection": "Clear selection",
