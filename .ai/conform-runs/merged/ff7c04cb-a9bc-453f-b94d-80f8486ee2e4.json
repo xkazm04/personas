@@ -1,0 +1,89 @@
+{
+  "schema": "conform-run/1",
+  "worker": "ff7c04cb-a9bc-453f-b94d-80f8486ee2e4",
+  "subject": "session-continuation",
+  "evaluatedAt": "2026-10-21T12:49:10Z",
+  "pairs": [
+    {
+      "context": "cd8712a3-9546-4c21-895b-9e64a4b161b1",
+      "subject": "session-continuation",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/engine/build_session/oneshot.rs:183 re-verified 2026-10-21: the test/fix loop still stops on an attempt count (MAX_TEST_RETRIES=3) with no failure signature, so an identical failure buys two more fix passes, and the halt hands up only the summary first line (:752) instead of a root-cause hypothesis",
+      "techniques": [
+        {
+          "technique": "stuck-loop-detection",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/oneshot.rs:183 halt predicate is attempts >= 3, not same-signature-after-N-repairs; :752 short_failure_label takes summary.lines().next() as the upward report"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:b0eabf78abd856a4",
+      "evaluatedRevision": 8
+    },
+    {
+      "context": "3084d603-7cdb-41cd-bbad-8f24a8015b3e",
+      "subject": "session-continuation",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/lib/harness/orchestrator.ts:118 re-verified 2026-10-21: the loop still exits on a pass rate counted from model-reported feature statuses (written at :209, counted at src/lib/harness/plan-builder.ts:76), so evaluator-passed is read as complete; an area left in-progress by a crash (:151) is never re-picked (plan-builder.ts:58 skips non-pending), so a resume reports done with work stranded",
+      "techniques": [
+        {
+          "technique": "single-loop-authority",
+          "verdict": "deviation",
+          "evidence": "src/lib/harness/orchestrator.ts:209 feature.status = newStatus from the parsed model reply is what passRate at :118 reads; no harness-owned verification separates evaluator-passed from complete"
+        },
+        {
+          "technique": "sealed-stage-advance",
+          "verdict": "deviation",
+          "evidence": "src/lib/harness/plan-builder.ts:58 pickNextArea only takes pending areas, so an area set in-progress at src/lib/harness/orchestrator.ts:151 before a crash is never resumed"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:b0eabf78abd856a4",
+      "evaluatedRevision": 8
+    },
+    {
+      "context": "fd961ee9-bf7c-4ec7-90c3-a728045d3d44",
+      "subject": "session-continuation",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/teams/sub_deliberations/useTeamDeliberations.ts:182 re-verified 2026-10-21: Run to budget is still a second continuation loop over the deliberation the autonomous tick also advances (src-tauri/src/engine/deliberation.rs:1010) with no refuse/adopt claim, and update_progress is a blind write keyed only on id (src-tauri/db/src/repos/resources/deliberation.rs:159), so the two can double-spend a round and overwrite an escalated/paused status",
+      "techniques": [
+        {
+          "technique": "single-loop-authority",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_deliberations/useTeamDeliberations.ts:188 client while-loop advances with only a component-local runningRef; src-tauri/src/engine/deliberation.rs:1010 tick advances the same list_advanceable rows with no shared authority field"
+        },
+        {
+          "technique": "sealed-stage-advance",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/resources/deliberation.rs:159 UPDATE sets round/status WHERE id = ?1 only - no compare-before-write on the round or status read"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:b0eabf78abd856a4",
+      "evaluatedRevision": 8
+    }
+  ],
+  "declined": [
+    {
+      "subject": "session-continuation",
+      "context": "33a96a83-6adc-42f7-b57c-839382bcef54",
+      "reason": "commands-curator is a weak-governance row (priorNotApplicable 7); the skill does not judge weak pairs by default - a coverage question, not a verdict"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-21T12:49:10Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "session-continuation"
+      ],
+      "techniques": [
+        "stuck-loop-detection",
+        "single-loop-authority",
+        "sealed-stage-advance",
+        "ordered-yield-composition"
+      ],
+      "deviations": 3
+    }
+  ]
+}

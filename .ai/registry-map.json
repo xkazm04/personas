@@ -11741,8 +11741,8 @@
           "changedAt": "2026-10-09",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/engine/build_session/oneshot.rs:183 the test/fix loop stops on an attempt count (MAX_TEST_RETRIES=3) with no failure signature, so an identical failure buys two more fix passes and the stop hands up the first line of the summary (:747) rather than a root-cause hypothesis",
-          "evaluatedAt": "2026-10-09",
+          "evidence": "src-tauri/src/engine/build_session/oneshot.rs:183 re-verified 2026-10-21: the test/fix loop still stops on an attempt count (MAX_TEST_RETRIES=3) with no failure signature, so an identical failure buys two more fix passes, and the halt hands up only the summary first line (:752) instead of a root-cause hypothesis",
+          "evaluatedAt": "2026-10-21",
           "evaluatedAgainst": "sha256-b2:b0eabf78abd856a4",
           "evaluatedRevision": 8,
           "revisionsBehind": 0
@@ -17734,8 +17734,8 @@
           "changedAt": "2026-10-09",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/lib/harness/orchestrator.ts:118 the loop exits on a pass rate built from the model's self-reported feature statuses (written at :209 before gates, counted across failed areas at src/lib/harness/plan-builder.ts:76), so evaluator-passed is read as complete; and an area left in-progress by a crash (:151) is never re-picked (plan-builder.ts:57 takes only pending), so a resume reports done with work stranded",
-          "evaluatedAt": "2026-10-09",
+          "evidence": "src/lib/harness/orchestrator.ts:118 re-verified 2026-10-21: the loop still exits on a pass rate counted from model-reported feature statuses (written at :209, counted at src/lib/harness/plan-builder.ts:76), so evaluator-passed is read as complete; an area left in-progress by a crash (:151) is never re-picked (plan-builder.ts:58 skips non-pending), so a resume reports done with work stranded",
+          "evaluatedAt": "2026-10-21",
           "evaluatedAgainst": "sha256-b2:b0eabf78abd856a4",
           "evaluatedRevision": 8,
           "revisionsBehind": 0
@@ -34455,8 +34455,8 @@
           "changedAt": "2026-10-09",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/teams/sub_deliberations/useTeamDeliberations.ts:174 \"Run to budget\" is a second continuation loop over the same deliberation the autonomous tick advances (src-tauri/src/engine/deliberation.rs:1010) with no refuse/adopt policy, and the round write is blind (src-tauri/db/src/repos/resources/deliberation.rs:179), so the two double-spend a round and a stale snapshot can overwrite an escalated/paused status back to open",
-          "evaluatedAt": "2026-10-10",
+          "evidence": "src/features/teams/sub_deliberations/useTeamDeliberations.ts:182 re-verified 2026-10-21: Run to budget is still a second continuation loop over the deliberation the autonomous tick also advances (src-tauri/src/engine/deliberation.rs:1010) with no refuse/adopt claim, and update_progress is a blind write keyed only on id (src-tauri/db/src/repos/resources/deliberation.rs:159), so the two can double-spend a round and overwrite an escalated/paused status",
+          "evaluatedAt": "2026-10-21",
           "evaluatedAgainst": "sha256-b2:b0eabf78abd856a4",
           "evaluatedRevision": 8,
           "revisionsBehind": 0

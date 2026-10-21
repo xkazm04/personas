@@ -12158,86 +12158,119 @@
       "subject": "session-continuation",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T17:56:23.000Z",
-      "worker": "a5729493-1417-4fc4-ab5b-f6005aae5a45",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:49:10.000Z",
+      "worker": "ff7c04cb-a9bc-453f-b94d-80f8486ee2e4",
       "techniques": [
-        {
-          "technique": "continuation-as-state",
-          "verdict": "realized",
-          "evidence": "src/lib/harness/orchestrator.ts:93 the loop re-reads persisted plan.json and drives continuation itself; prompt text is not the carrier (arming is an explicit CLI act, so no lease is needed)"
-        },
         {
           "technique": "single-loop-authority",
           "verdict": "deviation",
-          "evidence": "src/lib/harness/orchestrator.ts:118 terminal yield on passRate whose numerator (src/lib/harness/plan-builder.ts:76) counts model-claimed pass statuses written at orchestrator.ts:209 even when required gates failed - evaluator-passed collapsed into complete"
+          "evidence": "src/lib/harness/orchestrator.ts:209 feature.status = newStatus from the parsed model reply is what passRate at :118 reads; no harness-owned verification separates evaluator-passed from complete"
+        },
+        {
+          "technique": "sealed-stage-advance",
+          "verdict": "deviation",
+          "evidence": "src/lib/harness/plan-builder.ts:58 pickNextArea only takes pending areas, so an area set in-progress at src/lib/harness/orchestrator.ts:151 before a crash is never resumed"
+        },
+        {
+          "technique": "continuation-as-state",
+          "verdict": "realized",
+          "evidence": "src/lib/harness/orchestrator.ts:93 the loop re-reads persisted plan.json and drives continuation itself; prompt text is not the carrier (arming is an explicit CLI act, so no lease is needed)",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "stuck-loop-detection",
           "verdict": "deviation",
-          "evidence": "src/lib/harness/orchestrator.ts:132 retries by attempt count with no failure signature; an area marked in-progress at :151 before a crash or a second-Ctrl-C exit (src/lib/harness/run-harness.ts:183) is neither pending nor failed, so src/lib/harness/plan-builder.ts:57 never resumes it"
+          "evidence": "src/lib/harness/orchestrator.ts:132 retries by attempt count with no failure signature; an area marked in-progress at :151 before a crash or a second-Ctrl-C exit (src/lib/harness/run-harness.ts:183) is neither pending nor failed, so src/lib/harness/plan-builder.ts:57 never resumes it",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "boundary-applied-stop",
           "verdict": "realized",
-          "evidence": "src/lib/harness/orchestrator.ts:112 pause is checked only at the iteration boundary, and each session is bounded by its own timeout at src/lib/harness/executor.ts:176"
+          "evidence": "src/lib/harness/orchestrator.ts:112 pause is checked only at the iteration boundary, and each session is bounded by its own timeout at src/lib/harness/executor.ts:176",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "compaction-checkpoint",
           "verdict": "not-applicable",
-          "evidence": "src/lib/harness/executor.ts:146 every area is a fresh claude -p session; loop state lives in plan.json, never in a session that can be compacted"
+          "evidence": "src/lib/harness/executor.ts:146 every area is a fresh claude -p session; loop state lives in plan.json, never in a session that can be compacted",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "advisory-guard-fail-mode",
           "verdict": "not-applicable",
-          "evidence": "src/lib/harness/executor.ts:167 the harness spawns the CLI with no turn-boundary interceptors to classify"
+          "evidence": "src/lib/harness/executor.ts:167 the harness spawns the CLI with no turn-boundary interceptors to classify",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "gate-state-lifetimes",
           "verdict": "not-applicable",
-          "evidence": "src/lib/harness/orchestrator.ts:112 one process runs one loop; the technique's own when-not-to-use covers it"
+          "evidence": "src/lib/harness/orchestrator.ts:112 one process runs one loop; the technique's own when-not-to-use covers it",
+          "carriedFrom": "2026-10-09"
         }
       ],
-      "registryProposal": "Golden path frontmatter lists 10 techniques but its body '## The techniques' list and Invariants omit ordered-yield-composition (9 listed). Also: the map row digest for this subject was sha256-b2:89e82a9f790ac3fb rev 6 while the registry index is sha256-b2:b0eabf78abd856a4 rev 8; verdicts are stamped against the index."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/lib/harness/orchestrator.ts:118 the loop exits on a pass rate built from the model's self-reported feature statuses (written at :209 before gates, counted across failed areas at src/lib/harness/plan-builder.ts:76), so evaluator-passed is read as complete; and an area left in-progress by a crash (:151) is never re-picked (plan-builder.ts:57 takes only pending), so a resume reports done with work stranded",
+          "evaluatedAt": "2026-10-09T17:56:23.000Z",
+          "worker": "a5729493-1417-4fc4-ab5b-f6005aae5a45",
+          "reason": "replaced by ff7c04cb-a9bc-453f-b94d-80f8486ee2e4"
+        }
+      ]
     },
     "cd8712a3-9546-4c21-895b-9e64a4b161b1/session-continuation": {
       "context": "engine-build-session",
       "subject": "session-continuation",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T17:56:23.000Z",
-      "worker": "a5729493-1417-4fc4-ab5b-f6005aae5a45",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:49:10.000Z",
+      "worker": "ff7c04cb-a9bc-453f-b94d-80f8486ee2e4",
       "techniques": [
         {
           "technique": "stuck-loop-detection",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/build_session/oneshot.rs:183 halts on attempts, not failure identity; src-tauri/src/engine/build_session/oneshot.rs:747 the halt carries a truncated symptom line, not a hypothesis. The involuntary-interruption half IS realized: src-tauri/db/src/repos/core/build_sessions.rs:534 resumes an orphan at most MAX_RESTART_RESUMES=1 times inside a 2h window under compare-and-set"
+          "evidence": "src-tauri/src/engine/build_session/oneshot.rs:183 halt predicate is attempts >= 3, not same-signature-after-N-repairs; :752 short_failure_label takes summary.lines().next() as the upward report"
         },
         {
           "technique": "single-loop-authority",
           "verdict": "realized",
-          "evidence": "src-tauri/src/engine/build_session/oneshot.rs:408 promotion requires the harness's own tool-test verdict and fails closed (Held, :145) on an unreadable report or tools counted but never called - evaluator-passed kept apart from complete"
+          "evidence": "src-tauri/src/engine/build_session/oneshot.rs:408 promotion requires the harness's own tool-test verdict and fails closed (Held, :145) on an unreadable report or tools counted but never called - evaluator-passed kept apart from complete",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "boundary-applied-stop",
           "verdict": "realized",
-          "evidence": "src-tauri/src/engine/build_session/oneshot.rs:119 cancellation is checked at every loop boundary and after every await; the long fix pass is bounded by its own timeout at src-tauri/src/engine/build_session/fix_pass.rs:41"
+          "evidence": "src-tauri/src/engine/build_session/oneshot.rs:119 cancellation is checked at every loop boundary and after every await; the long fix pass is bounded by its own timeout at src-tauri/src/engine/build_session/fix_pass.rs:41",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "sealed-stage-advance",
           "verdict": "realized",
-          "evidence": "src-tauri/db/src/repos/core/build_sessions.rs:534 a resume restarts from the persisted row under a CAS on the orphan predicate with a claim lease (:561); the stage advance is driven by tool-test evidence, not a model phrase"
+          "evidence": "src-tauri/db/src/repos/core/build_sessions.rs:534 a resume restarts from the persisted row under a CAS on the orphan predicate with a claim lease (:561); the stage advance is driven by tool-test evidence, not a model phrase",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "continuation-as-state",
           "verdict": "realized",
-          "evidence": "src-tauri/src/engine/build_session/gates.rs:7 the Rule 16/17 ask-first rule is enforced by a Rust state machine that suppresses out-of-order events rather than by prompt text"
+          "evidence": "src-tauri/src/engine/build_session/gates.rs:7 the Rule 16/17 ask-first rule is enforced by a Rust state machine that suppresses out-of-order events rather than by prompt text",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "compaction-checkpoint",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:6 each fix is a one-shot --print invocation; the loop state is the session row, not model context"
+          "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:6 each fix is a one-shot --print invocation; the loop state is the session row, not model context",
+          "carriedFrom": "2026-10-09"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/oneshot.rs:183 the test/fix loop stops on an attempt count (MAX_TEST_RETRIES=3) with no failure signature, so an identical failure buys two more fix passes and the stop hands up the first line of the summary (:747) rather than a root-cause hypothesis",
+          "evaluatedAt": "2026-10-09T17:56:23.000Z",
+          "worker": "a5729493-1417-4fc4-ab5b-f6005aae5a45",
+          "reason": "replaced by ff7c04cb-a9bc-453f-b94d-80f8486ee2e4"
         }
       ]
     },
@@ -17314,37 +17347,54 @@
       "subject": "session-continuation",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T14:31:19.902Z",
-      "worker": "d9069ba4-9cd1-4478-b2c9-edc9ae5769dd",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:49:10.000Z",
+      "worker": "ff7c04cb-a9bc-453f-b94d-80f8486ee2e4",
       "techniques": [
         {
           "technique": "single-loop-authority",
           "verdict": "deviation",
-          "evidence": "src/features/teams/sub_deliberations/useTeamDeliberations.ts:174 client while-loop calls advanceTeamDeliberation while DeliberationSubscription::tick (src-tauri/src/engine/deliberation.rs:1010) advances every open/converging row; no single authority, no conflict policy, no compare-before-write"
+          "evidence": "src/features/teams/sub_deliberations/useTeamDeliberations.ts:188 client while-loop advances with only a component-local runningRef; src-tauri/src/engine/deliberation.rs:1010 tick advances the same list_advanceable rows with no shared authority field"
+        },
+        {
+          "technique": "sealed-stage-advance",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/resources/deliberation.rs:159 UPDATE sets round/status WHERE id = ?1 only - no compare-before-write on the round or status read"
         },
         {
           "technique": "stuck-loop-detection",
           "verdict": "deviation",
-          "evidence": "src/features/teams/sub_deliberations/useTeamDeliberations.ts:313 runAllTracks swallows each track advance error and re-advances the still-open track next pass; a moderator failure (src-tauri/src/engine/deliberation.rs:812 returns before cost or round move) repeats identically in a tight loop with a toast per pass and no failure-signature stop"
+          "evidence": "src/features/teams/sub_deliberations/useTeamDeliberations.ts:313 runAllTracks swallows each track advance error and re-advances the still-open track next pass; a moderator failure (src-tauri/src/engine/deliberation.rs:812 returns before cost or round move) repeats identically in a tight loop with a toast per pass and no failure-signature stop",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "continuation-as-state",
           "verdict": "realized",
-          "evidence": "src/features/teams/sub_deliberations/useTeamDeliberations.ts:178 the keep-going condition is the persisted deliberation status re-read every round against an enumerated continue set (:39); nothing is carried in prompt text"
+          "evidence": "src/features/teams/sub_deliberations/useTeamDeliberations.ts:178 the keep-going condition is the persisted deliberation status re-read every round against an enumerated continue set (:39); nothing is carried in prompt text",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "boundary-applied-stop",
           "verdict": "realized",
-          "evidence": "src/features/teams/sub_deliberations/useTeamDeliberations.ts:190 Stop clears runningRef and the loop exits at the next round boundary after the in-flight advance lands, never mid-round"
+          "evidence": "src/features/teams/sub_deliberations/useTeamDeliberations.ts:190 Stop clears runningRef and the loop exits at the next round boundary after the in-flight advance lands, never mid-round",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "compaction-checkpoint",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/deliberation.rs:812 each round rebuilds moderator context from the DB; no long-lived model context is compacted"
+          "evidence": "src-tauri/src/engine/deliberation.rs:812 each round rebuilds moderator context from the DB; no long-lived model context is compacted",
+          "carriedFrom": "2026-10-10"
         }
       ],
-      "registryProposal": "single-loop-authority frames the second loop as a host evaluator or a nested mode; a common shape it does not name is an operator-driven client loop beside a server scheduler tick on the same persisted record, where the authority conflict shows up as a blind read-modify-write. Worth one sentence and an example, and a seam note to background-jobs."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_deliberations/useTeamDeliberations.ts:174 \"Run to budget\" is a second continuation loop over the same deliberation the autonomous tick advances (src-tauri/src/engine/deliberation.rs:1010) with no refuse/adopt policy, and the round write is blind (src-tauri/db/src/repos/resources/deliberation.rs:179), so the two double-spend a round and a stale snapshot can overwrite an escalated/paused status back to open",
+          "evaluatedAt": "2026-10-10T14:31:19.902Z",
+          "worker": "d9069ba4-9cd1-4478-b2c9-edc9ae5769dd",
+          "reason": "replaced by ff7c04cb-a9bc-453f-b94d-80f8486ee2e4"
+        }
+      ]
     },
     "4810daf8-0549-4899-95d2-99c81cde6455/session-continuation": {
       "context": "overview-observability",
