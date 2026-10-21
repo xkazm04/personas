@@ -2285,9 +2285,9 @@ fn heatmap_tz_modifier(tz_offset_minutes: Option<i64>) -> String {
     }
 }
 
-/// Public API to invalidate the heatmap cache (e.g. after a new execution lands).
-/// Optional currently — the 1h TTL is the safety net.
-#[allow(dead_code)]
+/// Drop every cached heatmap snapshot. Called from the execution writes that
+/// change what the heatmap shows (insert, retry insert, finalized cost); the 1h
+/// TTL is only the backstop for writes that bypass those paths.
 pub fn invalidate_heatmap_cache() {
     if let Ok(mut map) = heatmap_cache().lock() {
         map.clear();

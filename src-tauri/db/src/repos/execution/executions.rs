@@ -910,6 +910,9 @@ pub fn create_with_idempotency_reporting(
                 }
             }
 
+            if rows_changed > 0 {
+                super::metrics::invalidate_heatmap_cache();
+            }
             get_by_id(pool, &id).map(|execution| (execution, true))
         }
     )
@@ -1258,6 +1261,10 @@ fn exec_status_update(
         input.business_outcome,
         input.error_category,
     ])?;
+    // The heatmap carries per-day cost: a finalized run moves it.
+    if rows_changed > 0 && input.cost_usd.is_some() {
+        super::metrics::invalidate_heatmap_cache();
+    }
     Ok(rows_changed)
 }
 
@@ -2164,6 +2171,7 @@ pub fn create_retry(
                      (SELECT source_recipe_version FROM persona_executions WHERE id = ?3))",
         )?;
         stmt.execute(params![id, persona_id, original_exec_id, retry_count, now])?;
+        super::metrics::invalidate_heatmap_cache();
 
         get_by_id(pool, &id)
     })
@@ -2809,6 +2817,39 @@ mod tests {
         assert_eq!(item.business_outcome, "unknown");
         assert_eq!(item.origin, "manual", "bare run classifies as manual");
         assert!(item.origin_lane.is_none());
+    }
+
+    /// The heatmap is cached for an hour per key, so a run that lands inside
+    /// that hour used to be missing from it. Writes that change what the
+    /// heatmap shows (a new row, a finalized cost) must drop the snapshot.
+    #[test]
+    fn a_new_execution_shows_in_the_heatmap_without_waiting_out_the_cache() {
+        use crate::repos::execution::metrics::get_execution_heatmap;
+        let pool = init_test_db().unwrap();
+        // A persona-scoped key is unique to this test, so a parallel test's
+        // snapshot can neither serve nor evict it.
+        let persona_id = make_persona(&pool, "Heatmap Cache Agent");
+        let total = |pool: &DbPool| -> i64 {
+            get_execution_heatmap(pool, Some(7), Some(&persona_id), None)
+                .unwrap()
+                .days
+                .iter()
+                .map(|d| d.count)
+                .sum()
+        };
+
+        assert_eq!(total(&pool), 0);
+        create(&pool, &persona_id, None, None, None, None).unwrap();
+        assert_eq!(
+            total(&pool),
+            1,
+            "the new run must not wait out the 1h cache"
+        );
+
+        let retry_of = create(&pool, &persona_id, None, None, None, None).unwrap();
+        assert_eq!(total(&pool), 2);
+        create_retry(&pool, &persona_id, &retry_of.id, 1).unwrap();
+        assert_eq!(total(&pool), 3);
     }
 
     /// Stalled (`incomplete`) runs count toward both streaks, and a newer
