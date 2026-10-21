@@ -3,7 +3,7 @@
 //! a `radio:state` event so the footer can re-render without polling.
 
 use serde::Deserialize;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, State};
 
 use crate::error::AppError;
@@ -152,15 +152,18 @@ pub fn radio_report_status(
     status: PlayStatus,
     position_sec: Option<u32>,
 ) -> Result<RadioState, AppError> {
-    let snap = with_service(&state, |svc| {
-        svc.set_status(status);
-        if let Some(pos) = position_sec {
-            svc.report_position(pos);
+    let (snap, flush) = with_service(&state, |svc| {
+        let flush = svc.report_status(status, position_sec, Instant::now());
+        if flush {
+            svc.persist();
         }
-        svc.persist();
-        snapshot(svc)
+        (snapshot(svc), flush)
     })?;
-    broadcast(&app, &snap);
+    // Position-only ticks inside the throttle window skip the disk write and
+    // the radio:state emit (the footer would re-render for nothing).
+    if flush {
+        broadcast(&app, &snap);
+    }
     Ok(snap)
 }
 

@@ -5,6 +5,7 @@
 
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 
 use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
@@ -36,7 +37,13 @@ pub struct RadioService {
     default_station_id: Option<String>,
     state: RadioState,
     persistence_path: PathBuf,
+    /// When a position-only report last asked for a persist + broadcast.
+    last_position_flush: Option<Instant>,
 }
+
+/// A progress report that changes only the resume position is persisted and
+/// broadcast at most this often. Status changes always go through at once.
+const POSITION_PERSIST_INTERVAL: Duration = Duration::from_secs(30);
 
 /// Newtype wrapper so Tauri's typed state lookup unambiguously resolves
 /// to the radio service.
@@ -90,6 +97,7 @@ impl RadioService {
             default_station_id: parsed.default_station_id,
             state,
             persistence_path,
+            last_position_flush: None,
         }
     }
 
@@ -211,6 +219,32 @@ impl RadioService {
         self.state.volume = volume.clamp(0.0, 1.0);
     }
 
+    /// Apply a renderer status report. Returns `true` when the caller must
+    /// persist and broadcast: always on a status change or a report without
+    /// a position, but for a position-only tick at most once per
+    /// `POSITION_PERSIST_INTERVAL` (the position is still kept in memory).
+    pub fn report_status(
+        &mut self,
+        status: PlayStatus,
+        position_sec: Option<u32>,
+        now: Instant,
+    ) -> bool {
+        let changed = self.state.status != status;
+        self.set_status(status);
+        let Some(pos) = position_sec else {
+            return true;
+        };
+        self.report_position(pos);
+        let due = self
+            .last_position_flush
+            .map_or(true, |t| now.duration_since(t) >= POSITION_PERSIST_INTERVAL);
+        if changed || due {
+            self.last_position_flush = Some(now);
+            return true;
+        }
+        false
+    }
+
     pub fn report_position(&mut self, position_sec: u32) {
         if let Some(station_id) = self.state.current_station_id.clone() {
             if let Some(cursor) = self.state.station_cursors.get_mut(&station_id) {
@@ -294,6 +328,25 @@ mod tests {
             assert!(matches!(svc.state().status, PlayStatus::Paused));
         }
         let _ = std::fs::remove_file(&path);
+    }
+
+    #[test]
+    fn position_ticks_flush_at_a_coarse_cadence() {
+        let mut svc = fresh();
+        svc.play().unwrap();
+        let t0 = Instant::now();
+        // First tick (and the status change from Stopped) flushes.
+        assert!(svc.report_status(PlayStatus::Playing, Some(5), t0));
+        // Ticks inside the interval update memory but do not flush.
+        for i in 1..6u64 {
+            let at = t0 + Duration::from_secs(5 * i);
+            assert!(!svc.report_status(PlayStatus::Playing, Some(5 + 5 * i as u32), at));
+        }
+        // Past the interval it flushes again.
+        assert!(svc.report_status(PlayStatus::Playing, Some(40), t0 + Duration::from_secs(31)));
+        // A status change always flushes; so does a report with no position.
+        assert!(svc.report_status(PlayStatus::Paused, Some(41), t0 + Duration::from_secs(32)));
+        assert!(svc.report_status(PlayStatus::Playing, None, t0 + Duration::from_secs(33)));
     }
 
     #[test]
