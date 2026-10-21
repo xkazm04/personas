@@ -5,6 +5,8 @@ import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import type { NowPlaying } from '@/lib/bindings/NowPlaying';
 import type { PlayStatus } from '@/lib/bindings/PlayStatus';
 import type { StreamMetadata } from '@/lib/bindings/StreamMetadata';
+import { openExternalUrl } from '@/api/system/system';
+import { silentCatch } from '@/lib/silentCatch';
 import EqualizerBars from './EqualizerBars';
 
 interface NowPlayingCardProps {
@@ -240,15 +242,17 @@ export default function NowPlayingCard({
 
       {nowPlaying.station.sourceUrl && (
         <div className="border-t border-primary/8 px-4 py-2">
-          <a
-            href={nowPlaying.station.sourceUrl}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="inline-flex items-center gap-1 typo-caption text-foreground hover:text-foreground/90 transition-colors"
+          <button
+            type="button"
+            onClick={() => {
+              const url = nowPlaying.station.sourceUrl;
+              if (url) openExternalUrl(url).catch(silentCatch('radio:open-source'));
+            }}
+            className="inline-flex items-center gap-1 typo-caption text-foreground hover:text-foreground/90 transition-colors focus-ring"
           >
             <ExternalLink className="w-3 h-3" />
             {nowPlaying.station.sourceLabel ?? t.radio.open_source}
-          </a>
+          </button>
         </div>
       )}
     </div>
