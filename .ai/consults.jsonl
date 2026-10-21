@@ -1879,3 +1879,5 @@
 {"ts":"2026-10-21T17:42:04Z","bundle":"software-engineering","subjects":["multi-project"],"techniques":["cross-project-comparison"],"deviations":1}
 {"ts":"2026-10-21T17:42:04Z","bundle":"software-engineering","subjects":["multi-project"],"techniques":["portfolio-drill-hierarchy"],"deviations":1}
 {"ts":"2026-10-21T17:43:00Z","bundle":"software-engineering","subjects":["adoption-measurement"],"techniques":["attribution-provenance-tiers","adoption-distribution-bands","dormancy-verdicts"],"deviations":0}
+{"ts":"2026-10-21T17:45:01Z","bundle":"software-engineering","subjects":["client-fetch-cache"],"techniques":["warm-remount-caches","swr-design","cache-key-discipline","in-flight-dedup"],"deviations":1}
+{"ts":"2026-10-21T17:45:01Z","bundle":"software-engineering","subjects":["client-fetch-cache"],"techniques":["swr-design"],"deviations":1}

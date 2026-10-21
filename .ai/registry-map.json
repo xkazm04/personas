@@ -22686,7 +22686,11 @@
           "revision": 15,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_incidents/libs/useIncidentsData.ts:48 the inbox list lives in hook state and OverviewPage.tsx:73 mounts IncidentsInbox only on its tab, so every return to Incidents starts empty and paints ghost rows (IncidentsInbox.tsx:245) for data held seconds ago",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:20824426732ffb6a",
+          "evaluatedRevision": 15
         }
       ],
       "governance": "governed"
@@ -39478,8 +39482,8 @@
           "changedAt": "2026-09-25",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/triggers/sub_shared/EventHistoryModal.tsx:65 a failed listFirings writes [] so the modal paints its 'no history' empty state as if the feed never fired; useSharedEvents.ts:61 does the same for a failed first catalog load (UnifiedTable shows no_feeds) and the hook exposes no error",
-          "evaluatedAt": "2026-10-16",
+          "evidence": "src/features/triggers/sub_shared/useSharedEvents.ts:54 re-judged after a7c0b5b21f (which fixed EventHistoryModal.tsx:111): a failed first catalog load still only logs and clears loading, the hook returns no error (useSharedEvents.ts:117), so the Watchtower paints no_feeds (SharedEventsTab.tsx:222) as if no feeds exist",
+          "evaluatedAt": "2026-10-21",
           "evaluatedAgainst": "sha256-b2:20824426732ffb6a",
           "evaluatedRevision": 15,
           "source": "retained",

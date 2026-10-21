@@ -28686,32 +28686,42 @@
       "subject": "client-fetch-cache",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T18:28:20.000Z",
-      "worker": "cdc9ecb8-7442-4613-a3dd-a52bdeabe42c",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:45:01.000Z",
+      "worker": "8d26bd62-5ca6-49df-ad2d-087cc3a0c7bd",
       "techniques": [
         {
           "technique": "swr-design",
           "verdict": "deviation",
-          "evidence": "src/features/triggers/sub_shared/EventHistoryModal.tsx:65 failure collapses into an empty collection (failure-not-empty-success); same at src/features/triggers/sub_shared/useSubscribedFeeds.ts:31 and src/features/triggers/sub_shared/useSharedEvents.ts:61. The refresh path (useSharedEvents.ts:78) keeps stale rows but reports nothing beside them"
+          "evidence": "src/features/triggers/sub_shared/useSharedEvents.ts:54 failure collapsed into empty success; failure-not-empty-success says the outcome must be separately available"
         },
         {
           "technique": "warm-remount-caches",
-          "verdict": "deviation",
-          "evidence": "src/features/triggers/sub_shared/useSharedEvents.ts:17 the catalog lives in component state, so every return to the Marketplace tab repaints cold and refetches; there is no module-scoped last result"
+          "verdict": "not-judged",
+          "evidence": "src/features/triggers/sub_shared/useSharedEvents.ts:13 catalog in hook state; remount behaviour not traced this run"
         },
         {
           "technique": "in-flight-dedup",
           "verdict": "partial",
-          "evidence": "src/lib/tauriInvoke.ts:194 transport auto-dedup covers shared_events_list_subscriptions, but shared_events_browse_catalog (src/api/events/sharedEvents.ts:11) has no list/get/fetch verb and is not eligible"
+          "evidence": "src/lib/tauriInvoke.ts:194 transport auto-dedup covers shared_events_list_subscriptions, but shared_events_browse_catalog (src/api/events/sharedEvents.ts:11) has no list/get/fetch verb and is not eligible",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "cache-key-discipline",
           "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_shared/useSharedEvents.ts:30 there is no keyed cache to key; the args-to-answer race is handled by a latest-wins token (loadSeqRef), which is client-state's async-race-guards"
+          "evidence": "src/features/triggers/sub_shared/useSharedEvents.ts:30 there is no keyed cache to key; the args-to-answer race is handled by a latest-wins token (loadSeqRef), which is client-state's async-race-guards",
+          "carriedFrom": "2026-10-16"
         }
       ],
-      "registryProposal": "Coverage: the map marks triggers-test governance 'weak', but the subject's precondition holds (two hooks and a modal keep IPC read responses past the call). Weak status comes from domain coverage of the context, not from this subject, so a weak row can hide a strongly-governed pair. Consider ranking pairs inside weak rows by subject precondition rather than skipping them wholesale. Separately, the transport auto-dedup in this repo keys eligibility on a verb regex (list|get|fetch), which silently excludes read verbs like 'browse'; in-flight-dedup could name verb-inferred eligibility as a failure mode beside opt-in dedup."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/triggers/sub_shared/EventHistoryModal.tsx:65 a failed listFirings writes [] so the modal paints its 'no history' empty state as if the feed never fired; useSharedEvents.ts:61 does the same for a failed first catalog load (UnifiedTable shows no_feeds) and the hook exposes no error",
+          "evaluatedAt": "2026-10-16T18:28:20.000Z",
+          "worker": "cdc9ecb8-7442-4613-a3dd-a52bdeabe42c",
+          "reason": "replaced by 8d26bd62-5ca6-49df-ad2d-087cc3a0c7bd"
+        }
+      ]
     },
     "63edaec0-367e-4553-a6ee-bfd4144be305/supply-chain": {
       "context": "workspace-governance",
@@ -33224,6 +33234,38 @@
           "evidence": "src/features/templates/sub_recipes/libs/recipeStaleness.ts:1 the only lifecycle verdict is catalog-version staleness, not usage/dormancy; no use counter exists"
         }
       ]
+    },
+    "9fff7e41-4fc5-4c31-846b-c04ca1c79757/client-fetch-cache": {
+      "context": "overview-incidents",
+      "subject": "client-fetch-cache",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:45:01.000Z",
+      "worker": "8d26bd62-5ca6-49df-ad2d-087cc3a0c7bd",
+      "techniques": [
+        {
+          "technique": "warm-remount-caches",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_incidents/libs/useIncidentsData.ts:48 useState([]) per mount, no module-scoped last-result cache; src/features/overview/components/dashboard/OverviewPage.tsx:73 tab switch unmounts it, so remount is cold"
+        },
+        {
+          "technique": "swr-design",
+          "verdict": "realized",
+          "evidence": "src/features/overview/sub_incidents/libs/useIncidentsData.ts:80 a failed list refresh sets error but keeps the last rows; IncidentsInbox.tsx:245 ghosts only when nothing is on screen"
+        },
+        {
+          "technique": "cache-key-discipline",
+          "verdict": "realized",
+          "evidence": "src/features/overview/sub_incidents/libs/useIncidentsData.ts:69 the read is keyed by the canonical JSON of the full filter object; the summary is filter-less and carries its own guard"
+        },
+        {
+          "technique": "in-flight-dedup",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_incidents/libs/useIncidentsData.ts:62 a single caller per read; overlapping polls are arbitrated by latest-wins tokens, not joined (no second concurrent caller of the same key on this surface)"
+        }
+      ],
+      "registryProposal": "The inbox polls every 30s (useIncidentsData.ts:117) while src/lib/eventRegistry.ts:1364 declares INCIDENT_RESOLVED; that is client-state invalidation-strategy territory, worth judging on the client-state pair rather than here."
     }
   }
 }
