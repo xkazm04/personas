@@ -358,15 +358,44 @@ pub fn replace_all(pool: &UserDbPool, names: &[String]) -> Result<(), AppError> 
     }
     // Insert new names. ON CONFLICT preserves existing rows untouched.
     for name in names {
-        let _ = tx.execute(
+        tx.execute(
             "INSERT INTO companion_active_connector (connector_name, enabled, created_at, updated_at)
              VALUES (?1, 1, ?2, ?2)
              ON CONFLICT(connector_name) DO NOTHING",
             params![name, now],
-        );
+        )?;
     }
     tx.commit()?;
     Ok(())
+}
+
+#[cfg(test)]
+mod replace_all_tests {
+    use super::*;
+
+    /// A pin insert that fails must reach the caller, and the transaction must
+    /// not commit the rest of the set around the hole.
+    #[test]
+    fn replace_all_surfaces_a_failed_insert_and_rolls_back() {
+        let pool = crate::db::init_test_user_db().unwrap();
+        replace_all(&pool, &["github".to_string()]).unwrap();
+        pool.get()
+            .unwrap()
+            .execute_batch(
+                "CREATE TRIGGER refuse_slack BEFORE INSERT ON companion_active_connector
+                 WHEN NEW.connector_name = 'slack'
+                 BEGIN SELECT RAISE(ABORT, 'refused'); END;",
+            )
+            .unwrap();
+        let res = replace_all(&pool, &["sentry".to_string(), "slack".to_string()]);
+        assert!(res.is_err(), "failed insert was swallowed");
+        let names: Vec<String> = list(&pool)
+            .unwrap()
+            .into_iter()
+            .map(|c| c.connector_name)
+            .collect();
+        assert_eq!(names, vec!["github".to_string()], "tx must roll back");
+    }
 }
 
 #[cfg(test)]
