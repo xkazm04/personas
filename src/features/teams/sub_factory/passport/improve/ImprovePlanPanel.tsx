@@ -10,15 +10,17 @@ import { Rocket, ScanSearch, Plug, Sparkles, Wrench, X, Target } from 'lucide-re
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useImprove } from './ImproveContext';
+import type { DevToolsKey } from './improveCopy';
 import { buildImprovePlan, fleetGoldenAvg, projectedFleetGolden, type PlanItem, type PlanKind } from './improvePlan';
 
-const KIND_META: Record<PlanKind, { icon: typeof Rocket; label: string; tone: string }> = {
-  scan: { icon: ScanSearch, label: 'Scan', tone: 'text-blue-300 border-blue-500/30 bg-blue-500/10' },
-  task: { icon: Rocket, label: 'Claude deploy', tone: 'text-violet-300 border-violet-500/30 bg-violet-500/10' },
-  connector: { icon: Plug, label: 'Connector', tone: 'text-emerald-300 border-emerald-500/30 bg-emerald-500/10' },
-  skills: { icon: Sparkles, label: 'Skills', tone: 'text-amber-300 border-amber-500/30 bg-amber-500/10' },
-  standards: { icon: Wrench, label: 'Config', tone: 'text-foreground/70 border-primary/20 bg-primary/10' },
+const KIND_META: Record<PlanKind, { icon: typeof Rocket; labelKey: DevToolsKey; tone: string }> = {
+  scan: { icon: ScanSearch, labelKey: 'improve_kind_scan', tone: 'text-blue-300 border-blue-500/30 bg-blue-500/10' },
+  task: { icon: Rocket, labelKey: 'improve_kind_task', tone: 'text-violet-300 border-violet-500/30 bg-violet-500/10' },
+  connector: { icon: Plug, labelKey: 'improve_kind_connector', tone: 'text-emerald-300 border-emerald-500/30 bg-emerald-500/10' },
+  skills: { icon: Sparkles, labelKey: 'improve_kind_skills', tone: 'text-amber-300 border-amber-500/30 bg-amber-500/10' },
+  standards: { icon: Wrench, labelKey: 'improve_kind_standards', tone: 'text-foreground/70 border-primary/20 bg-primary/10' },
 };
 
 const MAX_VISIBLE = 40;
@@ -30,6 +32,8 @@ export function ImprovePlanPanel({ open, onClose, slug }: {
    *  the original fleet-wide program. */
   slug?: string;
 }) {
+  const { t, tx } = useTranslation();
+  const d = t.plugins.dev_tools;
   const engine = useImprove();
   const addToast = useToastStore((s) => s.addToast);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -62,7 +66,7 @@ export function ImprovePlanPanel({ open, onClose, slug }: {
     setBusy(true);
     const queuedKeys: string[] = [];
     const queuedToast = () =>
-      addToast(`Queued ${queuedKeys.length} golden-standard ${queuedKeys.length === 1 ? 'task' : 'tasks'} across the fleet`, 'success');
+      addToast(tx(queuedKeys.length === 1 ? d.improve_toast_queued_tasks_one : d.improve_toast_queued_tasks_other, { count: queuedKeys.length }), 'success');
     try {
       for (const it of selectedItems.filter((i) => i.kind === 'task' && i.action)) {
         const raw = engine.getRaw(it.projectId);
@@ -96,9 +100,9 @@ export function ImprovePlanPanel({ open, onClose, slug }: {
     if (!engine) return;
     try {
       await engine.runContextScan(it.projectId);
-      addToast(`Context scan started for ${it.projectName}`, 'success');
+      addToast(tx(d.improve_toast_scan_started, { name: it.projectName }), 'success');
     } catch {
-      addToast('Couldn’t start the scan', 'error');
+      addToast(d.improve_toast_scan_failed, 'error');
     }
   };
 
@@ -111,11 +115,11 @@ export function ImprovePlanPanel({ open, onClose, slug }: {
         <div className="flex items-center gap-3 px-5 py-3.5 border-b border-primary/10">
           <Target className="w-5 h-5 text-primary flex-shrink-0" aria-hidden />
           <div className="min-w-0">
-            <h2 id="improve-plan-title" className="typo-section-title">Improve Plan</h2>
-            <p className="typo-caption text-foreground/55">{plan.length} ranked opportunities across {raws.length} projects</p>
+            <h2 id="improve-plan-title" className="typo-section-title">{d.improve_plan_title}</h2>
+            <p className="typo-caption text-foreground/55">{tx(d.improve_plan_summary, { count: plan.length, projects: raws.length })}</p>
           </div>
           <div className="ml-auto flex items-center gap-2 flex-shrink-0">
-            <span className="typo-caption text-foreground/55">Fleet golden</span>
+            <span className="typo-caption text-foreground/55">{d.improve_plan_fleet_golden}</span>
             <span className="typo-data-lg text-foreground">{avgNow}%</span>
             {projected > avgNow && (
               <>
@@ -124,7 +128,7 @@ export function ImprovePlanPanel({ open, onClose, slug }: {
               </>
             )}
           </div>
-          <button type="button" onClick={onClose} aria-label="Close" className="p-1 rounded-interactive text-foreground hover:bg-secondary/40 transition-colors">
+          <button type="button" onClick={onClose} aria-label={t.common.close} className="p-1 rounded-interactive text-foreground hover:bg-secondary/40 transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -132,7 +136,7 @@ export function ImprovePlanPanel({ open, onClose, slug }: {
         {/* ranked list */}
         <div className="overflow-y-auto px-2 py-2 flex-1">
           {plan.length === 0 ? (
-            <p className="text-center py-12 typo-caption text-foreground/55">Every project meets its golden standard 🎉</p>
+            <p className="text-center py-12 typo-caption text-foreground/55">{d.improve_plan_all_met}</p>
           ) : (
             <ol className="space-y-1">
               {plan.slice(0, MAX_VISIBLE).map((it, i) => {
@@ -148,7 +152,7 @@ export function ImprovePlanPanel({ open, onClose, slug }: {
                       <span className="w-3.5 flex-shrink-0" />
                     )}
                     <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border typo-label flex-shrink-0 ${meta.tone}`}>
-                      <Icon className="w-3 h-3" aria-hidden /> {meta.label}
+                      <Icon className="w-3 h-3" aria-hidden /> {d[meta.labelKey]}
                     </span>
                     <div className="min-w-0 flex-1">
                       <span className="typo-caption text-foreground block truncate">
@@ -159,9 +163,9 @@ export function ImprovePlanPanel({ open, onClose, slug }: {
                     </div>
                     <span className="typo-caption tabular-nums text-emerald-300 flex-shrink-0">+{it.estGoldenLift}%</span>
                     {it.kind === 'scan' ? (
-                      <button type="button" onClick={() => runScan(it)} className="px-2 py-0.5 rounded-interactive typo-label text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25 transition-colors flex-shrink-0">Run</button>
+                      <button type="button" onClick={() => runScan(it)} className="px-2 py-0.5 rounded-interactive typo-label text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25 transition-colors flex-shrink-0">{d.improve_plan_run}</button>
                     ) : it.kind !== 'task' ? (
-                      <span className="typo-label text-foreground/35 flex-shrink-0 whitespace-nowrap">in&nbsp;matrix</span>
+                      <span className="typo-label text-foreground/35 flex-shrink-0 whitespace-nowrap">{d.improve_plan_in_matrix}</span>
                     ) : (
                       <span className="w-8 flex-shrink-0" />
                     )}
@@ -169,7 +173,7 @@ export function ImprovePlanPanel({ open, onClose, slug }: {
                 );
               })}
               {plan.length > MAX_VISIBLE && (
-                <li className="text-center pt-1 typo-label text-foreground/35">+{plan.length - MAX_VISIBLE} lower-priority opportunities</li>
+                <li className="text-center pt-1 typo-label text-foreground/35">{tx(d.improve_plan_more, { count: plan.length - MAX_VISIBLE })}</li>
               )}
             </ol>
           )}
@@ -178,7 +182,7 @@ export function ImprovePlanPanel({ open, onClose, slug }: {
         {/* footer — batch */}
         <div className="flex items-center justify-between gap-3 px-5 py-3 border-t border-primary/10 bg-secondary/10">
           <span className="typo-caption text-foreground/55">
-            {selectableTasks.length > 0 ? `${selectableTasks.length} deploy ${selectableTasks.length === 1 ? 'task' : 'tasks'} selected` : 'Select deploy tasks to queue them as a campaign'}
+            {selectableTasks.length > 0 ? tx(selectableTasks.length === 1 ? d.improve_plan_selected_one : d.improve_plan_selected_other, { count: selectableTasks.length }) : d.improve_plan_select_hint}
           </span>
           <button
             type="button"
@@ -187,7 +191,7 @@ export function ImprovePlanPanel({ open, onClose, slug }: {
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive typo-caption text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Rocket className="w-3.5 h-3.5" />
-            {busy ? 'Queuing…' : `Queue ${selectableTasks.length || ''} selected`}
+            {busy ? d.improve_plan_queuing : selectableTasks.length > 0 ? tx(d.improve_plan_queue, { count: selectableTasks.length }) : d.improve_plan_queue_none}
           </button>
         </div>
       </div>

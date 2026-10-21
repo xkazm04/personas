@@ -16,8 +16,11 @@ import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 import { useImprove } from './ImproveContext';
 import { connectorSpecFor, candidateCredentials, catalogToolsFor, type CatalogTool } from './connectors';
 import { silentCatch } from '@/lib/silentCatch';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function ConnectorSection({ slug, rowKey, onClose }: { slug: string; rowKey: string; onClose: () => void }) {
+  const { t, tx } = useTranslation();
+  const d = t.plugins.dev_tools;
   const engine = useImprove();
   const addToast = useToastStore((s) => s.addToast);
   const spec = connectorSpecFor(rowKey);
@@ -55,10 +58,10 @@ export function ConnectorSection({ slug, rowKey, onClose }: { slug: string; rowK
     setBinding(c.id);
     try {
       await engine.bindConnector(slug, c.id, spec.bindField);
-      addToast(`Connected ${c.name}`, 'success');
+      addToast(tx(d.improve_toast_connected, { name: c.name }), 'success');
       onClose();
     } catch {
-      addToast('Couldn’t connect the credential', 'error');
+      addToast(d.improve_toast_connect_failed, 'error');
     } finally {
       setBinding(null);
     }
@@ -73,16 +76,16 @@ export function ConnectorSection({ slug, rowKey, onClose }: { slug: string; rowK
       <div className="flex items-start gap-2">
         <Plug className="w-3.5 h-3.5 mt-0.5 text-primary/70 flex-shrink-0" aria-hidden />
         <div className="min-w-0">
-          <span className="typo-caption text-foreground block">Connect a {spec.categoryLabel} tool</span>
-          <span className="typo-caption text-foreground/55 block" style={{ fontWeight: 400 }}>Lit tiles are connected in your vault — click to wire one. Dimmed tiles aren’t set up yet.</span>
+          <span className="typo-caption text-foreground block">{tx(d.improve_conn_title, { category: d[spec.categoryKey] })}</span>
+          <span className="typo-caption text-foreground/55 block" style={{ fontWeight: 400 }}>{d.improve_conn_hint}</span>
         </div>
       </div>
 
       {loading ? (
-        <p className="typo-caption text-foreground/55 mt-2">Checking your vault…</p>
+        <p className="typo-caption text-foreground/55 mt-2">{d.improve_conn_checking}</p>
       ) : tools.length === 0 ? (
         <button type="button" onClick={openVault} className="mt-2 inline-flex items-center gap-1 typo-caption text-primary hover:underline">
-          <ExternalLink className="w-3 h-3" /> Add a connector in the Vault first
+          <ExternalLink className="w-3 h-3" /> {d.improve_conn_add_first}
         </button>
       ) : (
         <>
@@ -96,15 +99,16 @@ export function ConnectorSection({ slug, rowKey, onClose }: { slug: string; rowK
               const color = tool.color ?? meta.color;
               const Fallback = meta.Icon;
               const status = enabled
-                ? (h === true ? 'Connected · healthy' : h === false ? 'Connected · unhealthy, check in Vault' : 'Connected · checking…')
-                : 'Not connected, add in the Vault';
+                ? (h === true ? d.improve_conn_status_healthy : h === false ? d.improve_conn_status_unhealthy : d.improve_conn_status_checking)
+                : d.improve_conn_status_none;
+              const toolStatus = tx(d.improve_conn_tool_status, { tool: tool.label, status });
               return (
-                <Tooltip key={tool.name} content={`${tool.label}: ${status}`}>
+                <Tooltip key={tool.name} content={toolStatus}>
                   <button
                     type="button"
                     onClick={() => (enabled && cred ? connect(cred) : openVault())}
                     disabled={enabled && cred ? binding === cred.id : false}
-                    aria-label={`${tool.label}: ${status}`}
+                    aria-label={toolStatus}
                     className={`group/tool relative flex flex-col items-center gap-1 w-[4.25rem] px-1.5 py-2 rounded-interactive border transition-colors disabled:opacity-50 ${
                       enabled
                         ? 'border-primary/25 bg-primary/[0.07] hover:bg-primary/[0.14]'
@@ -127,7 +131,7 @@ export function ConnectorSection({ slug, rowKey, onClose }: { slug: string; rowK
             })}
           </div>
           <button type="button" onClick={openVault} className="inline-flex items-center gap-1 typo-caption text-foreground/55 hover:text-foreground mt-2">
-            <ExternalLink className="w-3 h-3" /> Manage connectors in the Vault
+            <ExternalLink className="w-3 h-3" /> {d.improve_conn_manage}
           </button>
         </>
       )}

@@ -1,11 +1,19 @@
 import { describe, it, expect } from 'vitest';
 import type { CrossProjectProjectMetadata, RepoEvidence } from '@/api/devTools/devTools';
 import type { DevProject } from '@/lib/bindings/DevProject';
+import en from '@/i18n/locales/en.json';
+import cs from '@/i18n/locales/cs.json';
+import type { Translations } from '@/i18n/useTranslation';
 
 import { derivePassportFromMetadata } from '../../passportDerive';
 import type { AppPassport } from '../../passportModel';
 import type { ImproveRaw } from '../ImproveContext';
 import { dimensionReason } from '../provenance';
+
+// The shipped catalogs as the runtime proxy would merge them; the JSON is the
+// source of the generated `Translations` type, so the shape matches by construction.
+const tEn = en as unknown as Translations;
+const tCs = { ...en, plugins: { ...en.plugins, dev_tools: { ...en.plugins.dev_tools, ...cs.plugins.dev_tools } } } as unknown as Translations;
 
 function mkRaw(project: Partial<DevProject>, evidence: Partial<RepoEvidence>, dbTables: string[] = []): ImproveRaw {
   return {
@@ -55,7 +63,7 @@ describe('dimensionReason agrees with the derive it explains', () => {
     for (const raw of [rich, claudeMdOnly]) {
       const p = passportOf(raw);
       if (!SIGNAL[row]!(p)) continue;
-      const reason = dimensionReason(row, raw);
+      const reason = dimensionReason(row, raw, tEn);
       expect({ row, reason: reason && DENIES_SIGNAL.test(reason) ? reason : 'ok' }).toEqual({ row, reason: 'ok' });
     }
   });
@@ -65,7 +73,18 @@ describe('dimensionReason agrees with the derive it explains', () => {
     const p = passportOf(empty);
     for (const row of Object.keys(SIGNAL)) {
       expect(SIGNAL[row]!(p)).toBe(false);
-      expect(dimensionReason(row, empty)).toMatch(/^No /);
+      expect(dimensionReason(row, empty, tEn)).toMatch(/^No /);
     }
+  });
+});
+
+describe('dimensionReason is worded through the catalog', () => {
+  it('speaks Czech, not English, when the locale is Czech', () => {
+    const empty = mkRaw({}, { scanned: true });
+    const en1 = dimensionReason('skills', empty, tEn);
+    const cs1 = dimensionReason('skills', empty, tCs);
+    expect(en1).toBe(en.plugins.dev_tools.improve_why_skills_none);
+    expect(cs1).toBe(cs.plugins.dev_tools.improve_why_skills_none);
+    expect(cs1).not.toBe(en1);
   });
 });

@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
+import en from '@/i18n/locales/en.json';
+import type { Translations } from '@/i18n/useTranslation';
+
 import {
   BATCH_BRIEF_PATH, consolePrompt, skillCommand, syncFailureMessage, usageHint,
 } from '../skillsWorkbenchData';
+
+// Shipped English catalog; the JSON is the source of the generated `Translations` type.
+const tEn = en as unknown as Translations;
 
 describe('skillsWorkbenchData — pure helpers', () => {
   it('skillCommand builds a slash command, args optional + trimmed', () => {
@@ -57,12 +63,12 @@ describe('skillsWorkbenchData — consolePrompt', () => {
 describe('skillsWorkbenchData - syncFailureMessage', () => {
   // invokeWithTimeout rejects with a serialized AppError object, not an Error.
   it('names the backend sentence of an IPC AppError, not [object Object]', () => {
-    const msg = syncFailureMessage({ error: 'remote unreachable: github.com\nretry later', kind: 'Io' });
-    expect(msg).toBe('Registry not synced — remote unreachable: github.com');
+    const msg = syncFailureMessage({ error: 'remote unreachable: github.com\nretry later', kind: 'Io' }, tEn);
+    expect(msg).toBe('Registry not synced: remote unreachable: github.com');
   });
 
   it('still reads an Error and falls back when the sentence is empty', () => {
-    expect(syncFailureMessage(new Error('dirty tree'))).toBe('Registry not synced — dirty tree');
-    expect(syncFailureMessage({ error: '', kind: 'Io' })).not.toContain('[object Object]');
+    expect(syncFailureMessage(new Error('dirty tree'), tEn)).toBe('Registry not synced: dirty tree');
+    expect(syncFailureMessage({ error: '', kind: 'Io' }, tEn)).not.toContain('[object Object]');
   });
 });

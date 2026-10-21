@@ -5,6 +5,14 @@ import type { CrossProjectProjectMetadata, RepoEvidence } from '@/api/devTools/d
 import type { DevProject } from '@/lib/bindings/DevProject';
 import { useToastStore } from '@/stores/toastStore';
 
+// The plugins section is lazy-loaded at runtime; resolve the shipped English
+// catalog synchronously so toasts and labels are the real copy.
+vi.mock('@/i18n/useTranslation', async (importActual) => {
+  const actual = await importActual<typeof import('@/i18n/useTranslation')>();
+  const enJson = (await import('@/i18n/locales/en.json')).default;
+  return { ...actual, useTranslation: () => ({ t: enJson, tx: actual.interpolate, language: 'en' }) };
+});
+
 import { ImproveProvider, type ImproveEngine, type ImproveRaw } from '../ImproveContext';
 import { ImprovePlanPanel } from '../ImprovePlanPanel';
 import { useImproveActions } from '../useImproveActions';
