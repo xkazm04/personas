@@ -31,7 +31,7 @@ Personas is built around one loop. You define **agents** (personas), give them *
 | Get help running all of the above | [Companions](#7-companions-the-apps-own-agents) | Athena, Overseer, Curator |
 | Extend it | [Plugins](#8-plugins) | Dev Tools, Obsidian Brain, Drive, Twin |
 
-**Why local-first?** Your personas, prompts and credentials never leave your machine unless you explicitly send them. Outbound traffic goes only to the AI providers and third-party services you configure. No cloud account is required.
+**Why local-first?** Your personas, prompts and credentials never leave your machine unless you explicitly send them. The only outbound traffic goes to the AI providers and third-party services you configure. No telemetry dashboards. No cloud account required.
 
 ---
 

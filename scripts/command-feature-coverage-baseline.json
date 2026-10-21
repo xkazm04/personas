@@ -41,7 +41,6 @@
       "get_discovered_peers",
       "get_knowledge_base",
       "get_local_identity",
-      "get_messaging_metrics",
       "get_network_snapshot",
       "get_network_status",
       "get_peer_manifest",

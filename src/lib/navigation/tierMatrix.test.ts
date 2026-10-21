@@ -115,7 +115,7 @@ const EXPECTED_TEAM_ONLY = [
   'overview-tab:memories',
   'overview-tab:memory-graph',
   'overview-tab:observability',
-  'overview-tab:patterns',
+  'overview-tab:timeline',
   'settings-tab:api-keys',
   'settings-tab:limits',
   'settings-tab:portability',
