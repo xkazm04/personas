@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useMemo, useRef } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useNotificationCenterStore } from '@/stores/notificationCenterStore';
 import { useOverviewStore } from '@/stores/overviewStore';
@@ -83,6 +83,27 @@ export function useTitleBarTray() {
    */
   const decisions = useDecisionCounts();
 
+  // The count is a function of the wall clock, not just of the list: a schedule
+  // that has fired must leave the badge and the day must roll over without the
+  // list being refetched. One timeout to the next moment the answer can change
+  // (the earliest still-upcoming trigger, or midnight) bumps `clockTick`, which recomputes the count against the clock.
+  const [clockTick, setClockTick] = useState(0);
+  useEffect(() => {
+    const nowMs = Date.now();
+    const now = new Date(nowMs);
+    let nextChange = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime();
+    for (const a of cronAgents) {
+      if (!a.trigger_enabled || !a.persona_enabled || !a.next_trigger_at) continue;
+      const at = new Date(a.next_trigger_at).getTime();
+      // A trigger is counted through its own instant, so it leaves the badge just after.
+      if (at >= nowMs && at + 1 < nextChange) nextChange = at + 1;
+    }
+    // setTimeout clamps to a signed 32-bit delay; a day is well inside it.
+    const delay = Math.max(1000, nextChange - Date.now());
+    const id = setTimeout(() => setClockTick((n) => n + 1), delay);
+    return () => clearTimeout(id);
+  }, [cronAgents, clockTick]);
+
   const todayScheduleCount = useMemo(() => {
     const now = new Date();
     const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
@@ -92,7 +113,9 @@ export function useTitleBarTray() {
       const next = new Date(a.next_trigger_at);
       return next >= now && next <= endOfDay;
     }).length;
-  }, [cronAgents]);
+  // clockTick is the clock dependency: the body reads the current time.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cronAgents, clockTick]);
 
   /**
    * Every card waiting on the operator: the lanes (Breach + Sign + Accept +

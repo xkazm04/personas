@@ -18,7 +18,7 @@
  *  - the capsule's own rules: a zero collapses, a big number abbreviates.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, cleanup, fireEvent } from '@testing-library/react';
+import { render, screen, cleanup, fireEvent, act } from '@testing-library/react';
 
 import { buildChipCounts, decisionTotal } from '@/features/decision-center/roster/chipCounts';
 import { buildLaneCounts, laneTotal } from '@/features/decision-center/lanes/laneModel';
@@ -377,6 +377,25 @@ describe('the badge does not run a counts poll of its own', () => {
     // second path. The counts reader (mocked here) registers the roster's
     // coordinated ticker instead; the tray itself registers nothing.
     expect(registerTicker).not.toHaveBeenCalled();
+  });
+});
+
+describe('the schedules badge follows the wall clock', () => {
+  afterEach(() => vi.useRealTimers());
+
+  it('drops a schedule once it has fired, without the cron list being refetched', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 9, 21, 10, 0, 0));
+    const at = (h: number, m: number) => new Date(2026, 9, 21, h, m, 0).toISOString();
+    const cron = (id: string, next: string) => ({ id, trigger_enabled: true, persona_enabled: true, next_trigger_at: next });
+    overviewState.cronAgents = [cron('a', at(10, 30)), cron('b', at(15, 0))];
+
+    render(<TitleBarDock />);
+    expect(screen.getByTestId('titlebar-schedules')).toHaveAttribute('aria-label', '2 today');
+
+    act(() => { vi.advanceTimersByTime(60 * 60 * 1000); });
+    // 11:00: the 10:30 schedule has fired; only the 15:00 one is still ahead.
+    expect(screen.getByTestId('titlebar-schedules')).toHaveAttribute('aria-label', '1 today');
   });
 });
 
