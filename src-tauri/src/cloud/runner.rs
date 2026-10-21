@@ -35,6 +35,20 @@ async fn cancel_abandoned_run(
     }
 }
 
+/// The local `execution-status` value for a terminal orchestrator status.
+///
+/// The orchestrator also reports `"error"`, which is not in the local
+/// execution-state contract (`parseExecutionState('error')` is `unknown`, and
+/// the frontend raises a failure notification only for failed / cancelled /
+/// incomplete). A cloud error is a failed run, so it is emitted as `"failed"`;
+/// every other terminal status already has a local spelling.
+fn local_terminal_status(cloud_status: &str) -> &str {
+    match cloud_status {
+        "error" => "failed",
+        other => other,
+    }
+}
+
 /// Poll the cloud orchestrator for execution output and emit Tauri events.
 ///
 /// This function mirrors the local runner's event contract: it emits
@@ -205,7 +219,7 @@ pub async fn run_cloud_execution(
                     event_name::EXECUTION_STATUS,
                     serde_json::json!({
                         "execution_id": local_execution_id,
-                        "status": poll.status,
+                        "status": local_terminal_status(&poll.status),
                     }),
                 );
                 return CloudRunResult {
@@ -271,6 +285,26 @@ connection: close
                 .to_string()
         });
         (base, handle)
+    }
+
+    /// Every terminal status the poll loop stops on must reach the frontend as a
+    /// state it knows, or the run finalizes as `unknown` with no notification.
+    #[test]
+    fn terminal_cloud_statuses_map_onto_the_local_execution_states() {
+        assert_eq!(local_terminal_status("error"), "failed");
+        assert_eq!(local_terminal_status("failed"), "failed");
+        assert_eq!(local_terminal_status("cancelled"), "cancelled");
+        assert_eq!(local_terminal_status("completed"), "completed");
+        for s in ["completed", "failed", "cancelled", "error"] {
+            assert!(is_terminal_execution_status(s), "{s}");
+            assert!(
+                matches!(
+                    local_terminal_status(s),
+                    "completed" | "failed" | "cancelled"
+                ),
+                "{s} must map to a local state"
+            );
+        }
     }
 
     #[tokio::test]
