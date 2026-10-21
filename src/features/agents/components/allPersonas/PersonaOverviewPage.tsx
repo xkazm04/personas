@@ -41,6 +41,7 @@ const GRID_ACCENT_CLASS: Record<RowAccentTone, string> = {
   draft: 'border-l-zinc-400/40',
   failing: 'border-l-red-400/60',
   degraded: 'border-l-amber-400/60',
+  dormant: 'border-l-foreground/20',
   healthy: 'border-l-emerald-400/40',
 };
 

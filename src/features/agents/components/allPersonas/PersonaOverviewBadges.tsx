@@ -20,7 +20,7 @@ export const HEALTH_STYLES: Record<string, { bg: string; text: string; labelKey:
 
 /* -- Row accent ------------------------------------------------------- */
 
-export type RowAccentTone = 'building' | 'draft' | 'failing' | 'degraded' | 'healthy';
+export type RowAccentTone = 'building' | 'draft' | 'failing' | 'degraded' | 'dormant' | 'healthy';
 
 /**
  * ONE priority rule for the left-edge accent a persona row or card carries:
@@ -38,6 +38,7 @@ export function rowAccentTone(
   if (draft) return 'draft';
   if (health?.status === 'failing') return 'failing';
   if (health?.status === 'degraded') return 'degraded';
+  if (health?.status === 'dormant') return 'dormant';
   return 'healthy';
 }
 

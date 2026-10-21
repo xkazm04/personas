@@ -99,6 +99,7 @@ const CARD_ACCENT_CLASS: Record<RowAccentTone, string> = {
   draft: 'border-l-zinc-400',
   failing: 'border-l-red-400',
   degraded: 'border-l-amber-400',
+  dormant: 'border-l-foreground/30',
   healthy: 'border-l-emerald-400/60',
 };
 
