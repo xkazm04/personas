@@ -852,22 +852,22 @@
       "subject": "multi-project",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T11:48:34.000Z",
-      "worker": "b6169742-7a25-4f53-9506-024738171072",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:42:04.000Z",
+      "worker": "ab24b5af-0a44-4960-8696-bd5927fad5fb",
       "techniques": [
         {
           "technique": "passive-signal-ingestion",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/lib.rs:1563 could-not-observe is not durable state (no unwatched-since, no reason, no last-successfully-observed); the cursor gate IS realized at src-tauri/src/engine/project_tracking/scheduler.rs:194 (stamp only on should_stamp), closed vocabulary at src-tauri/src/engine/project_tracking/events.rs:24, announced-lane debounce at src-tauri/src/engine/project_tracking/push.rs:44, pulse cost accounting at src-tauri/src/engine/project_tracking/consolidator.rs:188"
+          "evidence": "src-tauri/src/engine/project_tracking/scheduler.rs:198 the cursor gate holds (last_pulse_at not advanced on a blind tick) but could-not-observe is not durable state on the project, so no drill level can show blind distinctly from quiet"
         },
         {
           "technique": "project-identity-and-joins",
           "verdict": "conformant",
-          "evidence": "src-tauri/src/engine/project_tracking/subscription.rs:22 subscriptions and events key on project_id (FK to companion_known_project.id); path is a denormalized field only"
+          "evidence": "src-tauri/src/engine/project_tracking/subscription.rs:22 subscriptions and events key on project_id (FK to companion_known_project.id); path is a denormalized field only",
+          "carriedFrom": "2026-10-10"
         }
       ],
-      "registryProposal": "passive-signal-ingestion names baseline cadence plus probe acceleration; this repo realizes only the announced lane (push.rs:44 debounce) on a fixed 1h tick (scheduler.rs:36). The technique could say explicitly whether an announced lane alone satisfies acceleration, since it decides the verdict for push-instrumented portfolios.",
       "superseded": [
         {
           "state": "deviation",
@@ -875,6 +875,13 @@
           "evaluatedAt": "2026-09-23",
           "worker": null,
           "reason": "replaced by b6169742-7a25-4f53-9506-024738171072"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/lib.rs:1563 re-confirmed: dev_tools_project_subscription has no unwatched-since/reason column, so a blind tick (src-tauri/src/engine/project_tracking/scheduler.rs:198) is only a warn log and a blind project still renders exactly like a quiet one on every surface",
+          "evaluatedAt": "2026-10-10T11:48:34.000Z",
+          "worker": "b6169742-7a25-4f53-9506-024738171072",
+          "reason": "replaced by ab24b5af-0a44-4960-8696-bd5927fad5fb"
         }
       ]
     },
@@ -14009,27 +14016,28 @@
       "subject": "multi-project",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T01:42:34.000Z",
-      "worker": "562a489c-a634-441d-8fcb-991342657f3b",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:42:04.000Z",
+      "worker": "ab24b5af-0a44-4960-8696-bd5927fad5fb",
       "techniques": [
         {
           "technique": "portfolio-drill-hierarchy",
           "verdict": "deviation",
-          "evidence": "src/features/teams/sub_factory/factoryData.tsx:268 mapWithConcurrency over every project fetching the detail-grade tree; ProjectsLayer.tsx:58 subscribes to it unconditionally, even on the default Atlas view that never passes attentionByProject. The 30-min/60-s client TTL caches (factoryData.tsx:240-241) soften revisits but are not a stored summary row with a named recompute. Realized: one level, two lenses - Atlas|Wall over the same passports (ProjectsLayer.tsx:54); a breadcrumb sibling switcher (src/features/teams/sub_factory/FactoryBreadcrumb.tsx:20)"
+          "evidence": "src/features/teams/sub_factory/factoryData.tsx:270 per-project detail fan-out feeding a wall-level badge instead of a stored summary row"
         },
         {
           "technique": "project-identity-and-joins",
           "verdict": "conformant",
-          "evidence": "src/features/teams/sub_factory/ProjectsLayer.tsx:140 attention keyed m.set(p.id, ...); factoryData.tsx:260 skeletons carry p.id with name as a display field"
+          "evidence": "src/features/teams/sub_factory/ProjectsLayer.tsx:140 attention keyed m.set(p.id, ...); factoryData.tsx:260 skeletons carry p.id with name as a display field",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "per-project-tabs-and-state",
           "verdict": "not-applicable",
-          "evidence": "src/features/teams/sub_factory/FactoryShell.tsx:42 a single projectId: string | null drill selection, not a persisted multi-project working set"
+          "evidence": "src/features/teams/sub_factory/FactoryShell.tsx:42 a single projectId: string | null drill selection, not a persisted multi-project working set",
+          "carriedFrom": "2026-10-10"
         }
       ],
-      "registryProposal": "portfolio-drill-hierarchy could name the 'client stale-while-revalidate cache over the fan-out' shape explicitly: it hides the N x depth cost on a warm revisit and looks like a fix, but it is not a stored rollup with a named recompute. A cold load still pays the full fan-out.",
       "superseded": [
         {
           "state": "deviation",
@@ -14037,6 +14045,13 @@
           "evaluatedAt": "2026-10-03",
           "worker": null,
           "reason": "replaced by 562a489c-a634-441d-8fcb-991342657f3b"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_factory/ProjectsLayer.tsx:58 re-judged after the 10-05/10-06 Atlas commits: the wall still pulls the full per-project KPI tree via useFactoryData (factoryData.tsx:268 bounded fan-out of groups+contexts+useCases+kpis+measurements per project) solely to fold the attention badge at :136-140, while the same page batches its other wall stats through projectWallSummary (:82) - wall cost still grows with N x depth",
+          "evaluatedAt": "2026-10-10T01:42:34.000Z",
+          "worker": "562a489c-a634-441d-8fcb-991342657f3b",
+          "reason": "replaced by ab24b5af-0a44-4960-8696-bd5927fad5fb"
         }
       ]
     },
@@ -16242,24 +16257,26 @@
       "subject": "multi-project",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T11:48:34.000Z",
-      "worker": "b6169742-7a25-4f53-9506-024738171072",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:42:04.000Z",
+      "worker": "ab24b5af-0a44-4960-8696-bd5927fad5fb",
       "techniques": [
         {
           "technique": "cross-project-comparison",
           "verdict": "deviation",
-          "evidence": "src/features/teams/sub_factory/passport/passportModel.ts:316 fixed-threshold grading with no recorded or rendered anchor policy; the divergence ranking IS realized at src/features/teams/sub_factory/passport/atlas/atlasModel.ts:56 (gap sort = |auto - prod|)"
+          "evidence": "src/features/teams/sub_factory/passport/passportModel.ts:309 fixed 80/60/40 ramp applied to every score with no per-dimension anchor policy rendered beside the score"
         },
         {
           "technique": "portfolio-drill-hierarchy",
           "verdict": "conformant",
-          "evidence": "src/features/teams/sub_factory/ProjectsLayer.tsx:176 Atlas/Wall are two lenses over the same passports at one level; per-project header stats come from one batched projectWallSummary call at :82; level parity: an unreadable checkout reads unknown at src/features/teams/sub_factory/passport/atlas/atlasModel.ts:27 and its dial shows ? at InstrumentParts.tsx:45"
+          "evidence": "src/features/teams/sub_factory/ProjectsLayer.tsx:176 Atlas/Wall are two lenses over the same passports at one level; per-project header stats come from one batched projectWallSummary call at :82; level parity: an unreadable checkout reads unknown at src/features/teams/sub_factory/passport/atlas/atlasModel.ts:27 and its dial shows ? at InstrumentParts.tsx:45",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "project-identity-and-joins",
           "verdict": "conformant",
-          "evidence": "src/features/teams/sub_factory/passport/passportDerive.ts:305 the passport slug IS the minted project_id, so Atlas keys, wall summaries and roadmaps join by id; shared display names are only qualified by folder at render"
+          "evidence": "src/features/teams/sub_factory/passport/passportDerive.ts:305 the passport slug IS the minted project_id, so Atlas keys, wall summaries and roadmaps join by id; shared display names are only qualified by folder at render",
+          "carriedFrom": "2026-10-10"
         }
       ],
       "superseded": [
@@ -16269,6 +16286,13 @@
           "evaluatedAt": "2026-10-03",
           "worker": null,
           "reason": "replaced by b6169742-7a25-4f53-9506-024738171072"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/atlas/variants/instrument/InstrumentParts.tsx:45 re-judged after the 10-06 Atlas commits: the new primary wall dial renders a bare composite score with no anchor policy, and passportModel.ts:316 scoreTint still grades it against fixed 80/60/40 cut-offs recorded nowhere as the dimension anchor - a reader cannot tell fleet-relative from fixed",
+          "evaluatedAt": "2026-10-10T11:48:34.000Z",
+          "worker": "b6169742-7a25-4f53-9506-024738171072",
+          "reason": "replaced by ab24b5af-0a44-4960-8696-bd5927fad5fb"
         }
       ]
     },

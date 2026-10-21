@@ -1875,3 +1875,6 @@
 {"ts":"2026-10-21T17:41:29Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["tool-identity-vs-tool-name"],"deviations":1}
 {"ts":"2026-10-21T17:41:29Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["tool-identity-vs-tool-name","client-integration","untrusted-result-handling"],"deviations":1}
 {"ts":"2026-10-21T17:41:29Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["client-integration","authentication-and-scoping","server-composition"],"deviations":1}
+{"ts":"2026-10-21T17:42:04Z","bundle":"software-engineering","subjects":["multi-project"],"techniques":["passive-signal-ingestion"],"deviations":1}
+{"ts":"2026-10-21T17:42:04Z","bundle":"software-engineering","subjects":["multi-project"],"techniques":["cross-project-comparison"],"deviations":1}
+{"ts":"2026-10-21T17:42:04Z","bundle":"software-engineering","subjects":["multi-project"],"techniques":["portfolio-drill-hierarchy"],"deviations":1}

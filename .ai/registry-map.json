@@ -12430,8 +12430,8 @@
           "changedAt": "2026-08-29",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/db/src/lib.rs:1563 re-confirmed: dev_tools_project_subscription has no unwatched-since/reason column, so a blind tick (src-tauri/src/engine/project_tracking/scheduler.rs:198) is only a warn log and a blind project still renders exactly like a quiet one on every surface",
-          "evaluatedAt": "2026-10-10",
+          "evidence": "src-tauri/db/src/lib.rs:1559 re-confirmed after 353c496b93/0b17d00233 touched the file: dev_tools_project_subscription still has no unwatched-since/reason column, so a blind tick (src-tauri/src/engine/project_tracking/scheduler.rs:198) is only a warn log and a blind project renders exactly like a quiet one",
+          "evaluatedAt": "2026-10-21",
           "evaluatedAgainst": "sha256-b2:07b32de44fd25fc6",
           "evaluatedRevision": 3,
           "revisionsBehind": 0
@@ -24351,8 +24351,8 @@
           "changedAt": "2026-08-29",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/teams/sub_factory/passport/atlas/variants/instrument/InstrumentParts.tsx:45 re-judged after the 10-06 Atlas commits: the new primary wall dial renders a bare composite score with no anchor policy, and passportModel.ts:316 scoreTint still grades it against fixed 80/60/40 cut-offs recorded nowhere as the dimension anchor - a reader cannot tell fleet-relative from fixed",
-          "evaluatedAt": "2026-10-10",
+          "evidence": "src/features/teams/sub_factory/passport/atlas/variants/instrument/InstrumentParts.tsx:45 re-judged after 4aff4d381a touched passportModel.ts: the wall dial still renders a bare composite with no anchor policy, graded by passportModel.ts:309 scoreTint against fixed 80/60/40 cut-offs recorded nowhere as the dimension's anchor",
+          "evaluatedAt": "2026-10-21",
           "evaluatedAgainst": "sha256-b2:07b32de44fd25fc6",
           "evaluatedRevision": 3,
           "revisionsBehind": 0
@@ -35019,8 +35019,8 @@
           "changedAt": "2026-08-29",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/teams/sub_factory/ProjectsLayer.tsx:58 re-judged after the 10-05/10-06 Atlas commits: the wall still pulls the full per-project KPI tree via useFactoryData (factoryData.tsx:268 bounded fan-out of groups+contexts+useCases+kpis+measurements per project) solely to fold the attention badge at :136-140, while the same page batches its other wall stats through projectWallSummary (:82) - wall cost still grows with N x depth",
-          "evaluatedAt": "2026-10-10",
+          "evidence": "src/features/teams/sub_factory/ProjectsLayer.tsx:58 re-judged after 9c5077abb6/29a02ace11/e67653e006: the wall still pulls the full per-project KPI tree via useFactoryData (factoryData.tsx:270 groups+contexts+useCases+kpis per project) solely to fold the attention badge at :134, beside the batched projectWallSummary at :82 - wall cost grows with N x depth",
+          "evaluatedAt": "2026-10-21",
           "evaluatedAgainst": "sha256-b2:07b32de44fd25fc6",
           "evaluatedRevision": 3,
           "revisionsBehind": 0
