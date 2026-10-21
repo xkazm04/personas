@@ -1596,6 +1596,16 @@ export type Translations = {
     live_author_director: string;
     live_event_directive: string;
     live_event_memory: string;
+    live_step_created: string;
+    live_step_running: string;
+    live_step_done: string;
+    live_step_failed: string;
+    live_step_skipped: string;
+    live_step_awaiting_review: string;
+    live_step_mission_done: string;
+    live_step_rework: string;
+    live_step_paused: string;
+    live_event_channel: string;
     orphan_unassigned: string;
     orphan_unknown_persona: string;
   };

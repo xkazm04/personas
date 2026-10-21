@@ -1589,6 +1589,16 @@
   "live_author_director": "Директор",
   "live_event_directive": "директива",
   "live_event_memory": "память · {label}",
+  "live_step_created": "миссия создана",
+  "live_step_running": "запущено",
+  "live_step_done": "завершено",
+  "live_step_failed": "завершилось ошибкой",
+  "live_step_skipped": "пропущено",
+  "live_step_awaiting_review": "требует вашей проверки",
+  "live_step_mission_done": "миссия выполнена",
+  "live_step_rework": "QA запросил изменения, раунд доработки",
+  "live_step_paused": "приостановлено",
+  "live_event_channel": "канал",
   "orphan_unassigned": "Не назначено",
   "orphan_unknown_persona": "Неизвестная персона"
 }

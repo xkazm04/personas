@@ -1589,6 +1589,16 @@
   "live_author_director": "Director",
   "live_event_directive": "directive",
   "live_event_memory": "memory · {label}",
+  "live_step_created": "created the mission",
+  "live_step_running": "started",
+  "live_step_done": "finished",
+  "live_step_failed": "failed",
+  "live_step_skipped": "skipped",
+  "live_step_awaiting_review": "needs your review",
+  "live_step_mission_done": "mission complete",
+  "live_step_rework": "QA requested changes, rework round",
+  "live_step_paused": "paused",
+  "live_event_channel": "channel",
   "orphan_unassigned": "Unassigned",
   "orphan_unknown_persona": "Unknown persona"
 }

@@ -1589,6 +1589,16 @@
   "live_author_director": "Giám đốc",
   "live_event_directive": "chỉ thị",
   "live_event_memory": "bộ nhớ · {label}",
+  "live_step_created": "đã tạo nhiệm vụ",
+  "live_step_running": "đã bắt đầu",
+  "live_step_done": "đã hoàn tất",
+  "live_step_failed": "thất bại",
+  "live_step_skipped": "đã bỏ qua",
+  "live_step_awaiting_review": "cần bạn xem xét",
+  "live_step_mission_done": "nhiệm vụ hoàn tất",
+  "live_step_rework": "QA yêu cầu thay đổi, vòng làm lại",
+  "live_step_paused": "đã tạm dừng",
+  "live_event_channel": "kênh",
   "orphan_unassigned": "Chưa gán",
   "orphan_unknown_persona": "Persona không xác định"
 }

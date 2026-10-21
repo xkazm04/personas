@@ -1589,6 +1589,16 @@
   "live_author_director": "পরিচালক",
   "live_event_directive": "নির্দেশ",
   "live_event_memory": "স্মৃতি · {label}",
+  "live_step_created": "মিশন তৈরি হয়েছে",
+  "live_step_running": "শুরু হয়েছে",
+  "live_step_done": "শেষ হয়েছে",
+  "live_step_failed": "ব্যর্থ হয়েছে",
+  "live_step_skipped": "বাদ দেওয়া হয়েছে",
+  "live_step_awaiting_review": "আপনার পর্যালোচনা দরকার",
+  "live_step_mission_done": "মিশন সম্পন্ন",
+  "live_step_rework": "QA পরিবর্তনের অনুরোধ করেছে, পুনঃকাজের রাউন্ড",
+  "live_step_paused": "বিরতি দেওয়া হয়েছে",
+  "live_event_channel": "চ্যানেল",
   "orphan_unassigned": "অনির্ধারিত",
   "orphan_unknown_persona": "অজানা পারসোনা"
 }

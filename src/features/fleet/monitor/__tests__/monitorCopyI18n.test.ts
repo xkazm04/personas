@@ -6,12 +6,21 @@ import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 import { buildMonitorModel } from '../monitorModel';
 import { resolveCompact } from '../channels/MergedRow';
 import { authorName, type LiveMessage } from '../live/liveModel';
+import { authorName as channelAuthorName, channelCopyLabels } from '@/features/teams/sub_collab/collabRender';
+import type { Translations } from '@/i18n/generated/types';
 
 const LOCALES = ['en', 'ar', 'bn', 'cs', 'de', 'es', 'fr', 'hi', 'id', 'ja', 'ko', 'ru', 'vi', 'zh'];
 const KEYS = [
   'live_author_you', 'live_author_athena', 'live_author_director',
   'live_event_directive', 'live_event_memory', 'orphan_unassigned', 'orphan_unknown_persona',
+  'live_step_created', 'live_step_running', 'live_step_done', 'live_step_failed', 'live_step_skipped',
+  'live_step_awaiting_review', 'live_step_mission_done', 'live_step_rework', 'live_step_paused', 'live_event_channel',
 ];
+
+const cs = JSON.parse(readFileSync(resolve(process.cwd(), 'src/i18n/locales/cs.json'), 'utf8')) as { monitor: Record<string, string> };
+// A Czech catalog, read the way the app reads it: the monitor section of the active locale.
+const csT = { monitor: cs.monitor } as unknown as Pick<Translations, 'monitor'>;
+const row = { id: 'i', at: '2026-01-01T00:00:00Z', body: 'b', label: 'x', extra: null, personaId: null };
 
 describe('monitor model copy comes from the caller, not from literals', () => {
   it('names an orphan message card with the supplied labels', () => {
@@ -28,10 +37,32 @@ describe('monitor model copy comes from the caller, not from literals', () => {
   });
 
   it('labels directive and memory rows with the supplied copy', () => {
-    const labels = { directive: 'pokyn', memory: 'paměť · {label}' };
-    const base = { id: 'i', at: '2026-01-01T00:00:00Z', body: 'b', label: 'fact', extra: null, personaId: null };
+    const labels = { ...channelCopyLabels(csT), directive: 'pokyn', memory: 'paměť · {label}' };
+    const base = { ...row, label: 'fact' };
     expect(resolveCompact({ ...base, kind: 'directive' } as unknown as TeamChannelItem, labels).event).toBe('pokyn');
     expect(resolveCompact({ ...base, kind: 'memory' } as unknown as TeamChannelItem, labels).event).toBe('paměť · fact');
+  });
+
+  it('words step verbs and author voices from a non-English catalog', () => {
+    const labels = channelCopyLabels(csT);
+    const step = (label: string) => resolveCompact({ ...row, kind: 'step', label } as unknown as TeamChannelItem, labels).event;
+    expect(step('step_running')).toBe('spuštěno');
+    expect(step('status_awaiting_review')).toBe('čeká na vaši kontrolu');
+    expect(step('paused')).toBe('pozastaveno');
+    const voice = (kind: string) => resolveCompact({ ...row, kind } as unknown as TeamChannelItem, labels).event;
+    expect(voice('persona')).toBe('kanál');
+    expect(voice('athena')).toBe(cs.monitor.live_author_athena);
+    expect(voice('director')).toBe(cs.monitor.live_author_director);
+    expect(voice('slack')).toBe('Slack');
+  });
+
+  it('names the Timeline authors from a non-English catalog', () => {
+    const labels = channelCopyLabels(csT);
+    const who = (kind: string) => channelAuthorName({ ...row, kind } as unknown as TeamChannelItem, undefined, labels);
+    expect(who('directive')).toBe(cs.monitor.live_author_you);
+    expect(who('athena')).toBe(cs.monitor.live_author_athena);
+    expect(who('director')).toBe(cs.monitor.live_author_director);
+    expect(who('machine')).toBe(cs.monitor.system);
   });
 
   it('has every monitor key in all 14 locales', () => {

@@ -1589,6 +1589,16 @@
   "live_author_director": "디렉터",
   "live_event_directive": "지시",
   "live_event_memory": "메모리 · {label}",
+  "live_step_created": "미션을 만들었습니다",
+  "live_step_running": "시작했습니다",
+  "live_step_done": "완료했습니다",
+  "live_step_failed": "실패했습니다",
+  "live_step_skipped": "건너뛰었습니다",
+  "live_step_awaiting_review": "검토가 필요합니다",
+  "live_step_mission_done": "미션 완료",
+  "live_step_rework": "QA가 변경을 요청했습니다. 재작업 라운드",
+  "live_step_paused": "일시 중지했습니다",
+  "live_event_channel": "채널",
   "orphan_unassigned": "미할당",
   "orphan_unknown_persona": "알 수 없는 페르소나"
 }

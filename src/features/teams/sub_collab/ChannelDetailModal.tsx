@@ -10,7 +10,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { PersonaChip, usePersonaIndex } from '../sub_teamWorkspace/teamStudio/boardShared';
 import { humanizePayload, type Artifact } from './payloadView';
-import { AUTHOR_KIND_META, authorName, isAuthorKind, itemAccent } from './collabRender';
+import { AUTHOR_KIND_META, authorName, channelAuthorLabels, isAuthorKind, itemAccent } from './collabRender';
 import { decisionTitle, STEP_VERB_KEY } from './decisionTitle';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 
@@ -147,7 +147,7 @@ export function ChannelDetailModal({ item, onClose, onPin, pinned }: {
             </span>
             <div className="min-w-0 flex-1">
               <h2 id="channel-detail-title" className="typo-title-lg truncate">
-                {authorName(item, persona)}
+                {authorName(item, persona, channelAuthorLabels(t))}
               </h2>
               <p className="flex items-center gap-2 flex-wrap mt-0.5 min-w-0">
                 {eventLabel && (

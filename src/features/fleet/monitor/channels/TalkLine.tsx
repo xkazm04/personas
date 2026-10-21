@@ -2,8 +2,9 @@ import { memo } from 'react';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
+import { useTranslation } from '@/i18n/useTranslation';
 import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
-import { AUTHOR_KIND_META, authorName, itemAccent } from '@/features/teams/sub_collab/collabRender';
+import { AUTHOR_KIND_META, authorName, channelAuthorLabels, itemAccent } from '@/features/teams/sub_collab/collabRender';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 
 /* ----------------------------------------------------------------------------
@@ -40,6 +41,7 @@ function Glyph({ item }: { item: TeamChannelItem }) {
 
 /** memo: `item` keeps identity across quiet refreshes and `onOpen` is a setter. */
 export const TalkLine = memo(function TalkLine({ item, onOpen }: { item: TeamChannelItem; onOpen: (i: TeamChannelItem) => void }) {
+  const { t } = useTranslation();
   const persona = usePersonaIndex().get(item.personaId ?? '');
   const mine = item.kind === 'directive';
 
@@ -71,7 +73,7 @@ export const TalkLine = memo(function TalkLine({ item, onOpen }: { item: TeamCha
     >
       {!mine && (
         <span className="mb-0.5 flex items-baseline gap-2">
-          <span className="typo-heading" style={{ color: itemAccent(item, persona) }}>{authorName(item, persona)}</span>
+          <span className="typo-heading" style={{ color: itemAccent(item, persona) }}>{authorName(item, persona, channelAuthorLabels(t))}</span>
           <span className="typo-caption"><RelativeTime timestamp={item.at} /></span>
         </span>
       )}

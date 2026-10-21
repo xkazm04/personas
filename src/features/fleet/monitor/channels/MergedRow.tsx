@@ -1,6 +1,6 @@
 import { eventFamily, FAMILY_TEXT } from '@/lib/channel/eventModel';
 import { payloadSummary } from '@/features/teams/sub_collab/payloadView';
-import { STEP_VERB, STEP_TONE, AUTHOR_KIND_META, isAuthorKind } from '@/features/teams/sub_collab/collabRender';
+import { STEP_TONE, AUTHOR_KIND_META, SLACK_BRAND, isAuthorKind } from '@/features/teams/sub_collab/collabRender';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 
 /* The compact resolution of one channel item, shared by the live pop-ups
@@ -9,15 +9,23 @@ import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
  * `overview/sub_timeline` with its own row; nothing rendered this one. */
 
 /** Translated copy `resolveCompact` needs for the kinds that carry no label of
- *  their own. `memory` is a template with a `{label}` slot. */
-export interface CompactLabels { directive: string; memory: string }
+ *  their own. `memory` is a template with a `{label}` slot; `stepVerb` is keyed
+ *  by step-layer kind; `channel` / `athena` / `director` name the author voices. */
+export interface CompactLabels {
+  directive: string;
+  memory: string;
+  channel: string;
+  athena: string;
+  director: string;
+  stepVerb: Record<string, string>;
+}
 
 /** Resolve the compact event label + tone + one-line message for any item.
  *  Exported so the live-mode corner overlay projects messages identically. */
 export function resolveCompact(item: TeamChannelItem, labels: CompactLabels): { event: string; tone: string; message: string | null; artifact: { url: string; label: string } | null; isError: boolean; alert: boolean } {
   if (item.kind === 'step') {
     return {
-      event: STEP_VERB[item.label] ?? item.label,
+      event: labels.stepVerb[item.label] ?? item.label,
       tone: STEP_TONE[item.label] ?? 'text-foreground/55',
       message: item.body,
       artifact: null,
@@ -38,6 +46,8 @@ export function resolveCompact(item: TeamChannelItem, labels: CompactLabels): { 
   // Every voiced author kind (persona / athena / director / slack) resolves from
   // the shared meta — which is why `slack` needs no special case here and, more
   // importantly, cannot silently fall through to the generic persona voice.
-  const meta = isAuthorKind(item.kind) ? AUTHOR_KIND_META[item.kind] : AUTHOR_KIND_META.persona;
-  return { event: meta.label, tone: meta.tag, message: item.body, artifact: null, isError: false, alert: false };
+  const kind = isAuthorKind(item.kind) ? item.kind : 'persona';
+  const meta = AUTHOR_KIND_META[kind];
+  const voice = kind === 'athena' ? labels.athena : kind === 'director' ? labels.director : kind === 'slack' ? SLACK_BRAND : labels.channel;
+  return { event: voice, tone: meta.tag, message: item.body, artifact: null, isError: false, alert: false };
 }

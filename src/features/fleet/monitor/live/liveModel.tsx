@@ -12,7 +12,8 @@ import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { resolveCompact, type CompactLabels } from '../channels/MergedRow';
 import type { TaggedItem } from '../channels/types';
 import type { Persona } from '@/lib/bindings/Persona';
-import { avatarBgFor, AUTHOR_KIND_META, slackAuthorName } from '@/features/teams/sub_collab/collabRender';
+import type { Translations } from '@/i18n/generated/types';
+import { avatarBgFor, AUTHOR_KIND_META, channelCopyLabels, slackAuthorName } from '@/features/teams/sub_collab/collabRender';
 import { cleanName } from '../grid/fleetGridModel';
 
 /** Where a live message came from. Absent = `channel` (a team-channel item). */
@@ -114,8 +115,16 @@ export function liveAuthorLabels(t: { monitor: { live_author_you: string; live_a
 }
 
 /** The compact-event labels read from the active locale's monitor section. */
-export function compactLabels(t: { monitor: { live_event_directive: string; live_event_memory: string } }): CompactLabels {
-  return { directive: t.monitor.live_event_directive, memory: t.monitor.live_event_memory };
+export function compactLabels(t: Pick<Translations, 'monitor'>): CompactLabels {
+  const c = channelCopyLabels(t);
+  return {
+    directive: t.monitor.live_event_directive,
+    memory: t.monitor.live_event_memory,
+    channel: c.channel,
+    athena: c.athena,
+    director: c.director,
+    stepVerb: c.stepVerb,
+  };
 }
 
 /** Author display name for a live message. */

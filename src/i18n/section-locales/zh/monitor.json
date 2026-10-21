@@ -1589,6 +1589,16 @@
   "live_author_director": "总监",
   "live_event_directive": "指令",
   "live_event_memory": "记忆 · {label}",
+  "live_step_created": "已创建任务",
+  "live_step_running": "已开始",
+  "live_step_done": "已完成",
+  "live_step_failed": "失败",
+  "live_step_skipped": "已跳过",
+  "live_step_awaiting_review": "需要你审核",
+  "live_step_mission_done": "任务完成",
+  "live_step_rework": "QA 要求修改，进入返工轮次",
+  "live_step_paused": "已暂停",
+  "live_event_channel": "频道",
   "orphan_unassigned": "未分配",
   "orphan_unknown_persona": "未知角色"
 }
