@@ -1777,3 +1777,4 @@
 {"ts":"2026-10-21T13:20:00Z","bundle":"software-engineering","subjects":["voice-io"],"techniques":["engine-abstraction","bounded-playback-wait"],"deviations":1}
 {"ts":"2026-10-21T13:20:00Z","bundle":"software-engineering","subjects":["voice-io"],"techniques":["voice-ux-integration","tts-pipeline","bounded-playback-wait"],"deviations":2}
 {"ts":"2026-10-21T13:20:00Z","bundle":"software-engineering","subjects":["voice-io"],"techniques":["spoken-intent-parsing"],"deviations":1}
+{"ts":"2026-10-21T12:42:30Z","bundle":"software-engineering","subjects":["public-claim-provenance"],"techniques":["derived-numerator-authored-denominator","degraded-never-claims-live","promise-only-what-ships"],"deviations":0}

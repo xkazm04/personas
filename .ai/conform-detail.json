@@ -31588,6 +31588,33 @@
         }
       ],
       "registryProposal": "useEngineCapabilities.ts:68 leaves the installed-providers set empty when the local health check rejects (unknown read as absent). That is unknown-is-not-a-value, but the capability is an external executable, which the golden path routes to a different subject; the subject could name which subject owns 'installed-tool presence' so the next judge does not have to guess"
+    },
+    "9b013060-5483-4162-9f8a-6b69109d623d/public-claim-provenance": {
+      "context": "teams-kpis",
+      "subject": "public-claim-provenance",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:42:30.000Z",
+      "worker": "96edc61c-2c71-4fd2-856c-a26c64ffd09e",
+      "techniques": [
+        {
+          "technique": "derived-numerator-authored-denominator",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_kpis/KPIsPage.tsx:1 internal KPI hub above Goals, not a public roadmap or progress fraction"
+        },
+        {
+          "technique": "degraded-never-claims-live",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_kpis/KPIsPage.tsx:1 no public live counter or badge; reads the local DB"
+        },
+        {
+          "technique": "promise-only-what-ships",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_kpis/KPIsPage.tsx:1 no outward confirmation panel promising a follow-up"
+        }
+      ],
+      "registryProposal": "Coverage: teams-kpis is a technique-shaped resonance, not a hole. It matched on the token 'provenance' (kpiMeasurementProvenance.ts surfaces evidence behind internal metrics), which is measurement-honesty / metric-surface-contract doctrine; public-claim-provenance's precondition (an outward reader who cannot check) fails. Route by precondition: consider measurement-honesty for this context."
     }
   }
 }

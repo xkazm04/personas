@@ -1,0 +1,11 @@
+{"schema":"conform-run/1","worker":"96edc61c-2c71-4fd2-856c-a26c64ffd09e","subject":"public-claim-provenance","evaluatedAt":"2026-10-21T12:42:30Z",
+"pairs":[{"context":"9b013060-5483-4162-9f8a-6b69109d623d","subject":"public-claim-provenance","bundle":"software-engineering","state":"not-applicable",
+"evidence":"src/features/teams/sub_kpis/kpiMeasurementProvenance.ts:4 KPI values are shown to the operator inside the desktop app with a trace to the command/rows that produced them; the subject's precondition is an outward-facing claim surface whose reader cannot audit the value, and this internal dashboard has none",
+"evaluatedAgainst":"sha256-b2:60eb54ef03f44a69","evaluatedRevision":3,
+"techniques":[
+{"technique":"derived-numerator-authored-denominator","verdict":"not-applicable","evidence":"src/features/teams/sub_kpis/KPIsPage.tsx:1 internal KPI hub above Goals, not a public roadmap or progress fraction"},
+{"technique":"degraded-never-claims-live","verdict":"not-applicable","evidence":"src/features/teams/sub_kpis/KPIsPage.tsx:1 no public live counter or badge; reads the local DB"},
+{"technique":"promise-only-what-ships","verdict":"not-applicable","evidence":"src/features/teams/sub_kpis/KPIsPage.tsx:1 no outward confirmation panel promising a follow-up"}],
+"registryProposal":"Coverage: teams-kpis is a technique-shaped resonance, not a hole. It matched on the token 'provenance' (kpiMeasurementProvenance.ts surfaces evidence behind internal metrics), which is measurement-honesty / metric-surface-contract doctrine; public-claim-provenance's precondition (an outward reader who cannot check) fails. Route by precondition: consider measurement-honesty for this context."}],
+"declined":[{"subject":"public-claim-provenance","context":"fd961ee9-bf7c-4ec7-90c3-a728045d3d44","reason":"existing not-applicable verdict (2026-10-16) was made against the current digest sha256-b2:60eb54ef03f44a69 rev 3 and is not stale; the map row's paths (src/features/teams/sub_goals/) no longer exist - the code moved to src/features/projects/development/goals/ - so the context's paths need a rescan, not a re-judgment"}],
+"consults":[{"ts":"2026-10-21T12:42:30Z","bundle":"software-engineering","subjects":["public-claim-provenance"],"techniques":["derived-numerator-authored-denominator","degraded-never-claims-live","promise-only-what-ships"],"deviations":0}]}

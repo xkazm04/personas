@@ -34633,7 +34633,11 @@
           "revision": 3,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/teams/sub_kpis/kpiMeasurementProvenance.ts:4 KPI values are shown to the operator inside the desktop app with a trace to the command/rows that produced them; the subject's precondition is an outward-facing claim surface whose reader cannot audit the value, and this internal dashboard has none",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:60eb54ef03f44a69",
+          "evaluatedRevision": 3
         },
         {
           "subject": "adoption-measurement",
