@@ -1805,3 +1805,8 @@
 {"ts":"2026-10-21T12:45:31Z","bundle":"software-engineering","subjects":["background-jobs"],"techniques":["loop-supervision","tick-isolation","adaptive-cadence","loop-health-telemetry"],"deviations":1}
 {"ts":"2026-10-21T12:46:18Z","bundle":"software-engineering","subjects":["deployment-contract"],"techniques":["deploy-gate-coupling"],"deviations":1}
 {"ts":"2026-10-21T12:46:18Z","bundle":"software-engineering","subjects":["deployment-contract"],"techniques":["environment-promotion"],"deviations":1}
+{"ts":"2026-10-21T12:46:48Z","bundle":"software-engineering","subjects":["codebase-scanning"],"techniques":["sensor-pipeline","finding-lifecycle"],"deviations":2}
+{"ts":"2026-10-21T12:46:48Z","bundle":"software-engineering","subjects":["codebase-scanning"],"techniques":["sensor-pipeline","llm-assisted-scanning"],"deviations":1}
+{"ts":"2026-10-21T12:46:48Z","bundle":"software-engineering","subjects":["codebase-scanning"],"techniques":["sensor-pipeline","incremental-scanning"],"deviations":2}
+{"ts":"2026-10-21T12:46:48Z","bundle":"software-engineering","subjects":["codebase-scanning"],"techniques":["sensor-pipeline","the-tree-is-not-the-population"],"deviations":2}
+{"ts":"2026-10-21T12:46:48Z","bundle":"software-engineering","subjects":["codebase-scanning"],"techniques":["sensor-pipeline"],"deviations":1}

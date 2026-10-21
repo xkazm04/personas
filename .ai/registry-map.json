@@ -8450,8 +8450,8 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/companion/jobs/scan_codebase.rs:242 a source file that fails read_to_string (non-UTF-8, locked) is dropped from the TODO sensor without a count, so the report's 'N total' markers carries no denominator of files actually read and an unread file reads as clean",
-          "evaluatedAt": "2026-10-16",
+          "evidence": "src-tauri/src/companion/jobs/scan_codebase.rs:242 a source file that fails read_to_string is skipped for the TODO sensor without a count, so the TODO total has no denominator of files actually read and an unread file reads as clean (re-verified, still live)",
+          "evaluatedAt": "2026-10-21",
           "evaluatedAgainst": "sha256-b2:06416fce13bc2342",
           "evaluatedRevision": 12
         },
@@ -11093,8 +11093,8 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/plugins/dev-tools/hooks/useContextScanBackground.ts:79 'completed_with_warning' (e.g. 'Scan exceeded 30-minute timeout but partial results were saved', context_generation.rs:2061) collapses to success, so the sidebar indicator and the Overview process metric record a partial context scan as complete",
-          "evaluatedAt": "2026-10-16",
+          "evidence": "src/features/plugins/dev-tools/hooks/useContextScanBackground.ts:86 settle treats any status except failed as success, so completed_with_warning (a timed-out partial scan, src-tauri/src/commands/infrastructure/context_generation.rs:2061) is recorded as a complete context scan (re-verified, still live)",
+          "evaluatedAt": "2026-10-21",
           "evaluatedAgainst": "sha256-b2:06416fce13bc2342",
           "evaluatedRevision": 12
         },
@@ -26805,8 +26805,8 @@
           "changedAt": "2026-09-23",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/sweep.ts:111 A failed standards read is converted to an empty list and marked as probed, allowing verification to report shipped standards findings as cleared without reading their sensor.",
-          "evaluatedAt": "2026-10-12",
+          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/sweep.ts:116 a failed listStandards read is turned into [] and the standards origin is still marked probed (:125), so verification can report shipped standards findings as cleared without their sensor having read anything (re-verified, still live)",
+          "evaluatedAt": "2026-10-21",
           "evaluatedAgainst": "sha256-b2:06416fce13bc2342",
           "evaluatedRevision": 12,
           "revisionsBehind": 0
@@ -29049,8 +29049,8 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/plugins/dev-tools/sub_overview/StandardsScanCard.tsx:59 a standards scan that ended in 'error' is handled exactly like 'complete' and its error payload discarded; since the backend clears prior rows first (standards_scan.rs:130) a failed scan renders as 'No scan yet' (:101) or as a partial compliance % presented as the result",
-          "evaluatedAt": "2026-10-16",
+          "evidence": "src/features/plugins/dev-tools/sub_overview/StandardsScanCard.tsx:57 an error status is handled the same way as complete and its payload is thrown away, so a failed standards scan renders as no scan or as a partial compliance result (re-verified, still live)",
+          "evaluatedAt": "2026-10-21",
           "evaluatedAgainst": "sha256-b2:06416fce13bc2342",
           "evaluatedRevision": 12
         }
@@ -41636,8 +41636,8 @@
           "changedAt": "2026-09-23",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/static_scan.rs:564 Malformed static-tool output becomes zero findings and can be recorded as complete because the runner checks persistence failures but never checks the child process exit status.",
-          "evaluatedAt": "2026-10-12",
+          "evidence": "src-tauri/src/commands/infrastructure/static_scan.rs:127 tool output is parsed without checking output.status, and parse_fallow maps malformed JSON to Value::Null (:564), so a crashed or misconfigured tool records a complete scan with zero findings (re-verified, still live)",
+          "evaluatedAt": "2026-10-21",
           "evaluatedAgainst": "sha256-b2:06416fce13bc2342",
           "evaluatedRevision": 12,
           "revisionsBehind": 0

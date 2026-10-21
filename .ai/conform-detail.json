@@ -3678,24 +3678,25 @@
       "subject": "codebase-scanning",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T20:35:52.064Z",
-      "worker": "60479f2f-0eef-44dd-ae59-407da317c82f",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:46:48.000Z",
+      "worker": "e3009567-9de5-41d2-b90a-351905648959",
       "techniques": [
         {
-          "technique": "causes-beside-the-finding-count",
+          "technique": "sensor-pipeline",
           "verdict": "deviation",
-          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/SweepButton.tsx:86 The report publishes finding counts without a distinct-cause count or a disclosure that the cause relation was not computed; SweepResult and FindingDraft carry no cause attribution."
+          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/sweep.ts:116 a failed gather becomes a silently empty snapshot rather than a skipped sensor"
         },
         {
           "technique": "finding-lifecycle",
           "verdict": "deviation",
-          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/emitters.ts:201 Verification uses these capped emissions as its fresh probe set; a shipped issue still above threshold but displaced from the top three becomes absent and is judged cleared by verify.ts:111."
+          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/sweep.ts:125 probedOrigins.add after an empty failed read lets absence verify as cleared"
         },
         {
-          "technique": "sensor-pipeline",
+          "technique": "causes-beside-the-finding-count",
           "verdict": "deviation",
-          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/sweep.ts:104 The listStandards catch returns the successful-empty representation without recording a standards skip or read error, and the following emitter marks the origin probed."
+          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/SweepButton.tsx:86 The report publishes finding counts without a distinct-cause count or a disclosure that the cause relation was not computed; SweepResult and FindingDraft carry no cause attribution.",
+          "carriedFrom": "2026-10-12"
         }
       ],
       "superseded": [
@@ -3705,6 +3706,13 @@
           "evaluatedAt": "2026-09-23",
           "worker": null,
           "reason": "replaced by 60479f2f-0eef-44dd-ae59-407da317c82f"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/sweep.ts:111 A failed standards read is converted to an empty list and marked as probed, allowing verification to report shipped standards findings as cleared without reading their sensor.",
+          "evaluatedAt": "2026-10-12T20:35:52.064Z",
+          "worker": "60479f2f-0eef-44dd-ae59-407da317c82f",
+          "reason": "replaced by e3009567-9de5-41d2-b90a-351905648959"
         }
       ]
     },
@@ -6362,34 +6370,37 @@
       "subject": "codebase-scanning",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T20:35:52.064Z",
-      "worker": "60479f2f-0eef-44dd-ae59-407da317c82f",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:46:48.000Z",
+      "worker": "e3009567-9de5-41d2-b90a-351905648959",
       "techniques": [
+        {
+          "technique": "sensor-pipeline",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/static_scan.rs:564 malformed sensor output becomes an empty finding set rather than a reported failure"
+        },
+        {
+          "technique": "llm-assisted-scanning",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/infrastructure/static_scan.rs:113 the sensor is a deterministic external tool, not a model"
+        },
         {
           "technique": "finding-lifecycle",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/static_scan.rs:615 The raw line number enters the title passed to scan_dedup_key; its normalization retains numeric tokens for short titles, so an edit above a finding can change its identity."
+          "evidence": "src-tauri/src/commands/infrastructure/static_scan.rs:615 The raw line number enters the title passed to scan_dedup_key; its normalization retains numeric tokens for short titles, so an edit above a finding can change its identity.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "incremental-scanning",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/incremental_scan.rs:214 The ledger compares only file content hashes, stores no ruleset version, and context_generation short-circuits an empty delta, so changed scanner rules do not invalidate unchanged files."
-        },
-        {
-          "technique": "llm-assisted-scanning",
-          "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/standards_scan.rs:350 The standards scanner merely trims model-provided rule keys before persistence; neither this processing path nor create_standard checks membership in the shipped ruleset."
-        },
-        {
-          "technique": "sensor-pipeline",
-          "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/static_scan.rs:500 The Impeccable parser also converts invalid JSON to an empty result; parse_tool_output wraps it in Ok, allowing a broken sensor to produce a completed zero-finding scan."
+          "evidence": "src-tauri/src/commands/infrastructure/incremental_scan.rs:214 The ledger compares only file content hashes, stores no ruleset version, and context_generation short-circuits an empty delta, so changed scanner rules do not invalidate unchanged files.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "the-tree-is-not-the-population",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/incremental_scan.rs:152 Traversal removes these directories before producing its inventory, without enumerated totals, excluded counts by filter, or example paths; ScanDelta.total_files counts only surviving entries."
+          "evidence": "src-tauri/src/commands/infrastructure/incremental_scan.rs:152 Traversal removes these directories before producing its inventory, without enumerated totals, excluded counts by filter, or example paths; ScanDelta.total_files counts only surviving entries.",
+          "carriedFrom": "2026-10-12"
         }
       ],
       "superseded": [
@@ -6399,6 +6410,13 @@
           "evaluatedAt": "2026-09-23",
           "worker": null,
           "reason": "replaced by 60479f2f-0eef-44dd-ae59-407da317c82f"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/static_scan.rs:564 Malformed static-tool output becomes zero findings and can be recorded as complete because the runner checks persistence failures but never checks the child process exit status.",
+          "evaluatedAt": "2026-10-12T20:35:52.064Z",
+          "worker": "60479f2f-0eef-44dd-ae59-407da317c82f",
+          "reason": "replaced by e3009567-9de5-41d2-b90a-351905648959"
         }
       ]
     },
@@ -26884,29 +26902,40 @@
       "subject": "codebase-scanning",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:48:30.000Z",
-      "worker": "2ba0470f-d435-4b3c-b925-3a25da2bf5b1",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:46:48.000Z",
+      "worker": "e3009567-9de5-41d2-b90a-351905648959",
       "techniques": [
-        {
-          "technique": "the-tree-is-not-the-population",
-          "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/jobs/scan_codebase.rs:215 walk errors are skipped silently and SKIP_DIRS exclusions are never counted, so the published file total has no excluded-count beside it"
-        },
         {
           "technique": "sensor-pipeline",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/jobs/scan_codebase.rs:242 per-file read failure is tolerated but not recorded as a skip, so the failed read and an empty file are spelled the same; cap and early-stop ARE disclosed at :334 and :295"
+          "evidence": "src-tauri/src/companion/jobs/scan_codebase.rs:242 per-file read failure is silent, not reported as skipped"
+        },
+        {
+          "technique": "the-tree-is-not-the-population",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/jobs/scan_codebase.rs:242 no excluded count is published beside file_count"
         },
         {
           "technique": "rule-precision-discipline",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/jobs/scan_codebase.rs:283 the marker rule is a bare substring match (HACK/XXX inside identifiers) with false positives accepted in a comment and no measured precision recorded"
+          "evidence": "src-tauri/src/companion/jobs/scan_codebase.rs:283 the marker rule is a bare substring match (HACK/XXX inside identifiers) with false positives accepted in a comment and no measured precision recorded",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "finding-lifecycle",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/companion/jobs/scan_codebase.rs:169 only a one-line summary is persisted; findings are a chat report, not filed work items"
+          "evidence": "src-tauri/src/companion/jobs/scan_codebase.rs:169 only a one-line summary is persisted; findings are a chat report, not filed work items",
+          "carriedFrom": "2026-10-16"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/jobs/scan_codebase.rs:242 a source file that fails read_to_string (non-UTF-8, locked) is dropped from the TODO sensor without a count, so the report's 'N total' markers carries no denominator of files actually read and an unread file reads as clean",
+          "evaluatedAt": "2026-10-16T17:48:30.000Z",
+          "worker": "2ba0470f-d435-4b3c-b925-3a25da2bf5b1",
+          "reason": "replaced by e3009567-9de5-41d2-b90a-351905648959"
         }
       ]
     },
@@ -26915,19 +26944,29 @@
       "subject": "codebase-scanning",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:48:30.000Z",
-      "worker": "2ba0470f-d435-4b3c-b925-3a25da2bf5b1",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:46:48.000Z",
+      "worker": "e3009567-9de5-41d2-b90a-351905648959",
       "techniques": [
         {
           "technique": "sensor-pipeline",
           "verdict": "deviation",
-          "evidence": "src/features/plugins/dev-tools/sub_overview/StandardsScanCard.tsx:59 failure and completion collapse into one refetch, so a scan that could not run and one that found nothing are spelled the same"
+          "evidence": "src/features/plugins/dev-tools/sub_overview/StandardsScanCard.tsx:57 a scan that could not run is spelled like a finished one"
         },
         {
           "technique": "llm-assisted-scanning",
           "verdict": "deviation",
-          "evidence": "src/features/plugins/dev-tools/sub_overview/StandardsScanCard.tsx:73 compliance % is computed over whatever rows exist with no count of rules expected vs assessed, so a model run that errored mid-stream yields a confident score; unknown statuses ARE clamped to a conservative 0 here"
+          "evidence": "src/features/plugins/dev-tools/sub_overview/StandardsScanCard.tsx:73 compliance % is computed over whatever rows exist with no count of rules expected vs assessed, so a model run that errored mid-stream yields a confident score; unknown statuses ARE clamped to a conservative 0 here",
+          "carriedFrom": "2026-10-16"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_overview/StandardsScanCard.tsx:59 a standards scan that ended in 'error' is handled exactly like 'complete' and its error payload discarded; since the backend clears prior rows first (standards_scan.rs:130) a failed scan renders as 'No scan yet' (:101) or as a partial compliance % presented as the result",
+          "evaluatedAt": "2026-10-16T17:48:30.000Z",
+          "worker": "2ba0470f-d435-4b3c-b925-3a25da2bf5b1",
+          "reason": "replaced by e3009567-9de5-41d2-b90a-351905648959"
         }
       ]
     },
@@ -26936,19 +26975,34 @@
       "subject": "codebase-scanning",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:48:30.000Z",
-      "worker": "2ba0470f-d435-4b3c-b925-3a25da2bf5b1",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:46:48.000Z",
+      "worker": "e3009567-9de5-41d2-b90a-351905648959",
       "techniques": [
+        {
+          "technique": "sensor-pipeline",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/hooks/useContextScanBackground.ts:86 partial coverage is reported as complete"
+        },
         {
           "technique": "incremental-scanning",
           "verdict": "deviation",
-          "evidence": "src/features/plugins/dev-tools/hooks/useContextScanBackground.ts:81 setContextScanComplete takes a boolean, so a partial scan cannot be labelled partial on this surface (ContextMapPage.tsx:326 does distinguish it)"
+          "evidence": "src/features/plugins/dev-tools/hooks/useContextScanBackground.ts:86 a truncated scan is not labelled as less than a full pass"
         },
         {
           "technique": "verify-after-generate",
           "verdict": "unknown",
-          "evidence": "src/features/plugins/dev-tools/hooks/useContextScanBackground.ts:104 this context only launches the generator; the post-generation audit lives in the backend context, not judged here"
+          "evidence": "src/features/plugins/dev-tools/hooks/useContextScanBackground.ts:104 this context only launches the generator; the post-generation audit lives in the backend context, not judged here",
+          "carriedFrom": "2026-10-16"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/plugins/dev-tools/hooks/useContextScanBackground.ts:79 'completed_with_warning' (e.g. 'Scan exceeded 30-minute timeout but partial results were saved', context_generation.rs:2061) collapses to success, so the sidebar indicator and the Overview process metric record a partial context scan as complete",
+          "evaluatedAt": "2026-10-16T17:48:30.000Z",
+          "worker": "2ba0470f-d435-4b3c-b925-3a25da2bf5b1",
+          "reason": "replaced by e3009567-9de5-41d2-b90a-351905648959"
         }
       ]
     },

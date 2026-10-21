@@ -1,0 +1,178 @@
+{
+  "schema": "conform-run/1",
+  "worker": "e3009567-9de5-41d2-b90a-351905648959",
+  "subject": "codebase-scanning",
+  "evaluatedAt": "2026-10-21T12:46:48Z",
+  "evaluatedAgainst": "sha256-b2:06416fce13bc2342",
+  "evaluatedRevision": 12,
+  "pairs": [
+    {
+      "context": "50f50f97-be0e-4a93-8f1c-c0b967cd45d0",
+      "subject": "codebase-scanning",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/dev-tools/sub_triage/findings/sweep.ts:116 a failed listStandards read is turned into [] and the standards origin is still marked probed (:125), so verification can report shipped standards findings as cleared without their sensor having read anything (re-verified, still live)",
+      "techniques": [
+        {
+          "technique": "sensor-pipeline",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/sweep.ts:116 a failed gather becomes a silently empty snapshot rather than a skipped sensor"
+        },
+        {
+          "technique": "finding-lifecycle",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/sweep.ts:125 probedOrigins.add after an empty failed read lets absence verify as cleared"
+        }
+      ]
+    },
+    {
+      "context": "63edaec0-367e-4553-a6ee-bfd4144be305",
+      "subject": "codebase-scanning",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/infrastructure/static_scan.rs:127 tool output is parsed without checking output.status, and parse_fallow maps malformed JSON to Value::Null (:564), so a crashed or misconfigured tool records a complete scan with zero findings (re-verified, still live)",
+      "techniques": [
+        {
+          "technique": "sensor-pipeline",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/static_scan.rs:564 malformed sensor output becomes an empty finding set rather than a reported failure"
+        },
+        {
+          "technique": "llm-assisted-scanning",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/infrastructure/static_scan.rs:113 the sensor is a deterministic external tool, not a model"
+        }
+      ]
+    },
+    {
+      "context": "4cfcafbc-1964-4d65-994f-66c4cd1f8820",
+      "subject": "codebase-scanning",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/dev-tools/hooks/useContextScanBackground.ts:86 settle treats any status except failed as success, so completed_with_warning (a timed-out partial scan, src-tauri/src/commands/infrastructure/context_generation.rs:2061) is recorded as a complete context scan (re-verified, still live)",
+      "techniques": [
+        {
+          "technique": "sensor-pipeline",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/hooks/useContextScanBackground.ts:86 partial coverage is reported as complete"
+        },
+        {
+          "technique": "incremental-scanning",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/hooks/useContextScanBackground.ts:86 a truncated scan is not labelled as less than a full pass"
+        }
+      ]
+    },
+    {
+      "context": "9e46b252-8eb1-4a15-a627-f7e342f1d85a",
+      "subject": "codebase-scanning",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/companion/jobs/scan_codebase.rs:242 a source file that fails read_to_string is skipped for the TODO sensor without a count, so the TODO total has no denominator of files actually read and an unread file reads as clean (re-verified, still live)",
+      "techniques": [
+        {
+          "technique": "sensor-pipeline",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/jobs/scan_codebase.rs:242 per-file read failure is silent, not reported as skipped"
+        },
+        {
+          "technique": "the-tree-is-not-the-population",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/jobs/scan_codebase.rs:242 no excluded count is published beside file_count"
+        }
+      ]
+    },
+    {
+      "context": "9967adb9-e895-4dcd-b296-ab49a19ab122",
+      "subject": "codebase-scanning",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/dev-tools/sub_overview/StandardsScanCard.tsx:57 an error status is handled the same way as complete and its payload is thrown away, so a failed standards scan renders as no scan or as a partial compliance result (re-verified, still live)",
+      "techniques": [
+        {
+          "technique": "sensor-pipeline",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_overview/StandardsScanCard.tsx:57 a scan that could not run is spelled like a finished one"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "codebase-scanning",
+      "context": "fc62a53a-85f9-4491-8b54-9b5f1795ef91",
+      "reason": "the context has no code left: src/features/overview/sub_patterns was removed in 6ea91dd77b and context-map.json lists empty file_paths, so a context rescan and map rebuild are owed before anyone can judge it"
+    },
+    {
+      "subject": "codebase-scanning",
+      "context": "cab45fee-e439-4bff-9924-217b1acc17f8",
+      "reason": "the context has no code left: the Artist plugin (src/features/plugins/artist/hooks) was removed in 0697f13438 and context-map.json lists empty file_paths; the match was also only vocabulary (scanning a folder for image assets)"
+    },
+    {
+      "subject": "codebase-scanning",
+      "context": "a35d1f4a-5de8-4be1-af8b-1a3784296400",
+      "reason": "weak governance row whose Artist plugin code was removed in 0697f13438; this is a coverage question, not a pair to judge"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-21T12:46:48Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "codebase-scanning"
+      ],
+      "techniques": [
+        "sensor-pipeline",
+        "finding-lifecycle"
+      ],
+      "deviations": 2
+    },
+    {
+      "ts": "2026-10-21T12:46:48Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "codebase-scanning"
+      ],
+      "techniques": [
+        "sensor-pipeline",
+        "llm-assisted-scanning"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-21T12:46:48Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "codebase-scanning"
+      ],
+      "techniques": [
+        "sensor-pipeline",
+        "incremental-scanning"
+      ],
+      "deviations": 2
+    },
+    {
+      "ts": "2026-10-21T12:46:48Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "codebase-scanning"
+      ],
+      "techniques": [
+        "sensor-pipeline",
+        "the-tree-is-not-the-population"
+      ],
+      "deviations": 2
+    },
+    {
+      "ts": "2026-10-21T12:46:48Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "codebase-scanning"
+      ],
+      "techniques": [
+        "sensor-pipeline"
+      ],
+      "deviations": 1
+    }
+  ]
+}
