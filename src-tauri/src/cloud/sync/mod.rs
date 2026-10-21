@@ -22,9 +22,11 @@ pub(crate) mod persona_chat;
 pub(crate) mod redact;
 mod rows;
 
+use std::panic::AssertUnwindSafe;
 use std::sync::{Arc, LazyLock};
 use std::time::{Duration, Instant};
 
+use futures_util::FutureExt;
 use serde::Serialize;
 use tauri::AppHandle;
 use tokio::sync::{Mutex, Notify};
@@ -906,6 +908,19 @@ async fn process_tombstones(pool: &DbPool, client: &SyncClient) -> LastTable {
     }
 }
 
+/// Take the single pass slot: flips the `syncing` flag (so a concurrent
+/// `status()` reflects the in-flight pass) and returns `true`, or returns
+/// `false` when a pass already holds it. `run_sync_once` clears the flag on its
+/// one exit path after the claim.
+async fn claim_pass() -> bool {
+    let mut rt = RUNTIME.lock().await;
+    if rt.syncing {
+        return false;
+    }
+    rt.syncing = true;
+    true
+}
+
 /// Run one full sync pass. No-op when sync is disabled or no Supabase JWT is
 /// available — both are "nothing to do", not errors. Persists the lifetime
 /// total, advances `last_sync_at` only on a fully-clean pass, and writes the
@@ -925,14 +940,33 @@ pub async fn run_sync_once(state: &Arc<AppState>) {
         }
     };
 
-    // Flip the syncing flag so a concurrent status() call reflects the in-flight
-    // pass. Reset on every exit path below.
-    RUNTIME.lock().await.syncing = true;
+    // One pass at a time: a manual "Sync now" during the ~45s loop pass (or a
+    // retry after the IPC timeout) would otherwise double-count `total` and let
+    // the first finisher clear `syncing` under the other. The pass in flight is
+    // already doing the work, so the late caller just reports its status.
+    if !claim_pass().await {
+        return;
+    }
 
     let report = match SyncClient::new(jwt) {
         Ok(client) => {
             let device_id = cursor::resolve_device_id(&pool);
-            collect_pass(&pool, &state.user_db, &client, &device_id).await
+            // A panic in a pass must not leave `syncing` latched, which would
+            // now refuse every later pass.
+            match AssertUnwindSafe(collect_pass(&pool, &state.user_db, &client, &device_id))
+                .catch_unwind()
+                .await
+            {
+                Ok(report) => report,
+                Err(_) => SyncReport {
+                    tables: vec![LastTable {
+                        remote: "pass".into(),
+                        rows: 0,
+                        error: Some("sync pass panicked".into()),
+                    }],
+                    total: 0,
+                },
+            }
         }
         Err(e) => SyncReport {
             tables: vec![LastTable {
@@ -1006,6 +1040,17 @@ pub fn spawn_sync_loop(_app: AppHandle, state: Arc<AppState>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A second pass cannot start while one holds the slot, and the slot is
+    /// reusable once the first finishes.
+    #[tokio::test]
+    async fn only_one_pass_holds_the_slot() {
+        assert!(claim_pass().await, "first claim takes the slot");
+        assert!(!claim_pass().await, "an overlapping pass is refused");
+        RUNTIME.lock().await.syncing = false;
+        assert!(claim_pass().await, "the slot is free after the pass ends");
+        RUNTIME.lock().await.syncing = false;
+    }
 
     #[test]
     fn report_clean_when_no_table_errors() {
