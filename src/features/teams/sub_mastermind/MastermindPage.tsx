@@ -32,6 +32,7 @@ import { SkillsWorkbench } from '@/features/teams/sub_factory/passport/improve/S
 import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { EventName } from '@/lib/eventRegistry';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { reportDispatchFailure } from './lib/reportDispatchFailure';
 import { useAgentStore } from '@/stores/agentStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -604,8 +605,7 @@ function MastermindInner() {
       void fleetRefresh();
       addToast(tx(t.mastermind.dispatch_toast, { name: project.name }), 'success');
     } catch (err) {
-      addToast(t.mastermind.dispatch_error, 'error');
-      toastCatch('mastermind dispatch fleet')(err);
+      reportDispatchFailure(err, t.mastermind.dispatch_error);
       throw err;
     }
   }, [projects, fleetRefresh, addToast, tx, t]);
