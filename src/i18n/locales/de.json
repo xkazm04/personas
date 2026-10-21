@@ -18038,6 +18038,7 @@
       "allowed_providers_hint": "Wählen Sie, welche Anbieter Ihre Organisation genehmigt. Leer lassen, um alle zuzulassen.",
       "allowed_providers_label": "Erlaubte Anbieter",
       "api_key_hint": "API-Schlüssel und Endpunkte für benutzerdefinierte Modellanbieter konfigurieren. Schlüssel werden verschlüsselt in der lokalen Datenbank gespeichert.",
+      "keys_load_failed": "Die gespeicherten Anbieter-Schlüssel konnten nicht geladen werden. Sie sind möglicherweise noch gespeichert - versuchen Sie es erneut, bevor Sie einen neuen eingeben.",
       "api_key_title": "API-Schlüsselverwaltung",
       "audit_cost": "Kosten",
       "audit_empty": "Noch keine Prüfeinträge. Einträge werden automatisch für jede Ausführung aufgezeichnet.",

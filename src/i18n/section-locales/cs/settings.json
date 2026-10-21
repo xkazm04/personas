@@ -426,6 +426,7 @@
     "allowed_providers_hint": "Vyberte, které poskytovatele vaše organizace schvaluje. Ponechte prázdné pro povolení všech.",
     "allowed_providers_label": "Povolení poskytovatelé",
     "api_key_hint": "Nakonfigurujte API klíče a endpointy pro vlastní poskytovatele modelů. Klíče jsou uloženy šifrovaně v lokální databázi.",
+    "keys_load_failed": "Uložené klíče poskytovatelů se nepodařilo načíst. Mohou být stále uloženy - před zadáním nového klíče to zkuste znovu.",
     "api_key_title": "Správa API klíčů",
     "audit_cost": "Cena",
     "audit_empty": "Zatím žádné auditní záznamy. Záznamy se automaticky zapisují pro každé spuštění.",

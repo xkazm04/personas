@@ -426,6 +426,7 @@
     "allowed_providers_hint": "Seleccione qué proveedores aprueba su organización. Deje vacío para permitir todos.",
     "allowed_providers_label": "Proveedores permitidos",
     "api_key_hint": "Configura claves de API y endpoints para proveedores de modelos personalizados. Las claves se almacenan cifradas en la base de datos local.",
+    "keys_load_failed": "No se pudieron cargar las claves de proveedor guardadas. Puede que sigan guardadas: reintenta antes de introducir una nueva.",
     "api_key_title": "Gestión de claves de API",
     "audit_cost": "Costo",
     "audit_empty": "Aún sin entradas de auditoría. Las entradas se registran automáticamente para cada ejecución.",

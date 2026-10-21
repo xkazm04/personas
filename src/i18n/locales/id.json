@@ -18038,6 +18038,7 @@
       "allowed_providers_hint": "Pilih provider mana yang disetujui organisasi Anda. Biarkan kosong untuk mengizinkan semua.",
       "allowed_providers_label": "Provider yang Diizinkan",
       "api_key_hint": "Konfigurasikan kunci API dan endpoint untuk provider model kustom. Kunci disimpan terenkripsi dalam database lokal.",
+      "keys_load_failed": "Tidak dapat memuat kunci penyedia yang tersimpan. Kunci mungkin masih tersimpan - coba lagi sebelum memasukkan kunci baru.",
       "api_key_title": "Manajemen Kunci API",
       "audit_cost": "Biaya",
       "audit_empty": "Belum ada entri audit. Entri dicatat secara otomatis untuk setiap eksekusi.",

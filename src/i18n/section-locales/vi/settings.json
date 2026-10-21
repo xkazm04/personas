@@ -426,6 +426,7 @@
     "allowed_providers_hint": "Chọn nhà cung cấp mà tổ chức bạn phê duyệt. Để trống để cho phép tất cả.",
     "allowed_providers_label": "Nhà cung cấp được phép",
     "api_key_hint": "Cấu hình khóa API và điểm cuối cho nhà cung cấp mô hình tùy chỉnh. Khóa được lưu mã hóa trong cơ sở dữ liệu cục bộ.",
+    "keys_load_failed": "Không thể tải các khóa nhà cung cấp đã lưu. Chúng có thể vẫn còn - hãy thử lại trước khi nhập khóa mới.",
     "api_key_title": "Quản lý khóa API",
     "audit_cost": "Chi phí",
     "audit_empty": "Chưa có mục kiểm tra. Mục được ghi tự động cho mỗi thực thi.",

@@ -6,6 +6,7 @@ import { PasswordToggleField } from '@/features/shared/components/forms/Password
 import { useKeyedCopyFlag } from '@/hooks/utility/interaction/useKeyedCopyFlag';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
@@ -112,13 +113,14 @@ export function ByomApiKeyManager() {
 
   // Load all key values in a single bulk IPC instead of N parallel invokes.
   const settingsKeys = useMemo(() => PROVIDER_KEYS.map((def) => def.settingsKey), []);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [reloadNonce, setReloadNonce] = useState(0);
   useEffect(() => {
     let cancelled = false;
+    // A rejected bulk read is NOT "no keys stored": it used to be mapped to {}
+    // so every row rendered as unconfigured and an operator re-entered a key
+    // that already existed. Keep the failure as its own state with a retry.
     getAppSettingsBulk(settingsKeys)
-      .catch((err) => {
-        silentCatch('ByomApiKeyManager:getAppSettingsBulk')(err);
-        return {} as Record<string, string | null>;
-      })
       .then((map) => {
         if (cancelled) return;
         const results: KeyEntry[] = PROVIDER_KEYS.map((def) => {
@@ -134,10 +136,23 @@ export function ByomApiKeyManager() {
           };
         });
         setEntries(results);
+        setLoadFailed(false);
+        setLoading(false);
+      })
+      .catch((err) => {
+        silentCatch('ByomApiKeyManager:getAppSettingsBulk')(err);
+        if (cancelled) return;
+        setLoadFailed(true);
         setLoading(false);
       });
     return () => { cancelled = true; };
-  }, [settingsKeys]);
+  }, [settingsKeys, reloadNonce]);
+
+  const retryLoad = useCallback(() => {
+    setLoading(true);
+    setLoadFailed(false);
+    setReloadNonce((n) => n + 1);
+  }, []);
 
   const updateEntry = useCallback((index: number, patch: Partial<KeyEntry>) => {
     setEntries((prev) => prev.map((e, i) => (i === index ? { ...e, ...patch } : e)));
@@ -230,6 +245,8 @@ export function ByomApiKeyManager() {
                only the row region ghosts, delayed so a fast fetch never paints
                one. Geometry-matched to KeyEntryRow below. */
             <ByomKeyGhostRows />
+          ) : loadFailed ? (
+            <InlineErrorBanner severity="error" message={s.keys_load_failed} onRetry={retryLoad} />
           ) : entries.map((entry, index) => (
             <KeyEntryRow
               key={entry.def.settingsKey}

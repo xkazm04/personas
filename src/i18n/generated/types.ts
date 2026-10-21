@@ -14245,6 +14245,7 @@ export type Translations = {
       health_fail: string;
       api_key_title: string;
       api_key_hint: string;
+      keys_load_failed: string;
       verify: string;
       remove_key: string;
       save: string;

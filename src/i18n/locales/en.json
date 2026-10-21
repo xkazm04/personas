@@ -14239,6 +14239,7 @@
       "health_fail": "Provider is unreachable",
       "api_key_title": "API Key Management",
       "api_key_hint": "Configure API keys and endpoints for custom model providers. Keys are stored encrypted in the local database.",
+      "keys_load_failed": "Could not load the stored provider keys. They may still be saved - retry before entering a new one.",
       "verify": "Verify",
       "remove_key": "Remove key",
       "save": "Save",

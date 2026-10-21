@@ -18038,6 +18038,7 @@
       "allowed_providers_hint": "Sélectionnez les fournisseurs approuvés par votre organisation. Laissez vide pour autoriser tous.",
       "allowed_providers_label": "Fournisseurs autorisés",
       "api_key_hint": "Configurez les clés API et les points de terminaison pour les fournisseurs de modèles personnalisés. Les clés sont stockées chiffrées dans la base de données locale.",
+      "keys_load_failed": "Impossible de charger les clés de fournisseur enregistrées. Elles sont peut-être toujours enregistrées : réessayez avant d'en saisir une nouvelle.",
       "api_key_title": "Gestion des clés API",
       "audit_cost": "Coût",
       "audit_empty": "Aucune entrée d’audit. Les entrées sont enregistrées automatiquement pour chaque exécution.",

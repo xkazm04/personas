@@ -18038,6 +18038,7 @@
       "allowed_providers_hint": "选择您的组织批准的提供商。留空以允许所有。",
       "allowed_providers_label": "允许的提供商",
       "api_key_hint": "为自定义模型提供商配置 API 密钥和端点。密钥以加密形式存储在本地数据库中。",
+      "keys_load_failed": "无法加载已保存的提供商密钥。它们可能仍然存在，请先重试，再输入新密钥。",
       "api_key_title": "API 密钥管理",
       "audit_cost": "成本",
       "audit_empty": "尚无审计条目。每次执行都会自动记录条目。",
