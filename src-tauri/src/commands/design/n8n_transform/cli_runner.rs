@@ -159,91 +159,102 @@ pub async fn start_n8n_transform_background(
     let transform_id_for_task = transform_id.clone();
     let token_for_task = cancel_token.clone();
     let session_id_for_task = session_id.clone();
-    tokio::spawn(async move {
-        if is_adjustment {
-            // -- Adjustment re-run: single-prompt path (no interactive questions) --
-            let result = tokio::select! {
-                _ = token_for_task.cancelled() => {
-                    Err(cancelled_error())
-                }
-                res = run_n8n_transform_job(
+    let on_panic = transform_panic_arm(
+        app.clone(),
+        transform_id.clone(),
+        workflow_name.clone(),
+        session_id.clone(),
+    );
+    crate::background_job::spawn_guarded(
+        "n8n_transform",
+        transform_id.clone(),
+        async move {
+            if is_adjustment {
+                // -- Adjustment re-run: single-prompt path (no interactive questions) --
+                let result = tokio::select! {
+                    _ = token_for_task.cancelled() => {
+                        Err(cancelled_error())
+                    }
+                    res = run_n8n_transform_job(
+                        &app_handle,
+                        &transform_id_for_task,
+                        &workflow_name,
+                        &workflow_json,
+                        &parser_result_json,
+                        adjustment_request.as_deref(),
+                        previous_draft_json.as_deref(),
+                        connectors_json.as_deref(),
+                        credentials_json.as_deref(),
+                        user_answers_json.as_deref(),
+                    ) => res
+                };
+
+                handle_transform_result(
+                    result.map(|d| (d, false)),
                     &app_handle,
                     &transform_id_for_task,
                     &workflow_name,
-                    &workflow_json,
-                    &parser_result_json,
-                    adjustment_request.as_deref(),
-                    previous_draft_json.as_deref(),
-                    connectors_json.as_deref(),
-                    credentials_json.as_deref(),
-                    user_answers_json.as_deref(),
-                ) => res
-            };
+                    session_id_for_task.as_deref(),
+                );
+            } else {
+                // -- Initial transform: unified prompt (may produce questions or persona) --
+                let result = tokio::select! {
+                    _ = token_for_task.cancelled() => {
+                        Err(cancelled_error())
+                    }
+                    res = run_unified_transform_turn1(
+                        &app_handle,
+                        &transform_id_for_task,
+                        &workflow_name,
+                        &workflow_json,
+                        &parser_result_json,
+                        connectors_json.as_deref(),
+                        credentials_json.as_deref(),
+                    ) => res
+                };
 
-            handle_transform_result(
-                result.map(|d| (d, false)),
-                &app_handle,
-                &transform_id_for_task,
-                &workflow_name,
-                session_id_for_task.as_deref(),
-            );
-        } else {
-            // -- Initial transform: unified prompt (may produce questions or persona) --
-            let result = tokio::select! {
-                _ = token_for_task.cancelled() => {
-                    Err(cancelled_error())
-                }
-                res = run_unified_transform_turn1(
-                    &app_handle,
-                    &transform_id_for_task,
-                    &workflow_name,
-                    &workflow_json,
-                    &parser_result_json,
-                    connectors_json.as_deref(),
-                    credentials_json.as_deref(),
-                ) => res
-            };
-
-            // result: Ok((draft_option, produced_questions))
-            match result {
-                Ok((Some(draft), _)) => {
-                    // Model skipped questions and produced persona directly
-                    handle_transform_result(
-                        Ok((draft, false)),
-                        &app_handle,
-                        &transform_id_for_task,
-                        &workflow_name,
-                        session_id_for_task.as_deref(),
-                    );
-                }
-                Ok((None, true)) => {
-                    // Questions were produced and stored -- status is awaiting_answers
-                    // Nothing else to do; frontend will poll and pick up the questions
-                }
-                Ok((None, false)) => {
-                    // No questions and no persona -- unusual, treat as failure
-                    handle_transform_result(
-                        Err(AppError::Internal(
-                            "No output from unified transform".into(),
-                        )),
-                        &app_handle,
-                        &transform_id_for_task,
-                        &workflow_name,
-                        session_id_for_task.as_deref(),
-                    );
-                }
-                Err(err) => {
-                    handle_transform_result(
-                        Err(err),
-                        &app_handle,
-                        &transform_id_for_task,
-                        &workflow_name,
-                        session_id_for_task.as_deref(),
-                    );
+                // result: Ok((draft_option, produced_questions))
+                match result {
+                    Ok((Some(draft), _)) => {
+                        // Model skipped questions and produced persona directly
+                        handle_transform_result(
+                            Ok((draft, false)),
+                            &app_handle,
+                            &transform_id_for_task,
+                            &workflow_name,
+                            session_id_for_task.as_deref(),
+                        );
+                    }
+                    Ok((None, true)) => {
+                        // Questions were produced and stored -- status is awaiting_answers
+                        // Nothing else to do; frontend will poll and pick up the questions
+                    }
+                    Ok((None, false)) => {
+                        // No questions and no persona -- unusual, treat as failure
+                        handle_transform_result(
+                            Err(AppError::Internal(
+                                "No output from unified transform".into(),
+                            )),
+                            &app_handle,
+                            &transform_id_for_task,
+                            &workflow_name,
+                            session_id_for_task.as_deref(),
+                        );
+                    }
+                    Err(err) => {
+                        handle_transform_result(
+                            Err(err),
+                            &app_handle,
+                            &transform_id_for_task,
+                            &workflow_name,
+                            session_id_for_task.as_deref(),
+                        );
+                    }
                 }
             }
-        }
-    });
+        },
+        on_panic,
+    );
 
     Ok(json!({ "transform_id": transform_id }))
 }
@@ -273,29 +284,40 @@ pub async fn continue_n8n_transform(
     let workflow_name =
         resolve_continue_workflow_name(get_n8n_transform_workflow_name(&transform_id).as_deref());
 
-    tokio::spawn(async move {
-        let result = tokio::select! {
-            _ = token_for_task.cancelled() => {
-                Err(cancelled_error())
-            }
-            res = run_continue_transform(
+    let on_panic = transform_panic_arm(
+        app.clone(),
+        transform_id.clone(),
+        workflow_name.clone(),
+        session_id_for_task.clone(),
+    );
+    crate::background_job::spawn_guarded(
+        "n8n_transform",
+        transform_id.clone(),
+        async move {
+            let result = tokio::select! {
+                _ = token_for_task.cancelled() => {
+                    Err(cancelled_error())
+                }
+                res = run_continue_transform(
+                    &app_handle,
+                    &transform_id_for_task,
+                    &claude_session_id,
+                    &user_answers_json,
+                    &workflow_name,
+                ) => res
+            };
+
+            // Re-use handle_transform_result for standard success/failure handling
+            handle_transform_result(
+                result.map(|d| (d, false)),
                 &app_handle,
                 &transform_id_for_task,
-                &claude_session_id,
-                &user_answers_json,
                 &workflow_name,
-            ) => res
-        };
-
-        // Re-use handle_transform_result for standard success/failure handling
-        handle_transform_result(
-            result.map(|d| (d, false)),
-            &app_handle,
-            &transform_id_for_task,
-            &workflow_name,
-            session_id_for_task.as_deref(),
-        );
-    });
+                session_id_for_task.as_deref(),
+            );
+        },
+        on_panic,
+    );
 
     Ok(json!({ "transform_id": transform_id }))
 }
@@ -383,6 +405,33 @@ fn classify_transform_outcome<T>(result: &Result<T, AppError>) -> TransformOutco
         Ok(_) => TransformOutcome::Completed,
         Err(AppError::Internal(m)) if m == TRANSFORM_CANCELLED_MSG => TransformOutcome::Cancelled,
         Err(_) => TransformOutcome::Failed,
+    }
+}
+
+/// What a panicking transform task reports. It must not equal the cancelled
+/// message, or `handle_transform_result` would treat the crash as a user cancel
+/// and leave the polled snapshot `running`.
+fn panicked_error(panic: &str) -> AppError {
+    AppError::Internal(format!("Transform task panicked: {panic}"))
+}
+
+/// Recovery arm for `spawn_guarded`: settle a panicked transform as failed
+/// through the same door a normal failure uses.
+fn transform_panic_arm(
+    app: tauri::AppHandle,
+    transform_id: String,
+    workflow_name: String,
+    session_id: Option<String>,
+) -> impl FnOnce(String) -> std::future::Ready<()> + Send + 'static {
+    move |panic| {
+        handle_transform_result(
+            Err(panicked_error(&panic)),
+            &app,
+            &transform_id,
+            &workflow_name,
+            session_id.as_deref(),
+        );
+        std::future::ready(())
     }
 }
 
@@ -1248,6 +1297,12 @@ mod outcome_tests {
         assert_eq!(
             classify_transform_outcome(&cancelled),
             TransformOutcome::Cancelled
+        );
+        // A panicked task must settle as failed, never as a user cancel.
+        let panicked: Result<(), AppError> = Err(panicked_error("index out of bounds"));
+        assert_eq!(
+            classify_transform_outcome(&panicked),
+            TransformOutcome::Failed
         );
         let failed: Result<(), AppError> = Err(AppError::Internal("boom".into()));
         assert_eq!(
