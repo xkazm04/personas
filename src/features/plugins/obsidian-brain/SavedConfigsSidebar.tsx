@@ -47,10 +47,12 @@ export default function SavedConfigsSidebar({ onSelect, emptyHint }: SavedConfig
   );
 
   const removeConfig = useCallback(
-    (e: React.MouseEvent, config: ObsidianVaultConfig) => {
+    async (e: React.MouseEvent, config: ObsidianVaultConfig) => {
       e.stopPropagation();
-      remove(config.vaultPath);
-      addToast(tx(t.plugins.obsidian_brain.vault_removed_from_saved, { name: config.vaultName }), 'success');
+      // A failed write rolls the roster back and toasts; only confirm a removal that persisted.
+      if (await remove(config.vaultPath)) {
+        addToast(tx(t.plugins.obsidian_brain.vault_removed_from_saved, { name: config.vaultName }), 'success');
+      }
     },
     [addToast, remove, t, tx],
   );
@@ -103,7 +105,7 @@ export default function SavedConfigsSidebar({ onSelect, emptyHint }: SavedConfig
                 </button>
                 <button
                   type="button"
-                  onClick={(e) => removeConfig(e, cfg)}
+                  onClick={(e) => void removeConfig(e, cfg)}
                   className="absolute top-1.5 right-1.5 p-1 rounded-input opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity hover:bg-red-500/10 text-foreground hover:text-red-400 focus-ring"
                   title={tx(t.plugins.obsidian_brain.remove_vault_aria, { name: cfg.vaultName })}
                   aria-label={tx(t.plugins.obsidian_brain.remove_vault_aria, { name: cfg.vaultName })}

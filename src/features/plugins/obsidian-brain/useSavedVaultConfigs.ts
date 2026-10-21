@@ -4,7 +4,7 @@ import {
   obsidianBrainSetSavedVaults,
   type ObsidianVaultConfig,
 } from '@/api/obsidianBrain';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 // Pre-2026-06 storage. The roster lived in webview localStorage, which does
 // not reliably survive app sessions (webview profile resets dropped it). It
@@ -60,12 +60,27 @@ async function loadConfigs(): Promise<ObsidianVaultConfig[]> {
   return inflight;
 }
 
-function persist(next: ObsidianVaultConfig[]) {
+/**
+ * Optimistic write: the UI updates first, then the roster is written to the DB.
+ * A rejected write rolls the cache back (unless a later edit already replaced
+ * it) and toasts, so the roster never shows a state the next launch will undo.
+ * Resolves true when the write landed.
+ */
+async function persist(next: ObsidianVaultConfig[]): Promise<boolean> {
+  const prev = cache ?? [];
   cache = next;
   window.dispatchEvent(new CustomEvent(CHANGED_EVENT));
-  obsidianBrainSetSavedVaults(next).catch(
-    silentCatch('features/plugins/obsidian-brain/useSavedVaultConfigs:persist'),
-  );
+  try {
+    await obsidianBrainSetSavedVaults(next);
+    return true;
+  } catch (err) {
+    toastCatch('features/plugins/obsidian-brain/useSavedVaultConfigs:persist')(err);
+    if (cache === next) {
+      cache = prev;
+      window.dispatchEvent(new CustomEvent(CHANGED_EVENT));
+    }
+    return false;
+  }
 }
 
 export function useSavedVaultConfigs() {
@@ -89,11 +104,11 @@ export function useSavedVaultConfigs() {
     const idx = next.findIndex((c) => c.vaultPath === config.vaultPath);
     if (idx >= 0) next[idx] = config;
     else next.push(config);
-    persist(next);
+    return persist(next);
   }, []);
 
   const remove = useCallback((vaultPath: string) => {
-    persist((cache ?? []).filter((c) => c.vaultPath !== vaultPath));
+    return persist((cache ?? []).filter((c) => c.vaultPath !== vaultPath));
   }, []);
 
   return { configs, addOrUpdate, remove };
