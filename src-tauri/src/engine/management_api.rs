@@ -2419,20 +2419,10 @@ async fn run_persona_synchronous(
 
     loop {
         let row = exec_repo::get_by_id(&state.pool, &execution.id)?;
-        let status = row.status.as_str();
-        match status {
-            "completed" | "success" => {
-                return Ok((
-                    execution.id.clone(),
-                    row.output_data.unwrap_or_else(|| "".to_string()),
-                ));
-            }
-            "failed" | "error" | "cancelled" | "timeout" => {
-                return Err(AppError::Execution(
-                    row.error_message.unwrap_or_else(|| status.to_string()),
-                ));
-            }
-            _ => {
+        match a2a_terminal_outcome(&row.status, row.output_data, row.error_message) {
+            Some(Ok(output)) => return Ok((execution.id.clone(), output)),
+            Some(Err(e)) => return Err(e),
+            None => {
                 if started.elapsed() > MAX_WAIT {
                     return Err(AppError::Execution(
                         "A2A execution timed out waiting for terminal status".into(),
@@ -2442,6 +2432,29 @@ async fn run_persona_synchronous(
             }
         }
     }
+}
+
+/// Verdict of one `run_persona_synchronous` poll: `None` while the row is still
+/// active (or its status is unrecognised), otherwise the caller's result.
+/// Parsed as `ExecutionState` so every terminal state ends the wait: an
+/// `incomplete` row (the process died) used to hold the caller for the full
+/// 600 s and then report a misleading timeout.
+fn a2a_terminal_outcome(
+    status: &str,
+    output: Option<String>,
+    error_message: Option<String>,
+) -> Option<Result<String, AppError>> {
+    use crate::engine::types::ExecutionState;
+    let state = status.parse::<ExecutionState>().ok()?;
+    if !state.is_terminal() {
+        return None;
+    }
+    Some(match state {
+        ExecutionState::Completed => Ok(output.unwrap_or_default()),
+        _ => Err(AppError::Execution(
+            error_message.unwrap_or_else(|| status.to_string()),
+        )),
+    })
 }
 
 // =============================================================================
@@ -4630,6 +4643,24 @@ async fn kp_test_retire(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a2a_poll_ends_on_every_terminal_state() {
+        let done = a2a_terminal_outcome("completed", Some("out".into()), None);
+        assert_eq!(done.expect("terminal").expect("ok"), "out");
+        for s in ["failed", "incomplete", "cancelled"] {
+            let r = a2a_terminal_outcome(s, None, Some("process died".into()));
+            let e = r.expect("terminal").expect_err("not a success");
+            assert!(e.to_string().contains("process died"), "{s}: {e}");
+        }
+    }
+
+    #[test]
+    fn a2a_poll_keeps_waiting_on_active_or_unknown_status() {
+        for s in ["queued", "running", "pending", "bogus"] {
+            assert!(a2a_terminal_outcome(s, None, None).is_none(), "{s}");
+        }
+    }
 
     /// Temp-file pool with the initial schema applied (no `run_incremental`).
     ///
