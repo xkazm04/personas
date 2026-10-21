@@ -2,9 +2,11 @@ import {
   Zap, Shield, Layers, FlaskConical, Package,
   Palette, Accessibility, Smartphone, AlertOctagon, Target,
   Telescope, DollarSign, BarChart3, FileText, Rocket,
-  Landmark, Lightbulb, AlertTriangle, Link2, Wrench, Crosshair, Briefcase,
+  Landmark, Lightbulb, AlertTriangle, Link2, Wrench, Crosshair, Briefcase, Library,
   type LucideIcon,
 } from 'lucide-react';
+
+import { SCAN_LENS_COPY } from './scanMatchRules.gen';
 
 export interface ScanAgentDef {
   key: string;
@@ -45,6 +47,9 @@ export const SCAN_AGENTS: ScanAgentDef[] = [
   { key: 'devops-optimizer', label: 'DevOps Optimizer', emoji: '🔧', icon: Wrench, abbreviation: 'OPS', color: '#14B8A6', categoryGroup: 'mastermind', description: 'Optimizes build, deploy, and operations workflows', examples: ['CI/CD pipelines', 'Docker optimization', 'Monitoring gaps'] },
   { key: 'bounty-hunter', label: 'Bounty Hunter', emoji: '🏴‍☠️', icon: Crosshair, abbreviation: 'BNT', color: '#DC2626', categoryGroup: 'technical', description: 'Scans for exploitable bugs, logic flaws, and edge cases that qualify for bug bounty programs', examples: ['Pricing calculation errors', 'Race conditions', 'Inconsistent validation', 'Data leaks between contexts'] },
   { key: 'business-strategist', label: 'Business Strategist', emoji: '💼', icon: Briefcase, abbreviation: 'BIZ', color: '#F59E0B', categoryGroup: 'business', description: 'Finds pure business-value opportunities: monetization, conversion, retention, and workflow friction — thinks like a product manager, not an engineer', examples: ['Add usage-based billing tier', 'Reduce onboarding drop-off step', 'Export reports customers ask for'] },
+  // Copy for this lens comes from scan_agents.toml (the scanner's source of truth)
+  // through the generated SCAN_LENS_COPY, so no second English literal lives here.
+  { key: 'registry-conformance', ...SCAN_LENS_COPY['registry-conformance'], emoji: '📚', icon: Library, abbreviation: 'REG', color: '#0EA5E9', categoryGroup: 'technical' },
 ];
 
 export const AGENT_CATEGORIES = [

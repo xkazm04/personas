@@ -35,7 +35,7 @@ export interface PresetSkillDef {
 export const PRESET_SKILL_PREFIX = 'scan-';
 
 /** The consolidated multi-lens sweep — a preset with no scanner lens behind
- *  it (it composes the 22 lenses), so it lives outside SCAN_AGENTS and must
+ *  it (it composes the 23 lenses), so it lives outside SCAN_AGENTS and must
  *  never join the Idea Scanner roster. Board renders it as the hero row. */
 export const SWEEP_SKILL_NAME = 'scan-sweep';
 const SWEEP_SKILL: PresetSkillDef = {
@@ -68,7 +68,7 @@ const I18N_SKILL: PresetSkillDef = {
 };
 
 /** Lens visual identities keyed by `scan-<key>` — NOT installable skills.
- *  The 22 single-lens scan skills were retired (2026-08-04) in favor of the
+ *  The single-lens scan skills were retired (2026-08-04) in favor of the
  *  consolidated sweep; these defs survive purely as the visual vocabulary for
  *  lens chips, historical usage rows, and deep-scan recommendations. */
 const LENS_VISUALS: ReadonlyMap<string, PresetSkillDef> = new Map(
