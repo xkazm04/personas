@@ -18,9 +18,9 @@ pub(super) fn evaluate_conditions(conditions_json: &str, idea: &DevIdea) -> bool
         let value = cond.get("value");
 
         match field {
-            "effort" => compare_numeric(idea.effort.unwrap_or(0), op, value),
-            "impact" => compare_numeric(idea.impact.unwrap_or(0), op, value),
-            "risk" => compare_numeric(idea.risk.unwrap_or(0), op, value),
+            "effort" => compare_numeric(idea.effort, op, value),
+            "impact" => compare_numeric(idea.impact, op, value),
+            "risk" => compare_numeric(idea.risk, op, value),
             "category" => compare_string(Some(&idea.category), op, value),
             "scan_type" => compare_string(Some(&idea.scan_type), op, value),
             // The findings spine: rules can now target WHICH SENSOR raised an idea
@@ -32,8 +32,13 @@ pub(super) fn evaluate_conditions(conditions_json: &str, idea: &DevIdea) -> bool
     })
 }
 
-fn compare_numeric(field_value: i32, op: &str, value: Option<&serde_json::Value>) -> bool {
-    let target = value.and_then(|v| v.as_i64()).unwrap_or(0) as i32;
+/// An unrated score (`None`) or a non-integer target never matches: absence is
+/// not 0, so `effort < 4 -> accept` must not sweep up every unrated idea.
+fn compare_numeric(field_value: Option<i32>, op: &str, value: Option<&serde_json::Value>) -> bool {
+    let (Some(field_value), Some(target)) = (field_value, value.and_then(|v| v.as_i64())) else {
+        return false;
+    };
+    let target = target as i32;
     match op {
         "lt" => field_value < target,
         "gt" => field_value > target,
@@ -131,6 +136,30 @@ mod tests {
         // sweep it up — otherwise "auto-accept passport gaps" would auto-accept
         // the whole backlog.
         assert!(!evaluate_conditions(rule, &idea()));
+    }
+
+    #[test]
+    fn unrated_score_never_matches_a_numeric_condition() {
+        let mut unrated = idea();
+        unrated.effort = None;
+        unrated.impact = None;
+        unrated.risk = None;
+
+        // A missing score is "not yet rated", not 0: `effort < 4 -> accept`
+        // must leave an unrated pending idea pending.
+        for rule in [
+            r#"[{"field":"effort","op":"lt","value":4}]"#,
+            r#"[{"field":"impact","op":"lt","value":4}]"#,
+            r#"[{"field":"risk","op":"eq","value":0}]"#,
+            r#"[{"field":"effort","op":"lte","value":4}]"#,
+        ] {
+            assert!(!evaluate_conditions(rule, &unrated), "{rule}");
+        }
+        // A rated idea still matches.
+        assert!(evaluate_conditions(
+            r#"[{"field":"effort","op":"lt","value":4}]"#,
+            &idea()
+        ));
     }
 
     #[test]
