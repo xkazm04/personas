@@ -1,0 +1,55 @@
+{"schema": "conform-run/1", "worker": "64299ba0-27fd-40c1-8af0-ddc7df52b12c", "subject": "agent-memory",
+ "evaluatedAt": "2026-10-21T17:22:13Z",
+ "evaluatedAgainst": "sha256-b2:4f054116d66a9495", "evaluatedRevision": 51,
+ "pairs": [
+  {"context": "0ecc70bc-a005-4ff8-9a98-f362d2a75f53", "subject": "agent-memory", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/db/src/repos/core/memories.rs:1506 delete_all (exposed at src/api/overview/memories.ts:154) hard-DELETEs every non-core memory and writes no fact_key tombstone, unlike single delete (:1436), so a deliberate workspace forget is undone by the next consolidation re-deriving the same facts",
+   "evaluatedAgainst": "sha256-b2:4f054116d66a9495", "evaluatedRevision": 51,
+   "techniques": [
+    {"technique": "decay-and-forgetting", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/core/memories.rs:1506 bulk forget leaves no key bar; the section 'A deliberate forget bars re-derivation' is met only by the single-row path at :1436"},
+    {"technique": "durable-store-failure-posture", "verdict": "partially realized", "evidence": "src-tauri/db/src/repos/core/memories.rs:1509 victims are captured and handed to the reaper ledger and the core tier is spared"}]},
+  {"context": "8cfb82ac-ebd6-4826-921d-d1399dba7a60", "subject": "agent-memory", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:804 the idea-verdict memory is built from title+description only and :819 makes a human rejection a permanent 'do not re-surface' constraint; rejection_reason (src-tauri/core/src/models/dev_tools.rs:1145) never reaches it, though the triage deck says it does (src/features/agents/quick-answer/triage/triageAdapters.ts:790)",
+   "evaluatedAgainst": "sha256-b2:4f054116d66a9495", "evaluatedRevision": 51,
+   "techniques": [
+    {"technique": "memory-governance", "verdict": "deviation", "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:819 an operator correction is remembered without its stated grounds, so an audit of the constraint cannot answer why"},
+    {"technique": "pending-beliefs-live-apart", "verdict": "deviation", "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:819 the rejection bars the whole subject forever instead of recording the claim as refused for its reason; a re-scoped idea is silently blocked"},
+    {"technique": "memory-governance", "verdict": "realized (author tier)", "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:797 automated rejections are advisory importance-5 decisions, human ones constraints"}]},
+  {"context": "0f1b56ac-cd96-4355-993e-dc445a20e63e", "subject": "agent-memory", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/fleet/monitor/channels/useTeamPin.ts:19 pins a channel row verbatim into team memory with persona_id = the speaker (:23), run_id null and provenance only {source:'conversation-pin'} (:28); it is injected into scanner prompts (src-tauri/src/commands/infrastructure/idea_scanner.rs:623), so relayed third-party text becomes a standing team belief in the speaker's voice",
+   "evaluatedAgainst": "sha256-b2:4f054116d66a9495", "evaluatedRevision": 51,
+   "techniques": [
+    {"technique": "memory-governance", "verdict": "deviation", "evidence": "src/features/fleet/monitor/channels/useTeamPin.ts:23 the evidence's author is not harness-stamped from the channel (section 'The evidence has an author')"},
+    {"technique": "episodic-capture", "verdict": "deviation", "evidence": "src/features/fleet/monitor/channels/useTeamPin.ts:21 run_id null and no pointer to the channel item, so the pinned row's provenance does not terminate at a real event"}]},
+  {"context": "f9c8b6b9-7a46-4c84-a31a-19356b174d10", "subject": "agent-memory", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/infrastructure/memory_health.rs:213 a team-bound project with zero memories records no snapshot and memory_health_overview reads only the latest snapshot (:266), so a never-covered project is absent from the list and one whose memories all retired keeps serving its last healthy score",
+   "evaluatedAgainst": "sha256-b2:4f054116d66a9495", "evaluatedRevision": 51,
+   "techniques": [
+    {"technique": "coverage-instrumentation", "verdict": "deviation", "evidence": "src-tauri/src/commands/infrastructure/memory_health.rs:213 'Honest zeros': a subject with no memory must report never, not be dropped; the denominator is the snapshot rows, not the tracked population"}]},
+  {"context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba", "subject": "agent-memory", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/db/src/repos/twin.rs:602 approval flips status on twin_pending_memories instead of moving the claim to a belief store, so every live read must carry status='approved' (src-tauri/src/engine/twin_prompt/input.rs:211, src-tauri/db/src/repos/twin.rs:1751, src/stores/slices/system/twinSlice.ts:550) and one that forgets injects pending or rejected claims as settled",
+   "evaluatedAgainst": "sha256-b2:4f054116d66a9495", "evaluatedRevision": 51,
+   "techniques": [
+    {"technique": "pending-beliefs-live-apart", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/twin.rs:602 the status-column design the technique names as its first failure mode; at least three readers, so the one-reader exemption does not hold"}]}
+ ],
+ "declined": [
+  {"subject": "agent-memory", "context": "e0a448bc-24d4-4663-ba31-27d4ce378a14", "reason": "budget: strong unknown (agents-deployment) left for a later run; this run re-judged the five strong stale deviations"},
+  {"subject": "agent-memory", "context": "5d4b913e-4384-49d7-8854-5c7ddac7e19e", "reason": "budget: strong unknown (commands-design) unread"},
+  {"subject": "agent-memory", "context": "ae80cd74-5beb-4d76-ae0a-16a4b581a2df", "reason": "budget: strong unknown (recipe-build-models) unread"},
+  {"subject": "agent-memory", "context": "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc", "reason": "budget: strong unknown (triggers-studio) unread"},
+  {"subject": "agent-memory", "context": "876c0b4e-6472-4544-a21b-56e7529fb6b3", "reason": "budget: strong unknown (vault-shared-vector) unread"},
+  {"subject": "agent-memory", "context": "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f", "reason": "budget: strong unknown (home-cockpit-widgets) unread"},
+  {"subject": "agent-memory", "context": "1ff7809a-171b-4baa-9c9b-12d888b017f0", "reason": "budget: the remaining stale verdicts on this subject (not-applicable and probable deviations) are left for a --stale run"}
+ ],
+ "consults": [
+  {"ts": "2026-10-21T17:22:13Z", "bundle": "software-engineering", "subjects": ["agent-memory"], "techniques": ["decay-and-forgetting", "durable-store-failure-posture"], "deviations": 1},
+  {"ts": "2026-10-21T17:22:13Z", "bundle": "software-engineering", "subjects": ["agent-memory"], "techniques": ["memory-governance", "pending-beliefs-live-apart"], "deviations": 1},
+  {"ts": "2026-10-21T17:22:13Z", "bundle": "software-engineering", "subjects": ["agent-memory"], "techniques": ["memory-governance", "episodic-capture"], "deviations": 1},
+  {"ts": "2026-10-21T17:22:13Z", "bundle": "software-engineering", "subjects": ["agent-memory"], "techniques": ["coverage-instrumentation"], "deviations": 1},
+  {"ts": "2026-10-21T17:22:13Z", "bundle": "software-engineering", "subjects": ["agent-memory"], "techniques": ["pending-beliefs-live-apart"], "deviations": 1}
+ ]}

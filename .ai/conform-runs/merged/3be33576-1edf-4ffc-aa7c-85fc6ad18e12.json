@@ -1,0 +1,95 @@
+{
+  "schema": "conform-run/1",
+  "worker": "3be33576-1edf-4ffc-aa7c-85fc6ad18e12",
+  "subject": "cost-metering",
+  "evaluatedAt": "2026-10-21T17:23:30Z",
+  "pairs": [
+    {
+      "context": "e0a448bc-24d4-4663-ba31-27d4ce378a14",
+      "subject": "cost-metering",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_deployment/components/cloud/DailyBreakdownChart.tsx:70 the cost line plots one total d.cost per day (DailyPoint :10 carries no failed-call cost or reason), so failed-call spend is folded invisibly into the total and no window or default-priced share sits beside it (re-checked 2026-10-21 after cfb65efdf3/6b6e03a57e, which fixed tone and UTC labels only)",
+      "techniques": [
+        {
+          "technique": "spend-observability",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_deployment/components/cloud/DailyBreakdownChart.tsx:70 failed-call spend folded into one total cost series"
+        }
+      ]
+    },
+    {
+      "context": "4810daf8-0549-4899-95d2-99c81cde6455",
+      "subject": "cost-metering",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/overview/sub_observability/components/MetricsCharts.tsx:105 Cost over time is a single all-classes area of MetricsChartPoint.cost, whose binding (src/lib/bindings/MetricsChartPoint.ts:8) carries no failed-call cost, no class split and no default-priced share; failures are drawn only as counts (:130), so failed spend and the pipeline-health caveats stay off the surface (re-checked 2026-10-21 after 53fe95d69f, a day-label fix)",
+      "techniques": [
+        {
+          "technique": "spend-observability",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_observability/components/MetricsCharts.tsx:105 single undifferentiated cost series; failed shown as counts at :130, not spend"
+        }
+      ]
+    },
+    {
+      "context": "b6e66a59-78d3-465e-83b7-e77498b4c6ae",
+      "subject": "cost-metering",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/stores/slices/agents/budgetEnforcementSlice.ts:154 the \"Run anyway\" override (wired at src/features/agents/sub_executions/components/runner/PersonaRunner.tsx:103) only flips a session Set and is never recorded, while the real gate src-tauri/src/commands/execution/executions.rs:481 takes no override and refuses with a generic Validation error naming no scope; the header (:23 \"frontend-only gating\") describes a gate that no longer exists, so the override is a dead door (re-checked 2026-10-21: unchanged)",
+      "techniques": [
+        {
+          "technique": "budget-enforcement",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/execution/executions.rs:481 backend gate has no override path; the frontend override at src/stores/slices/agents/budgetEnforcementSlice.ts:154 is unrecorded and cannot unblock it"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "cost-metering",
+      "context": "5ab49df3-3442-4ea6-a405-077dec64850d",
+      "reason": "persona-core-codex is a weak-governance row (confidence probable, score 286.6); the skill forbids judging weak pairs by default - left as a coverage question, not a guess"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-21T17:23:30Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "cost-metering"
+      ],
+      "techniques": [
+        "spend-observability"
+      ],
+      "deviations": 1,
+      "context": "agents-deployment"
+    },
+    {
+      "ts": "2026-10-21T17:23:30Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "cost-metering"
+      ],
+      "techniques": [
+        "spend-observability"
+      ],
+      "deviations": 1,
+      "context": "overview-observability"
+    },
+    {
+      "ts": "2026-10-21T17:23:30Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "cost-metering"
+      ],
+      "techniques": [
+        "budget-enforcement"
+      ],
+      "deviations": 1,
+      "context": "stores-slices-agents"
+    }
+  ]
+}

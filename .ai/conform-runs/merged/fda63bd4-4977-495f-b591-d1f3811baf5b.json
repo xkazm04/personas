@@ -1,0 +1,48 @@
+{"schema": "conform-run/1", "worker": "fda63bd4-4977-495f-b591-d1f3811baf5b", "subject": "quality-gates",
+ "evaluatedAt": "2026-10-21T17:21:17Z",
+ "evaluatedAgainst": "sha256-b2:0d8378dd13155e59", "evaluatedRevision": 54,
+ "pairs": [
+  {"context": "50f50f97-be0e-4a93-8f1c-c0b967cd45d0", "subject": "quality-gates", "bundle": "software-engineering",
+   "state": "not-applicable", "evaluatedAgainst": "sha256-b2:0d8378dd13155e59", "evaluatedRevision": 54,
+   "evidence": "src/features/plugins/dev-tools/sub_triage/findings/verify.ts:95 verdictFor only records a re-measured VerifyState; its sole consumers render it (src/features/plugins/dev-tools/sub_triage/findings/VerdictChip.tsx:32) - nothing refuses a change, commit, release or advancement on it, so the subject's 'mechanism that can refuse' precondition is unmet",
+   "techniques": [{"technique": "gate-liveness", "verdict": "not-applicable", "evidence": "src/features/plugins/dev-tools/sub_triage/findings/verify.ts:104 absence counts as cleared only when the sensor was probed (doctrine realized, but in an assessment loop, not a gate)"}],
+   "registryProposal": "Upward lesson for gate-liveness / conformance-checking: verify.ts:104 resolves 'finding absent from a fresh run' to pending unless that sensor actually ran this sweep - assert-the-instrument applied to fix verification rather than to a gate; candidate application row."},
+  {"context": "ef73ca1c-fc54-4b9c-83ec-390c54929192", "subject": "quality-gates", "bundle": "software-engineering",
+   "state": "not-applicable", "evaluatedAgainst": "sha256-b2:0d8378dd13155e59", "evaluatedRevision": 54,
+   "evidence": "src/features/overview/sub_manual-review/libs/reviewHelpers.ts:98 the inbox only reads verdicts made elsewhere (human decisions, or review_policy trust_llm/auto_triage, src/features/overview/sub_manual-review/components/AutoResolvedBadge.tsx:12) and renders them; no check over an artifact refuses anything here - hitl-approval/triage-queues govern it",
+   "techniques": []},
+  {"context": "8cfb82ac-ebd6-4826-921d-d1399dba7a60", "subject": "quality-gates", "bundle": "software-engineering",
+   "state": "not-applicable", "evaluatedAgainst": "sha256-b2:0d8378dd13155e59", "evaluatedRevision": 54,
+   "evidence": "src/features/agents/quick-answer/triage/triageDispatch.ts:2 the deck turns one human reviewer verdict into one backend write; no mechanism here computes a verdict over a tree, change or release, so the quality-gates precondition does not hold (hitl-approval territory)",
+   "techniques": []},
+  {"context": "7f6d3238-7136-4361-af8f-bca556ae2042", "subject": "quality-gates", "bundle": "software-engineering",
+   "state": "not-applicable", "evaluatedAgainst": "sha256-b2:0d8378dd13155e59", "evaluatedRevision": 54,
+   "evidence": "src-tauri/src/mcp_server/auth.rs:61 the context's refusals are token authorization and a path sandbox (src-tauri/src/mcp_server/tools.rs:39) - authorization/security subjects; nothing gates a change or release on a quality standard",
+   "techniques": []},
+  {"context": "7159d27d-86c2-43be-a83f-8b50c4c816be", "subject": "quality-gates", "bundle": "software-engineering",
+   "state": "not-applicable", "evaluatedAgainst": "sha256-b2:0d8378dd13155e59", "evaluatedRevision": 54,
+   "evidence": "src/features/settings/sub_network/components/BundleImportDialog.tsx:243 the dialog forwards a typed risk acknowledgement to a backend signature verdict (src-tauri/src/engine/bundle.rs:582); that refusal is bundle provenance (signed-artifacts), not an engineering quality standard over a tree, commit or release",
+   "techniques": [{"technique": "waiver-names-its-finding", "verdict": "not-applicable", "evidence": "src-tauri/src/engine/bundle.rs:582 the override takes effect only when it names the exact finding kind ('tamper' vs 'unknown') - resonance, outside the subject's precondition"}],
+   "registryProposal": "Technique-shaped resonance: bundle.rs:582 realizes waiver-names-its-finding (the escape must equal the gate's own finding kind; a mismatched acknowledgement still refuses) on a provenance gate. signed-artifacts could cite waiver-names-its-finding for its 'import anyway' override; the gate itself lives in context test-runner-lab (bundle.rs), not here."},
+  {"context": "59918f8a-62ca-4e52-9435-1e5bf9a18bbd", "subject": "quality-gates", "bundle": "software-engineering",
+   "state": "not-applicable", "evaluatedAgainst": "sha256-b2:0d8378dd13155e59", "evaluatedRevision": 54,
+   "evidence": "src-tauri/src/webbuild/versions.rs:100 the only refusal is a data-safety precondition (restore refused unless the live tree was captured first); no check over a commit or release gates advancement anywhere in webbuild/",
+   "techniques": []}
+ ],
+ "declined": [
+  {"subject": "quality-gates", "context": "bcb603ad-ce58-4b76-9623-aa99ace984af", "reason": "stale not-applicable (companion-proactive) left for a later run: budget of 6 spent"},
+  {"subject": "quality-gates", "context": "739b6d67-2c36-41ee-9794-a74bc0b25cfd", "reason": "stale not-applicable (display-table-primitives) left for a later run: budget of 6 spent"},
+  {"subject": "quality-gates", "context": "4560e824-e952-45a9-8aef-fe88d721952e", "reason": "stale not-applicable (home-welcome) left for a later run: budget of 6 spent"},
+  {"subject": "quality-gates", "context": "d9cffe6c-a868-4ed4-b5e8-6c8add36918a", "reason": "stale not-applicable (plugins-dev-tools-lifecycle) left for a later run: budget of 6 spent"},
+  {"subject": "quality-gates", "context": "0f1de245-e9ba-41df-9b6c-d9ccd91dfb4b", "reason": "stale not-applicable (site-whitelist-management) left for a later run: budget of 6 spent"},
+  {"subject": "quality-gates", "context": "b6e66a59-78d3-465e-83b7-e77498b4c6ae", "reason": "stale not-applicable (stores-slices-agents) left for a later run: budget of 6 spent"}
+ ],
+ "consults": [
+  {"ts":"2026-10-21T17:21:17Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":["gate-liveness"],"deviations":0},
+  {"ts":"2026-10-21T17:21:17Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":[],"deviations":0},
+  {"ts":"2026-10-21T17:21:17Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":[],"deviations":0},
+  {"ts":"2026-10-21T17:21:17Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":[],"deviations":0},
+  {"ts":"2026-10-21T17:21:17Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":["waiver-names-its-finding"],"deviations":0},
+  {"ts":"2026-10-21T17:21:17Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":[],"deviations":0}
+ ]
+}
