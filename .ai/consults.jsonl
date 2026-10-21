@@ -1740,3 +1740,7 @@
 {"ts":"2026-10-21T12:28:56Z","bundle":"software-engineering","subjects":["hitl-approval"],"techniques":["gate-state-machines","handoff-is-a-declared-door","fail-closed-profile-for-headless","decision-records"],"deviations":1}
 {"ts":"2026-10-21T12:28:56Z","bundle":"software-engineering","subjects":["hitl-approval"],"techniques":["unattended-mode"],"deviations":0}
 {"ts":"2026-10-21T12:28:56Z","bundle":"software-engineering","subjects":["hitl-approval"],"techniques":["consent-gates"],"deviations":0}
+{"ts":"2026-10-21T12:31:38.099Z","bundle":"software-engineering","subjects":["multi-project"],"techniques":["passive-signal-ingestion","project-identity-and-joins","portfolio-drill-hierarchy"],"deviations":1}
+{"ts":"2026-10-21T12:31:38.099Z","bundle":"software-engineering","subjects":["multi-project"],"techniques":["portfolio-drill-hierarchy","passive-signal-ingestion"],"deviations":1}
+{"ts":"2026-10-21T12:31:38.099Z","bundle":"software-engineering","subjects":["multi-project"],"techniques":["portfolio-drill-hierarchy","per-project-tabs-and-state"],"deviations":1}
+{"ts":"2026-10-21T12:31:38.099Z","bundle":"software-engineering","subjects":["multi-project"],"techniques":["portfolio-drill-hierarchy"],"deviations":0}

@@ -9541,32 +9541,48 @@
       "subject": "multi-project",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T16:53:41.000Z",
-      "worker": "4800b8be-7a11-401a-b29d-1ee0166a9c61",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:31:38.099Z",
+      "worker": "58a4e3f1-6365-4d82-bf7d-2e862cb02290",
       "techniques": [
         {
           "technique": "portfolio-drill-hierarchy",
           "verdict": "deviation",
-          "evidence": "src/features/teams/sub_mastermind/lib/IdeaScanPopover.tsx:118 fetch failure swallowed, then :239 renders the never-context-scanned hint for it. The rest of the technique holds here: the detail level fetches only its own layer, a bounded page (:116 listContexts(projectId, undefined, CONTEXT_CHIP_CAP)), and KpiListPopover.tsx:73 renders unmeasured as 'unmeasured', never as 0"
+          "evidence": "src/features/teams/sub_mastermind/lib/IdeaScanPopover.tsx:236 the empty-scope copy is shown for a failed read as well as for no contexts (level parity with reality)"
+        },
+        {
+          "technique": "passive-signal-ingestion",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_mastermind/lib/DataHealthBar.tsx:32 failed scene families are named beside a Retry, not rendered as a silent partial"
         },
         {
           "technique": "project-identity-and-joins",
           "verdict": "conformant",
-          "evidence": "src/features/teams/sub_mastermind/lib/KpiListPopover.tsx:79 rows keyed by KPI id and :86 emit the id; IdeaScanPopover.tsx:75 projectId is the island slug, which deriveScene.ts:82 takes from identity.slug = meta.project_id (src/features/teams/sub_factory/passport/useAutoRescanOnFleetExit.ts:21). Names appear only at render"
+          "evidence": "src/features/teams/sub_mastermind/lib/KpiListPopover.tsx:79 rows keyed by KPI id and :86 emit the id; IdeaScanPopover.tsx:75 projectId is the island slug, which deriveScene.ts:82 takes from identity.slug = meta.project_id (src/features/teams/sub_factory/passport/useAutoRescanOnFleetExit.ts:21). Names appear only at render",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "per-project-tabs-and-state",
           "verdict": "not-applicable",
-          "evidence": "src/features/teams/sub_mastermind/lib/ListPopover.tsx:75 every surface in this context is a transient overlay list for one already-selected island. There is no persisted working-set strip to judge"
+          "evidence": "src/features/teams/sub_mastermind/lib/ListPopover.tsx:75 every surface in this context is a transient overlay list for one already-selected island. There is no persisted working-set strip to judge",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "cross-project-comparison",
           "verdict": "not-applicable",
-          "evidence": "src/features/teams/sub_mastermind/lib/KpiListPopover.tsx:31 ranks one project's KPIs worst-first. Nothing in these popovers compares or ranks projects against each other"
+          "evidence": "src/features/teams/sub_mastermind/lib/KpiListPopover.tsx:31 ranks one project's KPIs worst-first. Nothing in these popovers compares or ranks projects against each other",
+          "carriedFrom": "2026-10-09"
         }
       ],
-      "registryProposal": "Missing pairing, judged out of scope for this run: the drill-context loss sits in teams-canvas (6e3e06ef-e5d0-4b4d-807f-688123370b14), which the map does not pair with multi-project (it carries canvas-graph, prompt-assembly and pipeline-dag). src/features/teams/sub_mastermind/MastermindPage.tsx:789 drops the kpiId that KpiListPopover emits and lands on the generic project matrix, against portfolio-drill-hierarchy's 'drilling preserves context'. That file also maps fleet sessions to projects by longest cwd/root_path prefix, a path-derived join that project-identity-and-joins forbids. teams-canvas is the canvas page of the portfolio surface and should carry multi-project."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/IdeaScanPopover.tsx:118 a FAILED listContexts is swallowed by silentCatch, leaving contexts=[] so :239 tells the operator \"Run a context scan first to enable scoping\" - the detail level renders could-not-read as never-scanned (portfolio-drill-hierarchy level parity / failure-not-empty-success), steering them into a needless context scan or a costlier whole-project scan",
+          "evaluatedAt": "2026-10-09T16:53:41.000Z",
+          "worker": "4800b8be-7a11-401a-b29d-1ee0166a9c61",
+          "reason": "replaced by 58a4e3f1-6365-4d82-bf7d-2e862cb02290"
+        }
+      ]
     },
     "11fe7642-7a1a-47c5-8910-499850aa04fe/triage-queues": {
       "context": "plugins-companion-inbox",
@@ -31077,6 +31093,97 @@
         }
       ],
       "registryProposal": "Context drift: the context is named overview-director but src/features/overview/sub_director no longer exists in git; only sub_missionControl remains, so the hitl-approval match (driven by 'triage', 'batch-review', 'DirectorVerdict' keywords) rests on deleted code."
+    },
+    "e0ea6f08-ebdf-4c9e-aab4-969eee32f573/multi-project": {
+      "context": "mastermind-scene-store",
+      "subject": "multi-project",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:31:38.099Z",
+      "worker": "58a4e3f1-6365-4d82-bf7d-2e862cb02290",
+      "techniques": [
+        {
+          "technique": "passive-signal-ingestion",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/liveState.ts:104 per-project fetch failure collapses into an absent key, indistinguishable from never-configured at :95; the family-level FamilyStatus at sceneStore.ts:36 is realized but not per project"
+        },
+        {
+          "technique": "project-identity-and-joins",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:70 scans grouped by r.project_id, never by name"
+        },
+        {
+          "technique": "portfolio-drill-hierarchy",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:82 failStatus turns a failed reload over held data into stale, not failed or empty"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/liveState.ts:87-88,116-119 loadMonitoringSummaries puts a project whose per-project Sentry fetch FAILED and a project that was never configured for monitoring into the exact same bucket (absent from the returned map, rendered as 'honest unknown'/readiness-only colour) - passive-signal-ingestion demands could-not-observe stay distinct from a project that is legitimately unwatched/quiet, and here an operator cannot tell a broken credential from a project that simply doesn't use Sentry. The family-level half of the same technique IS realized: sceneStore.ts:36,82-83's FamilyStatus (idle/loading/loaded/failed/stale) plus DataHealthBar.tsx explicitly name failed/stale families rather than rendering a silent partial truth. project-identity-and-joins is conformant throughout (groupScansByProject at sceneStore.ts:66-78 and the goals/sentry/runners maps all key by project.id, never by name).",
+          "evaluatedAt": "2026-10-03",
+          "worker": null,
+          "reason": "replaced by 58a4e3f1-6365-4d82-bf7d-2e862cb02290"
+        }
+      ]
+    },
+    "d7b7eb04-730f-4450-9a68-affc95f93267/multi-project": {
+      "context": "teams-factory-l2",
+      "subject": "multi-project",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:31:38.099Z",
+      "worker": "58a4e3f1-6365-4d82-bf7d-2e862cb02290",
+      "techniques": [
+        {
+          "technique": "portfolio-drill-hierarchy",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/l2/FactoryOverviewTab.tsx:82 the empty state fires on !loading with no contexts and no failed flag for the map read, while the goals tile at :96 already renders null on goalsFailed (7420fdde80) - parity is half done"
+        },
+        {
+          "technique": "per-project-tabs-and-state",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/l2/FactoryProjectTabs.tsx:21 L2Tab is a sub-view switcher inside one already-selected project, not a portfolio working set"
+        }
+      ],
+      "registryProposal": "portfolio-drill-hierarchy level parity names stale and unmeasured but not a failed matrix read; the realistic case here is the whole matrix failing to load and rendering the onboarding empty state. Consider naming could-not-read vs never-measured at the matrix level explicitly.",
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/l2/FactoryProjectTabs.tsx:21-34 L2Tab ('overview'|'matrix'|'observability') is a segmented sub-view strip SCOPED TO ONE PROJECT the parent FactoryShell already selected (projectId is a prop, not a tab set) - not the portfolio-level persisted working-set per-project-tabs-and-state specifies. The portfolio-level project switcher and drill hierarchy live in the sibling teams-factory context (FactoryShell/FactoryBreadcrumb, judged separately). Note: the context map's entry_points still cite src/features/teams/sub_factory/l2/ship/FactoryShipTab.tsx and shipDerive.ts, which no longer exist on disk (the Ship tab was retired 2026-09-15 per ProjectsLayer.tsx:177-183) - a context-map staleness worth a rescan, not a code defect.",
+          "evaluatedAt": "2026-10-03",
+          "worker": null,
+          "reason": "replaced by 58a4e3f1-6365-4d82-bf7d-2e862cb02290"
+        }
+      ]
+    },
+    "9967adb9-e895-4dcd-b296-ab49a19ab122/multi-project": {
+      "context": "project-overview",
+      "subject": "multi-project",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:31:38.099Z",
+      "worker": "58a4e3f1-6365-4d82-bf7d-2e862cb02290",
+      "techniques": [
+        {
+          "technique": "portfolio-drill-hierarchy",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_overview/useOverviewData.ts:104 one project looked up from the store; no wall or matrix above it in this context"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_overview/useOverviewData.ts:89-92 activeProjectId is a single global pointer (systemStore), not a portfolio registry, and ProjectOverviewPage.tsx:98-539 renders only ONE active project's own repo/Sentry vitals - member-level health diagnostics, not portfolio identity/drill/comparison/lifecycle, which this subject's golden path explicitly assigns to sibling contexts (teams-factory, passport-wall-ui, judged separately). The pair scored on lexical overlap alone ('project'/'projects'/'view', grounding=lexical-only) rather than on the subject's actual concerns.",
+          "evaluatedAt": "2026-10-03",
+          "worker": null,
+          "reason": "replaced by 58a4e3f1-6365-4d82-bf7d-2e862cb02290"
+        }
+      ]
     }
   }
 }
