@@ -17,6 +17,14 @@ function Harness(props: Partial<ChatInputBarProps> & { onSubmit: () => void }) {
 }
 
 describe('ChatInputBar', () => {
+  it.each([false, true])('keeps a persistent accessible name for the field (multiline=%s)', (multiline) => {
+    const { unmount } = render(<Harness value="typed" multiline={multiline} placeholder="Ask Athena" onSubmit={vi.fn()} />);
+    expect(screen.getByTestId('bar-input')).toHaveAttribute('aria-label', 'Ask Athena');
+    unmount();
+    render(<Harness value="" multiline={multiline} placeholder="Ask Athena" ariaLabel="Message" onSubmit={vi.fn()} />);
+    expect(screen.getByTestId('bar-input')).toHaveAttribute('aria-label', 'Message');
+  });
+
   it('submits on Enter and clears via the controlling harness', () => {
     const onSubmit = vi.fn();
     render(<Harness value="hello" onSubmit={onSubmit} />);
