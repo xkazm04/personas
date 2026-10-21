@@ -66,4 +66,20 @@ describe('NotificationSettings auto-save', () => {
     view.unmount();
     expect(setAppSettingCalls()).toHaveLength(0);
   });
+
+  it('tells the operator when a refused save means the toggle did not stick', async () => {
+    ipc.invoke.mockImplementation(async (cmd: string) => {
+      if (cmd === 'get_app_settings_bulk') return {};
+      if (cmd === 'set_app_setting') throw { error: 'disk is full' };
+      return undefined;
+    });
+    render(<NotificationSettings />);
+    const toggle = (await screen.findAllByRole('switch'))[0];
+    vi.useFakeTimers();
+
+    fireEvent.click(toggle);
+    await act(async () => { await vi.advanceTimersByTimeAsync(400); });
+
+    expect(screen.getByRole('alert').textContent).toContain('disk is full');
+  });
 });

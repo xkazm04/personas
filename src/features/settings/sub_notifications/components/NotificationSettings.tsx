@@ -70,6 +70,9 @@ function WeeklyDigestToggle() {
         checked={enabled}
         onChange={handleToggle}
       />
+      {digestSetting.error && (
+        <p role="alert" className="typo-caption text-status-error mt-2">{digestSetting.error}</p>
+      )}
     </SectionCard>
   );
 }
@@ -188,6 +191,10 @@ export default function NotificationSettings() {
 
           {/* Outbound webhook subscriptions (Slack/Discord/Teams/generic JSON) */}
           <WebhookSubscriptionsPanel />
+
+          {setting.error && (
+            <p role="alert" className="typo-caption text-status-error">{setting.error}</p>
+          )}
 
           <p className="typo-body text-foreground">
             {s.notification_hint}
