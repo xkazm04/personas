@@ -1,0 +1,44 @@
+{"schema":"conform-run/1","worker":"42446cf3-214f-4537-8e97-c2e9e4a4858c","subject":"chat-transcript","evaluatedAt":"2026-10-21T18:03:47Z",
+"pairs":[
+{"context":"0f1b56ac-cd96-4355-993e-dc445a20e63e","subject":"chat-transcript","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/features/fleet/monitor/channels/useConversation.ts:190 switching teams clears accepted queued prompts (in-memory only) while the draft persists per team, so submitted text is the perishable copy - still live after the 10-20/10-21 fixes",
+ "techniques":[
+  {"technique":"composer-turn-queue","verdict":"deviation","evidence":"src/features/fleet/monitor/channels/useConversation.ts:190 queue discarded on team switch and never persisted; useComposerDraft.ts:28 persists the draft, so the queue does not survive what the draft survives"},
+  {"technique":"composer-turn-queue","verdict":"realized-in-part","evidence":"src/features/fleet/monitor/channels/conversationOutbox.ts:63 consecutive plain prompts fold into one body while rows stay separate; goals never fold"}]},
+{"context":"283b44f6-a4af-4a1f-8a0e-8b2dedb9adc0","subject":"chat-transcript","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/features/shared/components/editors/MarkdownRenderer.tsx:350 model-emitted <img src> renders unsanitized while links go through sanitizeExternalUrl (:340); CSP img-src still admits http://127.0.0.1:* (src-tauri/tauri.conf.json:43), so injected markdown can fire GETs at local services",
+ "techniques":[
+  {"technique":"markdown-and-code-rendering","verdict":"deviation","evidence":"src/features/shared/components/editors/MarkdownRenderer.tsx:350 the image branch bypasses the one sanitizing door; anchor moved from :347 after af94edeeae (10-19), defect unchanged"},
+  {"technique":"markdown-and-code-rendering","verdict":"realized-in-part","evidence":"src/features/shared/components/editors/MarkdownRenderer.tsx:340 links carry a scheme policy via sanitizeExternalUrl"}]},
+{"context":"5ed4c95e-037f-459e-ba3e-aa1300fd7504","subject":"chat-transcript","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/features/companions/athena/chat/AthenaChatProposals.tsx:38 resolving an approval removes its card instead of leaving the same row as the record of the decision - unchanged since 2026-09-28",
+ "techniques":[
+  {"technique":"inline-structured-rows","verdict":"deviation","evidence":"src/features/companions/athena/chat/AthenaChatProposals.tsx:38 store.removeApproval(id) on resolve; the decision survives only as a separate backend system episode"}]},
+{"context":"50bf2ad0-3da7-4405-991a-6e22695903a2","subject":"chat-transcript","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/features/companions/athena/NarrationThread.tsx:104 the settled trail keeps only tool entries; beats persist as separate aside messages, so the trail neither recovers the full step record nor avoids a second narration stream - unchanged since 2026-09-22",
+ "techniques":[
+  {"technique":"progress-narration","verdict":"deviation","evidence":"src/features/companions/athena/NarrationThread.tsx:104 trail count and expansion cover tool entries only; beats live outside the trail as conversational asides ('not a second transcript' rule)"}]},
+{"context":"d77a22ee-23cb-42f3-a910-590f8622977f","subject":"chat-transcript","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/features/companions/athena/athenaStore.ts:1304 queued prompts drain one per machine turn (shiftQueuedMessage) and edits are unversioned; identities minted at :1301 and restart-to-draft (3684836c1c) are realized",
+ "techniques":[
+  {"technique":"composer-turn-queue","verdict":"deviation","evidence":"src/features/companions/athena/athenaStore.ts:1304 shiftQueuedMessage hands out a single prompt, so two quick follow-ups become two machine turns"},
+  {"technique":"composer-turn-queue","verdict":"realized-in-part","evidence":"src/features/companions/athena/athenaStore.ts:1301 each queued prompt gets a locally minted id at acceptance"}]}
+],
+"declined":[
+ {"subject":"chat-transcript","context":"1d8a480b-eac4-4110-a60e-47a6ab281c97","reason":"weak context (glyph-persona-card) with priorNotApplicable 8; matched on layout/composer/card tokens only - a coverage question, not a pair to judge"},
+ {"subject":"chat-transcript","context":"8cfb82ac-ebd6-4826-921d-d1399dba7a60","reason":"already judged not-applicable at current digest/revision 5; not re-read this run"},
+ {"subject":"chat-transcript","context":"19f3a6a0-f733-47d1-94b4-a1256c8a92fc","reason":"already judged not-applicable at current digest/revision 5; not re-read this run"},
+ {"subject":"chat-transcript","context":"4eb0030b-e8a2-4993-bfab-81aee6943054","reason":"already judged not-applicable today at current digest; not re-read this run"},
+ {"subject":"chat-transcript","context":"aa2197a5-6b7c-46ff-a6cd-8172d2984f50","reason":"already judged not-applicable today at current digest; not re-read this run"},
+ {"subject":"chat-transcript","context":"37cd64d2-bd42-47b9-8c17-7ea1b466135c","reason":"already judged not-applicable today at current digest; not re-read this run"},
+ {"subject":"chat-transcript","context":"b7c818bf-fe04-44ff-aa8d-7cd51e0fc67f","reason":"already judged not-applicable at current digest/revision 5; not re-read this run"},
+ {"subject":"chat-transcript","context":"b88ef121-d028-4999-bf34-6e44aed99959","reason":"already judged not-applicable today at current digest; not re-read this run"},
+ {"subject":"chat-transcript","context":"4be04ef0-88db-4f48-859c-92e6ba4d203f","reason":"already judged not-applicable today at current digest; not re-read this run"}
+],
+"consults":[
+ {"ts":"2026-10-21T18:03:47Z","bundle":"software-engineering","subjects":["chat-transcript"],"techniques":["composer-turn-queue"],"deviations":1},
+ {"ts":"2026-10-21T18:03:47Z","bundle":"software-engineering","subjects":["chat-transcript"],"techniques":["markdown-and-code-rendering"],"deviations":1},
+ {"ts":"2026-10-21T18:03:47Z","bundle":"software-engineering","subjects":["chat-transcript"],"techniques":["inline-structured-rows"],"deviations":1},
+ {"ts":"2026-10-21T18:03:47Z","bundle":"software-engineering","subjects":["chat-transcript"],"techniques":["progress-narration"],"deviations":1},
+ {"ts":"2026-10-21T18:03:47Z","bundle":"software-engineering","subjects":["chat-transcript"],"techniques":["composer-turn-queue"],"deviations":1}
+]}

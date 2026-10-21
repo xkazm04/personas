@@ -1897,3 +1897,8 @@
 {"ts":"2026-10-21T17:55:31.762Z","bundle":"software-engineering","subjects":["native-shell-integration"],"techniques":["native-owned-stream","native-side-owns-the-target-set","capability-presence-contract"],"deviations":0}
 {"ts":"2026-10-21T17:55:31.762Z","bundle":"software-engineering","subjects":["native-shell-integration"],"techniques":["native-side-owns-the-target-set","native-owned-stream","capability-presence-contract"],"deviations":0}
 {"ts":"2026-10-21T17:55:31.762Z","bundle":"software-engineering","subjects":["native-shell-integration"],"techniques":["native-owned-stream","native-side-owns-the-target-set"],"deviations":0}
+{"ts":"2026-10-21T18:03:47Z","bundle":"software-engineering","subjects":["chat-transcript"],"techniques":["composer-turn-queue"],"deviations":1}
+{"ts":"2026-10-21T18:03:47Z","bundle":"software-engineering","subjects":["chat-transcript"],"techniques":["markdown-and-code-rendering"],"deviations":1}
+{"ts":"2026-10-21T18:03:47Z","bundle":"software-engineering","subjects":["chat-transcript"],"techniques":["inline-structured-rows"],"deviations":1}
+{"ts":"2026-10-21T18:03:47Z","bundle":"software-engineering","subjects":["chat-transcript"],"techniques":["progress-narration"],"deviations":1}
+{"ts":"2026-10-21T18:03:47Z","bundle":"software-engineering","subjects":["chat-transcript"],"techniques":["composer-turn-queue"],"deviations":1}

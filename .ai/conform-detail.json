@@ -20415,19 +20415,29 @@
       "subject": "chat-transcript",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T18:03:13.000Z",
-      "worker": "8ac9f35f-598c-464e-9549-62cc45023282",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T18:03:47.000Z",
+      "worker": "42446cf3-214f-4537-8e97-c2e9e4a4858c",
       "techniques": [
         {
           "technique": "progress-narration",
           "verdict": "deviation",
-          "evidence": "src/features/companions/athena/NarrationThread.tsx:104 The expanded settled trail renders only tool entries; progress beats remain separate conversational asides instead of joining the collapsed record."
+          "evidence": "src/features/companions/athena/NarrationThread.tsx:104 trail count and expansion cover tool entries only; beats live outside the trail as conversational asides ('not a second transcript' rule)"
         },
         {
           "technique": "turn-metadata",
           "verdict": "deviation",
-          "evidence": "src/features/companions/athena/chat/AthenaChatStreamingTurn.tsx:84 The Current host mounts the recall metadata strip while streaming, contrary to the standard's settlement-only strip predicate."
+          "evidence": "src/features/companions/athena/chat/AthenaChatStreamingTurn.tsx:84 The Current host mounts the recall metadata strip while streaming, contrary to the standard's settlement-only strip predicate.",
+          "carriedFrom": "2026-10-12"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/companions/athena/NarrationThread.tsx:104 The settled trail excludes progress beats, so expanding it cannot recover the complete narration record required by the standard.",
+          "evaluatedAt": "2026-10-12T18:03:13.000Z",
+          "worker": "8ac9f35f-598c-464e-9549-62cc45023282",
+          "reason": "replaced by 42446cf3-214f-4537-8e97-c2e9e4a4858c"
         }
       ]
     },
@@ -20477,34 +20487,52 @@
       "subject": "chat-transcript",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T18:03:13.000Z",
-      "worker": "8ac9f35f-598c-464e-9549-62cc45023282",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T18:03:47.000Z",
+      "worker": "42446cf3-214f-4537-8e97-c2e9e4a4858c",
       "techniques": [
         {
           "technique": "composer-turn-queue",
           "verdict": "deviation",
-          "evidence": "src/features/fleet/monitor/channels/useConversation.ts:180 The team-change effect abandons the outbox; drafts persist per team, but queued text is neither retained nor restored as draft text."
+          "evidence": "src/features/fleet/monitor/channels/useConversation.ts:190 queue discarded on team switch and never persisted; useComposerDraft.ts:28 persists the draft, so the queue does not survive what the draft survives"
+        },
+        {
+          "technique": "composer-turn-queue",
+          "verdict": "realized-in-part",
+          "evidence": "src/features/fleet/monitor/channels/conversationOutbox.ts:63 consecutive plain prompts fold into one body while rows stay separate; goals never fold"
         },
         {
           "technique": "inline-structured-rows",
           "verdict": "deviation",
-          "evidence": "src/features/fleet/monitor/channels/useConversation.ts:266 Confirming a proposal removes its interactive row instead of preserving that same row as the resolved decision record."
+          "evidence": "src/features/fleet/monitor/channels/useConversation.ts:266 Confirming a proposal removes its interactive row instead of preserving that same row as the resolved decision record.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "transcript-scroll",
           "verdict": "deviation",
-          "evidence": "src/features/fleet/monitor/channels/VirtualConversation.tsx:142 prevCount starts at the existing row count, so a populated initial mount skips tail positioning; there is no initial layout-stability gate in this component."
+          "evidence": "src/features/fleet/monitor/channels/VirtualConversation.tsx:142 prevCount starts at the existing row count, so a populated initial mount skips tail positioning; there is no initial layout-stability gate in this component.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "turn-metadata",
           "verdict": "deviation",
-          "evidence": "src/features/fleet/monitor/channels/ConversationCards.tsx:252 An unavailable deliberation cost becomes a displayed zero rather than an explicit absence."
+          "evidence": "src/features/fleet/monitor/channels/ConversationCards.tsx:252 An unavailable deliberation cost becomes a displayed zero rather than an explicit absence.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "turn-model",
           "verdict": "deviation",
-          "evidence": "src/features/fleet/monitor/channels/conversationModel.ts:78 Queued prompt IDs are not submitted to the authority; successful delivery removes queued rows and refetch supplies differently keyed server rows."
+          "evidence": "src/features/fleet/monitor/channels/conversationModel.ts:78 Queued prompt IDs are not submitted to the authority; successful delivery removes queued rows and refetch supplies differently keyed server rows.",
+          "carriedFrom": "2026-10-12"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/fleet/monitor/channels/useConversation.ts:180 Changing teams clears accepted queued submissions instead of retaining them or returning them to their team's draft, making submitted text perishable.",
+          "evaluatedAt": "2026-10-12T18:03:13.000Z",
+          "worker": "8ac9f35f-598c-464e-9549-62cc45023282",
+          "reason": "replaced by 42446cf3-214f-4537-8e97-c2e9e4a4858c"
         }
       ]
     },
@@ -20513,39 +20541,53 @@
       "subject": "chat-transcript",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T18:03:13.000Z",
-      "worker": "8ac9f35f-598c-464e-9549-62cc45023282",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T18:03:47.000Z",
+      "worker": "42446cf3-214f-4537-8e97-c2e9e4a4858c",
       "techniques": [
-        {
-          "technique": "composer-turn-queue",
-          "verdict": "deviation",
-          "evidence": "src/features/companions/athena/chat/athenaChatQueue.ts:61 Each settlement drains one message into its own send, so consecutive plain follow-ups are not combined into one machine turn."
-        },
         {
           "technique": "inline-structured-rows",
           "verdict": "deviation",
-          "evidence": "src/features/companions/athena/chat/AthenaChatProposals.tsx:38 The resolution callback deletes the approval card; a subsequent system episode does not preserve the same row and position."
+          "evidence": "src/features/companions/athena/chat/AthenaChatProposals.tsx:38 store.removeApproval(id) on resolve; the decision survives only as a separate backend system episode"
+        },
+        {
+          "technique": "composer-turn-queue",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/chat/athenaChatQueue.ts:61 Each settlement drains one message into its own send, so consecutive plain follow-ups are not combined into one machine turn.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "markdown-and-code-rendering",
           "verdict": "deviation",
-          "evidence": "src/features/shared/components/editors/MarkdownRenderer.tsx:347 Bubble's AssistantProse reaches this renderer, which loads model-referenced images directly without a block, proxy or click-to-load policy."
+          "evidence": "src/features/shared/components/editors/MarkdownRenderer.tsx:347 Bubble's AssistantProse reaches this renderer, which loads model-referenced images directly without a block, proxy or click-to-load policy.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "progress-narration",
           "verdict": "deviation",
-          "evidence": "src/features/companions/athena/Bubble.tsx:111 Persisted progress beats render as individual aside rows instead of folding into a settled turn's expandable trail."
+          "evidence": "src/features/companions/athena/Bubble.tsx:111 Persisted progress beats render as individual aside rows instead of folding into a settled turn's expandable trail.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "transcript-scroll",
           "verdict": "deviation",
-          "evidence": "src/features/companions/athena/chat/athenaChatSession.ts:70 Initial positioning waits two animation frames rather than observing actual rendered layout stability."
+          "evidence": "src/features/companions/athena/chat/athenaChatSession.ts:70 Initial positioning waits two animation frames rather than observing actual rendered layout stability.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "turn-model",
           "verdict": "deviation",
-          "evidence": "src/features/companions/athena/chat/AthenaChatStreamingTurn.tsx:76 The Current host renders a separately keyed temporary working bubble that unmounts at settlement, while the persisted response mounts in the message list."
+          "evidence": "src/features/companions/athena/chat/AthenaChatStreamingTurn.tsx:76 The Current host renders a separately keyed temporary working bubble that unmounts at settlement, while the persisted response mounts in the message list.",
+          "carriedFrom": "2026-10-12"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/companions/athena/chat/AthenaChatProposals.tsx:38 Resolving an approval removes its card instead of preserving the same transcript row as a durable decision record.",
+          "evaluatedAt": "2026-10-12T18:03:13.000Z",
+          "worker": "8ac9f35f-598c-464e-9549-62cc45023282",
+          "reason": "replaced by 42446cf3-214f-4537-8e97-c2e9e4a4858c"
         }
       ]
     },
@@ -27392,17 +27434,30 @@
       "subject": "chat-transcript",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:47:49.000Z",
-      "worker": "c349d73a-cf7a-4ff3-974f-d1379308f6bb",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T18:03:47.000Z",
+      "worker": "42446cf3-214f-4537-8e97-c2e9e4a4858c",
       "techniques": [
         {
           "technique": "markdown-and-code-rendering",
           "verdict": "deviation",
-          "evidence": "src/features/shared/components/editors/MarkdownRenderer.tsx:347 img renders src with no block/proxy/click-to-load policy (links do carry one at :337); remote content loads implicitly"
+          "evidence": "src/features/shared/components/editors/MarkdownRenderer.tsx:350 the image branch bypasses the one sanitizing door; anchor moved from :347 after af94edeeae (10-19), defect unchanged"
+        },
+        {
+          "technique": "markdown-and-code-rendering",
+          "verdict": "realized-in-part",
+          "evidence": "src/features/shared/components/editors/MarkdownRenderer.tsx:340 links carry a scheme policy via sanitizeExternalUrl"
         }
       ],
-      "registryProposal": "This context is a shared primitive library that contains the transcript sanitizing door (MarkdownRenderer) but is not itself a transcript: only markdown-and-code-rendering genuinely governs it. A per-technique pairing (or routing the door to prompt-safety/output-sanitization) would fit better than the whole subject."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/shared/components/editors/MarkdownRenderer.tsx:347 the shared door Athena chat renders model text through loads any model-referenced <img src> on render; CSP still admits http://127.0.0.1:* and googleusercontent, so injected markup can fire GETs at local services",
+          "evaluatedAt": "2026-10-16T17:47:49.000Z",
+          "worker": "c349d73a-cf7a-4ff3-974f-d1379308f6bb",
+          "reason": "replaced by 42446cf3-214f-4537-8e97-c2e9e4a4858c"
+        }
+      ]
     },
     "b7c818bf-fe04-44ff-aa8d-7cd51e0fc67f/chat-transcript": {
       "context": "persona-shared-ui",
@@ -30144,19 +30199,34 @@
       "subject": "chat-transcript",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-17",
-      "evaluatedTs": "2026-10-17T01:58:28.172Z",
-      "worker": "3f248d37-eb86-442d-9567-f7a65d88281b",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T18:03:47.000Z",
+      "worker": "42446cf3-214f-4537-8e97-c2e9e4a4858c",
       "techniques": [
         {
           "technique": "composer-turn-queue",
           "verdict": "deviation",
-          "evidence": "src/features/companions/athena/athenaStore.ts:1305 The store shifts one prompt, and athenaChatQueue.ts:61-62 sends it alone per completion; consecutive plain follow-ups are not combined, and queued entries expose no versioned edit operation."
+          "evidence": "src/features/companions/athena/athenaStore.ts:1304 shiftQueuedMessage hands out a single prompt, so two quick follow-ups become two machine turns"
+        },
+        {
+          "technique": "composer-turn-queue",
+          "verdict": "realized-in-part",
+          "evidence": "src/features/companions/athena/athenaStore.ts:1301 each queued prompt gets a locally minted id at acceptance"
         },
         {
           "technique": "progress-narration",
           "verdict": "deviation",
-          "evidence": "src/features/companions/athena/athenaStore.ts:1386 athenaChatStream.ts:173-180 invokes this reset on error without attaching the narration to a failed turn, erasing the failure's activity detail from the store."
+          "evidence": "src/features/companions/athena/athenaStore.ts:1386 athenaChatStream.ts:173-180 invokes this reset on error without attaching the narration to a failed turn, erasing the failure's activity detail from the store.",
+          "carriedFrom": "2026-10-17"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/companions/athena/athenaStore.ts:1301 Queued prompts receive identities and survive restart as drafts, but lack versioned editing and drain individually into separate machine turns.",
+          "evaluatedAt": "2026-10-17T01:58:28.172Z",
+          "worker": "3f248d37-eb86-442d-9567-f7a65d88281b",
+          "reason": "replaced by 42446cf3-214f-4537-8e97-c2e9e4a4858c"
         }
       ]
     },
