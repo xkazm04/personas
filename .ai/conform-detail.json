@@ -4846,27 +4846,27 @@
       "subject": "realtime-events",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:56:03.000Z",
-      "worker": "0790580f-73bf-4102-be0e-5705d84859a2",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:48:57.000Z",
+      "worker": "fcfe75ad-4e00-455f-8640-0e65f0a6535d",
       "techniques": [
         {
           "technique": "event-registry",
           "verdict": "deviation",
-          "evidence": "scripts/check-event-registry.mjs:268 CALL_SITE regex matches only a literal first argument to listen()/emit(), so names passed through RunEventBinding (src/hooks/lab/useLabEvents.ts:43) or held in a Rust struct field (src-tauri/engine/src/test_runner/modes.rs:326 'lab-consensus-status', which no TS code listens to) are invisible to every pass; gate-sees-target fails"
+          "evidence": "src-tauri/engine/src/test_runner/modes.rs:228 lab-*-status names are literals on both sides of the IPC boundary with no registry entry; the gate cannot see binding-routed names (scripts/check-event-registry.mjs:268), so the vocabulary has an unenumerated, ungated family"
         },
         {
           "technique": "subscription-lifecycle",
           "verdict": "realized",
-          "evidence": "src/hooks/realtime/createSingletonListener.ts:115 one native listener per name with bounded early-arrival buffer (drops counted at :83), handshake-race teardown at :130, per-attempt cancelled flag at :164/:181"
+          "evidence": "src/hooks/realtime/createSingletonListener.ts:190 per-attempt cancelled flag; :155 handshake completing with zero subscribers releases the native listener; :125 bounded early-arrival buffer with counted drops (recordEarlyDrop)"
         },
         {
           "technique": "coalescing-and-batching",
           "verdict": "realized",
-          "evidence": "src/hooks/realtime/createSingletonListener.ts:55 per-frame queue flushes a burst once per animation frame so React batches N events into one render"
+          "evidence": "src/hooks/realtime/createSingletonListener.ts:40 per-frame queue flushed once per animation frame so a burst becomes one React commit"
         }
       ],
-      "registryProposal": "event-registry's gate section says 'a name emitted or subscribed anywhere' but gives no rule for names that reach listen()/emit() indirectly (a binding table, a struct field); this repo's gate is literal-call-site-shaped and goes blind exactly there. Worth a sentence: the gate must follow names to the boundary call, or the call must accept only registry-typed names (e.g. EventName keyof) so indirection cannot carry a bare string. Separately: context e0563a39 (triggers-test) is weak-governed; left unjudged as a coverage question.",
+      "registryProposal": "Re-judged unchanged from 2026-10-16 (digest a0685592373df03f, revision 6, still current at registry 145ab09c). Recent hooks-realtime fixes (6c38c824aa, ffdb882f97) hardened the listener and binding error paths but none moved the lab family into the registry - the event-registry technique could name 'names passed through a binding/config object' as a gate blind spot alongside runtime-minted names.",
       "superseded": [
         {
           "state": "deviation",
@@ -4874,6 +4874,13 @@
           "evaluatedAt": "2026-09-23",
           "worker": null,
           "reason": "replaced by 0790580f-73bf-4102-be0e-5705d84859a2"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/hooks/lab/useLabEvents.ts:43 still subscribes to the literal 'lab-arena-status' (and lab-ab/matrix/eval), absent from src/lib/eventRegistry.ts and src-tauri/core/src/events.rs; the gate's call-site regex (scripts/check-event-registry.mjs:268) only sees literal listen('x')/emit('x'), so binding-routed names pass unchecked and a rename silently stops Lab progress",
+          "evaluatedAt": "2026-10-16T17:56:03.000Z",
+          "worker": "0790580f-73bf-4102-be0e-5705d84859a2",
+          "reason": "replaced by fcfe75ad-4e00-455f-8640-0e65f0a6535d"
         }
       ]
     },
