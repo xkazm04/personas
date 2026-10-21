@@ -1,0 +1,55 @@
+{"schema": "conform-run/1", "worker": "e4d3c3ec-9768-456c-b508-74a7894f3e3c", "subject": "module-design",
+ "evaluatedAt": "2026-10-21T17:41:00Z",
+ "pairs": [
+  {"context": "3084d603-7cdb-41cd-bbad-8f24a8015b3e", "subject": "module-design", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/lib/harness/executor.ts:124 parseAreaResult asserts the agent's free-text JSON into ParsedAreaResult with no check, so a reply missing features or learnings throws at src/lib/harness/orchestrator.ts:207 and any string is written into feature.status as a FeatureStatus",
+   "techniques": [
+    {"technique": "marked-unverifiable-region", "verdict": "deviation", "evidence": "src/lib/harness/executor.ts:124 the one door for LLM output is an unmarked, invariant-free cast, so the region is neither enclosed behind a checked surface nor carries the fact that would make it valid"},
+    {"technique": "seams-and-adapters", "verdict": "deviation", "evidence": "src/lib/harness/orchestrator.ts:19 the loop imports executeArea (which spawns the claude CLI, executor.ts:167) and verify (execSync) directly with no enabling point, and git ls-files shows no test under src/lib/harness, so the area status transitions are reachable only by spawning a real CLI"},
+    {"technique": "module-depth", "verdict": "unknown", "evidence": "src/lib/harness/types.ts:10 status vocabularies are closed unions; depth of the orchestrator/executor split not judged"}
+   ]},
+  {"context": "b4439e30-fcff-4095-97dd-d9d7da2247dd", "subject": "module-design", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/settings/sub_portability/components/export-prototype/useExportPicker.ts:431 the closed AthenaTier set ('core'|'learned', src/api/system/dataPortability.ts:18) is widened to Set<string> at :100 and re-asserted 'as AthenaTier[]' at the IPC payload with no stated invariant, so any string id toggled under 'athena' reaches the export command typed as a tier",
+   "techniques": [
+    {"technique": "marked-unverifiable-region", "verdict": "deviation", "evidence": "src/features/settings/sub_portability/components/export-prototype/useExportPicker.ts:431 data-boundary assertion with no comment naming the invariant (the repo's own convention requires one)"},
+    {"technique": "module-depth", "verdict": "deviation", "evidence": "src/features/settings/sub_portability/components/export-prototype/useExportPicker.ts:100 the tier vocabulary the API owns is held in an open type, so membership is enforced by nothing between toggle and the wire"}
+   ]},
+  {"context": "0f1de245-e9ba-41df-9b6c-d9ccd91dfb4b", "subject": "module-design", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/browser/whitelist/AddSiteModal.tsx:64 the add form blocks submit on browserOriginProblem, a hand-written TS re-statement (src/features/browser/types.ts:203 'null when the value is something Rust will accept') of Rust's parse_origin_pattern (src-tauri/core/src/models/browser.rs:436) with no shared fixture, so grammar drift either makes a valid origin unenterable or lets a doomed one through",
+   "techniques": [
+    {"technique": "module-depth", "verdict": "deviation", "evidence": "src/features/browser/types.ts:203 one decision (the origin-pattern grammar) encoded in two hand-maintained modules with nothing comparing them - information leakage"},
+    {"technique": "io-free-core", "verdict": "conformant", "evidence": "src/features/browser/whitelist/siteEdit.ts:49 planSiteWrites is a pure diff of row vs draft into SiteWrite commands, with applySiteWrites (:71) as the only driver doing I/O"},
+    {"technique": "declarative-or-sequential", "verdict": "conformant", "evidence": "src/features/browser/whitelist/siteEdit.ts:49 multi-output planning written as explicit sequential code, the form the technique prescribes for that condition"}
+   ]},
+  {"context": "5dc3cb6a-6612-4909-995d-86e92394ec94", "subject": "module-design", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/templates/sub_n8n/steps/N8nSessionList.tsx:194 the wizard step is a closed vocabulary held as String (src-tauri/core/src/models/n8n_session.rs:85) and re-encoded in a local Record<string, N8nWizardStep> (:178) whose miss silently falls back to 'upload', so a new or renamed backend step resumes a session at the start instead of failing",
+   "techniques": [
+    {"technique": "module-depth", "verdict": "deviation", "evidence": "src/features/templates/sub_n8n/steps/N8nSessionList.tsx:178 step vocabulary owned by the backend restated in the UI with no compiler-walked link - information leakage"},
+    {"technique": "marked-unverifiable-region", "verdict": "deviation", "evidence": "src/features/templates/sub_n8n/steps/N8nSessionList.tsx:172 user_answers asserted Record<string,string> after checking only that it is an object, and :14 isValidAgentIR certifies a full AgentIR from the presence of 'name' - guards named as validation that check far less than they claim"}
+   ]}
+ ],
+ "declined": [
+  {"subject": "module-design", "context": "5ab49df3-3442-4ea6-a405-077dec64850d", "reason": "weak context (persona-core-codex); judging it would manufacture a deviation - coverage question"},
+  {"subject": "module-design", "context": "11fe7642-7a1a-47c5-8910-499850aa04fe", "reason": "weak context (plugins-companion-inbox) - coverage question"},
+  {"subject": "module-design", "context": "9b6cc17c-3add-4152-a349-c189b15a109f", "reason": "weak context (template-design-preview) - coverage question"},
+  {"subject": "module-design", "context": "e0563a39-fb7e-485f-a698-f9c4dc1004a7", "reason": "weak context (triggers-test) - coverage question"},
+  {"subject": "module-design", "context": "8650ca36-36fe-4862-98f5-745e866a2687", "reason": "budget: left for a later run (agents-design)"},
+  {"subject": "module-design", "context": "b0e9ba6b-7737-43ec-b551-9bcc1b71d76f", "reason": "budget: left for a later run (companion)"},
+  {"subject": "module-design", "context": "739b6d67-2c36-41ee-9794-a74bc0b25cfd", "reason": "budget: left for a later run (display-table-primitives); lead: UnifiedTable data: T[] (src/features/shared/components/display/UnifiedTable.tsx:105) forces readonly callers to cast, seen at src/features/browser/whitelist/WhitelistLedger.tsx:170"},
+  {"subject": "module-design", "context": "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f", "reason": "budget: left for a later run (home-cockpit-widgets)"},
+  {"subject": "module-design", "context": "06ef5a64-1796-4637-a4d9-f860bbe67562", "reason": "budget: left for a later run (recipes-playground)"},
+  {"subject": "module-design", "context": "f838d49f-2928-441e-ac8d-f6e6c412b262", "reason": "budget: left for a later run (shared-glyph)"},
+  {"subject": "module-design", "context": "80e0534a-d0ea-469a-9c3a-cf12910ecde9", "reason": "budget: left for a later run (template-adoption-support)"},
+  {"subject": "module-design", "context": "8a57c65c-06fd-45c9-9d32-d50c89c4c705", "reason": "budget: left for a later run (template-generation)"},
+  {"subject": "module-design", "context": "55d6d7cb-b016-4d73-8386-b5c18beafdae", "reason": "budget: left for a later run (vault-database-shell)"}
+ ],
+ "consults": [
+  {"ts":"2026-10-21T17:41:00Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["marked-unverifiable-region","seams-and-adapters","module-depth"],"deviations":1},
+  {"ts":"2026-10-21T17:41:00Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["marked-unverifiable-region","module-depth"],"deviations":1},
+  {"ts":"2026-10-21T17:41:00Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["module-depth","io-free-core","declarative-or-sequential"],"deviations":1},
+  {"ts":"2026-10-21T17:41:00Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["module-depth","marked-unverifiable-region"],"deviations":1}
+ ]}

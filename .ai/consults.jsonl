@@ -1867,3 +1867,7 @@
 {"ts":"2026-10-21T17:39:43Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":["retrieval-triggering","relevance-floors"],"deviations":0}
 {"ts":"2026-10-21T17:39:43Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":["hybrid-lane-fusion"],"deviations":0}
 {"ts":"2026-10-21T17:41:27Z","bundle":"software-engineering","subjects":["settings"],"techniques":[],"deviations":0}
+{"ts":"2026-10-21T17:41:00Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["marked-unverifiable-region","seams-and-adapters","module-depth"],"deviations":1}
+{"ts":"2026-10-21T17:41:00Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["marked-unverifiable-region","module-depth"],"deviations":1}
+{"ts":"2026-10-21T17:41:00Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["module-depth","io-free-core","declarative-or-sequential"],"deviations":1}
+{"ts":"2026-10-21T17:41:00Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["module-depth","marked-unverifiable-region"],"deviations":1}

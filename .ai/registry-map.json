@@ -18176,7 +18176,11 @@
           "revision": 18,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/lib/harness/executor.ts:124 parseAreaResult asserts the agent's free-text JSON into ParsedAreaResult with no check, so a reply missing features or learnings throws at src/lib/harness/orchestrator.ts:207 and any string is written into feature.status as a FeatureStatus",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:7c8008f2207b1946",
+          "evaluatedRevision": 18
         },
         {
           "subject": "prompt-assembly",
@@ -31520,7 +31524,11 @@
           "revision": 18,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/settings/sub_portability/components/export-prototype/useExportPicker.ts:431 the closed AthenaTier set ('core'|'learned', src/api/system/dataPortability.ts:18) is widened to Set<string> at :100 and re-asserted 'as AthenaTier[]' at the IPC payload with no stated invariant, so any string id toggled under 'athena' reaches the export command typed as a tier",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:7c8008f2207b1946",
+          "evaluatedRevision": 18
         },
         {
           "subject": "concurrent-vcs",
@@ -32719,7 +32727,11 @@
           "revision": 18,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/browser/whitelist/AddSiteModal.tsx:64 the add form blocks submit on browserOriginProblem, a hand-written TS re-statement (src/features/browser/types.ts:203 'null when the value is something Rust will accept') of Rust's parse_origin_pattern (src-tauri/core/src/models/browser.rs:436) with no shared fixture, so grammar drift either makes a valid origin unenterable or lets a doomed one through",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:7c8008f2207b1946",
+          "evaluatedRevision": 18
         },
         {
           "subject": "prompt-assembly",
@@ -37824,7 +37836,11 @@
           "revision": 18,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/templates/sub_n8n/steps/N8nSessionList.tsx:194 the wizard step is a closed vocabulary held as String (src-tauri/core/src/models/n8n_session.rs:85) and re-encoded in a local Record<string, N8nWizardStep> (:178) whose miss silently falls back to 'upload', so a new or renamed backend step resumes a session at the start instead of failing",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:7c8008f2207b1946",
+          "evaluatedRevision": 18
         },
         {
           "subject": "agent-memory",
