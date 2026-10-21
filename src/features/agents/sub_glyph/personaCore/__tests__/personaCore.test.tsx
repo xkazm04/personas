@@ -27,6 +27,7 @@ import {
   TRAIT_CATALOG,
   traitById,
 } from "../catalog";
+import en from "@/i18n/locales/en.json";
 import { ARCHETYPE_GLYPHS } from "../archetypeGlyphData";
 import { MentalityCard } from "../MentalityCard";
 import { EFFORT_LEVELS, EFFORT_OPTIONS } from "@/lib/models/modelCatalog";
@@ -108,7 +109,7 @@ describe("persona-core catalog integrity", () => {
   it("carries a blurb for every effort tier the vocabulary defines", () => {
     // Blurbs are this surface's own copy, keyed by id in a separate map — a
     // level added upstream must not arrive with an empty tooltip.
-    expect(EFFORT_TIERS.filter((e) => !e.blurb).map((e) => e.id)).toEqual([]);
+    expect(EFFORT_TIERS.filter((e) => !e.blurbKey).map((e) => e.id)).toEqual([]);
   });
 
   it("maps exactly the archetype icons the shipped catalog uses", () => {
@@ -270,6 +271,13 @@ describe("persona-core theming", () => {
 // --------------------------------------------------------------------------
 const listArchetypes = vi.fn();
 vi.mock("@/api/archetypes", () => ({ listArchetypes: () => listArchetypes() }));
+// The agents section is lazy-loaded at runtime; resolve the real English catalog
+// synchronously so rendered copy (trait/axis labels) is the shipped text.
+vi.mock("@/i18n/useTranslation", async (importActual) => {
+  const actual = await importActual<typeof import("@/i18n/useTranslation")>();
+  const enJson = (await import("@/i18n/locales/en.json")).default;
+  return { ...actual, useTranslation: () => ({ t: enJson, tx: actual.interpolate, language: "en" }) };
+});
 
 import { usePersonaCore } from "../usePersonaCore";
 
@@ -463,7 +471,7 @@ describe("AxisTraitGrid accessibility", () => {
     const groups = screen.getAllByRole("group");
     expect(groups.length).toBe(TRAIT_AXES.length);
     for (const axis of TRAIT_AXES) {
-      expect(screen.getByRole("group", { name: new RegExp(axis.short, "i") })).toBeTruthy();
+      expect(screen.getByRole("group", { name: new RegExp(en.agents[axis.labelKey], "i") })).toBeTruthy();
     }
   });
 

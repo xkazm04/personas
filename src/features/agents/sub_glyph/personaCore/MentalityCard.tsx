@@ -6,6 +6,7 @@
  *  dominant traits (applyPreset).
  */
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "@/i18n/useTranslation";
 import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
 import { MotionizedGlyph } from "@/features/shared/components/display/MotionizedGlyph";
 import { ACCENT, coreIcon, ARCHETYPE_TRAITS, traitById, TRAIT_AXES } from "./catalog";
@@ -49,10 +50,11 @@ function useNearViewportOnce<T extends HTMLElement>() {
 }
 
 export function MentalityCard({ archetype: a, active, onSelect }: { archetype: Archetype; active: boolean; onSelect: () => void }) {
+  const { t } = useTranslation();
   const { ref: cardRef, near } = useNearViewportOnce<HTMLButtonElement>();
   const glyph = ARCHETYPE_GLYPHS[a.id];
   const Icon = coreIcon(a.icon);
-  const traits = (ARCHETYPE_TRAITS[a.id] ?? []).flatMap((id) => { const t = traitById(id); return t ? [t] : []; });
+  const traits = (ARCHETYPE_TRAITS[a.id] ?? []).flatMap((id) => { const trait = traitById(id); return trait ? [trait] : []; });
   return (
     <button
       ref={cardRef}
@@ -85,11 +87,11 @@ export function MentalityCard({ archetype: a, active, onSelect }: { archetype: A
         </span>
         {traits.length > 0 && (
           <span className="flex flex-wrap gap-1">
-            {traits.map((t) => {
-              const TI = t.icon;
-              const c = axisColorOf(t.axis);
+            {traits.map((trait) => {
+              const TI = trait.icon;
+              const c = axisColorOf(trait.axis);
               return (
-                <span key={t.id} title={t.label} className="w-5 h-5 rounded-input flex items-center justify-center shrink-0" style={{ background: colorWithAlpha(c, 0.16) }}>
+                <span key={trait.id} title={t.agents[trait.labelKey]} className="w-5 h-5 rounded-input flex items-center justify-center shrink-0" style={{ background: colorWithAlpha(c, 0.16) }}>
                   <TI className="w-3 h-3" style={{ color: c }} />
                 </span>
               );

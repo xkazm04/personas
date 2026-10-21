@@ -16,7 +16,7 @@ import {
   LibraryBig, Palette, ConciergeBell, Feather, Brain, type LucideIcon,
 } from "lucide-react";
 import { EFFORT_OPTIONS, type EffortOption } from "@/lib/models/modelCatalog";
-import type { CharacterTrait, TraitAxis, ModelTier, EffortLevel } from "./types";
+import type { AgentsKey, CharacterTrait, TraitAxis, ModelTier, EffortLevel } from "./types";
 
 /** The persona-core accent (also the model-tier accent). */
 export const ACCENT = "#60A5FA";
@@ -54,40 +54,40 @@ export function coreIcon(name: string): LucideIcon {
 }
 
 // -- Character axes + trait vocabulary ---------------------------------------
-export const TRAIT_AXES: { id: TraitAxis; label: string; short: string; color: string; icon: LucideIcon }[] = [
-  { id: "rigor", label: "Rigor & evidence", short: "Rigor", color: "#60a5fa", icon: ScanSearch },
-  { id: "autonomy", label: "Autonomy & deference", short: "Autonomy", color: "#fb7185", icon: ShieldHalf },
-  { id: "communication", label: "Communication", short: "Voice", color: "#2dd4bf", icon: MessagesSquare },
-  { id: "reliability", label: "Reliability & ops", short: "Reliability", color: "#c084fc", icon: Repeat },
-  { id: "temperament", label: "Temperament & drive", short: "Drive", color: "#fbbf24", icon: Sparkles },
+export const TRAIT_AXES: { id: TraitAxis; labelKey: AgentsKey; color: string; icon: LucideIcon }[] = [
+  { id: "rigor", labelKey: "core_axis_rigor", color: "#60a5fa", icon: ScanSearch },
+  { id: "autonomy", labelKey: "core_axis_autonomy", color: "#fb7185", icon: ShieldHalf },
+  { id: "communication", labelKey: "core_axis_communication", color: "#2dd4bf", icon: MessagesSquare },
+  { id: "reliability", labelKey: "core_axis_reliability", color: "#c084fc", icon: Repeat },
+  { id: "temperament", labelKey: "core_axis_temperament", color: "#fbbf24", icon: Sparkles },
 ];
 
 export const TRAIT_CATALOG: CharacterTrait[] = [
   // Rigor & evidence
-  { id: "evidence-first", axis: "rigor", label: "Evidence-first", count: 47, icon: Microscope, blurb: "No claim without a citation — file:line, source link, clause ref.", directive: "Cite evidence for every claim; never assert without a source." },
-  { id: "states-confidence", axis: "rigor", label: "States confidence", count: 41, icon: Gauge, blurb: "Labels high/med/low confidence; separates observation from interpretation.", directive: "State confidence explicitly and separate fact from interpretation and speculation." },
-  { id: "baseline-anchor", axis: "rigor", label: "Anchors to a baseline", count: 31, icon: Anchor, blurb: "A number without a comparison basis is decoration — compares vs prior/known-good.", directive: "Anchor every metric to a baseline or prior period; never present a bare number." },
-  { id: "conservative", axis: "rigor", label: "Conservative when uncertain", count: 9, icon: Shield, blurb: "Rounds to the safe side — a false positive beats a silent miss.", directive: "When uncertain, err to the cautious side; a false alarm is cheaper than a silent miss." },
+  { id: "evidence-first", axis: "rigor", labelKey: "core_trait_evidence_first", count: 47, icon: Microscope, blurbKey: "core_trait_evidence_first_blurb", directive: "Cite evidence for every claim; never assert without a source." },
+  { id: "states-confidence", axis: "rigor", labelKey: "core_trait_states_confidence", count: 41, icon: Gauge, blurbKey: "core_trait_states_confidence_blurb", directive: "State confidence explicitly and separate fact from interpretation and speculation." },
+  { id: "baseline-anchor", axis: "rigor", labelKey: "core_trait_baseline_anchor", count: 31, icon: Anchor, blurbKey: "core_trait_baseline_anchor_blurb", directive: "Anchor every metric to a baseline or prior period; never present a bare number." },
+  { id: "conservative", axis: "rigor", labelKey: "core_trait_conservative", count: 9, icon: Shield, blurbKey: "core_trait_conservative_blurb", directive: "When uncertain, err to the cautious side; a false alarm is cheaper than a silent miss." },
   // Autonomy & deference
-  { id: "escalates", axis: "autonomy", label: "Escalates on ambiguity", count: 66, icon: Siren, blurb: "When uncertain, parks for review or asks — never guesses. The corpus's most common trait.", directive: "When uncertain or ambiguous, escalate or ask rather than guess." },
-  { id: "human-closure", axis: "autonomy", label: "Human owns closure", count: 39, icon: UserCheck, blurb: "Never sends, commits, or publishes without an explicit human gate.", directive: "Never send, commit, or publish without explicit human approval." },
-  { id: "no-destructive", axis: "autonomy", label: "No auto-destructive acts", count: 21, icon: Lock, blurb: "Draft/queue/confirm first; read-only unless granted; no auto-delete or rollback.", directive: "Never take destructive or irreversible actions automatically — draft, queue, and confirm first." },
-  { id: "tiered-autonomy", axis: "autonomy", label: "Tiered autonomy", count: 10, icon: Layers, blurb: "Safe fixes auto-apply; risky ones route to review; earns more autonomy over time.", directive: "Auto-apply safe changes; route risky ones to review." },
+  { id: "escalates", axis: "autonomy", labelKey: "core_trait_escalates", count: 66, icon: Siren, blurbKey: "core_trait_escalates_blurb", directive: "When uncertain or ambiguous, escalate or ask rather than guess." },
+  { id: "human-closure", axis: "autonomy", labelKey: "core_trait_human_closure", count: 39, icon: UserCheck, blurbKey: "core_trait_human_closure_blurb", directive: "Never send, commit, or publish without explicit human approval." },
+  { id: "no-destructive", axis: "autonomy", labelKey: "core_trait_no_destructive", count: 21, icon: Lock, blurbKey: "core_trait_no_destructive_blurb", directive: "Never take destructive or irreversible actions automatically — draft, queue, and confirm first." },
+  { id: "tiered-autonomy", axis: "autonomy", labelKey: "core_trait_tiered_autonomy", count: 10, icon: Layers, blurbKey: "core_trait_tiered_autonomy_blurb", directive: "Auto-apply safe changes; route risky ones to review." },
   // Communication
-  { id: "terse", axis: "communication", label: "Terse", count: 48, icon: Minimize2, blurb: "Signal over volume, no padding — a quiet week gets a short briefing.", directive: "Be terse — signal over volume, no padding; a quiet period gets a short note." },
-  { id: "no-hype", axis: "communication", label: "No-hype voice", count: 40, icon: VolumeX, blurb: "Zero hype, zero hedging, numbers-led — no marketing softening.", directive: "Write plainly — no hype, no hedging, numbers-led." },
-  { id: "structured", axis: "communication", label: "Structured format", count: 40, icon: ListTree, blurb: "One template per type; numbered findings; grouped by severity/owner.", directive: "Use a consistent structured format — numbered, grouped by severity or owner." },
-  { id: "actionable", axis: "communication", label: "Actionable", count: 18, icon: Zap, blurb: "Decision-ready — every item ends in a concrete next step.", directive: "Make every output actionable — each item ends in a concrete next step." },
+  { id: "terse", axis: "communication", labelKey: "core_trait_terse", count: 48, icon: Minimize2, blurbKey: "core_trait_terse_blurb", directive: "Be terse — signal over volume, no padding; a quiet period gets a short note." },
+  { id: "no-hype", axis: "communication", labelKey: "core_trait_no_hype", count: 40, icon: VolumeX, blurbKey: "core_trait_no_hype_blurb", directive: "Write plainly — no hype, no hedging, numbers-led." },
+  { id: "structured", axis: "communication", labelKey: "core_trait_structured", count: 40, icon: ListTree, blurbKey: "core_trait_structured_blurb", directive: "Use a consistent structured format — numbered, grouped by severity or owner." },
+  { id: "actionable", axis: "communication", labelKey: "core_trait_actionable", count: 18, icon: Zap, blurbKey: "core_trait_actionable_blurb", directive: "Make every output actionable — each item ends in a concrete next step." },
   // Reliability & ops
-  { id: "idempotent", axis: "reliability", label: "Idempotent", count: 46, icon: Repeat, blurb: "Dedupe keys on everything; never lose an event, never process one twice.", directive: "Be idempotent — dedupe on stable keys; never process the same item twice." },
-  { id: "reports-gaps", axis: "reliability", label: "Reports gaps", count: 23, icon: Flag, blurb: "A failed check is itself a finding; report partial coverage, never silently skip.", directive: "Report gaps and partial coverage explicitly; a failed check is itself a finding." },
-  { id: "single-truth", axis: "reliability", label: "Single source of truth", count: 22, icon: Database, blurb: "One system of record; other views mirror it, never fork.", directive: "Treat one system as the source of truth; other views mirror it, never fork it." },
-  { id: "silent-when-healthy", axis: "reliability", label: "Silence when healthy", count: 10, icon: BellOff, blurb: "Within-normal gets no message; one alert per incident per window.", directive: "Stay silent when everything is within normal; alert only on genuine thresholds, once per incident." },
+  { id: "idempotent", axis: "reliability", labelKey: "core_trait_idempotent", count: 46, icon: Repeat, blurbKey: "core_trait_idempotent_blurb", directive: "Be idempotent — dedupe on stable keys; never process the same item twice." },
+  { id: "reports-gaps", axis: "reliability", labelKey: "core_trait_reports_gaps", count: 23, icon: Flag, blurbKey: "core_trait_reports_gaps_blurb", directive: "Report gaps and partial coverage explicitly; a failed check is itself a finding." },
+  { id: "single-truth", axis: "reliability", labelKey: "core_trait_single_truth", count: 22, icon: Database, blurbKey: "core_trait_single_truth_blurb", directive: "Treat one system as the source of truth; other views mirror it, never fork it." },
+  { id: "silent-when-healthy", axis: "reliability", labelKey: "core_trait_silent_when_healthy", count: 10, icon: BellOff, blurbKey: "core_trait_silent_when_healthy_blurb", directive: "Stay silent when everything is within normal; alert only on genuine thresholds, once per incident." },
   // Temperament & drive
-  { id: "learns", axis: "temperament", label: "Learns from feedback", count: 19, icon: GraduationCap, blurb: "Corrections compound; adapts cadence and output to what worked.", directive: "Learn from corrections — adapt to feedback so mistakes don't repeat." },
-  { id: "quality-gate", axis: "temperament", label: "Quality gate", count: 9, icon: ShieldCheck, blurb: "Blocks on critical findings even at velocity's cost — nothing ships unverified.", directive: "Hold a hard quality gate — block on critical findings even under time pressure." },
-  { id: "challenges", axis: "temperament", label: "Challenges consensus", count: 7, icon: Swords, blurb: "Surfaces tension, pushes back on debt and added risk, blocks when everyone's in a hurry.", directive: "Push back — surface tension and challenge consensus rather than going along." },
-  { id: "ships-fast", axis: "temperament", label: "Ships fast", count: 5, icon: Rocket, blurb: "Perfect is the enemy of shipped — smallest working thing, iterate on reality.", directive: "Favour momentum — ship the smallest working thing and iterate on real feedback." },
+  { id: "learns", axis: "temperament", labelKey: "core_trait_learns", count: 19, icon: GraduationCap, blurbKey: "core_trait_learns_blurb", directive: "Learn from corrections — adapt to feedback so mistakes don't repeat." },
+  { id: "quality-gate", axis: "temperament", labelKey: "core_trait_quality_gate", count: 9, icon: ShieldCheck, blurbKey: "core_trait_quality_gate_blurb", directive: "Hold a hard quality gate — block on critical findings even under time pressure." },
+  { id: "challenges", axis: "temperament", labelKey: "core_trait_challenges", count: 7, icon: Swords, blurbKey: "core_trait_challenges_blurb", directive: "Push back — surface tension and challenge consensus rather than going along." },
+  { id: "ships-fast", axis: "temperament", labelKey: "core_trait_ships_fast", count: 5, icon: Rocket, blurbKey: "core_trait_ships_fast_blurb", directive: "Favour momentum — ship the smallest working thing and iterate on real feedback." },
 ];
 
 export function traitById(id: string): CharacterTrait | undefined {
@@ -95,11 +95,11 @@ export function traitById(id: string): CharacterTrait | undefined {
 }
 
 // -- Conflict styles (temperament in disagreement) ---------------------------
-export const CONFLICT_STYLES: { id: string; label: string; blurb: string; icon: LucideIcon }[] = [
-  { id: "challenger", label: "Challenger", icon: Flame, blurb: "Pushes back and blocks when needed — will not rubber-stamp." },
-  { id: "analyst", label: "Analyst", icon: Scale, blurb: "Lets the evidence settle it — argues from data, not stance." },
-  { id: "pragmatist", label: "Pragmatist", icon: Wrench, blurb: "Finds the workable path — trades perfect for shipped." },
-  { id: "harmonizer", label: "Harmonizer", icon: Handshake, blurb: "Smooths friction and keeps things moving — consensus-seeking." },
+export const CONFLICT_STYLES: { id: string; labelKey: AgentsKey; blurbKey: AgentsKey; icon: LucideIcon }[] = [
+  { id: "challenger", labelKey: "core_conflict_challenger", icon: Flame, blurbKey: "core_conflict_challenger_blurb" },
+  { id: "analyst", labelKey: "core_conflict_analyst", icon: Scale, blurbKey: "core_conflict_analyst_blurb" },
+  { id: "pragmatist", labelKey: "core_conflict_pragmatist", icon: Wrench, blurbKey: "core_conflict_pragmatist_blurb" },
+  { id: "harmonizer", labelKey: "core_conflict_harmonizer", icon: Handshake, blurbKey: "core_conflict_harmonizer_blurb" },
 ];
 
 export const CONFLICT_DIRECTIVE: Record<string, string> = {
@@ -138,10 +138,10 @@ export const ARCHETYPE_TRAITS: Record<string, string[]> = {
  *  `MODEL_ICON` map and the prompt word in a ternary inside usePersonaCore, so
  *  the same three tiers were written out in three files and a fourth tier would
  *  have had to be added to all three (with only this one failing a test). */
-export const MODEL_TIERS: { id: ModelTier; label: string; blurb: string; icon: LucideIcon; promptWord: string; relativeCost: number }[] = [
-  { id: "haiku", label: "Haiku", icon: Feather, promptWord: "Haiku (fast)", relativeCost: 1, blurb: "Fastest & cheapest — great for high-volume, well-scoped work" },
-  { id: "sonnet", label: "Sonnet", icon: Sparkles, promptWord: "Sonnet (balanced)", relativeCost: 3, blurb: "The everyday default — strong reasoning at moderate cost" },
-  { id: "opus", label: "Opus", icon: Brain, promptWord: "Opus (max reasoning)", relativeCost: 5, blurb: "Deepest reasoning for hard, high-stakes work" },
+export const MODEL_TIERS: { id: ModelTier; label: string; blurbKey: AgentsKey; icon: LucideIcon; promptWord: string; relativeCost: number }[] = [
+  { id: "haiku", label: "Haiku", icon: Feather, promptWord: "Haiku (fast)", relativeCost: 1, blurbKey: "core_model_haiku_blurb" },
+  { id: "sonnet", label: "Sonnet", icon: Sparkles, promptWord: "Sonnet (balanced)", relativeCost: 3, blurbKey: "core_model_sonnet_blurb" },
+  { id: "opus", label: "Opus", icon: Brain, promptWord: "Opus (max reasoning)", relativeCost: 5, blurbKey: "core_model_opus_blurb" },
 ];
 
 export function modelTier(id: ModelTier) {
@@ -156,12 +156,12 @@ export function modelTier(id: ModelTier) {
  *  fifth level added to modelCatalog would simply never have appeared in this
  *  modal. The app-wide English label for `xhigh` is now "Max" — this is that
  *  key's first real call site, and it had been left holding the raw id. */
-const EFFORT_BLURBS: Record<EffortLevel, string> = {
-  low: "Minimal deliberation — quickest, cheapest responses",
-  medium: "Balanced reasoning — the default",
-  high: "Extended reasoning for tricky problems",
-  xhigh: "Maximum reasoning depth — slowest, most thorough",
+const EFFORT_BLURB_KEYS: Record<EffortLevel, AgentsKey> = {
+  low: "core_effort_low_blurb",
+  medium: "core_effort_medium_blurb",
+  high: "core_effort_high_blurb",
+  xhigh: "core_effort_xhigh_blurb",
 };
 
-export const EFFORT_TIERS: { id: EffortLevel; labelKey: EffortOption["labelKey"]; blurb: string }[] =
-  EFFORT_OPTIONS.map((o) => ({ id: o.id, labelKey: o.labelKey, blurb: EFFORT_BLURBS[o.id] }));
+export const EFFORT_TIERS: { id: EffortLevel; labelKey: EffortOption["labelKey"]; blurbKey: AgentsKey }[] =
+  EFFORT_OPTIONS.map((o) => ({ id: o.id, labelKey: o.labelKey, blurbKey: EFFORT_BLURB_KEYS[o.id] }));
