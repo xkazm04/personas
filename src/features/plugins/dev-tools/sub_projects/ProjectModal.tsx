@@ -200,12 +200,11 @@ export function ProjectModal({
     if (isEdit && editProject) {
       // `data` carries `path` too, but onUpdate's param omits it — the extra
       // key is harmless for a non-literal argument.
-      try {
-        await onUpdate(editProject.id, data);
-      } catch {
-        // The store already toasted; staying open keeps the typed edits.
-        return;
-      }
+      // The store reports and toasts the failure, then rethrows so callers
+      // know it did not land; here that only decides whether to stay open
+      // (keeping the typed edits).
+      const updated = await onUpdate(editProject.id, data).then(() => true, () => false);
+      if (!updated) return;
       // Only a real switch appends a version; an unread preset (the read
       // failed) is never overwritten by the form's default.
       if (loadedPreset !== null && preset !== loadedPreset) {

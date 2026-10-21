@@ -9,7 +9,9 @@ const columns: TableColumn<Row>[] = [
   { key: 'id', label: 'Id', width: '1fr', render: (r) => r.id },
 ];
 
-function table(extra: { ariaLabel?: string; rowHeight?: number; tableId?: string } = {}) {
+function table({ rowHeight = 0, ...extra }: { ariaLabel?: string; rowHeight?: number; tableId?: string } = {}) {
+  // rowHeight 0 = unwindowed, which is what a two-row fixture wants; the
+  // virtualized case passes a real height.
   return (
     <UnifiedTable<Row>
       columns={columns}
@@ -17,6 +19,7 @@ function table(extra: { ariaLabel?: string; rowHeight?: number; tableId?: string
       getRowKey={(r) => r.id}
       defaultSortKey="name"
       defaultSortDir="asc"
+      rowHeight={rowHeight}
       {...extra}
     />
   );
