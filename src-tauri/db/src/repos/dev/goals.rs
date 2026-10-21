@@ -174,7 +174,7 @@ pub fn update_goal(
     kpi_id: Option<Option<&str>>,
 ) -> Result<DevGoal, AppError> {
     timed_query!("dev_goals", "dev_goals::update_goal", {
-        get_goal_by_id(pool, id)?;
+        let existing = get_goal_by_id(pool, id)?;
         // Same door as `create_goal`: legacy aliases fold, unknown values are
         // refused here with a readable message instead of at the column CHECK.
         let status = match status {
@@ -182,11 +182,25 @@ pub fn update_goal(
             None => None,
         };
         let now = chrono::Utc::now().to_rfc3339();
+        // The editor writes `status` alone, so the completion stamp the Progress
+        // "Recent" window filters on must follow the status here too (the progress
+        // path stamps its own). Entering `done` without a stamp stamps now; leaving
+        // the done/awaiting pair clears it. An explicit `completed_at` wins.
+        let completed_at = match (completed_at, status) {
+            (Some(explicit), _) => Some(explicit),
+            (None, Some("done")) if existing.completed_at.is_none() => Some(Some(now.as_str())),
+            (None, Some(s))
+                if s != "done" && s != "awaiting_acceptance" && existing.completed_at.is_some() =>
+            {
+                Some(None)
+            }
+            (None, _) => None,
+        };
         let conn = pool.get()?;
 
         let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
         let mut param_idx = 2u32;
-        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
+        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now.clone())];
 
         push_field_param!(
             title.map(|s| s.to_string()),
@@ -1108,6 +1122,45 @@ pub fn mark_goal_in_progress(pool: &DbPool, goal_id: &str) -> Result<(), AppErro
         None,
     )?;
     Ok(())
+}
+
+#[cfg(test)]
+mod completion_stamp_tests {
+    use super::*;
+    use crate::init_test_db;
+    use crate::repos::dev::projects::create_project;
+
+    fn set_status(pool: &DbPool, id: &str, status: &str) -> DevGoal {
+        update_goal(
+            pool,
+            id,
+            None,
+            None,
+            Some(status),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap()
+    }
+
+    /// The editor writes status only; completed_at must follow it.
+    #[test]
+    fn editor_done_stamps_and_leaving_done_clears() {
+        let pool = init_test_db().unwrap();
+        let project = create_project(&pool, "P", "/tmp/p", None, None, None, None, None).unwrap();
+        let goal = create_goal(&pool, &project.id, "G", None, None, None, None, None).unwrap();
+        assert!(goal.completed_at.is_none());
+
+        let done = set_status(&pool, &goal.id, "done");
+        assert!(done.completed_at.is_some());
+
+        let reopened = set_status(&pool, &goal.id, "in-progress");
+        assert!(reopened.completed_at.is_none());
+    }
 }
 
 #[cfg(test)]
