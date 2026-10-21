@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { extractMessage } from '@/lib/silentCatch';
 
 export type ValidationState = 'idle' | 'validating' | 'valid' | 'error';
 
@@ -83,7 +84,7 @@ export function useFieldValidation({
         } catch (err) {
           if (signal.aborted) return;
           setState('error');
-          setError(err instanceof Error ? err.message : String(err));
+          setError(extractMessage(err));
         }
       }, debounceMs);
     },

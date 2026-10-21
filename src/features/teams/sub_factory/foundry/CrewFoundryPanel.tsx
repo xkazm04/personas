@@ -16,7 +16,7 @@ import {
 } from '@/api/devTools/crewFoundry';
 import { AthenaComposedBadge } from '@/features/shared/components/feedback/AthenaComposedBadge';
 import { kpiTrack } from '@/features/teams/sub_kpis/kpiMath';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, extractMessage } from '@/lib/silentCatch';
 
 import { INK } from '../passport/passportInk';
 import { derivePassportFromMetadata } from '../passport/passportDerive';
@@ -120,7 +120,7 @@ export function CrewFoundryPanel({ data }: { data: FactoryL2Data }) {
         data.reloadMap(); // refetch the project row (team_id is now wired)
       })
       .catch((e: unknown) => {
-        setForge({ kind: 'failed', error: e instanceof Error ? e.message : String(e) });
+        setForge({ kind: 'failed', error: extractMessage(e) });
       });
   }, [project, compiled, data]);
 
