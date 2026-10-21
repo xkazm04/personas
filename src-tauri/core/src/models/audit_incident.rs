@@ -59,6 +59,19 @@ impl IncidentStatus {
             _ => None,
         }
     }
+
+    /// The non-terminal ("open") set: everything except `resolved`/`dismissed`.
+    /// One definition for every backend read that asks "is this still open?"
+    /// (the portfolio count and the UI use the same three).
+    pub fn is_active(self) -> bool {
+        matches!(
+            self,
+            IncidentStatus::Open | IncidentStatus::Acknowledged | IncidentStatus::InProgress
+        )
+    }
+
+    /// SQL `IN (...)` body for [`IncidentStatus::is_active`]; pinned to it by a test.
+    pub const ACTIVE_SQL_LIST: &'static str = "'open','acknowledged','in_progress'";
 }
 
 /// Severity scale — normalized across all source streams.
@@ -208,6 +221,25 @@ mod incident_vocab_tests {
             .ok()
             .and_then(|j| j.as_str().map(str::to_owned))
             .unwrap_or_default()
+    }
+
+    /// `ACTIVE_SQL_LIST` must be exactly the `is_active` variants.
+    #[test]
+    fn active_sql_list_matches_is_active() {
+        let all = [
+            IncidentStatus::Open,
+            IncidentStatus::Acknowledged,
+            IncidentStatus::InProgress,
+            IncidentStatus::Resolved,
+            IncidentStatus::Dismissed,
+        ];
+        let listed: Vec<&str> = IncidentStatus::ACTIVE_SQL_LIST
+            .split(',')
+            .map(|t| t.trim_matches('\''))
+            .collect();
+        for v in all {
+            assert_eq!(listed.contains(&v.as_str()), v.is_active(), "{v:?}");
+        }
     }
 
     /// The comment on `IncidentStatus` records the drift this pins: with

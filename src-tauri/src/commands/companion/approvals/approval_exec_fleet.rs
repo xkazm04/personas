@@ -424,9 +424,12 @@ pub(crate) fn gather_daily_brief_digest(db: &crate::db::DbPool, hours: i64) -> S
         );
         let (open_total, open_sev): (i64, i64) = conn
             .query_row(
-                "SELECT COUNT(*),
-                        SUM(CASE WHEN severity IN ('high','critical') THEN 1 ELSE 0 END)
-                 FROM audit_incidents WHERE status IN ('open','acknowledged')",
+                &format!(
+                    "SELECT COUNT(*),
+                            SUM(CASE WHEN severity IN ('high','critical') THEN 1 ELSE 0 END)
+                     FROM audit_incidents WHERE status IN ({})",
+                    personas_core::models::IncidentStatus::ACTIVE_SQL_LIST
+                ),
                 [],
                 |r| Ok((r.get::<_, i64>(0)?, r.get::<_, i64>(1).unwrap_or(0))),
             )
@@ -437,16 +440,17 @@ pub(crate) fn gather_daily_brief_digest(db: &crate::db::DbPool, hours: i64) -> S
                     "\n### Incidents\n- {total} new this window ({sev} high/critical) · {open_total} open total ({open_sev} high/critical)\n"
                 ));
                 if open_total > 0 {
-                    if let Ok(mut stmt) = conn.prepare(
+                    if let Ok(mut stmt) = conn.prepare(&format!(
                         "SELECT COALESCE(NULLIF(title,''),'(untitled)'), COALESCE(severity,'low'), status
                          FROM audit_incidents
-                         WHERE status IN ('open','acknowledged')
+                         WHERE status IN ({})
                          ORDER BY CASE severity
                                     WHEN 'critical' THEN 0 WHEN 'high' THEN 1
                                     WHEN 'medium' THEN 2 ELSE 3 END,
                                   created_at DESC
                          LIMIT 5",
-                    ) {
+                        personas_core::models::IncidentStatus::ACTIVE_SQL_LIST
+                    )) {
                         if let Ok(rows) = stmt.query_map([], |r| {
                             Ok((
                                 r.get::<_, String>(0)?,
@@ -2584,5 +2588,34 @@ mod fleet_plan_tests {
             FLEET_PLAN_OUTCOME_CONFIRMED
         );
         assert!(fleet_plan_audit_rationale(&intent, &plan).contains("1 session(s)"));
+    }
+}
+
+#[cfg(test)]
+mod daily_brief_incident_tests {
+    use super::gather_daily_brief_digest;
+
+    /// An incident someone is actively working (`in_progress`) is still open:
+    /// the brief must count it, as the portfolio count and the UI do.
+    #[test]
+    fn brief_counts_in_progress_incidents_as_open() {
+        let pool = crate::db::init_test_db().expect("test db");
+        {
+            let conn = crate::db::PoolExt::conn(&pool, "test:brief_in_progress").unwrap();
+            conn.execute(
+                "INSERT INTO audit_incidents (id, source_table, source_id, dedup_key, severity,
+                    kind, title, status, created_at)
+                 VALUES ('inc-1', 't', 's', 't:s', 'high', 'test', 'Being worked', 'in_progress',
+                    datetime('now'))",
+                [],
+            )
+            .unwrap();
+        }
+        let digest = gather_daily_brief_digest(&pool, 24);
+        assert!(
+            digest.contains("1 open total (1 high/critical)"),
+            "{digest}"
+        );
+        assert!(digest.contains("Being worked"), "{digest}");
     }
 }
