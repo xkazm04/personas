@@ -62,29 +62,87 @@ pub async fn run(
     timeout: Duration,
 ) -> Result<BunOutput, AppError> {
     let bun = resolve_bun()?;
-    let mut cmd = tokio::process::Command::new(&bun);
+    run_binary(&bun, args, cwd, timeout).await
+}
+
+/// `run` against an explicit binary (the seam the timeout test drives).
+async fn run_binary(
+    bun: &std::path::Path,
+    args: &[&str],
+    cwd: &std::path::Path,
+    timeout: Duration,
+) -> Result<BunOutput, AppError> {
+    let mut cmd = tokio::process::Command::new(bun);
     cmd.args(args)
         .current_dir(cwd)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
     hide_window(&mut cmd);
-    // A timed-out build must stop, not detach and keep compiling.
+    // A timed-out build must stop, not detach and keep compiling. kill_on_drop
+    // reaches only the direct child, so `bun x create-next-app` would leave its
+    // own install child writing into the half-made project; the timeout arm
+    // below kills the whole tree, and on Unix the child leads its own group so
+    // `kill_tree`'s group signal has something to reach.
     cmd.kill_on_drop(true);
+    #[cfg(unix)]
+    cmd.process_group(0);
 
-    let child = cmd
+    let mut child = cmd
         .spawn()
         .map_err(|e| AppError::Internal(format!("spawn bun {args:?}: {e}")))?;
-    let output = tokio::time::timeout(timeout, child.wait_with_output())
-        .await
-        .map_err(|_| AppError::Internal(format!("bun {args:?} timed out after {timeout:?}")))?
-        .map_err(|e| AppError::Internal(format!("bun wait: {e}")))?;
+    let pid = child.id();
+    // The child stays OWNED here (not moved into `wait_with_output`) so that on
+    // timeout it is still alive when the tree kill runs: dropping it first would
+    // kill the root and sever the parent links `taskkill /T` walks.
+    let mut stdout_pipe = child.stdout.take();
+    let mut stderr_pipe = child.stderr.take();
+    let collect = async {
+        let (out, err, status) = tokio::join!(
+            read_pipe(stdout_pipe.as_mut()),
+            read_pipe(stderr_pipe.as_mut()),
+            child.wait()
+        );
+        status.map(|status| (status, out, err))
+    };
+    let (status, stdout, stderr) = match tokio::time::timeout(timeout, collect).await {
+        Ok(waited) => waited.map_err(|e| AppError::Internal(format!("bun wait: {e}")))?,
+        Err(_) => {
+            if let Some(pid) = pid {
+                kill_tree_blocking(pid).await;
+            }
+            return Err(AppError::Internal(format!(
+                "bun {args:?} timed out after {timeout:?}"
+            )));
+        }
+    };
 
     Ok(BunOutput {
-        success: output.status.success(),
-        stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
-        stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
+        success: status.success(),
+        stdout: String::from_utf8_lossy(&stdout).into_owned(),
+        stderr: String::from_utf8_lossy(&stderr).into_owned(),
     })
+}
+
+async fn read_pipe<R: tokio::io::AsyncRead + Unpin>(pipe: Option<&mut R>) -> Vec<u8> {
+    use tokio::io::AsyncReadExt;
+    let mut buf = Vec::new();
+    if let Some(pipe) = pipe {
+        // A read error ends the capture; the exit status is the real outcome.
+        let _ = pipe.read_to_end(&mut buf).await;
+    }
+    buf
+}
+
+/// Kill a timed-out run's whole process tree off the async worker (the kill
+/// command is a blocking subprocess). A failed kill is logged, never fatal: the
+/// timeout error the caller gets is the real outcome.
+async fn kill_tree_blocking(pid: u32) {
+    match tokio::task::spawn_blocking(move || super::devserver::kill_tree(pid)).await {
+        Ok(Ok(())) => {}
+        Ok(Err(e)) => tracing::warn!(pid, error = %e, "bun timeout: tree kill failed"),
+        Err(e) => tracing::warn!(pid, error = %e, "bun timeout: tree kill task did not finish"),
+    }
 }
 
 /// Hide the console window on Windows for a spawned bun process (same rationale
@@ -98,6 +156,34 @@ pub(crate) fn hide_window(cmd: &mut tokio::process::Command) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(windows)]
+    #[tokio::test]
+    async fn timeout_kills_the_grandchildren_too() {
+        // The fake "bun" starts a detached grandchild that writes a marker file
+        // 3 s later, then idles. A root-only kill leaves the grandchild to write it.
+        let dir = tempfile::tempdir().unwrap();
+        let marker = dir.path().join("marker.txt");
+        let script = dir.path().join("fakebun.cmd");
+        std::fs::write(
+            &script,
+            format!(
+                "@echo off
+start /b cmd /c \"ping -n 4 127.0.0.1 >nul & echo x> \"{}\"\"
+ping -n 30 127.0.0.1 >nul
+",
+                marker.display()
+            ),
+        )
+        .unwrap();
+        let res = run_binary(&script, &[], dir.path(), Duration::from_millis(1000)).await;
+        assert!(res.is_err(), "run must time out");
+        tokio::time::sleep(Duration::from_secs(6)).await;
+        assert!(
+            !marker.exists(),
+            "grandchild survived the timeout and kept writing"
+        );
+    }
 
     #[test]
     fn resolve_bun_honors_missing_override_gracefully() {
