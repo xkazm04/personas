@@ -305,7 +305,7 @@ mod tests {
     fn quality_score_renormalises_when_no_run_is_decided() {
         let pool = init_test_db().unwrap();
         let review_id = seed(&pool, &["running"]).unwrap();
-        let conn = pool.get().unwrap();
+        let conn = crate::PoolExt::conn(&pool, "test:template_feedback_scores").unwrap();
         conn.execute(
             "UPDATE persona_design_reviews SET structural_score = 100, semantic_score = 100 WHERE id = ?1",
             params![review_id],

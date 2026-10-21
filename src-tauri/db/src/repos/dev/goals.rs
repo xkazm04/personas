@@ -1130,23 +1130,6 @@ mod completion_stamp_tests {
     use crate::init_test_db;
     use crate::repos::dev::projects::create_project;
 
-    fn set_status(pool: &DbPool, id: &str, status: &str) -> DevGoal {
-        update_goal(
-            pool,
-            id,
-            None,
-            None,
-            Some(status),
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        )
-        .unwrap()
-    }
-
     /// The editor writes status only; completed_at must follow it.
     #[test]
     fn editor_done_stamps_and_leaving_done_clears() {
@@ -1155,10 +1138,36 @@ mod completion_stamp_tests {
         let goal = create_goal(&pool, &project.id, "G", None, None, None, None, None).unwrap();
         assert!(goal.completed_at.is_none());
 
-        let done = set_status(&pool, &goal.id, "done");
+        let done = update_goal(
+            &pool,
+            &goal.id,
+            None,
+            None,
+            Some("done"),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
         assert!(done.completed_at.is_some());
 
-        let reopened = set_status(&pool, &goal.id, "in-progress");
+        let reopened = update_goal(
+            &pool,
+            &goal.id,
+            None,
+            None,
+            Some("in-progress"),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
         assert!(reopened.completed_at.is_none());
     }
 }

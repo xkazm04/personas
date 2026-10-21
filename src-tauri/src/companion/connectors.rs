@@ -379,7 +379,7 @@ mod replace_all_tests {
     fn replace_all_surfaces_a_failed_insert_and_rolls_back() {
         let pool = crate::db::init_test_user_db().unwrap();
         replace_all(&pool, &["github".to_string()]).unwrap();
-        pool.get()
+        crate::db::PoolExt::conn(&pool, "test:connectors_refuse_slack")
             .unwrap()
             .execute_batch(
                 "CREATE TRIGGER refuse_slack BEFORE INSERT ON companion_active_connector
