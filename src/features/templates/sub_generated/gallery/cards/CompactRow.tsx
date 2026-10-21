@@ -1,3 +1,4 @@
+import { onRowActivateKey } from './rowActivation';
 import {
   Download,
   Sparkles,
@@ -33,6 +34,9 @@ export function CompactRow({
   return (
     <div
       onClick={() => openModal({ type: 'detail', review })}
+      onKeyDown={onRowActivateKey(() => openModal({ type: 'detail', review }))}
+      tabIndex={0}
+      role="button"
       className="group flex items-center border-b border-primary/5 hover:bg-secondary/30 cursor-pointer transition-colors px-4 py-1.5"
       data-testid={`template-row-${review.id}`}
     >

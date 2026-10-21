@@ -1,3 +1,4 @@
+import { onRowActivateKey } from './rowActivation';
 import { memo, useCallback } from 'react';
 import {
   CheckSquare,
@@ -98,6 +99,10 @@ function ComfortableRowImpl({
     <>
       <div
         onClick={handleToggle}
+        onKeyDown={onRowActivateKey(handleToggle)}
+        tabIndex={0}
+        role="button"
+        aria-expanded={isExpanded}
         className="group flex items-center border-b border-primary/5 hover:bg-secondary/30 cursor-pointer transition-colors"
         data-testid={`template-row-${review.id}`}
       >
