@@ -1886,3 +1886,7 @@
 {"ts":"2026-10-21T17:46:03Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["unsafe-deserialization-off-by-default","archive-extraction-safety"],"deviations":0}
 {"ts":"2026-10-21T17:46:03Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["reading-is-not-running"],"deviations":0}
 {"ts":"2026-10-21T17:46:03Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["license-reach-follows-integration-form"],"deviations":0}
+{"ts":"2026-10-21T17:48:30Z","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":["indeterminate-closure-on-interruption","bounded-projection-of-external-work"],"deviations":1}
+{"ts":"2026-10-21T17:48:30Z","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":["indeterminate-closure-on-interruption"],"deviations":1}
+{"ts":"2026-10-21T17:48:30Z","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":["bounded-projection-of-external-work"],"deviations":1}
+{"ts":"2026-10-21T17:48:30Z","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":["nested-run-is-not-its-parent"],"deviations":0}

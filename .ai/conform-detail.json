@@ -33348,6 +33348,59 @@
         }
       ],
       "registryProposal": "lexical resonance: 'licensing' here means SaaS plan tier, not a dependency licence; the matcher should not let licence vocabulary alone pull supply-chain onto connector catalogs"
+    },
+    "5d4b913e-4384-49d7-8854-5c7ddac7e19e/agent-runtime-assembly": {
+      "context": "commands-design",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:48:30.000Z",
+      "worker": "ff8a116c-2acb-4ba1-9216-b4c79c720fae",
+      "techniques": [
+        {
+          "technique": "indeterminate-closure-on-interruption",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/resources/n8n_sessions.rs:214 the startup sweep includes SessionStatus::Interrupted and writes Failed + a prose error; the SessionStatus vocabulary (src-tauri/core/src/models/n8n_session.rs:13) has Interrupted but recovery never preserves it, so the outcome-unknown status exists and is overwritten"
+        },
+        {
+          "technique": "bounded-projection-of-external-work",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/design/n8n_transform/cli_runner.rs:894 the transform is a local CLI child spawned and drained by this process, not remote work behind a handle that outlives a turn"
+        }
+      ]
+    },
+    "3effd422-2610-4c8a-bc02-53aceafd827c/agent-runtime-assembly": {
+      "context": "commands-companion",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:48:30.000Z",
+      "worker": "ff8a116c-2acb-4ba1-9216-b4c79c720fae",
+      "techniques": [
+        {
+          "technique": "indeterminate-closure-on-interruption",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/jobs/mod.rs:189 the restart cause is encoded as a suffix inside a failure message instead of a first-class indeterminate status; the job vocabulary has no such status"
+        }
+      ]
+    },
+    "468953eb-0204-4013-b366-9357b2161138/agent-runtime-assembly": {
+      "context": "core",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:48:30.000Z",
+      "worker": "ff8a116c-2acb-4ba1-9216-b4c79c720fae",
+      "techniques": [
+        {
+          "technique": "bounded-projection-of-external-work",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/cloud/runner.rs:57 run_cloud_execution takes the cloud_execution_id as an argument from memory; the rule 'persist the remote handle and lease before returning, poll from a background runtime outside the run with the store as truth' is unmet - polling is host-side (not model-visible), but the handle is not durable"
+        }
+      ]
     }
   }
 }
