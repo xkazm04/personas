@@ -29240,7 +29240,11 @@
           "revision": 26,
           "changedAt": "2026-10-06",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/core/src/models/output_assertion.rs:224 assertion_tokens_round_trip iterates the hand-kept TOKENS list (and :255 hand-lists 6 variants) instead of the enum, so a new AssertionType given an as_token arm but no parse_token/TOKENS entry stays green while the row mapper (src-tauri/db/src/repos/execution/assertions.rs:98) refuses every stored row of it",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:5521806124d93882",
+          "evaluatedRevision": 26
         },
         {
           "subject": "mcp-tools",
@@ -37211,7 +37215,11 @@
           "revision": 26,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/output_assertions.rs:486 the critical-severity branch that downgrades an execution (the branch output_assertion.rs:76-78 records as having silently never fired) is reached by no test: the module tests (:594) drive only the pure evaluators, though the crate already uses the migrated template (src-tauri/engine/src/active_persona_cap.rs:195)",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:5521806124d93882",
+          "evaluatedRevision": 26
         },
         {
           "subject": "voice-io",

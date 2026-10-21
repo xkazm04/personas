@@ -17846,87 +17846,95 @@
       "context": "recipe-build-models",
       "subject": "test-harness",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T16:43:32.807Z",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:15:42.608Z",
+      "worker": "0373b7ef-b5c9-4a36-8518-e536fbf77e53",
       "techniques": [
         {
           "technique": "negative-control-tests",
-          "verdict": "conformant",
-          "evidence": "src-tauri/core/src/models/output_assertion.rs:244 Rejects unknown token variants explicitly rather than coercing to default or silent variants."
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/output_assertion.rs:224 a correspondence probe whose population is the list it checks: the mutation \"add a variant, omit it from parse_token+TOKENS\" leaves all three tests green"
         },
         {
           "technique": "unreached-decisions-pin-nothing",
-          "verdict": "conformant",
-          "evidence": "src-tauri/core/src/models/trigger.rs:894 Each assertion exercises a distinct condition and reaches the exact capability priority branch claimed."
+          "verdict": "realized",
+          "evidence": "src-tauri/core/src/models/trigger.rs:1040 every from_raw arm plus the Unknown fallback has its own test, so no arm answers for another; recipe.rs:738 pairs the valid control with each mutated-field refusal (:773)"
         },
         {
           "technique": "fixture-economics",
           "verdict": "conformant",
-          "evidence": "src-tauri/core/src/models/recipe.rs:739 Pure in-memory model instances and factories provide the cheapest fixture tier for validation rules."
+          "evidence": "src-tauri/core/src/models/recipe.rs:739 Pure in-memory model instances and factories provide the cheapest fixture tier for validation rules.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "isolation-lanes",
           "verdict": "conformant",
-          "evidence": "src-tauri/core/src/models/output_assertion.rs:225 In-process pure function testing without shared databases or filesystem side effects."
+          "evidence": "src-tauri/core/src/models/output_assertion.rs:225 In-process pure function testing without shared databases or filesystem side effects.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "approval-snapshots-with-guarded-update",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/recipe.rs:747 Assertions check individual fields and structural validation errors directly without stored approval files."
+          "evidence": "src-tauri/core/src/models/recipe.rs:747 Assertions check individual fields and structural validation errors directly without stored approval files.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "assert-through-the-reader",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/output_assertion.rs:252 Models define internal domain data structures rather than code or snippets emitted for a foreign runtime."
+          "evidence": "src-tauri/core/src/models/output_assertion.rs:252 Models define internal domain data structures rather than code or snippets emitted for a foreign runtime.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "pin-the-call-not-the-name",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/recipe.rs:773 Tests execute validation functions against domain models directly rather than scanning source text."
+          "evidence": "src-tauri/core/src/models/recipe.rs:773 Tests execute validation functions against domain models directly rather than scanning source text.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "suite-partitioning",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 Suite scheduling and lane partitioning are defined in runner configs outside domain model crates."
+          "evidence": "vitest.config.ts:17 Suite scheduling and lane partitioning are defined in runner configs outside domain model crates.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "live-app-harness",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/output_assertion.rs:220 Pure model unit tests execute within cargo test without requiring a running Tauri application."
+          "evidence": "src-tauri/core/src/models/output_assertion.rs:220 Pure model unit tests execute within cargo test without requiring a running Tauri application.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "dynamic-verifier-classes",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/output_assertion.rs:220 Runtime dynamic verifier instrumentation is configured at lane/build level outside model unit tests."
+          "evidence": "src-tauri/core/src/models/output_assertion.rs:220 Runtime dynamic verifier instrumentation is configured at lane/build level outside model unit tests.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "gate-scope-is-not-report-scope",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/output_assertion.rs:220 No scoped coverage report is defined over this isolated model crate."
+          "evidence": "src-tauri/core/src/models/output_assertion.rs:220 No scoped coverage report is defined over this isolated model crate.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "flake-lifecycle",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/output_assertion.rs:220 Deterministic in-memory tests have no timing dependencies or quarantine lifecycle."
+          "evidence": "src-tauri/core/src/models/output_assertion.rs:220 Deterministic in-memory tests have no timing dependencies or quarantine lifecycle.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "far-side-oracle",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/output_assertion.rs:220 Domain models do not interact with unowned third-party external services."
+          "evidence": "src-tauri/core/src/models/output_assertion.rs:220 Domain models do not interact with unowned third-party external services.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "recorded-interaction-fixtures",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/output_assertion.rs:220 No external HTTP or network boundaries exist in core model structs."
+          "evidence": "src-tauri/core/src/models/output_assertion.rs:220 No external HTTP or network boundaries exist in core model structs.",
+          "carriedFrom": "2026-10-12"
         }
       ],
-      "withdrawn": {
-        "worker": "b9065c40-0f9e-46fc-a8a2-b36a03aad8fa",
-        "state": "conformant",
-        "at": "2026-10-12T16:47:28.291204+00:00",
-        "reason": "conformant padded to the evidence floor: one generic anchor (mod tests {, vitest.config.ts:17) reused for 5-6 not-applicable techniques; 9-10 distinct anchors of 12 needed"
-      }
+      "registryProposal": "This context is domain model types, matched on product vocabulary (suite/build/assertion = the user-facing persona Test Suite feature). test-harness only governs it through the in-module #[cfg(test)] blocks; the matcher conflates a product feature NAMED test-suite with the team harness. A strong-confidence pairing on a models context is a technique-shaped resonance, not governance."
     },
     "959baa73-f18f-42c8-8569-466939b9050d/test-harness": {
       "context": "notepad-plan",
@@ -30332,6 +30340,28 @@
       "worker": "aeab75e2-45e7-4efa-9fc6-1272d0c248a9",
       "techniques": [],
       "registryProposal": "lexical resonance: this strong pair (score 1199) is earned by routing/provider vocabulary; the governing subject is model-routing, not prompt-assembly. The matcher could down-weight prompt-assembly where no prompt/template/system-text token appears in the paths."
+    },
+    "6a81750d-fdbf-4518-bae6-689303e1a884/test-harness": {
+      "context": "test-runner-lab",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:15:42.608Z",
+      "worker": "0373b7ef-b5c9-4a36-8518-e536fbf77e53",
+      "techniques": [
+        {
+          "technique": "negative-control-tests",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/output_assertions.rs:398 evaluate_assertions (critical count, failure action, persistence) is a path the ordinary suite never executes, the exact place the technique says a passing suite proves least"
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "realized",
+          "evidence": "src-tauri/engine/src/active_persona_cap.rs:195 init_test_db copies the once-migrated template, so a DB-backed test of evaluate_assertions costs nothing new"
+        }
+      ],
+      "registryProposal": "context-map lists src-tauri/src/engine/circuit_breakers_integration_tests.rs and src-tauri/src/engine/failover.rs, which no longer exist; the governing match leaned partly on those names."
     }
   }
 }

@@ -1,0 +1,97 @@
+{
+ "schema": "conform-run/1",
+ "worker": "0373b7ef-b5c9-4a36-8518-e536fbf77e53",
+ "subject": "test-harness",
+ "evaluatedAt": "2026-10-21T12:15:42.608Z",
+ "pairs": [
+  {
+   "context": "ae80cd74-5beb-4d76-ae0a-16a4b581a2df",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:5521806124d93882",
+   "evaluatedRevision": 26,
+   "evidence": "src-tauri/core/src/models/output_assertion.rs:224 assertion_tokens_round_trip iterates the hand-kept TOKENS list (and :255 hand-lists 6 variants) instead of the enum, so a new AssertionType given an as_token arm but no parse_token/TOKENS entry stays green while the row mapper (src-tauri/db/src/repos/execution/assertions.rs:98) refuses every stored row of it",
+   "techniques": [
+    {
+     "technique": "negative-control-tests",
+     "verdict": "deviation",
+     "evidence": "src-tauri/core/src/models/output_assertion.rs:224 a correspondence probe whose population is the list it checks: the mutation \"add a variant, omit it from parse_token+TOKENS\" leaves all three tests green"
+    },
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "realized",
+     "evidence": "src-tauri/core/src/models/trigger.rs:1040 every from_raw arm plus the Unknown fallback has its own test, so no arm answers for another; recipe.rs:738 pairs the valid control with each mutated-field refusal (:773)"
+    }
+   ],
+   "registryProposal": "This context is domain model types, matched on product vocabulary (suite/build/assertion = the user-facing persona Test Suite feature). test-harness only governs it through the in-module #[cfg(test)] blocks; the matcher conflates a product feature NAMED test-suite with the team harness. A strong-confidence pairing on a models context is a technique-shaped resonance, not governance."
+  },
+  {
+   "context": "6a81750d-fdbf-4518-bae6-689303e1a884",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:5521806124d93882",
+   "evaluatedRevision": 26,
+   "evidence": "src-tauri/engine/src/output_assertions.rs:486 the critical-severity branch that downgrades an execution (the branch output_assertion.rs:76-78 records as having silently never fired) is reached by no test: the module tests (:594) drive only the pure evaluators, though the crate already uses the migrated template (src-tauri/engine/src/active_persona_cap.rs:195)",
+   "techniques": [
+    {
+     "technique": "negative-control-tests",
+     "verdict": "deviation",
+     "evidence": "src-tauri/engine/src/output_assertions.rs:398 evaluate_assertions (critical count, failure action, persistence) is a path the ordinary suite never executes, the exact place the technique says a passing suite proves least"
+    },
+    {
+     "technique": "fixture-economics",
+     "verdict": "realized",
+     "evidence": "src-tauri/engine/src/active_persona_cap.rs:195 init_test_db copies the once-migrated template, so a DB-backed test of evaluate_assertions costs nothing new"
+    }
+   ],
+   "registryProposal": "context-map lists src-tauri/src/engine/circuit_breakers_integration_tests.rs and src-tauri/src/engine/failover.rs, which no longer exist; the governing match leaned partly on those names."
+  }
+ ],
+ "declined": [
+  {
+   "subject": "test-harness",
+   "context": "63a0a6fc-fa9a-453c-943d-4579b83f0ca3",
+   "reason": "stores: read systemStore/themeStore rehydrate + improveActivityStore tests; no deviation found (per-describe resets at src/stores/__tests__/systemStore.rehydrate.test.ts:28-30, membership iterated from ALL_SIDEBAR_SECTIONS/COMPANIONS_PAGES, not hand-lists), but a conformant verdict needs anchors for >=12 of 24 techniques and most are lane-level, not context-level - left unknown rather than under-evidenced"
+  },
+  {
+   "subject": "test-harness",
+   "context": "532bbf10-3fd3-4b57-a8ea-95a957645697",
+   "reason": "stores-slices-overview: personaHealthSlice.bundle/processActivitySlice/networkSlice tests read clean (producer-named successRateSource, enum-derived iteration at src/stores/slices/processActivitySlice.test.ts:17), same evidence-floor problem as stores - unknown"
+  },
+  {
+   "subject": "test-harness",
+   "context": "320d2cea-9761-4233-97c1-ee2eaf4d6c17",
+   "reason": "db-repos-execution: assertions.rs tests are strong (projection prepared against the real schema at src-tauri/db/src/repos/execution/assertions.rs:583, template fixture), but test_suites.rs/circuit_breaker.rs/scheduled_retries.rs carry zero tests and were not judged; partial read - unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-21T12:15:42.608Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "negative-control-tests",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 1,
+   "context": "recipe-build-models"
+  },
+  {
+   "ts": "2026-10-21T12:15:42.608Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "negative-control-tests",
+    "fixture-economics"
+   ],
+   "deviations": 1,
+   "context": "test-runner-lab"
+  }
+ ]
+}
