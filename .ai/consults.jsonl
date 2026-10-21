@@ -1708,3 +1708,6 @@
 {"ts":"2026-10-21T12:23:04Z","bundle":"software-engineering","subjects":["table"],"techniques":[],"deviations":0}
 {"ts":"2026-10-21T12:23:04Z","bundle":"software-engineering","subjects":["table"],"techniques":[],"deviations":0}
 {"ts":"2026-10-21T12:23:04Z","bundle":"software-engineering","subjects":["table"],"techniques":[],"deviations":0}
+{"ts":"2026-10-21T12:22:32Z","bundle":"software-engineering","subjects":["terminal-multiplexing"],"techniques":["keystroke-injection"],"deviations":1}
+{"ts":"2026-10-21T12:22:32Z","bundle":"software-engineering","subjects":["terminal-multiplexing"],"techniques":["keystroke-injection"],"deviations":1}
+{"ts":"2026-10-21T12:22:32Z","bundle":"software-engineering","subjects":["terminal-multiplexing"],"techniques":["keystroke-injection"],"deviations":1}

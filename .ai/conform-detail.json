@@ -2572,14 +2572,14 @@
       "subject": "terminal-multiplexing",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T18:11:06.000Z",
-      "worker": "709f051b-7fb5-41f2-ac67-96bd6a3a54fd",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:22:32.000Z",
+      "worker": "d7fc10b7-5a64-4d64-8bb3-c2296ec93139",
       "techniques": [
         {
           "technique": "keystroke-injection",
           "verdict": "deviation",
-          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:136 payload = pressEnter ? text+CR : text - paste and press are one string, told apart downstream by shape"
+          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:138 paste and press are one concatenated write chosen by a toggle, not two verbs through one notation door"
         }
       ],
       "superseded": [
@@ -2589,6 +2589,13 @@
           "evaluatedAt": "2026-10-06",
           "worker": null,
           "reason": "replaced by 709f051b-7fb5-41f2-ac67-96bd6a3a54fd"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:136 sends a multi-line broadcast with Enter off as raw text and src-tauri/src/commands/fleet/commands.rs:199 routes only newline-terminated payloads through frame_paste, so each internal newline submits a partial prompt; still live 2026-10-16, and src/features/plugins/fleet/__tests__/FleetBroadcastPayload.test.tsx:115 now freezes that unframed payload as the contract",
+          "evaluatedAt": "2026-10-16T18:11:06.000Z",
+          "worker": "709f051b-7fb5-41f2-ac67-96bd6a3a54fd",
+          "reason": "replaced by d7fc10b7-5a64-4d64-8bb3-c2296ec93139"
         }
       ]
     },
@@ -7793,14 +7800,14 @@
       "subject": "terminal-multiplexing",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T18:11:06.000Z",
-      "worker": "709f051b-7fb5-41f2-ac67-96bd6a3a54fd",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:22:32.000Z",
+      "worker": "d7fc10b7-5a64-4d64-8bb3-c2296ec93139",
       "techniques": [
         {
           "technique": "keystroke-injection",
           "verdict": "deviation",
-          "evidence": "src/features/plugins/fleet/__tests__/SkillLibraryDrawer.test.tsx:124 expects '/compact'+CR as a single write"
+          "evidence": "src/features/plugins/fleet/__tests__/FleetBroadcastPayload.test.tsx:115 the Enter-off multi-line send is pinned as raw text, not a bracketed paste"
         },
         {
           "technique": "attach-detach-lifecycle",
@@ -7822,6 +7829,13 @@
           "evaluatedAt": "2026-10-09T16:30:39.000Z",
           "worker": "a28dc0ce-25c9-49f0-81c1-ed526248964b",
           "reason": "replaced by 709f051b-7fb5-41f2-ac67-96bd6a3a54fd"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/plugins/fleet/__tests__/SkillLibraryDrawer.test.tsx:124 and src/features/plugins/fleet/__tests__/FleetBroadcastModal.test.tsx:101 assert one write of text + CR as the submit contract, locking paste and press into one verb; no test in this context covers the Enter-off multi-line send, and the one outside it (FleetBroadcastPayload.test.tsx:115) asserts the unframed payload rather than a framed paste",
+          "evaluatedAt": "2026-10-16T18:11:06.000Z",
+          "worker": "709f051b-7fb5-41f2-ac67-96bd6a3a54fd",
+          "reason": "replaced by d7fc10b7-5a64-4d64-8bb3-c2296ec93139"
         }
       ]
     },
@@ -26846,47 +26860,52 @@
       "subject": "terminal-multiplexing",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T18:11:06.000Z",
-      "worker": "709f051b-7fb5-41f2-ac67-96bd6a3a54fd",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:22:32.000Z",
+      "worker": "d7fc10b7-5a64-4d64-8bb3-c2296ec93139",
       "techniques": [
         {
           "technique": "keystroke-injection",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/fleet/commands.rs:199 only newline-terminated multi-char text reaches write_text_line's framing (src-tauri/src/commands/fleet/registry.rs:1584); keys.rs:146 rejects unknown keys loudly but parse_plan is test-only, so the notation is not the one authority"
+          "evidence": "src-tauri/src/commands/fleet/keys.rs:88 parse_plan, the one key-notation authority that would make paste and press separate verbs, still has no production caller (keys.rs:87 cfg_attr(not(test), allow(dead_code)))"
         },
         {
           "technique": "pty-management",
           "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/fleet/pty.rs:994 finalize_child_exit is the exit path distinct from the reader; src-tauri/src/commands/fleet/registry.rs:1706 resize keeps master, dims and parser in step"
+          "evidence": "src-tauri/src/commands/fleet/pty.rs:994 finalize_child_exit is the exit path distinct from the reader; src-tauri/src/commands/fleet/registry.rs:1706 resize keeps master, dims and parser in step",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "bounded-replay-buffers",
           "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/fleet/registry.rs:34 OUTPUT_RING_CAP 512 KiB byte-budgeted ring; registry.rs:1846 subscribe_output returns the tail snapshot to hydrate a re-attach"
+          "evidence": "src-tauri/src/commands/fleet/registry.rs:34 OUTPUT_RING_CAP 512 KiB byte-budgeted ring; registry.rs:1846 subscribe_output returns the tail snapshot to hydrate a re-attach",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "occupant-state-detection",
           "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/fleet/hooks.rs:115 occupant state is driven by the runtime's own hooks, with revive_to_running_on_activity correcting a stale awaiting-input"
+          "evidence": "src-tauri/src/commands/fleet/hooks.rs:115 occupant state is driven by the runtime's own hooks, with revive_to_running_on_activity correcting a stale awaiting-input",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "injected-hook-reconvergence",
           "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/fleet/hook_install.rs:235 needs_upgrade flags port/token/command drift so the installed hook re-converges instead of being trusted once"
+          "evidence": "src-tauri/src/commands/fleet/hook_install.rs:235 needs_upgrade flags port/token/command drift so the installed hook re-converges instead of being trusted once",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "multiplexer-state",
           "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/fleet/commands.rs:376 wake threads lineage onto the new row id via adopt_lineage"
+          "evidence": "src-tauri/src/commands/fleet/commands.rs:376 wake threads lineage onto the new row id via adopt_lineage",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "multi-client-fan-out",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/fleet/registry.rs:45 one subscribed bool per session; the product never has two viewers of one session"
+          "evidence": "src-tauri/src/commands/fleet/registry.rs:45 one subscribed bool per session; the product never has two viewers of one session",
+          "carriedFrom": "2026-10-16"
         }
       ],
-      "registryProposal": "Re-judged from conformant: the prior verdict credited write_text_line's framing to the whole IPC door, but the door's shape test at commands.rs:199 lets the Enter-off multi-line case bypass it - the same defect fleet-terminal-manager already recorded from the caller side. A technique realized in a helper is not realized at the door unless every caller reaches it; keystroke-injection could say so.",
       "superseded": [
         {
           "state": "conformant",
@@ -26894,6 +26913,13 @@
           "evaluatedAt": "2026-10-03",
           "worker": null,
           "reason": "replaced by 709f051b-7fb5-41f2-ac67-96bd6a3a54fd"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/commands.rs:199 fleet_write_input infers paste-vs-press from payload shape, so a multi-line payload without a trailing newline skips frame_paste and every internal newline submits a partial prompt; the key-notation parser that would make them separate verbs (src-tauri/src/commands/fleet/keys.rs:88 parse_plan) has no production caller (keys.rs:87 allow(dead_code))",
+          "evaluatedAt": "2026-10-16T18:11:06.000Z",
+          "worker": "709f051b-7fb5-41f2-ac67-96bd6a3a54fd",
+          "reason": "replaced by d7fc10b7-5a64-4d64-8bb3-c2296ec93139"
         }
       ]
     },
