@@ -7,7 +7,7 @@
 // runs. To bump: re-run `npm view <pkg> version`, read the changelog for the
 // jump, then change the const and nothing else (tests assert exact versions).
 /// `@playwright/mcp` version run inside build turns.
-pub(super) const PLAYWRIGHT_MCP_VERSION: &str = "0.0.83";
+pub(crate) const PLAYWRIGHT_MCP_VERSION: &str = "0.0.83";
 /// `@upstash/context7-mcp` version run inside build turns.
 pub(super) const CONTEXT7_MCP_VERSION: &str = "4.4.4";
 /// `create-next-app` version used by the scaffold (see `project.rs`).
