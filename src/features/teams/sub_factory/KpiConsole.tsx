@@ -7,17 +7,28 @@
 // Calibration and assessment edits flow up via onEdit; FactoryShell persists them.
 import { useState } from 'react';
 
+import type { DevKpiMeasurement } from '@/lib/bindings/DevKpiMeasurement';
+
 import { evaluateKpi } from '@/api/devTools/kpis';
 import { Dot, KeyValueGrid, KitButton, Section, StatStrip, toneColor, UnitStrip } from '@/features/shared/components/kit';
 import { KIND_LABEL, CADENCE_LABEL, kpiStatus, progressPct, fmtUnit, describeMeasureConfig, type MockKpi, type KpiEdit } from './factoryModel';
 import { CalibrationTrack, Sparkline } from './factoryPrimitives';
 import { KPI_STATUS_MARK } from './factoryTone';
 import { errMsg } from './composeTask';
+import { rel } from './factoryData';
 import { MeasureSetupModal } from './MeasureSetupModal';
 import { KpiSteer } from './KpiSteer';
 import type { FactoryWords } from './useFactoryWords';
 
-export function KpiConsole({ kpi, onEdit, w }: { kpi: MockKpi; onEdit: (patch: KpiEdit) => void; w: FactoryWords }) {
+export function KpiConsole({ kpi: loaded, onEdit, w }: { kpi: MockKpi; onEdit: (patch: KpiEdit) => void; w: FactoryWords }) {
+  // The only refresh door (useFactoryData.reload) refetches every project tree,
+  // so a reading taken here is overlaid locally; the next reload carries the
+  // same value and the overlay becomes a no-op.
+  const [reading, setReading] = useState<DevKpiMeasurement | null>(null);
+  const kpi: MockKpi =
+    reading && reading.kpi_id === loaded.id
+      ? { ...loaded, current: reading.value, lastMeasuredAt: rel(reading.measured_at), series: [...loaded.series, reading.value], skipFresh: false }
+      : loaded;
   const st = kpiStatus(kpi);
   const mark = KPI_STATUS_MARK[st];
   const pct = progressPct(kpi);
@@ -30,6 +41,7 @@ export function KpiConsole({ kpi, onEdit, w }: { kpi: MockKpi; onEdit: (patch: K
     setMeasureMsg(null);
     try {
       const m = await evaluateKpi(kpi.id);
+      setReading(m);
       setMeasureMsg(w.L.measured(fmtUnit(m.value, kpi.unit)));
     } catch (e) {
       setMeasureMsg(errMsg(e));

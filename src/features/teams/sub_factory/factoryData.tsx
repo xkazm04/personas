@@ -53,7 +53,7 @@ function toUtcIso(iso: string): string {
   return /[Zz]|[+-]\d\d:?\d\d$/.test(t) ? t : `${t}Z`;
 }
 
-function rel(iso: string | null): string {
+export function rel(iso: string | null): string {
   if (!iso) return 'never';
   const t = new Date(toUtcIso(iso)).getTime();
   if (!Number.isFinite(t)) return '—';
