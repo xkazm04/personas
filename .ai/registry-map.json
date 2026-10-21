@@ -42336,8 +42336,8 @@
           "changedAt": "2026-09-15",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/webbuild/athena_preview_agent.tsx:295 the injected guest agent (embedded via preview_agent.rs:16) still dispatches inbound commands on shape alone with no origin check and posts every report to window.parent with \"*\" (:145), so any document in the frame tree can drive locate/inspect and the agent's reports reach whatever parent loaded it; prior anchor preview_agent.rs:53 moved into this file",
-          "evaluatedAt": "2026-10-16",
+          "evidence": "src-tauri/src/webbuild/athena_preview_agent.tsx:295 re-judged 2026-10-21: the guest agent still accepts any message whose shape says source:athena with no origin check and posts every report to window.parent with \"*\" (:145), so any document in the frame tree can drive locate/inspect and reports reach whatever parent loaded it; snapshot and route-scan failures are also silent",
+          "evaluatedAt": "2026-10-21",
           "evaluatedAgainst": "sha256-b2:a6e12ae70d42efcc",
           "evaluatedRevision": 2,
           "revisionsBehind": 0
