@@ -121,6 +121,22 @@ describe('NoteMilestonePicker', () => {
     expect(listMilestones).toHaveBeenCalledWith('p2');
   });
 
+  it('offers a milestone created elsewhere when the menu is reopened', async () => {
+    listMilestones.mockResolvedValueOnce([milestone('p1')]);
+    render(picker('p1'));
+    const trigger = screen.getByTestId('notepad-milestone-picker');
+    fireEvent.click(trigger);
+    expect(await screen.findByText('Mile p1')).toBeInTheDocument();
+    fireEvent.click(trigger);
+
+    const fresh = { ...milestone('p1'), id: 'm-fresh', name: 'Fresh from Ship' };
+    listMilestones.mockResolvedValueOnce([milestone('p1'), fresh]);
+    fireEvent.click(trigger);
+    expect(await screen.findByText('Fresh from Ship')).toBeInTheDocument();
+    expect(screen.getByText('Mile p1')).toBeInTheDocument();
+    expect(listMilestones).toHaveBeenCalledTimes(2);
+  });
+
   it('drops a milestone list that arrives after the project changed', async () => {
     let releaseP1: (rows: DevMilestone[]) => void = () => {};
     listMilestones.mockImplementation((projectId: string) => {

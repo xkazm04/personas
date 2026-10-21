@@ -11,7 +11,7 @@
 //     answers to "what is this for" and the operator would have no way to know
 //     which one a run read.
 //
-// The list is fetched when the popover OPENS, not on mount. A pad full of
+// The list is fetched each time the popover OPENS, not on mount. A pad full of
 // brainstorm notes should cost no milestone IPC at all, and the picker is the
 // one control that needs this data.
 import { useCallback, useEffect, useState } from 'react';
@@ -66,7 +66,10 @@ export function NoteMilestonePicker({ projectId, disabled, onPick, onCreate }: {
     : (rows ?? []).filter((m) => m.status !== 'shipped' && !linked.has(m.id));
 
   const fetchRows = useCallback(() => {
-    if (!projectId || rows) return;
+    // Asked again on EVERY open: a milestone created elsewhere (Ship tab) while
+    // this picker stayed mounted must be offered. The rows already held stay on
+    // screen until the fresh list lands.
+    if (!projectId) return;
     const token = wins.next();
     listMilestones(projectId)
       .then((list) => {
@@ -83,7 +86,7 @@ export function NoteMilestonePicker({ projectId, disabled, onPick, onCreate }: {
         silentCatch('notepad milestone picker')(e);
         setListFailed(true);
       });
-  }, [projectId, rows, wins]);
+  }, [projectId, wins]);
 
   return (
     <Listbox
