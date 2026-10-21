@@ -180,13 +180,18 @@ pub fn get_template_adopt_snapshot(
 // -- Instant Adopt (no AI transform -- creates persona directly from design) --
 
 #[tauri::command]
-pub fn instant_adopt_template(
+pub async fn instant_adopt_template(
     state: State<'_, Arc<AppState>>,
     template_name: String,
     design_result_json: String,
 ) -> Result<serde_json::Value, AppError> {
     require_auth_sync(&state)?;
-    instant_adopt_template_inner(&state, template_name, design_result_json, None)
+    // Creates a persona, tools and triggers in one transaction: off the IPC worker.
+    let state = state.inner().clone();
+    crate::commands::blocking::run_blocking("instant_adopt_template", move || {
+        instant_adopt_template_inner(&state, template_name, design_result_json, None)
+    })
+    .await
 }
 
 /// Inner function callable from both Tauri command and test automation.
