@@ -1694,3 +1694,8 @@
 {"ts":"2026-10-21T12:18:39Z","bundle":"software-engineering","subjects":["eval-harness"],"techniques":[],"deviations":0}
 {"ts":"2026-10-21T12:18:39Z","bundle":"software-engineering","subjects":["eval-harness"],"techniques":[],"deviations":0}
 {"ts":"2026-10-21T12:18:39Z","bundle":"software-engineering","subjects":["eval-harness"],"techniques":[],"deviations":0}
+{"ts":"2026-10-21T12:19:00Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":["unit-classes-are-open","usage-ledgers"],"deviations":1}
+{"ts":"2026-10-21T12:19:00Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":["price-tables","spend-observability"],"deviations":1}
+{"ts":"2026-10-21T12:19:00Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":["spend-observability","unit-classes-are-open"],"deviations":1}
+{"ts":"2026-10-21T12:19:00Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":["usage-ledgers","budget-enforcement"],"deviations":1}
+{"ts":"2026-10-21T12:19:00Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":["usage-ledgers","budget-enforcement","unit-classes-are-open"],"deviations":1}

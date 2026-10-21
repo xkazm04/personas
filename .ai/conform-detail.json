@@ -10460,10 +10460,21 @@
       "subject": "cost-metering",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T09:32:18.000Z",
-      "worker": "d61cfc0d-c1fb-4ceb-b01d-0a7143b73719",
-      "techniques": [],
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:19:00.000Z",
+      "worker": "d8d2e1c0-93bb-4c76-b3d2-39a89f464309",
+      "techniques": [
+        {
+          "technique": "usage-ledgers",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/llm_spend.rs:83 no failed-leg writer; :30 dropped writes uncounted"
+        },
+        {
+          "technique": "budget-enforcement",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/llm_spend.rs:135 the cap enforces against a success-only sum"
+        }
+      ],
       "superseded": [
         {
           "state": "deviation",
@@ -10471,6 +10482,13 @@
           "evaluatedAt": "2026-10-09T17:20:48.000Z",
           "worker": "e5f5e2b1-1518-44d4-b881-39195a416435",
           "reason": "replaced by d61cfc0d-c1fb-4ceb-b01d-0a7143b73719"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/llm_spend.rs:85 the headless ledger's only row constructor is a parse of the stream's `result` event, so a killed or timed-out spawn writes no row (no failed-leg writer like turn_ledger's), and :30 swallows a failed insert with an uncounted warn; the curator daily cap sums this ledger (:135), so failed spend and dropped writes are invisible to it (re-checked 2026-10-14 against rev 15: anchors unchanged)",
+          "evaluatedAt": "2026-10-14T09:32:18.000Z",
+          "worker": "d61cfc0d-c1fb-4ceb-b01d-0a7143b73719",
+          "reason": "replaced by d8d2e1c0-93bb-4c76-b3d2-39a89f464309"
         }
       ]
     },
@@ -17354,10 +17372,26 @@
       "subject": "cost-metering",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T09:32:18.000Z",
-      "worker": "d61cfc0d-c1fb-4ceb-b01d-0a7143b73719",
-      "techniques": [],
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:19:00.000Z",
+      "worker": "d8d2e1c0-93bb-4c76-b3d2-39a89f464309",
+      "techniques": [
+        {
+          "technique": "usage-ledgers",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/executions.rs:2371 no period boundary returned with the total"
+        },
+        {
+          "technique": "budget-enforcement",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/execution.rs:3045 undeclared, uncounted fail-open when the ledger read fails"
+        },
+        {
+          "technique": "unit-classes-are-open",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/executions.rs:2382 an unpriced row sums as zero rather than marking the total a floor"
+        }
+      ],
       "superseded": [
         {
           "state": "deviation",
@@ -17372,6 +17406,13 @@
           "evaluatedAt": "2026-10-12T12:28:00.000Z",
           "worker": "fa3546ed-8b65-4479-831d-a0f222e353b7",
           "reason": "replaced by d61cfc0d-c1fb-4ceb-b01d-0a7143b73719"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/executions.rs:2359 SUMs cost_usd under COALESCE(..,0.0), so unpriced rows (kept None by coerce_f64 :210, mapper :294) vanish from the month figure the gate enforces, and get_monthly_spend (:2348) returns a bare f64 with no period window or floor flag; unattended consumers swallow a ledger error as $0 (src-tauri/src/engine/background/scheduler.rs:889, src-tauri/src/engine/execution.rs:3021 unwrap_or(0.0)) - undeclared, uncounted fail-open on unattended paths. Realized: one MONTHLY_SPEND_PREDICATE (:2346) counting failed/cancelled rows (re-checked 2026-10-14 against rev 15: anchors unchanged)",
+          "evaluatedAt": "2026-10-14T09:32:18.000Z",
+          "worker": "d61cfc0d-c1fb-4ceb-b01d-0a7143b73719",
+          "reason": "replaced by d8d2e1c0-93bb-4c76-b3d2-39a89f464309"
         }
       ]
     },
@@ -24037,10 +24078,21 @@
       "subject": "cost-metering",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T09:32:18.000Z",
-      "worker": "d61cfc0d-c1fb-4ceb-b01d-0a7143b73719",
-      "techniques": [],
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:19:00.000Z",
+      "worker": "d8d2e1c0-93bb-4c76-b3d2-39a89f464309",
+      "techniques": [
+        {
+          "technique": "spend-observability",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_activity/components/LlmSpendSection.tsx:51 slices do not reach the total and there is no row drill-down"
+        },
+        {
+          "technique": "unit-classes-are-open",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_activity/components/LlmSpendSection.tsx:114 cache classes dropped from the token total"
+        }
+      ],
       "superseded": [
         {
           "state": "deviation",
@@ -24048,6 +24100,13 @@
           "evaluatedAt": "2026-10-05",
           "worker": null,
           "reason": "replaced by d61cfc0d-c1fb-4ceb-b01d-0a7143b73719"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_activity/components/LlmSpendSection.tsx:108 renders the total as a bare number with no window or unpriced/floor caveat, :110 sums only input+output tokens (cache classes dropped), the errors tile (:111) counts calls not failed-call spend, by_trigger is cut to 8 (:50) with no remainder so slices do not reach the total, by_model is returned but never rendered anywhere in sub_activity, and there is no outlier or row drill-down: spend-observability's reading order stops below the total (re-checked 2026-10-14 against rev 15: anchors unchanged)",
+          "evaluatedAt": "2026-10-14T09:32:18.000Z",
+          "worker": "d61cfc0d-c1fb-4ceb-b01d-0a7143b73719",
+          "reason": "replaced by d8d2e1c0-93bb-4c76-b3d2-39a89f464309"
         }
       ]
     },
@@ -24444,29 +24503,46 @@
       "subject": "cost-metering",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-15",
-      "evaluatedTs": "2026-10-15T21:35:41.778Z",
-      "worker": "925f883c-ea35-4b36-ba0f-e1617949b4e9",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:19:00.000Z",
+      "worker": "d8d2e1c0-93bb-4c76-b3d2-39a89f464309",
       "techniques": [
         {
           "technique": "price-tables",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_executions/detail/inspector/CostBreakdownBar.tsx:28 Unknown models fall back to zero cost in estimateCost, causing unrecognised models to price at zero and disabling the split bar."
+          "evidence": "src/lib/utils/platform/pricing.ts:81 unknown -> 0 with an uncounted warn; a third price authority beside src-tauri/engine/src/cost.rs and src-tauri/engine/src/http_engine/config.rs"
+        },
+        {
+          "technique": "spend-observability",
+          "verdict": "realized-in-part",
+          "evidence": "src/features/agents/sub_executions/detail/inspector/CostBreakdownBar.tsx:46 the default-priced state is surfaced on the row as a chip"
         },
         {
           "technique": "unit-classes-are-open",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_executions/detail/inspector/TraceSummary.tsx:55 Token totals sum only input and output fields, omitting reasoning tokens or cache read/write units reported by providers."
+          "evidence": "src/features/agents/sub_executions/detail/inspector/TraceSummary.tsx:55 Token totals sum only input and output fields, omitting reasoning tokens or cache read/write units reported by providers.",
+          "carriedFrom": "2026-10-15"
         },
         {
           "technique": "spend-attribution",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_executions/detail/inspector/SpanRow.tsx:95 Tracer attributes cost exclusively to the root execution span, leaving child steps and tool spans unpriced at write time."
+          "evidence": "src/features/agents/sub_executions/detail/inspector/SpanRow.tsx:95 Tracer attributes cost exclusively to the root execution span, leaving child steps and tool spans unpriced at write time.",
+          "carriedFrom": "2026-10-15"
         },
         {
           "technique": "one-pot-across-delegation",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_executions/detail/inspector/SubagentTree.tsx:49 Subagent tree tracks independent token counts per task without referencing or drawing from a shared parent budget pot."
+          "evidence": "src/features/agents/sub_executions/detail/inspector/SubagentTree.tsx:49 Subagent tree tracks independent token counts per task without referencing or drawing from a shared parent budget pot.",
+          "carriedFrom": "2026-10-15"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_executions/detail/inspector/CostBreakdownBar.tsx:28 CostBreakdownBar delegates pricing to estimateCost, which falls back to zero cost on unrecognised models rather than applying a loud conservative default.",
+          "evaluatedAt": "2026-10-15T21:35:41.778Z",
+          "worker": "925f883c-ea35-4b36-ba0f-e1617949b4e9",
+          "reason": "replaced by d8d2e1c0-93bb-4c76-b3d2-39a89f464309"
         }
       ]
     },
@@ -24501,24 +24577,34 @@
       "subject": "cost-metering",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-15",
-      "evaluatedTs": "2026-10-15T21:35:41.778Z",
-      "worker": "925f883c-ea35-4b36-ba0f-e1617949b4e9",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:19:00.000Z",
+      "worker": "d8d2e1c0-93bb-4c76-b3d2-39a89f464309",
       "techniques": [
         {
           "technique": "unit-classes-are-open",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_lab/libs/labAggregation.ts:108 Token totals sum exactly inputTokens and outputTokens, omitting third-party unit classes like reasoning and cache tokens."
+          "evidence": "src/features/agents/sub_lab/libs/labAggregation.ts:113 cache read/creation units neither nested nor counted as residual in the cross-model token comparison"
         },
         {
           "technique": "usage-ledgers",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:122 Eval aggregations accumulate raw costs without recording pricing provenance or rate-schedule versions."
+          "evidence": "src-tauri/engine/src/test_runner/types.rs:120 cost_usd: f64 turns unknown cell cost into a definite zero"
         },
         {
           "technique": "spend-observability",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_lab/components/versions_table/LabEconomicsPanel.tsx:58 Economics table renders model-level cost-per-success averages without providing row-level drill-down into composing executions."
+          "evidence": "src/features/agents/sub_lab/components/versions_table/LabEconomicsPanel.tsx:58 Economics table renders model-level cost-per-success averages without providing row-level drill-down into composing executions.",
+          "carriedFrom": "2026-10-15"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_lab/libs/labAggregation.ts:108 Token counts in lab aggregations are computed by summing only two fields (inputTokens + outputTokens), disregarding open unit classes and failing to distinguish cached or reasoning units.",
+          "evaluatedAt": "2026-10-15T21:35:41.778Z",
+          "worker": "925f883c-ea35-4b36-ba0f-e1617949b4e9",
+          "reason": "replaced by d8d2e1c0-93bb-4c76-b3d2-39a89f464309"
         }
       ]
     },
