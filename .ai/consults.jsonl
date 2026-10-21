@@ -1786,3 +1786,8 @@
 {"ts":"2026-10-21T12:37:40Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["verification-scope","dependency-policy-gates","reading-is-not-running"],"deviations":1}
 {"ts":"2026-10-21T12:37:40Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["reading-is-not-running","archive-extraction-safety"],"deviations":0}
 {"ts":"2026-10-21T12:37:40Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":[],"deviations":0}
+{"ts":"2026-10-21T12:44:16Z","bundle":"localization","subjects":["translation-pipeline-topology"],"techniques":["language-registry-single-source","source-identical-value-audit","pseudo-localization-readiness","canonical-fallback-serving"],"deviations":1}
+{"ts":"2026-10-21T12:44:16Z","bundle":"localization","subjects":["translation-pipeline-topology"],"techniques":["language-registry-single-source"],"deviations":1}
+{"ts":"2026-10-21T12:44:16Z","bundle":"localization","subjects":["translation-pipeline-topology"],"techniques":[],"deviations":0}
+{"ts":"2026-10-21T12:44:16Z","bundle":"localization","subjects":["translation-pipeline-topology"],"techniques":[],"deviations":0}
+{"ts":"2026-10-21T12:44:16Z","bundle":"localization","subjects":["translation-pipeline-topology"],"techniques":[],"deviations":0}

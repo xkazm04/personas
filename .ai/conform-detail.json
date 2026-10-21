@@ -20061,39 +20061,45 @@
       "subject": "translation-pipeline-topology",
       "bundle": "localization",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:45:00.000Z",
-      "worker": "19b298ea-84af-4d34-9283-f671997cccf4",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:44:16.000Z",
+      "worker": "a7c3c3b8-4960-489c-a199-8356b7325260",
       "techniques": [
         {
           "technique": "language-registry-single-source",
           "verdict": "deviation",
-          "evidence": "src/features/home/sub_welcome/LanguageSwitcher.tsx:16 and src/features/onboarding/components/AppearanceStep.tsx:13 declare their own language tables instead of deriving from LOCALES; per-language font config also sprawls into src/stores/i18nStore.ts:20 - the one-line-diff test fails (adding a locale touches 3+ files)"
-        },
-        {
-          "technique": "canonical-fallback-serving",
-          "verdict": "deviation",
-          "evidence": "src/features/onboarding/components/AppearanceStep.tsx:13 offers 11 of 14 served locales (published bn/id/vi work unreachable from that switcher); per-key fallback itself is realized by the deep-merge loader (src/features/home/sub_releases/i18n/useReleasesTranslation.ts:7)"
-        },
-        {
-          "technique": "canonical-and-derived-split",
-          "verdict": "deviation",
-          "evidence": ".claude/rules/i18n.md:164 makes medium-quality machine translation the committed bar for gap-fill; scripts/i18n/translate-merge.mjs gates only key and placeholder parity, so unreviewed subagent output lands in the reviewed catalog with no marker separating it"
+          "evidence": "src/features/home/sub_welcome/LanguageSwitcher.tsx:16 is a second hand-made 14-entry list beside the manifest (src/i18n/locales.manifest.ts:13 says it is the only one); onboarding copy at AppearanceStep.tsx:13 has already drifted"
         },
         {
           "technique": "source-identical-value-audit",
-          "verdict": "realized",
-          "evidence": "scripts/i18n/check-untranslated.mjs:17 per-locale \"<lang>:<key>\" allowlist (with *: wildcard for locale-independent classes), gated at pre-commit by lefthook.yml:85"
+          "verdict": "conformant",
+          "evidence": "scripts/i18n/check-untranslated.mjs:3 value-level gate with a committed allowlist, enforced --strict in pre-commit at lefthook.yml:87"
         },
         {
           "technique": "pseudo-localization-readiness",
-          "verdict": "realized",
-          "evidence": "src/i18n/pseudoLocale.ts:2 dev-only pseudo-locale synthesized from English with no engine"
+          "verdict": "conformant",
+          "evidence": "src/i18n/pseudoLocale.ts:2 dev-only pseudo-locale built from en at runtime, with no catalog file and no effect on coverage"
+        },
+        {
+          "technique": "canonical-fallback-serving",
+          "verdict": "conformant",
+          "evidence": "src/i18n/useTranslation.ts:327 deepMergeSection layers each locale over English per key, so a miss renders canonical text"
+        },
+        {
+          "technique": "canonical-and-derived-split",
+          "verdict": "not-applicable",
+          "evidence": "src/i18n/locales.manifest.ts:4 reviewed-and-committed product catalog; no derived MT store exists"
+        },
+        {
+          "technique": "sharded-translation-ci",
+          "verdict": "not-applicable",
+          "evidence": "package.json:130 gaps are planned and merged by local scripts (i18n:plan-gaps / merge-chunks); no CI translation job"
         },
         {
           "technique": "prompt-context-contract",
           "verdict": "partial",
-          "evidence": "scripts/i18n/plan-gaps.mjs:60 attaches per-key translator notes to gap chunks; surface, glossary terms and placeholder map are still left to the subagent (per the registry's own personas application)"
+          "evidence": "scripts/i18n/plan-gaps.mjs:60 attaches per-key translator notes to gap chunks; surface, glossary terms and placeholder map are still left to the subagent (per the registry's own personas application)",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "non-translatable-value-classification",
@@ -20120,19 +20126,12 @@
           "carriedFrom": "2026-10-12"
         },
         {
-          "technique": "sharded-translation-ci",
-          "verdict": "not-applicable",
-          "evidence": "src/i18n/useTranslation.ts:42 Runtime lazy section loader is client-side code-splitting, not a sharded CI translation execution pipeline.",
-          "carriedFrom": "2026-10-12"
-        },
-        {
           "technique": "source-hash-translation-cache",
           "verdict": "not-applicable",
           "evidence": "src/i18n/en.ts:75 The en Proxy is a backward-compatibility synchronous shim rather than a source-hash translation cache.",
           "carriedFrom": "2026-10-12"
         }
       ],
-      "registryProposal": "canonical-and-derived-split names this desktop app as committing catalogs because every string went through the review wave first; its gap-fill path (.claude/rules/i18n.md:164, translate-extract -> Sonnet subagent -> translate-merge) has no review wave, so the technique's cited example is only half-true. Correct the sighting, and consider whether a bundled offline app needs a sanctioned third shape: machine output committed but provenance-marked per key. Separately: home-welcome (src/features/home/sub_welcome/LanguageSwitcher.tsx) and onboarding-components (src/features/onboarding/components/AppearanceStep.tsx) hold the two shadow language lists but carry no translation-pipeline-topology pair; the matcher missed them because they use switcher/picker vocabulary, not translation/pipeline.",
       "superseded": [
         {
           "state": "deviation",
@@ -20140,6 +20139,13 @@
           "evaluatedAt": "2026-10-12T18:34:37.368Z",
           "worker": "70179329-1ff7-4e15-bcd5-b855c9d451b4",
           "reason": "replaced by 19b298ea-84af-4d34-9283-f671997cccf4"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/i18n/locales.manifest.ts:13 claims no other file enumerates locales, but two switchers keep hand-made lists and the onboarding one (src/features/onboarding/components/AppearanceStep.tsx:13) already omits bn/id/vi, so 3 of 14 shipped locales cannot be picked at onboarding",
+          "evaluatedAt": "2026-10-16T17:45:00.000Z",
+          "worker": "19b298ea-84af-4d34-9283-f671997cccf4",
+          "reason": "replaced by a7c3c3b8-4960-489c-a199-8356b7325260"
         }
       ]
     },
@@ -29163,33 +29169,42 @@
       "context": "prompt-assembly-engine",
       "subject": "translation-pipeline-topology",
       "bundle": "localization",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-17",
-      "evaluatedTs": "2026-10-17T01:37:57.168Z",
-      "techniques": [],
-      "withdrawn": {
-        "worker": "7c949da1-f359-4ea0-8e42-d82371f6c899",
-        "state": "not-applicable",
-        "at": "2026-10-17T01:38:11.326645+00:00",
-        "reason": "reviewer (sonnet): The anchor assemble.rs:96 is only the doc comment of the assembler function, so it does not show that a localization pipeline is absent. The context's own README.md describes a LANGUAGE RULE block, which makes the locale/i18n search terms too narrow."
-      }
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:44:16.000Z",
+      "worker": "a7c3c3b8-4960-489c-a199-8356b7325260",
+      "techniques": []
     },
     "7826a48f-5883-4f26-8476-c3c515bda745/translation-pipeline-topology": {
       "context": "lib-personas",
       "subject": "translation-pipeline-topology",
       "bundle": "localization",
       "state": "deviation",
-      "evaluatedAt": "2026-10-17",
-      "evaluatedTs": "2026-10-17T01:37:57.168Z",
-      "worker": "7c949da1-f359-4ea0-8e42-d82371f6c899",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:44:16.000Z",
+      "worker": "a7c3c3b8-4960-489c-a199-8356b7325260",
       "techniques": [
         {
           "technique": "language-registry-single-source",
           "verdict": "deviation",
-          "evidence": "src/lib/personas/templates/templateOverlays.ts:263 The loader explicitly retains a handwritten language enumeration alongside LOCALE_CODES; the parity test detects missing patterns but does not satisfy the one-entry onboarding rule."
+          "evidence": "src/lib/personas/templates/templateOverlays.ts:276 hand-written per-locale glob; a single ../scripts/templates/**/*.*.json glob filtered by OVERLAY_SUFFIX_RE (derived from LOCALE_CODES at :270) would remove the shadow list"
+        },
+        {
+          "technique": "canonical-fallback-serving",
+          "verdict": "unknown",
+          "evidence": "src/lib/personas/templates/useLocalizedTemplateCatalog.ts not read this run"
         }
       ],
-      "registryProposal": "Clarify canonical fallback unit boundaries for structured template catalogs whose translations are partial field overlays."
+      "registryProposal": "language-registry-single-source: when a bundler requires literal glob strings, a test that checks the copy against the registry stops drift but does not pass the one-line-diff test. The technique could name the conformant escape: one wildcard glob filtered at runtime by a pattern derived from the registry",
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/lib/personas/templates/templateOverlays.ts:275 Overlay discovery manually enumerates language-specific glob patterns, so adding a manifest language also requires editing this loader despite the standard's single-registry requirement.",
+          "evaluatedAt": "2026-10-17T01:37:57.168Z",
+          "worker": "7c949da1-f359-4ea0-8e42-d82371f6c899",
+          "reason": "replaced by a7c3c3b8-4960-489c-a199-8356b7325260"
+        }
+      ]
     },
     "4be04ef0-88db-4f48-859c-92e6ba4d203f/chat-transcript": {
       "context": "template-gallery-search",
@@ -31749,6 +31764,26 @@
       "evaluatedAt": "2026-10-21",
       "evaluatedTs": "2026-10-21T12:37:40.000Z",
       "worker": "14a97262-073d-4ee7-89ec-06703a023530",
+      "techniques": []
+    },
+    "835ed922-2ebd-425b-a542-dbe5996e1e78/translation-pipeline-topology": {
+      "context": "persona-build-matrix",
+      "subject": "translation-pipeline-topology",
+      "bundle": "localization",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:44:16.000Z",
+      "worker": "a7c3c3b8-4960-489c-a199-8356b7325260",
+      "techniques": []
+    },
+    "8a57c65c-06fd-45c9-9d32-d50c89c4c705/translation-pipeline-topology": {
+      "context": "template-generation",
+      "subject": "translation-pipeline-topology",
+      "bundle": "localization",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:44:16.000Z",
+      "worker": "a7c3c3b8-4960-489c-a199-8356b7325260",
       "techniques": []
     }
   }
