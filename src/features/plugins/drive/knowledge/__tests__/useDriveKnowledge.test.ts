@@ -39,7 +39,7 @@ describe('useDriveKnowledge — build-gate probe', () => {
 
   it('marks the lane unavailable, silently, when the command is genuinely not registered (lite build)', async () => {
     vi.mocked(vectorKb.listKnowledgeBases).mockRejectedValue(
-      new Error('Command "list_knowledge_bases" not found'),
+      new Error('Command list_knowledge_bases not found'),
     );
 
     const { result } = renderHook(() => useDriveKnowledge());
