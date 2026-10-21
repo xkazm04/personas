@@ -233,6 +233,17 @@ fn fnv1a_hash(input: &str) -> u64 {
     hash
 }
 
+/// The annotation doors only touch annotation rows; zero affected rows means
+/// the id is unknown or names a learned pattern, which is not theirs to change.
+fn require_annotation_hit(changed: usize, knowledge_id: &str) -> Result<(), AppError> {
+    if changed == 0 {
+        return Err(AppError::NotFound(format!(
+            "Knowledge annotation {knowledge_id}"
+        )));
+    }
+    Ok(())
+}
+
 /// Mark a knowledge annotation as verified by a user.
 pub fn verify_annotation(pool: &DbPool, knowledge_id: &str) -> Result<(), AppError> {
     timed_query!(
@@ -241,11 +252,11 @@ pub fn verify_annotation(pool: &DbPool, knowledge_id: &str) -> Result<(), AppErr
         {
             let conn = pool.conn("knowledge::verify_annotation")?;
             let now = chrono::Utc::now().to_rfc3339();
-            conn.execute(
-            "UPDATE execution_knowledge SET is_verified = 1, confidence = 1.0, updated_at = ?1 WHERE id = ?2",
+            let changed = conn.execute(
+            "UPDATE execution_knowledge SET is_verified = 1, confidence = 1.0, updated_at = ?1              WHERE id = ?2 AND knowledge_type IN ('user_annotation', 'agent_annotation')",
             params![now, knowledge_id],
         )?;
-            Ok(())
+            require_annotation_hit(changed, knowledge_id)
         }
     )
 }
@@ -257,11 +268,11 @@ pub fn dismiss_annotation(pool: &DbPool, knowledge_id: &str) -> Result<(), AppEr
         "knowledge_entries::dismiss_annotation",
         {
             let conn = pool.conn("knowledge::dismiss_annotation")?;
-            conn.execute(
-                "DELETE FROM execution_knowledge WHERE id = ?1",
+            let changed = conn.execute(
+                "DELETE FROM execution_knowledge                  WHERE id = ?1 AND knowledge_type IN ('user_annotation', 'agent_annotation')",
                 params![knowledge_id],
             )?;
-            Ok(())
+            require_annotation_hit(changed, knowledge_id)
         }
     )
 }
@@ -574,6 +585,43 @@ mod tests {
         .unwrap();
         let id = persona.id.clone();
         (pool, id)
+    }
+
+    #[test]
+    fn annotation_doors_refuse_learned_patterns_and_unknown_ids() {
+        let (pool, persona_id) = setup();
+        upsert(
+            &pool,
+            &persona_id,
+            None,
+            "tool_sequence",
+            "learned",
+            "{}",
+            true,
+            0.0,
+            1.0,
+            "exec-1",
+        )
+        .unwrap();
+        let learned_id = list_for_persona(&pool, &persona_id, None, None).unwrap()[0]
+            .id
+            .clone();
+
+        assert!(matches!(
+            dismiss_annotation(&pool, &learned_id),
+            Err(AppError::NotFound(_))
+        ));
+        assert!(matches!(
+            verify_annotation(&pool, &learned_id),
+            Err(AppError::NotFound(_))
+        ));
+        assert!(matches!(
+            dismiss_annotation(&pool, "no-such-id"),
+            Err(AppError::NotFound(_))
+        ));
+        let rows = list_for_persona(&pool, &persona_id, None, None).unwrap();
+        assert_eq!(rows.len(), 1, "learned pattern must survive dismiss");
+        assert!(!rows[0].is_verified, "learned pattern must not be verified");
     }
 
     /// The first test this file has ever had, and it FAILED on its first run
