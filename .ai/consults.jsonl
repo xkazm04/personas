@@ -1686,3 +1686,7 @@
 {"ts":"2026-10-21T12:15:03Z","bundle":"software-engineering","subjects":["prompt-assembly"],"techniques":[],"deviations":0}
 {"ts":"2026-10-21T12:15:42.608Z","bundle":"software-engineering","subjects":["test-harness"],"techniques":["negative-control-tests","unreached-decisions-pin-nothing"],"deviations":1,"context":"recipe-build-models"}
 {"ts":"2026-10-21T12:15:42.608Z","bundle":"software-engineering","subjects":["test-harness"],"techniques":["negative-control-tests","fixture-economics"],"deviations":1,"context":"test-runner-lab"}
+{"ts":"2026-10-21T12:16:30Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["exposure-is-not-credit","recall-injection"],"deviations":1}
+{"ts":"2026-10-21T12:16:30Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["consolidation"],"deviations":1}
+{"ts":"2026-10-21T12:16:30Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["recall-injection","exposure-is-not-credit"],"deviations":1}
+{"ts":"2026-10-21T12:16:30Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["consolidation","memory-governance"],"deviations":1}

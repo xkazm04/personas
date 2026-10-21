@@ -1,0 +1,43 @@
+{"schema": "conform-run/1", "worker": "a8cfb2ff-e320-4851-83e6-2d58684935b9", "subject": "agent-memory",
+ "evaluatedAt": "2026-10-21T12:16:30Z",
+ "pairs": [
+  {"context": "0b0ee725-52a2-4656-9e13-07c5204de60e", "subject": "agent-memory", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/db/src/repos/execution/knowledge.rs:197 an agent re-emitting the same annotation text raises confidence +0.1 (and success_count +1 at :194), so one rediscovery lifts a 0.5 note over the global tier's 0.6 bar (:382) into every persona's injected top-10 - rediscovery credited as use, on a ratchet",
+   "techniques": [
+    {"technique": "exposure-is-not-credit", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/execution/knowledge.rs:194 ON CONFLICT on the same text hash counts the distiller's repetition as success; the tool/connector injection door (:346 success_count+failure_count >= 2) is reachable only through that repetition"},
+    {"technique": "recall-injection", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/execution/knowledge.rs:382 the always-on global tier is admitted by that repetition-derived confidence alone, cross-persona, with no review step"}
+   ],
+   "registryProposal": "exposure-is-not-credit's 'rediscovery as reinforcement' channel would gain from naming the variant where the injection door itself requires the repeat count (here min 2 sightings), so the store can only ever admit what agents echo."},
+  {"context": "767b2bb5-4662-4be1-ad24-c881ac334016", "subject": "agent-memory", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/engine/memory_reflection.rs:876 team reflection sorts members' memories by importance/access_count/created_at and truncates at 200 (persona path :805 takes the 200 newest), a store-ordered cap with no per-item shortlist, so duplicates and contradictions in the low tail are never consolidation candidates",
+   "techniques": [
+    {"technique": "consolidation", "verdict": "deviation", "evidence": "src-tauri/src/engine/memory_reflection.rs:876 'a cap that is not a shortlist becomes a blind spot' - the exclusion is fixed by store order and compounds run over run"},
+    {"technique": "consolidation", "verdict": "deviation", "evidence": "src-tauri/src/engine/memory_reflection.rs:124 cluster hints normalize by the union, which the technique names as punishing short corrections against the long beliefs they overturn"}
+   ],
+   "registryProposal": "This context (webhook-ingestion) is a lumped bag of engine files; memory_reflection.rs and engine/knowledge.rs are governed by agent-memory while the context's name and description are not - a context-map split question for the consumer, not a corpus hole."},
+  {"context": "1db5c86e-3237-4d2a-8e2f-1426d680757c", "subject": "agent-memory", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/lib/execution/knowledgeMiddleware.ts:96 guidance now rides inside the caller's input_data JSON (the user channel) with no age or sample count, and :41 failure_pattern entries still have no confidence floor, so a one-off failure string is served as standing advice; re-confirmed at rev 51",
+   "techniques": [
+    {"technique": "recall-injection", "verdict": "deviation", "evidence": "src/lib/execution/knowledgeMiddleware.ts:41 failure patterns injected unfloored while tool_sequence (:28) and model_performance (:55) carry floors"},
+    {"technique": "exposure-is-not-credit", "verdict": "deviation", "evidence": "src/lib/execution/knowledgeMiddleware.ts:32 prints confidence as '% success', but tool_sequence confidence is an EMA (src-tauri/db/src/repos/execution/knowledge.rs:117), so the model reads a smoothed score as a success rate - the count lost its predicate"}
+   ]},
+  {"context": "e62d5595-2bbd-480a-a757-2d3a126545a0", "subject": "agent-memory", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:156 resolves a duplicate via mergeMemoriesAction, still the hard-DELETE merge at src-tauri/db/src/repos/core/memories.rs:1662 that drops both originals and their provenance rows; re-confirmed at rev 51, anchors moved",
+   "techniques": [
+    {"technique": "consolidation", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/core/memories.rs:1662 DELETE of delete_id_a inside the merge tx; supersedence requires the overturned items stay inspectable"},
+    {"technique": "memory-governance", "verdict": "deviation", "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:156 the review surface's only consolidating action is irreversible"}
+   ]}
+ ],
+ "declined": [
+  {"subject": "agent-memory", "context": "*", "reason": "115 probable/unknown pairs left for later runs; budget 4. Note: the map lags the registry - 26 judged pairs (incl. fleet-monitor-channels, agents-quick-answer, api-overview, stores-slices-system, resource-tracking) were judged at revision 48, the subject is at 51 (exposure-is-not-credit added, scope-before-similarity/durable-store-failure-posture amended); they are not flagged stale because the map's pair digests are also rev 48. Rebuild with node ../ai-registry/scripts/build-registry-map.mjs --project personas."}
+ ],
+ "consults": [
+  {"ts":"2026-10-21T12:16:30Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["exposure-is-not-credit","recall-injection"],"deviations":1},
+  {"ts":"2026-10-21T12:16:30Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["consolidation"],"deviations":1},
+  {"ts":"2026-10-21T12:16:30Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["recall-injection","exposure-is-not-credit"],"deviations":1},
+  {"ts":"2026-10-21T12:16:30Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["consolidation","memory-governance"],"deviations":1}
+ ]}

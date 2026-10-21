@@ -9974,7 +9974,11 @@
           "revision": 48,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/knowledge.rs:197 an agent re-emitting the same annotation text raises confidence +0.1 (and success_count +1 at :194), so one rediscovery lifts a 0.5 note over the global tier's 0.6 bar (:382) into every persona's injected top-10 - rediscovery credited as use, on a ratchet",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
+          "evaluatedRevision": 51
         },
         {
           "subject": "retrieval",
@@ -17427,10 +17431,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/lib/execution/knowledgeMiddleware.ts:84 injected knowledge guidance is appended to the user's inputData (the most-trusted channel) as an unlabeled '[Knowledge Graph Guidance]' block with no as-of/age or sample count, and :41-47 failure_pattern entries carry no confidence floor (tool_sequence :28 and model_performance :55 do), so an unconfirmed one-off failure string is served to the model as standing advice",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
-          "evaluatedRevision": 48,
+          "evidence": "src/lib/execution/knowledgeMiddleware.ts:96 guidance now rides inside the caller's input_data JSON (the user channel) with no age or sample count, and :41 failure_pattern entries still have no confidence floor, so a one-off failure string is served as standing advice; re-confirmed at rev 51",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
+          "evaluatedRevision": 51,
           "revisionsBehind": 0
         },
         {
@@ -22314,10 +22318,10 @@
           "changedAt": "2026-10-14",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:152 resolves a duplicate via mergeMemoriesAction, the hard-DELETE merge at src-tauri/db/src/repos/core/memories.rs:1661 whose cascade drops both originals' provenance rows: the review surface's one consolidating action replaces a family with an unauditable item",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
-          "evaluatedRevision": 48,
+          "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:156 resolves a duplicate via mergeMemoriesAction, still the hard-DELETE merge at src-tauri/db/src/repos/core/memories.rs:1662 that drops both originals and their provenance rows; re-confirmed at rev 51, anchors moved",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
+          "evaluatedRevision": 51,
           "source": "conform",
           "revisionsBehind": 0
         },
@@ -41361,7 +41365,11 @@
           "revision": 48,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/memory_reflection.rs:876 team reflection sorts members' memories by importance/access_count/created_at and truncates at 200 (persona path :805 takes the 200 newest), a store-ordered cap with no per-item shortlist, so duplicates and contradictions in the low tail are never consolidation candidates",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
+          "evaluatedRevision": 51
         },
         {
           "subject": "quality-gates",

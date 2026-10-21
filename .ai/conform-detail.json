@@ -2002,19 +2002,19 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:16:30.000Z",
+      "worker": "a8cfb2ff-e320-4851-83e6-2d58684935b9",
       "techniques": [
         {
           "technique": "consolidation",
-          "verdict": "not realized: merge destroys originals instead of superseding",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:1661"
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1662 DELETE of delete_id_a inside the merge tx; supersedence requires the overturned items stay inspectable"
         },
         {
           "technique": "memory-governance",
-          "verdict": "not realized: audit answer lost for the merged belief",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:1642"
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:156 the review surface's only consolidating action is irreversible"
         }
       ],
       "superseded": [
@@ -2031,6 +2031,13 @@
           "evaluatedAt": "2026-10-09T15:39:28.000Z",
           "worker": "3429d36b-b462-4b05-bc18-7d9e1c2e1e35",
           "reason": "replaced by eb06c63f-1bdf-4963-bd38-1f3a60ec203b"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:152 resolves a duplicate via mergeMemoriesAction, the hard-DELETE merge at src-tauri/db/src/repos/core/memories.rs:1661 whose cascade drops both originals' provenance rows: the review surface's one consolidating action replaces a family with an unauditable item",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
+          "reason": "replaced by a8cfb2ff-e320-4851-83e6-2d58684935b9"
         }
       ]
     },
@@ -22836,22 +22843,36 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T07:51:32.035Z",
-      "worker": "fafffaa1-f7f4-49f8-b3d9-a1290fb6e924",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:16:30.000Z",
+      "worker": "a8cfb2ff-e320-4851-83e6-2d58684935b9",
       "techniques": [
         {
           "technique": "recall-injection",
           "verdict": "deviation",
-          "evidence": "src/lib/execution/knowledgeMiddleware.ts:84 injected items lack age/confirmation labelling and the omitted count (slice(0,3) at :44 drops the rest silently); failure_pattern at :41 skips the confidence gate used at :28 and :55"
+          "evidence": "src/lib/execution/knowledgeMiddleware.ts:41 failure patterns injected unfloored while tool_sequence (:28) and model_performance (:55) carry floors"
+        },
+        {
+          "technique": "exposure-is-not-credit",
+          "verdict": "deviation",
+          "evidence": "src/lib/execution/knowledgeMiddleware.ts:32 prints confidence as '% success', but tool_sequence confidence is an EMA (src-tauri/db/src/repos/execution/knowledge.rs:117), so the model reads a smoothed score as a success rate - the count lost its predicate"
         },
         {
           "technique": "durable-store-failure-posture",
           "verdict": "deviation",
-          "evidence": "src/lib/execution/knowledgeMiddleware.ts:90 a failed read logs a warning and continues, so the model gets no signal that its guidance was unavailable (failure indistinguishable from empty recall)"
+          "evidence": "src/lib/execution/knowledgeMiddleware.ts:90 a failed read logs a warning and continues, so the model gets no signal that its guidance was unavailable (failure indistinguishable from empty recall)",
+          "carriedFrom": "2026-10-14"
         }
       ],
-      "registryProposal": "Execution-derived knowledge (tool sequences, failure patterns) is not agent memory in the subject's three-layer sense; the pairing is technique-shaped (recall-injection labelling) rather than precondition-shaped. A short note in recall-injection on derived-statistics stores would settle whether this is in scope."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/lib/execution/knowledgeMiddleware.ts:84 injected knowledge guidance is appended to the user's inputData (the most-trusted channel) as an unlabeled '[Knowledge Graph Guidance]' block with no as-of/age or sample count, and :41-47 failure_pattern entries carry no confidence floor (tool_sequence :28 and model_performance :55 do), so an unconfirmed one-off failure string is served to the model as standing advice",
+          "evaluatedAt": "2026-10-14T07:51:32.035Z",
+          "worker": "fafffaa1-f7f4-49f8-b3d9-a1290fb6e924",
+          "reason": "replaced by a8cfb2ff-e320-4851-83e6-2d58684935b9"
+        }
+      ]
     },
     "532bbf10-3fd3-4b57-a8ea-95a957645697/agent-memory": {
       "context": "stores-slices-overview",
@@ -30362,6 +30383,50 @@
         }
       ],
       "registryProposal": "context-map lists src-tauri/src/engine/circuit_breakers_integration_tests.rs and src-tauri/src/engine/failover.rs, which no longer exist; the governing match leaned partly on those names."
+    },
+    "0b0ee725-52a2-4656-9e13-07c5204de60e/agent-memory": {
+      "context": "db",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:16:30.000Z",
+      "worker": "a8cfb2ff-e320-4851-83e6-2d58684935b9",
+      "techniques": [
+        {
+          "technique": "exposure-is-not-credit",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/knowledge.rs:194 ON CONFLICT on the same text hash counts the distiller's repetition as success; the tool/connector injection door (:346 success_count+failure_count >= 2) is reachable only through that repetition"
+        },
+        {
+          "technique": "recall-injection",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/knowledge.rs:382 the always-on global tier is admitted by that repetition-derived confidence alone, cross-persona, with no review step"
+        }
+      ],
+      "registryProposal": "exposure-is-not-credit's 'rediscovery as reinforcement' channel would gain from naming the variant where the injection door itself requires the repeat count (here min 2 sightings), so the store can only ever admit what agents echo."
+    },
+    "767b2bb5-4662-4be1-ad24-c881ac334016/agent-memory": {
+      "context": "webhook-ingestion",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:16:30.000Z",
+      "worker": "a8cfb2ff-e320-4851-83e6-2d58684935b9",
+      "techniques": [
+        {
+          "technique": "consolidation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/memory_reflection.rs:876 'a cap that is not a shortlist becomes a blind spot' - the exclusion is fixed by store order and compounds run over run"
+        },
+        {
+          "technique": "consolidation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/memory_reflection.rs:124 cluster hints normalize by the union, which the technique names as punishing short corrections against the long beliefs they overturn"
+        }
+      ],
+      "registryProposal": "This context (webhook-ingestion) is a lumped bag of engine files; memory_reflection.rs and engine/knowledge.rs are governed by agent-memory while the context's name and description are not - a context-map split question for the consumer, not a corpus hole."
     }
   }
 }
