@@ -1758,3 +1758,8 @@
 {"ts":"2026-10-21T12:34:47Z","bundle":"software-engineering","subjects":["rate-limiting"],"techniques":["storm-hygiene"],"deviations":1}
 {"ts":"2026-10-21T12:34:47Z","bundle":"software-engineering","subjects":["rate-limiting"],"techniques":["limit-observability"],"deviations":1}
 {"ts":"2026-10-21T12:34:47Z","bundle":"software-engineering","subjects":["rate-limiting"],"techniques":["refusal-contract"],"deviations":1}
+{"ts":"2026-10-21T12:36:11Z","bundle":"software-engineering","subjects":["companion-identity"],"techniques":["anchored-identity-diffs"],"deviations":1}
+{"ts":"2026-10-21T12:36:11Z","bundle":"software-engineering","subjects":["companion-identity"],"techniques":["anchored-identity-diffs"],"deviations":1}
+{"ts":"2026-10-21T12:36:11Z","bundle":"software-engineering","subjects":["companion-identity"],"techniques":["disk-truth-db-index"],"deviations":1}
+{"ts":"2026-10-21T12:36:11Z","bundle":"software-engineering","subjects":["companion-identity"],"techniques":["anchored-identity-diffs"],"deviations":1}
+{"ts":"2026-10-21T12:36:11Z","bundle":"software-engineering","subjects":["companion-identity"],"techniques":["anchored-identity-diffs"],"deviations":1}

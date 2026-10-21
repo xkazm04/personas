@@ -4904,16 +4904,17 @@
       "subject": "companion-identity",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:31:07.000Z",
-      "worker": "ccad5e7a-194d-48a5-88ee-0a53559f8c17",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:36:11.000Z",
+      "worker": "a72c5dbb-a4d8-4b2e-8ba8-a16ac7d66f82",
       "techniques": [
         {
           "technique": "anchored-identity-diffs",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_core.rs:352 full-content write path survives beside the anchored-diff path; no autonomy carve-out for update_identity (approval_autopilot.rs:132)"
+          "evidence": "src-tauri/src/companion/brain/identity.rs:312 write_full overwrites identity.md wholesale; reachable from the approval door at approval_exec_core.rs:352 and resolved automatically in autonomous mode (src-tauri/src/commands/companion/approvals/approval_autopilot.rs:22)"
         }
       ],
+      "registryProposal": "Re-judged 2026-10-21 against rev 7 (sha256-b2:ff529a6dc44bf233); unchanged since 2026-10-16 despite approval_autopilot.rs edited 2026-10-20 (4234c58db9, logging only).",
       "superseded": [
         {
           "state": "deviation",
@@ -4928,6 +4929,13 @@
           "evaluatedAt": "2026-10-09T17:47:13.000Z",
           "worker": "4d8c5d79-58b9-4388-817a-018e13252e0f",
           "reason": "replaced by ccad5e7a-194d-48a5-88ee-0a53559f8c17"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_core.rs:352 update_identity still accepts a whole-document `content` replacement via identity::write_full, and approval_autopilot.rs:132 confirms update_identity keeps its old autonomous behaviour (every proposed action fires, :22), so the self-model can still be rewritten wholesale with no human seeing it.",
+          "evaluatedAt": "2026-10-16T17:31:07.000Z",
+          "worker": "ccad5e7a-194d-48a5-88ee-0a53559f8c17",
+          "reason": "replaced by a72c5dbb-a4d8-4b2e-8ba8-a16ac7d66f82"
         }
       ]
     },
@@ -4974,14 +4982,14 @@
       "subject": "companion-identity",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:31:07.000Z",
-      "worker": "ccad5e7a-194d-48a5-88ee-0a53559f8c17",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:36:11.000Z",
+      "worker": "a72c5dbb-a4d8-4b2e-8ba8-a16ac7d66f82",
       "techniques": [
         {
           "technique": "disk-truth-db-index",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/brain/backlog.rs:440 \"There is no rebuild-from-disk pass in the tree today\" - semantic/procedural/goal/backlog nodes have no rebuild"
+          "evidence": "src-tauri/src/companion/brain/backlog.rs:425 'There is no rebuild-from-disk pass in the tree today' - the index has no total, person-invokable rebuild; episodic.rs:392 reconcile_orphaned_episodes is episodes-only and incremental"
         }
       ],
       "superseded": [
@@ -4998,6 +5006,13 @@
           "evaluatedAt": "2026-10-09T17:47:13.000Z",
           "worker": "4d8c5d79-58b9-4388-817a-018e13252e0f",
           "reason": "replaced by ccad5e7a-194d-48a5-88ee-0a53559f8c17"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/brain/episodic.rs:394 the only rebuild-from-disk pass walks episodes/ alone and inserts missing rows only; backlog.rs:440 still states no pass reconstructs companion_node from brain_root(), so the index is not recomputable from the documents.",
+          "evaluatedAt": "2026-10-16T17:31:07.000Z",
+          "worker": "ccad5e7a-194d-48a5-88ee-0a53559f8c17",
+          "reason": "replaced by a72c5dbb-a4d8-4b2e-8ba8-a16ac7d66f82"
         }
       ]
     },
@@ -5753,14 +5768,14 @@
       "subject": "companion-identity",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T17:47:13.000Z",
-      "worker": "4d8c5d79-58b9-4388-817a-018e13252e0f",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:36:11.000Z",
+      "worker": "a72c5dbb-a4d8-4b2e-8ba8-a16ac7d66f82",
       "techniques": [
         {
           "technique": "anchored-identity-diffs",
           "verdict": "deviation",
-          "evidence": "src/features/companions/athena/ApprovalCard.tsx:48 the approval envelope must show operation, anchor, exact before and after, and reason, and permit edit before approval"
+          "evidence": "src/features/companions/athena/ApprovalCard.tsx:48 the approval envelope renders params as a generic collapsed JSON block, not the operation/anchor/before/after the technique requires"
         }
       ],
       "superseded": [
@@ -5770,6 +5785,13 @@
           "evaluatedAt": "2026-09-23",
           "worker": null,
           "reason": "replaced by 4d8c5d79-58b9-4388-817a-018e13252e0f"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/companions/athena/ApprovalCard.tsx:48 an update_identity approval still shows only the batch rationale with its diffs inside a collapsed raw-JSON details block - no per-diff before-to-after and no edit-before-approval - so self-model changes are approved without the change in view.",
+          "evaluatedAt": "2026-10-09T17:47:13.000Z",
+          "worker": "4d8c5d79-58b9-4388-817a-018e13252e0f",
+          "reason": "replaced by a72c5dbb-a4d8-4b2e-8ba8-a16ac7d66f82"
         }
       ]
     },
@@ -5778,14 +5800,14 @@
       "subject": "companion-identity",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:31:07.000Z",
-      "worker": "ccad5e7a-194d-48a5-88ee-0a53559f8c17",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:36:11.000Z",
+      "worker": "a72c5dbb-a4d8-4b2e-8ba8-a16ac7d66f82",
       "techniques": [
         {
           "technique": "anchored-identity-diffs",
           "verdict": "deviation",
-          "evidence": "src/features/companions/athena/decision/rosterDecisions.ts:101 prompt = `${label}: ${rationale}`; no per-diff before/after; actionRisk.ts:85 elevated risk only changes recommendation copy"
+          "evidence": "src/features/companions/athena/decision/rosterDecisions.ts:101 approval envelope shows neither operation, anchor nor before/after text, and offers no edit-before-approval"
         }
       ],
       "superseded": [
@@ -5802,6 +5824,13 @@
           "evaluatedAt": "2026-10-09T17:47:13.000Z",
           "worker": "4d8c5d79-58b9-4388-817a-018e13252e0f",
           "reason": "replaced by ccad5e7a-194d-48a5-88ee-0a53559f8c17"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/companions/athena/decision/rosterDecisions.ts:101 an update_identity orb decision (moved here from useDecisionQueue.ts) is still prompted by action label plus batch rationale only and its approve option (:91) applies it; the diffs ride only in an opaque payload string (:110), so a self-model rewrite is answerable from the orb with no before-to-after shown.",
+          "evaluatedAt": "2026-10-16T17:31:07.000Z",
+          "worker": "ccad5e7a-194d-48a5-88ee-0a53559f8c17",
+          "reason": "replaced by a72c5dbb-a4d8-4b2e-8ba8-a16ac7d66f82"
         }
       ]
     },
@@ -16487,19 +16516,20 @@
       "subject": "companion-identity",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:31:07.000Z",
-      "worker": "ccad5e7a-194d-48a5-88ee-0a53559f8c17",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:36:11.000Z",
+      "worker": "a72c5dbb-a4d8-4b2e-8ba8-a16ac7d66f82",
       "techniques": [
         {
           "technique": "anchored-identity-diffs",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/companion/brain.rs:521 correction routed to propose_identity_update instead of an immediate anchored remove"
+          "evidence": "src-tauri/src/commands/companion/brain.rs:514 correction is routed through propose_identity_update rather than a fast-path anchored remove applied immediately with operator-issued provenance"
         },
         {
           "technique": "operator-profile-synthesis",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/companion/brain.rs:521 a refuted profile claim keeps governing context until approved"
+          "evidence": "src-tauri/src/commands/companion/brain.rs:521 a refuted profile claim keeps governing context until approved",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "constitution-self-model-split",
@@ -16521,6 +16551,13 @@
           "evaluatedAt": "2026-10-10T14:27:05.000Z",
           "worker": "46b2f787-918d-4134-9faf-ebae138952d1",
           "reason": "replaced by ccad5e7a-194d-48a5-88ee-0a53559f8c17"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/api/companion.ts:1491 a person's \"that's wrong\" correction still only proposes a pending update_identity RemoveBullet approval (backend src-tauri/src/commands/companion/brain.rs:521), so the refuted claim stays in the always-loaded identity.md until a second click; anchored-identity-diffs lets an operator correction supersede immediately.",
+          "evaluatedAt": "2026-10-16T17:31:07.000Z",
+          "worker": "ccad5e7a-194d-48a5-88ee-0a53559f8c17",
+          "reason": "replaced by a72c5dbb-a4d8-4b2e-8ba8-a16ac7d66f82"
         }
       ]
     },
