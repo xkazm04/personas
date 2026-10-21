@@ -603,7 +603,7 @@ body {
   width: 2rem;
   text-align: right;
   padding-right: 0.75rem;
-  color: hsl(var(--foreground) / 0.3);
+  color: color-mix(in srgb, var(--foreground) 30%, transparent);
   user-select: none;
   pointer-events: none;
 }

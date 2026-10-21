@@ -138,12 +138,12 @@ export default function FlowDiagram({
                 >
                   <line
                     x1="5" y1="0" x2="5" y2="20"
-                    stroke="hsl(var(--primary) / 0.2)"
+                    stroke="color-mix(in srgb, var(--primary) 20%, transparent)"
                     strokeWidth="1.5"
                   />
                   <polygon
                     points="1,19 5,27 9,19"
-                    fill="hsl(var(--primary) / 0.3)"
+                    fill="color-mix(in srgb, var(--primary) 30%, transparent)"
                   />
                 </svg>
                 {interLayerLabels[layerIdx] && interLayerLabels[layerIdx].length > 0 && (

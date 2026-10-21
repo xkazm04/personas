@@ -131,7 +131,7 @@ export function TemplateVirtualList({
   // Sticky header — static chrome. Renders identically above ghost rows,
   // the settled-empty state, and real rows so no swap ever moves it.
   const header = (
-    <div className="flex items-center border-b border-primary/10 bg-secondary/80 flex-shrink-0" style={{ backgroundColor: 'hsl(var(--background))' }}>
+    <div className="flex items-center border-b border-primary/10 bg-secondary/80 flex-shrink-0" style={{ backgroundColor: 'var(--background)' }}>
       {density === 'comfortable' && <div className="w-20 px-4 py-3" />}
       <div className="flex-1 text-left typo-body text-foreground px-4 py-2">{t.templates.list.template_name}</div>
       <div className={`typo-body text-foreground px-4 py-2 flex-shrink-0 ${density === 'compact' ? 'w-32 text-center' : 'w-auto text-right'}`}>

@@ -146,7 +146,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
                 </button>
               </div>
               {/* Improvement #2: JSON syntax highlighting + fills height */}
-              <div className="flex-1 overflow-y-auto px-5 py-3 bg-[hsl(var(--background))]/60">
+              <div className="flex-1 overflow-y-auto px-5 py-3 bg-background/60">
                 <HighlightedJson raw={event.payload} />
               </div>
             </div>
