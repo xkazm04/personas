@@ -15,6 +15,7 @@ import {
 } from '@/api/fleet/fleet';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { useNowTick, formatAgo } from './relativeAgo';
+import { extractMessage } from '@/lib/silentCatch';
 
 /**
  * "Pair a device" — the real pairing flow for Fleet Command Anywhere.
@@ -49,7 +50,7 @@ export function FleetPairDevice() {
         silentCatch('FleetPairDevice:devices')(err);
         // A failed read must not render as "No devices paired yet": a paired,
         // active phone would look absent and un-revocable.
-        setLoadError(resolveError(err instanceof Error ? err.message : String(err)).message);
+        setLoadError(resolveError(extractMessage(err)).message);
       });
   }, []);
 

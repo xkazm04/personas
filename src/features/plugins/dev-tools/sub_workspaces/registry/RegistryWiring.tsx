@@ -25,6 +25,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { useVaultStore } from '@/stores/vaultStore';
 
 import { dispatchPairing, linkLocalRegistry, linkRegistry, type Registry } from './registryLinkStore';
+import { extractMessage } from '@/lib/silentCatch';
 
 // The clone path is CHOSEN, not derived — see `Registry.clonePath`. A scan skill
 // reads the registry working copy and the project repos side by side, so a URL
@@ -135,7 +136,7 @@ export function RegistryWiring({
       })
       .catch((e: unknown) => {
         if (cancelled) return;
-        setLoadError(e instanceof Error ? e.message : String(e));
+        setLoadError(extractMessage(e));
         setRepos([]);
         silentCatch('RegistryWiring:githubListRepos')(e);
       });

@@ -21,6 +21,7 @@ import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
+import { extractMessage } from '@/lib/silentCatch';
 
 import { RegistryWiring } from './RegistryWiring';
 import { LANES, unlinkRegistry, workspacesOn, type Registry } from './registryLinkStore';
@@ -58,7 +59,7 @@ export function RegistryHolding({
     } catch (e) {
       // The backend's sentence names which of connectivity / mapping / local
       // state to look at; a generic failure toast would discard exactly that.
-      const detail = e instanceof Error ? e.message.split('\n')[0] : String(e);
+      const detail = extractMessage(e).split('\n')[0];
       addToast(`${tr.sync_failed} ${detail}`, 'error');
     }
   };
