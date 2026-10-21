@@ -405,9 +405,10 @@ pub fn get_stats(
             .collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)?;
 
-        // Run breakdown
+        // Run breakdown, oldest run first: consumers (RunDiffView) treat the
+        // tail as the latest runs, so this is NOT ordered by memory count.
         let sql_run = format!(
-            "SELECT COALESCE(run_id, 'manual'), COUNT(*) as cnt FROM team_memories {where_clause} GROUP BY run_id ORDER BY cnt DESC"
+            "SELECT COALESCE(run_id, 'manual'), COUNT(*) as cnt FROM team_memories {where_clause} GROUP BY run_id ORDER BY MAX(created_at) ASC, 1 ASC"
         );
         let mut run_stmt = conn.prepare(&sql_run)?;
         let run_counts: Vec<(String, i64)> = run_stmt
@@ -515,5 +516,59 @@ mod tests {
         assert_eq!(stats.avg_importance, 0.0);
         assert!(stats.category_counts.is_empty());
         assert!(stats.run_counts.is_empty());
+    }
+
+    fn memory_in_run(pool: &DbPool, run_id: &str, title: &str, created_at: &str) {
+        let m = create(
+            pool,
+            CreateTeamMemoryInput {
+                team_id: "team-1".into(),
+                run_id: Some(run_id.into()),
+                member_id: None,
+                persona_id: None,
+                title: title.into(),
+                content: "content".into(),
+                category: None,
+                importance: None,
+                tags: None,
+            },
+        )
+        .unwrap();
+        pool.get()
+            .unwrap()
+            .execute(
+                "UPDATE team_memories SET created_at = ?1 WHERE id = ?2",
+                params![created_at, m.id],
+            )
+            .unwrap();
+    }
+
+    /// `run_counts` is read as "oldest to newest" (RunDiffView seeds the last
+    /// two entries as the latest runs), so it is ordered by when each run last
+    /// wrote, never by how many memories it wrote.
+    #[test]
+    fn run_counts_are_ordered_oldest_run_first_not_by_count() {
+        let pool = init_test_db().unwrap();
+        pool.get()
+            .unwrap()
+            .execute(
+                "INSERT INTO persona_teams (id, name, created_at, updated_at)                  VALUES ('team-1', 'team', datetime('now'), datetime('now'))",
+                [],
+            )
+            .unwrap();
+        memory_in_run(&pool, "run-old", "a", "2026-01-01T00:00:00+00:00");
+        for (i, title) in ["b", "c", "d"].into_iter().enumerate() {
+            memory_in_run(
+                &pool,
+                "run-new",
+                title,
+                &format!("2026-02-0{}T00:00:00+00:00", i + 1),
+            );
+        }
+        let stats = get_stats(&pool, "team-1", None, None).unwrap();
+        assert_eq!(
+            stats.run_counts,
+            vec![("run-old".to_string(), 1), ("run-new".to_string(), 3)]
+        );
     }
 }
