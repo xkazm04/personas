@@ -1800,7 +1800,7 @@ mod tests {
         let pool = crate::init_test_db().expect("init test db");
         let twin =
             create_profile(&pool, "Memory Fail Twin", None, None, None, None).expect("profile");
-        pool.get()
+        crate::PoolExt::conn(&pool, "test:twin_fail_trigger")
             .unwrap()
             .execute_batch(
                 "CREATE TRIGGER fail_pending_memory BEFORE INSERT ON twin_pending_memories                  BEGIN SELECT RAISE(ABORT, 'forced failure'); END;",
@@ -1810,8 +1810,7 @@ mod tests {
         let r = record_interaction(&pool, &twin.id, "email", "in", None, "hi", None, None, true);
         assert!(r.is_err(), "the memory write failed; the call must say so");
 
-        let n: i64 = pool
-            .get()
+        let n: i64 = crate::PoolExt::conn(&pool, "test:twin_count")
             .unwrap()
             .query_row(
                 "SELECT COUNT(*) AS n FROM twin_communications WHERE twin_id = ?1",

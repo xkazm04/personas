@@ -24,12 +24,10 @@ export type TimeRange = RollingDaysRange | CustomRange;
 /** Resolve a TimeRange to concrete start/end ISO date strings. */
 export function resolveTimeRange(range: TimeRange): { startDate: string; endDate: string } {
   if (range.kind === 'rolling-days') {
+    const toISO = (d: Date) => d.toISOString().slice(0, 10);
     const end = new Date();
     const start = new Date(end.getTime() - range.days * 24 * 60 * 60 * 1000);
-    return {
-      startDate: start.toISOString().slice(0, 10),
-      endDate: end.toISOString().slice(0, 10),
-    };
+    return { startDate: toISO(start), endDate: toISO(end) };
   }
   return { startDate: range.startDate, endDate: range.endDate };
 }

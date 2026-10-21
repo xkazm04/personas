@@ -534,7 +534,7 @@ mod tests {
             },
         )
         .unwrap();
-        pool.get()
+        crate::PoolExt::conn(pool, "test:team_memories_created_at")
             .unwrap()
             .execute(
                 "UPDATE team_memories SET created_at = ?1 WHERE id = ?2",
@@ -549,7 +549,7 @@ mod tests {
     #[test]
     fn run_counts_are_ordered_oldest_run_first_not_by_count() {
         let pool = init_test_db().unwrap();
-        pool.get()
+        crate::PoolExt::conn(&pool, "test:team_memories_team")
             .unwrap()
             .execute(
                 "INSERT INTO persona_teams (id, name, created_at, updated_at)                  VALUES ('team-1', 'team', datetime('now'), datetime('now'))",
