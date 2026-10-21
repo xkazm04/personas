@@ -1703,3 +1703,8 @@
 {"ts":"2026-10-21T12:20:17Z","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":["evidence-outranks-a-liveness-claim","absent-status-passthrough","session-registry","lifecycle-signals"],"deviations":1,"context":"fleet-monitor-channels","via":"curator-worker","model":"claude-opus-5-5"}
 {"ts":"2026-10-21T12:20:17Z","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":["session-registry"],"deviations":0,"context":"fleet-monitor-shell","via":"curator-worker","model":"claude-opus-5-5"}
 {"ts":"2026-10-21T12:20:17Z","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":["brief-carries-the-session","parallel-dispatch"],"deviations":1,"context":"notepad-plan","via":"curator-worker","model":"claude-opus-5-5"}
+{"ts":"2026-10-21T12:23:04Z","bundle":"software-engineering","subjects":["table"],"techniques":["loading-and-empty-states","sorting","client-server-split"],"deviations":2}
+{"ts":"2026-10-21T12:23:04Z","bundle":"software-engineering","subjects":["table"],"techniques":["loading-and-empty-states"],"deviations":1}
+{"ts":"2026-10-21T12:23:04Z","bundle":"software-engineering","subjects":["table"],"techniques":[],"deviations":0}
+{"ts":"2026-10-21T12:23:04Z","bundle":"software-engineering","subjects":["table"],"techniques":[],"deviations":0}
+{"ts":"2026-10-21T12:23:04Z","bundle":"software-engineering","subjects":["table"],"techniques":[],"deviations":0}

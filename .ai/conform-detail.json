@@ -22851,11 +22851,20 @@
       "subject": "table",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T00:00:00.000Z",
-      "worker": "5a399517-9013-4ffa-a4af-a2979e66ebe7",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:23:04.000Z",
+      "worker": "d0d5d9b2-b44c-4acb-9aee-43f05e83409c",
       "techniques": [],
-      "registryProposal": "Context plugins-artist-gallery has paths [] and its code was removed; the context map entry is dead and should be dropped on the next scan (map governance is weak)."
+      "registryProposal": "Not a registry finding: this context is empty in the project's context-map (zero file_paths) and should be retired by the next context scan rather than carrying pairs.",
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:1 retires the Artist plugin (artist_assets dropped at :18); git ls-files lists no src/features/plugins/artist, so the gallery context has no code and no table surface to judge",
+          "evaluatedAt": "2026-10-14T00:00:00.000Z",
+          "worker": "5a399517-9013-4ffa-a4af-a2979e66ebe7",
+          "reason": "replaced by d0d5d9b2-b44c-4acb-9aee-43f05e83409c"
+        }
+      ]
     },
     "942d2449-34ab-4f02-af7e-b130269d10ef/operator-surfaces-for-llm-spend": {
       "context": "fleet-triage-columns",
@@ -30590,6 +30599,69 @@
       "evaluatedTs": "2026-10-21T12:18:39.000Z",
       "worker": "172ec1ad-68b8-4c86-a059-6d85806a7c06",
       "techniques": []
+    },
+    "a4174786-a5fb-4145-a1b3-f02826fac64a/table": {
+      "context": "passport-wall-ui",
+      "subject": "table",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:23:04.000Z",
+      "worker": "d0d5d9b2-b44c-4acb-9aee-43f05e83409c",
+      "techniques": [
+        {
+          "technique": "loading-and-empty-states",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/ProjectsLayer.tsx:158 error is gated on passports.length === 0; a refresh failure while rows are shown is never surfaced (the technique requires keeping the rows AND surfacing the failure ambiently with its staleness); first-load failure vs empty is correctly split at :158-159 and the ghost at :187"
+        },
+        {
+          "technique": "sorting",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/ProjectsPassportWall.tsx:93 score sorts carry no identity tiebreaker and lean on input order from sortByNameAsc (src/features/teams/sub_factory/passport/passportModel.ts:325), which breaks ties by the display name - the label the technique names as mutable and colliding - not by identity.slug"
+        },
+        {
+          "technique": "client-server-split",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_factory/passport/ProjectsPassportWall.tsx:89 all-client regime: the full passport set is loaded once and sorted locally, with no server window to disagree with"
+        }
+      ]
+    },
+    "283b44f6-a4af-4a1f-8a0e-8b2dedb9adc0/table": {
+      "context": "shared-components-layout",
+      "subject": "table",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:23:04.000Z",
+      "worker": "d0d5d9b2-b44c-4acb-9aee-43f05e83409c",
+      "techniques": [
+        {
+          "technique": "loading-and-empty-states",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/layout/TableSkeleton.tsx:59 header ghost on by default makes chrome conditional on data; :75 bar widths vary per column but are identical on every row (the barcode the technique warns against); geometry-matching via column spans (:19) and the calm, non-pulsing tone (:55) are realized, and the 150-300ms delay is left to the caller (LeaderboardMatrixView.tsx:58 uses 185ms)"
+        }
+      ]
+    },
+    "67c91bb4-f3ee-4aa0-91ca-e7097ac6b394/table": {
+      "context": "fleet-session-grid",
+      "subject": "table",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:23:04.000Z",
+      "worker": "d0d5d9b2-b44c-4acb-9aee-43f05e83409c",
+      "techniques": []
+    },
+    "937c9d47-b0ca-4e3b-90e3-25baefe04474/table": {
+      "context": "supabase-sync-pipeline",
+      "subject": "table",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:23:04.000Z",
+      "worker": "d0d5d9b2-b44c-4acb-9aee-43f05e83409c",
+      "techniques": [],
+      "registryProposal": "Matcher false positive: the token overlap ['table','rows','client'] comes from database vocabulary (SQLite tables, sync rows, HTTP client), not a UI data table. The table subject could add a negative signal for contexts whose paths are entirely src-tauri/**/*.rs or that have no .tsx file."
     }
   }
 }

@@ -13353,7 +13353,11 @@
           "revision": 14,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/fleet/FleetSessionCard.tsx:18 sessions render as compact one-row cards in state groups (FleetSessionList.tsx:82) for 5-10 live CLIs, with no column model and no cross-record attribute comparison - the golden path's own 'a list, not a table' case",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+          "evaluatedRevision": 14
         },
         {
           "subject": "native-shell-integration",
@@ -23563,7 +23567,11 @@
           "revision": 14,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_factory/ProjectsLayer.tsx:158 failure renders only when zero passports are loaded, so a per-project rescan that fails (usePassportData.ts:471 sets error) leaves the comparison table showing the old rows with no failure signal and no staleness note",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+          "evaluatedRevision": 14
         },
         {
           "subject": "multi-project",
@@ -24779,12 +24787,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:1 retires the Artist plugin (artist_assets dropped at :18); git ls-files lists no src/features/plugins/artist, so the gallery context has no code and no table surface to judge",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:f5aa23bf6f14872f",
-          "evaluatedRevision": 13,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:1 retires the Artist plugin (artist_assets dropped at :18), and context-map.json lists zero file_paths for this context, so no gallery remains to judge; re-judged against revision 14",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+          "evaluatedRevision": 14,
+          "revisionsBehind": 1
         },
         {
           "subject": "codebase-scanning",
@@ -31250,7 +31257,11 @@
           "revision": 14,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/shared/components/layout/TableSkeleton.tsx:59 the shared table placeholder ghosts the header band by default (docstring :4-6 says swap in the real header after data), so its consumer LeaderboardMatrixView.tsx:60 hides the column headers while loading instead of rendering chrome first and ghosting only the body",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+          "evaluatedRevision": 14
         },
         {
           "subject": "test-harness",
@@ -33222,7 +33233,11 @@
           "revision": 14,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/cloud/sync/mod.rs:1 is a backend SQLite-to-Supabase sync writer with no UI surface; 'table' and 'rows' here mean database tables, so there is no rendered table for the subject to govern",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+          "evaluatedRevision": 14
         },
         {
           "subject": "embedded-db",
