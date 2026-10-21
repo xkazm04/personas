@@ -21369,7 +21369,12 @@
       "step_sr_label": "ধাপ {current}/{total}: {label} ({status})",
       "step_status_completed": "সম্পন্ন",
       "step_status_in_progress": "চলমান",
-      "step_status_upcoming": "আসন্ন"
+      "step_status_upcoming": "আসন্ন",
+      "precond_analyze_no_parse": "বিশ্লেষণ দেখা যাচ্ছে না: কোনো পার্স করা ওয়ার্কফ্লো নেই। আগে একটি ওয়ার্কফ্লো আপলোড করুন।",
+      "precond_transform_no_parse": "রূপান্তর করা যাচ্ছে না: কোনো পার্স করা ওয়ার্কফ্লো নেই। আগে একটি ওয়ার্কফ্লো আপলোড করে পার্স করুন।",
+      "precond_edit_no_draft": "এডিটর খোলা যাচ্ছে না: কোনো ড্রাফট নেই। আগে রূপান্তর চালান।",
+      "precond_confirm_no_draft": "নিশ্চিত করা যাচ্ছে না: কোনো ড্রাফট নেই। আগে রূপান্তর চালান।",
+      "precond_confirm_json_errors": "নিশ্চিত করা যাচ্ছে না: ড্রাফটে JSON ত্রুটি আছে। আগে এডিটরে সেগুলো ঠিক করুন।"
     },
     "opportunities": {
       "add_connector": "যোগ করুন",

@@ -21369,7 +21369,12 @@
       "step_sr_label": "Bước {current}/{total}: {label} ({status})",
       "step_status_completed": "đã hoàn tất",
       "step_status_in_progress": "đang thực hiện",
-      "step_status_upcoming": "sắp tới"
+      "step_status_upcoming": "sắp tới",
+      "precond_analyze_no_parse": "Không thể xem phân tích: chưa có quy trình nào được phân tích. Hãy tải quy trình lên trước.",
+      "precond_transform_no_parse": "Không thể chuyển đổi: chưa có quy trình nào được phân tích. Hãy tải lên và phân tích quy trình trước.",
+      "precond_edit_no_draft": "Không thể mở trình chỉnh sửa: chưa có bản nháp. Hãy chạy chuyển đổi trước.",
+      "precond_confirm_no_draft": "Không thể xác nhận: chưa có bản nháp. Hãy chạy chuyển đổi trước.",
+      "precond_confirm_json_errors": "Không thể xác nhận: bản nháp có lỗi JSON. Hãy sửa trong trình chỉnh sửa trước."
     },
     "opportunities": {
       "add_connector": "Thêm",

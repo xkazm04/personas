@@ -942,7 +942,12 @@
     "step_sr_label": "चरण {current}/{total}: {label} ({status})",
     "step_status_completed": "पूर्ण",
     "step_status_in_progress": "प्रगति में",
-    "step_status_upcoming": "आगामी"
+    "step_status_upcoming": "आगामी",
+    "precond_analyze_no_parse": "विश्लेषण नहीं दिखाया जा सकता: कोई पार्स किया हुआ वर्कफ़्लो नहीं है। पहले एक वर्कफ़्लो अपलोड करें।",
+    "precond_transform_no_parse": "रूपांतरण नहीं हो सकता: कोई पार्स किया हुआ वर्कफ़्लो नहीं है। पहले वर्कफ़्लो अपलोड करके पार्स करें।",
+    "precond_edit_no_draft": "एडिटर नहीं खुल सकता: कोई ड्राफ़्ट उपलब्ध नहीं है। पहले रूपांतरण चलाएँ।",
+    "precond_confirm_no_draft": "पुष्टि नहीं हो सकती: कोई ड्राफ़्ट उपलब्ध नहीं है। पहले रूपांतरण चलाएँ।",
+    "precond_confirm_json_errors": "पुष्टि नहीं हो सकती: ड्राफ़्ट में JSON त्रुटियाँ हैं। पहले उन्हें एडिटर में ठीक करें।"
   },
   "opportunities": {
     "add_connector": "जोड़ें",

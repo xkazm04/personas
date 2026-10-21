@@ -21369,7 +21369,12 @@
       "step_sr_label": "ステップ {current}/{total}: {label}（{status}）",
       "step_status_completed": "完了",
       "step_status_in_progress": "進行中",
-      "step_status_upcoming": "未着手"
+      "step_status_upcoming": "未着手",
+      "precond_analyze_no_parse": "分析を表示できません: 解析済みのワークフローがありません。先にワークフローをアップロードしてください。",
+      "precond_transform_no_parse": "変換できません: 解析済みのワークフローがありません。先にワークフローをアップロードして解析してください。",
+      "precond_edit_no_draft": "エディターを開けません: 下書きがありません。先に変換を実行してください。",
+      "precond_confirm_no_draft": "確認できません: 下書きがありません。先に変換を実行してください。",
+      "precond_confirm_json_errors": "確認できません: 下書きに JSON エラーがあります。先にエディターで修正してください。"
     },
     "opportunities": {
       "add_connector": "追加",

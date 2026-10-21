@@ -21369,7 +21369,12 @@
       "step_sr_label": "Krok {current} z {total}: {label} ({status})",
       "step_status_completed": "dokončeno",
       "step_status_in_progress": "probíhá",
-      "step_status_upcoming": "nadcházející"
+      "step_status_upcoming": "nadcházející",
+      "precond_analyze_no_parse": "Analýzu nelze zobrazit: není k dispozici žádný zpracovaný workflow. Nejprve nahrajte workflow.",
+      "precond_transform_no_parse": "Nelze transformovat: není k dispozici žádný zpracovaný workflow. Nejprve nahrajte a zpracujte workflow.",
+      "precond_edit_no_draft": "Editor nelze otevřít: není k dispozici žádný koncept. Nejprve spusťte transformaci.",
+      "precond_confirm_no_draft": "Nelze potvrdit: není k dispozici žádný koncept. Nejprve spusťte transformaci.",
+      "precond_confirm_json_errors": "Nelze potvrdit: koncept obsahuje chyby JSON. Nejprve je opravte v editoru."
     },
     "opportunities": {
       "add_connector": "Přidat",

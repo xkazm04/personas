@@ -21369,7 +21369,12 @@
       "step_sr_label": "Étape {current} sur {total} : {label} ({status})",
       "step_status_completed": "terminée",
       "step_status_in_progress": "en cours",
-      "step_status_upcoming": "à venir"
+      "step_status_upcoming": "à venir",
+      "precond_analyze_no_parse": "Impossible d'afficher l'analyse : aucun workflow analysé. Importez d'abord un workflow.",
+      "precond_transform_no_parse": "Impossible de transformer : aucun workflow analysé. Importez et analysez d'abord un workflow.",
+      "precond_edit_no_draft": "Impossible d'ouvrir l'éditeur : aucun brouillon disponible. Lancez d'abord une transformation.",
+      "precond_confirm_no_draft": "Impossible de confirmer : aucun brouillon disponible. Lancez d'abord une transformation.",
+      "precond_confirm_json_errors": "Impossible de confirmer : le brouillon contient des erreurs JSON. Corrigez-les d'abord dans l'éditeur."
     },
     "opportunities": {
       "add_connector": "Ajouter",

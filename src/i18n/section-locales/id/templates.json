@@ -942,7 +942,12 @@
     "step_sr_label": "Langkah {current} dari {total}: {label} ({status})",
     "step_status_completed": "selesai",
     "step_status_in_progress": "sedang berjalan",
-    "step_status_upcoming": "akan datang"
+    "step_status_upcoming": "akan datang",
+    "precond_analyze_no_parse": "Tidak dapat melihat analisis: tidak ada alur kerja yang diurai. Unggah alur kerja terlebih dahulu.",
+    "precond_transform_no_parse": "Tidak dapat mengubah: tidak ada alur kerja yang diurai. Unggah dan urai alur kerja terlebih dahulu.",
+    "precond_edit_no_draft": "Tidak dapat membuka editor: tidak ada draf. Jalankan transformasi terlebih dahulu.",
+    "precond_confirm_no_draft": "Tidak dapat mengonfirmasi: tidak ada draf. Jalankan transformasi terlebih dahulu.",
+    "precond_confirm_json_errors": "Tidak dapat mengonfirmasi: draf memiliki kesalahan JSON. Perbaiki di editor terlebih dahulu."
   },
   "opportunities": {
     "add_connector": "Tambah",

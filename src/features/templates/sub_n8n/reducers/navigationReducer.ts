@@ -1,4 +1,5 @@
 import type { N8nImportState, N8nImportAction, N8nWizardStep } from '../hooks/useN8nImportReducer';
+import { getActiveTranslations } from '@/i18n/useTranslation';
 
 // -- Navigation State Slice --
 
@@ -16,19 +17,22 @@ export function checkStepPrecondition(
   step: N8nWizardStep,
   state: Pick<N8nImportState, 'parsedResult' | 'draft' | 'draftJsonError'>,
 ): string | null {
+  // The reducers are plain functions with no hook; the message is read from the active locale
+  // when the precondition fails (it lands in `state.error`, which the tab renders as-is).
+  const n = getActiveTranslations().templates.n8n;
   switch (step) {
     case 'analyze':
-      if (!state.parsedResult) return 'Cannot view analysis: no parsed workflow. Upload a workflow first.';
+      if (!state.parsedResult) return n.precond_analyze_no_parse;
       break;
     case 'transform':
-      if (!state.parsedResult) return 'Cannot transform: no parsed workflow. Upload and parse a workflow first.';
+      if (!state.parsedResult) return n.precond_transform_no_parse;
       break;
     case 'edit':
-      if (!state.draft) return 'Cannot open editor: no draft available. Run a transform first.';
+      if (!state.draft) return n.precond_edit_no_draft;
       break;
     case 'confirm':
-      if (!state.draft) return 'Cannot confirm: no draft available. Run a transform first.';
-      if (state.draftJsonError) return 'Cannot confirm: draft has JSON errors. Fix them in the editor first.';
+      if (!state.draft) return n.precond_confirm_no_draft;
+      if (state.draftJsonError) return n.precond_confirm_json_errors;
       break;
   }
   return null;

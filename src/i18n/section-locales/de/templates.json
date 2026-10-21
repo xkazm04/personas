@@ -942,7 +942,12 @@
     "step_sr_label": "Schritt {current} von {total}: {label} ({status})",
     "step_status_completed": "abgeschlossen",
     "step_status_in_progress": "in Bearbeitung",
-    "step_status_upcoming": "ausstehend"
+    "step_status_upcoming": "ausstehend",
+    "precond_analyze_no_parse": "Analyse kann nicht angezeigt werden: Kein geparster Workflow vorhanden. Lade zuerst einen Workflow hoch.",
+    "precond_transform_no_parse": "Transformation nicht möglich: Kein geparster Workflow vorhanden. Lade zuerst einen Workflow hoch und parse ihn.",
+    "precond_edit_no_draft": "Editor kann nicht geöffnet werden: Kein Entwurf vorhanden. Führe zuerst eine Transformation aus.",
+    "precond_confirm_no_draft": "Bestätigen nicht möglich: Kein Entwurf vorhanden. Führe zuerst eine Transformation aus.",
+    "precond_confirm_json_errors": "Bestätigen nicht möglich: Der Entwurf enthält JSON-Fehler. Behebe sie zuerst im Editor."
   },
   "opportunities": {
     "add_connector": "Hinzufügen",

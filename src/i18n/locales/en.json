@@ -12143,7 +12143,12 @@
       "step_status_completed": "completed",
       "step_status_in_progress": "in progress",
       "step_status_upcoming": "upcoming",
-      "step_hint_analyze": "~30s"
+      "step_hint_analyze": "~30s",
+      "precond_analyze_no_parse": "Cannot view analysis: no parsed workflow. Upload a workflow first.",
+      "precond_transform_no_parse": "Cannot transform: no parsed workflow. Upload and parse a workflow first.",
+      "precond_edit_no_draft": "Cannot open editor: no draft available. Run a transform first.",
+      "precond_confirm_no_draft": "Cannot confirm: no draft available. Run a transform first.",
+      "precond_confirm_json_errors": "Cannot confirm: draft has JSON errors. Fix them in the editor first."
     },
     "diagram": {
       "no_flow_data": "No flow data available",

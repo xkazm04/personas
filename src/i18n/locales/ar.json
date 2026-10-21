@@ -21369,7 +21369,12 @@
       "step_sr_label": "الخطوة {current} من {total}: {label} ({status})",
       "step_status_completed": "مكتملة",
       "step_status_in_progress": "قيد التنفيذ",
-      "step_status_upcoming": "قادمة"
+      "step_status_upcoming": "قادمة",
+      "precond_analyze_no_parse": "لا يمكن عرض التحليل: لا يوجد سير عمل تم تحليله. حمّل سير عمل أولاً.",
+      "precond_transform_no_parse": "لا يمكن التحويل: لا يوجد سير عمل تم تحليله. حمّل سير عمل وحلّله أولاً.",
+      "precond_edit_no_draft": "لا يمكن فتح المحرر: لا توجد مسودة متاحة. شغّل التحويل أولاً.",
+      "precond_confirm_no_draft": "لا يمكن التأكيد: لا توجد مسودة متاحة. شغّل التحويل أولاً.",
+      "precond_confirm_json_errors": "لا يمكن التأكيد: تحتوي المسودة على أخطاء JSON. أصلحها في المحرر أولاً."
     },
     "opportunities": {
       "add_connector": "إضافة",

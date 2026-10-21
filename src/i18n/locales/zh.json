@@ -21369,7 +21369,12 @@
       "step_sr_label": "第 {current} 步，共 {total} 步：{label}（{status}）",
       "step_status_completed": "已完成",
       "step_status_in_progress": "进行中",
-      "step_status_upcoming": "即将开始"
+      "step_status_upcoming": "即将开始",
+      "precond_analyze_no_parse": "无法查看分析：没有已解析的工作流。请先上传工作流。",
+      "precond_transform_no_parse": "无法转换：没有已解析的工作流。请先上传并解析工作流。",
+      "precond_edit_no_draft": "无法打开编辑器：没有可用的草稿。请先运行转换。",
+      "precond_confirm_no_draft": "无法确认：没有可用的草稿。请先运行转换。",
+      "precond_confirm_json_errors": "无法确认：草稿存在 JSON 错误。请先在编辑器中修复。"
     },
     "opportunities": {
       "add_connector": "添加",

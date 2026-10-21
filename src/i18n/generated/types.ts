@@ -12150,6 +12150,11 @@ export type Translations = {
       step_status_in_progress: string;
       step_status_upcoming: string;
       step_hint_analyze: string;
+      precond_analyze_no_parse: string;
+      precond_transform_no_parse: string;
+      precond_edit_no_draft: string;
+      precond_confirm_no_draft: string;
+      precond_confirm_json_errors: string;
     };
     diagram: {
       no_flow_data: string;

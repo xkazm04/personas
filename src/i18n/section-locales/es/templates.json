@@ -942,7 +942,12 @@
     "step_sr_label": "Paso {current} de {total}: {label} ({status})",
     "step_status_completed": "completado",
     "step_status_in_progress": "en curso",
-    "step_status_upcoming": "próximo"
+    "step_status_upcoming": "próximo",
+    "precond_analyze_no_parse": "No se puede ver el análisis: no hay ningún flujo de trabajo analizado. Sube primero un flujo de trabajo.",
+    "precond_transform_no_parse": "No se puede transformar: no hay ningún flujo de trabajo analizado. Sube y analiza primero un flujo de trabajo.",
+    "precond_edit_no_draft": "No se puede abrir el editor: no hay ningún borrador disponible. Ejecuta primero una transformación.",
+    "precond_confirm_no_draft": "No se puede confirmar: no hay ningún borrador disponible. Ejecuta primero una transformación.",
+    "precond_confirm_json_errors": "No se puede confirmar: el borrador tiene errores de JSON. Corrígelos primero en el editor."
   },
   "opportunities": {
     "add_connector": "Agregar",
