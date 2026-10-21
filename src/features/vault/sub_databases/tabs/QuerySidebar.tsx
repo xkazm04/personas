@@ -137,7 +137,7 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
               type="button"
               aria-label={t.common.delete}
               onClick={(e) => { e.stopPropagation(); setPendingDelete({ id: q.id, title: q.title }); }}
-              className="p-0.5 text-foreground opacity-0 group-hover:opacity-100 hover:text-red-400/60 transition-all"
+              className="p-0.5 text-foreground opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:text-red-400/60 transition-all"
             >
               <Trash2 className="w-3 h-3" />
             </button>

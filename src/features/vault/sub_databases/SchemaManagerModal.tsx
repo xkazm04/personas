@@ -140,7 +140,7 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
                 <button
                   type="button"
                   onClick={() => { setEditName(credential.name); setIsEditingName(true); }}
-                  className="p-0.5 rounded text-foreground hover:text-muted-foreground/70 opacity-0 group-hover/name:opacity-100 transition-all shrink-0"
+                  className="p-0.5 rounded text-foreground hover:text-muted-foreground/70 opacity-0 group-hover/name:opacity-100 group-focus-within/name:opacity-100 focus-visible:opacity-100 transition-all shrink-0"
                   title={db.rename_credential}
                 >
                   <Pencil className="w-3 h-3" />
