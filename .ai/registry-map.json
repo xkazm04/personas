@@ -18259,7 +18259,11 @@
           "revision": 3,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/lib/harness/guide-generator.ts:88 The harness publishes a guide containing model-authored material without semantic, structural, and human-read acceptance gates for that document.",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:346e2d5ca7d54fa1",
+          "evaluatedRevision": 3
         },
         {
           "subject": "agent-memory",
