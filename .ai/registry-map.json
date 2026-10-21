@@ -7479,8 +7479,12 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "deviation",
+          "priorNotApplicable": 4,
+          "evidence": "src-tauri/src/commands/design/n8n_transform/cli_runner.rs:891 isolates the transform CLI in a stable shared temp_dir/personas-transform, which on Windows sits under $HOME so the upward walk still loads a home-level CLAUDE.md, and the loaded set is never asserted",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:25b61236a62604b0",
+          "evaluatedRevision": 31
         },
         {
           "subject": "voice-io",
@@ -12326,8 +12330,12 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "deviation",
+          "priorNotApplicable": 4,
+          "evidence": "src-tauri/src/engine/runner/mod.rs:1208 every run installs .claude/skills/personas-connector-*/SKILL.md into exec_dir (which may be the user's bound or home project) and nothing ever reaps them, so unbound connectors keep publishing descriptions into later sessions' skill listing",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:25b61236a62604b0",
+          "evaluatedRevision": 31
         },
         {
           "subject": "agent-cli-transport",
@@ -17689,8 +17697,12 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "deviation",
+          "priorNotApplicable": 4,
+          "evidence": "src/lib/harness/orchestrator.ts:256 an automated loop appends model-written failure explanations to .harness/AGENTS.md and redelivers them into every later area prompt with no capability-vs-steering classification, dedup or pruning",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:25b61236a62604b0",
+          "evaluatedRevision": 31
         },
         {
           "subject": "session-continuation",

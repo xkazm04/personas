@@ -31405,6 +31405,70 @@
           "reason": "replaced by 58a4e3f1-6365-4d82-bf7d-2e862cb02290"
         }
       ]
+    },
+    "d5c5e7fe-6353-41eb-800b-dc11adee0775/agent-instruction-files": {
+      "context": "engine-project-tracking",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:36:43.000Z",
+      "worker": "cbeba344-d661-4fe3-b50f-fae65a148c60",
+      "techniques": [
+        {
+          "technique": "sibling-floor-ownership",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/skills_sidecar/mod.rs:248 writes SKILL.md per bound connector with no removal path anywhere (no other code references the personas-connector- prefix for deletion); install is decided per run, retention by nobody - creation names no reaper"
+        },
+        {
+          "technique": "workspace-ancestry-isolation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/project_tracking/consolidator.rs:561 claims a $HOME CLAUDE.md no longer reaches the pulse turn, but on Windows tempfile/temp_dir resolves under %USERPROFILE%/AppData/Local/Temp, so the unbounded upward walk still reaches $HOME; the scratch cwd at :574 is positionally inside the span and the loaded set is never asserted"
+        }
+      ],
+      "registryProposal": "workspace-ancestry-isolation could name the platform trap: on Windows the OS temp dir is a descendant of the user profile, so 'run in an empty temp dir' does not empty the span on the unbounded-walk host; only a dir outside $HOME (or a loaded-set assertion) does"
+    },
+    "5d4b913e-4384-49d7-8854-5c7ddac7e19e/agent-instruction-files": {
+      "context": "commands-design",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:36:43.000Z",
+      "worker": "cbeba344-d661-4fe3-b50f-fae65a148c60",
+      "techniques": [
+        {
+          "technique": "workspace-ancestry-isolation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/design/n8n_transform/cli_runner.rs:891 a predictable, reused directory (not a fresh, ACL-restricted one like the consolidator's) inside the user profile on Windows; intent is right (comment at :889) but the span is not empty and nothing captures which instruction files loaded"
+        }
+      ]
+    },
+    "3084d603-7cdb-41cd-bbad-8f24a8015b3e/agent-instruction-files": {
+      "context": "lib-harness",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:36:43.000Z",
+      "worker": "cbeba344-d661-4fe3-b50f-fae65a148c60",
+      "techniques": [
+        {
+          "technique": "capability-before-steering",
+          "verdict": "deviation",
+          "evidence": "src/lib/harness/executor.ts:104 asks the agent to explain every failed feature in learnings, and orchestrator.ts:256 writes them back as standing text; a failure caused by an absent tool or denied permission becomes a steering line, which the technique names as the loop's first gate"
+        },
+        {
+          "technique": "line-earning",
+          "verdict": "deviation",
+          "evidence": "src/lib/harness/executor.ts:283 append-only rewrite of the whole file with no dedup, removal test or prune, so the floor grows by every run's learnings and is re-injected at executor.ts:56"
+        },
+        {
+          "technique": "context-reset-redelivery",
+          "verdict": "conformant",
+          "evidence": "src/lib/harness/orchestrator.ts:161 re-reads AGENTS.md from disk before each area rather than replaying a cached string, so each fresh executor session gets the current file"
+        }
+      ]
     }
   }
 }

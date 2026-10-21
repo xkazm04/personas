@@ -1763,3 +1763,6 @@
 {"ts":"2026-10-21T12:36:11Z","bundle":"software-engineering","subjects":["companion-identity"],"techniques":["disk-truth-db-index"],"deviations":1}
 {"ts":"2026-10-21T12:36:11Z","bundle":"software-engineering","subjects":["companion-identity"],"techniques":["anchored-identity-diffs"],"deviations":1}
 {"ts":"2026-10-21T12:36:11Z","bundle":"software-engineering","subjects":["companion-identity"],"techniques":["anchored-identity-diffs"],"deviations":1}
+{"ts":"2026-10-21T12:36:43Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":["sibling-floor-ownership","workspace-ancestry-isolation"],"deviations":1}
+{"ts":"2026-10-21T12:36:43Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":["workspace-ancestry-isolation"],"deviations":1}
+{"ts":"2026-10-21T12:36:43Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":["capability-before-steering","line-earning","context-reset-redelivery"],"deviations":1}
