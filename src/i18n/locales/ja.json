@@ -22534,7 +22534,9 @@
     "add_persona_available": "利用可能: {count}",
     "add_persona_all_connected": "すべてのペルソナが接続済みです",
     "add_persona_ungrouped": "グループなし",
-    "live_status_skipped": "スキップ"
+    "live_status_skipped": "スキップ",
+    "webhooks_load_failed": "Webhook トリガーを読み込めませんでした",
+    "webhooks_load_failed_desc": "一覧を読み取れなかったため、ここに空の一覧を表示すると誤解を招きます。トリガーは失われていません。もう一度お試しください。"
   },
   "twin": {
     "channels": {

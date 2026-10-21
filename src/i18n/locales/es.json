@@ -22534,7 +22534,9 @@
     "add_persona_available": "{count} disponibles",
     "add_persona_all_connected": "Todas las personas ya están conectadas",
     "add_persona_ungrouped": "Sin grupo",
-    "live_status_skipped": "Omitido"
+    "live_status_skipped": "Omitido",
+    "webhooks_load_failed": "No se pudieron cargar los disparadores de webhook",
+    "webhooks_load_failed_desc": "No se pudo leer la lista, así que mostrarla vacía sería engañoso. Tus disparadores no han desaparecido - inténtalo de nuevo."
   },
   "twin": {
     "channels": {

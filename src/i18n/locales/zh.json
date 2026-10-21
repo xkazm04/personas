@@ -22534,7 +22534,9 @@
     "add_persona_available": "{count} 个可用",
     "add_persona_all_connected": "所有角色均已连接",
     "add_persona_ungrouped": "未分组",
-    "live_status_skipped": "已跳过"
+    "live_status_skipped": "已跳过",
+    "webhooks_load_failed": "无法加载 Webhook 触发器",
+    "webhooks_load_failed_desc": "无法读取列表，在此显示空列表会产生误导。您的触发器并未丢失 - 请重试。"
   },
   "twin": {
     "channels": {

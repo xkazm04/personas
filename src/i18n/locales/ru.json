@@ -22534,7 +22534,9 @@
     "add_persona_available": "Доступно: {count}",
     "add_persona_all_connected": "Все персоны уже подключены",
     "add_persona_ungrouped": "Без группы",
-    "live_status_skipped": "Пропущено"
+    "live_status_skipped": "Пропущено",
+    "webhooks_load_failed": "Не удалось загрузить триггеры вебхуков",
+    "webhooks_load_failed_desc": "Список не удалось прочитать, поэтому пустой список здесь вводил бы в заблуждение. Ваши триггеры не пропали - повторите попытку."
   },
   "twin": {
     "channels": {

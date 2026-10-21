@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useKeyedCopyFlag } from '@/hooks/utility/interaction/useKeyedCopyFlag';
 import { Cloud, Plus, Trash2, Webhook, RefreshCw } from 'lucide-react';
 import { CopyButton, Button } from '@/features/shared/components/buttons';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { useAgentStore } from '@/stores/agentStore';
@@ -37,6 +39,9 @@ export function CloudWebhooksTab() {
 
   const [webhookRows, setWebhookRows] = useState<WebhookTriggerRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  // A list read that failed. Without it the empty state claims "no webhook
+  // triggers" about a list nobody could read.
+  const [loadFailed, setLoadFailed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   // Personas with an ACTIVE deployment: the only ones a webhook trigger can be
   // created for. The URL is /api/deployed/{slug} and this list reads triggers
@@ -58,6 +63,7 @@ export function CloudWebhooksTab() {
 
   const fetchWebhookTriggers = useCallback(async () => {
     const seq = fetchLatest.next();
+    let failedReads = 0;
     try {
       const [deployments, url] = await Promise.all([
         cloudListDeployments(),
@@ -89,12 +95,19 @@ export function CloudWebhooksTab() {
             const seen = new Set(newRows.map((r) => r.trigger.id));
             return [...prev.filter((r) => !seen.has(r.trigger.id)), ...newRows];
           });
-        } catch (err) { silentCatch("features/triggers/sub_cloud_webhooks/CloudWebhooksTab:catch1")(err); }
+        } catch (err) {
+          failedReads += 1;
+          silentCatch("features/triggers/sub_cloud_webhooks/CloudWebhooksTab:catch1")(err);
+        }
       });
 
       if (!fetchLatest.isCurrent(seq)) return;
       setWebhookRows(collected);
-    } catch (err) { silentCatch("features/triggers/sub_cloud_webhooks/CloudWebhooksTab:catch2")(err); } finally {
+      setLoadFailed(collected.length === 0 && failedReads > 0);
+    } catch (err) {
+      silentCatch("features/triggers/sub_cloud_webhooks/CloudWebhooksTab:catch2")(err);
+      if (fetchLatest.isCurrent(seq)) setLoadFailed(true);
+    } finally {
       if (fetchLatest.isCurrent(seq)) setIsLoading(false);
     }
   }, [personas, fetchLatest]);
@@ -264,7 +277,16 @@ export function CloudWebhooksTab() {
         )}
 
         {/* Empty state */}
-        {!isLoading && webhookRows.length === 0 && (
+        {!isLoading && webhookRows.length === 0 && loadFailed && (
+          <InlineErrorBanner
+            severity="error"
+            title={t.triggers.webhooks_load_failed}
+            message={t.triggers.webhooks_load_failed_desc}
+            onRetry={fetchWebhookTriggers}
+          />
+        )}
+
+        {!isLoading && webhookRows.length === 0 && !loadFailed && (
           <EmptyState
             art="link"
             size="md"
@@ -367,7 +389,7 @@ export function CloudWebhooksTab() {
                       f.status === 'completed' ? 'text-emerald-400' :
                       f.status === 'failed' ? 'text-red-400' : 'text-amber-400'
                     }`}>
-                      {f.status}
+                      {tokenLabel(t, 'execution', f.status)}
                     </span>
                     <span className="text-foreground">
                       <RelativeTime timestamp={f.firedAt ?? null} fallback="—" />

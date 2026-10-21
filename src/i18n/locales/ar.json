@@ -22534,7 +22534,9 @@
     "add_persona_available": "{count} متاحة",
     "add_persona_all_connected": "جميع الشخصيات متصلة بالفعل",
     "add_persona_ungrouped": "بدون مجموعة",
-    "live_status_skipped": "تم التخطي"
+    "live_status_skipped": "تم التخطي",
+    "webhooks_load_failed": "تعذّر تحميل مشغّلات الويب هوك",
+    "webhooks_load_failed_desc": "تعذّرت قراءة القائمة، وعرض قائمة فارغة هنا سيكون مضللًا. مشغّلاتك لم تُفقد - حاول مرة أخرى."
   },
   "twin": {
     "channels": {

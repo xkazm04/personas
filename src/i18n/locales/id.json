@@ -22534,7 +22534,9 @@
     "add_persona_available": "{count} tersedia",
     "add_persona_all_connected": "Semua persona sudah terhubung",
     "add_persona_ungrouped": "Tanpa grup",
-    "live_status_skipped": "Dilewati"
+    "live_status_skipped": "Dilewati",
+    "webhooks_load_failed": "Pemicu webhook tidak dapat dimuat",
+    "webhooks_load_failed_desc": "Daftar tidak dapat dibaca, sehingga daftar kosong di sini akan menyesatkan. Pemicu Anda tidak hilang - coba lagi."
   },
   "twin": {
     "channels": {

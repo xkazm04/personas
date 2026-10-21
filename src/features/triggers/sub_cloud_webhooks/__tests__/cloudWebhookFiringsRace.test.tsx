@@ -9,10 +9,11 @@ import csTriggers from '@/i18n/section-locales/cs/triggers.json';
 import enCommon from '@/i18n/section-locales/en/common.json';
 import enEmptyStates from '@/i18n/section-locales/en/empty_states.json';
 import enShared from '@/i18n/section-locales/en/shared.json';
+import enStatusTokens from '@/i18n/section-locales/en/status_tokens.json';
 
 vi.mock('@/i18n/useTranslation', () => ({
   useTranslation: () => ({
-    t: { triggers: csTriggers, common: enCommon, empty_states: enEmptyStates, shared: enShared },
+    t: { triggers: csTriggers, common: enCommon, empty_states: enEmptyStates, shared: enShared, status_tokens: enStatusTokens },
     tx: (s: string) => s,
     language: 'cs',
   }),

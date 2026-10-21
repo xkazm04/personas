@@ -949,5 +949,7 @@
   "add_persona_available": "{count} disponibles",
   "add_persona_all_connected": "Toutes les personas sont déjà connectées",
   "add_persona_ungrouped": "Sans groupe",
-  "live_status_skipped": "Ignoré"
+  "live_status_skipped": "Ignoré",
+  "webhooks_load_failed": "Impossible de charger les déclencheurs de webhook",
+  "webhooks_load_failed_desc": "La liste n’a pas pu être lue, une liste vide serait donc trompeuse. Vos déclencheurs ne sont pas perdus - réessayez."
 }

@@ -22534,7 +22534,9 @@
     "add_persona_available": "K dispozici: {count}",
     "add_persona_all_connected": "Všechny persony jsou již připojeny",
     "add_persona_ungrouped": "Bez skupiny",
-    "live_status_skipped": "Přeskočeno"
+    "live_status_skipped": "Přeskočeno",
+    "webhooks_load_failed": "Triggery webhooků se nepodařilo načíst",
+    "webhooks_load_failed_desc": "Seznam se nepodařilo přečíst, takže prázdný seznam by byl zavádějící. Vaše triggery nezmizely - zkuste to znovu."
   },
   "twin": {
     "channels": {

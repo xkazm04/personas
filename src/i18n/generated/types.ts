@@ -13649,6 +13649,8 @@ export type Translations = {
     add_persona_all_connected: string;
     add_persona_ungrouped: string;
     live_status_skipped: string;
+    webhooks_load_failed: string;
+    webhooks_load_failed_desc: string;
   };
   remote_approval: {
     title: string;

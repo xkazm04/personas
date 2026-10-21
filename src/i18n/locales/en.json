@@ -13642,7 +13642,9 @@
     "add_persona_available": "{count} available",
     "add_persona_all_connected": "All personas are already connected",
     "add_persona_ungrouped": "Ungrouped",
-    "live_status_skipped": "Skipped"
+    "live_status_skipped": "Skipped",
+    "webhooks_load_failed": "Couldn't load webhook triggers",
+    "webhooks_load_failed_desc": "The list could not be read, so an empty one here would be misleading. Your triggers are not gone - try again."
   },
   "remote_approval": {
     "title": "Remote run request",

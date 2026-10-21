@@ -22534,7 +22534,9 @@
     "add_persona_available": "{count}টি উপলব্ধ",
     "add_persona_all_connected": "সব পার্সোনা ইতিমধ্যে সংযুক্ত",
     "add_persona_ungrouped": "গ্রুপহীন",
-    "live_status_skipped": "এড়িয়ে যাওয়া হয়েছে"
+    "live_status_skipped": "এড়িয়ে যাওয়া হয়েছে",
+    "webhooks_load_failed": "ওয়েবহুক ট্রিগার লোড করা যায়নি",
+    "webhooks_load_failed_desc": "তালিকাটি পড়া যায়নি, তাই এখানে খালি তালিকা দেখানো বিভ্রান্তিকর হবে। আপনার ট্রিগারগুলো হারায়নি - আবার চেষ্টা করুন।"
   },
   "twin": {
     "channels": {

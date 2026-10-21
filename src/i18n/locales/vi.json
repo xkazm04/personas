@@ -22534,7 +22534,9 @@
     "add_persona_available": "{count} khả dụng",
     "add_persona_all_connected": "Tất cả persona đã được kết nối",
     "add_persona_ungrouped": "Chưa nhóm",
-    "live_status_skipped": "Đã bỏ qua"
+    "live_status_skipped": "Đã bỏ qua",
+    "webhooks_load_failed": "Không thể tải trình kích hoạt webhook",
+    "webhooks_load_failed_desc": "Không đọc được danh sách, nên hiển thị danh sách trống ở đây sẽ gây hiểu lầm. Các trình kích hoạt của bạn không mất - hãy thử lại."
   },
   "twin": {
     "channels": {

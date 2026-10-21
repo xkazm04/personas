@@ -949,5 +949,7 @@
   "add_persona_available": "{count} उपलब्ध",
   "add_persona_all_connected": "सभी पर्सोना पहले से जुड़े हुए हैं",
   "add_persona_ungrouped": "समूह रहित",
-  "live_status_skipped": "छोड़ा गया"
+  "live_status_skipped": "छोड़ा गया",
+  "webhooks_load_failed": "वेबहुक ट्रिगर लोड नहीं हो सके",
+  "webhooks_load_failed_desc": "सूची पढ़ी नहीं जा सकी, इसलिए यहाँ खाली सूची दिखाना भ्रामक होगा। आपके ट्रिगर गायब नहीं हुए हैं - फिर से कोशिश करें।"
 }

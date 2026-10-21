@@ -22534,7 +22534,9 @@
     "add_persona_available": "{count} verfügbar",
     "add_persona_all_connected": "Alle Personas sind bereits verbunden",
     "add_persona_ungrouped": "Ohne Gruppe",
-    "live_status_skipped": "Übersprungen"
+    "live_status_skipped": "Übersprungen",
+    "webhooks_load_failed": "Webhook-Trigger konnten nicht geladen werden",
+    "webhooks_load_failed_desc": "Die Liste konnte nicht gelesen werden, daher wäre eine leere Anzeige irreführend. Ihre Trigger sind nicht verloren - versuchen Sie es erneut."
   },
   "twin": {
     "channels": {
