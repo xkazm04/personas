@@ -236,10 +236,13 @@ impl ManifestSync {
     /// (bug-hunt 2026-06-07 p2p #3, manifest half).
     pub fn build_local_manifest(&self) -> Result<Vec<ManifestEntry>, AppError> {
         let conn = self.pool.get()?;
+        // datetime() on both sides: `expires_at` is stored as RFC3339 text, and a
+        // raw TEXT compare against datetime('now') reads an exposure that expired
+        // earlier the same UTC day as live (same fix as the exposure repo).
         let mut stmt = conn.prepare(
             "SELECT resource_type, resource_id, display_name, access_level, tags
              FROM exposed_resources
-             WHERE (expires_at IS NULL OR expires_at > datetime('now'))
+             WHERE (expires_at IS NULL OR datetime(expires_at) > datetime('now'))
                AND COALESCE(requires_auth, 0) = 0",
         )?;
 
@@ -421,5 +424,59 @@ impl ManifestSync {
             .query_map([], |row| row.get(0))?
             .collect::<Result<Vec<String>, _>>()?;
         Ok(ids)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use personas_db::PoolExt;
+
+    fn sync_over(pool: DbPool) -> ManifestSync {
+        let transport = Arc::new(
+            super::super::transport::QuicTransport::new("LocalPeer0001".into()).expect("transport"),
+        );
+        let connections = Arc::new(ConnectionManager::new(
+            transport,
+            pool.clone(),
+            "LocalPeer0001".into(),
+            "Local".into(),
+            8,
+        ));
+        ManifestSync::new(pool, connections)
+    }
+
+    fn expose(pool: &DbPool, id: &str, expires_at: &str) {
+        let conn = pool.conn("test:manifest_expiry").unwrap();
+        conn.execute(
+            "INSERT INTO exposed_resources (id, resource_type, resource_id, display_name,
+                requires_auth, expires_at)
+             VALUES (?1, 'persona', ?1, ?1, 0, ?2)",
+            rusqlite::params![id, expires_at],
+        )
+        .unwrap();
+    }
+
+    /// `expires_at` arrives as RFC3339 (`T`/`Z`); a raw compare against
+    /// `datetime('now')` (space-separated) kept an exposure that expired a
+    /// moment ago advertised until UTC midnight.
+    #[test]
+    fn manifest_drops_an_exposure_that_expired_earlier_today() {
+        let pool = personas_db::init_test_db().expect("test db");
+        let fmt = "%Y-%m-%dT%H:%M:%SZ";
+        let now = chrono::Utc::now();
+        expose(
+            &pool,
+            "expired",
+            &(now - chrono::Duration::seconds(2)).format(fmt).to_string(),
+        );
+        expose(
+            &pool,
+            "live",
+            &(now + chrono::Duration::hours(1)).format(fmt).to_string(),
+        );
+        let manifest = sync_over(pool).build_local_manifest().unwrap();
+        let ids: Vec<&str> = manifest.iter().map(|e| e.resource_id.as_str()).collect();
+        assert_eq!(ids, vec!["live"]);
     }
 }
