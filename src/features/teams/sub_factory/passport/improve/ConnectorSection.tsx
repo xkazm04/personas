@@ -7,13 +7,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Plug, ExternalLink } from 'lucide-react';
 
-import { listCredentials, healthcheckCredential } from '@/api/vault/credentials';
+import { listCredentials } from '@/api/vault/credentials';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { ThemedConnectorIcon, getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 import { useImprove } from './ImproveContext';
+import { cachedHealthcheck } from './credentialHealthCache';
 import { connectorSpecFor, candidateCredentials, catalogToolsFor, type CatalogTool } from './connectors';
 import { silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -39,8 +40,8 @@ export function ConnectorSection({ slug, rowKey, onClose }: { slug: string; rowK
         const cands = candidateCredentials(creds, spec);
         setCandidates(cands);
         cands.forEach((c) => {
-          healthcheckCredential(c.id)
-            .then((r) => { if (!cancelled) setHealth((h) => ({ ...h, [c.id]: r.success })); })
+          cachedHealthcheck(c.id)
+            .then((ok) => { if (!cancelled) setHealth((h) => ({ ...h, [c.id]: ok })); })
             .catch((err) => { silentCatch('ConnectorSection:healthcheckCredential')(err); if (!cancelled) setHealth((h) => ({ ...h, [c.id]: false })); });
         });
       })
