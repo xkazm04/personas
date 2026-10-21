@@ -194,7 +194,12 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
       await startNlQuery(queryId, credentialId, question, history, dbType);
 
       const pollStartedAt = Date.now();
+      // One snapshot read in flight at a time: a read slower than the interval
+      // let a second tick start before the first settled, and both then saw
+      // `completed` -- two `generated` events and two bubble rewrites per job.
+      let tickInFlight = false;
       pollRef.current = setInterval(async () => {
+        if (tickInFlight) return;
         if (Date.now() - pollStartedAt > NL_QUERY_POLL_TIMEOUT_MS) {
           clearInterval(pollRef.current);
           pollRef.current = undefined;
@@ -211,8 +216,11 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
           );
           return;
         }
+        tickInFlight = true;
         try {
           const snapshot: NlQuerySnapshot = await getNlQuerySnapshot(queryId);
+          // Cancelled or timed out while the read was in flight: its result is stale.
+          if (pollRef.current === undefined) return;
           if (snapshot.status === 'completed') {
             trackInteraction(NL_TELEMETRY, 'generated', snapshot.generated_sql ? 'with_sql' : 'no_sql');
             clearInterval(pollRef.current);
@@ -241,6 +249,7 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
             );
           }
         } catch (err) { silentCatch("features/vault/sub_databases/tabs/ChatTab:catch1")(err); }
+        finally { tickInFlight = false; }
       }, 800);
     } catch (err) {
       trackInteraction(NL_TELEMETRY, 'generation_failed', 'start');
