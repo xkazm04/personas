@@ -13386,8 +13386,8 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/plugins/fleet/useFleetOverlayActions.ts:84 spawns a claude process with the renderer-supplied root_path as cwd; fleet_spawn_session (src-tauri/src/commands/fleet/commands.rs:33) takes any string, admission only requires it non-empty (src-tauri/src/commands/fleet/queue.rs:1101) and the command carries no require_auth, so the executing command's target is chosen by the less trusted side instead of a project id the native side resolves",
-          "evaluatedAt": "2026-10-16",
+          "evidence": "src/features/plugins/fleet/useFleetOverlayActions.ts:85 spawns a claude session with the renderer-supplied root_path as cwd; fleet_spawn_session (src-tauri/src/commands/fleet/commands.rs:33) takes any string with no require_auth and admission only checks non-empty (src-tauri/src/commands/fleet/queue.rs:1101), so the less trusted side chooses where an executing process runs - re-confirmed 2026-10-21, prior anchor :84 was one line high",
+          "evaluatedAt": "2026-10-21",
           "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
           "evaluatedRevision": 4,
           "revisionsBehind": 1
@@ -15857,8 +15857,12 @@
           "revision": 4,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "deviation",
+          "priorNotApplicable": 4,
+          "evidence": "src/hooks/utility/data/useAutoUpdater.ts:207 the 6-hourly update poller is skipped only in DEV, not on a mobile build where the updater plugin is compiled out (src-tauri/Cargo.toml:268 ties it to the desktop feature), so the absent capability is called every 6h and filed as a failure via silentCatch at :123 - Sentry noise indistinguishable from a dead update endpoint",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
+          "evaluatedRevision": 4
         },
         {
           "subject": "mcp-tools",
@@ -19587,8 +19591,8 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/notepad/notepadActions.ts:162 sends project.root_path as the write target to fleet_write_dispatch_brief, whose native side only checks is_dir on it (src-tauri/src/commands/fleet/external.rs:93), so a corrupted renderer can write brief content under any directory on disk - while :176 of the same function already sends project.id to installSystemSkill and lets the native side resolve the root",
-          "evaluatedAt": "2026-10-16",
+          "evidence": "src/features/notepad/notepadActions.ts:162 sends project.root_path as the write root to fleet_write_dispatch_brief, whose native side only checks is_dir (src-tauri/src/commands/fleet/external.rs:93) before writing under it, so a corrupted renderer picks any directory on disk - while :176 of the same function already sends project.id and lets the native side resolve the root; re-confirmed 2026-10-21",
+          "evaluatedAt": "2026-10-21",
           "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
           "evaluatedRevision": 4,
           "revisionsBehind": 1
@@ -41028,8 +41032,8 @@
           "confidence": "probable",
           "state": "deviation",
           "priorNotApplicable": 4,
-          "evidence": "src-tauri/engine/src/chunker.rs:339 Vector ingestion reads caller-supplied files before checking its extension allow-list, allowing unsupported file classes to be accessed before the native positive rule can refuse them.",
-          "evaluatedAt": "2026-10-16",
+          "evidence": "src-tauri/src/commands/credentials/vector_kb.rs:553 kb_ingest_files gates renderer-supplied paths only with a deny-list of sensitive prefixes (validate_path_safety), so any unlisted location is ingested and made searchable; the extension allow-list is applied only later, after the read (src-tauri/engine/src/chunker.rs:339) - re-anchored from the chunker to the real gate",
+          "evaluatedAt": "2026-10-21",
           "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
           "evaluatedRevision": 4
         },

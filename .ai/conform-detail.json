@@ -22399,34 +22399,38 @@
       "subject": "native-shell-integration",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:35:00.000Z",
-      "worker": "56ce4ae4-545b-46a2-b62f-fdadbbf66288",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:39:42.000Z",
+      "worker": "39030afc-d468-4b92-8e28-a27e7f78deab",
       "techniques": [
         {
           "technique": "native-side-owns-the-target-set",
           "verdict": "deviation",
-          "evidence": "src/features/plugins/fleet/useFleetOverlayActions.ts:84 the rule-five inversion names the bound as a project root the native side resolved from its own records; kill/remove/write already take a native-issued session id (src/features/plugins/fleet/useFleetOverlayActions.ts:6) and the spawn uses no shell (src-tauri/src/commands/fleet/pty.rs:537 CommandBuilder::new(&claude_exe))"
+          "evidence": "src-tauri/src/commands/fleet/queue.rs:1101 the only bound on the executing command's working directory is non-emptiness; rule five's fallback (a project root the native side resolved from its own records) is not taken"
         },
         {
           "technique": "non-stealing-overlay",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/fleet/FleetTerminalOverlay.tsx:294 the terminal grid is an in-document fixed div under the app header, not a host window over other applications"
+          "evidence": "src/features/plugins/fleet/FleetTerminalOverlay.tsx:294 the terminal grid is an in-document fixed div under the app header, not a host window over other applications",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "query-transparent-overlay",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/fleet/FleetTerminalOverlay.tsx:294 no surface over a foreign application"
+          "evidence": "src/features/plugins/fleet/FleetTerminalOverlay.tsx:294 no surface over a foreign application",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "observer-perturbation",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/fleet/FleetTerminalOverlay.tsx:294 the overlay covers only the product's own document"
+          "evidence": "src/features/plugins/fleet/FleetTerminalOverlay.tsx:294 the overlay covers only the product's own document",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "layout-resolved-input-synthesis",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/fleet/useFleetOverlayActions.ts:6 writeInput writes text to a PTY the product owns, not a synthesized chord into a foreign application"
+          "evidence": "src/features/plugins/fleet/useFleetOverlayActions.ts:6 writeInput writes text to a PTY the product owns, not a synthesized chord into a foreign application",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "permission-gate-vector",
@@ -22442,6 +22446,13 @@
           "evaluatedAt": "2026-10-13T11:30:27.173Z",
           "worker": "5776a53e-f892-4da5-8247-972bc619bce1",
           "reason": "replaced by 56ce4ae4-545b-46a2-b62f-fdadbbf66288"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/plugins/fleet/useFleetOverlayActions.ts:84 spawns a claude process with the renderer-supplied root_path as cwd; fleet_spawn_session (src-tauri/src/commands/fleet/commands.rs:33) takes any string, admission only requires it non-empty (src-tauri/src/commands/fleet/queue.rs:1101) and the command carries no require_auth, so the executing command's target is chosen by the less trusted side instead of a project id the native side resolves",
+          "evaluatedAt": "2026-10-16T17:35:00.000Z",
+          "worker": "56ce4ae4-545b-46a2-b62f-fdadbbf66288",
+          "reason": "replaced by 39030afc-d468-4b92-8e28-a27e7f78deab"
         }
       ]
     },
@@ -22450,39 +22461,44 @@
       "subject": "native-shell-integration",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:35:00.000Z",
-      "worker": "56ce4ae4-545b-46a2-b62f-fdadbbf66288",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:39:42.000Z",
+      "worker": "39030afc-d468-4b92-8e28-a27e7f78deab",
       "techniques": [
         {
           "technique": "native-side-owns-the-target-set",
           "verdict": "deviation",
-          "evidence": "src/features/notepad/notepadActions.ts:162 rule one: a target (root_path) crosses instead of the project identity used at :176; rule two is realised for the relative part only (src-tauri/src/commands/fleet/external.rs:60 resolve_inside refuses non-Normal components), the root itself is unbounded"
+          "evidence": "src-tauri/src/commands/fleet/external.rs:93 the write root is a renderer string tested only for being a directory; resolve_inside bounds the relative path but not the root (rule one: send an identity, not a target)"
         },
         {
           "technique": "non-stealing-overlay",
           "verdict": "not-applicable",
-          "evidence": "src/features/notepad/NotepadOverlayHost.tsx:423 the pad is an in-document fixed div under the title bar, not a host window over another application"
+          "evidence": "src/features/notepad/NotepadOverlayHost.tsx:423 the pad is an in-document fixed div under the title bar, not a host window over another application",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "query-transparent-overlay",
           "verdict": "not-applicable",
-          "evidence": "src/features/notepad/NotepadOverlayHost.tsx:423 no surface over a foreign application, so no point query can hit it"
+          "evidence": "src/features/notepad/NotepadOverlayHost.tsx:423 no surface over a foreign application, so no point query can hit it",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "observer-perturbation",
           "verdict": "not-applicable",
-          "evidence": "src/features/notepad/NotepadOverlayHost.tsx:423 the surface covers only the product's own document"
+          "evidence": "src/features/notepad/NotepadOverlayHost.tsx:423 the surface covers only the product's own document",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "permission-gate-vector",
           "verdict": "not-applicable",
-          "evidence": "src/features/notepad/notepadActions.ts:11 the context's native calls are companion/fleet/devTools commands; no out-of-band host grant is read or required"
+          "evidence": "src/features/notepad/notepadActions.ts:11 the context's native calls are companion/fleet/devTools commands; no out-of-band host grant is read or required",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "layout-resolved-input-synthesis",
           "verdict": "not-applicable",
-          "evidence": "src/features/notepad/notepadActions.ts:12 delivery is a file brief plus a fleet dispatch, no synthesized input into a foreign application"
+          "evidence": "src/features/notepad/notepadActions.ts:12 delivery is a file brief plus a fleet dispatch, no synthesized input into a foreign application",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "native-owned-stream",
@@ -22491,7 +22507,6 @@
           "carriedFrom": "2026-10-13"
         }
       ],
-      "registryProposal": "Revision 4's native-side-owns-the-target-set reaches UI caller contexts whose native side lives elsewhere (src-tauri/src/commands/fleet/); the map pairs this subject only with frontend contexts, so the Rust fleet-commands context that owns the handlers is unpaired - the matcher missed it (repo says dispatch brief / spawn / cwd where the technique says target set / allow-list).",
       "superseded": [
         {
           "state": "not-applicable",
@@ -22499,6 +22514,13 @@
           "evaluatedAt": "2026-10-13T11:30:27.173Z",
           "worker": "5776a53e-f892-4da5-8247-972bc619bce1",
           "reason": "replaced by 56ce4ae4-545b-46a2-b62f-fdadbbf66288"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/notepad/notepadActions.ts:162 sends project.root_path as the write target to fleet_write_dispatch_brief, whose native side only checks is_dir on it (src-tauri/src/commands/fleet/external.rs:93), so a corrupted renderer can write brief content under any directory on disk - while :176 of the same function already sends project.id to installSystemSkill and lets the native side resolve the root",
+          "evaluatedAt": "2026-10-16T17:35:00.000Z",
+          "worker": "56ce4ae4-545b-46a2-b62f-fdadbbf66288",
+          "reason": "replaced by 39030afc-d468-4b92-8e28-a27e7f78deab"
         }
       ]
     },
@@ -28537,29 +28559,41 @@
       "subject": "native-shell-integration",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T23:08:35.179Z",
-      "worker": "ef8dba44-069f-4690-932f-71299b6d5ea1",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:39:42.000Z",
+      "worker": "39030afc-d468-4b92-8e28-a27e7f78deab",
       "techniques": [
-        {
-          "technique": "layout-resolved-input-synthesis",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/shared/vector/VectorKbModal.tsx:83 Keyboard handling changes the product's own tab selection rather than synthesizing foreign-application input."
-        },
         {
           "technique": "native-side-owns-the-target-set",
           "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/chunker.rs:339 IngestDropZone.tsx:73 passes presentation-layer paths through vectorKb.ts:46 to kb_ingest_files; vector_kb.rs:546–556 canonicalizes and applies sensitive-path denylists, but chunker.rs checks supported extensions only at lines 341–348, after this filesystem read."
+          "evidence": "src-tauri/src/commands/credentials/vector_kb.rs:553 a deny-list is the gate rather than the backstop (rule two); and :612 kb_ingest_directory lets caller-supplied patterns replace the native extension allow-list, so the positive rule is the caller's"
+        },
+        {
+          "technique": "layout-resolved-input-synthesis",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/shared/vector/VectorKbModal.tsx:83 Keyboard handling changes the product's own tab selection rather than synthesizing foreign-application input.",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "non-stealing-overlay",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/shared/vector/ingest/IngestDropZone.tsx:105 The drop indicator is a DOM element inside the application, rather than an always-on-top native window over another application."
+          "evidence": "src/features/vault/shared/vector/ingest/IngestDropZone.tsx:105 The drop indicator is a DOM element inside the application, rather than an always-on-top native window over another application.",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "query-transparent-overlay",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/shared/vector/VectorKbModal.tsx:91 The inspected element query targets the modal's own DOM tab button rather than a foreign application's accessibility tree."
+          "evidence": "src/features/vault/shared/vector/VectorKbModal.tsx:91 The inspected element query targets the modal's own DOM tab button rather than a foreign application's accessibility tree.",
+          "carriedFrom": "2026-10-16"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/chunker.rs:339 Vector ingestion reads caller-supplied files before checking its extension allow-list, allowing unsupported file classes to be accessed before the native positive rule can refuse them.",
+          "evaluatedAt": "2026-10-16T23:08:35.179Z",
+          "worker": "ef8dba44-069f-4690-932f-71299b6d5ea1",
+          "reason": "replaced by 39030afc-d468-4b92-8e28-a27e7f78deab"
         }
       ]
     },
@@ -31476,6 +31510,28 @@
           "evidence": "src/lib/harness/orchestrator.ts:161 re-reads AGENTS.md from disk before each area rather than replaying a cached string, so each fresh executor session gets the current file"
         }
       ]
+    },
+    "107445f8-c266-4671-8160-f854bd79319e/native-shell-integration": {
+      "context": "hooks-utility-data",
+      "subject": "native-shell-integration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:39:42.000Z",
+      "worker": "39030afc-d468-4b92-8e28-a27e7f78deab",
+      "techniques": [
+        {
+          "technique": "capability-presence-contract",
+          "verdict": "deviation",
+          "evidence": "src/hooks/utility/data/useAutoUpdater.ts:207 the compile-out (src-tauri/Cargo.toml:268) is not mirrored by a declared presence class the hook reads; the build and the frontend disagree, which the technique names as the failure of compiling out without declaring the class"
+        },
+        {
+          "technique": "native-owned-stream",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/data/useAutoUpdater.ts:208 the context owns a timed 6-hourly poll, not a long-lived stream; no subscriber here waits on frames"
+        }
+      ],
+      "registryProposal": "useEngineCapabilities.ts:68 leaves the installed-providers set empty when the local health check rejects (unknown read as absent). That is unknown-is-not-a-value, but the capability is an external executable, which the golden path routes to a different subject; the subject could name which subject owns 'installed-tool presence' so the next judge does not have to guess"
     }
   }
 }
