@@ -32877,6 +32877,48 @@
         }
       ],
       "registryProposal": "Not a corpus finding: the context recipes-playground has empty paths in both context-map.json and the registry map yet stats.deadContexts reports 0. A context whose files were all deleted should be flagged dead, not left to collect pairs; this is a context-map rescan question for the consumer."
+    },
+    "ef4a1671-8bf4-44b2-9ae9-cb2533b780a6/error-handling": {
+      "context": "lib-utils",
+      "subject": "error-handling",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:36:40.000Z",
+      "worker": "0b0f264f-2109-4dc4-9a7b-6078e390705d",
+      "techniques": [
+        {
+          "technique": "taxonomy-design",
+          "verdict": "deviation",
+          "evidence": "src/lib/utils/apiError.ts:55 a second frontend classifier (severity from prose patterns) independent of src/lib/errorTaxonomy.ts:4, which tells subsystems to import from it instead of maintaining independent heuristics"
+        },
+        {
+          "technique": "structured-propagation",
+          "verdict": "deviation",
+          "evidence": "src/lib/utils/apiError.ts:57 the app's own InvokeTimeoutError (src/lib/tauriInvoke.ts:134, a typed class carrying backendMayStillBeRunning) has no instanceof branch and is rediscovered as transient from its message text; kind-first path (:146) and cause preservation (:33) are otherwise realized"
+        },
+        {
+          "technique": "crash-capture",
+          "verdict": "conformant",
+          "evidence": "src/lib/utils/crashPersistence.ts:111 sanitizes before the first write, local spool bounded at :36, spool parsed defensively at :122, backend shipping fire-and-forget at :157"
+        },
+        {
+          "technique": "error-doors",
+          "verdict": "conformant",
+          "evidence": "src/lib/utils/staleWhileRevalidate.ts:135 background revalidation failure routed through silentCatch; src/lib/utils/tauri/safeInvoke.ts:80 fallback only for the declared unregistered-command probe, everything else rethrown"
+        },
+        {
+          "technique": "swallowed-error-prevention",
+          "verdict": "conformant",
+          "evidence": "src/lib/utils/parseJson.ts:26 the one empty catch is visibly declared intentional, and the module offers the error-returning safeJsonParse beside it"
+        },
+        {
+          "technique": "user-facing-mapping",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/utils/apiError.ts:195 the context only extracts raw messages; the copy registry lives in src/lib/errors/errorRegistry.ts outside this context"
+        }
+      ],
+      "registryProposal": "lib-utils is a consolidated grab-bag (cron presets, animation, crash persistence, fetch caches, apiError); error-handling governs only 5 of its 17 files, so a whole-context verdict is driven by apiError.ts. Consider letting conform verdicts scope to a file subset for consolidated contexts."
     }
   }
 }
