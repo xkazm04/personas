@@ -4,7 +4,7 @@
 // config) so the user sees exactly how golden-standard practices lift the scores
 // before applying. Apply → setStandardsConfig + re-derive. Portalled + anchored
 // so the matrix's overflow-x-auto never clips it.
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Sparkles, X, ArrowRight } from 'lucide-react';
 
@@ -14,6 +14,7 @@ import { derivePassportFromMetadata } from '../passportDerive';
 import { CI_LABEL, SECURITY_LABEL } from '../passportModel';
 import { ReadinessSeal } from '../passportWidgets';
 import { useImprove } from './ImproveContext';
+import { useAnchoredPopover } from './useAnchoredPopover';
 import {
   parseStandards, serializeStandards, applyStandardsActions, applicableStandardsActions,
 } from './standards';
@@ -35,8 +36,6 @@ export function ImprovePopover({
   const d = t.plugins.dev_tools;
   const engine = useImprove();
   const addToast = useToastStore((s) => s.addToast);
-  const panelRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const [saving, setSaving] = useState(false);
 
   const raw = engine?.getRaw(slug);
@@ -53,22 +52,7 @@ export function ImprovePopover({
     return { picked, projectedStandards, before, after };
   }, [raw, applicable, selected]);
 
-  useLayoutEffect(() => {
-    if (!anchor) { setPos(null); return; }
-    const panelH = panelRef.current?.offsetHeight ?? 300;
-    const spaceBelow = window.innerHeight - anchor.bottom;
-    const top = spaceBelow < panelH + 14 && anchor.top > spaceBelow ? Math.max(8, anchor.top - panelH - 6) : anchor.bottom + 6;
-    const left = Math.max(8, Math.min(anchor.left, window.innerWidth - WIDTH - 8));
-    setPos({ top, left });
-  }, [anchor, selected]);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    const onDown = (e: MouseEvent) => { if (panelRef.current && !panelRef.current.contains(e.target as Node)) onClose(); };
-    window.addEventListener('keydown', onKey);
-    const id = window.setTimeout(() => document.addEventListener('mousedown', onDown), 0);
-    return () => { window.removeEventListener('keydown', onKey); window.clearTimeout(id); document.removeEventListener('mousedown', onDown); };
-  }, [onClose]);
+  const { panelRef, style: popStyle } = useAnchoredPopover({ anchor, width: WIDTH, onClose, active: !!raw && !!anchor && !!projection, estimatedHeight: 300, layoutKey: selected });
 
   if (!raw || !anchor || !projection) return null;
 
@@ -93,9 +77,10 @@ export function ImprovePopover({
     <div
       ref={panelRef}
       role="dialog"
+      tabIndex={-1}
       aria-label={tx(d.improve_pop_title, { name: raw.project.name })}
-      style={{ top: pos?.top ?? anchor.bottom + 6, left: pos?.left ?? anchor.left, width: WIDTH, visibility: pos ? 'visible' : 'hidden' }}
-      className="fixed z-[9995] rounded-modal border border-primary/15 bg-background shadow-elevation-4 overflow-hidden"
+      style={popStyle(anchor)}
+      className="fixed z-[9995] outline-none rounded-modal border border-primary/15 bg-background shadow-elevation-4 overflow-hidden"
     >
       <div className="flex items-center gap-1.5 px-3 py-2 border-b border-primary/10 bg-primary/[0.04]">
         <Sparkles className="w-3.5 h-3.5 text-primary flex-shrink-0" aria-hidden />
