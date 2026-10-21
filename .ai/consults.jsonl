@@ -1801,3 +1801,5 @@
 {"ts":"2026-10-21T12:44:46Z","bundle":"software-engineering","subjects":["chat-transcript"],"techniques":["turn-model"],"deviations":0}
 {"ts":"2026-10-21T12:44:46Z","bundle":"software-engineering","subjects":["chat-transcript"],"techniques":["turn-model"],"deviations":0}
 {"ts":"2026-10-21T12:44:46Z","bundle":"software-engineering","subjects":["chat-transcript"],"techniques":["turn-model"],"deviations":0}
+{"ts":"2026-10-21T12:45:31Z","bundle":"software-engineering","subjects":["background-jobs"],"techniques":["job-progress-and-cancellation"],"deviations":1}
+{"ts":"2026-10-21T12:45:31Z","bundle":"software-engineering","subjects":["background-jobs"],"techniques":["loop-supervision","tick-isolation","adaptive-cadence","loop-health-telemetry"],"deviations":1}

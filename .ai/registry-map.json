@@ -5020,8 +5020,8 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/workflows.rs:69 the WorkflowJob projection drops the cancel_outcome JobSnapshot carries (src-tauri/src/background_job.rs:1002) though :134 claims the snapshot reports it, and src/api/pipeline/workflows.ts:16 cancel resolves void onto a terminal Failed row, so no client can show cancelling or tell cancelled from failed",
-          "evaluatedAt": "2026-10-16",
+          "evidence": "src-tauri/src/commands/infrastructure/workflows.rs:69 the WorkflowJob projection still drops the cancel_outcome JobSnapshot carries (src-tauri/src/background_job.rs:1002) though :134 says the snapshot reports it, and src/api/pipeline/workflows.ts:16 cancel resolves void, so no client can show cancelling or tell cancelled from failed",
+          "evaluatedAt": "2026-10-21",
           "evaluatedAgainst": "sha256-b2:22ed2a99172ae050",
           "evaluatedRevision": 5,
           "revisionsBehind": 1
@@ -7196,7 +7196,11 @@
           "revision": 5,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:176 an unreadable registry root (and :199 unreadable brakes) logs and returns from a unit tick, and src-tauri/src/engine/subscription/runner.rs:219 records only latency, so a curator loop that fails every tick looks identical to a healthy idle one on the health surface",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:22ed2a99172ae050",
+          "evaluatedRevision": 5
         },
         {
           "subject": "session-continuation",

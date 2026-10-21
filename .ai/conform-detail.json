@@ -11757,29 +11757,32 @@
       "subject": "background-jobs",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:44:08.000Z",
-      "worker": "c20f1ff3-2b39-4b57-9b78-f3f3bd7407a3",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:45:31.000Z",
+      "worker": "4b6bde5a-89ad-46bf-b2e3-ed4838ecc33c",
       "techniques": [
         {
           "technique": "job-progress-and-cancellation",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/workflows.rs:69 cancel_outcome is dropped from WorkflowJob; src-tauri/src/background_job.rs:684 sync cancel writes JobStatus::Failed at once, no cancelling state, no distinct cancelled terminal - collapses two-step acknowledgement and failure/cancelled into one gray endpoint"
+          "evidence": "src/lib/bindings/WorkflowJob.ts:3 has no cancel_outcome or cancelling state; the two-step cancel acknowledgement and the cancelled terminal state never reach the observer"
         },
         {
           "technique": "job-progress-and-cancellation (re-attach snapshot)",
           "verdict": "realized",
-          "evidence": "src-tauri/src/commands/infrastructure/workflows.rs:75 overview snapshot carries a bounded 20-line output_tail per job id, read via src/api/pipeline/workflows.ts:10"
+          "evidence": "src-tauri/src/commands/infrastructure/workflows.rs:75 overview snapshot carries a bounded 20-line output_tail per job id, read via src/api/pipeline/workflows.ts:10",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "loop-supervision",
           "verdict": "not-applicable",
-          "evidence": "src/api/pipeline/workflows.ts:1 this context is IPC wrappers; the supervisor/loops live in src-tauri, not in these files"
+          "evidence": "src/api/pipeline/workflows.ts:1 this context is IPC wrappers; the supervisor/loops live in src-tauri, not in these files",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "timeout-is-a-status-not-a-consumption",
           "verdict": "not-applicable",
-          "evidence": "src/api/pipeline/workflows.ts:12 no wait-for-result call on a tracked job exists; the client only lists, reads output and cancels"
+          "evidence": "src/api/pipeline/workflows.ts:12 no wait-for-result call on a tracked job exists; the client only lists, reads output and cancels",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "job-progress-and-cancellation:re-attach",
@@ -11794,7 +11797,7 @@
           "carriedFrom": "2026-10-12"
         }
       ],
-      "registryProposal": "Prior verdict (rev 4) re-judged against rev 5: still a deviation. Partial backend fix (ae76c1fb8c CancelOutcome Requested/Reclaimed) shows a real-world middle state the technique lacks words for: a cancel that SIGNALLED but cannot prove the task stopped. The technique's two-step cancelling->cancelled assumes the runner can observe stop; consider naming 'requested-unconfirmed' as an honest terminal-ish state for un-abortable spans. Also: cancelWorkflowJob/getWorkflowsOverview have no UI caller in src/ - context paths may over-claim this surface.",
+      "registryProposal": "Re-judged at unchanged digest sha256-b2:22ed2a99172ae050 (revision 5, matches registry 145ab09c); the map row reports revisionsBehind 1 although evaluatedRevision equals revision, which looks like a builder arithmetic bug worth checking.",
       "superseded": [
         {
           "state": "deviation",
@@ -11823,6 +11826,13 @@
           "evaluatedAt": "2026-10-12T12:42:43.000Z",
           "worker": "d89c71ba-1f03-41f8-a35b-8392166d55e2",
           "reason": "replaced by c20f1ff3-2b39-4b57-9b78-f3f3bd7407a3"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/workflows.rs:69 the WorkflowJob projection drops the cancel_outcome JobSnapshot carries (src-tauri/src/background_job.rs:1002) though :134 claims the snapshot reports it, and src/api/pipeline/workflows.ts:16 cancel resolves void onto a terminal Failed row, so no client can show cancelling or tell cancelled from failed",
+          "evaluatedAt": "2026-10-16T17:44:08.000Z",
+          "worker": "c20f1ff3-2b39-4b57-9b78-f3f3bd7407a3",
+          "reason": "replaced by 4b6bde5a-89ad-46bf-b2e3-ed4838ecc33c"
         }
       ]
     },
@@ -31859,6 +31869,38 @@
           "evidence": "src/features/shared/glyph/persona-layout/PersonaLayout.tsx:10 a three-mode (view/adoption/scratch) sigil layout of capability rows; no conversation turns are rendered, so the precondition does not hold"
         }
       ]
+    },
+    "33a96a83-6adc-42f7-b57c-839382bcef54/background-jobs": {
+      "context": "commands-curator",
+      "subject": "background-jobs",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:45:31.000Z",
+      "worker": "4b6bde5a-89ad-46bf-b2e3-ed4838ecc33c",
+      "techniques": [
+        {
+          "technique": "loop-supervision",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/background/lifecycle.rs:224 registers CuratorLoopSubscription with the shared runner (named, generation-stoppable) instead of a bare spawn+loop"
+        },
+        {
+          "technique": "tick-isolation",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/subscription/runner.rs:153 wraps every tick in catch_unwind with crash event and backoff; no per-tick deadline beyond the overrun warning, not judged further"
+        },
+        {
+          "technique": "adaptive-cadence",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:134 declares a wake signal beside the 60s/180s active/idle intervals, so operator requests skip the poll wait"
+        },
+        {
+          "technique": "loop-health-telemetry",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/subscription/traits.rs:37 tick returns (), so the envelope has no failed vs succeeded-empty vs skipped outcome; tick.rs:176/:199 failures are tracing-only"
+        }
+      ],
+      "registryProposal": "Context is marked governance weak, but the subject genuinely governs it: tick.rs is a supervised loop. The loop-health-telemetry root cause sits in the shared ReactiveSubscription trait (src-tauri/engine/src/subscription/traits.rs:37, another context) and is likely the same deviation for all ~41 subscriptions; a pairing of background-jobs to the engine-subscription context is worth checking."
     }
   }
 }
