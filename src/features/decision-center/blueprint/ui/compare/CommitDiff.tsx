@@ -3,6 +3,7 @@ import type { CommitDiff as Diff } from '@/lib/lensScan/wire';
 import { useSheet } from '../../controller/SheetContext';
 import { fmtNum } from '../format';
 import { capPatch, patchRows, splitTrailers } from './patch';
+import { extractMessage } from '@/lib/silentCatch';
 
 type Got = { sha: string; d: Diff } | { sha: string; error: string };
 /** The patch's rows are drawn in chunks the browser skips laying out off screen (content-visibility). */
@@ -53,7 +54,7 @@ export function CommitDiff({ sha, initiallyOpen = false }: { sha: string; initia
   const [open, setOpen] = useState(initiallyOpen);
   useEffect(() => {
     let live = true;
-    s.actions.commitDiff(sha).then((d) => { if (live) setGot({ sha, d }); }, (e: unknown) => { if (live) setGot({ sha, error: e instanceof Error ? e.message : String(e) }); });
+    s.actions.commitDiff(sha).then((d) => { if (live) setGot({ sha, d }); }, (e: unknown) => { if (live) setGot({ sha, error: extractMessage(e) }); });
     return () => { live = false; };
   }, [s.actions, sha]);
   const cur = got && got.sha === sha ? got : null, d = cur && 'd' in cur ? cur.d : null;

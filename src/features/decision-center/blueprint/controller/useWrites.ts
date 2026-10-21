@@ -8,6 +8,7 @@ import type { BlueprintActions, TriageDecisionInput } from '../source';
 import type { Work, WorkItem } from '../model/work';
 import { actable, MOVES } from '../model/states';
 import type { NoteMove, UiAction, UiState } from '../state/uiState';
+import { extractMessage } from '@/lib/silentCatch';
 
 export interface Writes {
   approve(p: WorkItem | null): Promise<void>;
@@ -55,7 +56,7 @@ export interface Say {
   disarmed(): string;
 }
 
-const errText = (e: unknown): string => (e instanceof Error ? e.message : String(e));
+const errText = (e: unknown): string => extractMessage(e);
 
 export function useWrites({ actions, work, ui, dispatch, reload, say, sent }: Deps): Writes {
   const lock = useRef(false);

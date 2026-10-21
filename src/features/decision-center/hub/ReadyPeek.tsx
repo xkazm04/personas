@@ -22,6 +22,7 @@ import { useSystemStore } from '@/stores/systemStore';
 
 import { usePeekKeyboard } from './usePeekKeyboard';
 import { PeekShell } from './visual/PeekShell';
+import { extractMessage } from '@/lib/silentCatch';
 
 const NO_ITEMS: never[] = [];
 const noop = () => undefined;
@@ -38,7 +39,7 @@ export function ReadyPeek({
   const { t } = useTranslation();
   const ctl = useAcceptedDispatch({
     resolveErrorMessage: (err) =>
-      resolveErrorTranslated(t, err instanceof Error ? err.message : String(err)).message,
+      resolveErrorTranslated(t, extractMessage(err)).message,
   });
   // Only Esc and ←/→ mean anything here: the rows are selected, not decided.
   usePeekKeyboard(NO_ITEMS, keyboard, { onOpen: noop, onDecide: noop, onWalk, onClose });

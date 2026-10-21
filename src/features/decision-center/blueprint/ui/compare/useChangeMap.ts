@@ -8,6 +8,7 @@ import { createModuleCache } from '@/hooks/utility/data/useModuleSubscription';
 import { silentCatch } from '@/lib/silentCatch';
 import { diffPixels, type PixGrid } from '../../model/ledgerPixels';
 import type { MapReply, MapRequest } from './changeMap.worker';
+import { extractMessage } from '@/lib/silentCatch';
 
 /** A shot pair to compare: its cache key and the two image URLs. */
 export interface PairRef { key: string; before: string; after: string }
@@ -89,7 +90,7 @@ function start(p: PairRef) {
   const st = maps.get(p.key);
   if (st && st.status !== 'error') return;
   put(p.key, { status: 'computing' });
-  compute(p).then((grid) => put(p.key, { status: 'done', grid }), (e: unknown) => put(p.key, { status: 'error', error: e instanceof Error ? e.message : String(e) }));
+  compute(p).then((grid) => put(p.key, { status: 'done', grid }), (e: unknown) => put(p.key, { status: 'error', error: extractMessage(e) }));
 }
 
 /** The change map of each pair, in order: undefined until its computation starts, then computing, done or error.

@@ -4,11 +4,12 @@
 // useShotUrls asks for several at once (the compare panel's screens, whose change maps need both sides of each pair).
 import { useEffect, useState } from 'react';
 import { useSheet } from '../../controller/SheetContext';
+import { extractMessage } from '@/lib/silentCatch';
 
 export type ShotState = { path: string; url: string } | { path: string; error: string } | null;
 
 const revoke = (url: string) => { if (url.startsWith('blob:')) URL.revokeObjectURL(url); };
-const errText = (e: unknown) => (e instanceof Error ? e.message : String(e));
+const errText = (e: unknown) => extractMessage(e);
 
 export function useShotUrl(path: string | undefined): ShotState {
   const { actions } = useSheet();
