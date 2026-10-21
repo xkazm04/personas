@@ -4403,5 +4403,17 @@
   "id:deploy_errors.persona_fallback",
   "ko:deploy_errors.persona_fallback",
   "vi:deploy_errors.persona_fallback",
-  "zh:deploy_errors.persona_fallback"
+  "zh:deploy_errors.persona_fallback",
+  "cs:kpis.setup_kind_codebase",
+  "de:kpis.setup_optional",
+  "es:kpis.setup_kind_manual",
+  "es:kpis.setup_cadence_manual",
+  "fr:kpis.setup_cadence",
+  "fr:kpis.setup_ink_services_one",
+  "fr:kpis.setup_ink_services_other",
+  "id:kpis.setup_target",
+  "id:kpis.setup_kind_codebase",
+  "id:kpis.setup_kind_manual",
+  "id:kpis.setup_cadence_manual",
+  "vi:kpis.setup_kind_codebase"
 ]

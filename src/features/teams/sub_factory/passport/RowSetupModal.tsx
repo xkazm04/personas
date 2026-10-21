@@ -14,6 +14,7 @@ import { MessagesSquare, Rocket, ScanSearch, ShieldCheck, Sparkles, X } from 'lu
 import { listCredentials } from '@/api/vault/credentials';
 import { BaseModal } from '@/features/shared/components/modals';
 import { toastCatch } from '@/lib/silentCatch';
+import { useTranslation } from '@/i18n/useTranslation';
 
 import type { AppPassport } from './passportModel';
 import { INK } from './passportInk';
@@ -56,6 +57,8 @@ export function RowSetupModal({ rowKey, rowLabel, passport, currentLabel, onDisp
   onClose: () => void;
 }) {
   const engine = useImprove();
+  const { t, tx } = useTranslation();
+  const w = t.kpis;
   const [selected, setSelected] = useState<string | null>(null);
   const [instruction, setInstruction] = useState('');
   const instructionRef = useRef(instruction);
@@ -145,10 +148,10 @@ export function RowSetupModal({ rowKey, rowLabel, passport, currentLabel, onDisp
             <div className="text-[10px] uppercase tracking-[0.14em] text-foreground/40">{passport.identity.name}</div>
             <h2 id="row-setup-title" className="typo-body text-foreground">{rowLabel}</h2>
             <p className="typo-caption text-foreground/55 mt-0.5">
-              Currently at “{currentLabel}” — pick a direction; a Fleet terminal runs it in the project’s repo.
+              {tx(w.setup_row_state, { level: currentLabel })}
             </p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close" className="ml-auto shrink-0 p-1 rounded-interactive text-foreground/50 hover:text-foreground hover:bg-primary/10 transition-colors focus-ring">
+          <button type="button" onClick={onClose} aria-label={t.common.close} className="ml-auto shrink-0 p-1 rounded-interactive text-foreground/50 hover:text-foreground hover:bg-primary/10 transition-colors focus-ring">
             <X className="w-4 h-4" aria-hidden />
           </button>
         </div>
@@ -169,13 +172,13 @@ export function RowSetupModal({ rowKey, rowLabel, passport, currentLabel, onDisp
               >
                 <span className="flex items-center gap-2 min-w-0">
                   <MessagesSquare className="w-3.5 h-3.5 shrink-0" style={{ color: INK.violet }} aria-hidden />
-                  <span className="typo-caption text-foreground truncate">Guided session</span>
+                  <span className="typo-caption text-foreground truncate">{w.setup_row_guided}</span>
                   <span className="shrink-0 rounded-full px-1.5 py-[1px] text-[9px] font-medium tracking-wide" style={{ color: INK.violet, border: `1px solid ${INK.violet}55`, background: `${INK.violet}14` }}>
-                    interactive
+                    {w.setup_row_interactive}
                   </span>
                 </span>
                 <span className="block typo-caption text-foreground/55 mt-0.5 pl-[22px]">
-                  The onboarding skill scoped to this dimension — it assesses, offers you select choices in the terminal, and executes what you accept.
+                  {w.setup_row_guided_hint}
                 </span>
               </button>
             );
@@ -199,7 +202,7 @@ export function RowSetupModal({ rowKey, rowLabel, passport, currentLabel, onDisp
                   <span className="typo-caption text-foreground truncate">{d.label}</span>
                   {d.fromScan && (
                     <span className="shrink-0 rounded-full px-1.5 py-[1px] text-[9px] font-medium tracking-wide" style={{ color: INK.violet, border: `1px solid ${INK.violet}55`, background: `${INK.violet}14` }}>
-                      from scan
+                      {w.setup_row_from_scan}
                     </span>
                   )}
                 </span>
@@ -213,7 +216,7 @@ export function RowSetupModal({ rowKey, rowLabel, passport, currentLabel, onDisp
           value={instruction}
           onChange={(e) => setInstruction(e.target.value)}
           rows={2}
-          placeholder="Additional instructions for the run…"
+          placeholder={w.setup_row_instruction_ph}
           className="w-full bg-transparent border rounded-input px-2.5 py-1.5 typo-caption text-foreground focus-ring resize-none mt-3"
           style={{ borderColor: 'rgba(148,163,184,.25)' }}
           data-testid="row-setup-instruction"
@@ -228,10 +231,10 @@ export function RowSetupModal({ rowKey, rowLabel, passport, currentLabel, onDisp
           data-testid="row-setup-deploy"
         >
           <Rocket className="w-3.5 h-3.5" aria-hidden />
-          {busy ? 'Dispatching…' : 'Deploy to Fleet'}
+          {busy ? w.setup_row_dispatching : w.setup_row_deploy}
         </button>
         <p className="text-[10px] text-foreground/35 text-center mt-1.5">
-          Opens a Fleet terminal in the repo root — the cell icon tracks its state; click it to open the terminal.
+          {w.setup_row_note}
         </p>
       </div>
     </BaseModal>

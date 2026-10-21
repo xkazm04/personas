@@ -17,6 +17,8 @@ import { type KpiCategory, type KpiTier, type MeasureKind } from './factoryModel
 import { useFactoryData } from './factoryData';
 import { CATEGORY_DEFAULT_KIND, DERIVED_METRICS, errMsg } from './composeTask';
 import { silentCatch } from '@/lib/silentCatch';
+import { useTranslation } from '@/i18n/useTranslation';
+import { useKpiSetupLabels } from './useKpiSetupLabels';
 import { num, type Measured } from './addKpiPrimitives';
 
 export function useAddKpi({
@@ -31,6 +33,8 @@ export function useAddKpi({
   onClose: () => void;
 }) {
   const { reload } = useFactoryData();
+  const { t } = useTranslation();
+  const words = useKpiSetupLabels();
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -62,8 +66,8 @@ export function useAddKpi({
     [creds],
   );
   const derivedOpts: ThemedSelectOption[] = useMemo(
-    () => DERIVED_METRICS.map((m) => ({ value: m.id, label: m.label, description: m.hint })),
-    [],
+    () => DERIVED_METRICS.map((m) => ({ value: m.id, label: words.derived[m.id]?.label ?? m.label, description: words.derived[m.id]?.hint ?? m.hint })),
+    [words],
   );
 
   const onCategory = (c: KpiCategory) => {
@@ -109,7 +113,7 @@ export function useAddKpi({
   };
 
   const setupWithAi = async () => {
-    if (!name.trim()) { setMsg('Give the KPI a name.'); return; }
+    if (!name.trim()) { setMsg(t.kpis.setup_name_required); return; }
     setBusy(true);
     setMsg(null);
     try {

@@ -79,7 +79,7 @@ export function ActionConfirmModal({ spec, onConfirm, onClose, extra, confirmDis
           <div className="mt-4 grid md:grid-cols-2 gap-4">
             {/* what happens, in order */}
             <section className="min-w-0">
-              <h3 className="typo-caption uppercase tracking-[0.08em] text-foreground/45 mb-2">What happens</h3>
+              <h3 className="typo-caption uppercase tracking-[0.08em] text-foreground/45 mb-2">{t.kpis.setup_confirm_what_happens}</h3>
               <ol className="space-y-2">
                 {spec.steps.map((step, i) => (
                   <li key={step} className="flex items-start gap-2.5 min-w-0">
@@ -98,7 +98,7 @@ export function ActionConfirmModal({ spec, onConfirm, onClose, extra, confirmDis
 
             {/* what holds regardless */}
             <section className="min-w-0">
-              <h3 className="typo-caption uppercase tracking-[0.08em] text-foreground/45 mb-2">What it will not do</h3>
+              <h3 className="typo-caption uppercase tracking-[0.08em] text-foreground/45 mb-2">{t.kpis.setup_confirm_will_not}</h3>
               <ul className="space-y-2">
                 {spec.boundaries.map((b) => (
                   <li key={b} className="flex items-start gap-2.5 min-w-0">
