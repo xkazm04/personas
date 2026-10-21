@@ -10895,24 +10895,26 @@
       "subject": "cross-provider-benchmark-operations",
       "bundle": "llm-observability",
       "state": "deviation",
-      "evaluatedAt": "2026-10-15",
-      "evaluatedTs": "2026-10-15T00:01:42.608Z",
-      "worker": "c1329887-55a4-4a78-a37e-3fff5f311705",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:44:32.000Z",
+      "worker": "dc9b3388-cbaf-46a0-8bba-f874a8455d2e",
       "techniques": [
+        {
+          "technique": "async-run-queue-with-cancel",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/agents/labSlice.ts:206 a failed cancel is still marked cancelled; the technique demands an honest unsupported/failed result, never a pretend-cancel"
+        },
         {
           "technique": "target-matrix-runs",
           "verdict": "deviation",
-          "evidence": "src/stores/slices/agents/labSlice.ts:471 The model list is an invocation argument. The slice stores no benchmark id or target-set version, so two arena runs are not the same declared matrix."
+          "evidence": "src/stores/slices/agents/labSlice.ts:471 The model list is an invocation argument. The slice stores no benchmark id or target-set version, so two arena runs are not the same declared matrix.",
+          "carriedFrom": "2026-10-15"
         },
         {
           "technique": "budget-preflight-and-ceiling",
           "verdict": "deviation",
-          "evidence": "src/stores/slices/agents/labSlice.ts:138 Terminal cache states omit partial. LabRunStatus matches that closed set. A ceiling halt cannot be kept as an unverified partial run in this client."
-        },
-        {
-          "technique": "async-run-queue-with-cancel",
-          "verdict": "deviation",
-          "evidence": "src/stores/slices/agents/labSlice.ts:187 finally runs after reportError on cancel failure. runLifecycle.ts:147 then sets progress null. The FSM type has no cancelling state. testSlice.ts:95 does the same."
+          "evidence": "src/stores/slices/agents/labSlice.ts:138 Terminal cache states omit partial. LabRunStatus matches that closed set. A ceiling halt cannot be kept as an unverified partial run in this client.",
+          "carriedFrom": "2026-10-15"
         }
       ],
       "superseded": [
@@ -10922,6 +10924,13 @@
           "evaluatedAt": "2026-10-09T17:25:35.000Z",
           "worker": "6e7b7da6-2885-45da-86bc-2e45c441984d",
           "reason": "replaced by c1329887-55a4-4a78-a37e-3fff5f311705"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/stores/slices/agents/labSlice.ts:187 A failed lab cancel is reported and then still marked cancelled in finally, and the run lifecycle clears progress, so the client shows a stopped run with no cancelling or partial state while the worker can keep spending.",
+          "evaluatedAt": "2026-10-15T00:01:42.608Z",
+          "worker": "c1329887-55a4-4a78-a37e-3fff5f311705",
+          "reason": "replaced by dc9b3388-cbaf-46a0-8bba-f874a8455d2e"
         }
       ]
     },
@@ -10988,14 +10997,24 @@
       "subject": "cross-provider-benchmark-operations",
       "bundle": "llm-observability",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T17:25:35.000Z",
-      "worker": "6e7b7da6-2885-45da-86bc-2e45c441984d",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:44:32.000Z",
+      "worker": "dc9b3388-cbaf-46a0-8bba-f874a8455d2e",
       "techniques": [
         {
           "technique": "target-matrix-runs",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/AssignmentMatrix.tsx:2 assignment matrix of connectors to projects"
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/AssignmentMatrix.tsx:2 assignment matrix of connectors to projects",
+          "carriedFrom": "2026-10-09"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/AssignmentMatrix.tsx:2 the matrix is projects x observability connectors (Langfuse/LangSmith/Helicone wiring), not a benchmark target matrix; nothing here runs cases against models or produces a scorecard",
+          "evaluatedAt": "2026-10-09T17:25:35.000Z",
+          "worker": "6e7b7da6-2885-45da-86bc-2e45c441984d",
+          "reason": "replaced by dc9b3388-cbaf-46a0-8bba-f874a8455d2e"
         }
       ]
     },
@@ -13948,17 +13967,27 @@
       "subject": "cross-provider-benchmark-operations",
       "bundle": "llm-observability",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T02:06:36.108Z",
-      "worker": "f4f3f23e-7e29-41b6-ae49-4520669d6cab",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:44:32.000Z",
+      "worker": "dc9b3388-cbaf-46a0-8bba-f874a8455d2e",
       "techniques": [
         {
           "technique": "target-matrix-runs",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/db/src/model_routing.rs:13 resolves one (model, effort) per persona by selector precedence; no targets x cases run or scorecard is produced here"
+          "evidence": "src-tauri/db/src/model_routing.rs:13 resolves one (model, effort) per persona by selector precedence; no targets x cases run or scorecard is produced here",
+          "carriedFrom": "2026-10-10"
         }
       ],
-      "registryProposal": "matcher precision: of 17 probable pairs for this subject in personas, 12 are now judged not-applicable and every one matched on generic tokens (matrix, case/cases, routing, model, settings, run); the use_when grounding needs the conjunction of a target axis (provider/model/variant) AND a shared case set before a pair is proposed, or a boundary token against builder-side routing"
+      "registryProposal": "Re-judged against rev 12 (rev 11 -> 12 only added the stale-cancelling settler rule to async-run-queue-with-cancel, which does not touch this precondition). The earlier evidence said routing was the only relevant code, but lab_crud and AUTO_OPTIMIZE_PREFIX also live here.",
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/db/src/model_routing.rs:1 the context is the db substrate whose only model-selection code is the runtime routing cascade the golden path assigns to model-routing; its learned rules cite Self-Tuning production-health snapshots (:74), not a benchmark run, and the lab benchmark tables live in db-repos-lab",
+          "evaluatedAt": "2026-10-10T02:06:36.108Z",
+          "worker": "f4f3f23e-7e29-41b6-ae49-4520669d6cab",
+          "reason": "replaced by dc9b3388-cbaf-46a0-8bba-f874a8455d2e"
+        }
+      ]
     },
     "835ed922-2ebd-425b-a542-dbe5996e1e78/cross-provider-benchmark-operations": {
       "context": "persona-build-matrix",
@@ -14247,14 +14276,24 @@
       "subject": "cross-provider-benchmark-operations",
       "bundle": "llm-observability",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T02:06:36.108Z",
-      "worker": "f4f3f23e-7e29-41b6-ae49-4520669d6cab",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:44:32.000Z",
+      "worker": "dc9b3388-cbaf-46a0-8bba-f874a8455d2e",
       "techniques": [
         {
           "technique": "target-matrix-runs",
           "verdict": "not-applicable",
-          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:14 lazy-loaded subtabs; no benchmark run, target or scorecard is rendered here"
+          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:14 lazy-loaded subtabs; no benchmark run, target or scorecard is rendered here",
+          "carriedFrom": "2026-10-10"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:11 the context is the Overview routing shell, dashboard widgets and the system-health/API-key popup; \"routing\" is subtab routing and \"health\" is install/crash-log health, so the subject precondition (benchmark evidence for a model choice) does not hold",
+          "evaluatedAt": "2026-10-10T02:06:36.108Z",
+          "worker": "f4f3f23e-7e29-41b6-ae49-4520669d6cab",
+          "reason": "replaced by dc9b3388-cbaf-46a0-8bba-f874a8455d2e"
         }
       ]
     },
@@ -16381,34 +16420,36 @@
       "subject": "cross-provider-benchmark-operations",
       "bundle": "llm-observability",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:40:51.000Z",
-      "worker": "7afe9251-781d-42b9-8c30-19c0da4120c9",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:44:32.000Z",
+      "worker": "dc9b3388-cbaf-46a0-8bba-f874a8455d2e",
       "techniques": [
         {
           "technique": "budget-preflight-and-ceiling",
           "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/test_runner/lab.rs:551 halted_by_budget run finalizes Completed; src-tauri/core/src/models/lab.rs:13 LabRunStatus has no Partial variant, so 'halted run must not read as passing' is unmet"
-        },
-        {
-          "technique": "dataset-sampling-anonymize-freeze",
-          "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/lab/arena.rs:71 INSERT INTO lab_arena_runs carries no dataset/scenario-set version or frozen flag; src-tauri/db/src/migrations/schema.rs:782 table never gained one"
+          "evidence": "src-tauri/engine/src/test_runner/lab.rs:569 halted_by_budget run is written Completed; a halted run must read partial, never passed"
         },
         {
           "technique": "determinism-stamping",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/lab/arena.rs:103 lab_arena_results row records model/provider/scores/cost but no generation or judge pinning stamp"
+          "evidence": "src-tauri/db/src/repos/lab/arena.rs:71 run row has no generation or judge pinning stamp"
+        },
+        {
+          "technique": "dataset-sampling-anonymize-freeze",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/lab/arena.rs:71 run row records no frozen dataset version, so two runs cannot be shown comparable"
         },
         {
           "technique": "target-matrix-runs",
           "verdict": "conformant",
-          "evidence": "src-tauri/db/src/repos/lab/arena.rs:103 each cell row records scenario x model_id x provider with quality, tokens, cost and duration on the same call"
+          "evidence": "src-tauri/db/src/repos/lab/arena.rs:103 each cell row records scenario x model_id x provider with quality, tokens, cost and duration on the same call",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "axes-and-caveats-live-at-the-surface",
           "verdict": "conformant",
-          "evidence": "src-tauri/db/src/repos/lab/ratings.rs:119 renormalised composites carry a partial_coverage flag onto the rating row so the caveat reaches the UI"
+          "evidence": "src-tauri/db/src/repos/lab/ratings.rs:119 renormalised composites carry a partial_coverage flag onto the rating row so the caveat reaches the UI",
+          "carriedFrom": "2026-10-16"
         }
       ],
       "superseded": [
@@ -16425,6 +16466,13 @@
           "evaluatedAt": "2026-10-10T12:07:04.000Z",
           "worker": "f9423480-bb6c-424a-9616-ef7002896726",
           "reason": "replaced by 7afe9251-781d-42b9-8c30-19c0da4120c9"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/test_runner/lab.rs:551 a budget-halted run (halted_by_budget skips the completeness gate) finalizes LabRunStatus::Completed with no partial state, and src-tauri/db/src/repos/lab/arena.rs:71 persists runs with no dataset version or determinism stamp, so halted and unpinned runs store and compare as full ones (re-confirmed against rev 12)",
+          "evaluatedAt": "2026-10-16T17:40:51.000Z",
+          "worker": "7afe9251-781d-42b9-8c30-19c0da4120c9",
+          "reason": "replaced by dc9b3388-cbaf-46a0-8bba-f874a8455d2e"
         }
       ]
     },

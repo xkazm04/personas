@@ -10131,12 +10131,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/db/src/model_routing.rs:1 the context is the db substrate whose only model-selection code is the runtime routing cascade the golden path assigns to model-routing; its learned rules cite Self-Tuning production-health snapshots (:74), not a benchmark run, and the lab benchmark tables live in db-repos-lab",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:529238b95e86e429",
-          "evaluatedRevision": 11,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/db/src/model_routing.rs:1 db substrate: its model-selection code is the runtime routing cascade (model-routing territory); the lab code it holds is generic CRUD (src-tauri/db/src/macros.rs:386) and a settings key (src-tauri/db/src/settings_keys.rs:171), while lab run creation and finalization are judged under db-repos-lab",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
+          "evaluatedRevision": 12,
+          "revisionsBehind": 1
         },
         {
           "subject": "connector-catalog",
@@ -10882,8 +10881,8 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/engine/src/test_runner/lab.rs:551 a budget-halted run (halted_by_budget skips the completeness gate) finalizes LabRunStatus::Completed with no partial state, and src-tauri/db/src/repos/lab/arena.rs:71 persists runs with no dataset version or determinism stamp, so halted and unpinned runs store and compare as full ones (re-confirmed against rev 12)",
-          "evaluatedAt": "2026-10-16",
+          "evidence": "src-tauri/engine/src/test_runner/lab.rs:569 a budget-halted run (excluded from the completeness gate at :560) finalizes as LabRunStatus::Completed with no partial marker, and src-tauri/db/src/repos/lab/arena.rs:71 inserts runs with no dataset version or determinism stamp, so halted and unpinned runs store and compare as full ones (re-anchored: :551 had drifted to a comment)",
+          "evaluatedAt": "2026-10-21",
           "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
           "evaluatedRevision": 12,
           "revisionsBehind": 1
@@ -21257,12 +21256,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:11 the context is the Overview routing shell, dashboard widgets and the system-health/API-key popup; \"routing\" is subtab routing and \"health\" is install/crash-log health, so the subject precondition (benchmark evidence for a model choice) does not hold",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:529238b95e86e429",
-          "evaluatedRevision": 11,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:11 Overview shell lazy-loads subtabs, and the health popup covers install/config health; a grep of all 20 context paths finds no benchmark, scorecard or arena code, so the precondition (benchmark evidence for a model choice) does not hold",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
+          "evaluatedRevision": 12,
+          "revisionsBehind": 1
         },
         {
           "subject": "sidecar-provisioning",
@@ -26176,12 +26174,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/AssignmentMatrix.tsx:2 the matrix is projects x observability connectors (Langfuse/LangSmith/Helicone wiring), not a benchmark target matrix; nothing here runs cases against models or produces a scorecard",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:529238b95e86e429",
-          "evaluatedRevision": 11,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/AssignmentMatrix.tsx:2 projects x observability-connector wiring matrix; the newer pinpoint hooks (useLlmPinpoints.ts:64) read external tracing calls, so nothing here runs cases against model targets or produces a scorecard",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
+          "evaluatedRevision": 12,
+          "revisionsBehind": 1
         },
         {
           "subject": "cost-metering",
@@ -32235,8 +32232,8 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/stores/slices/agents/labSlice.ts:187 A failed lab cancel is reported and then still marked cancelled in finally, and the run lifecycle clears progress, so the client shows a stopped run with no cancelling or partial state while the worker can keep spending.",
-          "evaluatedAt": "2026-10-15",
+          "evidence": "src/stores/slices/agents/labSlice.ts:206 cancelRun calls lc.markCancelled in finally even when the backend cancel threw (:197), so the client shows a stopped run with no cancelling or partial state while the worker can keep spending (re-anchored: :187 had drifted to fetchRuns)",
+          "evaluatedAt": "2026-10-21",
           "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
           "evaluatedRevision": 12,
           "revisionsBehind": 1
