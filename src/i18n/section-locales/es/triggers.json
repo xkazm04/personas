@@ -41,12 +41,14 @@
   "budget_label": "Presupuesto",
   "build_validation": {
     "composite_min_conditions": "Los disparadores compuestos necesitan al menos 2 condiciones.",
+    "composite_window_maximum": "La ventana de tiempo puede ser de como máximo 24 horas (86400 segundos).",
     "composite_window_minimum": "La ventana de tiempo debe ser de al menos 5 segundos.",
     "cron_invalid": "La expresión cron no es válida.",
     "cron_required": "Se requiere una expresión cron.",
     "endpoint_required": "Se requiere una URL de endpoint o un evento.",
     "event_type_required": "Se requiere el tipo de evento a escuchar.",
     "interval_minimum": "El intervalo debe ser de al menos 60 segundos.",
+    "watch_events_required": "Selecciona al menos un evento de archivo para vigilar.",
     "watch_path_required": "Se requiere al menos una ruta a vigilar."
   },
   "builder": {

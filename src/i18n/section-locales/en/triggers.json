@@ -480,7 +480,9 @@
     "watch_path_required": "At least one watch path is required.",
     "composite_min_conditions": "Composite triggers need at least 2 conditions.",
     "composite_window_minimum": "Time window must be at least 5 seconds.",
-    "endpoint_required": "Endpoint URL or event is required."
+    "endpoint_required": "Endpoint URL or event is required.",
+    "composite_window_maximum": "Time window can be at most 24 hours (86400 seconds).",
+    "watch_events_required": "Select at least one file event to watch."
   },
   "simulated_event": "Simulated Event",
   "matched_subscriptions_title": "Matched Subscriptions",

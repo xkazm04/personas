@@ -41,12 +41,14 @@
   "budget_label": "예산",
   "build_validation": {
     "composite_min_conditions": "복합 트리거는 조건이 2개 이상 필요합니다.",
+    "composite_window_maximum": "시간 윈도우는 최대 24시간(86400초)까지 가능합니다.",
     "composite_window_minimum": "시간 윈도우는 5초 이상이어야 합니다.",
     "cron_invalid": "잘못된 Cron 표현식입니다.",
     "cron_required": "Cron 표현식이 필요합니다.",
     "endpoint_required": "엔드포인트 URL 또는 이벤트가 필요합니다.",
     "event_type_required": "수신할 이벤트 유형이 필요합니다.",
     "interval_minimum": "간격은 60초 이상이어야 합니다.",
+    "watch_events_required": "감시할 파일 이벤트를 하나 이상 선택하세요.",
     "watch_path_required": "감시 경로가 하나 이상 필요합니다."
   },
   "builder": {

@@ -21611,12 +21611,14 @@
     "budget_label": "予算",
     "build_validation": {
       "composite_min_conditions": "コンポジットトリガーには少なくとも2つの条件が必要です。",
+      "composite_window_maximum": "時間枠は最大24時間（86400秒）までです。",
       "composite_window_minimum": "時間枠は5秒以上にする必要があります。",
       "cron_invalid": "Cron式が無効です。",
       "cron_required": "Cron式は必須です。",
       "endpoint_required": "エンドポイントURLまたはイベントが必要です。",
       "event_type_required": "リッスンするイベントタイプは必須です。",
       "interval_minimum": "間隔は60秒以上にする必要があります。",
+      "watch_events_required": "監視するファイルイベントを1つ以上選択してください。",
       "watch_path_required": "監視パスを少なくとも1つ指定してください。"
     },
     "builder": {

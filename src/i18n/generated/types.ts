@@ -10251,6 +10251,13 @@ export type Translations = {
       memory_insights: string;
       suggestions: string;
       suggestions_one: string;
+      kind_throttle: string;
+      kind_schedule: string;
+      kind_alert: string;
+      kind_config: string;
+      kind_routing: string;
+      rules_restored_from_session: string;
+      rules_unreadable: string;
     };
     memory_conflict: {
       memory_a: string;
@@ -10276,6 +10283,13 @@ export type Translations = {
       count_duplicate: string;
       count_duplicate_one: string;
       count_superseded: string;
+      kind_duplicate: string;
+      kind_contradiction: string;
+      kind_superseded: string;
+      reason_contradiction: string;
+      reason_duplicate_cross_agent: string;
+      reason_duplicate_same_agent: string;
+      reason_superseded: string;
     };
     observability_charts: {
       cost_over_time: string;
@@ -13166,6 +13180,8 @@ export type Translations = {
       composite_min_conditions: string;
       composite_window_minimum: string;
       endpoint_required: string;
+      composite_window_maximum: string;
+      watch_events_required: string;
     };
     simulated_event: string;
     matched_subscriptions_title: string;
@@ -18140,6 +18156,7 @@ export type Translations = {
       ctx_audit_never_run: string;
       ctx_audit_balanced: string;
       ctx_audit_attention: string;
+      ctx_audit_unverified: string;
       ctx_audit_scope: string;
       ctx_audit_failed: string;
       ctx_audit_more_not_listed: string;

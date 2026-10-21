@@ -21611,12 +21611,14 @@
     "budget_label": "Anggaran",
     "build_validation": {
       "composite_min_conditions": "Pemicu komposit memerlukan minimal 2 kondisi.",
+      "composite_window_maximum": "Jendela waktu maksimal 24 jam (86400 detik).",
       "composite_window_minimum": "Jendela waktu harus minimal 5 detik.",
       "cron_invalid": "Ekspresi cron tidak valid.",
       "cron_required": "Ekspresi cron wajib diisi.",
       "endpoint_required": "URL endpoint atau event diperlukan.",
       "event_type_required": "Jenis peristiwa yang akan didengarkan wajib diisi.",
       "interval_minimum": "Interval harus minimal 60 detik.",
+      "watch_events_required": "Pilih setidaknya satu peristiwa file untuk dipantau.",
       "watch_path_required": "Setidaknya satu jalur pemantauan diperlukan."
     },
     "builder": {

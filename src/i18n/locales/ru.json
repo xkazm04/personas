@@ -21611,12 +21611,14 @@
     "budget_label": "Бюджет",
     "build_validation": {
       "composite_min_conditions": "Составным триггерам нужно как минимум 2 условия.",
+      "composite_window_maximum": "Временное окно не может превышать 24 часа (86400 секунд).",
       "composite_window_minimum": "Временное окно должно быть не менее 5 секунд.",
       "cron_invalid": "Неверное cron-выражение.",
       "cron_required": "Необходимо указать cron-выражение.",
       "endpoint_required": "Требуется URL конечной точки или событие.",
       "event_type_required": "Необходимо указать тип отслеживаемого события.",
       "interval_minimum": "Интервал должен быть не менее 60 секунд.",
+      "watch_events_required": "Выберите хотя бы одно файловое событие для отслеживания.",
       "watch_path_required": "Необходимо указать хотя бы один отслеживаемый путь."
     },
     "builder": {

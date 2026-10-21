@@ -1,6 +1,7 @@
 import { Plus, X } from 'lucide-react';
 import type { CompositeCondition } from '@/lib/utils/platform/triggerConstants';
 import { TriggerFieldGroup } from './TriggerFieldGroup';
+import { COMPOSITE_WINDOW_MAX_SECONDS } from './buildTriggerConfig';
 import { useTranslation } from '@/i18n/useTranslation';
 import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -106,6 +107,7 @@ export function CompositeConfig({
           value={windowSeconds.trim() === '' ? null : Number(windowSeconds)}
           onChange={(v) => { setWindowSeconds(v == null ? '' : String(v)); if (validationError) setValidationError(null); }}
           min={5}
+          max={COMPOSITE_WINDOW_MAX_SECONDS}
           allowEmpty
           placeholder={t.triggers.composite_debounce_placeholder}
           ariaLabel={t.triggers.composite.window_label}

@@ -41,12 +41,14 @@
   "budget_label": "预算",
   "build_validation": {
     "composite_min_conditions": "组合触发器至少需要 2 个条件。",
+    "composite_window_maximum": "时间窗口最长为 24 小时（86400 秒）。",
     "composite_window_minimum": "时间窗口至少需要 5 秒。",
     "cron_invalid": "cron 表达式无效。",
     "cron_required": "需要提供 cron 表达式。",
     "endpoint_required": "需要端点URL或事件。",
     "event_type_required": "需要提供要监听的事件类型。",
     "interval_minimum": "间隔至少需要 60 秒。",
+    "watch_events_required": "请至少选择一个要监视的文件事件。",
     "watch_path_required": "至少需要提供一个监视路径。"
   },
   "builder": {

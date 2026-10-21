@@ -21611,12 +21611,14 @@
     "budget_label": "বাজেট",
     "build_validation": {
       "composite_min_conditions": "সম্মিলিত ট্রিগারে অন্তত ২টি শর্ত প্রয়োজন।",
+      "composite_window_maximum": "সময় উইন্ডো সর্বোচ্চ ২৪ ঘণ্টা (৮৬৪০০ সেকেন্ড) হতে পারে।",
       "composite_window_minimum": "সময় উইন্ডো অন্তত ৫ সেকেন্ড হতে হবে।",
       "cron_invalid": "অবৈধ Cron এক্সপ্রেশন।",
       "cron_required": "Cron এক্সপ্রেশন আবশ্যক।",
       "endpoint_required": "এন্ডপয়েন্ট URL বা ইভেন্ট প্রয়োজন।",
       "event_type_required": "শোনার জন্য ইভেন্ট টাইপ আবশ্যক।",
       "interval_minimum": "ইন্টারভাল অন্তত ৬০ সেকেন্ড হতে হবে।",
+      "watch_events_required": "পর্যবেক্ষণের জন্য অন্তত একটি ফাইল ইভেন্ট নির্বাচন করুন।",
       "watch_path_required": "অন্তত একটি ওয়াচ পাথ আবশ্যক।"
     },
     "builder": {

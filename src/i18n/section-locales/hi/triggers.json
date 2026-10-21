@@ -41,12 +41,14 @@
   "budget_label": "बजट",
   "build_validation": {
     "composite_min_conditions": "कंपोज़िट ट्रिगर के लिए कम से कम 2 शर्तें आवश्यक हैं।",
+    "composite_window_maximum": "समय विंडो अधिकतम 24 घंटे (86400 सेकंड) की हो सकती है।",
     "composite_window_minimum": "समय विंडो कम से कम 5 सेकंड की होनी चाहिए।",
     "cron_invalid": "अमान्य Cron एक्सप्रेशन।",
     "cron_required": "Cron एक्सप्रेशन आवश्यक है।",
     "endpoint_required": "एंडपॉइंट URL या इवेंट आवश्यक है।",
     "event_type_required": "सुनने के लिए इवेंट प्रकार आवश्यक है।",
     "interval_minimum": "अंतराल कम से कम 60 सेकंड का होना चाहिए।",
+    "watch_events_required": "निगरानी के लिए कम से कम एक फ़ाइल इवेंट चुनें।",
     "watch_path_required": "कम से कम एक निगरानी पथ आवश्यक है।"
   },
   "builder": {

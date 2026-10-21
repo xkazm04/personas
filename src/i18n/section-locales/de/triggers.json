@@ -41,12 +41,14 @@
   "budget_label": "Budget",
   "build_validation": {
     "composite_min_conditions": "Zusammengesetzte Trigger benötigen mindestens 2 Bedingungen.",
+    "composite_window_maximum": "Das Zeitfenster darf höchstens 24 Stunden (86400 Sekunden) betragen.",
     "composite_window_minimum": "Das Zeitfenster muss mindestens 5 Sekunden betragen.",
     "cron_invalid": "Ungültiger Cron-Ausdruck.",
     "cron_required": "Ein Cron-Ausdruck ist erforderlich.",
     "endpoint_required": "Endpoint-URL oder Ereignis ist erforderlich.",
     "event_type_required": "Der zu überwachende Ereignistyp ist erforderlich.",
     "interval_minimum": "Das Intervall muss mindestens 60 Sekunden betragen.",
+    "watch_events_required": "Wählen Sie mindestens ein Dateiereignis zur Überwachung aus.",
     "watch_path_required": "Mindestens ein Überwachungspfad ist erforderlich."
   },
   "builder": {

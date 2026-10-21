@@ -41,12 +41,14 @@
   "budget_label": "Budget",
   "build_validation": {
     "composite_min_conditions": "Les déclencheurs composites nécessitent au moins 2 conditions.",
+    "composite_window_maximum": "La fenêtre temporelle ne peut pas dépasser 24 heures (86400 secondes).",
     "composite_window_minimum": "La fenêtre temporelle doit être d’au moins 5 secondes.",
     "cron_invalid": "Expression cron invalide.",
     "cron_required": "L’expression cron est requise.",
     "endpoint_required": "Une URL de point de terminaison ou un événement est requis.",
     "event_type_required": "Le type d’événement à écouter est requis.",
     "interval_minimum": "L’intervalle doit être d’au moins 60 secondes.",
+    "watch_events_required": "Sélectionnez au moins un événement de fichier à surveiller.",
     "watch_path_required": "Au moins un chemin à surveiller est requis."
   },
   "builder": {

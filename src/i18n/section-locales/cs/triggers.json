@@ -41,12 +41,14 @@
   "budget_label": "Rozpočet",
   "build_validation": {
     "composite_min_conditions": "Kombinované spouštěče vyžadují alespoň 2 podmínky.",
+    "composite_window_maximum": "Časové okno může být nejvýše 24 hodin (86400 sekund).",
     "composite_window_minimum": "Časové okno musí být alespoň 5 sekund.",
     "cron_invalid": "Neplatný cron výraz.",
     "cron_required": "Vyžadován cron výraz.",
     "endpoint_required": "Je vyžadována URL koncového bodu nebo událost.",
     "event_type_required": "Vyžadován typ události k naslouchání.",
     "interval_minimum": "Interval musí být alespoň 60 sekund.",
+    "watch_events_required": "Vyberte alespoň jednu událost souboru ke sledování.",
     "watch_path_required": "Vyžadována alespoň jedna sledovaná cesta."
   },
   "builder": {

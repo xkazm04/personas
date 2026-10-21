@@ -21611,12 +21611,14 @@
     "budget_label": "الميزانية",
     "build_validation": {
       "composite_min_conditions": "تحتاج المُشغِّلات المركّبة إلى شرطين على الأقل.",
+      "composite_window_maximum": "يجب ألا تتجاوز النافذة الزمنية 24 ساعة (86400 ثانية).",
       "composite_window_minimum": "يجب أن تكون النافذة الزمنية 5 ثوانٍ على الأقل.",
       "cron_invalid": "تعبير cron غير صالح.",
       "cron_required": "يجب تحديد تعبير cron.",
       "endpoint_required": "رابط نقطة النهاية أو الحدث مطلوب.",
       "event_type_required": "يجب تحديد نوع الحدث المطلوب الاستماع إليه.",
       "interval_minimum": "يجب أن يكون الفاصل الزمني 60 ثانية على الأقل.",
+      "watch_events_required": "اختر حدثًا واحدًا على الأقل من أحداث الملفات للمراقبة.",
       "watch_path_required": "يجب تحديد مسار مراقبة واحد على الأقل."
     },
     "builder": {
