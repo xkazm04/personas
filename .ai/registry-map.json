@@ -25902,7 +25902,11 @@
           "revision": 13,
           "changedAt": "2026-09-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:3 records the Artist plugin removed from the app (commit 0697f13438, 2026-09-15); git ls-files holds none of this context's entry points, so there is no code that reads or writes the settings key space and the precondition cannot hold",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:85c48ec5bdb5581f",
+          "evaluatedRevision": 13
         }
       ],
       "governance": "governed"
@@ -26051,7 +26055,11 @@
           "revision": 13,
           "changedAt": "2026-09-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:3 records the Artist plugin removed from the app (commit 0697f13438, 2026-09-15); git ls-files holds none of this context's entry points, so there is no code that reads or writes the settings key space and the precondition cannot hold",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:85c48ec5bdb5581f",
+          "evaluatedRevision": 13
         }
       ],
       "governance": "governed"

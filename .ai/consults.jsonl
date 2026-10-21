@@ -1866,3 +1866,4 @@
 {"ts":"2026-10-21T17:38:07Z","bundle":"software-engineering","subjects":["concurrency-guards"],"techniques":["guard-key-design","single-flight-primitives"],"deviations":0}
 {"ts":"2026-10-21T17:39:43Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":["retrieval-triggering","relevance-floors"],"deviations":0}
 {"ts":"2026-10-21T17:39:43Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":["hybrid-lane-fusion"],"deviations":0}
+{"ts":"2026-10-21T17:41:27Z","bundle":"software-engineering","subjects":["settings"],"techniques":[],"deviations":0}
