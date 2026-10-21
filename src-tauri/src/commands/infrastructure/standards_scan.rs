@@ -85,12 +85,54 @@ fn norm(value: &str, allowed: &[&str], default: &str) -> String {
     }
 }
 
+/// The shipped ruleset, the same text the prompt embeds.
+const RULESET: &str = include_str!("standards_ruleset.md");
+
+/// `(category, rule_key)` for every rule in the ruleset, in file order. A rule
+/// is a `- **key** —` bullet under a `## <category> —` heading.
+fn ruleset_rules(ruleset: &str) -> Vec<(String, String)> {
+    let mut category = String::new();
+    let mut rules = Vec::new();
+    for line in ruleset.lines() {
+        if let Some(h) = line.strip_prefix("## ") {
+            category = h.split_whitespace().next().unwrap_or("").to_string();
+        } else if let Some(rest) = line.strip_prefix("- **") {
+            if let Some((key, _)) = rest.split_once("**") {
+                if !category.is_empty() {
+                    rules.push((category.clone(), key.to_string()));
+                }
+            }
+        }
+    }
+    rules
+}
+
+/// Whether a reported finding may be persisted. The prompt demands exactly one
+/// finding per ruleset key, so an invented key or a repeat is dropped: both
+/// would otherwise count in the compliance percentage. First report wins.
+fn accept_rule_key(known: &[(String, String)], seen: &mut Vec<String>, key: &str) -> bool {
+    if !known.iter().any(|(_, k)| k == key) || seen.iter().any(|k| k == key) {
+        return false;
+    }
+    seen.push(key.to_string());
+    true
+}
+
+/// Ruleset rules the run never reported, as `(category, rule_key)`.
+fn unreported_rules(known: &[(String, String)], seen: &[String]) -> Vec<(String, String)> {
+    known
+        .iter()
+        .filter(|(_, k)| !seen.contains(k))
+        .cloned()
+        .collect()
+}
+
 // ----------------------------------------------------------------------------
 // Prompt
 // ----------------------------------------------------------------------------
 
 fn build_standards_prompt() -> String {
-    let ruleset = include_str!("standards_ruleset.md");
+    let ruleset = RULESET;
     format!(
         r#"You are a senior engineering-standards auditor. Inspect THIS repository
 (your working directory is the project root) and assess it against the golden
@@ -334,6 +376,8 @@ async fn run_standards_scan(
     let mut reader = BufReader::new(stdout).lines();
 
     let mut count = 0i32;
+    let known_rules = ruleset_rules(RULESET);
+    let mut seen_rules: Vec<String> = Vec::new();
     let timeout = std::time::Duration::from_secs(1200);
     let spend_ctx = crate::db::repos::llm_spend::SpendCtx {
         source: "scanner",
@@ -353,6 +397,13 @@ async fn run_standards_scan(
                 for proto in text.lines() {
                     let proto = proto.trim();
                     if let Some(f) = parse_finding(proto) {
+                        if !accept_rule_key(&known_rules, &mut seen_rules, f.rule_key.trim()) {
+                            tracing::warn!(
+                                rule_key = %f.rule_key,
+                                "standards scan: dropped a finding with an unknown or repeated rule_key"
+                            );
+                            continue;
+                        }
                         let category = norm(&f.category, ALLOWED_CATEGORIES, "code_quality");
                         let status = norm(&f.status, ALLOWED_STATUS, "missing");
                         let severity = norm(
@@ -423,5 +474,60 @@ async fn run_standards_scan(
         )));
     }
 
+    // A rule the run never reported is filed as `missing` rather than left out:
+    // compliance is computed over the persisted set, so a run that reported 10
+    // of 22 rules would otherwise read as a complete verdict.
+    for (category, rule_key) in unreported_rules(&known_rules, &seen_rules) {
+        match repo::create_standard(
+            pool,
+            project_id,
+            Some(scan_id),
+            &rule_key,
+            &norm(&category, ALLOWED_CATEGORIES, "code_quality"),
+            &rule_key,
+            "missing",
+            "info",
+            Some("Not assessed: this scan run did not report the rule."),
+            Some("Re-run the standards scan."),
+        ) {
+            Ok(_) => count += 1,
+            Err(e) => tracing::warn!(error = %e, "failed to persist unassessed standard"),
+        }
+    }
+
     Ok(count)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ruleset_has_the_22_documented_keys() {
+        let rules = ruleset_rules(RULESET);
+        assert_eq!(rules.len(), 22);
+        assert!(rules
+            .iter()
+            .all(|(c, _)| ALLOWED_CATEGORIES.contains(&c.as_str())));
+        assert!(rules.contains(&("precommit".to_string(), "lint.config".to_string())));
+    }
+
+    #[test]
+    fn invented_and_repeated_rule_keys_are_rejected() {
+        let known = ruleset_rules(RULESET);
+        let mut seen = Vec::new();
+        assert!(accept_rule_key(&known, &mut seen, "docs.readme"));
+        assert!(!accept_rule_key(&known, &mut seen, "docs.readme"), "repeat");
+        assert!(!accept_rule_key(&known, &mut seen, "made.up"), "invented");
+        assert_eq!(seen, vec!["docs.readme".to_string()]);
+    }
+
+    #[test]
+    fn unreported_rules_are_the_ruleset_minus_the_reported() {
+        let known = ruleset_rules(RULESET);
+        let seen = vec!["docs.readme".to_string(), "lint.config".to_string()];
+        let missing = unreported_rules(&known, &seen);
+        assert_eq!(missing.len(), 20);
+        assert!(!missing.iter().any(|(_, k)| k == "docs.readme"));
+    }
 }
