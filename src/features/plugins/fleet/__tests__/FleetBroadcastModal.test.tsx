@@ -33,6 +33,21 @@ const SESSIONS: FleetSession[] = [
     stateReason: null,
     name: null,
   } as unknown as FleetSession,
+  // Retired-without-running and not-yet-spawned rows have no PTY either.
+  {
+    id: 's-expired',
+    state: 'expired',
+    projectLabel: 'repo-expired',
+    stateReason: null,
+    name: null,
+  } as unknown as FleetSession,
+  {
+    id: 's-queued',
+    state: 'queued',
+    projectLabel: 'repo-queued',
+    stateReason: null,
+    name: null,
+  } as unknown as FleetSession,
   {
     id: 's-dead',
     state: 'exited',
@@ -126,8 +141,10 @@ describe('FleetBroadcastModal — target list and failure handling', () => {
     expect(screen.queryByText('repo-exited')).not.toBeInTheDocument();
     // Hibernated rows look alive in every other list; here they are dead ends.
     expect(screen.queryByText('repo-hibernated')).not.toBeInTheDocument();
+    expect(screen.queryByText('repo-expired')).not.toBeInTheDocument();
+    expect(screen.queryByText('repo-queued')).not.toBeInTheDocument();
     // Derived from the rendered rows, not from a label: one target checkbox
-    // plus the "Append Enter" toggle. Three sessions would give four.
+    // plus the "Append Enter" toggle. Five sessions would give six.
     expect(screen.getAllByRole('checkbox')).toHaveLength(2);
   });
 

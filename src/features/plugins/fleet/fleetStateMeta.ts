@@ -94,6 +94,12 @@ export function isTombstoneState(state: FleetSessionState): boolean {
   return state === 'exited' || state === 'hibernated' || state === 'expired';
 }
 
+/** Whether a broadcast can reach the row: a live PTY writer exists. Tombstones
+ *  have none and a queued row has none YET, so a write fails either way. */
+export function isBroadcastTargetState(state: FleetSessionState): boolean {
+  return !isTombstoneState(state) && state !== 'queued';
+}
+
 /** Whether Sleep can free anything: a tombstone has no process, and a queued
  *  row has none YET (the backend returns `false` for both, so the control
  *  would be a silent no-op). */

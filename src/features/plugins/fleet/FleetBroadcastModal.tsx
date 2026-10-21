@@ -9,6 +9,7 @@ import { writeInput } from '@/api/fleet/fleet';
 import { mapWithConcurrency } from '@/lib/concurrency';
 import { silentCatch } from '@/lib/silentCatch';
 import { FleetStatusDots } from './FleetStatusDots';
+import { isBroadcastTargetState } from './fleetStateMeta';
 
 
 /**
@@ -92,7 +93,7 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
   // tombstones with "no PTY to attach"); this list was the one place that
   // filtered on `exited` alone.
   const targetable = useMemo(
-    () => sessions.filter((s) => s.state !== 'exited' && s.state !== 'hibernated'),
+    () => sessions.filter((s) => isBroadcastTargetState(s.state)),
     [sessions],
   );
 
