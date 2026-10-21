@@ -1902,3 +1902,7 @@
 {"ts":"2026-10-21T18:03:47Z","bundle":"software-engineering","subjects":["chat-transcript"],"techniques":["inline-structured-rows"],"deviations":1}
 {"ts":"2026-10-21T18:03:47Z","bundle":"software-engineering","subjects":["chat-transcript"],"techniques":["progress-narration"],"deviations":1}
 {"ts":"2026-10-21T18:03:47Z","bundle":"software-engineering","subjects":["chat-transcript"],"techniques":["composer-turn-queue"],"deviations":1}
+{"ts":"2026-10-21T18:04:11Z","bundle":"software-engineering","subjects":["companion-runtime"],"techniques":["host-seam-contracts"],"deviations":1}
+{"ts":"2026-10-21T18:04:11Z","bundle":"software-engineering","subjects":["companion-runtime"],"techniques":["action-catalog-single-source"],"deviations":1}
+{"ts":"2026-10-21T18:04:11Z","bundle":"software-engineering","subjects":["companion-runtime"],"techniques":["action-catalog-single-source"],"deviations":1}
+{"ts":"2026-10-21T18:04:11Z","bundle":"software-engineering","subjects":["companion-runtime"],"techniques":["action-catalog-single-source"],"deviations":1}

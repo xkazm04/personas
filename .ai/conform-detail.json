@@ -3292,19 +3292,14 @@
       "subject": "companion-runtime",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T12:12:02.000Z",
-      "worker": "529daf0c-daf4-423d-9a30-a4f3a61037c3",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T18:04:11.000Z",
+      "worker": "2d63f35f-3e38-4124-80af-c6f9bba95c94",
       "techniques": [
         {
           "technique": "host-seam-contracts",
           "verdict": "deviation",
-          "evidence": "src-tauri/Cargo.toml:14 members = [\".\", \"macros\", \"core\", \"db\", \"engine\"]; no build-enforced boundary, import count 111/162 to crate::db is the only measure"
-        },
-        {
-          "technique": "host-seam-contracts",
-          "verdict": "deviation",
-          "evidence": ".claude/skills/athena/brain.py:16 \"Parity contract\" against episodic.rs: second channel re-implements rather than calls the runtime, the trap the technique names"
+          "evidence": "src-tauri/src/companion/disk.rs:23 runtime file imports the host db layer; the rule says such a file has already broken portability, and a second consumer exists (.claude/skills/athena/brain.py:16)"
         }
       ],
       "superseded": [
@@ -3314,6 +3309,13 @@
           "evaluatedAt": "2026-10-05",
           "worker": null,
           "reason": "replaced by 529daf0c-daf4-423d-9a30-a4f3a61037c3"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/Cargo.toml:14 lists no companion crate, so the runtime is a module of its host: src-tauri/src/companion/disk.rs:23 imports crate::db directly (111 of 162 companion files reach crate::db, 24 reach crate::commands/AppState, 33 AppHandle) and src-tauri/src/companion/session/turn.rs:70 takes `app: &AppHandle` as the turn sink; the terminal channel .claude/skills/athena/brain.py:16 still re-implements the episode write by parity contract instead of calling the turn (re-confirmed 2026-10-10).",
+          "evaluatedAt": "2026-10-10T12:12:02.000Z",
+          "worker": "529daf0c-daf4-423d-9a30-a4f3a61037c3",
+          "reason": "replaced by 2d63f35f-3e38-4124-80af-c6f9bba95c94"
         }
       ]
     },
@@ -3361,14 +3363,14 @@
       "subject": "companion-runtime",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:48:29.000Z",
-      "worker": "e5a005a2-7aa8-43d9-80d7-5a026c271c78",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T18:04:11.000Z",
+      "worker": "2d63f35f-3e38-4124-80af-c6f9bba95c94",
       "techniques": [
         {
           "technique": "action-catalog-single-source",
           "verdict": "deviation",
-          "evidence": "src/features/companions/athena/athenaLabels.ts:115 unpinned co-deployed fallback"
+          "evidence": "src/features/companions/athena/athenaLabels.ts:115 unpinned co-deployed fallback hides kind-label drift"
         }
       ],
       "superseded": [
@@ -3385,6 +3387,13 @@
           "evaluatedAt": "2026-10-10T12:12:02.000Z",
           "worker": "529daf0c-daf4-423d-9a30-a4f3a61037c3",
           "reason": "replaced by e5a005a2-7aa8-43d9-80d7-5a026c271c78"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/companions/athena/athenaLabels.ts:115 falls back to titleCase(action) in a bundle that ships with the catalog, and no test compares its cases to the 60 ALLOWED_ACTIONS at src-tauri/src/companion/dispatcher/catalog.rs:11 (25 unlabeled, up from 23); the co-deployed fallback hides exactly the drift actionRisk.test.ts already gates for the risk table (re-confirmed 2026-10-16)",
+          "evaluatedAt": "2026-10-16T17:48:29.000Z",
+          "worker": "e5a005a2-7aa8-43d9-80d7-5a026c271c78",
+          "reason": "replaced by 2d63f35f-3e38-4124-80af-c6f9bba95c94"
         }
       ]
     },
@@ -3419,14 +3428,14 @@
       "subject": "companion-runtime",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:48:29.000Z",
-      "worker": "e5a005a2-7aa8-43d9-80d7-5a026c271c78",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T18:04:11.000Z",
+      "worker": "2d63f35f-3e38-4124-80af-c6f9bba95c94",
       "techniques": [
         {
           "technique": "action-catalog-single-source",
           "verdict": "deviation",
-          "evidence": "src/features/companions/athena/athenaLabels.ts:115 label surface not exhaustive; src/features/companions/athena/decision/actionRisk.ts:83 risk surface names both arms (conformant part)"
+          "evidence": "src/features/companions/athena/athenaLabels.ts:115 surface tolerant where it should be exhaustive (one artifact)"
         }
       ],
       "superseded": [
@@ -3443,6 +3452,13 @@
           "evaluatedAt": "2026-10-10T12:12:02.000Z",
           "worker": "529daf0c-daf4-423d-9a30-a4f3a61037c3",
           "reason": "replaced by e5a005a2-7aa8-43d9-80d7-5a026c271c78"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/decision-center/roster/decisionAdapters.ts:375 titles each approval with actionLabel, which src/features/companions/athena/decision/rosterDecisions.ts:101 voices as the orb prompt; the co-deployed titleCase fallback (src/features/companions/athena/athenaLabels.ts:115) is unpinned, so 25 of 60 kinds are voiced as synthesized slugs with no failing check; the risk table stays conformant (actionRisk.ts:48/:83, pinned by __tests__/actionRisk.test.ts:36) (re-confirmed 2026-10-16; anchor moved from useDecisionQueue.ts after the 10-15 Lanes refactor)",
+          "evaluatedAt": "2026-10-16T17:48:29.000Z",
+          "worker": "e5a005a2-7aa8-43d9-80d7-5a026c271c78",
+          "reason": "replaced by 2d63f35f-3e38-4124-80af-c6f9bba95c94"
         }
       ]
     },
@@ -5863,14 +5879,14 @@
       "subject": "companion-runtime",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:48:29.000Z",
-      "worker": "e5a005a2-7aa8-43d9-80d7-5a026c271c78",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T18:04:11.000Z",
+      "worker": "2d63f35f-3e38-4124-80af-c6f9bba95c94",
       "techniques": [
         {
           "technique": "action-catalog-single-source",
           "verdict": "deviation",
-          "evidence": "src/features/companions/athena/athenaLabels.ts:115 co-deployed fallback hides drift; no test reads catalog.rs against the label switch"
+          "evidence": "src/features/companions/athena/athenaLabels.ts:115 co-deployed surface falls back instead of being exhaustive or pinned by a source-reading test"
         }
       ],
       "superseded": [
@@ -5894,6 +5910,13 @@
           "evaluatedAt": "2026-10-12T12:33:40.000Z",
           "worker": "7ebfa425-34fb-4871-8a6e-9346b53e9173",
           "reason": "replaced by e5a005a2-7aa8-43d9-80d7-5a026c271c78"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/companions/athena/athenaLabels.ts:115 default arm title-cases the raw slug in the bundle that ships with the catalog; 25 of the 60 ALLOWED_ACTIONS (src-tauri/src/companion/dispatcher/catalog.rs:11) have no case (incl. new mesh_set_agent_enabled, mesh_queue_move) and src/features/companions/athena/ApprovalCard.tsx:40 renders that guess, so the gap grew 23->25 with nothing failing (re-confirmed 2026-10-16)",
+          "evaluatedAt": "2026-10-16T17:48:29.000Z",
+          "worker": "e5a005a2-7aa8-43d9-80d7-5a026c271c78",
+          "reason": "replaced by 2d63f35f-3e38-4124-80af-c6f9bba95c94"
         }
       ]
     },
