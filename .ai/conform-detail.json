@@ -34010,6 +34010,64 @@
           "evidence": "src/features/overview/shared/emptyStatePrototype/motifs/ActivityMotif.tsx:31 Draws a predetermined execution waveform, without synthesized-speech timing."
         }
       ]
+    },
+    "b30528dc-8655-4b38-800e-8cb73e96d618/trust-base": {
+      "context": "companion-ui-controls",
+      "subject": "trust-base",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T23:02:24.468Z",
+      "techniques": [
+        {
+          "technique": "census-counts-unmarked-members",
+          "verdict": "deviation",
+          "evidence": "tests/playwright/template-marathon-fixtures.ts:218 An isolated type-aware lint confirmed an unsafe any assignment here; the searched repository tooling does not census this flow."
+        },
+        {
+          "technique": "soundness-argument-names-its-dependencies",
+          "verdict": "deviation",
+          "evidence": "tests/playwright/discord-twin-1-setup.spec.ts:61 The assertion relies on endpoint responses matching caller-selected T, but names no producing declaration or corresponding dependency annotation; the fallback also asserts plain text as T."
+        }
+      ],
+      "withdrawn": {
+        "worker": "5729c1e2-f371-4bed-a643-3b2bfbe049bd",
+        "state": "deviation",
+        "at": "2026-10-21T23:03:00.905118+00:00",
+        "reason": "reviewer (sonnet): The primary anchor tests/playwright/template-marathon-fixtures.ts:218 is not one of the context's files. Only template-marathon.spec.ts and a unit test import it, so the verdict is about a different context. The claimed type-aware lint result could not be confirmed, though line 218 does assign `JSON"
+      }
+    },
+    "1ffb5765-de47-4f01-87ec-06732a63522c/trust-base": {
+      "context": "i18n-generated",
+      "subject": "trust-base",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T23:02:24.468Z",
+      "worker": "5729c1e2-f371-4bed-a643-3b2bfbe049bd",
+      "techniques": [
+        {
+          "technique": "soundness-argument-names-its-dependencies",
+          "verdict": "deviation",
+          "evidence": "src/i18n/__tests__/useTranslatedError.test.ts:24 Safe fixture use depends on resolveErrorTranslated's restricted reads in src/i18n/useTranslatedError.ts:214; neither end identifies this dependency."
+        }
+      ]
+    },
+    "66bc7a14-bf15-41d7-8d9a-900aa670f47e/trust-base": {
+      "context": "passport-wall-model",
+      "subject": "trust-base",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T23:02:24.468Z",
+      "worker": "5729c1e2-f371-4bed-a643-3b2bfbe049bd",
+      "techniques": [
+        {
+          "technique": "soundness-argument-names-its-dependencies",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/__tests__/usePassportData.test.tsx:57 CrossProjectMetadataMap requires cross_project and total_projects; this fixture omits both and names no dependency on runPassportBuild reading only the supplied fields."
+        }
+      ]
     }
   }
 }

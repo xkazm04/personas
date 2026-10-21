@@ -16888,7 +16888,11 @@
           "revision": 5,
           "changedAt": "2026-10-21",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/i18n/__tests__/useTranslatedError.test.ts:24 The partial fixture asserts the complete translation type without documenting its dependence on the resolver reading only error_registry.",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:3ad9d5604e9627ce",
+          "evaluatedRevision": 5
         },
         {
           "subject": "agent-instruction-files",
@@ -24246,7 +24250,11 @@
           "revision": 5,
           "changedAt": "2026-10-21",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/__tests__/usePassportData.test.tsx:57 The fixture asserts a metadata type with required fields it omits, while leaving its dependence on the hook's narrower reads undocumented.",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:3ad9d5604e9627ce",
+          "evaluatedRevision": 5
         },
         {
           "subject": "agent-instruction-files",

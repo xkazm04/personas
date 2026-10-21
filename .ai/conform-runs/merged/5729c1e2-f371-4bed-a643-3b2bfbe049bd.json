@@ -1,0 +1,90 @@
+{
+  "schema": "conform-run/1",
+  "worker": "5729c1e2-f371-4bed-a643-3b2bfbe049bd",
+  "subject": "trust-base",
+  "evaluatedAt": "2026-10-21T23:02:24.468986+00:00",
+  "provider": "codex",
+  "model": "gpt-6.1-sol",
+  "pairs": [
+    {
+      "context": "i18n-generated",
+      "subject": "trust-base",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/i18n/__tests__/useTranslatedError.test.ts:24 The partial fixture asserts the complete translation type without documenting its dependence on the resolver reading only error_registry.",
+      "techniques": [
+        {
+          "technique": "soundness-argument-names-its-dependencies",
+          "verdict": "deviation",
+          "evidence": "src/i18n/__tests__/useTranslatedError.test.ts:24 Safe fixture use depends on resolveErrorTranslated's restricted reads in src/i18n/useTranslatedError.ts:214; neither end identifies this dependency."
+        }
+      ]
+    },
+    {
+      "context": "passport-wall-model",
+      "subject": "trust-base",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/teams/sub_factory/passport/__tests__/usePassportData.test.tsx:57 The fixture asserts a metadata type with required fields it omits, while leaving its dependence on the hook's narrower reads undocumented.",
+      "techniques": [
+        {
+          "technique": "soundness-argument-names-its-dependencies",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/__tests__/usePassportData.test.tsx:57 CrossProjectMetadataMap requires cross_project and total_projects; this fixture omits both and names no dependency on runPassportBuild reading only the supplied fields."
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "trust-base",
+      "context": "companion-ui-controls",
+      "reason": "withdrawn after review: reviewer (sonnet): The primary anchor tests/playwright/template-marathon-fixtures.ts:218 is not one of the context's files. Only template-marathon.spec.ts and a unit test import it, so the verdict is about a different context. The claimed type-aware lint result could not be confirmed, though line 218 does assign `JSON"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-21T23:02:24.468986+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "trust-base"
+      ],
+      "techniques": [
+        "census-counts-unmarked-members",
+        "soundness-argument-names-its-dependencies"
+      ],
+      "deviations": 1,
+      "context": "companion-ui-controls",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    },
+    {
+      "ts": "2026-10-21T23:02:24.468986+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "trust-base"
+      ],
+      "techniques": [
+        "soundness-argument-names-its-dependencies"
+      ],
+      "deviations": 1,
+      "context": "i18n-generated",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    },
+    {
+      "ts": "2026-10-21T23:02:24.468986+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "trust-base"
+      ],
+      "techniques": [
+        "soundness-argument-names-its-dependencies"
+      ],
+      "deviations": 1,
+      "context": "passport-wall-model",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    }
+  ]
+}
