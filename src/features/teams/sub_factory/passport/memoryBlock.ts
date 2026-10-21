@@ -13,6 +13,24 @@ import { silentCatch } from '@/lib/silentCatch';
 /** Recall cap per dispatch (design §5 decision 1). */
 const RECALL_CAP = 8;
 
+const MAX_TITLE = 200;
+const MAX_BODY = 240;
+
+/** Reduce agent-authored text to one bounded line before it joins the prompt:
+ *  control characters (newline included) become spaces, whitespace runs
+ *  collapse, angle brackets are neutralised, and the result is capped. A note
+ *  that survives this cannot open its own heading or forge the block's END
+ *  line at column 0. Mirrors `flatten_untrusted` in the engine consolidator. */
+function flattenUntrusted(raw: string, cap: number): string {
+  return raw
+    .replace(/[\p{Cc}\u2028\u2029]/gu, ' ')
+    .replace(/</g, '(')
+    .replace(/>/g, ')')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, cap);
+}
+
 const contract = (skillName: string | undefined) => [
   '--- MEMORY BLOCK (Personas Project Memory Ledger) ---',
   'This project has a durable, cross-terminal memory ledger. Before you finish, record what the NEXT session (yours or another terminal’s) would need: durable facts, progress made, decisions taken, gotchas hit.',
@@ -35,14 +53,14 @@ export async function composeMemoryBlock(projectId: string, binding: 'project' |
   const parts: string[] = [contract(skillName)];
 
   if (contexts.length > 0) {
-    parts.push('', `Known contexts (use these exact names to anchor nodes): ${contexts.map((c) => c.name).join(' · ')}`);
+    parts.push('', `Known contexts (use these exact names to anchor nodes): ${contexts.map((c) => flattenUntrusted(c.name, MAX_TITLE)).join(' · ')}`);
   }
 
   if (nodes.length > 0) {
     parts.push('', `RECALL — the ${nodes.length} freshest ledger notes (trust but verify against the code):`);
     for (const n of nodes) {
       const anchor = n.contextId ? ` [ctx]` : '';
-      parts.push(`- (${n.kind}${anchor}) ${n.title}${n.body ? ` — ${n.body.slice(0, 240)}` : ''}`);
+      parts.push(`- (${n.kind}${anchor}) ${flattenUntrusted(n.title, MAX_TITLE)}${n.body ? ` — ${flattenUntrusted(n.body, MAX_BODY)}` : ''}`);
     }
   }
 
