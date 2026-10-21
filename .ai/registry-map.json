@@ -12103,8 +12103,8 @@
           "revision": 8,
           "changedAt": "2026-09-03",
           "state": "deviation",
-          "evidence": "src-tauri/src/engine/management_api.rs:754 writes an api_key_audit SQLite row (plus an unlatched warn at :749) on every 429, beside the limiter's once-per-streak latch at src-tauri/engine/src/rate_limiter.rs:78 - a refusal storm becomes per-request log and DB write amplification (re-verified unchanged 2026-10-16)",
-          "evaluatedAt": "2026-10-16",
+          "evidence": "src-tauri/src/engine/management_api.rs:759 writes an api_key_audit SQLite row (plus an unlatched warn at :754) on every 429, beside the limiter's once-per-streak latch at src-tauri/engine/src/rate_limiter.rs:78 - a refusal storm becomes per-request log and DB write amplification (re-verified 2026-10-21, anchors moved +5)",
+          "evaluatedAt": "2026-10-21",
           "evaluatedAgainst": "sha256-b2:c1ab95c98c885951",
           "evaluatedRevision": 8,
           "revisionsBehind": 0
@@ -29771,8 +29771,8 @@
           "revision": 8,
           "changedAt": "2026-09-03",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/tier_usage.rs:83 infers each bucket's limit from its key prefix (webhook: else event_source_max), so apikey: (120, src-tauri/src/engine/management_api.rs:408) and mcp_tool: (src-tauri/src/engine/mcp_tools.rs:793) buckets are charted against the wrong limit and feed approaching_limit at :109 - one arithmetic for operator and caller is violated (re-verified unchanged 2026-10-16)",
-          "evaluatedAt": "2026-10-16",
+          "evidence": "src-tauri/src/commands/infrastructure/tier_usage.rs:83 infers each bucket's limit from its key prefix (webhook: else event_source_max), so apikey: (120, src-tauri/src/engine/management_api.rs:403) and mcp_tool: (src-tauri/src/engine/mcp_tools.rs:825) buckets are charted against the wrong limit and feed approaching_limit at :109 - the limiter does not own its policy, so operator and caller arithmetic diverge (re-verified 2026-10-21)",
+          "evaluatedAt": "2026-10-21",
           "evaluatedAgainst": "sha256-b2:c1ab95c98c885951",
           "evaluatedRevision": 8,
           "revisionsBehind": 0
@@ -41503,8 +41503,8 @@
           "revision": 8,
           "changedAt": "2026-09-03",
           "state": "deviation",
-          "evidence": "src-tauri/src/engine/webhook.rs:409 refuses 429 with no_headers() (retry-after only in body prose) although the same file sets Retry-After on its active-window path at src-tauri/src/engine/webhook.rs:499 - header-honouring senders get nothing and guess (re-verified unchanged 2026-10-16)",
-          "evaluatedAt": "2026-10-16",
+          "evidence": "src-tauri/src/engine/webhook.rs:499 refuses 429 with no_headers() (retry-after only in body prose; same at the auth-fail 429 :365) although the same file sets Retry-After on its active-window path at src-tauri/src/engine/webhook.rs:521 - header-honouring senders get nothing and guess (re-verified 2026-10-21, anchors moved)",
+          "evaluatedAt": "2026-10-21",
           "evaluatedAgainst": "sha256-b2:c1ab95c98c885951",
           "evaluatedRevision": 8,
           "revisionsBehind": 0

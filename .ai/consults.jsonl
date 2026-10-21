@@ -1755,3 +1755,6 @@
 {"ts":"2026-10-21T12:34:21Z","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":["rewriting-under-a-foreign-gate"],"deviations":0}
 {"ts":"2026-10-21T12:34:21Z","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":["rewriting-under-a-foreign-gate"],"deviations":0}
 {"ts":"2026-10-21T12:34:21Z","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":["rewriting-under-a-foreign-gate"],"deviations":0}
+{"ts":"2026-10-21T12:34:47Z","bundle":"software-engineering","subjects":["rate-limiting"],"techniques":["storm-hygiene"],"deviations":1}
+{"ts":"2026-10-21T12:34:47Z","bundle":"software-engineering","subjects":["rate-limiting"],"techniques":["limit-observability"],"deviations":1}
+{"ts":"2026-10-21T12:34:47Z","bundle":"software-engineering","subjects":["rate-limiting"],"techniques":["refusal-contract"],"deviations":1}
