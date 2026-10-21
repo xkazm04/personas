@@ -207,8 +207,13 @@ pub fn get_performance(pool: &DbPool, review_id: &str) -> Result<TemplatePerform
         top_negative.sort_by_key(|e| std::cmp::Reverse(e.1));
 
         // Derived quality: 40% semantic + 30% structural + 30% success rate (all normalized to 0-100)
-        let derived_quality_score =
-            (semantic_score * 0.4) + (structural_score * 0.3) + (success_rate * 100.0 * 0.3);
+        // A template with no decided run has no measured success rate: score the
+        // two measured dimensions renormalised, instead of counting it as 0%.
+        let derived_quality_score = if decided_count > 0 {
+            (semantic_score * 0.4) + (structural_score * 0.3) + (success_rate * 100.0 * 0.3)
+        } else {
+            ((semantic_score * 0.4) + (structural_score * 0.3)) / 0.7
+        };
 
         Ok(TemplatePerformance {
             review_id: review_id.to_string(),
@@ -291,6 +296,27 @@ mod tests {
             (perf.success_rate - 2.0 / 3.0).abs() < 1e-9,
             "expected 2/3 over decided runs, got {}",
             perf.success_rate
+        );
+    }
+
+    /// A template nobody has run has no measured success rate: its quality is
+    /// the two measured dimensions renormalised, not capped at 70.
+    #[test]
+    fn quality_score_renormalises_when_no_run_is_decided() {
+        let pool = init_test_db().unwrap();
+        let review_id = seed(&pool, &["running"]).unwrap();
+        let conn = pool.get().unwrap();
+        conn.execute(
+            "UPDATE persona_design_reviews SET structural_score = 100, semantic_score = 100 WHERE id = ?1",
+            params![review_id],
+        )
+        .unwrap();
+        drop(conn);
+        let perf = get_performance(&pool, &review_id).unwrap();
+        assert!(
+            (perf.derived_quality_score - 100.0).abs() < 1e-9,
+            "perfect measured dimensions must score 100, got {}",
+            perf.derived_quality_score
         );
     }
 
