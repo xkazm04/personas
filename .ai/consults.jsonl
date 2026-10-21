@@ -1720,3 +1720,7 @@
 {"ts":"2026-10-21T12:26:00Z","bundle":"software-engineering","subjects":["data-access"],"techniques":["batching-and-n-plus-one","layering-rules","read-models-and-projections"],"deviations":0}
 {"ts":"2026-10-21T12:26:00Z","bundle":"software-engineering","subjects":["data-access"],"techniques":["query-construction","layering-rules"],"deviations":0}
 {"ts":"2026-10-21T12:26:00Z","bundle":"software-engineering","subjects":["data-access"],"techniques":["localized-record-identity"],"deviations":0}
+{"ts":"2026-10-21T12:26:12Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["marked-unverifiable-region","locality-and-leverage","module-depth"],"deviations":1}
+{"ts":"2026-10-21T12:26:12Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["marked-unverifiable-region","seams-and-adapters","locality-and-leverage"],"deviations":1}
+{"ts":"2026-10-21T12:26:12Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["module-depth","seams-and-adapters","marked-unverifiable-region"],"deviations":1}
+{"ts":"2026-10-21T12:26:12Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["module-depth","io-free-core"],"deviations":1}

@@ -6950,7 +6950,11 @@
           "revision": 18,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/core/personas.rs:34 list_personas takes lifecycle as Option<Vec<String>> although the closed PersonaLifecycle enum with a validating FromStr exists (src-tauri/core/src/models/persona.rs:200), so a misspelt stage returns an empty roster instead of a Validation error",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:7c8008f2207b1946",
+          "evaluatedRevision": 18
         },
         {
           "subject": "import-normalization",
@@ -18143,7 +18147,11 @@
           "revision": 18,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/lib/types/types.ts:426 getAuthMethods asserts any non-empty metadata array into ConnectorAuthMethod[] without an element check, a second unchecked door beside parseConnectorMetadata (:218), so a malformed seed entry reaches callers typed as a method",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:7c8008f2207b1946",
+          "evaluatedRevision": 18
         },
         {
           "subject": "eval-harness",
@@ -18346,7 +18354,11 @@
           "revision": 18,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/lib/utils/parseJson.ts:24 parseJsonOrDefault<T> asserts any parsed JSON into a caller-chosen T with no guard and no stated invariant, so its 34 consumers receive unchecked shapes typed as checked ones while the guarded door (safeJsonParse, :49) sits beside it",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:7c8008f2207b1946",
+          "evaluatedRevision": 18
         }
       ],
       "governance": "governed"
@@ -24761,7 +24773,11 @@
           "revision": 18,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/pipeline_executor.rs:138 ConditionSpec.op is a String matched on text with an unknown-operator arm that fails open (:200), so an edge saved with a misspelt or unsupported op runs its target node unconditionally - gating silently disabled",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:7c8008f2207b1946",
+          "evaluatedRevision": 18
         }
       ],
       "governance": "governed"

@@ -30804,6 +30804,105 @@
       "worker": "d0d5d9b2-b44c-4acb-9aee-43f05e83409c",
       "techniques": [],
       "registryProposal": "Matcher false positive: the token overlap ['table','rows','client'] comes from database vocabulary (SQLite tables, sync rows, HTTP client), not a UI data table. The table subject could add a negative signal for contexts whose paths are entirely src-tauri/**/*.rs or that have no .tsx file."
+    },
+    "ef4a1671-8bf4-44b2-9ae9-cb2533b780a6/module-design": {
+      "context": "lib-utils",
+      "subject": "module-design",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:26:12.000Z",
+      "worker": "9f024a99-e630-40bd-9053-f1709120e49f",
+      "techniques": [
+        {
+          "technique": "marked-unverifiable-region",
+          "verdict": "deviation",
+          "evidence": "src/lib/utils/parseJson.ts:24 the unverifiable cast is the shared door itself: named (greppable) but not enclosed behind a checked surface and carrying no invariant, so property 2 and property 4 both fail"
+        },
+        {
+          "technique": "locality-and-leverage",
+          "verdict": "conformant",
+          "evidence": "src/lib/utils/dayOfWeek.ts:31 one day-name to cron-digit vocabulary replaces three drifting copies (header :5-12); schedule.ts:2 consumes it"
+        },
+        {
+          "technique": "module-depth",
+          "verdict": "conformant",
+          "evidence": "src/lib/utils/tauri/safeInvoke.ts:64 isCommandNotFound hides Tauri's exact unregistered-command string behind a one-boolean interface and refuses to widen to resource not-found"
+        }
+      ]
+    },
+    "ad601e35-b998-4029-97a5-77487f00d561/module-design": {
+      "context": "lib-types",
+      "subject": "module-design",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:26:12.000Z",
+      "worker": "9f024a99-e630-40bd-9053-f1709120e49f",
+      "techniques": [
+        {
+          "technique": "marked-unverifiable-region",
+          "verdict": "deviation",
+          "evidence": "src/lib/types/types.ts:426 cast with no invariant and not enclosed by the typeof-checked door at :218; contrast :359, which states its invariant and does realize property 4"
+        },
+        {
+          "technique": "seams-and-adapters",
+          "verdict": "conformant",
+          "evidence": "src/lib/types/__tests__/tauriErrorKindParity.test.ts:5 the hand-written TauriErrorKind mirror is pinned to the Rust AppError serializer by a shared-contract test, so the two producers cannot drift silently"
+        },
+        {
+          "technique": "locality-and-leverage",
+          "verdict": "conformant",
+          "evidence": "src/lib/types/schedule.ts:2 day vocabulary imported from the one owner instead of the former local DOW_MAP"
+        }
+      ]
+    },
+    "e62cdb2d-a626-4a0b-afdf-ac3d7aada9f0/module-design": {
+      "context": "commands-core",
+      "subject": "module-design",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:26:12.000Z",
+      "worker": "9f024a99-e630-40bd-9053-f1709120e49f",
+      "techniques": [
+        {
+          "technique": "module-depth",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/core/personas.rs:34 a closed set held in an open type at the IPC door; the strings go straight into a WHERE IN (src-tauri/db/src/repos/core/personas.rs:666) unvalidated"
+        },
+        {
+          "technique": "seams-and-adapters",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/core/personas.rs:51 archive/restore commands are thin adapters: auth gate then one repo call"
+        },
+        {
+          "technique": "marked-unverifiable-region",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/core/personas.rs:679 the delete path's hazards are an engine marker with guaranteed unmark (:679-686), not an unchecked operation"
+        }
+      ]
+    },
+    "de8b648f-7971-452b-88dc-773b215c5f09/module-design": {
+      "context": "pipeline-and-automation",
+      "subject": "module-design",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:26:12.000Z",
+      "worker": "9f024a99-e630-40bd-9053-f1709120e49f",
+      "techniques": [
+        {
+          "technique": "module-depth",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/pipeline_executor.rs:138 four accepted operators held in an open type; same shape for connection_type == \"conditional\" at :220"
+        },
+        {
+          "technique": "io-free-core",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/pipeline_executor.rs:154 evaluate_condition is a pure function of (condition, predecessor output) exercised without doubles by unit tests from :1373"
+        }
+      ]
     }
   }
 }
