@@ -5,6 +5,7 @@ import { Check, X, Send, User, Cloud, ExternalLink, CheckCircle2, XCircle } from
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import Button from '@/features/shared/components/buttons/Button';
 import { useSystemStore } from '@/stores/systemStore';
+import { openExecutionFromLink } from '@/lib/deepLinks/navigationLinks';
 import { listReviewMessages, addReviewMessage } from '@/api/overview/reviews';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
@@ -164,6 +165,9 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
             <ReviewReportLink contextData={review.context_data} />
             <button
               onClick={() => {
+                // With an execution id, hand it to the Activity list's focus
+                // door (opens that run's detail); without one, the section root.
+                if (review.execution_id && openExecutionFromLink(review.execution_id)) return;
                 useSystemStore.getState().setSidebarSection('overview');
               }}
               className="inline-flex items-center gap-1 typo-caption text-blue-400/70 hover:text-blue-400 transition-colors"
