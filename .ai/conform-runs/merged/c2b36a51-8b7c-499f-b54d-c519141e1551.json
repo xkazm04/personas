@@ -1,0 +1,15 @@
+{"schema":"conform-run/1","worker":"c2b36a51-8b7c-499f-b54d-c519141e1551","subject":"wizard-flows","evaluatedAt":"2026-10-21T17:51:02Z",
+ "pairs":[],
+ "declined":[
+  {"subject":"wizard-flows","context":"68e3a26f-d83a-447b-a2d0-ad875004506f","reason":"already judged deviation 2026-10-21 against the current digest sha256-b2:e0fac678b7164451 (rev 4); re-judging the same day reads nothing new"},
+  {"subject":"wizard-flows","context":"b88ef121-d028-4999-bf34-6e44aed99959","reason":"already judged deviation 2026-10-21 against the current digest (rev 4)"},
+  {"subject":"wizard-flows","context":"e76afaf6-ba3b-4341-b1ad-f444f08da8b8","reason":"already judged deviation 2026-10-21 against the current digest (rev 4)"},
+  {"subject":"wizard-flows","context":"5dc3cb6a-6612-4909-995d-86e92394ec94","reason":"already judged deviation 2026-10-21 against the current digest (rev 4)"},
+  {"subject":"wizard-flows","context":"8650ca36-36fe-4862-98f5-745e866a2687","reason":"not-applicable verdict of 2026-10-13 is current (rev 4, revisionsBehind 0)"},
+  {"subject":"wizard-flows","context":"3a377c10-3b0f-4674-87f9-aae9cb267c99","reason":"not-applicable verdict of 2026-10-16 is current (rev 4, revisionsBehind 0)"},
+  {"subject":"wizard-flows","context":"2a54cdc2-87af-4298-b490-9eb87f230df7","reason":"not-applicable verdict of 2026-10-16 is current (rev 4, revisionsBehind 0)"},
+  {"subject":"wizard-flows","context":"89d44c76-ec4c-4388-843e-503cf6ca2507","reason":"progress-transform is a weak, lexical-only row (tokens progress/wizard/flows); judging it would manufacture a deviation - coverage question, not a verdict"},
+  {"subject":"wizard-flows","context":"onboarding-components","reason":"MISSING PAIRING (not added per worker contract): src/features/onboarding/components/OnboardingOverlay.tsx:130 renders a sequenced first-run wizard with StepIndicator.tsx:38 current/completed step states over a store-owned onboardingStep - wizard-flows governs it and the matcher never paired it"},
+  {"subject":"wizard-flows","context":"agents-connectors","reason":"MISSING PAIRING (not added per worker contract): src/features/agents/sub_connectors/components/automation/AutomationSetupModal.tsx:54 is a four-step trigger/design/review/deploy flow driven by a phase machine with an irreversible deploy commit - candidate wizard-flows pair, judge after adding"}
+ ],
+ "consults":[]}
