@@ -136,16 +136,16 @@ export default function CustomThemeCreator() {
 
   const isActiveCustom = currentThemeId === 'custom';
 
-  const colorRows: { label: string; value: string | null; derivedValue: string | undefined; onChange: (c: string | null) => void }[] = useMemo(() => [
-    { label: 'Primary', value: primaryColor, derivedValue: '#8b5cf6', onChange: (c: string | null) => setPrimaryColor(c ?? '#8b5cf6') },
-    { label: 'Accent', value: accentColor, derivedValue: baseVars['--accent'], onChange: (c: string | null) => setAccentColor(c) },
-    { label: 'Background', value: backgroundColor, derivedValue: baseVars['--background'], onChange: (c: string | null) => setBackgroundColor(c) },
-    { label: 'Foreground', value: foregroundColor, derivedValue: baseVars['--foreground'], onChange: (c: string | null) => setForegroundColor(c) },
-    { label: 'Secondary', value: secondaryColor, derivedValue: baseVars['--secondary'], onChange: (c: string | null) => setSecondaryColor(c) },
-    { label: 'Border', value: borderColor, derivedValue: baseVars['--border'], onChange: (c: string | null) => setBorderColor(c) },
-    { label: 'Card', value: cardBgColor, derivedValue: baseVars['--card-bg'], onChange: (c: string | null) => setCardBgColor(c) },
-    { label: 'Muted Text', value: mutedFgColor, derivedValue: baseVars['--muted-foreground'], onChange: (c: string | null) => setMutedFgColor(c) },
-  ], [primaryColor, accentColor, backgroundColor, foregroundColor, secondaryColor, borderColor, cardBgColor, mutedFgColor, baseVars]);
+  const colorRows: { id: string; label: string; value: string | null; derivedValue: string | undefined; onChange: (c: string | null) => void }[] = useMemo(() => [
+    { id: 'primary', label: s.color_primary, value: primaryColor, derivedValue: '#8b5cf6', onChange: (c: string | null) => setPrimaryColor(c ?? '#8b5cf6') },
+    { id: 'accent', label: s.color_accent, value: accentColor, derivedValue: baseVars['--accent'], onChange: (c: string | null) => setAccentColor(c) },
+    { id: 'background', label: s.color_background, value: backgroundColor, derivedValue: baseVars['--background'], onChange: (c: string | null) => setBackgroundColor(c) },
+    { id: 'foreground', label: s.color_foreground, value: foregroundColor, derivedValue: baseVars['--foreground'], onChange: (c: string | null) => setForegroundColor(c) },
+    { id: 'secondary', label: s.color_secondary, value: secondaryColor, derivedValue: baseVars['--secondary'], onChange: (c: string | null) => setSecondaryColor(c) },
+    { id: 'border', label: s.color_border, value: borderColor, derivedValue: baseVars['--border'], onChange: (c: string | null) => setBorderColor(c) },
+    { id: 'card', label: s.color_card, value: cardBgColor, derivedValue: baseVars['--card-bg'], onChange: (c: string | null) => setCardBgColor(c) },
+    { id: 'muted', label: s.color_muted_text, value: mutedFgColor, derivedValue: baseVars['--muted-foreground'], onChange: (c: string | null) => setMutedFgColor(c) },
+  ], [primaryColor, accentColor, backgroundColor, foregroundColor, secondaryColor, borderColor, cardBgColor, mutedFgColor, baseVars, s]);
 
   return (
     <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-5">
@@ -192,7 +192,7 @@ export default function CustomThemeCreator() {
           <input
             value={label}
             onChange={(e) => setLabel(e.target.value)}
-            placeholder="Custom"
+            placeholder={s.custom_theme_name_placeholder}
             maxLength={24}
             className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal typo-body text-foreground placeholder-muted-foreground/30 focus-ring transition-all"
           />
@@ -204,7 +204,7 @@ export default function CustomThemeCreator() {
         <label className="typo-caption text-foreground">{s.colors}</label>
         <div className="rounded-card border border-primary/8 bg-secondary/10 px-3 py-1 divide-y divide-primary/5">
           {colorRows.map((row) => (
-            <ColorRow key={row.label} label={row.label} value={row.value} derivedValue={row.derivedValue} onChange={row.onChange} />
+            <ColorRow key={row.id} label={row.label} value={row.value} derivedValue={row.derivedValue} onChange={row.onChange} />
           ))}
         </div>
       </div>
@@ -222,7 +222,7 @@ export default function CustomThemeCreator() {
         {showGradient && (
           <div className="pl-4 space-y-3">
             <div className="rounded-card border border-primary/8 bg-secondary/10 px-3 py-1">
-              <ColorRow label="End Color" value={backgroundEndColor} derivedValue={backgroundColor ?? baseVars['--background']} onChange={setBackgroundEndColor} />
+              <ColorRow label={s.end_color} value={backgroundEndColor} derivedValue={backgroundColor ?? baseVars['--background']} onChange={setBackgroundEndColor} />
             </div>
             <div className="flex items-center gap-3">
               <label className="typo-caption text-foreground w-24 flex-shrink-0">{s.angle}</label>

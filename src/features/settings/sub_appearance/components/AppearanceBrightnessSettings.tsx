@@ -49,9 +49,9 @@ export default function AppearanceBrightnessSettings() {
             >
               <Sun className={`w-5 h-5 ${iconOpacity} ${isActive ? 'text-amber-400' : 'text-foreground'}`} />
               <span className={`typo-heading ${isActive ? 'text-foreground/90' : 'text-foreground'}`}>
-                {level.label}
+                {s[level.labelKey]}
               </span>
-              <span className="typo-caption text-foreground">{level.description}</span>
+              <span className="typo-caption text-foreground">{s[level.descriptionKey]}</span>
               {isActive && (
                 <div className="absolute top-2 right-2">
                   <Check className="w-3.5 h-3.5 text-primary" />

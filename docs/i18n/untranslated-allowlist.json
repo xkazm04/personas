@@ -4382,5 +4382,17 @@
   "vi:gitlab.pipeline_count_one",
   "vi:gitlab.notify_title_other",
   "fr:plugins.fleet.tab_sessions",
-  "fr:overview.memory_conflict.kind_contradiction"
+  "fr:overview.memory_conflict.kind_contradiction",
+  "de:settings.appearance.brightness_dark_low",
+  "de:settings.appearance.brightness_light_high",
+  "de:settings.appearance.text_scale_larger",
+  "fr:settings.appearance.brightness_dark_low",
+  "fr:settings.appearance.brightness_light_high",
+  "fr:settings.appearance.text_scale_larger",
+  "fr:settings.appearance.color_accent",
+  "cs:settings.appearance.preview_info",
+  "de:settings.appearance.preview_info",
+  "es:settings.appearance.preview_info",
+  "fr:settings.appearance.preview_info",
+  "id:settings.appearance.preview_info"
 ]

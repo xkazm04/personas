@@ -1,4 +1,5 @@
 import type { ThemeDefinition } from '@/stores/themeStore';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /* Hover-expand popover — renders a larger fidelity app-surface sample of
    the theme: titlebar, sidebar with nav items, header card, status row,
@@ -7,6 +8,8 @@ import type { ThemeDefinition } from '@/stores/themeStore';
    previewed theme. Positioned below the tile; pointer-events-none so the
    hover target stays the tile itself. */
 export function AppearanceThemeHoverPreview({ theme }: { theme: ThemeDefinition }) {
+  const { t } = useTranslation();
+  const s = t.settings.appearance;
   return (
     <div
       className="absolute top-full left-1/2 -translate-x-1/2 mt-2 pointer-events-none animate-expand-in"
@@ -39,16 +42,16 @@ export function AppearanceThemeHoverPreview({ theme }: { theme: ThemeDefinition 
             <div className="rounded-card bg-card-bg border border-card-border p-2 space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="h-1.5 w-12 rounded-full bg-foreground/30" />
-                <span className="px-1.5 py-0.5 rounded-pill text-[8px] font-semibold bg-status-success/20 text-status-success">OK</span>
+                <span className="px-1.5 py-0.5 rounded-pill text-[8px] font-semibold bg-status-success/20 text-status-success uppercase">{s.preview_ok}</span>
               </div>
               <span className="block h-1 w-full rounded-full bg-foreground/10" />
               <span className="block h-1 w-3/4 rounded-full bg-foreground/10" />
             </div>
             {/* Status row */}
             <div className="flex items-center gap-1">
-              <span className="px-1.5 py-0.5 rounded-pill text-[8px] font-semibold bg-status-info/20 text-status-info">INFO</span>
-              <span className="px-1.5 py-0.5 rounded-pill text-[8px] font-semibold bg-status-warning/25 text-status-warning">WARN</span>
-              <span className="px-1.5 py-0.5 rounded-pill text-[8px] font-semibold bg-status-error/20 text-status-error">ERR</span>
+              <span className="px-1.5 py-0.5 rounded-pill text-[8px] font-semibold bg-status-info/20 text-status-info uppercase">{s.preview_info}</span>
+              <span className="px-1.5 py-0.5 rounded-pill text-[8px] font-semibold bg-status-warning/25 text-status-warning uppercase">{s.preview_warn}</span>
+              <span className="px-1.5 py-0.5 rounded-pill text-[8px] font-semibold bg-status-error/20 text-status-error uppercase">{s.preview_err}</span>
             </div>
             {/* Sparkline */}
             <svg viewBox="0 0 100 24" className="w-full h-6" preserveAspectRatio="none">
@@ -72,8 +75,8 @@ export function AppearanceThemeHoverPreview({ theme }: { theme: ThemeDefinition 
             </svg>
             {/* Button row */}
             <div className="flex items-center gap-1.5">
-              <span className="px-2 py-1 rounded-interactive text-[10px] font-semibold bg-primary text-btn-primary-fg">Run</span>
-              <span className="px-2 py-1 rounded-interactive text-[10px] font-medium border border-card-border text-foreground/85">Skip</span>
+              <span className="px-2 py-1 rounded-interactive text-[10px] font-semibold bg-primary text-btn-primary-fg">{s.preview_run}</span>
+              <span className="px-2 py-1 rounded-interactive text-[10px] font-medium border border-card-border text-foreground/85">{s.preview_skip}</span>
             </div>
           </div>
         </div>

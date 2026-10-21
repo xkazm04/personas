@@ -28,20 +28,33 @@ export type TextScale = 'large' | 'larger' | 'xl';
 
 export type BrightnessLevel = 'low' | 'mid' | 'high';
 
-interface BrightnessDef { id: BrightnessLevel; label: string; description: string; value: number }
+/** Keys under `t.settings.appearance` that name a brightness level or text size. */
+export type AppearanceLevelKey =
+  | 'brightness_dark_low' | 'brightness_dark_mid' | 'brightness_dark_high'
+  | 'brightness_light_low' | 'brightness_light_mid' | 'brightness_light_high'
+  | 'text_scale_large' | 'text_scale_larger' | 'text_scale_xl';
+
+interface BrightnessDef {
+  id: BrightnessLevel;
+  /** `t.settings.appearance` key for the tile title. */
+  labelKey: AppearanceLevelKey;
+  /** `t.settings.appearance` key for the tile description (`<labelKey>_desc`). */
+  descriptionKey: `${AppearanceLevelKey}_desc`;
+  value: number;
+}
 
 /** Dark themes: old default was too dark → 1.25 is the new baseline, two brighter above. */
 export const DARK_BRIGHTNESS_LEVELS: BrightnessDef[] = [
-  { id: 'low',  label: 'Standard',  description: 'Default depth',          value: 1.25 },
-  { id: 'mid',  label: 'Bright',    description: 'Lifted for dim displays', value: 1.38 },
-  { id: 'high', label: 'Brighter',  description: 'Maximum clarity',        value: 1.50 },
+  { id: 'low',  labelKey: 'brightness_dark_low',  descriptionKey: 'brightness_dark_low_desc',  value: 1.25 },
+  { id: 'mid',  labelKey: 'brightness_dark_mid',  descriptionKey: 'brightness_dark_mid_desc',  value: 1.38 },
+  { id: 'high', labelKey: 'brightness_dark_high', descriptionKey: 'brightness_dark_high_desc', value: 1.50 },
 ];
 
 /** Light themes: full brightness is the standard, two darker variants below. */
 export const LIGHT_BRIGHTNESS_LEVELS: BrightnessDef[] = [
-  { id: 'low',  label: 'Dimmer',    description: 'Reduced glare',   value: 0.82 },
-  { id: 'mid',  label: 'Soft',      description: 'Gentle on eyes',  value: 0.91 },
-  { id: 'high', label: 'Standard',  description: 'Full brightness', value: 1.0 },
+  { id: 'low',  labelKey: 'brightness_light_low',  descriptionKey: 'brightness_light_low_desc',  value: 0.82 },
+  { id: 'mid',  labelKey: 'brightness_light_mid',  descriptionKey: 'brightness_light_mid_desc',  value: 0.91 },
+  { id: 'high', labelKey: 'brightness_light_high', descriptionKey: 'brightness_light_high_desc', value: 1.0 },
 ];
 
 /** Tailwind opacity utilities for brightness-level icon glyphs, indexed alongside *_BRIGHTNESS_LEVELS. */
@@ -88,10 +101,10 @@ const RETIRED_THEME_FALLBACKS: Record<string, ThemeId> = {
   'light-sand': 'light',
 };
 
-export const TEXT_SCALES: { id: TextScale; label: string; description: string }[] = [
-  { id: 'large', label: 'Small', description: 'Compact readability' },
-  { id: 'larger', label: 'Standard', description: 'Default — comfortable reading' },
-  { id: 'xl', label: 'Large', description: 'Maximum readability' },
+export const TEXT_SCALES: { id: TextScale; labelKey: AppearanceLevelKey; descriptionKey: `${AppearanceLevelKey}_desc` }[] = [
+  { id: 'large', labelKey: 'text_scale_large', descriptionKey: 'text_scale_large_desc' },
+  { id: 'larger', labelKey: 'text_scale_larger', descriptionKey: 'text_scale_larger_desc' },
+  { id: 'xl', labelKey: 'text_scale_xl', descriptionKey: 'text_scale_xl_desc' },
 ];
 
 const TEXT_SCALE_MULTIPLIERS: Record<TextScale, number> = {
