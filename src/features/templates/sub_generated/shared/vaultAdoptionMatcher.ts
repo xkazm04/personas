@@ -67,6 +67,24 @@ export function hasMatchingCredential(
 }
 
 /**
+ * The credential a question's `service_type` resolves to: the same three match
+ * paths as `hasMatchingCredential` (direct, alias, category tag), in that
+ * priority, returning the credential itself so a caller can act on it. The
+ * dynamic-question picker uses this so it agrees with the banner on whether a
+ * credential exists when a template names a CATEGORY (`messaging`).
+ */
+export function findMatchingCredential<T extends { service_type: string }>(
+  canonical: string,
+  credentials: readonly T[],
+): T | undefined {
+  for (const alias of expandAliases(canonical)) {
+    const hit = credentials.find((c) => c.service_type === alias);
+    if (hit) return hit;
+  }
+  return credentials.find((c) => connectorCategoryTags(c.service_type).includes(canonical));
+}
+
+/**
  * Build the `credential_bindings` map sent to the backend so
  * `apply_credential_bindings_to_connectors` can rewrite placeholder connector
  * entries (e.g. `name: "email"`) to the user's concrete picks

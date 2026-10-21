@@ -6,10 +6,12 @@ const discover = vi.fn();
 vi.mock('@/api/discovery/discovery', () => ({
   discoverConnectorResources: (...args: unknown[]) => discover(...args),
 }));
-vi.mock('@/stores/vaultStore', () => {
-  const state = { credentials: [{ id: 'cred-gh', service_type: 'github', name: 'GH' }] };
-  return { useVaultStore: (sel: (s: typeof state) => unknown) => sel(state) };
-});
+const vault = vi.hoisted(() => ({
+  credentials: [{ id: 'cred-gh', service_type: 'github', name: 'GH' }] as Array<Record<string, unknown>>,
+}));
+vi.mock('@/stores/vaultStore', () => ({
+  useVaultStore: (sel: (s: typeof vault) => unknown) => sel(vault),
+}));
 // Stable identity, as the real provider gives: a fresh `t` per render would
 // re-run the hook's effect on every render and mask what it does on one pass.
 vi.mock('@/i18n/useTranslation', () => {
@@ -73,5 +75,36 @@ describe('useDynamicQuestionOptions - chained (depends_on) questions', () => {
     });
     expect(result.current.dynamicOptions.branch?.waitingOnParent).toBe(true);
     expect(result.current.dynamicOptions.branch?.items).toHaveLength(0);
+  });
+});
+
+const NO_ANSWERS: Record<string, string> = {};
+
+describe('useDynamicQuestionOptions - category service_type (operation call)', () => {
+  const CATEGORY_Q = [{
+    id: 'alert_channel',
+    question: 'Channel?',
+    type: 'select',
+    dynamic_source: { service_type: 'messaging', operation: 'list_channels' },
+  }] as unknown as TransformQuestionResponse[];
+
+  beforeEach(() => {
+    discover.mockReset();
+    vault.credentials = [{ id: 'cred-gh', service_type: 'github', name: 'GH' }];
+  });
+
+  it('a slack credential satisfies a "messaging" question, as the adoption banner already says', async () => {
+    vault.credentials = [{ id: 'cred-slack', service_type: 'slack', name: 'Slack' }];
+    discover.mockResolvedValue([{ value: 'C1', label: '#general' }]);
+    const { result } = renderHook(() => useDynamicQuestionOptions(CATEGORY_Q, NO_ANSWERS));
+    await waitFor(() => expect(result.current.dynamicOptions.alert_channel?.items).toHaveLength(1));
+    expect(result.current.dynamicOptions.alert_channel?.errorKind).toBeNull();
+    expect(discover).toHaveBeenCalledWith('cred-slack', 'slack', 'list_channels', {});
+  });
+
+  it('still reports no credential when nothing in the vault matches the category', async () => {
+    const { result } = renderHook(() => useDynamicQuestionOptions(CATEGORY_Q, NO_ANSWERS));
+    await waitFor(() => expect(result.current.dynamicOptions.alert_channel?.errorKind).toBe('no_credential'));
+    expect(discover).not.toHaveBeenCalled();
   });
 });

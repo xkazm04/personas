@@ -5,6 +5,7 @@ import type { PersonaConnectorSlot, TransformQuestionResponse } from '@/api/temp
 import { createLogger } from '@/lib/log';
 import { silentCatch } from '@/lib/silentCatch';
 import { connectorCategoryTags } from '@/lib/credentials/builtinConnectors';
+import { findMatchingCredential } from '@/features/templates/sub_generated/shared/vaultAdoptionMatcher';
 import { useTranslation } from '@/i18n/useTranslation';
 
 const logger = createLogger('dynamic-question-options');
@@ -88,15 +89,12 @@ export function useDynamicQuestionOptions(
   // would re-issue every discovery call.
   const lastFingerprintRef = useRef<Record<string, string>>({});
 
-  // Pre-compute the first healthy credential per service_type the questions ask for.
-  const credentialByService = useMemo(() => {
-    const out: Record<string, string> = {};
-    for (const c of credentials) {
-      if (c.healthcheck_last_success === false) continue;
-      if (!out[c.service_type]) out[c.service_type] = c.id;
-    }
-    return out;
-  }, [credentials]);
+  // Credentials a discovery call may use. A question names a service_type or a
+  // CATEGORY; findMatchingCredential resolves either, as the adoption banner does.
+  const healthyCredentials = useMemo(
+    () => credentials.filter((c) => c.healthcheck_last_success !== false),
+    [credentials],
+  );
 
   // A question that falls back to waiting on its parent must forget what it
   // last fetched. Otherwise re-picking the SAME parent value reproduces the old
@@ -247,10 +245,14 @@ export function useDynamicQuestionOptions(
       // Codebases bypasses the credential check — the backend reads
       // dev_projects directly and ignores the id (we still send a placeholder
       // to satisfy the command signature).
-      const credentialId =
+      const matched =
         src.service_type === 'codebases'
-          ? 'local'
-          : credentialByService[src.service_type];
+          ? undefined
+          : findMatchingCredential(src.service_type, healthyCredentials);
+      const credentialId = src.service_type === 'codebases' ? 'local' : matched?.id;
+      // Discovery dispatches on the credential's own service, so a category
+      // ("messaging") is sent as the connector it resolved to ("slack").
+      const discoveryService = matched?.service_type ?? src.service_type;
 
       if (!credentialId) {
         setStateByQuestion((prev) => {
@@ -292,7 +294,7 @@ export function useDynamicQuestionOptions(
 
       void discoverConnectorResources(
         credentialId,
-        src.service_type,
+        discoveryService,
         src.operation,
         params,
       )
@@ -356,7 +358,7 @@ export function useDynamicQuestionOptions(
     // t/tx come from the i18n provider with stable identity but are listed
     // here for exhaustive-deps conformance.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [questions, userAnswers, credentialByService, retryCounters, t, tx]);
+  }, [questions, userAnswers, healthyCredentials, retryCounters, t, tx]);
 
   const retry = (questionId: string) => {
     setRetryCounters((prev) => ({ ...prev, [questionId]: (prev[questionId] ?? 0) + 1 }));
