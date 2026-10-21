@@ -30286,8 +30286,12 @@
           "revision": 7,
           "changedAt": "2026-09-04",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 17
+          "state": "not-applicable",
+          "priorNotApplicable": 17,
+          "evidence": "docs/features/recipes/README.md:242 the context's only code (features/recipes/sub_playground: RecipePlaygroundModal, useRecipeTestRunner) was deleted 2026-09-25 in 450f1c9e5c and no tracked file matches its entry points; even before deletion it ran recipes over a piped CLI stream, so there is no PTY-backed interactive session for the subject to govern",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:c3ef11aba4a471f5",
+          "evaluatedRevision": 7
         },
         {
           "subject": "mcp-tools",

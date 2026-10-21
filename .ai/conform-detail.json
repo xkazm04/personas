@@ -32803,6 +32803,23 @@
       "evaluatedTs": "2026-10-21T17:31:26.000Z",
       "worker": "4fac4cdf-93e3-479d-a7c0-6697b24bc7d4",
       "techniques": []
+    },
+    "06ef5a64-1796-4637-a4d9-f860bbe67562/terminal-multiplexing": {
+      "context": "recipes-playground",
+      "subject": "terminal-multiplexing",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:34:52.000Z",
+      "worker": "1938d119-0972-4384-96ed-8972c958daa2",
+      "techniques": [
+        {
+          "technique": "pty-management",
+          "verdict": "not-applicable",
+          "evidence": "docs/features/recipes/README.md:242 execute_recipe's only caller, features/recipes/sub_playground, was deleted 2026-09-25; no PTY or emulator remains in this context"
+        }
+      ],
+      "registryProposal": "Not a corpus finding: the context recipes-playground has empty paths in both context-map.json and the registry map yet stats.deadContexts reports 0. A context whose files were all deleted should be flagged dead, not left to collect pairs; this is a context-map rescan question for the consumer."
     }
   }
 }

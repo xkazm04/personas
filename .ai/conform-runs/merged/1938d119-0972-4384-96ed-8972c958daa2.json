@@ -1,0 +1,11 @@
+{"schema":"conform-run/1","worker":"1938d119-0972-4384-96ed-8972c958daa2","subject":"terminal-multiplexing","evaluatedAt":"2026-10-21T17:34:52Z",
+"pairs":[{"context":"06ef5a64-1796-4637-a4d9-f860bbe67562","subject":"terminal-multiplexing","bundle":"software-engineering","state":"not-applicable",
+"evidence":"docs/features/recipes/README.md:242 the context's only code (features/recipes/sub_playground: RecipePlaygroundModal, useRecipeTestRunner) was deleted 2026-09-25 in 450f1c9e5c and no tracked file matches its entry points; even before deletion it ran recipes over a piped CLI stream, so there is no PTY-backed interactive session for the subject to govern",
+"techniques":[{"technique":"pty-management","verdict":"not-applicable","evidence":"docs/features/recipes/README.md:242 execute_recipe's only caller, features/recipes/sub_playground, was deleted 2026-09-25; no PTY or emulator remains in this context"}],
+"registryProposal":"Not a corpus finding: the context recipes-playground has empty paths in both context-map.json and the registry map yet stats.deadContexts reports 0. A context whose files were all deleted should be flagged dead, not left to collect pairs; this is a context-map rescan question for the consumer."}],
+"declined":[
+{"subject":"terminal-multiplexing","context":"2651f2ce-7fc1-4331-8b31-61e783e9746a","reason":"companions-page is governance: weak; the skill never judges weak pairs by default - a coverage question, not a verdict"},
+{"subject":"terminal-multiplexing","context":"2de6333f-8375-404b-8fdc-fe0fb15d4f95","reason":"deviation already re-verified 2026-10-21 against the current digest sha256-b2:c3ef11aba4a471f5 (revision 7); nothing to re-judge"},
+{"subject":"terminal-multiplexing","context":"4bdc9d46-06f1-4eb7-98f5-f6546aa5ef6e","reason":"deviation already re-verified 2026-10-21 against the current digest (revision 7); nothing to re-judge"},
+{"subject":"terminal-multiplexing","context":"d7525012-ab19-4b29-99bb-0d4b6b9e084b","reason":"deviation already re-verified 2026-10-21 against the current digest (revision 7); nothing to re-judge"}],
+"consults":[{"ts":"2026-10-21T17:34:52Z","bundle":"software-engineering","subjects":["terminal-multiplexing"],"techniques":["pty-management"],"deviations":0}]}
