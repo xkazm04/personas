@@ -20985,49 +20985,64 @@
       "subject": "client-fetch-cache",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-13",
-      "evaluatedTs": "2026-10-13T03:51:17.040Z",
-      "worker": "ba79c104-b902-4b06-89cf-aae6027aacf0",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:00:00.000Z",
+      "worker": "dfc0292f-bd22-4118-9098-0b426830e3f5",
       "techniques": [
         {
-          "technique": "admission-hypothesis",
-          "verdict": "conformant",
-          "evidence": "src/features/templates/sub_generated/gallery/cards/reviewParseCache.ts:7 Admits derivations of review objects something still holds, and the collector drops them when the gallery replaces those objects."
-        },
-        {
-          "technique": "similarity-keyed-admission",
-          "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/gallery/cards/reviewParseCache.ts:18 Two different review objects cannot share an entry. The key is reference identity, not a cut-point."
+          "technique": "parse-and-derive-caches",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/gallery/cards/reviewParseCache.ts:77 the derivation's ambient inputs are neither promoted into the key nor removed; the injected verify callback at line 54 has the same shape"
         },
         {
           "technique": "cache-key-discipline",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/gallery/cards/reviewParseCache.ts:76 Once a score is stored, later calls skip compute even though installedConnectorNames and credentialServiceTypes are answer-changing and are not in the key."
+          "evidence": "src/features/templates/sub_generated/gallery/cards/reviewParseCache.ts:18 key is review identity only; the vault sets are an answer-changing axis left out"
+        },
+        {
+          "technique": "admission-hypothesis",
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_generated/gallery/cards/reviewParseCache.ts:7 Admits derivations of review objects something still holds, and the collector drops them when the gallery replaces those objects.",
+          "carriedFrom": "2026-10-13"
+        },
+        {
+          "technique": "similarity-keyed-admission",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/cards/reviewParseCache.ts:18 Two different review objects cannot share an entry. The key is reference identity, not a cut-point.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "prefetch-and-defer",
           "verdict": "conformant",
-          "evidence": "src/features/templates/sub_generated/gallery/cards/useTemplateCardData.ts:89 The heavy verification waits for hover or expand; the row mount uses the cheap origin check."
-        },
-        {
-          "technique": "parse-and-derive-caches",
-          "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/gallery/cards/reviewParseCache.ts:77 Reference identity plus WeakMap eviction is declared and fits a pure parse. The readiness derivation also reads vault sets, so it is not a function of the keyed content."
+          "evidence": "src/features/templates/sub_generated/gallery/cards/useTemplateCardData.ts:89 The heavy verification waits for hover or expand; the row mount uses the cheap origin check.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "plural-policy-claims",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/gallery/cards/reviewParseCache.ts:21 Callers pass the review, not a TTL or eviction option, so there are no competing claims on one entry."
+          "evidence": "src/features/templates/sub_generated/gallery/cards/reviewParseCache.ts:21 Callers pass the review, not a TTL or eviction option, so there are no competing claims on one entry.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "portable-read-definitions",
           "verdict": "conformant",
-          "evidence": "src/features/templates/sub_generated/gallery/cards/useTemplateCardData.ts:15 The parse doors are plain functions in one module; card data and gallery actions both import them rather than re-declaring the parse."
+          "evidence": "src/features/templates/sub_generated/gallery/cards/useTemplateCardData.ts:15 The parse doors are plain functions in one module; card data and gallery actions both import them rather than re-declaring the parse.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "sibling-entry-warmth",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/gallery/cards/CompactRow.tsx:33 The detail modal receives the row's review object. There is no second detail fetch to seed from a partial summary."
+          "evidence": "src/features/templates/sub_generated/gallery/cards/CompactRow.tsx:33 The detail modal receives the row's review object. There is no second detail fetch to seed from a partial summary.",
+          "carriedFrom": "2026-10-13"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/templates/sub_generated/gallery/cards/reviewParseCache.ts:77 The review derive cache stores an adoption score that reads the vault's connector and credential sets, but the WeakMap key is only the review object, so the first score is reused after those sets change.",
+          "evaluatedAt": "2026-10-13T03:51:17.040Z",
+          "worker": "ba79c104-b902-4b06-89cf-aae6027aacf0",
+          "reason": "replaced by dfc0292f-bd22-4118-9098-0b426830e3f5"
         }
       ]
     },
@@ -21036,49 +21051,64 @@
       "subject": "client-fetch-cache",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-13",
-      "evaluatedTs": "2026-10-13T03:51:17.040Z",
-      "worker": "ba79c104-b902-4b06-89cf-aae6027aacf0",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:00:00.000Z",
+      "worker": "dfc0292f-bd22-4118-9098-0b426830e3f5",
       "techniques": [
         {
-          "technique": "similarity-keyed-admission",
-          "verdict": "not-applicable",
-          "evidence": "src/features/agents/sub_executions/detail/inspector/traceInspectorTypes.ts:110 The only dedupe here is exact span_id on a live event. Fetches are addressed by execution id and persona id."
+          "technique": "warm-remount-caches",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/detail/inspector/useTraceData.ts:74 useState trace with no module-scoped last-result map; unmount discards the data the user just saw"
         },
         {
           "technique": "swr-design",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_executions/detail/views/ExecutionLogViewer.tsx:70 After the first successful log read, opening the log again serves that string with no age, no revalidation, and no stale ceiling for as long as the viewer stays mounted."
+          "evidence": "src/api/agents/executions.ts:129 getExecutionTrace is a bare invoke with no fresh window or stale ceiling, so the tab paints a ghost instead of the held trace"
+        },
+        {
+          "technique": "similarity-keyed-admission",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_executions/detail/inspector/traceInspectorTypes.ts:110 The only dedupe here is exact span_id on a live event. Fetches are addressed by execution id and persona id.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "in-flight-dedup",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_executions/detail/inspector/useTraceData.ts:117 useChainTrace issues the same call on detail mount and neither side shares a pending promise, so a trace-tab open while the chain read is in flight is a second flight. The cancelled flag drops the result; it does not join."
-        },
-        {
-          "technique": "warm-remount-caches",
-          "verdict": "deviation",
-          "evidence": "src/features/agents/sub_executions/detail/inspector/useTraceData.ts:74 Leaving the trace tab unmounts the inspector. Coming back paints from empty state and refetches; nothing module-scoped holds the last trace."
+          "evidence": "src/features/agents/sub_executions/detail/inspector/useTraceData.ts:117 useChainTrace issues the same call on detail mount and neither side shares a pending promise, so a trace-tab open while the chain read is in flight is a second flight. The cancelled flag drops the result; it does not join.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "prefetch-and-defer",
           "verdict": "conformant",
-          "evidence": "src/features/agents/sub_executions/detail/ExecutionDetail.tsx:133 TraceInspector, and therefore its fetch, mounts only when the trace tab is selected. The chain read stays eager because the tab strip needs hasChain."
+          "evidence": "src/features/agents/sub_executions/detail/ExecutionDetail.tsx:133 TraceInspector, and therefore its fetch, mounts only when the trace tab is selected. The chain read stays eager because the tab strip needs hasChain.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "parse-and-derive-caches",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/sub_executions/detail/inspector/useTraceData.ts:241 Tree building is a per-hook memo of the current trace. It does not accumulate a content-keyed store across edits."
+          "evidence": "src/features/agents/sub_executions/detail/inspector/useTraceData.ts:241 Tree building is a per-hook memo of the current trace. It does not accumulate a content-keyed store across edits.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "portable-read-definitions",
           "verdict": "conformant",
-          "evidence": "src/features/agents/sub_executions/detail/inspector/useTraceData.ts:8 useTraceData and useChainTrace both call that one imported function with the execution id and persona id. They do not each re-type a fetcher."
+          "evidence": "src/features/agents/sub_executions/detail/inspector/useTraceData.ts:8 useTraceData and useChainTrace both call that one imported function with the execution id and persona id. They do not each re-type a fetcher.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "sibling-entry-warmth",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_executions/detail/ExecutionDetail.tsx:134 useChainTrace already holds this run's ExecutionTrace, including the solo-trace case, but the inspector is given only the execution record and always fetches. The cold path still works because the fetch is not suppressed."
+          "evidence": "src/features/agents/sub_executions/detail/ExecutionDetail.tsx:134 useChainTrace already holds this run's ExecutionTrace, including the solo-trace case, but the inspector is given only the execution record and always fetches. The cold path still works because the fetch is not suppressed.",
+          "carriedFrom": "2026-10-13"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_executions/detail/inspector/useTraceData.ts:74 The trace lives in the inspector's state, the inspector unmounts when the user leaves the trace tab, and the next visit starts null and calls getExecutionTrace again.",
+          "evaluatedAt": "2026-10-13T03:51:17.040Z",
+          "worker": "ba79c104-b902-4b06-89cf-aae6027aacf0",
+          "reason": "replaced by dfc0292f-bd22-4118-9098-0b426830e3f5"
         }
       ]
     },
@@ -21087,49 +21117,64 @@
       "subject": "client-fetch-cache",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-13",
-      "evaluatedTs": "2026-10-13T03:51:17.040Z",
-      "worker": "ba79c104-b902-4b06-89cf-aae6027aacf0",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:00:00.000Z",
+      "worker": "dfc0292f-bd22-4118-9098-0b426830e3f5",
       "techniques": [
         {
-          "technique": "similarity-keyed-admission",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/shared/playground/tabs/apiExplorerHelpers.ts:5 Endpoint merge keys are canonical method plus path. Unequal endpoints do not share an entry."
+          "technique": "warm-remount-caches",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/shared/playground/tabs/ExecutionsTab.tsx:27 useState entries with no module-scoped map keyed by credentialId"
         },
         {
           "technique": "swr-design",
           "verdict": "deviation",
-          "evidence": "src/features/vault/shared/playground/tabs/ExecutionsTab.tsx:31 Audit, saved API definition, rotation status, and the MCP tool list are one-shot holds. The stored health probe is separately labelled isStale, and that label does not give these reads a fresh window or a ceiling."
+          "evidence": "src/api/vault/credentials.ts:131 getCredentialAuditLog has no fresh window, stale ceiling or revalidation; the failure path is now honest (ExecutionsTab.tsx:62) but there is no held truth to keep visible"
+        },
+        {
+          "technique": "similarity-keyed-admission",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/shared/playground/tabs/apiExplorerHelpers.ts:5 Endpoint merge keys are canonical method plus path. Unequal endpoints do not share an entry.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "in-flight-dedup",
           "verdict": "deviation",
-          "evidence": "src/features/vault/shared/playground/CredentialPlaygroundModal.tsx:57 Every call launches getRotationStatus. A refresh during the mount effect does not join the flight already in the air. ExecutionsTab's cancelled flag drops a late result and does not share it."
-        },
-        {
-          "technique": "warm-remount-caches",
-          "verdict": "deviation",
-          "evidence": "src/features/vault/shared/playground/tabs/ExecutionsTab.tsx:25 The executions tab is mounted only while selected, so leaving it throws away the list the user just saw and the next visit starts empty and refetches."
+          "evidence": "src/features/vault/shared/playground/CredentialPlaygroundModal.tsx:57 Every call launches getRotationStatus. A refresh during the mount effect does not join the flight already in the air. ExecutionsTab's cancelled flag drops a late result and does not share it.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "prefetch-and-defer",
           "verdict": "conformant",
-          "evidence": "src/features/vault/shared/playground/PlaygroundTabContent.tsx:79 The audit fetch mounts with the executions tab, and MCP tool discovery waits for the Discover button. Neither runs when the modal opens onto Overview."
+          "evidence": "src/features/vault/shared/playground/PlaygroundTabContent.tsx:79 The audit fetch mounts with the executions tab, and MCP tool discovery waits for the Discover button. Neither runs when the modal opens onto Overview.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "parse-and-derive-caches",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/shared/playground/prettyJson.ts:8 JSON reindent runs on each call and stores nothing. No content-keyed derive cache is in these files."
+          "evidence": "src/features/vault/shared/playground/prettyJson.ts:8 JSON reindent runs on each call and stores nothing. No content-keyed derive cache is in these files.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "portable-read-definitions",
           "verdict": "conformant",
-          "evidence": "src/features/vault/shared/playground/tabs/ExecutionsTab.tsx:4 The tab calls the shared API function with the credential id. It does not re-declare the command."
+          "evidence": "src/features/vault/shared/playground/tabs/ExecutionsTab.tsx:4 The tab calls the shared API function with the credential id. It does not re-declare the command.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "sibling-entry-warmth",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/shared/playground/CredentialPlaygroundModal.tsx:34 The modal is handed the credential record. Tabs do not open a detail whose summary is a list row they must borrow."
+          "evidence": "src/features/vault/shared/playground/CredentialPlaygroundModal.tsx:34 The modal is handed the credential record. Tabs do not open a detail whose summary is a list row they must borrow.",
+          "carriedFrom": "2026-10-13"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/vault/shared/playground/tabs/ExecutionsTab.tsx:31 The activity list is loaded once into component state when the executions tab mounts and kept with no fresh window, no background revalidation, and no stale ceiling until the tab unmounts and the state is discarded.",
+          "evaluatedAt": "2026-10-13T03:51:17.040Z",
+          "worker": "ba79c104-b902-4b06-89cf-aae6027aacf0",
+          "reason": "replaced by dfc0292f-bd22-4118-9098-0b426830e3f5"
         }
       ]
     },
@@ -25712,34 +25757,45 @@
       "subject": "client-fetch-cache",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:17:44.000Z",
-      "worker": "345c82e7-fad2-4a0b-b285-7f597693e462",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:00:00.000Z",
+      "worker": "dfc0292f-bd22-4118-9098-0b426830e3f5",
       "techniques": [
         {
           "technique": "cache-key-discipline",
           "verdict": "deviation",
-          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:304 flights.run('goals') and :234 flights.run('scans') omit projectIds; a joiner with different ids gets another question's answer, against the registry's own rule at src/stores/util/inFlight.ts:13"
+          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:317 the flight key 'goals' omits the projectIds axis that changes the answer; a non-fresh call with different ids joins the wrong flight"
         },
         {
           "technique": "in-flight-dedup",
-          "verdict": "realized",
-          "evidence": "src/stores/util/inFlight.ts:36 keyed join registry cleared at settle on success and failure alike; replace mode for post-event reloads"
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:187 the registry sits at the store seam and its comment claims family keys cover every answer-changing argument, but loadGoals takes projectIds"
         },
         {
           "technique": "swr-design",
-          "verdict": "partial",
-          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:184 fresh window declared and stamped only on success (:253), failure goes stale with data kept (:83); no stale ceiling is named"
+          "verdict": "realized",
+          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:193 FAMILY_FRESH_MS names a fresh window keyed by idsKey; a failed reload over held data goes stale via failedReload (sceneStore.ts:344)"
         },
         {
           "technique": "warm-remount-caches",
           "verdict": "realized",
-          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:195 module-scoped store survives remount, event-driven invalidateScans, test reset hatch"
+          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:195 module-scoped store survives remount, event-driven invalidateScans, test reset hatch",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "prefetch-and-defer",
           "verdict": "realized",
-          "evidence": "src/features/teams/sub_mastermind/lib/prefetchMastermind.ts:43 intent prefetch goes through the same loaders, debounced by REPEAT_MS"
+          "evidence": "src/features/teams/sub_mastermind/lib/prefetchMastermind.ts:43 intent prefetch goes through the same loaders, debounced by REPEAT_MS",
+          "carriedFrom": "2026-10-16"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:304 the goals flight is keyed 'goals' without the projectIds that change the answer, so a one-project post-mutation refresh (MastermindGoalsModal.tsx:87) supersedes the whole-portfolio fan-out, leaving the rest of the projects unloaded and lastGoalProjectIds narrowed to one",
+          "evaluatedAt": "2026-10-16T17:17:44.000Z",
+          "worker": "345c82e7-fad2-4a0b-b285-7f597693e462",
+          "reason": "replaced by dfc0292f-bd22-4118-9098-0b426830e3f5"
         }
       ]
     },
@@ -25774,32 +25830,42 @@
       "subject": "client-fetch-cache",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:17:44.000Z",
-      "worker": "345c82e7-fad2-4a0b-b285-7f597693e462",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:00:00.000Z",
+      "worker": "dfc0292f-bd22-4118-9098-0b426830e3f5",
       "techniques": [
         {
           "technique": "warm-remount-caches",
           "verdict": "deviation",
-          "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:103 retained rows are neither cleared on identity change nor keyed by teamId; and leaving memory mode unmounts the pane (TeamStudioSplitVariant.tsx:226), so every return reloads cold"
+          "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:103 the identity-change effect neither clears the held list nor keys it by teamId"
         },
         {
           "technique": "swr-design",
-          "verdict": "partial",
-          "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:77 rows are kept during refetch and a failure sets loadFailed, but MemoryPanelList.tsx:123 shows the failure only into emptiness, so stale rows are not marked stale"
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_teamMemory/components/panel/MemoryPanelList.tsx:121 a failed refresh over rows reports nothing beside the stale paint, and those rows can belong to another team"
         },
         {
           "technique": "cache-key-discipline",
           "verdict": "deviation",
-          "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:46 the held list carries no teamId axis, so one team's answer is served under another team's identity"
+          "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:46 the held list carries no teamId axis, so one team's answer is served under another team's identity",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "in-flight-dedup",
           "verdict": "not-applicable",
-          "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:69 successive filter fetches are different questions, guarded by latest-wins (the sibling guard), not dedup"
+          "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:69 successive filter fetches are different questions, guarded by latest-wins (the sibling guard), not dedup",
+          "carriedFrom": "2026-10-16"
         }
       ],
-      "registryProposal": "warm-remount-caches decision rule 'clear on identity change' also bites hooks with no cache at all: a render-only 'keep rows on screen during refetch' law (this repo's overview-loading law 1) produces cross-identity paints when the host stays mounted. Worth a line in swr-design or async-ui-states."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:103 a team switch resets filters but not memories/total/stats, and the host keeps the pane mounted across switches (TeamMemoryPane.tsx:15), so team B paints team A's memories until B's list lands, and keeps them if it fails (MemoryPanelList.tsx:123 hides the failure when rows exist)",
+          "evaluatedAt": "2026-10-16T17:17:44.000Z",
+          "worker": "345c82e7-fad2-4a0b-b285-7f597693e462",
+          "reason": "replaced by dfc0292f-bd22-4118-9098-0b426830e3f5"
+        }
+      ]
     },
     "10c96ae7-a356-4555-996b-df92fc5dc8e7/supply-chain": {
       "context": "plugins-dev-tools-skills",

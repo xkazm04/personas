@@ -1746,3 +1746,8 @@
 {"ts":"2026-10-21T12:31:38.099Z","bundle":"software-engineering","subjects":["multi-project"],"techniques":["portfolio-drill-hierarchy"],"deviations":0}
 {"ts":"2026-10-21T12:31:48Z","bundle":"llm-observability","subjects":["breach-alerting-and-attribution"],"techniques":["scoped-dedup-keys","top-contributor-attribution","off-request-path-delivery","identity-scope-attribution-refusal","notification-channel-security"],"deviations":2}
 {"ts":"2026-10-21T12:31:48Z","bundle":"llm-observability","subjects":["breach-alerting-and-attribution"],"techniques":["scoped-dedup-keys","top-contributor-attribution","off-request-path-delivery","identity-scope-attribution-refusal","notification-channel-security"],"deviations":2}
+{"ts":"2026-10-21T12:00:00Z","bundle":"software-engineering","subjects":["client-fetch-cache"],"techniques":["warm-remount-caches","swr-design"],"deviations":1}
+{"ts":"2026-10-21T12:00:00Z","bundle":"software-engineering","subjects":["client-fetch-cache"],"techniques":["cache-key-discipline","in-flight-dedup","swr-design"],"deviations":1}
+{"ts":"2026-10-21T12:00:00Z","bundle":"software-engineering","subjects":["client-fetch-cache"],"techniques":["warm-remount-caches","swr-design"],"deviations":1}
+{"ts":"2026-10-21T12:00:00Z","bundle":"software-engineering","subjects":["client-fetch-cache"],"techniques":["parse-and-derive-caches","cache-key-discipline"],"deviations":1}
+{"ts":"2026-10-21T12:00:00Z","bundle":"software-engineering","subjects":["client-fetch-cache"],"techniques":["warm-remount-caches","swr-design"],"deviations":1}
