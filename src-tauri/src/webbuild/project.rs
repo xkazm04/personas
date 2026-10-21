@@ -152,10 +152,12 @@ pub async fn scaffold_next_app(slug: &str) -> Result<PathBuf, AppError> {
         .map_err(|e| AppError::Internal(format!("create projects root: {e}")))?;
 
     let dir_str = dir.to_string_lossy().to_string();
+    // Pinned (see `mcp.rs`): the scaffold must not float on the registry's latest.
+    let cna = format!("create-next-app@{}", super::mcp::CREATE_NEXT_APP_VERSION);
     let out = super::bun::run(
         &[
             "x",
-            "create-next-app@latest",
+            cna.as_str(),
             dir_str.as_str(),
             "--ts",
             "--tailwind",
