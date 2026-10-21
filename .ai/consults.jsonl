@@ -1715,3 +1715,8 @@
 {"ts":"2026-10-21T12:17:01Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":["policy-projection","gate-laddering"],"deviations":1}
 {"ts":"2026-10-21T12:17:01Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":["unmeasurable-criteria","refusal-names-a-reachable-remedy"],"deviations":1}
 {"ts":"2026-10-21T12:17:01Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":[],"deviations":0}
+{"ts":"2026-10-21T12:26:00Z","bundle":"software-engineering","subjects":["data-access"],"techniques":["layering-rules","row-mapping"],"deviations":1}
+{"ts":"2026-10-21T12:26:00Z","bundle":"software-engineering","subjects":["data-access"],"techniques":["existence-authority-written-last","sequence-token-write-ordering"],"deviations":1}
+{"ts":"2026-10-21T12:26:00Z","bundle":"software-engineering","subjects":["data-access"],"techniques":["batching-and-n-plus-one","layering-rules","read-models-and-projections"],"deviations":0}
+{"ts":"2026-10-21T12:26:00Z","bundle":"software-engineering","subjects":["data-access"],"techniques":["query-construction","layering-rules"],"deviations":0}
+{"ts":"2026-10-21T12:26:00Z","bundle":"software-engineering","subjects":["data-access"],"techniques":["localized-record-identity"],"deviations":0}

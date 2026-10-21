@@ -1,0 +1,59 @@
+{"schema":"conform-run/1","worker":"30b01c05-e5f3-45c1-9b6d-a02126947a1f","subject":"data-access",
+"evaluatedAt":"2026-10-21T12:26:00Z",
+"pairs":[
+{"context":"0b0ee725-52a2-4656-9e13-07c5204de60e","subject":"data-access","bundle":"software-engineering","state":"deviation",
+ "evidence":"src-tauri/db/src/cdc.rs:24 the data crate still imports tauri's AppHandle/Emitter (dependency at src-tauri/db/Cargo.toml:69) and emits to the UI at :459, so the layer cannot build or test without the shell; src-tauri/db/src/macros.rs:144 row_mapper!'s opt arm turns an undecodable value into None, so present-but-unreadable reads as absent",
+ "techniques":[
+  {"technique":"layering-rules","verdict":"deviation","evidence":"src-tauri/db/src/cdc.rs:24 upward import of tauri AppHandle/Emitter inside the data crate instead of a hook injected at composition; emit at :459"},
+  {"technique":"row-mapping","verdict":"deviation","evidence":"src-tauri/db/src/macros.rs:144 the shared mapper's opt arm uses .ok().flatten(), swallowing decode errors into None (24 [opt] uses)"}]},
+{"context":"937c9d47-b0ca-4e3b-90e3-25baefe04474","subject":"data-access","bundle":"software-engineering","state":"deviation",
+ "evidence":"src-tauri/src/cloud/sync/mod.rs:829 delete_persona_cascade still deletes child tables first and the synced_personas authority row last (:840), so an abandoned cascade leaves a ghost persona with vanished children; rows.rs:561 strict second-resolution datetime(col) > datetime(cursor) with the cursor advanced to the observed max (mod.rs:477) drops same-second late writes on resync=false tables (synced_personas, mod.rs:65)",
+ "techniques":[
+  {"technique":"existence-authority-written-last","verdict":"deviation","evidence":"src-tauri/src/cloud/sync/mod.rs:840 the authority row readers treat as proof of existence is removed last instead of first"},
+  {"technique":"sequence-token-write-ordering","verdict":"deviation","evidence":"src-tauri/src/cloud/sync/rows.rs:561 order is carried by a whole-second timestamp compared with strict >, so a tie at the cursor second is silently excluded rather than answered"}]},
+{"context":"532bbf10-3fd3-4b57-a8ea-95a957645697","subject":"data-access","bundle":"software-engineering","state":"conformant",
+ "evidence":"src/stores/slices/pipeline/teamSlice.ts:146 per-team counts arrive in one grouped call (src-tauri/db/src/repos/resources/teams.rs:79 get_all_team_counts) and health in one projection bundle (src/api/overview/health.ts:19); the slices hold no query text and reach the store only through typed wrappers; store-owning techniques have no precondition here",
+ "techniques":[
+  {"technique":"batching-and-n-plus-one","verdict":"conformant","evidence":"src/stores/slices/pipeline/teamSlice.ts:146 listTeams + getTeamCounts as two set-shaped calls instead of per-team reads"},
+  {"technique":"layering-rules","verdict":"conformant","evidence":"src/stores/slices/pipeline/teamSlice.ts:146 consumers call named operations; no statement text in any of the context's slices"},
+  {"technique":"read-models-and-projections","verdict":"conformant","evidence":"src/api/overview/health.ts:19 getHealthBundle is a read-only projection shaped for the health view, never written back"},
+  {"technique":"row-mapping","verdict":"not-applicable","evidence":"src/stores/slices/pipeline/teamSlice.ts:146 decoding happens in the Rust repo layer; the slices receive typed bindings"},
+  {"technique":"query-construction","verdict":"not-applicable","evidence":"src/stores/slices/pipeline/teamSlice.ts:146 no statement is assembled in this context"},
+  {"technique":"transactions-and-units-of-work","verdict":"not-applicable","evidence":"src/stores/slices/pipeline/teamSlice.ts:146 no multi-write invariant owned here; boundaries live behind the IPC commands"},
+  {"technique":"repo-testing","verdict":"not-applicable","evidence":"src/stores/slices/pipeline/teamSlice.ts:146 no repository or engine owned by this context"}]},
+{"context":"55d6d7cb-b016-4d73-8386-b5c18beafdae","subject":"data-access","bundle":"software-engineering","state":"conformant",
+ "evidence":"src/features/vault/sub_databases/introspectionQueries.ts:1 live introspection runs only through the backend's parameterized commands; the one remaining statement builder (getSelectAllQuery, :152) feeds only the clipboard (src/features/vault/sub_databases/tabs/TablesTab.tsx:104); user-typed SQL goes to the backend unassembled (hooks/useDbQueryRunner.ts:46), the golden path's ad-hoc exception",
+ "techniques":[
+  {"technique":"query-construction","verdict":"conformant","evidence":"src/features/vault/sub_databases/introspectionQueries.ts:147 escaping hoisted to one helper in this context; executed introspection uses backend bound parameters (:1)"},
+  {"technique":"layering-rules","verdict":"conformant","evidence":"src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:46 the shell hands text to one backend door (executeDbQuery) and owns no executed statement assembly"},
+  {"technique":"batching-and-n-plus-one","verdict":"not-applicable","evidence":"src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:46 one user query per run; no fetch-one-per-id loop over an owned store"},
+  {"technique":"row-mapping","verdict":"not-applicable","evidence":"src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:46 results of ad-hoc user queries are displayed as tabular data, not decoded into domain types"},
+  {"technique":"transactions-and-units-of-work","verdict":"not-applicable","evidence":"src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:46 ad-hoc console over external databases; no application invariant spans writes"},
+  {"technique":"read-models-and-projections","verdict":"not-applicable","evidence":"src/features/vault/sub_databases/tabs/TablesTab.tsx:104 an explorer over foreign stores, not a projection surface of the app's own store"},
+  {"technique":"repo-testing","verdict":"not-applicable","evidence":"src/features/vault/sub_databases/introspectionQueries.ts:1 no repository lives in this context"}]},
+{"context":"1ffb5765-de47-4f01-87ec-06732a63522c","subject":"data-access","bundle":"software-engineering","state":"not-applicable",
+ "evidence":"src/i18n/generated/types.ts:2 precondition unmet: the context is a type file generated from en.json plus two i18n contract tests - an interface catalog, not a store; localized-record-identity routes interface translation elsewhere by its own text",
+ "techniques":[{"technique":"localized-record-identity","verdict":"not-applicable","evidence":"src/i18n/generated/types.ts:2 interface catalog generated from en.json, not localized records"}]}
+],
+"declined":[
+ {"subject":"data-access","context":"06ef5a64-1796-4637-a4d9-f860bbe67562","reason":"recipes-playground is a dead context: context-map.json lists file_paths [] and every entry point under src/features/recipes/sub_playground/ was deleted in 450f1c9e5c (delete the never-mounted recipe manager tree); nothing to judge, a context-map rescan should drop it"},
+ {"subject":"data-access","context":"511ca12f-50df-4941-84e1-e2d74a3dff85","reason":"capability-config-view is governance weak; left as a coverage question per the skill"},
+ {"subject":"data-access","context":"a8857307-216c-46e0-9571-e05e8cf06112","reason":"already judged against the current registry digest sha256-b2:2dba94be6400dea1 (rev 19); its stale flag is an artefact of the map lagging the registry at rev 18"},
+ {"subject":"data-access","context":"320d2cea-9761-4233-97c1-ee2eaf4d6c17","reason":"already judged against current registry digest 2dba94be (rev 19); map lag only"},
+ {"subject":"data-access","context":"e0ea6f08-ebdf-4c9e-aab4-969eee32f573","reason":"already judged against current registry digest 2dba94be (rev 19); map lag only"},
+ {"subject":"data-access","context":"ae80cd74-5beb-4d76-ae0a-16a4b581a2df","reason":"already judged against current registry digest 2dba94be (rev 19); map lag only"},
+ {"subject":"data-access","context":"647d6a54-3813-4149-bbf7-2d96a57a77c7","reason":"already judged against current registry digest 2dba94be (rev 19); map lag only"},
+ {"subject":"data-access","context":"cd7e7cc7-cc5b-44a1-9bff-76b34af21966","reason":"stale not-applicable verdict at rev 18; out of budget, left for the next run (rev 19 only added an application, so low risk)"},
+ {"subject":"data-access","context":"63a0a6fc-fa9a-453c-943d-4579b83f0ca3","reason":"stale not-applicable at rev 18; out of budget"},
+ {"subject":"data-access","context":"c06088ef-d143-4aa4-b60a-9d6f7aff9aba","reason":"stale not-applicable at rev 18; out of budget"},
+ {"subject":"data-access","context":"0aded02d-f5c5-4e24-8366-90783fb343b1","reason":"stale not-applicable at rev 18; out of budget"},
+ {"subject":"data-access","context":"336089a8-bb18-449c-a62e-ca76b02097fb","reason":"stale not-applicable at rev 18; out of budget"},
+ {"subject":"data-access","context":"e1bc4bef-5cf0-4bc0-9b12-a26e88065857","reason":"stale not-applicable at rev 18; out of budget"}
+],
+"consults":[
+ {"ts":"2026-10-21T12:26:00Z","bundle":"software-engineering","subjects":["data-access"],"techniques":["layering-rules","row-mapping"],"deviations":1},
+ {"ts":"2026-10-21T12:26:00Z","bundle":"software-engineering","subjects":["data-access"],"techniques":["existence-authority-written-last","sequence-token-write-ordering"],"deviations":1},
+ {"ts":"2026-10-21T12:26:00Z","bundle":"software-engineering","subjects":["data-access"],"techniques":["batching-and-n-plus-one","layering-rules","read-models-and-projections"],"deviations":0},
+ {"ts":"2026-10-21T12:26:00Z","bundle":"software-engineering","subjects":["data-access"],"techniques":["query-construction","layering-rules"],"deviations":0},
+ {"ts":"2026-10-21T12:26:00Z","bundle":"software-engineering","subjects":["data-access"],"techniques":["localized-record-identity"],"deviations":0}
+]}

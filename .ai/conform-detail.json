@@ -6745,34 +6745,37 @@
       "subject": "data-access",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T11:38:19.000Z",
-      "worker": "8839de9b-9ad2-4e19-862a-e3c630f43e4d",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:26:00.000Z",
+      "worker": "30b01c05-e5f3-45c1-9b6d-a02126947a1f",
       "techniques": [
         {
           "technique": "layering-rules",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/cdc.rs:24 upward import of tauri::{AppHandle, Emitter}, emitted at src-tauri/db/src/cdc.rs:459 - the technique's named failure; the fix is an injected callback hook from the composition root"
+          "evidence": "src-tauri/db/src/cdc.rs:24 upward import of tauri AppHandle/Emitter inside the data crate instead of a hook injected at composition; emit at :459"
         },
         {
           "technique": "row-mapping",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/macros.rs:145 `[opt]` decodes with .ok().flatten(), collapsing a type/decode error into None at the seam; the opt_str/opt_i32 arms below it default a missing column to \"working\"/0, the programmer-error-as-damage resilience the technique forbids"
+          "evidence": "src-tauri/db/src/macros.rs:144 the shared mapper's opt arm uses .ok().flatten(), swallowing decode errors into None (24 [opt] uses)"
         },
         {
           "technique": "query-construction",
           "verdict": "realized",
-          "evidence": "src-tauri/db/src/query_builder.rs:255 try_order_by_allowed resolves sort identifiers through an allowlist and errors on unknown tokens; predicates and their values are appended in one call (where_eq etc.); the unchecked order_by at :233 is a documented hatch"
+          "evidence": "src-tauri/db/src/query_builder.rs:255 try_order_by_allowed resolves sort identifiers through an allowlist and errors on unknown tokens; predicates and their values are appended in one call (where_eq etc.); the unchecked order_by at :233 is a documented hatch",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "repo-testing",
           "verdict": "realized",
-          "evidence": "src-tauri/db/src/lib.rs:2451 init_test_db copies a template built by the real migration chain into a fresh file per test"
+          "evidence": "src-tauri/db/src/lib.rs:2451 init_test_db copies a template built by the real migration chain into a fresh file per test",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "cross-driver-invariant-parity",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/db/Cargo.toml:69 sits beside a single rusqlite engine; no second backend behind the surface"
+          "evidence": "src-tauri/db/Cargo.toml:69 sits beside a single rusqlite engine; no second backend behind the surface",
+          "carriedFrom": "2026-10-10"
         }
       ],
       "superseded": [
@@ -6782,6 +6785,13 @@
           "evaluatedAt": "2026-09-23",
           "worker": null,
           "reason": "replaced by 8839de9b-9ad2-4e19-862a-e3c630f43e4d"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/cdc.rs:24 the data crate still imports tauri's AppHandle/Emitter (dependency declared at src-tauri/db/Cargo.toml:69) and emits straight to the UI at :459, so the layer everything trusts cannot build or test without the shell above it; also src-tauri/db/src/macros.rs:145 row_mapper!'s [opt] arm (24 uses) turns a value that fails to decode into None, so present-but-unreadable reads as absent",
+          "evaluatedAt": "2026-10-10T11:38:19.000Z",
+          "worker": "8839de9b-9ad2-4e19-862a-e3c630f43e4d",
+          "reason": "replaced by 30b01c05-e5f3-45c1-9b6d-a02126947a1f"
         }
       ]
     },
@@ -13042,74 +13052,89 @@
       "subject": "data-access",
       "bundle": "software-engineering",
       "state": "conformant",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T01:31:33.733Z",
-      "worker": "bd5abba4-e76b-472e-85a1-fe02de1d99c8",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:26:00.000Z",
+      "worker": "30b01c05-e5f3-45c1-9b6d-a02126947a1f",
       "techniques": [
         {
           "technique": "batching-and-n-plus-one",
           "verdict": "conformant",
-          "evidence": "src/stores/slices/pipeline/teamSlice.ts:146 grouped aggregate instead of a per-team count loop; src/stores/slices/overview/personaHealthSlice.ts:283 set-shaped personaStats/personaDaily; src/stores/slices/pipeline/teamSlice.ts:434 batchDeleteTeamMemories(ids). The one fan-out, src/stores/slices/pipeline/channelSlice.ts:334, is one query per mounted channel subscription (distinct team+kinds keys), not per list row"
+          "evidence": "src/stores/slices/pipeline/teamSlice.ts:146 listTeams + getTeamCounts as two set-shaped calls instead of per-team reads"
         },
         {
           "technique": "layering-rules",
           "verdict": "conformant",
-          "evidence": "src/stores/slices/pipeline/teamSlice.ts:10 imports typed @/api wrappers; no raw invoke, SQL or connection in any of the context's 24 files"
+          "evidence": "src/stores/slices/pipeline/teamSlice.ts:146 consumers call named operations; no statement text in any of the context's slices"
         },
         {
-          "technique": "query-construction",
-          "verdict": "not-applicable",
-          "evidence": "src/stores/slices/pipeline/teamSlice.ts:10 precondition unmet: the slices consume typed IPC results; statement construction, row decoding, transactions, driver choice and schema live in the Rust db crate (src-tauri/db/src/repos/resources/teams.rs:79)"
+          "technique": "read-models-and-projections",
+          "verdict": "conformant",
+          "evidence": "src/api/overview/health.ts:19 getHealthBundle is a read-only projection shaped for the health view, never written back"
         },
         {
           "technique": "row-mapping",
           "verdict": "not-applicable",
-          "evidence": "src/stores/slices/pipeline/teamSlice.ts:10 precondition unmet: the slices consume typed IPC results; statement construction, row decoding, transactions, driver choice and schema live in the Rust db crate (src-tauri/db/src/repos/resources/teams.rs:79)"
+          "evidence": "src/stores/slices/pipeline/teamSlice.ts:146 decoding happens in the Rust repo layer; the slices receive typed bindings"
+        },
+        {
+          "technique": "query-construction",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/pipeline/teamSlice.ts:146 no statement is assembled in this context"
         },
         {
           "technique": "transactions-and-units-of-work",
           "verdict": "not-applicable",
-          "evidence": "src/stores/slices/pipeline/teamSlice.ts:10 precondition unmet: the slices consume typed IPC results; statement construction, row decoding, transactions, driver choice and schema live in the Rust db crate (src-tauri/db/src/repos/resources/teams.rs:79)"
+          "evidence": "src/stores/slices/pipeline/teamSlice.ts:146 no multi-write invariant owned here; boundaries live behind the IPC commands"
         },
         {
           "technique": "repo-testing",
           "verdict": "not-applicable",
-          "evidence": "src/stores/slices/pipeline/teamSlice.ts:10 precondition unmet: the slices consume typed IPC results; statement construction, row decoding, transactions, driver choice and schema live in the Rust db crate (src-tauri/db/src/repos/resources/teams.rs:79)"
+          "evidence": "src/stores/slices/pipeline/teamSlice.ts:146 no repository or engine owned by this context"
         },
         {
           "technique": "cross-driver-invariant-parity",
           "verdict": "not-applicable",
-          "evidence": "src/stores/slices/pipeline/teamSlice.ts:10 precondition unmet: the slices consume typed IPC results; statement construction, row decoding, transactions, driver choice and schema live in the Rust db crate (src-tauri/db/src/repos/resources/teams.rs:79)"
-        },
-        {
-          "technique": "read-models-and-projections",
-          "verdict": "not-applicable",
-          "evidence": "src/stores/slices/pipeline/teamSlice.ts:10 precondition unmet: the slices consume typed IPC results; statement construction, row decoding, transactions, driver choice and schema live in the Rust db crate (src-tauri/db/src/repos/resources/teams.rs:79)"
+          "evidence": "src/stores/slices/pipeline/teamSlice.ts:10 precondition unmet: the slices consume typed IPC results; statement construction, row decoding, transactions, driver choice and schema live in the Rust db crate (src-tauri/db/src/repos/resources/teams.rs:79)",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "capability-declared-in-the-type",
           "verdict": "not-applicable",
-          "evidence": "src/stores/slices/pipeline/teamSlice.ts:10 precondition unmet: the slices consume typed IPC results; statement construction, row decoding, transactions, driver choice and schema live in the Rust db crate (src-tauri/db/src/repos/resources/teams.rs:79)"
+          "evidence": "src/stores/slices/pipeline/teamSlice.ts:10 precondition unmet: the slices consume typed IPC results; statement construction, row decoding, transactions, driver choice and schema live in the Rust db crate (src-tauri/db/src/repos/resources/teams.rs:79)",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "sequence-token-write-ordering",
           "verdict": "not-applicable",
-          "evidence": "src/stores/slices/pipeline/teamSlice.ts:10 precondition unmet: the slices consume typed IPC results; statement construction, row decoding, transactions, driver choice and schema live in the Rust db crate (src-tauri/db/src/repos/resources/teams.rs:79)"
+          "evidence": "src/stores/slices/pipeline/teamSlice.ts:10 precondition unmet: the slices consume typed IPC results; statement construction, row decoding, transactions, driver choice and schema live in the Rust db crate (src-tauri/db/src/repos/resources/teams.rs:79)",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "existence-authority-written-last",
           "verdict": "not-applicable",
-          "evidence": "src/stores/slices/pipeline/teamSlice.ts:10 precondition unmet: the slices consume typed IPC results; statement construction, row decoding, transactions, driver choice and schema live in the Rust db crate (src-tauri/db/src/repos/resources/teams.rs:79)"
+          "evidence": "src/stores/slices/pipeline/teamSlice.ts:10 precondition unmet: the slices consume typed IPC results; statement construction, row decoding, transactions, driver choice and schema live in the Rust db crate (src-tauri/db/src/repos/resources/teams.rs:79)",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "operator-defined-tables",
           "verdict": "not-applicable",
-          "evidence": "src/stores/slices/pipeline/teamSlice.ts:10 precondition unmet: the slices consume typed IPC results; statement construction, row decoding, transactions, driver choice and schema live in the Rust db crate (src-tauri/db/src/repos/resources/teams.rs:79)"
+          "evidence": "src/stores/slices/pipeline/teamSlice.ts:10 precondition unmet: the slices consume typed IPC results; statement construction, row decoding, transactions, driver choice and schema live in the Rust db crate (src-tauri/db/src/repos/resources/teams.rs:79)",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "localized-record-identity",
           "verdict": "not-applicable",
-          "evidence": "src/stores/slices/pipeline/teamSlice.ts:10 precondition unmet: the slices consume typed IPC results; statement construction, row decoding, transactions, driver choice and schema live in the Rust db crate (src-tauri/db/src/repos/resources/teams.rs:79)"
+          "evidence": "src/stores/slices/pipeline/teamSlice.ts:10 precondition unmet: the slices consume typed IPC results; statement construction, row decoding, transactions, driver choice and schema live in the Rust db crate (src-tauri/db/src/repos/resources/teams.rs:79)",
+          "carriedFrom": "2026-10-10"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "conformant",
+          "evidence": "src/stores/slices/pipeline/teamSlice.ts:146 per-team member/connection counts arrive in one grouped-aggregate call (getTeamCounts -> src-tauri/db/src/repos/resources/teams.rs:79 get_all_team_counts) and per-persona health in one bundle (src/stores/slices/overview/personaHealthSlice.ts:283); the slices own no query text and reach the store only through typed wrappers; the remaining techniques govern the Rust data layer, not these consumers",
+          "evaluatedAt": "2026-10-10T01:31:33.733Z",
+          "worker": "bd5abba4-e76b-472e-85a1-fe02de1d99c8",
+          "reason": "replaced by 30b01c05-e5f3-45c1-9b6d-a02126947a1f"
         }
       ]
     },
@@ -13128,10 +13153,16 @@
       "subject": "data-access",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T01:31:33.733Z",
-      "worker": "bd5abba4-e76b-472e-85a1-fe02de1d99c8",
-      "techniques": []
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:26:00.000Z",
+      "worker": "30b01c05-e5f3-45c1-9b6d-a02126947a1f",
+      "techniques": [
+        {
+          "technique": "localized-record-identity",
+          "verdict": "not-applicable",
+          "evidence": "src/i18n/generated/types.ts:2 interface catalog generated from en.json, not localized records"
+        }
+      ]
     },
     "59918f8a-62ca-4e52-9435-1e5bf9a18bbd/settings": {
       "context": "webbuild",
@@ -15277,24 +15308,25 @@
       "subject": "data-access",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T11:38:19.000Z",
-      "worker": "8839de9b-9ad2-4e19-862a-e3c630f43e4d",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:26:00.000Z",
+      "worker": "30b01c05-e5f3-45c1-9b6d-a02126947a1f",
       "techniques": [
         {
           "technique": "existence-authority-written-last",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/cloud/sync/mod.rs:838 the parent synced_personas row is deleted LAST, after the dependent tables at :830; the tombstone retry is idempotent by persona_id, so authority-first would cost nothing"
+          "evidence": "src-tauri/src/cloud/sync/mod.rs:840 the authority row readers treat as proof of existence is removed last instead of first"
         },
         {
           "technique": "sequence-token-write-ordering",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/cloud/sync/rows.rs:561 a tied timestamp reads as already-synced (strict >, truncated by datetime()); the same strict filter on tombstones (rows.rs:1085) with the cursor set to tick_start at src-tauri/src/cloud/sync/mod.rs:875 (error discarded by `let _`) drops a deletion that lands in the same second after the fetch, and nothing reconciles either case"
+          "evidence": "src-tauri/src/cloud/sync/rows.rs:561 order is carried by a whole-second timestamp compared with strict >, so a tie at the cursor second is silently excluded rather than answered"
         },
         {
           "technique": "query-construction",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/cloud/sync/mod.rs:830 persona_id is spliced unencoded into the PostgREST filter text (persona_id=eq.{persona_id}), a value interpolated into query text rather than carried out-of-band"
+          "evidence": "src-tauri/src/cloud/sync/mod.rs:830 persona_id is spliced unencoded into the PostgREST filter text (persona_id=eq.{persona_id}), a value interpolated into query text rather than carried out-of-band",
+          "carriedFrom": "2026-10-10"
         }
       ],
       "superseded": [
@@ -15304,6 +15336,13 @@
           "evaluatedAt": "2026-10-03",
           "worker": null,
           "reason": "replaced by 8839de9b-9ad2-4e19-862a-e3c630f43e4d"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/cloud/sync/mod.rs:827 delete_persona_cascade still deletes every child table before the synced_personas authority row (:838), the reverse of authority-removed-first, so an abandoned cascade shows a ghost persona with vanished children; and rows.rs:561 filters strictly datetime(col) > datetime(cursor) (second resolution) while mod.rs:475 advances to the observed max, so a same-second late write on the four resync=false tables (synced_personas at mod.rs:63) is excluded forever",
+          "evaluatedAt": "2026-10-10T11:38:19.000Z",
+          "worker": "8839de9b-9ad2-4e19-862a-e3c630f43e4d",
+          "reason": "replaced by 30b01c05-e5f3-45c1-9b6d-a02126947a1f"
         }
       ]
     },
@@ -15359,44 +15398,44 @@
       "subject": "data-access",
       "bundle": "software-engineering",
       "state": "conformant",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T11:38:19.000Z",
-      "worker": "8839de9b-9ad2-4e19-862a-e3c630f43e4d",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T12:26:00.000Z",
+      "worker": "30b01c05-e5f3-45c1-9b6d-a02126947a1f",
       "techniques": [
         {
           "technique": "query-construction",
-          "verdict": "realized",
-          "evidence": "src/features/vault/sub_databases/introspectionQueries.ts:128 identifier quoting has one implementation per dialect and is used only for clipboard text; src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:45 passes user SQL to one backend command with no frontend splicing"
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_databases/introspectionQueries.ts:147 escaping hoisted to one helper in this context; executed introspection uses backend bound parameters (:1)"
         },
         {
           "technique": "layering-rules",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_databases/introspectionQueries.ts:1 a SQL console over the user's own external databases, the golden path's named exception, not the app's operational store"
-        },
-        {
-          "technique": "row-mapping",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:45 results are untyped grids of the user's ad-hoc query; there is no domain type to decode into"
-        },
-        {
-          "technique": "repo-testing",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_databases/introspectionQueries.ts:152 no repository in this context to test"
-        },
-        {
-          "technique": "transactions-and-units-of-work",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:45 single user-issued statements; no multi-write invariant owned here"
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:46 the shell hands text to one backend door (executeDbQuery) and owns no executed statement assembly"
         },
         {
           "technique": "batching-and-n-plus-one",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:45 one query per user action"
+          "evidence": "src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:46 one user query per run; no fetch-one-per-id loop over an owned store"
+        },
+        {
+          "technique": "row-mapping",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:46 results of ad-hoc user queries are displayed as tabular data, not decoded into domain types"
+        },
+        {
+          "technique": "transactions-and-units-of-work",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:46 ad-hoc console over external databases; no application invariant spans writes"
         },
         {
           "technique": "read-models-and-projections",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:45 ad-hoc result sets, never written back"
+          "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:104 an explorer over foreign stores, not a projection surface of the app's own store"
+        },
+        {
+          "technique": "repo-testing",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_databases/introspectionQueries.ts:1 no repository lives in this context"
         }
       ],
       "superseded": [
@@ -15406,6 +15445,13 @@
           "evaluatedAt": "2026-10-03",
           "worker": null,
           "reason": "replaced by 8839de9b-9ad2-4e19-862a-e3c630f43e4d"
+        },
+        {
+          "state": "conformant",
+          "evidence": "src/features/vault/sub_databases/introspectionQueries.ts:1 live introspection runs only through the backend's parameterized commands; the one remaining frontend statement builder (getSelectAllQuery, :152) feeds only the clipboard (its sole caller is src/features/vault/sub_databases/tabs/TablesTab.tsx:97); the user's typed SQL goes to the backend unassembled (hooks/useDbQueryRunner.ts:45); the golden path's ad-hoc analytics exception covers the rest",
+          "evaluatedAt": "2026-10-10T11:38:19.000Z",
+          "worker": "8839de9b-9ad2-4e19-862a-e3c630f43e4d",
+          "reason": "replaced by 30b01c05-e5f3-45c1-9b6d-a02126947a1f"
         }
       ]
     },

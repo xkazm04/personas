@@ -9958,10 +9958,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/db/src/cdc.rs:24 the data crate still imports tauri's AppHandle/Emitter (dependency declared at src-tauri/db/Cargo.toml:69) and emits straight to the UI at :459, so the layer everything trusts cannot build or test without the shell above it; also src-tauri/db/src/macros.rs:145 row_mapper!'s [opt] arm (24 uses) turns a value that fails to decode into None, so present-but-unreadable reads as absent",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:b67182492821d592",
-          "evaluatedRevision": 18,
+          "evidence": "src-tauri/db/src/cdc.rs:24 the data crate still imports tauri's AppHandle/Emitter (dependency at src-tauri/db/Cargo.toml:69) and emits to the UI at :459, so the layer cannot build or test without the shell; src-tauri/db/src/macros.rs:144 row_mapper!'s opt arm turns an undecodable value into None, so present-but-unreadable reads as absent",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:2dba94be6400dea1",
+          "evaluatedRevision": 19,
           "revisionsBehind": 0
         },
         {
@@ -16456,9 +16456,9 @@
           "confidence": "probable",
           "state": "not-applicable",
           "evidence": "src/i18n/generated/types.ts:2 precondition unmet: the context is a type file generated from en.json plus two i18n contract tests - an interface catalog, not a store; localized-record-identity routes interface translation elsewhere by its own text",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:b67182492821d592",
-          "evaluatedRevision": 18,
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:2dba94be6400dea1",
+          "evaluatedRevision": 19,
           "revisionsBehind": 0
         },
         {
@@ -32426,10 +32426,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "conformant",
-          "evidence": "src/stores/slices/pipeline/teamSlice.ts:146 per-team member/connection counts arrive in one grouped-aggregate call (getTeamCounts -> src-tauri/db/src/repos/resources/teams.rs:79 get_all_team_counts) and per-persona health in one bundle (src/stores/slices/overview/personaHealthSlice.ts:283); the slices own no query text and reach the store only through typed wrappers; the remaining techniques govern the Rust data layer, not these consumers",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:b67182492821d592",
-          "evaluatedRevision": 18,
+          "evidence": "src/stores/slices/pipeline/teamSlice.ts:146 per-team counts arrive in one grouped call (src-tauri/db/src/repos/resources/teams.rs:79 get_all_team_counts) and health in one projection bundle (src/api/overview/health.ts:19); the slices hold no query text and reach the store only through typed wrappers; store-owning techniques have no precondition here",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:2dba94be6400dea1",
+          "evaluatedRevision": 19,
           "revisionsBehind": 0
         },
         {
@@ -33294,10 +33294,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/cloud/sync/mod.rs:827 delete_persona_cascade still deletes every child table before the synced_personas authority row (:838), the reverse of authority-removed-first, so an abandoned cascade shows a ghost persona with vanished children; and rows.rs:561 filters strictly datetime(col) > datetime(cursor) (second resolution) while mod.rs:475 advances to the observed max, so a same-second late write on the four resync=false tables (synced_personas at mod.rs:63) is excluded forever",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:b67182492821d592",
-          "evaluatedRevision": 18,
+          "evidence": "src-tauri/src/cloud/sync/mod.rs:829 delete_persona_cascade still deletes child tables first and the synced_personas authority row last (:840), so an abandoned cascade leaves a ghost persona with vanished children; rows.rs:561 strict second-resolution datetime(col) > datetime(cursor) with the cursor advanced to the observed max (mod.rs:477) drops same-second late writes on resync=false tables (synced_personas, mod.rs:65)",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:2dba94be6400dea1",
+          "evaluatedRevision": 19,
           "revisionsBehind": 0
         },
         {
@@ -39864,10 +39864,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "conformant",
-          "evidence": "src/features/vault/sub_databases/introspectionQueries.ts:1 live introspection runs only through the backend's parameterized commands; the one remaining frontend statement builder (getSelectAllQuery, :152) feeds only the clipboard (its sole caller is src/features/vault/sub_databases/tabs/TablesTab.tsx:97); the user's typed SQL goes to the backend unassembled (hooks/useDbQueryRunner.ts:45); the golden path's ad-hoc analytics exception covers the rest",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:b67182492821d592",
-          "evaluatedRevision": 18,
+          "evidence": "src/features/vault/sub_databases/introspectionQueries.ts:1 live introspection runs only through the backend's parameterized commands; the one remaining statement builder (getSelectAllQuery, :152) feeds only the clipboard (src/features/vault/sub_databases/tabs/TablesTab.tsx:104); user-typed SQL goes to the backend unassembled (hooks/useDbQueryRunner.ts:46), the golden path's ad-hoc exception",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:2dba94be6400dea1",
+          "evaluatedRevision": 19,
           "revisionsBehind": 0
         },
         {
