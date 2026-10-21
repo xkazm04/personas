@@ -42,4 +42,14 @@ describe('ObservabilityOverview success rate', () => {
     render(<Harness s={summary(4, 3, 1)} />);
     expect(within(rateTile()).getByText(/75\.0\s*%/)).toBeTruthy();
   });
+
+  it('queued and running runs stay out of the denominator', () => {
+    render(<Harness s={summary(10, 3, 1)} />);
+    expect(within(rateTile()).getByText(/75\.0\s*%/)).toBeTruthy();
+  });
+
+  it('a window of only in-flight runs has no rate yet', () => {
+    render(<Harness s={summary(5, 0, 0)} />);
+    expect(within(rateTile()).getByText('-')).toBeTruthy();
+  });
 });
