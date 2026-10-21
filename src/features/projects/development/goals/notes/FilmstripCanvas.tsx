@@ -118,8 +118,16 @@ function FilmstripRow({
           <AddGoalButton projectName={row.name} label={dl.goal_new_title} onClick={() => createGoalIn(row.projectId)} />
         </div>
 
-        {/* The scope margin. Absent until the lanes arrive: the goals above are
-            the surface and a placeholder here would be noise on every row. */}
+        {/* The scope margin. Its height is reserved while the lanes load: they
+            arrive after first paint and, unreserved, pushed every row below this
+            one down (CLS 0.150 on a cold open, measured 2026-10-20). */}
+        {lanes === null && (
+          <div
+            aria-hidden="true"
+            data-testid={`progress-lanes-pending-${row.projectId}`}
+            style={{ minHeight: NODE_PX + 8 }}
+          />
+        )}
         {lanes !== null && (
           <div className="flex flex-wrap items-center gap-1.5">
             {lanes.map((lane) => (
