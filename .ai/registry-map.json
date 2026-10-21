@@ -6566,10 +6566,10 @@
           "changedAt": "2026-10-12",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/companion/stt.rs:33 companion_stt_transcribe still returns a bare Result<String>, so no-speech crosses IPC as AppError::Internal text (src-tauri/src/companion/stt/whisper.rs:210) and useLocalDictation.ts:266 renders err.message - silence, no-speech and engine failure are not three typed facts; re-checked at rev 21",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:fa03abeab38c89c7",
-          "evaluatedRevision": 21,
+          "evidence": "src-tauri/src/commands/companion/stt.rs:33 companion_stt_transcribe still returns a bare Result<String>, so no-speech crosses IPC as AppError::Internal text (src-tauri/src/companion/stt/whisper.rs:210) and src/features/companions/athena/useLocalDictation.ts:266 shows the raw message - silence, no-speech and engine failure are still not three typed facts; re-checked at rev 23",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23,
           "revisionsBehind": 0
         },
         {
@@ -8396,10 +8396,10 @@
           "changedAt": "2026-10-12",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/companion/jobs/connector_use.rs:1312 Athena's ElevenLabs generate_tts interpolates a model-supplied voice_id straight into the API URL, bypassing the existing voice-id door (src-tauri/src/companion/tts/mod.rs:128, which already names ElevenLabs ids and rejects '../'), and pins model eleven_turbo_v2_5 (:1319) outside any engine adapter, so a hallucinated or path-shaped id reaches the vendor with the user's key and a retired model fails with no normalization",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
-          "evaluatedRevision": 20,
+          "evidence": "src-tauri/src/companion/jobs/connector_use.rs:1358 Athena's ElevenLabs generate_tts tool still pins model eleven_turbo_v2_5 in a second vendor adapter outside the companion TTS engine seam (which configures eleven_v3 at src-tauri/src/companion/tts/mod.rs:172), so a retired model fails with no normalization; the path-shaped voice_id half was fixed by 8ead4810f1 (:1333 safe_path_segment), through a second id door beside tts::validate_voice_id",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23,
           "revisionsBehind": 0
         },
         {
@@ -8499,10 +8499,10 @@
           "changedAt": "2026-10-12",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/companions/athena/sub_voice/voiceEngineShared.tsx:322 a preview stopped during 'synth' resets state but the awaited synthesize still reaches play() at :330 with no latest-wins gate, so a stopped preview plays anyway; BubbleReadAloud.tsx:66 still sends raw markdown to synthesis and athenaSlice.ts:353 still defaults STT to 'browser'; re-checked at rev 21",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:fa03abeab38c89c7",
-          "evaluatedRevision": 21,
+          "evidence": "src/features/companions/athena/sub_voice/voiceEngineShared.tsx:322 a preview stopped during 'synth' resets state but the awaited synthesize still reaches play() at :330 with no latest-wins gate, so a stopped preview plays anyway; src/features/companions/athena/BubbleReadAloud.tsx:65 still hands raw markdown to synthesize while the chat queue strips it (src/features/companions/athena/chat/athenaChatVoice.ts:132); re-checked at rev 23",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23,
           "revisionsBehind": 0
         },
         {
@@ -9016,10 +9016,10 @@
           "changedAt": "2026-10-12",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/companion/tts/kokoro.rs:222 still spawns a fresh sherpa process per utterance, reloading the model on every live reply (real-time-synthesis-budget counts the process boundary in the rate); re-checked at rev 21, whisper.rs:210 no-speech is still AppError::Internal and kokoro_installer.rs:44 the install lock is still per-process",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:fa03abeab38c89c7",
-          "evaluatedRevision": 21,
+          "evidence": "src-tauri/src/companion/tts/kokoro.rs:222 still spawns a fresh sherpa process per utterance, reloading the model on every live reply (real-time-synthesis-budget counts the process boundary in the rate); src-tauri/src/companion/tts/kokoro_installer.rs:44 the install lock is still per-process, not one locked engine home; re-checked at rev 23",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23,
           "revisionsBehind": 0
         },
         {
@@ -20551,10 +20551,10 @@
           "changedAt": "2026-10-12",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/onboarding/components/useTourNarration.ts:102 tour narration still calls play() on a private element with no shared speech arbiter, so it can overlap an Athena read-aloud; TourNarrationButton.tsx:30 still renders 'error' like idle and :121 caches audio by step key alone, so a voice change replays the old voice; re-checked at rev 21",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:fa03abeab38c89c7",
-          "evaluatedRevision": 21,
+          "evidence": "src/features/onboarding/components/useTourNarration.ts:102 tour narration still calls play() on a private element with no shared speech arbiter, so it can overlap an Athena read-aloud; :121 caches audio by step key alone so a voice change replays the old voice, and src/features/onboarding/components/TourNarrationButton.tsx:30 renders 'error' like idle; re-checked at rev 23",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23,
           "revisionsBehind": 0
         },
         {
@@ -25363,10 +25363,10 @@
           "changedAt": "2026-10-12",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/companions/athena/useHoldToTalk.ts:117 still runs whichever option a bare spoken digit names, approve included, with no confirmation echoing the interpretation, and src/features/companions/athena/decision/actionRisk.ts:23 states risk never gates execution; re-checked at rev 21",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:fa03abeab38c89c7",
-          "evaluatedRevision": 21,
+          "evidence": "src/features/companions/athena/useHoldToTalk.ts:117 still runs whichever option a bare spoken digit names, approve included, with no confirmation echoing the interpretation, and src/features/companions/athena/decision/actionRisk.ts:23 states risk never gates execution; re-checked at rev 23",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23,
           "revisionsBehind": 0
         },
         {

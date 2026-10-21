@@ -1771,3 +1771,9 @@
 {"ts":"2026-10-21T12:39:42Z","bundle":"software-engineering","subjects":["native-shell-integration"],"techniques":["native-side-owns-the-target-set"],"deviations":1}
 {"ts":"2026-10-21T12:39:42Z","bundle":"software-engineering","subjects":["native-shell-integration"],"techniques":["native-side-owns-the-target-set"],"deviations":1}
 {"ts":"2026-10-21T12:39:42Z","bundle":"software-engineering","subjects":["native-shell-integration"],"techniques":["capability-presence-contract","native-owned-stream"],"deviations":1}
+{"ts":"2026-10-21T13:20:00Z","bundle":"software-engineering","subjects":["voice-io"],"techniques":["stt-pipeline","bounded-playback-wait"],"deviations":1}
+{"ts":"2026-10-21T13:20:00Z","bundle":"software-engineering","subjects":["voice-io"],"techniques":["tts-pipeline","speech-ready-text","on-device-vs-cloud","bounded-playback-wait","speech-timing-timeline"],"deviations":3}
+{"ts":"2026-10-21T13:20:00Z","bundle":"software-engineering","subjects":["voice-io"],"techniques":["real-time-synthesis-budget","voice-setup-experience","stt-pipeline"],"deviations":3}
+{"ts":"2026-10-21T13:20:00Z","bundle":"software-engineering","subjects":["voice-io"],"techniques":["engine-abstraction","bounded-playback-wait"],"deviations":1}
+{"ts":"2026-10-21T13:20:00Z","bundle":"software-engineering","subjects":["voice-io"],"techniques":["voice-ux-integration","tts-pipeline","bounded-playback-wait"],"deviations":2}
+{"ts":"2026-10-21T13:20:00Z","bundle":"software-engineering","subjects":["voice-io"],"techniques":["spoken-intent-parsing"],"deviations":1}
