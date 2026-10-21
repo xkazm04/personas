@@ -149,6 +149,9 @@ export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevTo
       }));
     } catch (err) {
       reportError(err, "Failed to update project", set);
+      // Rethrow like createProject: bulk archive counts failures and the edit
+      // modal stays open on them; a resolved promise read as success.
+      throw err;
     }
   },
 

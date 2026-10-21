@@ -10,6 +10,7 @@ vi.mock('@/api/devTools/devTools', () => ({
   countPendingAcceptance: vi.fn(),
   updateGoal: vi.fn(),
   deleteGoal: vi.fn(),
+  updateProject: vi.fn(),
 }));
 
 // reportError emits its toast through the store bus; counting emits is how
@@ -164,4 +165,15 @@ describe('devToolsProjectSlice — KPI actions leave the toast to their caller',
       expect(await storeToasts()).toBe(0);
     });
   }
+});
+
+describe('devToolsProjectSlice — updateProject rejects so callers can count failures', () => {
+  beforeEach(() => { vi.clearAllMocks(); });
+
+  it('REJECTS a failed update (bulk archive and the edit modal depend on it) and records the store error', async () => {
+    const h = harness();
+    vi.mocked(devApi.updateProject).mockRejectedValueOnce(new Error('database is locked'));
+    await expect(h.get().updateProject('p1', { status: 'archived' })).rejects.toThrow(/database is locked/);
+    expect(h.get().error).toMatch(/database is locked/);
+  });
 });
