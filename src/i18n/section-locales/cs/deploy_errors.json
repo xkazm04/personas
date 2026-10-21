@@ -14,5 +14,16 @@
   "url_empty": "Zadej URL orchestrátoru.",
   "credentials_revoked": "Přihlašovací údaje vypršely nebo byly odvolány. Znovu se připojte k cloudovému orchestrátoru.",
   "reconnect_exhausted": "Cloudový orchestrátor se nepodařilo zastihnout ani po několika pokusech. Zkontrolujte připojení a zkuste to znovu. Poslední chyba: {cause}",
-  "reconnect_disconnected": "Kontrola připojení ohlásila odpojení"
+  "reconnect_disconnected": "Kontrola připojení ohlásila odpojení",
+  "gitlab_agent_redeployed": "Agent byl úspěšně znovu nasazen",
+  "gitlab_auto_connect_failed": "Automatické připojení ke GitLabu se nezdařilo. Můžete se znovu připojit ručně z panelu GitLab.",
+  "gitlab_branches_created": "Větve prostředí byly vytvořeny",
+  "gitlab_no_persona": "Nebyla nalezena žádná persona odpovídající agentovi \"{name}\". Nasaďte ho ručně.",
+  "gitlab_no_project": "K tomuto agentovi není přiřazen žádný projekt. Nejprve ho nasaďte ručně.",
+  "gitlab_rolled_back": "{name} byl vrácen na {tag}",
+  "gitlab_rolled_back_previous": "Nasazení bylo vráceno na předchozí verzi",
+  "gitlab_version_tag_failed": "Agent {name} byl nasazen, ale značku verze se nepodařilo vytvořit. Tato verze se nezobrazí v historii a nelze se k ní vrátit. Zkuste nasazení zopakovat.",
+  "oauth_timed_out_error": "Autorizace OAuth vypršela. Zkuste to prosím znovu.",
+  "oauth_timed_out_toast": "Autorizace OAuth vypršela. Zkuste to prosím znovu.",
+  "persona_fallback": "persona"
 }

@@ -4498,7 +4498,18 @@
     "url_empty": "Bitte Orchestrator-URL eingeben.",
     "credentials_revoked": "Anmeldedaten sind abgelaufen oder widerrufen. Bitte verbinde dich erneut mit dem Cloud-Orchestrator.",
     "reconnect_exhausted": "Der Cloud-Orchestrator war nach mehreren Versuchen nicht erreichbar. Prüfe die Verbindung und versuche es erneut. Letzter Fehler: {cause}",
-    "reconnect_disconnected": "Die Verbindungsprüfung meldete eine Trennung"
+    "reconnect_disconnected": "Die Verbindungsprüfung meldete eine Trennung",
+    "gitlab_agent_redeployed": "Agent erfolgreich erneut bereitgestellt",
+    "gitlab_auto_connect_failed": "Die automatische GitLab-Verbindung ist fehlgeschlagen. Du kannst dich im GitLab-Bereich manuell erneut verbinden.",
+    "gitlab_branches_created": "Umgebungs-Branches erstellt",
+    "gitlab_no_persona": "Keine Persona gefunden, die zum Agent \"{name}\" passt. Stelle sie manuell bereit.",
+    "gitlab_no_project": "Diesem Agent ist kein Projekt zugeordnet. Stelle ihn zuerst manuell bereit.",
+    "gitlab_rolled_back": "{name} auf {tag} zurückgesetzt",
+    "gitlab_rolled_back_previous": "Auf die vorherige Bereitstellung zurückgesetzt",
+    "gitlab_version_tag_failed": "{name} wurde bereitgestellt, aber der Versions-Tag konnte nicht erstellt werden. Diese Version erscheint nicht im Verlauf und es kann nicht darauf zurückgesetzt werden. Versuche die Bereitstellung erneut.",
+    "oauth_timed_out_error": "Die OAuth-Autorisierung ist abgelaufen. Bitte versuche es erneut.",
+    "oauth_timed_out_toast": "Die OAuth-Autorisierung ist abgelaufen. Bitte versuche es noch einmal.",
+    "persona_fallback": "Persona"
   },
   "deployment": {
     "api_key": "API-Schlüssel",

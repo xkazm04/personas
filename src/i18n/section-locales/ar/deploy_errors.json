@@ -14,5 +14,16 @@
   "url_empty": "يرجى إدخال عنوان URL للمنسّق.",
   "credentials_revoked": "انتهت صلاحية بيانات الاعتماد أو تم إلغاؤها. يُرجى إعادة الاتصال بمنسّق السحابة.",
   "reconnect_exhausted": "تعذّر الوصول إلى منسّق السحابة بعد عدة محاولات. تحقّق من الاتصال وأعد المحاولة. آخر خطأ: {cause}",
-  "reconnect_disconnected": "أفاد فحص الاتصال بأن الاتصال مقطوع"
+  "reconnect_disconnected": "أفاد فحص الاتصال بأن الاتصال مقطوع",
+  "gitlab_agent_redeployed": "تمت إعادة نشر الوكيل بنجاح",
+  "gitlab_auto_connect_failed": "فشل الاتصال التلقائي بـ GitLab. يمكنك إعادة الاتصال يدويًا من لوحة GitLab.",
+  "gitlab_branches_created": "تم إنشاء فروع البيئات",
+  "gitlab_no_persona": "لم يتم العثور على شخصية مطابقة للوكيل \"{name}\". انشره يدويًا.",
+  "gitlab_no_project": "لا يوجد مشروع مرتبط بهذا الوكيل. انشره يدويًا أولًا.",
+  "gitlab_rolled_back": "تمت إعادة {name} إلى {tag}",
+  "gitlab_rolled_back_previous": "تمت العودة إلى النشر السابق",
+  "gitlab_version_tag_failed": "تم نشر {name}، لكن تعذر إنشاء وسم الإصدار. لن يظهر هذا الإصدار في السجل ولا يمكن الرجوع إليه. حاول النشر مرة أخرى.",
+  "oauth_timed_out_error": "انتهت مهلة تفويض OAuth. يرجى المحاولة مرة أخرى.",
+  "oauth_timed_out_toast": "انتهت مهلة تفويض OAuth. يرجى إعادة المحاولة.",
+  "persona_fallback": "شخصية"
 }

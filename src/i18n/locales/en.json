@@ -22393,7 +22393,18 @@
     "token_empty": "Please enter your GitLab personal access token.",
     "credentials_revoked": "Credentials expired or revoked. Please reconnect to the cloud orchestrator.",
     "reconnect_exhausted": "Could not reach the cloud orchestrator after several attempts. Check the connection and retry. Last error: {cause}",
-    "reconnect_disconnected": "Connection check reported disconnected"
+    "reconnect_disconnected": "Connection check reported disconnected",
+    "gitlab_auto_connect_failed": "GitLab auto-connect failed. You can reconnect manually from the GitLab panel.",
+    "gitlab_no_project": "No project associated with this agent. Deploy manually first.",
+    "gitlab_no_persona": "No persona found matching agent \"{name}\". Deploy manually.",
+    "gitlab_agent_redeployed": "Agent redeployed successfully",
+    "gitlab_version_tag_failed": "Deployed {name}, but the version tag could not be created. This version won't appear in history and can't be rolled back to. Try deploying again.",
+    "persona_fallback": "persona",
+    "gitlab_rolled_back": "Rolled back {name} to {tag}",
+    "gitlab_branches_created": "Environment branches created",
+    "gitlab_rolled_back_previous": "Rolled back to previous deployment",
+    "oauth_timed_out_error": "OAuth authorization timed out. Please try again.",
+    "oauth_timed_out_toast": "OAuth authorization timed out. Please retry."
   },
   "tiers": {
     "starter_label": "Simple",

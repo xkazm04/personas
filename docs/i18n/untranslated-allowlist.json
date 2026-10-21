@@ -4394,5 +4394,14 @@
   "de:settings.appearance.preview_info",
   "es:settings.appearance.preview_info",
   "fr:settings.appearance.preview_info",
-  "id:settings.appearance.preview_info"
+  "id:settings.appearance.preview_info",
+  "bn:deploy_errors.persona_fallback",
+  "cs:deploy_errors.persona_fallback",
+  "es:deploy_errors.persona_fallback",
+  "fr:deploy_errors.persona_fallback",
+  "hi:deploy_errors.persona_fallback",
+  "id:deploy_errors.persona_fallback",
+  "ko:deploy_errors.persona_fallback",
+  "vi:deploy_errors.persona_fallback",
+  "zh:deploy_errors.persona_fallback"
 ]

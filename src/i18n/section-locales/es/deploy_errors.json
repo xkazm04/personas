@@ -14,5 +14,16 @@
   "url_empty": "Por favor ingresa la URL del orquestador.",
   "credentials_revoked": "Las credenciales han caducado o se han revocado. Vuelve a conectarte al orquestador en la nube.",
   "reconnect_exhausted": "No se pudo contactar con el orquestador en la nube tras varios intentos. Revisa la conexión e inténtalo de nuevo. Último error: {cause}",
-  "reconnect_disconnected": "La comprobación de conexión indicó que está desconectado"
+  "reconnect_disconnected": "La comprobación de conexión indicó que está desconectado",
+  "gitlab_agent_redeployed": "Agente redesplegado correctamente",
+  "gitlab_auto_connect_failed": "Falló la conexión automática con GitLab. Puedes volver a conectarte manualmente desde el panel de GitLab.",
+  "gitlab_branches_created": "Ramas de entorno creadas",
+  "gitlab_no_persona": "No se encontró ninguna persona que coincida con el agente \"{name}\". Despliega manualmente.",
+  "gitlab_no_project": "Este agente no tiene ningún proyecto asociado. Despliega manualmente primero.",
+  "gitlab_rolled_back": "Se revirtió {name} a {tag}",
+  "gitlab_rolled_back_previous": "Se revirtió al despliegue anterior",
+  "gitlab_version_tag_failed": "Se desplegó {name}, pero no se pudo crear la etiqueta de versión. Esta versión no aparecerá en el historial y no se podrá revertir a ella. Intenta desplegar de nuevo.",
+  "oauth_timed_out_error": "La autorización de OAuth agotó el tiempo de espera. Inténtalo de nuevo.",
+  "oauth_timed_out_toast": "La autorización de OAuth agotó el tiempo de espera. Reinténtalo.",
+  "persona_fallback": "persona"
 }

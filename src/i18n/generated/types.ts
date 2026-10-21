@@ -22400,6 +22400,17 @@ export type Translations = {
     credentials_revoked: string;
     reconnect_exhausted: string;
     reconnect_disconnected: string;
+    gitlab_auto_connect_failed: string;
+    gitlab_no_project: string;
+    gitlab_no_persona: string;
+    gitlab_agent_redeployed: string;
+    gitlab_version_tag_failed: string;
+    persona_fallback: string;
+    gitlab_rolled_back: string;
+    gitlab_branches_created: string;
+    gitlab_rolled_back_previous: string;
+    oauth_timed_out_error: string;
+    oauth_timed_out_toast: string;
   };
   tiers: {
     starter_label: string;

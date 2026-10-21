@@ -14,5 +14,16 @@
   "url_empty": "Veuillez entrer l’URL de l’orchestrateur.",
   "credentials_revoked": "Les identifiants ont expiré ou ont été révoqués. Reconnectez-vous à l'orchestrateur cloud.",
   "reconnect_exhausted": "Impossible de joindre l'orchestrateur cloud après plusieurs tentatives. Vérifiez la connexion et réessayez. Dernière erreur : {cause}",
-  "reconnect_disconnected": "La vérification de connexion a signalé une déconnexion"
+  "reconnect_disconnected": "La vérification de connexion a signalé une déconnexion",
+  "gitlab_agent_redeployed": "Agent redéployé avec succès",
+  "gitlab_auto_connect_failed": "La connexion automatique à GitLab a échoué. Vous pouvez vous reconnecter manuellement depuis le panneau GitLab.",
+  "gitlab_branches_created": "Branches d'environnement créées",
+  "gitlab_no_persona": "Aucune persona ne correspond à l'agent « {name} ». Déployez manuellement.",
+  "gitlab_no_project": "Aucun projet n'est associé à cet agent. Déployez d'abord manuellement.",
+  "gitlab_rolled_back": "{name} a été restauré à {tag}",
+  "gitlab_rolled_back_previous": "Retour au déploiement précédent effectué",
+  "gitlab_version_tag_failed": "{name} a été déployé, mais le tag de version n'a pas pu être créé. Cette version n'apparaîtra pas dans l'historique et il sera impossible d'y revenir. Essayez de déployer à nouveau.",
+  "oauth_timed_out_error": "L'autorisation OAuth a expiré. Veuillez réessayer.",
+  "oauth_timed_out_toast": "L'autorisation OAuth a expiré. Veuillez réessayer.",
+  "persona_fallback": "persona"
 }

@@ -41,6 +41,7 @@ import {
   type GitLabDeploymentStatus,
 } from "@/api/system/gitlab";
 import { silentCatch } from '@/lib/silentCatch';
+import { getActiveTranslations, interpolate } from "@/i18n/useTranslation";
 import { createLatestWins } from "../../util/latestWins";
 
 
@@ -208,7 +209,7 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
     } catch {
       set({ gitlabIsConnecting: false });
       storeBus.emit('toast', {
-        message: "GitLab auto-connect failed — you can reconnect manually from the GitLab panel.",
+        message: getActiveTranslations().deploy_errors.gitlab_auto_connect_failed,
         type: "error",
       });
     }
@@ -361,7 +362,7 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
     const meta = state.gitlabDeploymentMeta[agentName];
     const projectId = meta?.projectId ?? state.gitlabSelectedProjectId;
     if (!projectId) {
-      set({ gitlabError: "No project associated with this agent. Deploy manually first." });
+      set({ gitlabError: getActiveTranslations().deploy_errors.gitlab_no_project });
       throw new Error("No project for redeploy");
     }
 
@@ -373,7 +374,7 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
         (p) => p.name.toLowerCase() === agentName.toLowerCase(),
       );
       if (!match) {
-        set({ gitlabError: `No persona found matching agent "${agentName}". Deploy manually.` });
+        set({ gitlabError: interpolate(getActiveTranslations().deploy_errors.gitlab_no_persona, { name: agentName }) });
         throw new Error("No persona match for redeploy");
       }
       personaId = match.id;
@@ -391,7 +392,7 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
         }),
       ]);
       set({ gitlabAgents: agents, gitlabDeploymentStatuses: statuses, gitlabRedeployingAgentId: null });
-      storeBus.emit('toast', { message: "Agent redeployed successfully", type: "success" });
+      storeBus.emit('toast', { message: getActiveTranslations().deploy_errors.gitlab_agent_redeployed, type: "success" });
       return result;
     } catch (err) {
       set({ gitlabRedeployingAgentId: null, gitlabError: translateGitLabError(err) });
@@ -538,7 +539,7 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
       // of discovering the missing version during an incident.
       if (!result.tagCreated) {
         storeBus.emit('toast', {
-          message: `Deployed ${persona?.name ?? 'persona'}, but the version tag could not be created — this version won't appear in history and can't be rolled back to. Try deploying again.`,
+          message: interpolate(getActiveTranslations().deploy_errors.gitlab_version_tag_failed, { name: persona?.name ?? getActiveTranslations().deploy_errors.persona_fallback }),
           type: 'warning',
         });
       }
@@ -578,7 +579,7 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
       });
       set(versions ? { gitlabPersonaVersions: versions, gitlabRollingBack: false } : { gitlabRollingBack: false });
       storeBus.emit('toast', {
-        message: `Rolled back ${personaName} to ${targetTag}`,
+        message: interpolate(getActiveTranslations().deploy_errors.gitlab_rolled_back, { name: personaName, tag: targetTag }),
         type: "success",
       });
       emitDeploymentEvent({ eventType: 'deploy_succeeded', target: 'gitlab', detail: `rollback:${targetTag}` });
@@ -602,7 +603,7 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
     try {
       const branches = await gitlabSetupPersonaBranches(projectId, personaName);
       set({ gitlabPersonaBranches: branches, gitlabError: null });
-      storeBus.emit('toast', { message: "Environment branches created", type: "success" });
+      storeBus.emit('toast', { message: getActiveTranslations().deploy_errors.gitlab_branches_created, type: "success" });
       return branches;
     } catch (err) {
       set({ gitlabError: translateGitLabError(err) });
@@ -653,7 +654,7 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
       set(history
         ? { gitlabDeploymentHistory: history, gitlabRollingBackFromHistory: false }
         : { gitlabRollingBackFromHistory: false });
-      storeBus.emit('toast', { message: "Rolled back to previous deployment", type: "success" });
+      storeBus.emit('toast', { message: getActiveTranslations().deploy_errors.gitlab_rolled_back_previous, type: "success" });
       emitDeploymentEvent({ eventType: 'deploy_succeeded', target: 'gitlab', detail: `rollback-from-history:${deploymentId}` });
       return result;
     } catch (err) {

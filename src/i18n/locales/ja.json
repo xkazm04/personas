@@ -4498,7 +4498,18 @@
     "url_empty": "オーケストレーターのURLを入力してください。",
     "credentials_revoked": "認証情報が期限切れか取り消されました。クラウドオーケストレーターに再接続してください。",
     "reconnect_exhausted": "複数回試行しましたが、クラウドオーケストレーターに接続できませんでした。接続を確認して再試行してください。最後のエラー：{cause}",
-    "reconnect_disconnected": "接続チェックで切断が報告されました"
+    "reconnect_disconnected": "接続チェックで切断が報告されました",
+    "gitlab_agent_redeployed": "エージェントを再デプロイしました",
+    "gitlab_auto_connect_failed": "GitLab への自動接続に失敗しました。GitLab パネルから手動で再接続できます。",
+    "gitlab_branches_created": "環境ブランチを作成しました",
+    "gitlab_no_persona": "エージェント「{name}」に一致するペルソナが見つかりません。手動でデプロイしてください。",
+    "gitlab_no_project": "このエージェントに関連付けられたプロジェクトがありません。先に手動でデプロイしてください。",
+    "gitlab_rolled_back": "{name} を {tag} にロールバックしました",
+    "gitlab_rolled_back_previous": "前回のデプロイにロールバックしました",
+    "gitlab_version_tag_failed": "{name} をデプロイしましたが、バージョンタグを作成できませんでした。このバージョンは履歴に表示されず、ロールバックもできません。もう一度デプロイしてください。",
+    "oauth_timed_out_error": "OAuth 認証がタイムアウトしました。もう一度お試しください。",
+    "oauth_timed_out_toast": "OAuth 認証がタイムアウトしました。再試行してください。",
+    "persona_fallback": "ペルソナ"
   },
   "deployment": {
     "api_key": "APIキー",

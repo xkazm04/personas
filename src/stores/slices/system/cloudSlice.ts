@@ -32,6 +32,7 @@ import {
 } from "@/api/system/cloud";
 import { listDeploymentHistoryAll } from "@/api/system/gitlab";
 import { silentCatch } from '@/lib/silentCatch';
+import { getActiveTranslations } from "@/i18n/useTranslation";
 
 
 export interface CloudReconnectState {
@@ -199,7 +200,7 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
           void get().cloudReconcileDeployments();
         } catch (err) {
           if (isAuthError(err)) {
-            set({ cloudError: "Credentials expired or revoked. Please reconnect to the cloud orchestrator." });
+            set({ cloudError: getActiveTranslations().deploy_errors.credentials_revoked });
           }
           // Network / unreachable errors -- stay disconnected silently
         }
@@ -280,8 +281,8 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
       pendingOAuthTimeoutRef = setTimeout(() => {
         pendingOAuthTimeoutRef = null;
         if (!get().cloudPendingOAuthState) return;
-        set({ cloudPendingOAuthState: null, cloudError: "OAuth authorization timed out. Please try again." });
-        storeBus.emit('toast', { message: "OAuth authorization timed out -- please retry.", type: "error" });
+        set({ cloudPendingOAuthState: null, cloudError: getActiveTranslations().deploy_errors.oauth_timed_out_error });
+        storeBus.emit('toast', { message: getActiveTranslations().deploy_errors.oauth_timed_out_toast, type: "error" });
       }, PENDING_OAUTH_TIMEOUT_MS);
       return result;
     } catch (err) {

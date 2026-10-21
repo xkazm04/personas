@@ -4498,7 +4498,18 @@
     "url_empty": "请输入编排器 URL。",
     "credentials_revoked": "凭据已过期或被吊销。请重新连接云编排器。",
     "reconnect_exhausted": "多次尝试后仍无法连接云编排器。请检查网络连接后重试。最近一次错误：{cause}",
-    "reconnect_disconnected": "连接检查报告已断开连接"
+    "reconnect_disconnected": "连接检查报告已断开连接",
+    "gitlab_agent_redeployed": "智能体已成功重新部署",
+    "gitlab_auto_connect_failed": "GitLab 自动连接失败。你可以在 GitLab 面板中手动重新连接。",
+    "gitlab_branches_created": "环境分支已创建",
+    "gitlab_no_persona": "未找到与智能体“{name}”匹配的 persona。请手动部署。",
+    "gitlab_no_project": "此智能体没有关联的项目。请先手动部署。",
+    "gitlab_rolled_back": "已将 {name} 回滚到 {tag}",
+    "gitlab_rolled_back_previous": "已回滚到上一次部署",
+    "gitlab_version_tag_failed": "已部署 {name}，但无法创建版本标签。此版本不会出现在历史记录中，也无法回滚到该版本。请重新部署。",
+    "oauth_timed_out_error": "OAuth 授权已超时。请重试。",
+    "oauth_timed_out_toast": "OAuth 授权已超时。请重试。",
+    "persona_fallback": "persona"
   },
   "deployment": {
     "api_key": "API 凭证",
