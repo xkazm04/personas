@@ -27,7 +27,7 @@
   "cover_empty": "لا توجد مراحل بعد — خطّط أول قطع",
   "cover_forecast": "توقع {date}",
   "cover_next": "التالي",
-  "cover_open_aria": "افتح خارطة طريق Ship لـ {name}",
+  "cover_open_aria": "افتح خارطة الطريق لـ {name} في المفكرة",
   "cover_shipped_count": "تم شحن {shipped}/{total}",
   "crit_contexts": "السياقات الأساسية سليمة",
   "crit_contexts_critical": " · حرِج: {names}",

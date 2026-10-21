@@ -19623,7 +19623,7 @@
     "cover_empty": "尚无里程碑 — 规划第一次切分",
     "cover_forecast": "预计 {date}",
     "cover_next": "下一个",
-    "cover_open_aria": "打开 {name} 的 Ship 路线图",
+    "cover_open_aria": "在记事本中打开 {name} 的路线图",
     "cover_shipped_count": "已发布 {shipped}/{total}",
     "crit_contexts": "核心上下文健康",
     "crit_contexts_critical": " · 严重：{names}",

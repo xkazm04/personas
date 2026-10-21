@@ -27,7 +27,7 @@
   "cover_empty": "Вех пока нет — спланируйте первый срез",
   "cover_forecast": "прогноз {date}",
   "cover_next": "Далее",
-  "cover_open_aria": "Открыть дорожную карту Ship для {name}",
+  "cover_open_aria": "Открыть дорожную карту {name} в Блокноте",
   "cover_shipped_count": "{shipped}/{total} выпущено",
   "crit_contexts": "Основные контексты в порядке",
   "crit_contexts_critical": " · критично: {names}",

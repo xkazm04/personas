@@ -27,7 +27,7 @@
   "cover_empty": "Aún no hay hitos — planifica el primer corte",
   "cover_forecast": "previsión {date}",
   "cover_next": "Siguiente",
-  "cover_open_aria": "Abrir la hoja de ruta de Ship de {name}",
+  "cover_open_aria": "Abrir la hoja de ruta de {name} en el Bloc de notas",
   "cover_shipped_count": "{shipped}/{total} entregados",
   "crit_contexts": "Contextos núcleo saludables",
   "crit_contexts_critical": " · crítico: {names}",

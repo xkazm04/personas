@@ -19623,7 +19623,7 @@
     "cover_empty": "Zatím žádné milníky — naplánujte první řez",
     "cover_forecast": "odhad {date}",
     "cover_next": "Další",
-    "cover_open_aria": "Otevřít Ship roadmapu pro {name}",
+    "cover_open_aria": "Otevřít roadmapu pro {name} v Poznámkovém bloku",
     "cover_shipped_count": "vydáno {shipped}/{total}",
     "crit_contexts": "Klíčové kontexty zdravé",
     "crit_contexts_critical": " · kritické: {names}",

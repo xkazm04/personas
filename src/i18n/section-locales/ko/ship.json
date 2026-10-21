@@ -27,7 +27,7 @@
   "cover_empty": "마일스톤 없음 — 첫 컷을 계획하세요",
   "cover_forecast": "예상 {date}",
   "cover_next": "다음",
-  "cover_open_aria": "{name}의 Ship 로드맵 열기",
+  "cover_open_aria": "노트패드에서 {name}의 로드맵 열기",
   "cover_shipped_count": "{shipped}/{total} 출시됨",
   "crit_contexts": "핵심 컨텍스트 정상",
   "crit_contexts_critical": " · 위험: {names}",

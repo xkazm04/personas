@@ -19623,7 +19623,7 @@
     "cover_empty": "Noch keine Meilensteine — den ersten Schnitt planen",
     "cover_forecast": "Prognose {date}",
     "cover_next": "Nächster",
-    "cover_open_aria": "Ship-Roadmap für {name} öffnen",
+    "cover_open_aria": "Roadmap für {name} im Notizblock öffnen",
     "cover_shipped_count": "{shipped}/{total} ausgeliefert",
     "crit_contexts": "Kernkontexte gesund",
     "crit_contexts_critical": " · kritisch: {names}",

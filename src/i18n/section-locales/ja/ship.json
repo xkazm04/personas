@@ -27,7 +27,7 @@
   "cover_empty": "マイルストーンなし — 最初のカットを計画",
   "cover_forecast": "予測 {date}",
   "cover_next": "次",
-  "cover_open_aria": "{name} の Ship ロードマップを開く",
+  "cover_open_aria": "メモ帳で {name} のロードマップを開く",
   "cover_shipped_count": "{shipped}/{total} 出荷済み",
   "crit_contexts": "コアコンテキストが健全",
   "crit_contexts_critical": " · 重大: {names}",

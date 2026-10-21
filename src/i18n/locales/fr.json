@@ -19623,7 +19623,7 @@
     "cover_empty": "Aucun jalon — planifiez la première coupe",
     "cover_forecast": "prévision {date}",
     "cover_next": "Suivant",
-    "cover_open_aria": "Ouvrir la feuille de route Ship de {name}",
+    "cover_open_aria": "Ouvrir la feuille de route de {name} dans le Bloc-notes",
     "cover_shipped_count": "{shipped}/{total} livrés",
     "crit_contexts": "Contextes core sains",
     "crit_contexts_critical": " · critique : {names}",
