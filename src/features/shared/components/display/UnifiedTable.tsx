@@ -367,8 +367,10 @@ function TableGhostRows<T>({ columns, gridTemplate, rowHeight, rowPadY, loadingL
 // ---------------------------------------------------------------------------
 
 function ColumnHeader<T>({
-  col, sortKey, sortDir, onSort, resizeHandle, density = 'comfortable',
+  col, sortKey, sortDir, onSort, resizeHandle, density = 'comfortable', semantic = false,
 }: {
+  /** Emit columnheader/aria-sort (only valid inside a labelled role=table). */
+  semantic?: boolean;
   col: TableColumn<T>;
   sortKey: string | null;
   sortDir: 'asc' | 'desc';
@@ -396,10 +398,14 @@ function ColumnHeader<T>({
   const isFiltered = !!(col.filterValue && col.filterValue !== '' && col.filterValue !== 'all');
   const isSearched = !!(col.searchValue && col.searchValue.trim());
 
+  const aria = semantic
+    ? { role: 'columnheader' as const, 'aria-sort': col.sortable ? (isSorted ? (sortDir === 'asc' ? 'ascending' as const : 'descending' as const) : 'none' as const) : undefined }
+    : {};
+
   // Custom filter component takes full control
   if (col.filterComponent) {
     return (
-      <div className={`relative flex items-center gap-1 ${headPad} ${col.align === 'right' ? 'justify-end' : ''}`}>
+      <div {...aria} className={`relative flex items-center gap-1 ${headPad} ${col.align === 'right' ? 'justify-end' : ''}`}>
         {col.filterComponent}
         {resizeHandle}
       </div>
@@ -407,7 +413,7 @@ function ColumnHeader<T>({
   }
 
   return (
-    <div className={`relative flex items-center gap-1 ${headPad} ${col.align === 'right' ? 'justify-end' : ''}`}>
+    <div {...aria} className={`relative flex items-center gap-1 ${headPad} ${col.align === 'right' ? 'justify-end' : ''}`}>
       {/* Same label type the filter-bearing headers get from their filter
           component's trigger (TABLE_HEAD_LABEL): one header scale across every
           column, whether or not it filters. */}
@@ -659,10 +665,13 @@ export function UnifiedTable<T>({
     <div
       role={ariaLabel ? 'table' : undefined}
       aria-label={ariaLabel}
+      aria-rowcount={ariaLabel && (useVirtual || grouped) ? sortedData.length + 1 : undefined}
       className={`${borderless ? '' : 'border border-primary/10 rounded-xl'} overflow-hidden flex flex-col min-h-0 ${resize.isResizing ? 'select-none cursor-col-resize' : ''} ${className ?? ''}`}
     >
       {/* Header */}
       <div
+        role={ariaLabel ? 'row' : undefined}
+        aria-rowindex={ariaLabel && (useVirtual || grouped) ? 1 : undefined}
         className={`grid border-b border-primary/10 ${stickyHeader ? 'sticky top-0 z-20 bg-background/95 backdrop-blur-sm' : 'bg-primary/5'}`}
         style={{ gridTemplateColumns: gridTemplate }}
       >
@@ -674,10 +683,12 @@ export function UnifiedTable<T>({
             sortDir={sortDir}
             onSort={handleSort}
             density={density}
+            semantic={!!ariaLabel}
             resizeHandle={resizable && i < columns.length - 1 ? (
               <ColumnResizeHandle
                 label={t.shared.resize_column}
                 onBeginResize={(w, x) => resize.beginResize(col.key, w, x)}
+                onNudge={(w, d) => resize.resizeBy(col.key, w, d)}
                 onReset={() => resize.clearColumn(col.key)}
               />
             ) : null}
@@ -739,6 +750,7 @@ export function UnifiedTable<T>({
           keyboardNav={keyboardNav}
           activeKey={activeKey}
           rowAttrs={rowAttrs}
+          semantic={!!ariaLabel}
         />
       ) : sortedData.length > 0 && (useVirtual ? (
         <div
@@ -770,6 +782,8 @@ export function UnifiedTable<T>({
                   revealDelayMs={delayFor(rowKey, vRow.index)}
                   onRevealEnd={markEntered}
                   padY={rowPadY}
+                  semantic={!!ariaLabel}
+                  ariaRowIndex={vRow.index + 2}
                   virtualStart={vRow.start}
                   virtualSize={vRow.size}
                 />
@@ -804,6 +818,7 @@ export function UnifiedTable<T>({
                 revealDelayMs={delayFor(rowKey, idx)}
                 onRevealEnd={markEntered}
                 padY={rowPadY}
+                semantic={!!ariaLabel}
               />
             );
           })}
@@ -841,7 +856,9 @@ function GroupedTableBody<T>({
   keyboardNav = true,
   activeKey,
   rowAttrs,
+  semantic,
 }: {
+  semantic?: boolean;
   sortedData: T[];
   columns: TableColumn<T>[];
   gridTemplate: string;
@@ -951,6 +968,8 @@ function GroupedTableBody<T>({
               revealDelayMs={delayFor(rowKey, dataIndex)}
               onRevealEnd={markEntered}
               padY=""
+              semantic={semantic}
+              ariaRowIndex={dataIndex + 2}
               virtualStart={vRow.start}
               virtualSize={rowHeight}
             />

@@ -26,6 +26,8 @@ export interface ColumnWidthsApi {
   template: (columns: { key: string; width: string }[]) => string;
   /** Start a pointer-drag resize for `key`, given the column's current px width. */
   beginResize: (key: string, startWidth: number, clientX: number) => void;
+  /** Keyboard resize: set `key` to `startWidth + delta` px (clamped) and persist. */
+  resizeBy: (key: string, startWidth: number, delta: number) => void;
   /** Drop the override for one column (double-click the handle to restore default). */
   clearColumn: (key: string) => void;
   /** True while a drag-resize is in progress. */
@@ -103,6 +105,15 @@ export function useColumnWidths(tableId: string): ColumnWidthsApi {
     window.addEventListener('pointerup', handleUp);
   }, [persist]);
 
+  const resizeBy = useCallback((key: string, startWidth: number, delta: number) => {
+    const w = Math.max(MIN_COLUMN_WIDTH, Math.round(startWidth + delta));
+    setWidths((prev) => {
+      const next = { ...prev, [key]: w };
+      persist(next);
+      return next;
+    });
+  }, [persist]);
+
   const clearColumn = useCallback((key: string) => {
     setWidths((prev) => {
       if (prev[key] == null) return prev;
@@ -119,12 +130,14 @@ export function useColumnWidths(tableId: string): ColumnWidthsApi {
     [widths],
   );
 
-  return { widths, template, beginResize, clearColumn, isResizing };
+  return { widths, template, beginResize, resizeBy, clearColumn, isResizing };
 }
 
 interface ColumnResizeHandleProps {
   /** Called on drag start with the host header cell's current px width. */
   onBeginResize: (startWidth: number, clientX: number) => void;
+  /** Keyboard resize: ArrowLeft/ArrowRight call this with the cell's current px width and a signed delta. */
+  onNudge?: (startWidth: number, delta: number) => void;
   /** Called on double-click to restore the default width. */
   onReset: () => void;
   /** Accessible label for the divider, e.g. "Resize Persona column". */
@@ -136,12 +149,30 @@ interface ColumnResizeHandleProps {
  * header cell — it pins itself to the cell's right edge. Pointer events are
  * stopped so a drag never triggers the header's sort/filter affordances.
  */
-export function ColumnResizeHandle({ onBeginResize, onReset, label }: ColumnResizeHandleProps) {
+const KEY_STEP = 16;
+
+export function ColumnResizeHandle({ onBeginResize, onNudge, onReset, label }: ColumnResizeHandleProps) {
+  // A focusable separator is a widget and must expose its value. Measured from
+  // the host cell on focus and after each nudge; absent until then.
+  const [now, setNow] = useState<number | undefined>(undefined);
   return (
     <div
       role="separator"
       aria-orientation="vertical"
       aria-label={label}
+      aria-valuenow={onNudge ? now : undefined}
+      aria-valuemin={onNudge ? MIN_COLUMN_WIDTH : undefined}
+      tabIndex={onNudge ? 0 : undefined}
+      onFocus={onNudge ? (e) => setNow(Math.round(e.currentTarget.parentElement?.getBoundingClientRect().width ?? 0)) : undefined}
+      onKeyDown={onNudge ? (e) => {
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+        e.preventDefault();
+        e.stopPropagation();
+        const width = e.currentTarget.parentElement?.getBoundingClientRect().width ?? 0;
+        const delta = e.key === 'ArrowRight' ? KEY_STEP : -KEY_STEP;
+        onNudge(width, delta);
+        setNow(Math.max(MIN_COLUMN_WIDTH, Math.round(width + delta)));
+      } : undefined}
       title={label}
       onPointerDown={(e) => {
         e.preventDefault();

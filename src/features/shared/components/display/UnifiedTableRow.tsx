@@ -59,6 +59,10 @@ export interface UnifiedTableRowProps<T> {
   onRevealEnd: (rowKey: string) => void;
   /** Flow-layout vertical padding class; ignored in virtual placement. */
   padY: string;
+  /** ARIA table semantics (row/cell roles); true only when the table is labelled. */
+  semantic?: boolean;
+  /** 1-based aria-rowindex, set when rows are virtualized or grouped. */
+  ariaRowIndex?: number;
   /** Virtual placement (absolute + translateY). Omit for the flow layout. */
   virtualStart?: number;
   virtualSize?: number;
@@ -96,7 +100,9 @@ export function rowPropsEqual<T>(a: UnifiedTableRowProps<T>, b: UnifiedTableRowP
     a.revealDelayMs !== b.revealDelayMs ||
     a.padY !== b.padY ||
     a.virtualStart !== b.virtualStart ||
-    a.virtualSize !== b.virtualSize
+    a.virtualSize !== b.virtualSize ||
+    a.semantic !== b.semantic ||
+    a.ariaRowIndex !== b.ariaRowIndex
   ) return false;
   if (a.index % 2 !== b.index % 2 || a.index > 0 !== b.index > 0) return false;
   if (b.indexSensitive && a.index !== b.index) return false;
@@ -105,7 +111,7 @@ export function rowPropsEqual<T>(a: UnifiedTableRowProps<T>, b: UnifiedTableRowP
 
 function UnifiedTableRowImpl<T>({
   row, rowKey, index, columns, gridTemplate, onRowClick, clickable, accent, fill, focused, domId, testId,
-  revealDelayMs, onRevealEnd, padY, virtualStart, virtualSize,
+  revealDelayMs, onRevealEnd, padY, virtualStart, virtualSize, semantic, ariaRowIndex,
 }: UnifiedTableRowProps<T>) {
   const virtual = virtualStart !== undefined;
   const entering = revealDelayMs !== null;
@@ -127,6 +133,8 @@ function UnifiedTableRowImpl<T>({
       // real focus target inside the composite, so a pointer click lands focus
       // where the keyboard's arrow keys keep working (keydown bubbles up).
       id={domId}
+      role={semantic ? 'row' : undefined}
+      aria-rowindex={semantic ? ariaRowIndex : undefined}
       data-testid={testId}
       tabIndex={clickable ? -1 : undefined}
       onClick={() => onRowClick(row)}
@@ -138,7 +146,7 @@ function UnifiedTableRowImpl<T>({
       className={`row-hover-lift grid items-center ${virtual ? '' : `px-0 ${padY}`} border-l-2 ${accent ?? 'border-transparent'} hover:bg-primary/[0.12] ${focused ? 'ring-1 ring-inset ring-primary/40 z-[1]' : ''} ${clickable ? 'cursor-pointer' : ''} ${index > 0 ? 'border-t border-t-primary/10' : ''} ${index % 2 === 0 ? 'bg-primary/[0.03]' : ''} ${entering ? 'animate-fade-in' : ''}`}
     >
       {columns.map((col) => (
-        <div key={col.key} className={`px-4 min-w-0 ${col.align === 'right' ? 'text-right' : ''}`}>
+        <div key={col.key} role={semantic ? 'cell' : undefined} className={`px-4 min-w-0 ${col.align === 'right' ? 'text-right' : ''}`}>
           {col.render(row, index)}
         </div>
       ))}
