@@ -7156,14 +7156,19 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:22:13.000Z",
+      "worker": "64299ba0-27fd-40c1-8af0-ddc7df52b12c",
       "techniques": [
         {
           "technique": "memory-governance",
-          "verdict": "not realized: author not stamped from channel, no taint inheritance",
-          "evidence": "src/features/fleet/monitor/channels/ConversationBriefing.tsx:182"
+          "verdict": "deviation",
+          "evidence": "src/features/fleet/monitor/channels/useTeamPin.ts:23 the evidence's author is not harness-stamped from the channel (section 'The evidence has an author')"
+        },
+        {
+          "technique": "episodic-capture",
+          "verdict": "deviation",
+          "evidence": "src/features/fleet/monitor/channels/useTeamPin.ts:21 run_id null and no pointer to the channel item, so the pinned row's provenance does not terminate at a real event"
         }
       ],
       "superseded": [
@@ -7173,6 +7178,13 @@
           "evaluatedAt": "2026-10-09T15:39:28.000Z",
           "worker": "3429d36b-b462-4b05-bc18-7d9e1c2e1e35",
           "reason": "replaced by eb06c63f-1bdf-4963-bd38-1f3a60ec203b"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/fleet/monitor/channels/ConversationBriefing.tsx:178 pins a channel row verbatim into team memory with persona_id = the speaker (:182) and provenance only {source:'conversation-pin'} (:187), no pointer to the channel item, run or approving operator; the row reaches scanner prompts (src-tauri/src/commands/infrastructure/idea_scanner.rs:623). Revision 48 wants the author of evidence harness-stamped from the channel: a speaker relaying third-party text is recorded as the memory's own author",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
+          "reason": "replaced by 64299ba0-27fd-40c1-8af0-ddc7df52b12c"
         }
       ]
     },
@@ -12555,14 +12567,14 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:22:13.000Z",
+      "worker": "64299ba0-27fd-40c1-8af0-ddc7df52b12c",
       "techniques": [
         {
           "technique": "coverage-instrumentation",
-          "verdict": "not realized: 'never covered' and 'all retired' rows both fail",
-          "evidence": "src-tauri/src/commands/infrastructure/memory_health.rs:266"
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/memory_health.rs:213 'Honest zeros': a subject with no memory must report never, not be dropped; the denominator is the snapshot rows, not the tracked population"
         }
       ],
       "superseded": [
@@ -12572,6 +12584,13 @@
           "evaluatedAt": "2026-10-10T01:06:00.000Z",
           "worker": "cc8123ad-a2a0-475b-9a88-c705d9790f61",
           "reason": "replaced by eb06c63f-1bdf-4963-bd38-1f3a60ec203b"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/memory_health.rs:213 a team-bound project with zero memories records no snapshot (counted in the run summary only) and memory_health_overview reads only the latest snapshot (:266), so a never-covered project is absent from the list and a project whose memories all retired keeps serving its last healthy snapshot",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
+          "reason": "replaced by 64299ba0-27fd-40c1-8af0-ddc7df52b12c"
         }
       ]
     },
@@ -12580,19 +12599,25 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:22:13.000Z",
+      "worker": "64299ba0-27fd-40c1-8af0-ddc7df52b12c",
       "techniques": [
         {
           "technique": "decay-and-forgetting",
-          "verdict": "not realized: purge skips the tombstone that makes forgetting durable",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:1506"
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1506 bulk forget leaves no key bar; the section 'A deliberate forget bars re-derivation' is met only by the single-row path at :1436"
+        },
+        {
+          "technique": "durable-store-failure-posture",
+          "verdict": "partially realized",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1509 victims are captured and handed to the reaper ledger and the core tier is spared"
         },
         {
           "technique": "memory-governance",
           "verdict": "partly: core tier guarded, reaper ledger run",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:1486"
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1486",
+          "carriedFrom": "2026-10-14"
         }
       ],
       "superseded": [
@@ -12602,6 +12627,13 @@
           "evaluatedAt": "2026-10-10T01:06:00.000Z",
           "worker": "cc8123ad-a2a0-475b-9a88-c705d9790f61",
           "reason": "replaced by eb06c63f-1bdf-4963-bd38-1f3a60ec203b"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/api/overview/memories.ts:141 deleteAllMemories exposes delete_all (src-tauri/db/src/repos/core/memories.rs:1486), a workspace-wide hard DELETE of every non-core memory (:1506) that writes no fact_key tombstone (single delete does, :1436), so the next consolidation can re-derive every fact. Improved: victims go to the reaper ledger and core tier is spared, but the purge is still not a durable forget",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
+          "reason": "replaced by 64299ba0-27fd-40c1-8af0-ddc7df52b12c"
         }
       ]
     },
@@ -12690,11 +12722,19 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T01:09:48.799Z",
-      "worker": "3ebd8e48-554f-40a8-bc1e-31658ecf232f",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:21:17.000Z",
+      "worker": "fda63bd4-4977-495f-b591-d1f3811baf5b",
       "techniques": [],
-      "registryProposal": "technique-shaped resonance: matched at score 1597 on verdict/blocking/triage tokens, but the governing subjects are human-review-queue and hitl-approval; the golden path's precondition is a check that can refuse, and a human decision surface is not one"
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/agents/quick-answer/triage/triageDispatch.ts:2 the deck routes a human reviewer's verdict (accept/reject vocabulary, src/features/agents/quick-answer/triage/triageTypes.ts:38) to one backend write; no mechanism here computes a verdict over an artifact, so no quality-gates precondition holds",
+          "evaluatedAt": "2026-10-10T01:09:48.799Z",
+          "worker": "3ebd8e48-554f-40a8-bc1e-31658ecf232f",
+          "reason": "replaced by fda63bd4-4977-495f-b591-d1f3811baf5b"
+        }
+      ]
     },
     "dc471d31-ae30-4ac9-b015-d51969df458d/quality-gates": {
       "context": "shared-chrome",
@@ -15102,19 +15142,30 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:22:13.000Z",
+      "worker": "64299ba0-27fd-40c1-8af0-ddc7df52b12c",
       "techniques": [
         {
           "technique": "memory-governance",
-          "verdict": "realized in part: human vs automated actor split decides constraint vs advisory",
-          "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:595"
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:819 an operator correction is remembered without its stated grounds, so an audit of the constraint cannot answer why"
+        },
+        {
+          "technique": "pending-beliefs-live-apart",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:819 the rejection bars the whole subject forever instead of recording the claim as refused for its reason; a re-scoped idea is silently blocked"
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "realized (author tier)",
+          "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:797 automated rejections are advisory importance-5 decisions, human ones constraints"
         },
         {
           "technique": "memory-value-model",
           "verdict": "not realized: the reason separating 'already done' from 'not worth it' is dropped",
-          "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:819"
+          "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:819",
+          "carriedFrom": "2026-10-14"
         }
       ],
       "superseded": [
@@ -15124,6 +15175,13 @@
           "evaluatedAt": "2026-10-10T11:14:00.000Z",
           "worker": "ae1def3a-8e43-4ee7-a7e9-a74fe0c5d27d",
           "reason": "replaced by eb06c63f-1bdf-4963-bd38-1f3a60ec203b"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:805 the idea-verdict memory is built from title+description only (content :819) though the idea carries rejection_reason (src-tauri/core/src/models/dev_tools.rs:1145) and the deck asks for it (src/features/agents/quick-answer/triage/triageAdapters.ts:790): a human rejection recalls as one permanent never-re-surface rule whatever the reason. Improved since last judged: automated rejections are now advisory importance-5 decisions (src-tauri/src/commands/infrastructure/dev_tools.rs:595, :815)",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
+          "reason": "replaced by 64299ba0-27fd-40c1-8af0-ddc7df52b12c"
         }
       ]
     },
@@ -15132,19 +15190,20 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:22:13.000Z",
+      "worker": "64299ba0-27fd-40c1-8af0-ddc7df52b12c",
       "techniques": [
         {
           "technique": "pending-beliefs-live-apart",
-          "verdict": "not realized: pending and approved share one table and one filter",
-          "evidence": "src-tauri/db/src/repos/twin.rs:602"
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/twin.rs:602 the status-column design the technique names as its first failure mode; at least three readers, so the one-reader exemption does not hold"
         },
         {
           "technique": "filter-at-the-id-door",
           "verdict": "partly: reader filters at query but only by convention",
-          "evidence": "src-tauri/src/engine/twin_prompt/input.rs:211"
+          "evidence": "src-tauri/src/engine/twin_prompt/input.rs:211",
+          "carriedFrom": "2026-10-14"
         }
       ],
       "superseded": [
@@ -15154,6 +15213,13 @@
           "evaluatedAt": "2026-10-10T11:14:00.000Z",
           "worker": "ae1def3a-8e43-4ee7-a7e9-a74fe0c5d27d",
           "reason": "replaced by eb06c63f-1bdf-4963-bd38-1f3a60ec203b"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/stores/slices/system/twinSlice.ts:68 the twin's live beliefs are TwinPendingMemory rows with status='approved' (:522) because approval flips a status (src-tauri/db/src/repos/twin.rs:602) instead of moving to a belief store: every live read (src-tauri/src/engine/twin_prompt/input.rs:211) must remember the filter, and one that forgets injects pending/rejected claims as settled",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
+          "reason": "replaced by 64299ba0-27fd-40c1-8af0-ddc7df52b12c"
         }
       ]
     },
@@ -15255,39 +15321,64 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T11:13:52.000Z",
-      "worker": "2d8e0e50-5978-4133-8647-1bbaae10b6ce",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:21:17.000Z",
+      "worker": "fda63bd4-4977-495f-b591-d1f3811baf5b",
       "techniques": [
+        {
+          "technique": "gate-liveness",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/verify.ts:104 absence counts as cleared only when the sensor was probed (doctrine realized, but in an assessment loop, not a gate)"
+        },
         {
           "technique": "unmeasurable-criteria",
           "verdict": "realized (in an assessment)",
-          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/verify.ts:104 a sensor that did not probe this sweep yields 'pending' with reason sensor_not_probed, never 'cleared' - absence in the instrument is not read as compliance"
+          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/verify.ts:104 a sensor that did not probe this sweep yields 'pending' with reason sensor_not_probed, never 'cleared' - absence in the instrument is not read as compliance",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "advancement-evidence-fields",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/verify.ts:168 the verify state is written only after the item already shipped; no stage boundary is gated on it"
+          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/verify.ts:168 the verify state is written only after the item already shipped; no stage boundary is gated on it",
+          "carriedFrom": "2026-10-10"
         }
       ],
-      "registryProposal": "Upward lesson for unmeasurable-criteria / measurement-honesty: verify.ts:95-112 makes the probed-origins set a REQUIRED argument so no call site can forget to distinguish 'signal absent' from 'sensor skipped' - the derivation lives in the signature, not in a null-check each caller must remember."
+      "registryProposal": "Upward lesson for gate-liveness / conformance-checking: verify.ts:104 resolves 'finding absent from a fresh run' to pending unless that sensor actually ran this sweep - assert-the-instrument applied to fix verification rather than to a gate; candidate application row.",
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/sweep.ts:266 the findings loop only records a re-measured verify state (cleared/moved/unchanged/regressed/pending); nothing in the context refuses a change, commit, release or advancement on it - assessment, not refusal (matched on finding/rule tokens)",
+          "evaluatedAt": "2026-10-10T11:13:52.000Z",
+          "worker": "2d8e0e50-5978-4133-8647-1bbaae10b6ce",
+          "reason": "replaced by fda63bd4-4977-495f-b591-d1f3811baf5b"
+        }
+      ]
     },
     "ef73ca1c-fc54-4b9c-83ec-390c54929192/quality-gates": {
       "context": "overview-manual-review",
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T11:13:52.000Z",
-      "worker": "2d8e0e50-5978-4133-8647-1bbaae10b6ce",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:21:17.000Z",
+      "worker": "fda63bd4-4977-495f-b591-d1f3811baf5b",
       "techniques": [
         {
           "technique": "policy-projection",
           "verdict": "not-applicable",
-          "evidence": "src/features/overview/sub_manual-review/components/AutoResolvedBadge.tsx:16 projects the auto-resolution policy onto rows, but the projected policy is review routing, not a quality gate"
+          "evidence": "src/features/overview/sub_manual-review/components/AutoResolvedBadge.tsx:16 projects the auto-resolution policy onto rows, but the projected policy is review routing, not a quality gate",
+          "carriedFrom": "2026-10-10"
         }
       ],
-      "registryProposal": "Coverage: matched on backlog/review/item tokens; the governing subjects are hitl-approval and triage-queues. Reviews dropped upstream by the dispatch quality gate (see db-repos-execution) never reach this inbox and leave no marker here."
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/overview/sub_manual-review/libs/reviewHelpers.ts:98 the inbox only reads verdicts made elsewhere (human decisions, or trust_llm/auto_triage notes the engine wrote) and renders them; nothing in this context computes a verdict over an artifact or refuses anything - hitl-approval/triage-queues govern it",
+          "evaluatedAt": "2026-10-10T11:13:52.000Z",
+          "worker": "2d8e0e50-5978-4133-8647-1bbaae10b6ce",
+          "reason": "replaced by fda63bd4-4977-495f-b591-d1f3811baf5b"
+        }
+      ]
     },
     "0f1de245-e9ba-41df-9b6c-d9ccd91dfb4b/quality-gates": {
       "context": "site-whitelist-management",
@@ -18994,10 +19085,26 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T07:49:49.292Z",
-      "worker": "0408d088-1b0c-464a-b9c4-5ec13c2256ba",
-      "techniques": []
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:21:17.000Z",
+      "worker": "fda63bd4-4977-495f-b591-d1f3811baf5b",
+      "techniques": [
+        {
+          "technique": "waiver-names-its-finding",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/bundle.rs:582 the override takes effect only when it names the exact finding kind ('tamper' vs 'unknown') - resonance, outside the subject's precondition"
+        }
+      ],
+      "registryProposal": "Technique-shaped resonance: bundle.rs:582 realizes waiver-names-its-finding (the escape must equal the gate's own finding kind; a mismatched acknowledgement still refuses) on a provenance gate. signed-artifacts could cite waiver-names-its-finding for its 'import anyway' override; the gate itself lives in context test-runner-lab (bundle.rs), not here.",
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/settings/sub_network/components/BundleImportDialog.tsx:228 the context is a UI over a backend integrity verdict with an acknowledged_risk override; it is bundle trust (signed-artifacts territory), not an engineering check over a tree, commit or release. Backend half not read here.",
+          "evaluatedAt": "2026-10-14T07:49:49.292Z",
+          "worker": "0408d088-1b0c-464a-b9c4-5ec13c2256ba",
+          "reason": "replaced by fda63bd4-4977-495f-b591-d1f3811baf5b"
+        }
+      ]
     },
     "739b6d67-2c36-41ee-9794-a74bc0b25cfd/quality-gates": {
       "context": "display-table-primitives",
@@ -23674,20 +23781,38 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T07:49:49.292Z",
-      "worker": "0408d088-1b0c-464a-b9c4-5ec13c2256ba",
-      "techniques": []
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:21:17.000Z",
+      "worker": "fda63bd4-4977-495f-b591-d1f3811baf5b",
+      "techniques": [],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/webbuild/versions.rs:100 restore is refused unless the live tree was captured first - a data-safety precondition, not a quality standard gating advancement; no check over a commit or release exists in the context.",
+          "evaluatedAt": "2026-10-14T07:49:49.292Z",
+          "worker": "0408d088-1b0c-464a-b9c4-5ec13c2256ba",
+          "reason": "replaced by fda63bd4-4977-495f-b591-d1f3811baf5b"
+        }
+      ]
     },
     "7f6d3238-7136-4361-af8f-bca556ae2042/quality-gates": {
       "context": "mcp-server",
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T07:49:49.292Z",
-      "worker": "0408d088-1b0c-464a-b9c4-5ec13c2256ba",
-      "techniques": []
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:21:17.000Z",
+      "worker": "fda63bd4-4977-495f-b591-d1f3811baf5b",
+      "techniques": [],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/mcp_server/auth.rs:61 authorize_tool_call is token authorization (authorization subject); the only gate text in the context (backlog.rs:326 `gate red`) is a test fixture string, not a gate.",
+          "evaluatedAt": "2026-10-14T07:49:49.292Z",
+          "worker": "0408d088-1b0c-464a-b9c4-5ec13c2256ba",
+          "reason": "replaced by fda63bd4-4977-495f-b591-d1f3811baf5b"
+        }
+      ]
     },
     "a35d1f4a-5de8-4be1-af8b-1a3784296400/table": {
       "context": "plugins-artist-gallery",
@@ -24249,29 +24374,40 @@
       "subject": "prompt-assembly",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T00:00:00.000Z",
-      "worker": "03ab05cd-5f89-4d7c-bd2c-1d7e91fc69b2",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:20:56.000Z",
+      "worker": "cb18bd68-e15b-4264-9dc5-527cffc34328",
       "techniques": [
         {
           "technique": "task-envelope",
-          "verdict": "deviation: competence-claim opening in both builders",
-          "evidence": "src-tauri/src/commands/design/n8n_transform/prompts.rs:364 and :439"
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/design/n8n_transform/prompts.rs:439 expertise claim where a locate pointer belongs"
+        },
+        {
+          "technique": "context-budgeting",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/design/n8n_transform/prompt_sanitizer.rs:201 truncation that does not name what it dropped"
         },
         {
           "technique": "variable-interpolation",
           "verdict": "realized for trust: every workflow-derived span is sanitized then wrapped in a nonce-tagged boundary, and empty optional spans are omitted rather than rendered empty",
-          "evidence": "src-tauri/src/commands/design/n8n_transform/prompt_sanitizer.rs:171 wrap_xml_boundary with random nonce; prompts.rs:326-328 wrap workflow data, :330-355 filter-empty then wrap with the section omitted when absent"
-        },
-        {
-          "technique": "context-budgeting",
-          "verdict": "partial: the unified prompt names its 5000-char cut ('first 5000 chars') but the transform prompt's 50,000-byte cap is silent",
-          "evidence": "src-tauri/src/commands/design/n8n_transform/prompts.rs:506 labels the cut; prompt_sanitizer.rs:201 does not"
+          "evidence": "src-tauri/src/commands/design/n8n_transform/prompt_sanitizer.rs:171 wrap_xml_boundary with random nonce; prompts.rs:326-328 wrap workflow data, :330-355 filter-empty then wrap with the section omitted when absent",
+          "carriedFrom": "2026-10-14"
         },
         {
           "technique": "layered-composition",
           "verdict": "realized in shape: standing fragments come from named builders and the untrusted workflow data trails them",
-          "evidence": "src-tauri/src/commands/design/n8n_transform/prompts.rs:75 build_credential_adaptation_rules, :91 build_protocol_docs, :168, :224 composed in order at :381 before the workflow data wrapped at :326-328"
+          "evidence": "src-tauri/src/commands/design/n8n_transform/prompts.rs:75 build_credential_adaptation_rules, :91 build_protocol_docs, :168, :224 composed in order at :381 before the workflow data wrapped at :326-328",
+          "carriedFrom": "2026-10-14"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/design/n8n_transform/prompts.rs:364 and :439 both open with 'You are a senior Personas architect', the same expertise-claim opening as the build prompt; and sanitize_json_payload cuts the workflow at 50,000 bytes with no notice (prompt_sanitizer.rs:155 truncate_safe, :201 use), so the model reasons over a silently partial workflow in the transform prompt.",
+          "evaluatedAt": "2026-10-14T00:00:00.000Z",
+          "worker": "03ab05cd-5f89-4d7c-bd2c-1d7e91fc69b2",
+          "reason": "replaced by cb18bd68-e15b-4264-9dc5-527cffc34328"
         }
       ]
     },
@@ -24322,19 +24458,28 @@
       "subject": "prompt-assembly",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T00:00:00.000Z",
-      "worker": "03ab05cd-5f89-4d7c-bd2c-1d7e91fc69b2",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:20:56.000Z",
+      "worker": "cb18bd68-e15b-4264-9dc5-527cffc34328",
       "techniques": [
         {
           "technique": "layered-composition",
-          "verdict": "deviation: prompt text born at command call sites (fleet_bridge.rs:572, approval_exec_dev.rs:535, approvals/app_master_hire.rs:132), no shared assembler, volatile content before standing rules",
-          "evidence": "src-tauri/src/commands/companion/fleet_bridge.rs:572-576"
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/companion/fleet_bridge.rs:572 prompt text concatenated at the command call site, volatile blocks before standing rules"
         },
         {
           "technique": "variable-interpolation",
-          "verdict": "deviation: session screen content and user scenario text interpolated with no trust class or boundary",
-          "evidence": "src-tauri/src/commands/companion/fleet_bridge.rs:575-576 and src-tauri/src/commands/companion/approvals/approval_exec_dev.rs:543"
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_dev.rs:543 untrusted user scenario inserted with no declared trust class or fence"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/companion/fleet_bridge.rs:572 builds the fleet-orchestration directive with an inline format! at the command call site, embedding the unfenced session digest and screen blocks ({digest} at :575, {blocks} at :576) ahead of the standing outcome rules; approval_exec_dev.rs:535 does the same with the user's {scenario} at :543. This is the call-site concatenation the layered-composition technique names as sprawl.",
+          "evaluatedAt": "2026-10-14T00:00:00.000Z",
+          "worker": "03ab05cd-5f89-4d7c-bd2c-1d7e91fc69b2",
+          "reason": "replaced by cb18bd68-e15b-4264-9dc5-527cffc34328"
         }
       ]
     },
@@ -24343,19 +24488,28 @@
       "subject": "prompt-assembly",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T00:00:00.000Z",
-      "worker": "03ab05cd-5f89-4d7c-bd2c-1d7e91fc69b2",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:20:56.000Z",
+      "worker": "cb18bd68-e15b-4264-9dc5-527cffc34328",
       "techniques": [
         {
           "technique": "task-envelope",
-          "verdict": "deviation: expertise-claim opening; a JSON-shape done criterion exists but no check step",
-          "evidence": "src-tauri/src/commands/recipes/recipe_generation.rs:34"
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/recipes/recipe_generation.rs:34 role/competence priming opens the task prompt"
         },
         {
           "technique": "variable-interpolation",
-          "verdict": "deviation: user text enters unclassified, with no boundary or cap",
-          "evidence": "src-tauri/src/commands/recipes/recipe_generation.rs:37 {description}"
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/recipes/crud.rs:309 untrusted description passed with only trim(), inserted unfenced at recipe_generation.rs:37"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/recipes/recipe_generation.rs:34 opens with a role claim ('You are an API recipe designer for the ...') and :37 interpolates the user's free-text {description} raw into the task layer, unfenced and uncapped.",
+          "evaluatedAt": "2026-10-14T00:00:00.000Z",
+          "worker": "03ab05cd-5f89-4d7c-bd2c-1d7e91fc69b2",
+          "reason": "replaced by cb18bd68-e15b-4264-9dc5-527cffc34328"
         }
       ]
     },
@@ -24406,22 +24560,38 @@
       "subject": "prompt-assembly",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T00:00:00.000Z",
-      "worker": "03ab05cd-5f89-4d7c-bd2c-1d7e91fc69b2",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:20:56.000Z",
+      "worker": "cb18bd68-e15b-4264-9dc5-527cffc34328",
       "techniques": [],
-      "registryProposal": "matcher hit on 'prompt' vocabulary; the editor edits the identity layer's source text, it does not assemble"
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "precondition unmet: the editor is a client-side form over stored persona fields and assembles no prompt; src/features/agents/sub_editor/hooks/useEditorDraft.ts:53 only copies selectedPersona.system_prompt into draft state, and assembly lives in src-tauri/engine/src/prompt/assemble.rs:112",
+          "evaluatedAt": "2026-10-14T00:00:00.000Z",
+          "worker": "03ab05cd-5f89-4d7c-bd2c-1d7e91fc69b2",
+          "reason": "replaced by cb18bd68-e15b-4264-9dc5-527cffc34328"
+        }
+      ]
     },
     "e0a448bc-24d4-4663-ba31-27d4ce378a14/prompt-assembly": {
       "context": "agents-deployment",
       "subject": "prompt-assembly",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T00:00:00.000Z",
-      "worker": "03ab05cd-5f89-4d7c-bd2c-1d7e91fc69b2",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:20:56.000Z",
+      "worker": "cb18bd68-e15b-4264-9dc5-527cffc34328",
       "techniques": [],
-      "registryProposal": "matcher hit on 'prompt'/'persona' vocabulary"
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "precondition unmet: the deployment tab sends one canned smoke-test string, not an assembled prompt family; src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:17 DEFAULT_TEST_PROMPT is a literal passed to executePersona at :58",
+          "evaluatedAt": "2026-10-14T00:00:00.000Z",
+          "worker": "03ab05cd-5f89-4d7c-bd2c-1d7e91fc69b2",
+          "reason": "replaced by cb18bd68-e15b-4264-9dc5-527cffc34328"
+        }
+      ]
     },
     "89eddf81-0c57-441d-a07d-de36bf022cb5/prompt-assembly": {
       "context": "display-data-formatters",
@@ -24450,11 +24620,19 @@
       "subject": "prompt-assembly",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T00:00:00.000Z",
-      "worker": "03ab05cd-5f89-4d7c-bd2c-1d7e91fc69b2",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:20:56.000Z",
+      "worker": "cb18bd68-e15b-4264-9dc5-527cffc34328",
       "techniques": [],
-      "registryProposal": "matcher hit on 'prompt starters'"
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "precondition unmet: the studio UI holds canned i18n vision starters that seed a text box, and the assembly of the build prompt happens server-side; src/features/studio/StudioVisionStart.tsx:23 STARTERS are label/vision keys applied at :100 applyStarter",
+          "evaluatedAt": "2026-10-14T00:00:00.000Z",
+          "worker": "03ab05cd-5f89-4d7c-bd2c-1d7e91fc69b2",
+          "reason": "replaced by cb18bd68-e15b-4264-9dc5-527cffc34328"
+        }
+      ]
     },
     "1ffb5765-de47-4f01-87ec-06732a63522c/test-harness": {
       "context": "i18n-generated",
@@ -25338,24 +25516,35 @@
       "subject": "cost-metering",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-15",
-      "evaluatedTs": "2026-10-15T21:35:41.778Z",
-      "worker": "925f883c-ea35-4b36-ba0f-e1617949b4e9",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:23:30.000Z",
+      "worker": "3be33576-1edf-4ffc-aa7c-85fc6ad18e12",
       "techniques": [
         {
           "technique": "spend-observability",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_deployment/components/cloud/DailyBreakdownChart.tsx:70 Failed-call spend is folded into the daily total cost line without a dedicated series or failure-reason breakdown."
+          "evidence": "src/features/agents/sub_deployment/components/cloud/DailyBreakdownChart.tsx:70 failed-call spend folded into one total cost series"
         },
         {
           "technique": "unit-classes-are-open",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_deployment/components/cloud/CloudExecutionRow.tsx:59 Summing input and output tokens into an un-split scalar collapses the direction split and ignores additional provider unit classes."
+          "evidence": "src/features/agents/sub_deployment/components/cloud/CloudExecutionRow.tsx:59 Summing input and output tokens into an un-split scalar collapses the direction split and ignores additional provider unit classes.",
+          "carriedFrom": "2026-10-15"
         },
         {
           "technique": "budget-enforcement",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_deployment/components/cloud/cloudDeploymentHelpers.ts:19 Deployment budget utilization is computed purely for UI gauge presentation and lacks any gating to block executions when exceeded."
+          "evidence": "src/features/agents/sub_deployment/components/cloud/cloudDeploymentHelpers.ts:19 Deployment budget utilization is computed purely for UI gauge presentation and lacks any gating to block executions when exceeded.",
+          "carriedFrom": "2026-10-15"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_deployment/components/cloud/DailyBreakdownChart.tsx:70 The daily breakdown chart maps only total aggregate cost to a trend line, folding failed-call spend invisibly into totals rather than rendering it as its own series with failure reasons as required by spend-observability.",
+          "evaluatedAt": "2026-10-15T21:35:41.778Z",
+          "worker": "925f883c-ea35-4b36-ba0f-e1617949b4e9",
+          "reason": "replaced by 3be33576-1edf-4ffc-aa7c-85fc6ad18e12"
         }
       ]
     },
@@ -25364,24 +25553,26 @@
       "subject": "cost-metering",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T18:07:52.000Z",
-      "worker": "26a261d0-277d-43e2-8c68-5107a8d2f5f2",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:23:30.000Z",
+      "worker": "3be33576-1edf-4ffc-aa7c-85fc6ad18e12",
       "techniques": [
         {
           "technique": "budget-enforcement",
           "verdict": "deviation",
-          "evidence": "src/stores/slices/agents/budgetEnforcementSlice.ts:151 override is an unrecorded in-memory Set that the server gate src-tauri/src/commands/execution/executions.rs:476 never consults; the UI gate reads a 60s-TTL frontend mirror (:29) instead of the store it enforces, and fails open before the first fetch (:148)"
+          "evidence": "src-tauri/src/commands/execution/executions.rs:481 backend gate has no override path; the frontend override at src/stores/slices/agents/budgetEnforcementSlice.ts:154 is unrecorded and cannot unblock it"
         },
         {
           "technique": "usage-ledgers",
           "verdict": "deviation",
-          "evidence": "src/stores/slices/agents/budgetEnforcementSlice.ts:106 keeps only result.items and discards MonthlySpendResult.periodStartUtc, so the reset label is re-derived in local time by a consumer (src/features/agents/sub_executions/components/runner/BudgetRecoveryCard.tsx:17) while the gate uses the UTC month"
+          "evidence": "src/stores/slices/agents/budgetEnforcementSlice.ts:106 keeps only result.items and discards MonthlySpendResult.periodStartUtc, so the reset label is re-derived in local time by a consumer (src/features/agents/sub_executions/components/runner/BudgetRecoveryCard.tsx:17) while the gate uses the UTC month",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "spend-observability",
           "verdict": "not-applicable",
-          "evidence": "src/stores/slices/agents/budgetEnforcementSlice.ts:33 the slice holds per-persona gate state only; no spend surface is drawn here"
+          "evidence": "src/stores/slices/agents/budgetEnforcementSlice.ts:33 the slice holds per-persona gate state only; no spend surface is drawn here",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "preflight-estimation",
@@ -25394,6 +25585,15 @@
           "verdict": "deviation",
           "evidence": "src/stores/slices/agents/chatSlice.ts:32 Streaming chat uses an elapsed wall-clock timeout watchdog rather than accumulating active working turn durations.",
           "carriedFrom": "2026-10-15"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/stores/slices/agents/budgetEnforcementSlice.ts:151 the session-scoped \"Run anyway\" override unblocks only the frontend mirror and is never recorded, while the real gate at src-tauri/src/commands/execution/executions.rs:476 takes no override and refuses the run as a generic Validation error - the slice header (:23 \"frontend-only gating\") describes a gate that no longer exists, so the override is a dead door",
+          "evaluatedAt": "2026-10-16T18:07:52.000Z",
+          "worker": "26a261d0-277d-43e2-8c68-5107a8d2f5f2",
+          "reason": "replaced by 3be33576-1edf-4ffc-aa7c-85fc6ad18e12"
         }
       ]
     },
@@ -25450,24 +25650,35 @@
       "subject": "cost-metering",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-15",
-      "evaluatedTs": "2026-10-15T21:35:41.778Z",
-      "worker": "925f883c-ea35-4b36-ba0f-e1617949b4e9",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:23:30.000Z",
+      "worker": "3be33576-1edf-4ffc-aa7c-85fc6ad18e12",
       "techniques": [
         {
           "technique": "spend-observability",
           "verdict": "deviation",
-          "evidence": "src/features/overview/sub_observability/components/MetricsCharts.tsx:108 Aggregate cost is rendered as a single curve without separating failed-call spend or exposing default-priced share."
+          "evidence": "src/features/overview/sub_observability/components/MetricsCharts.tsx:105 single undifferentiated cost series; failed shown as counts at :130, not spend"
         },
         {
           "technique": "budget-enforcement",
           "verdict": "deviation",
-          "evidence": "src/features/overview/sub_observability/components/AlertRulesPanel.tsx:94 Alert rules act as retroactive notifications rather than proactive gates that prevent calls exceeding the budget."
+          "evidence": "src/features/overview/sub_observability/components/AlertRulesPanel.tsx:94 Alert rules act as retroactive notifications rather than proactive gates that prevent calls exceeding the budget.",
+          "carriedFrom": "2026-10-15"
         },
         {
           "technique": "usage-ledgers",
           "verdict": "deviation",
-          "evidence": "src/features/overview/sub_observability/components/AthenaSpendSection.tsx:71 Athena spend rollups lack direction-split units and do not distinguish failed-call spend from successful turns."
+          "evidence": "src/features/overview/sub_observability/components/AthenaSpendSection.tsx:71 Athena spend rollups lack direction-split units and do not distinguish failed-call spend from successful turns.",
+          "carriedFrom": "2026-10-15"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_observability/components/MetricsCharts.tsx:108 Cost over time is drawn as an undifferentiated area curve that lacks a failed-call spend series, outlier call inspection, and metering pipeline health indicators.",
+          "evaluatedAt": "2026-10-15T21:35:41.778Z",
+          "worker": "925f883c-ea35-4b36-ba0f-e1617949b4e9",
+          "reason": "replaced by 3be33576-1edf-4ffc-aa7c-85fc6ad18e12"
         }
       ]
     },
@@ -32115,6 +32326,58 @@
         }
       ],
       "registryProposal": "Context is marked governance weak, but the subject genuinely governs it: tick.rs is a supervised loop. The loop-health-telemetry root cause sits in the shared ReactiveSubscription trait (src-tauri/engine/src/subscription/traits.rs:37, another context) and is likely the same deviation for all ~41 subscriptions; a pairing of background-jobs to the engine-subscription context is worth checking."
+    },
+    "b6e66a59-78d3-465e-83b7-e77498b4c6ae/eval-harness": {
+      "context": "stores-slices-agents",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:28:26.000Z",
+      "worker": "8034a62c-3406-4d0e-be81-6627e0bca59b",
+      "techniques": [
+        {
+          "technique": "comparison-modes",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/libs/versionMatrixRows.ts:110 deltaVsBaseline subtracts the baseline version current composite (compositeFor over live versionRatings), not a frozen run score; tracking quality over time requires absolute scoring on a frozen instrument"
+        },
+        {
+          "technique": "scenario-design",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/agents/labSlice.ts:51 the pin records no suite, scenario version or judge packet, and the runId that could recover them is written as an empty string, so the instrument behind the baseline score has no identity"
+        }
+      ],
+      "registryProposal": "Pinning a regression baseline is its own small technique (pin a measurement, not a candidate): a baseline keyed by version only silently re-scores itself whenever the version gains ratings under a new suite or judge. comparison-modes says absolute on a frozen instrument but does not name the baseline-pin shape."
+    },
+    "6c0d30e4-99b9-4580-ba02-9a526db1d639/eval-harness": {
+      "context": "agent-health",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:28:26.000Z",
+      "worker": "8034a62c-3406-4d0e-be81-6627e0bca59b",
+      "techniques": []
+    },
+    "33a96a83-6adc-42f7-b57c-839382bcef54/eval-harness": {
+      "context": "commands-curator",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:28:26.000Z",
+      "worker": "8034a62c-3406-4d0e-be81-6627e0bca59b",
+      "techniques": []
+    },
+    "54236947-3775-4d0a-8e14-1a709dd4d8bc/eval-harness": {
+      "context": "teams-factory",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-21",
+      "evaluatedTs": "2026-10-21T17:28:26.000Z",
+      "worker": "8034a62c-3406-4d0e-be81-6627e0bca59b",
+      "techniques": []
     }
   }
 }
