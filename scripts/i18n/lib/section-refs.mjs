@@ -121,6 +121,8 @@ export function scanSectionReferences({ root, srcDir, sections }) {
     } catch {
       continue;
     }
+    // `t?.cockpit?.inbox` is a read of `t.cockpit.inbox`; see find-unused-i18n-keys.mjs.
+    src = src.replace(/\?\.(?=[A-Za-z_$])/g, '.');
 
     let m;
     T_REF_RE.lastIndex = 0;
