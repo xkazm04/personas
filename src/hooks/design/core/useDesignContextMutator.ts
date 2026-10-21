@@ -4,7 +4,7 @@ import {
   parseDesignContext,
   serializeDesignContext,
   mergeCredentialLink,
-} from '@/features/agents/sub_lab/use-cases/UseCasesList';
+} from '@/features/agents/shared/designContext';
 import type { DesignFilesSection, DesignUseCase } from '@/lib/types/frontendTypes';
 import { extractMessage } from '@/lib/silentCatch';
 

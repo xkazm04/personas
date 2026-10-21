@@ -26,6 +26,9 @@
  */
 const fs = require("node:fs");
 const path = require("node:path");
+// The className walk (literals, templates, cn()/clsx(), join, ternaries) is
+// shared with the other design-token rules.
+const { extractClassStrings, collectClassText, isClassNameAttribute } = require("./_classname-strings.cjs");
 
 const SKIP_DIRS = new Set(["node_modules", ".git", "dist", "target", "coverage"]);
 
@@ -132,79 +135,11 @@ module.exports = {
     schema: [],
   },
   create(context) {
-    /**
-     * Extract string values from a JSX expression.
-     * Handles: literal strings, template literals, array.join() patterns,
-     * and cn()/clsx() function call arguments.
-     */
-    function extractStrings(node) {
-      if (!node) return [];
-
-      if (node.type === "Literal" && typeof node.value === "string") {
-        return [{ value: node.value, node }];
-      }
-
-      if (node.type === "TemplateLiteral") {
-        return node.quasis.map((q) => ({ value: q.value.raw, node: q }));
-      }
-
-      if (node.type === "JSXExpressionContainer") {
-        return extractStrings(node.expression);
-      }
-
-      // Handle array.join(' ') patterns: ['text-sm', ...].join(' ')
-      if (
-        node.type === "CallExpression" &&
-        node.callee.type === "MemberExpression" &&
-        node.callee.property.name === "join" &&
-        node.callee.object.type === "ArrayExpression"
-      ) {
-        const results = [];
-        for (const el of node.callee.object.elements) {
-          if (el) results.push(...extractStrings(el));
-        }
-        return results;
-      }
-
-      // Handle cn(...), clsx(...), twMerge(...) function calls
-      if (
-        node.type === "CallExpression" &&
-        node.callee.type === "Identifier" &&
-        /^(cn|clsx|twMerge|classNames|cx)$/.test(node.callee.name)
-      ) {
-        const results = [];
-        for (const arg of node.arguments) {
-          results.push(...extractStrings(arg));
-        }
-        return results;
-      }
-
-      // Handle conditional (ternary) expressions: condition ? 'a' : 'b'
-      if (node.type === "ConditionalExpression") {
-        return [
-          ...extractStrings(node.consequent),
-          ...extractStrings(node.alternate),
-        ];
-      }
-
-      return [];
-    }
-
-    /**
-     * Collect all string fragments reachable from a className attribute
-     * to check for mono context across the entire value.
-     */
-    function collectAllText(node) {
-      return extractStrings(node)
-        .map((p) => p.value)
-        .join(" ");
-    }
-
     return {
       JSXAttribute(node) {
-        if (node.name.name !== "className") return;
+        if (!isClassNameAttribute(node)) return;
 
-        const parts = extractStrings(node.value);
+        const parts = extractClassStrings(node.value);
 
         // Phantom typo-* names are reported wherever they appear, mono or not.
         if (READER_OK) {
@@ -224,7 +159,7 @@ module.exports = {
         }
 
         // Full text for context checks: only a REAL typo-* token exempts.
-        const fullText = collectAllText(node.value);
+        const fullText = collectClassText(node.value);
         if (hasRealTypo(fullText)) return; // already has a semantic class
         if (MONO_RE.test(fullText)) return; // mono context, skip
 

@@ -36,3 +36,10 @@ they don't recognize.
 - **Vendor-neutral.** Any coding agent can read and write this; it names no tool.
 
 The first entry below records adopting this standard — it doubles as a worked example of the format.
+
+## Finding a decision
+
+This store is one of four places a decision can be recorded here (the others: the directions ledger
+`.ai/directions/ledger.jsonl` and the two `/ship-loop` logs under `.claude/ship-loop/`).
+[`docs/decisions.md`](../../docs/decisions.md) indexes all four in one file; search that first. After
+adding a memory, run `node scripts/docs/gen-decision-index.mjs`: `npm test` fails while the index is stale.

@@ -40,7 +40,10 @@ const path = '.ai/manifest.yaml';
 if (!existsSync(path)) {
   add('fail', 'missing .ai/manifest.yaml - run the Ascent onboarding skill to scaffold the standard');
 } else {
-  const text = readFileSync(path, 'utf8');
+  // LF-normalised once, as project-commands.mjs does: the block parsers below split on '\n', so a
+  // manifest saved with CRLF (a Windows editor, a PowerShell rewrite) otherwise lost every
+  // capability and failed as "no capabilities declared" while the file was fine.
+  const text = readFileSync(path, 'utf8').replace(/\r\n/g, '\n');
 
   // 1. structure
   const schema = kv(text, 'schema');
@@ -104,7 +107,7 @@ if (!existsSync(path)) {
     try {
       for (const m of (JSON.parse(readFileSync(ctxIndex, 'utf8')).modules || []))
         if (m.context && !existsSync(m.context)) add('fail', 'context-index references missing ' + m.context);
-    } catch { add('warn', 'context-index.json is not valid JSON'); }
+    } catch { add('fail', ctxIndex + ' is not valid JSON - the context check above read nothing'); }
   }
   if (/TODO/.test(text)) add('warn', 'manifest still has TODO placeholders (purpose / secretsFrom / boundaries / agents)');
 }

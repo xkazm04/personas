@@ -2,7 +2,7 @@
 
 Thanks for your interest in contributing! Personas Desktop is a community project and we welcome issues, discussions, and pull requests of all sizes — from typo fixes to entire features.
 
-This document covers how to get set up, how we work, and what we expect from contributions. For the system architecture, see [ARCHITECTURE.md](./ARCHITECTURE.md). For day-to-day development tasks, see [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md).
+This document covers how to get set up, how we work, and what we expect from contributions. For the system architecture, see [docs/architecture](./docs/architecture/README.md). For day-to-day development tasks, see [docs/development](./docs/development/README.md).
 
 ---
 
@@ -48,6 +48,17 @@ Copy `.env.example` to `.env` and fill in the values you need. Most keys are opt
 
 ## Development Workflow
 
+There are two ways changes land here, and they follow different rules. Read the one that fits you.
+
+| You are | How your change lands | The rules you follow |
+|---|---|---|
+| **An external contributor** | Fork, branch, open a pull request against `master` (steps 1-5 below). A maintainer reviews and merges it. | This document and the [PR template](./.github/PULL_REQUEST_TEMPLATE.md). |
+| **A maintainer, or an AI agent session working in the maintainer's checkout** | Commits go straight onto the current branch, usually `master`, with no pull request. Several sessions commit to the same checkout at once, and the owner pushes after reading the log. CI runs on every push to `master`, which is its primary trigger (see the header of [`.github/workflows/ci.yml`](./.github/workflows/ci.yml)). | [AGENTS.md](./AGENTS.md) and the git policy in [`.claude/CLAUDE.md`](./.claude/CLAUDE.md). An agent session commits but never pushes or opens a PR unless its prompt asks, and it names itself in an `Agent-Session:` commit trailer. |
+
+The two tracks run the same gates. The steps below are the external-contributor track; where
+something here disagrees with [AGENTS.md](./AGENTS.md) or `.claude/CLAUDE.md` about commands or
+gates, those files win.
+
 ### 1. Fork and branch
 
 Fork the repo, then create a topic branch off `master`:
@@ -67,11 +78,21 @@ Keep PRs focused. If you discover unrelated cleanups while working, open a separ
 Before pushing, run at least:
 
 ```bash
-npm run check        # TypeScript + ESLint
-npm run test         # Vitest unit tests
-cargo clippy --all-targets --all-features -- -D warnings    # Rust lint
-cargo test                                                  # Rust unit tests
+npm run gate -- --cold   # the done gate: tsc, ESLint on changed files, the golden-path census
+npm run check            # the full pre-push chain: project checks, census, typecheck, ESLint
+npm run test             # Vitest unit tests
+cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings   # Rust lint (if Rust changed)
+npm run test:rust        # Rust unit tests (if Rust changed)
 ```
+
+`npm run check` is more than TypeScript and ESLint. It is a chain of project checks, among them
+the golden-path census in `scripts/census/rules.json`, followed by the typecheck and ESLint. The
+first failure stops the chain. The current list is in the `check` script in `package.json`. The
+census is the gate most likely to fail a diff that compiles cleanly; `.claude/CLAUDE.md` explains
+how to read it.
+
+On Windows, use `npm run test:rust` rather than a bare `cargo test`. Rust test binaries carry no
+manifest, so they fail to load there; the script adds the manifest after linking.
 
 CI runs the full matrix on Windows, macOS, and Linux — but catching issues locally is much faster than waiting for the remote build.
 
@@ -113,7 +134,7 @@ Push your branch and open a PR against `master`. Fill out the PR template — it
 ### Backend (Rust)
 
 - **Clippy clean** — `cargo clippy -- -D warnings` must pass. Prefer `?` propagation over `unwrap`/`expect` outside of tests.
-- **Repository pattern** — database access goes through `src-tauri/src/db/repos/`. Don't write raw SQL in command handlers.
+- **Repository pattern** — database access goes through the repos in the extracted `db` crate (`src-tauri/db/src/repos/`). Don't write raw SQL in command handlers. Backend conventions live in [`.claude/rules/rust-backend.md`](./.claude/rules/rust-backend.md).
 - **Command handlers** — thin. Validate input, delegate to a service or repo, return a typed result. Heavy logic belongs in `engine/` or a dedicated module.
 - **Typed bindings** — public types sent over IPC must derive `TS` and use `#[ts(export)]` with `#[serde(rename_all = "camelCase")]`. Generated bindings land in `src/lib/bindings/` — CI checks they're in sync.
 
@@ -151,7 +172,7 @@ See the [i18n section in the README](./README.md#internationalization-i18n) for 
 ## Testing
 
 - **Frontend** — Vitest + React Testing Library in `src/**/*.test.ts(x)`. Run with `npm run test`.
-- **Backend** — Cargo tests in `src-tauri/src/**/tests.rs` and `#[cfg(test)]` modules. Run with `cargo test`.
+- **Backend** — Cargo tests in `src-tauri/**/tests.rs` and `#[cfg(test)]` modules. Run with `npm run test:rust` (the app crate) and `npm run test:rust:crates` (the extracted crates).
 - **E2E / integration** — `npm run test:e2e:cli` and `npm run test:integration:cli`.
 
 New features should come with tests. New bug fixes should come with a regression test that would have caught the bug. PRs that lower overall coverage will be flagged but not automatically blocked — reviewers will ask you to add tests where it matters.

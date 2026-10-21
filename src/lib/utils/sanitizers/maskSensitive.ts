@@ -1,7 +1,9 @@
 /**
  * Sensitive data masking for execution display.
  *
- * - maskSensitiveJson(): redacts JSON values whose keys match sensitive patterns
+ * - maskSensitiveJson(): redacts JSON values whose keys match sensitive patterns,
+ *   and token-shaped values (ghp_, sk-ant-, AKIA, xox*, JWT, ...) wherever they sit,
+ *   including in text that is not JSON at all
  * - sanitizeErrorMessage(): strips file paths, IPs, and internal hostnames from errors
  */
 
@@ -32,6 +34,7 @@ const MASK = '********';
  */
 function redactObject(obj: unknown): unknown {
   if (obj === null || obj === undefined) return obj;
+  if (typeof obj === 'string') return maskTokenShapes(obj);
   if (Array.isArray(obj)) return obj.map(redactObject);
   if (typeof obj === 'object') {
     const out: Record<string, unknown> = {};
@@ -48,8 +51,13 @@ function redactObject(obj: unknown): unknown {
 }
 
 /**
- * Parse a raw JSON string, redact sensitive keys, and re-serialize.
- * Returns the original string unchanged if it doesn't parse as JSON.
+ * Parse a raw JSON string, redact sensitive keys and token-shaped values, and
+ * re-serialize. Text that doesn't parse as JSON (a scraped page, a plain-text
+ * tool result) still has its token-shaped substrings masked.
+ *
+ * Key names alone are not enough: a persona coaxed by hostile tool output into
+ * echoing a vault value writes it into free text, under a key no list can
+ * predict. See src/lib/utils/sanitizers/__tests__/hostileToolOutput.golden.test.ts.
  */
 export function maskSensitiveJson(raw: string | null | undefined): string | null | undefined {
   if (!raw) return raw;
@@ -57,8 +65,8 @@ export function maskSensitiveJson(raw: string | null | undefined): string | null
     const parsed: unknown = JSON.parse(raw);
     return JSON.stringify(redactObject(parsed));
   } catch {
-    // intentional: non-critical -- JSON parse fallback
-    return raw;
+    // intentional: non-critical -- not JSON, mask token shapes in the text itself
+    return maskTokenShapes(raw);
   }
 }
 
@@ -124,6 +132,11 @@ function redactUrlParts(url: string): string {
     .replace(EMAIL_RE, '[email]')
     .replace(INLINE_SECRET_RE, (_match, key) => `${key}: [secret]`)
     .replace(PREFIXED_SECRET_RE, '[secret]');
+}
+
+/** Replace every token-shaped substring (PREFIXED_SECRET_RE) with the JSON mask. */
+function maskTokenShapes(text: string): string {
+  return text.replace(PREFIXED_SECRET_RE, MASK);
 }
 
 /**

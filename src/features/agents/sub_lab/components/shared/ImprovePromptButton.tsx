@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { Wand2, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { buildTestMetadataForDesignContext } from '../../libs/labFeedbackLoop';
-import { parseDesignContext, serializeDesignContext } from '@/features/agents/sub_lab/use-cases/UseCasesList';
+import { parseDesignContext, serializeDesignContext } from '@/features/agents/shared/designContext';
 import { useTranslation } from '@/i18n/useTranslation';
 
 

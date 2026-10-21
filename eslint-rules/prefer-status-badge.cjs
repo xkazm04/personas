@@ -20,6 +20,8 @@
  * Opt out: // eslint-disable-next-line custom/prefer-status-badge
  */
 
+const { collectClassText, isClassNameAttribute } = require('./_classname-strings.cjs');
+
 // Semantic variants (color → StatusBadge variant). Checked first so emerald maps
 // to `variant="success"`, not `accent="emerald"`.
 const VARIANT_BY_COLOR = { emerald: 'success', amber: 'warning', red: 'error', blue: 'info' };
@@ -32,24 +34,6 @@ function comboPresent(cls, c) {
     new RegExp(`text-${c}-400(?![\\w/])`).test(cls) &&
     cls.includes(`border-${c}-500/20`)
   );
-}
-
-/** Collect the static className text from a className attribute value. */
-function classText(valueNode) {
-  if (!valueNode) return '';
-  if (valueNode.type === 'Literal') return String(valueNode.value || '');
-  if (valueNode.type !== 'JSXExpressionContainer') return '';
-  const out = [];
-  const visit = (n) => {
-    if (!n) return;
-    if (n.type === 'Literal') out.push(String(n.value || ''));
-    else if (n.type === 'TemplateLiteral') n.quasis.forEach((q) => out.push(q.value.raw));
-    else if (n.type === 'ConditionalExpression') { visit(n.consequent); visit(n.alternate); }
-    else if (n.type === 'LogicalExpression') { visit(n.left); visit(n.right); }
-    else if (n.type === 'CallExpression') n.arguments.forEach(visit); // cn(...) / clsx(...)
-  };
-  visit(valueNode.expression);
-  return out.join(' ');
 }
 
 /** @type {import('eslint').Rule.RuleModule} */
@@ -75,11 +59,9 @@ module.exports = {
       JSXOpeningElement(node) {
         const tag = node.name && node.name.name;
         if (tag !== 'span' && tag !== 'div') return;
-        const attr = node.attributes.find(
-          (a) => a.type === 'JSXAttribute' && a.name && a.name.name === 'className',
-        );
+        const attr = node.attributes.find((a) => a.type === 'JSXAttribute' && isClassNameAttribute(a));
         if (!attr) return;
-        const cls = classText(attr.value);
+        const cls = collectClassText(attr.value);
         if (!cls) return;
 
         // Skip elements that borrow a status COLOR combo but aren't an inline
