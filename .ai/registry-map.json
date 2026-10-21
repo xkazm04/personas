@@ -5784,10 +5784,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:161 This context is the operator editor that saves a provider allow, block, and routing policy; it does not assemble the code around a model call.",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:9036e979656a8dc5",
-          "evaluatedRevision": 27,
+          "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:168 this context is the operator editor that saves the provider allow/block/routing policy via one IPC write; it does not assemble the code around a model call (re-anchored: the prior anchor :161 was a bare closing paren)",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc",
+          "evaluatedRevision": 28,
           "revisionsBehind": 0
         },
         {
@@ -15097,10 +15097,10 @@
           "changedAt": "2026-10-06",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/hooks/design/core/useDesignAnalysis.ts:169 This context starts and displays design-studio IPC jobs from React hooks; it does not compose the hook chain, extension loader, or loop state around a model or tool call.",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:9036e979656a8dc5",
-          "evaluatedRevision": 27,
+          "evidence": "src/hooks/design/core/useDesignAnalysis.ts:169 these React hooks start design-studio IPC jobs and render their streams; no hook chain, extension loader, or command rewriter around a model/tool call lives here (re-judged at rev 28: rewriting-under-a-foreign-gate's precondition is absent too)",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc",
+          "evaluatedRevision": 28,
           "revisionsBehind": 0
         },
         {
@@ -20277,10 +20277,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/core/src/models/policy_event.rs:8 These files are serde shapes for records of work that already happened; the drop they describe is attributed to engine dispatch, not performed here.",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:9036e979656a8dc5",
-          "evaluatedRevision": 27,
+          "evidence": "src-tauri/core/src/models/policy_event.rs:8 these are serde shapes for records of work already done; the policy drop they describe is performed by engine dispatch, not here (re-judged at rev 28, no rewriter present)",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc",
+          "evaluatedRevision": 28,
           "revisionsBehind": 0
         },
         {
@@ -29063,11 +29063,11 @@
           "revision": 27,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "not-applicable",
-          "evidence": "src-tauri/engine/src/prompt/mod.rs:1 This module assembles the text the model reads and the session-reuse fingerprints of that text, which the golden path places in prompt-assembly rather than in the code around the call.",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:9036e979656a8dc5",
-          "evaluatedRevision": 27,
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/prompt/cli_args.rs:354 the resume builder deliberately drops the persona's --allowedTools, yet src-tauri/src/engine/runner/mod.rs:842 records tool_roster_source=cli_allowlist for a SessionResume run too, so a resumed persona runs on Claude Code's full default roster while its record says the allowlist was applied",
+          "evaluatedAt": "2026-10-21",
+          "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc",
+          "evaluatedRevision": 28,
           "revisionsBehind": 0
         },
         {

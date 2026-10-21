@@ -1751,3 +1751,7 @@
 {"ts":"2026-10-21T12:00:00Z","bundle":"software-engineering","subjects":["client-fetch-cache"],"techniques":["warm-remount-caches","swr-design"],"deviations":1}
 {"ts":"2026-10-21T12:00:00Z","bundle":"software-engineering","subjects":["client-fetch-cache"],"techniques":["parse-and-derive-caches","cache-key-discipline"],"deviations":1}
 {"ts":"2026-10-21T12:00:00Z","bundle":"software-engineering","subjects":["client-fetch-cache"],"techniques":["warm-remount-caches","swr-design"],"deviations":1}
+{"ts":"2026-10-21T12:34:21Z","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":["assembly-identity","session-scoped-capability","semantic-hook-placement","rewriting-under-a-foreign-gate"],"deviations":1}
+{"ts":"2026-10-21T12:34:21Z","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":["rewriting-under-a-foreign-gate"],"deviations":0}
+{"ts":"2026-10-21T12:34:21Z","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":["rewriting-under-a-foreign-gate"],"deviations":0}
+{"ts":"2026-10-21T12:34:21Z","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":["rewriting-under-a-foreign-gate"],"deviations":0}
