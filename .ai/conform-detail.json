@@ -21816,67 +21816,90 @@
       "subject": "client-fetch-cache",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-13",
-      "evaluatedTs": "2026-10-13T03:51:17.040Z",
-      "worker": "ba79c104-b902-4b06-89cf-aae6027aacf0",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:57:09.000Z",
+      "worker": "f0adffa1-cbf1-47d0-9b8b-f02164cfdd9a",
       "techniques": [
+        {
+          "technique": "swr-design",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/live_roadmap.rs:43 a single CACHE_TTL names no stale zone and no stale ceiling; the rescue at live_roadmap.rs:229 serves any age"
+        },
+        {
+          "technique": "swr-design",
+          "verdict": "realized (failure keeps stale truth visible)",
+          "evidence": "src/features/home/sub_releases/useLiveRoadmap.ts:77 a failed fetch keeps the shown roadmap and flips the pill to stale instead of claiming fresh"
+        },
         {
           "technique": "admission-hypothesis",
           "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/live_roadmap.rs:54 One named slot admits only the roadmap document the home view and its hourly poll re-read; nothing else can enter."
+          "evidence": "src-tauri/src/commands/live_roadmap.rs:54 One named slot admits only the roadmap document the home view and its hourly poll re-read; nothing else can enter.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "similarity-keyed-admission",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/live_roadmap.rs:32 The question is one exact URL, not a resemblance; a hit is identity."
-        },
-        {
-          "technique": "swr-design",
-          "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/live_roadmap.rs:178 One threshold is the whole policy. Failure does keep the stored document and leaves fetched_at at cached_at, but there is no stale window that paints and revalidates, and no ceiling that refuses an arbitrarily old rescue."
+          "evidence": "src-tauri/src/commands/live_roadmap.rs:32 The question is one exact URL, not a resemblance; a hit is identity.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "in-flight-dedup",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/live_roadmap.rs:388 Concurrent identical fetches are expected and race on the cache file. useLiveRoadmap.run awaits fetchLiveRoadmap with no join, so a refresh overlapping the poll launches a second flight."
+          "evidence": "src-tauri/src/commands/live_roadmap.rs:388 Concurrent identical fetches are expected and race on the cache file. useLiveRoadmap.run awaits fetchLiveRoadmap with no join, so a refresh overlapping the poll launches a second flight.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "cache-key-discipline",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/live_roadmap.rs:180 Locale is not a missing axis: the payload holds every language and the view picks one after the read. The persistent slot is unversioned, and a fresh hit returns the stored document without checking schema_version, so a shape bump does not orphan the file until TTL."
+          "evidence": "src-tauri/src/commands/live_roadmap.rs:180 Locale is not a missing axis: the payload holds every language and the view picks one after the read. The persistent slot is unversioned, and a fresh hit returns the stored document without checking schema_version, so a shape bump does not orphan the file until TTL.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "warm-remount-caches",
           "verdict": "deviation",
-          "evidence": "src/features/home/sub_releases/useLiveRoadmap.ts:43 Remount starts with no roadmap, so the first paint is the bundled snapshot. The disk copy is reached only after the invoke returns; it is not a synchronous warm paint of the last live result."
+          "evidence": "src/features/home/sub_releases/useLiveRoadmap.ts:43 Remount starts with no roadmap, so the first paint is the bundled snapshot. The disk copy is reached only after the invoke returns; it is not a synchronous warm paint of the last live result.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "prefetch-and-defer",
           "verdict": "not-applicable",
-          "evidence": "src/features/home/sub_releases/useLiveRoadmap.ts:99 The only remote read is the roadmap tab's own document. The poll is held while that tab is not the visible home tab; there is no hover prefetch and no below-fold remote fetch in these files."
+          "evidence": "src/features/home/sub_releases/useLiveRoadmap.ts:99 The only remote read is the roadmap tab's own document. The poll is held while that tab is not the visible home tab; there is no hover prefetch and no below-fold remote fetch in these files.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "parse-and-derive-caches",
           "verdict": "not-applicable",
-          "evidence": "src/features/home/sub_releases/roadmapItems.ts:139 Display items are a pure projection invoked from render. No content-keyed memo exists in the listed files."
+          "evidence": "src/features/home/sub_releases/roadmapItems.ts:139 Display items are a pure projection invoked from render. No content-keyed memo exists in the listed files.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "plural-policy-claims",
           "verdict": "not-applicable",
-          "evidence": "src/features/home/sub_releases/useLiveRoadmap.ts:58 Repo search shows this hook as the only production caller. force is a refresh bypass from that same caller, not a second reader's TTL."
+          "evidence": "src/features/home/sub_releases/useLiveRoadmap.ts:58 Repo search shows this hook as the only production caller. force is a refresh bypass from that same caller, not a second reader's TTL.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "portable-read-definitions",
           "verdict": "conformant",
-          "evidence": "src/api/liveRoadmap.ts:149 Key, transport, and TTL live in one plain function the hook calls; the component does not re-declare the invoke."
+          "evidence": "src/api/liveRoadmap.ts:149 Key, transport, and TTL live in one plain function the hook calls; the component does not re-declare the invoke.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "sibling-entry-warmth",
           "verdict": "not-applicable",
-          "evidence": "src/features/home/sub_releases/HomeReleases.tsx:51 The hero is one item from the list already built. There is no second detail read waiting on a field the row holds."
+          "evidence": "src/features/home/sub_releases/HomeReleases.tsx:51 The hero is one item from the list already built. There is no second detail read waiting on a field the row holds.",
+          "carriedFrom": "2026-10-13"
         }
       ],
-      "registryProposal": "Say which of the four policies still bind when the population is a single named document. Admission and plural claims have nothing to reconcile on a one-slot cache; two freshness thresholds and an in-flight join still do."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/live_roadmap.rs:43 The roadmap cache the home view calls has a single one-hour TTL: younger than that it skips the network, older than that it blocks on the fetch, and a failed refresh may still paint a disk copy of any age.",
+          "evaluatedAt": "2026-10-13T03:51:17.040Z",
+          "worker": "ba79c104-b902-4b06-89cf-aae6027aacf0",
+          "reason": "replaced by f0adffa1-cbf1-47d0-9b8b-f02164cfdd9a"
+        }
+      ]
     },
     "283b44f6-a4af-4a1f-8a0e-8b2dedb9adc0/client-fetch-cache": {
       "context": "shared-components-layout",
@@ -27097,24 +27120,34 @@
       "subject": "client-fetch-cache",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:17:44.000Z",
-      "worker": "345c82e7-fad2-4a0b-b285-7f597693e462",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:57:09.000Z",
+      "worker": "f0adffa1-cbf1-47d0-9b8b-f02164cfdd9a",
       "techniques": [
         {
           "technique": "swr-design",
           "verdict": "deviation",
-          "evidence": "src/features/settings/sub_portability/components/export-prototype/useExportPicker.ts:133 evicts stale rows on failed revalidation and reports it as an empty success (same shape for teams/credentials/projects/workspaces/twins/athena)"
+          "evidence": "src/features/settings/sub_portability/components/export-prototype/useExportPicker.ts:133 the failure path evicts the previous list (settle with []), the opposite of never evict on failed revalidation"
         },
         {
           "technique": "warm-remount-caches",
-          "verdict": "deviation",
-          "evidence": "src/lib/async/createTtlValueCache.ts:39 an entry past the 60s TTL (useDataPortability.ts:27) is returned as a miss, so a remount after a minute paints cold (useDataPortability.ts:99) instead of warm-stale with a revalidation"
+          "verdict": "realized (reopen keeps prior rows while in flight)",
+          "evidence": "src/features/settings/sub_portability/components/export-prototype/useExportPicker.ts:115 reopen marks scopes pending and keeps the already-rendered rows"
         },
         {
           "technique": "in-flight-dedup",
           "verdict": "not-applicable",
-          "evidence": "src/features/settings/sub_portability/components/ExportSelectionModal.tsx:41 the picker reads have a single caller; there is no concurrent identical request to join"
+          "evidence": "src/features/settings/sub_portability/components/ExportSelectionModal.tsx:41 the picker reads have a single caller; there is no concurrent identical request to join",
+          "carriedFrom": "2026-10-16"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/settings/sub_portability/components/export-prototype/useExportPicker.ts:133 a failed reopen refresh overwrites the shown list with [] and settles the scope, so the modal paints its no-results empty state (ExportSelectionModal.tsx:303) while the previous selection ids stay selected and exportable",
+          "evaluatedAt": "2026-10-16T17:17:44.000Z",
+          "worker": "345c82e7-fad2-4a0b-b285-7f597693e462",
+          "reason": "replaced by f0adffa1-cbf1-47d0-9b8b-f02164cfdd9a"
         }
       ]
     },
