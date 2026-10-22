@@ -2042,3 +2042,4 @@
 {"ts":"2026-10-22T19:57:16.784Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":[],"deviations":0}
 {"ts":"2026-10-22T19:57:20.348Z","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":["semantic-hook-placement","session-scoped-capability","checkpoint-mode-custody"],"deviations":0}
 {"ts":"2026-10-22T00:00:00Z","bundle":"software-engineering","subjects":["companion-identity"],"techniques":[],"deviations":0}
+{"ts":"2026-10-22T19:59:05.935Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":[],"deviations":0}

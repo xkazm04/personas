@@ -5722,7 +5722,11 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/browser/webview/WebviewPage.tsx:3 the page hosts an embedded OS webview window for navigation; it neither writes nor re-delivers a repo-owned instruction file",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:25b61236a62604b0",
+          "evaluatedRevision": 31
         },
         {
           "subject": "agent-cli-transport",
@@ -30009,7 +30013,11 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_overview/StandardsScanCard.tsx:3 the overview only triggers dev_tools_run_standards_scan and renders findings; it authors, loads and delivers no repo instruction file",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:25b61236a62604b0",
+          "evaluatedRevision": 31
         },
         {
           "subject": "sidecar-provisioning",
@@ -38408,7 +38416,11 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_recipes/libs/substituteBindings.ts:3 substitutes {{variable}} placeholders in app-owned recipe data; recipe text is application prompt data, not a harness-loaded repo instruction file",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:25b61236a62604b0",
+          "evaluatedRevision": 31
         },
         {
           "subject": "eval-harness",
@@ -43369,7 +43381,11 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_workspaces/workspaceStore.ts:1 workspace store is SQLite-backed app state (dev_workspaces) for a switcher UI; no instruction file is authored, loaded or maintained here",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:25b61236a62604b0",
+          "evaluatedRevision": 31
         },
         {
           "subject": "mcp-tools",

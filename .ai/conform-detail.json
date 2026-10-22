@@ -37050,6 +37050,46 @@
       "worker": "4fe6cefa-53e5-4eba-b89d-89ee96524fe3",
       "techniques": [],
       "registryProposal": "Matcher paired companion-identity with a persona-configuration UI on the tokens companion/identity/edits (lexical-only); consider a precondition note in the golden path that it governs a companion's own self-model, not agent configuration screens."
+    },
+    "9967adb9-e895-4dcd-b296-ab49a19ab122/agent-instruction-files": {
+      "context": "project-overview",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T19:59:05.934Z",
+      "worker": "ac0789c1-0336-49c1-81bf-e396e2a57df6",
+      "techniques": []
+    },
+    "db6357fe-000f-498d-8c02-4e8ad6d95574/agent-instruction-files": {
+      "context": "workspace-knowledge",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T19:59:05.934Z",
+      "worker": "ac0789c1-0336-49c1-81bf-e396e2a57df6",
+      "techniques": []
+    },
+    "cbb061cf-5c61-49d4-80d8-98b8f9b40600/agent-instruction-files": {
+      "context": "browser-webview-control",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T19:59:05.934Z",
+      "worker": "ac0789c1-0336-49c1-81bf-e396e2a57df6",
+      "techniques": []
+    },
+    "e13cfc6c-f666-4959-81c0-2cfbc4815f04/agent-instruction-files": {
+      "context": "templates-recipes",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T19:59:05.934Z",
+      "worker": "ac0789c1-0336-49c1-81bf-e396e2a57df6",
+      "techniques": []
     }
   }
 }

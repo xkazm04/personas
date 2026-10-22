@@ -1,0 +1,328 @@
+{
+ "schema": "conform-run/1",
+ "worker": "ac0789c1-0336-49c1-81bf-e396e2a57df6",
+ "subject": "agent-instruction-files",
+ "evaluatedAt": "2026-10-22T19:59:05.934Z",
+ "pairs": [
+  {
+   "context": "9967adb9-e895-4dcd-b296-ab49a19ab122",
+   "subject": "agent-instruction-files",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/dev-tools/sub_overview/StandardsScanCard.tsx:3 the overview only triggers dev_tools_run_standards_scan and renders findings; it authors, loads and delivers no repo instruction file",
+   "techniques": []
+  },
+  {
+   "context": "db6357fe-000f-498d-8c02-4e8ad6d95574",
+   "subject": "agent-instruction-files",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/dev-tools/sub_workspaces/workspaceStore.ts:1 workspace store is SQLite-backed app state (dev_workspaces) for a switcher UI; no instruction file is authored, loaded or maintained here",
+   "techniques": []
+  },
+  {
+   "context": "cbb061cf-5c61-49d4-80d8-98b8f9b40600",
+   "subject": "agent-instruction-files",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/browser/webview/WebviewPage.tsx:3 the page hosts an embedded OS webview window for navigation; it neither writes nor re-delivers a repo-owned instruction file",
+   "techniques": []
+  },
+  {
+   "context": "e13cfc6c-f666-4959-81c0-2cfbc4815f04",
+   "subject": "agent-instruction-files",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/templates/sub_recipes/libs/substituteBindings.ts:3 substitutes {{variable}} placeholders in app-owned recipe data; recipe text is application prompt data, not a harness-loaded repo instruction file",
+   "techniques": []
+  }
+ ],
+ "declined": [
+  {
+   "subject": "agent-instruction-files",
+   "context": "6c0d30e4-99b9-4580-ba02-9a526db1d639",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "a8857307-216c-46e0-9571-e05e8cf06112",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "8650ca36-36fe-4862-98f5-745e866a2687",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "5d538a29-a2bb-4d61-8ec2-c51bcde105fe",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "895b4bb2-16fd-4e8e-aae8-11315fe6436b",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "0ecc70bc-a005-4ff8-9a98-f362d2a75f53",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "d146b88b-6223-41c7-8330-8b9d7a1b3ee0",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "511ca12f-50df-4941-84e1-e2d74a3dff85",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "12d5948a-76a4-4db1-ac6a-ac554eb12020",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "1bad7967-29dc-4e12-b99a-cb5177b4fb9b",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "208f50de-5d3b-4345-9fed-1c106a7a36e9",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "0f1b56ac-cd96-4355-993e-dc445a20e63e",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "743a0ae5-b7d0-46a6-a915-cb82c7834bf8",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "a38e2b93-2322-4187-befa-c0443c4ca85f",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "1d8a480b-eac4-4110-a60e-47a6ab281c97",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "b39776f5-3909-41e3-b69f-14c9a6c70bec",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "1ffb5765-de47-4f01-87ec-06732a63522c",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "0a73aef0-7c50-4be1-b990-cbddad3671bd",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "e61f931c-25d7-4532-9ec7-ab6f3fc377e2",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "ad601e35-b998-4029-97a5-77487f00d561",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "97025c06-0d64-4025-8a1f-98b90ba1c233",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "2418ddaf-0e6e-446f-968f-28a4bf6e7120",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "4eb0030b-e8a2-4993-bfab-81aee6943054",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "456eb952-9b93-4de4-bad5-79e6f101aeb1",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "c413de7d-1182-4abc-8a08-9c8832254c62",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "90f639de-ffc7-4225-b67f-1566e5d66b8b",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "ef73ca1c-fc54-4b9c-83ec-390c54929192",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "a397f2e9-de1d-495f-8ff4-fabc019646cc",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "4810daf8-0549-4899-95d2-99c81cde6455",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "fc62a53a-85f9-4491-8b54-9b5f1795ef91",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "835ed922-2ebd-425b-a542-dbe5996e1e78",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "37cd64d2-bd42-47b9-8c17-7ea1b466135c",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "b7c818bf-fe04-44ff-aa8d-7cd51e0fc67f",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "fbc22b36-e0c9-486e-a9d9-838ac272ed2f",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "a35d1f4a-5de8-4be1-af8b-1a3784296400",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "cab45fee-e439-4bff-9924-217b1acc17f8",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "3c107fe6-ec95-4f45-bf31-665e9ccfe223",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "ae80cd74-5beb-4d76-ae0a-16a4b581a2df",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "56a0fd55-279d-428b-b2f6-7c89154abd6f",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "dc471d31-ae30-4ac9-b015-d51969df458d",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "f838d49f-2928-441e-ac8d-f6e6c412b262",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "fd961ee9-bf7c-4ec7-90c3-a728045d3d44",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "a576c14f-1edd-4da4-8d11-527161a3b5b3",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "d3346f2c-d747-4d85-b6e6-c1450da57ec9",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "8a57c65c-06fd-45c9-9d32-d50c89c4c705",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "b38217f2-397e-49a7-ac32-4cce440c7e74",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "2a54cdc2-87af-4298-b490-9eb87f230df7",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "7dddb34a-3a9b-4ce0-832f-55ea352c12b5",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "9fca099d-94e4-4fd0-8460-3cf5d8c85acf",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "336089a8-bb18-449c-a62e-ca76b02097fb",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "f197653d-267c-4a91-bffc-b3be17434877",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "3619ab0d-0367-43d0-b4eb-ec39c1302d65",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "0a6ae5fd-fb42-446c-9602-0d2abdd220d5",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "876c0b4e-6472-4544-a21b-56e7529fb6b3",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  },
+  {
+   "subject": "agent-instruction-files",
+   "context": "767b2bb5-4662-4be1-ad24-c881ac334016",
+   "reason": "unread this run: budget of 4-6 pairs; left unjudged for a later pass"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-22T19:59:05.935Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-instruction-files"
+   ],
+   "techniques": [],
+   "deviations": 0
+  }
+ ]
+}
