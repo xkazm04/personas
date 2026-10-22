@@ -4856,7 +4856,11 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/api/overview/incidents.ts:13 the context is thin Tauri IPC wrappers over invokeWithTimeout reading incidents, reviews, memories and events; it resolves no dependency graph, unpacks no archive, declares no permission manifest and scans no history",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:f5666db1094acd9f",
+          "evaluatedRevision": 6
         },
         {
           "subject": "node-boot-and-declarative-bootstrap",
@@ -20655,7 +20659,11 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/notepad/overview/deskModel.ts:1 a pure filter/highlight model with no React, DOM or stores; the match came from notes/build/support vocabulary and no supply-chain crossing exists in this context",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:f5666db1094acd9f",
+          "evaluatedRevision": 6
         }
       ],
       "governance": "governed"
@@ -34983,7 +34991,11 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:15 a paginated CRUD hook over the team-memory IPC API; the match came from diff/team/update vocabulary and no code, archive, lockfile or manifest crosses this context",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:f5666db1094acd9f",
+          "evaluatedRevision": 6
         },
         {
           "subject": "client-fetch-cache",
@@ -36164,7 +36176,11 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/teams/sub_teamWorkspace/useAutoTeam.ts:4 team composition calls only first-party pipeline IPC (suggestTopology, addTeamMember); the graph is a persona topology, not a dependency graph, and nothing is fetched, unpacked or executed",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:f5666db1094acd9f",
+          "evaluatedRevision": 6
         },
         {
           "subject": "native-shell-integration",

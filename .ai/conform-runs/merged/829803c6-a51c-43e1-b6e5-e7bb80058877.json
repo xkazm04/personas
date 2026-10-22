@@ -1,0 +1,73 @@
+{
+ "schema": "conform-run/1",
+ "worker": "829803c6-a51c-43e1-b6e5-e7bb80058877",
+ "subject": "supply-chain",
+ "evaluatedAt": "2026-10-22T19:57:16.784Z",
+ "pairs": [
+  {
+   "context": "0ecc70bc-a005-4ff8-9a98-f362d2a75f53",
+   "subject": "supply-chain",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/api/overview/incidents.ts:13 the context is thin Tauri IPC wrappers over invokeWithTimeout reading incidents, reviews, memories and events; it resolves no dependency graph, unpacks no archive, declares no permission manifest and scans no history",
+   "techniques": []
+  },
+  {
+   "context": "fd092e44-fcec-4418-8337-ed2b7b2c8473",
+   "subject": "supply-chain",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:15 a paginated CRUD hook over the team-memory IPC API; the match came from diff/team/update vocabulary and no code, archive, lockfile or manifest crosses this context",
+   "techniques": []
+  },
+  {
+   "context": "a576c14f-1edd-4da4-8d11-527161a3b5b3",
+   "subject": "supply-chain",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/teams/sub_teamWorkspace/useAutoTeam.ts:4 team composition calls only first-party pipeline IPC (suggestTopology, addTeamMember); the graph is a persona topology, not a dependency graph, and nothing is fetched, unpacked or executed",
+   "techniques": []
+  },
+  {
+   "context": "4eb0030b-e8a2-4993-bfab-81aee6943054",
+   "subject": "supply-chain",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/notepad/overview/deskModel.ts:1 a pure filter/highlight model with no React, DOM or stores; the match came from notes/build/support vocabulary and no supply-chain crossing exists in this context",
+   "techniques": []
+  }
+ ],
+ "declined": [
+  {
+   "subject": "supply-chain",
+   "context": "cab45fee-e439-4bff-9924-217b1acc17f8",
+   "reason": "plugins-artist-hooks has empty paths in the map and its files (artist* hooks) do not resolve under git ls-files; no anchor can be written"
+  },
+  {
+   "subject": "supply-chain",
+   "context": "d7b7eb04-730f-4450-9a68-affc95f93267",
+   "reason": "teams-factory-l2 ship entry points (sub_factory/l2/ship) do not resolve under git ls-files; left unjudged rather than guessed"
+  },
+  {
+   "subject": "supply-chain",
+   "context": "2a54cdc2-87af-4298-b490-9eb87f230df7",
+   "reason": "templates-draft-editor entry points (templates/draft-editor) do not resolve under git ls-files; left unjudged"
+  },
+  {
+   "subject": "supply-chain",
+   "context": "fc62a53a-85f9-4491-8b54-9b5f1795ef91",
+   "reason": "overview-patterns has empty paths; no code to anchor"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-22T19:57:16.784Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "supply-chain"
+   ],
+   "techniques": [],
+   "deviations": 0
+  }
+ ]
+}

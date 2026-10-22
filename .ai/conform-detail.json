@@ -36941,6 +36941,46 @@
       "worker": "1395872f-67ed-421a-ad8d-f32a46fc200e",
       "techniques": [],
       "registryProposal": "Matched via 'checkpoint'/'surface' vocabulary only (dev_tools_git_checkpoint is a git commit, not a per-mutation guest-state checkpoint); technique-shaped resonance with preview-checkpoints, routed by vocabulary not precondition. Consider downweighting the pairing for backend-only contexts."
+    },
+    "0ecc70bc-a005-4ff8-9a98-f362d2a75f53/supply-chain": {
+      "context": "api-overview",
+      "subject": "supply-chain",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T19:57:16.784Z",
+      "worker": "829803c6-a51c-43e1-b6e5-e7bb80058877",
+      "techniques": []
+    },
+    "fd092e44-fcec-4418-8337-ed2b7b2c8473/supply-chain": {
+      "context": "team-memory",
+      "subject": "supply-chain",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T19:57:16.784Z",
+      "worker": "829803c6-a51c-43e1-b6e5-e7bb80058877",
+      "techniques": []
+    },
+    "a576c14f-1edd-4da4-8d11-527161a3b5b3/supply-chain": {
+      "context": "teams-teamworkspace",
+      "subject": "supply-chain",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T19:57:16.784Z",
+      "worker": "829803c6-a51c-43e1-b6e5-e7bb80058877",
+      "techniques": []
+    },
+    "4eb0030b-e8a2-4993-bfab-81aee6943054/supply-chain": {
+      "context": "notepad-overview",
+      "subject": "supply-chain",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T19:57:16.784Z",
+      "worker": "829803c6-a51c-43e1-b6e5-e7bb80058877",
+      "techniques": []
     }
   }
 }
