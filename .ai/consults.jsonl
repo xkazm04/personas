@@ -2017,3 +2017,8 @@
 {"ts":"2026-10-22T15:30:36.269Z","bundle":"software-engineering","subjects":["table"],"techniques":[],"deviations":0}
 {"ts":"2026-10-22T15:32:23.305Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["module-depth","io-free-core","seams-and-adapters"],"deviations":2}
 {"ts":"2026-10-22T15:32:38.207Z","bundle":"software-engineering","subjects":["hitl-approval"],"techniques":[],"deviations":0}
+{"ts":"2026-10-22T15:33:18.275Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["golden-path-precondition"],"deviations":0}
+{"ts":"2026-10-22T15:33:18.276Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["golden-path-precondition"],"deviations":0}
+{"ts":"2026-10-22T15:33:18.276Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["golden-path-precondition"],"deviations":0}
+{"ts":"2026-10-22T15:33:18.276Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["authentication-and-scoping","tool-identity-vs-tool-name"],"deviations":1}
+{"ts":"2026-10-22T15:33:18.276Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["golden-path-precondition"],"deviations":0}

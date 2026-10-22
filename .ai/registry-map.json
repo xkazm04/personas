@@ -4717,12 +4717,11 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/api/overview/incidents.ts:1 - typed Tauri IPC wrappers over overview data; no tool server, no tool results, no model-facing catalog.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:afba7a2b8c938ae1",
-          "evaluatedRevision": 31,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src/api/overview/incidents.ts:1 imports invokeWithTimeout from tauriInvoke; all 30 files are typed Tauri IPC wrappers, none mentions mcp or tools/call - no tool server, tool result or model-facing catalog.",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34,
+          "revisionsBehind": 3
         },
         {
           "subject": "eval-harness",
@@ -6539,12 +6538,11 @@
           "changedAt": "2026-10-15",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src-tauri/src/commands/companion/mcp_bridge.rs:26 is a Tauri IPC door resolving a pending hub entry (response: Value); it publishes and consumes no MCP tool surface - the MCP wire and handlers live in companion-brain (src-tauri/src/companion/orchestration/mcp/mod.rs:118).",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:afba7a2b8c938ae1",
-          "evaluatedRevision": 31,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src-tauri/src/commands/companion/mcp_bridge.rs:26 is a #[tauri::command] resolver for a pending hub entry; the MCP wire, handlers and request classes live in companion-brain (src-tauri/src/companion/orchestration/mcp/mod.rs:118), outside this context. Note approvals/approval_exec_browser.rs:20 re-walks browser_bridge gate order (not in this context file list).",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34,
+          "revisionsBehind": 3
         },
         {
           "subject": "companion-identity",
@@ -8182,12 +8180,11 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/src/commands/tools/mod.rs:1 declares only automation/trigger/definition CRUD modules; no MCP server or client module is in this 8-file context.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:afba7a2b8c938ae1",
-          "evaluatedRevision": 31,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src-tauri/src/commands/tools/mod.rs:1 declares only automation/trigger/definition CRUD modules; grep over all 8 files finds no mcp/tool_result surface.",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34,
+          "revisionsBehind": 3
         },
         {
           "subject": "terminal-multiplexing",
@@ -12248,13 +12245,12 @@
           "revision": 34,
           "changedAt": "2026-10-15",
           "confidence": "strong",
-          "state": "not-applicable",
-          "evidence": "src-tauri/src/engine/management_api.rs:3 - the /api/* surface is ordinary REST between services (what an MCP server calls), read by no model; the in-process MCP consumer is not among this context's files.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:afba7a2b8c938ae1",
-          "evaluatedRevision": 31,
-          "revisionsBehind": 3,
-          "stale": true
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/management_api.rs:877 the process-wide \"system\" key never expires, is not origin-bound and holds personas:read + personas:execute + proxy (:884), yet it authenticates the MCP sidecar bridge, and :1131 says external MCP/CLI clients holding it can mint per-credential handles - one omnibus token is the MCP surface instead of per-consumer scoped tokens; :872 also identifies it by name == \"system\".",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34,
+          "revisionsBehind": 3
         },
         {
           "subject": "test-harness",
@@ -18524,12 +18520,11 @@
           "changedAt": "2026-10-15",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/lib/personas/parsers/n8nParser.ts:1 - workflow-format parsers (n8n, Zapier, Make, GitHub Actions); no tool protocol surface on either side of a wire.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:afba7a2b8c938ae1",
-          "evaluatedRevision": 31,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src/lib/personas/parsers/n8nParser.ts:1 - workflow-format parsers (n8n, Zapier, Make, GitHub Actions) plus template catalog; grep over 18 existing files finds no mcp/tool_result surface.",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34,
+          "revisionsBehind": 3
         },
         {
           "subject": "quality-gates",

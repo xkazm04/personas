@@ -1,0 +1,149 @@
+{
+ "schema": "conform-run/1",
+ "worker": "7652a801-1c3d-4515-8a93-6e6d80cf1957",
+ "subject": "mcp-tools",
+ "evaluatedAt": "2026-10-22T15:33:18.276Z",
+ "pairs": [
+  {
+   "context": "0ecc70bc-a005-4ff8-9a98-f362d2a75f53",
+   "subject": "mcp-tools",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/api/overview/incidents.ts:1 imports invokeWithTimeout from tauriInvoke; all 30 files are typed Tauri IPC wrappers, none mentions mcp or tools/call - no tool server, tool result or model-facing catalog.",
+   "techniques": [
+    {
+     "technique": "golden-path-precondition",
+     "verdict": "not-applicable: re-judged at revision 34 after a grep of every file; precondition (a wire a model reads) still unmet",
+     "evidence": "src/api/overview/incidents.ts:1 imports invokeWithTimeout from tauriInvoke; all 30 files are typed Tauri IPC wrappers, none mentions mcp or tools/call - no tool server, tool result or model-facing catalog."
+    }
+   ]
+  },
+  {
+   "context": "3effd422-2610-4c8a-bc02-53aceafd827c",
+   "subject": "mcp-tools",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/commands/companion/mcp_bridge.rs:26 is a #[tauri::command] resolver for a pending hub entry; the MCP wire, handlers and request classes live in companion-brain (src-tauri/src/companion/orchestration/mcp/mod.rs:118), outside this context. Note approvals/approval_exec_browser.rs:20 re-walks browser_bridge gate order (not in this context file list).",
+   "techniques": [
+    {
+     "technique": "golden-path-precondition",
+     "verdict": "not-applicable: re-judged at revision 34; this context only forwards operator answers to blocking RPCs",
+     "evidence": "src-tauri/src/commands/companion/mcp_bridge.rs:26 is a #[tauri::command] resolver for a pending hub entry; the MCP wire, handlers and request classes live in companion-brain (src-tauri/src/companion/orchestration/mcp/mod.rs:118), outside this context. Note approvals/approval_exec_browser.rs:20 re-walks browser_bridge gate order (not in this context file list)."
+    }
+   ]
+  },
+  {
+   "context": "93359619-794a-4de7-a5bb-c7864e475fe7",
+   "subject": "mcp-tools",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/commands/tools/mod.rs:1 declares only automation/trigger/definition CRUD modules; grep over all 8 files finds no mcp/tool_result surface.",
+   "techniques": [
+    {
+     "technique": "golden-path-precondition",
+     "verdict": "not-applicable: re-judged at revision 34; tools here are persona tool definitions, not a protocol wire",
+     "evidence": "src-tauri/src/commands/tools/mod.rs:1 declares only automation/trigger/definition CRUD modules; grep over all 8 files finds no mcp/tool_result surface."
+    }
+   ]
+  },
+  {
+   "context": "059fdee0-40da-434a-a5cb-874bc9179a31",
+   "subject": "mcp-tools",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/engine/management_api.rs:877 the process-wide \"system\" key never expires, is not origin-bound and holds personas:read + personas:execute + proxy (:884), yet it authenticates the MCP sidecar bridge, and :1131 says external MCP/CLI clients holding it can mint per-credential handles - one omnibus token is the MCP surface instead of per-consumer scoped tokens; :872 also identifies it by name == \"system\".",
+   "techniques": [
+    {
+     "technique": "authentication-and-scoping",
+     "verdict": "deviation: MCP-facing callers share one non-expiring, unbound, omnibus-scoped key",
+     "evidence": "src-tauri/src/engine/management_api.rs:877 never expires, not origin-bound; scopes read+execute+proxy (:884)"
+    },
+    {
+     "technique": "tool-identity-vs-tool-name",
+     "verdict": "deviation: the key is revoked and re-found by display name, not minted id",
+     "evidence": "src-tauri/src/engine/management_api.rs:872 filters existing keys by k.name == \"system\""
+    }
+   ],
+   "registryProposal": "The context entry list treats management_api.rs as REST-between-services, but its own comments (:4, :878, :1131, :2461) say the MCP sidecar and third-party MCP clients authenticate through it; the golden path scopes tool-server auth to the model-facing door, so a note on trusted-sidecar bridges that share one first-party key would help the next judge."
+  },
+  {
+   "context": "7826a48f-5883-4f26-8476-c3c515bda745",
+   "subject": "mcp-tools",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/lib/personas/parsers/n8nParser.ts:1 - workflow-format parsers (n8n, Zapier, Make, GitHub Actions) plus template catalog; grep over 18 existing files finds no mcp/tool_result surface.",
+   "techniques": [
+    {
+     "technique": "golden-path-precondition",
+     "verdict": "not-applicable: re-judged at revision 34; no tool protocol on either side of a wire",
+     "evidence": "src/lib/personas/parsers/n8nParser.ts:1 - workflow-format parsers (n8n, Zapier, Make, GitHub Actions) plus template catalog; grep over 18 existing files finds no mcp/tool_result surface."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "mcp-tools",
+   "context": "3f38546e-e970-4837-97f7-f0504aa32daf",
+   "reason": "plugins-companion-decision has no paths in the map and an empty file_paths in context-map.json, so there is no code to read; its description (decision queue UI, voice digit parsing) suggests not-applicable but that is unread, left unknown."
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-22T15:33:18.275Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "mcp-tools"
+   ],
+   "techniques": [
+    "golden-path-precondition"
+   ],
+   "deviations": 0
+  },
+  {
+   "ts": "2026-10-22T15:33:18.276Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "mcp-tools"
+   ],
+   "techniques": [
+    "golden-path-precondition"
+   ],
+   "deviations": 0
+  },
+  {
+   "ts": "2026-10-22T15:33:18.276Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "mcp-tools"
+   ],
+   "techniques": [
+    "golden-path-precondition"
+   ],
+   "deviations": 0
+  },
+  {
+   "ts": "2026-10-22T15:33:18.276Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "mcp-tools"
+   ],
+   "techniques": [
+    "authentication-and-scoping",
+    "tool-identity-vs-tool-name"
+   ],
+   "deviations": 1
+  },
+  {
+   "ts": "2026-10-22T15:33:18.276Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "mcp-tools"
+   ],
+   "techniques": [
+    "golden-path-precondition"
+   ],
+   "deviations": 0
+  }
+ ]
+}
