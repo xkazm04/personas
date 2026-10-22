@@ -34417,6 +34417,52 @@
         "at": "2026-10-22T01:54:44.284681+00:00",
         "reason": "reviewer (sonnet): The lines quoted say what the verdict claims (`mergedFeed.tsx:50` sorts by timestamp only, `countUnread` uses `<=` on the watermark), but the deviation is about code outside this context. `mergedFeed.tsx` is not among the listed context files and no listed file imports it; its header comment says it"
       }
+    },
+    "e61f931c-25d7-4532-9ec7-ab6f3fc377e2/issuance-policy-ladder": {
+      "context": "lib-credentials",
+      "subject": "issuance-policy-ladder",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:11:43.664Z",
+      "worker": "d66ec3a5-3bfa-4146-bfbc-92ed9937b886",
+      "techniques": [
+        {
+          "technique": "bounds-as-modes",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/credentials/remediationBus.ts:70 This bounds local remediation deduplication, not an artifact's validity negotiated between requester, role, and issuer."
+        },
+        {
+          "technique": "explicit-forbid-beats-allow-any",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/credentials/connectorAudiences.ts:194 Audience membership filters connector classifications; it does not compose issuance permissions and prohibitions."
+        },
+        {
+          "technique": "float-references-resolve-at-use",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/credentials/connectorRoles.ts:257 The lookup resolves a connector's functional grouping, not an issuing key or issuance-policy reference."
+        },
+        {
+          "technique": "program-role-returns-the-artifact",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/credentials/credentialRecipeRegistry.ts:102 Recipes persist connector credential-field schemas; they are not executable issuance roles."
+        },
+        {
+          "technique": "require-one-constraint",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/credentials/connectorRoles.ts:64 These role records hold catalog labels and connector members rather than constraints on issued authority."
+        },
+        {
+          "technique": "stamped-instants-name-their-clock",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/credentials/remediationBus.ts:136 The timestamp records a remediation event, not a validity or creation stamp on an issued authority artifact."
+        },
+        {
+          "technique": "verbatim-is-a-separate-privilege",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/credentials/catalogApiEndpoints.ts:17 The endpoint helper constructs API Explorer metadata and exposes no unconstrained signing operation."
+        }
+      ]
     }
   }
 }

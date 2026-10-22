@@ -17718,7 +17718,11 @@
           "revision": 3,
           "changedAt": "2026-09-17",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/lib/credentials/connectorRoles.ts:69 The context groups interchangeable connectors rather than shaping issued authority, and searches found no issuer, issuance, issuing, or sign_verbatim occurrences in its directory or builtin seeds.",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:fc31943d5d78e4d2",
+          "evaluatedRevision": 3
         },
         {
           "subject": "connector-catalog",
