@@ -39584,8 +39584,12 @@
           "revision": 16,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "not-applicable",
+          "priorNotApplicable": 4,
+          "evidence": "src/features/triggers/sub_shared/SubscribeControls.tsx:24 if (busy) return is a per-instance UI re-entry flag (and TestTab.tsx:175 !isTesting gates Publish), the UI-side async race concurrency-guards.md:39 assigns to client-state; subscribeFeed/testEventFlow are IPC calls (src/api/events/sharedEvents.ts:16, src/api/overview/events.ts:47) whose guard and idempotency live in src-tauri, outside this context",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:ccc991958e998a93",
+          "evaluatedRevision": 16
         },
         {
           "subject": "client-fetch-cache",
