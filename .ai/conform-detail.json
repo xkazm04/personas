@@ -35661,6 +35661,50 @@
           "evidence": "src/features/shared/chrome/CliReadinessBanner.tsx:24 presentation of a probe status only; no spawn into any tree"
         }
       ]
+    },
+    "33a96a83-6adc-42f7-b57c-839382bcef54/agent-runtime-assembly": {
+      "context": "commands-curator",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T03:02:49.000Z",
+      "worker": "c5c00524-ab1f-40e4-a7f9-d6bb815ddfe9",
+      "techniques": [
+        {
+          "technique": "indeterminate-closure-on-interruption",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:918 vanished session closed as Ended::Failed; CuratorRequestState has no indeterminate value (src-tauri/core/src/models/curator.rs:799 Failed is the only non-success end), so restart-vs-crash is recoverable only by matching the reason text"
+        }
+      ],
+      "registryProposal": "Fourth lane in this repo with the same indeterminate-closure deviation (companion jobs, n8n transform, contest seats, curator dispatches) while db-repos-execution restart_recovery already closes runs as incomplete. A note on adopting one recovery vocabulary per lane would help: the primitive existing in one store does not reach sibling lanes that each own their own status enum."
+    },
+    "e4b48fb7-3763-4955-8ea9-01fd48aa0cf7/agent-runtime-assembly": {
+      "context": "commands-contest",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T03:02:49.000Z",
+      "worker": "c5c00524-ab1f-40e4-a7f9-d6bb815ddfe9",
+      "techniques": [
+        {
+          "technique": "indeterminate-closure-on-interruption",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/contest/record.rs:140 restart-lost seat -> errored; the outcome vocabulary (record.rs:16) is completed/seat-limit/timed-out/errored with no unknown/interrupted value"
+        }
+      ]
+    },
+    "7f6d3238-7136-4361-af8f-bca556ae2042/agent-runtime-assembly": {
+      "context": "mcp-server",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T03:02:49.000Z",
+      "worker": "c5c00524-ab1f-40e4-a7f9-d6bb815ddfe9",
+      "techniques": [],
+      "registryProposal": "Lexical pairing via install/gate/tool. install.rs writes a persisted registration into a FOREIGN host (Claude Code user config), which resonates with activation-is-a-separate-mutation from the contributor side: src-tauri/src/mcp_server/install.rs:197 reports success loudly and fails non-zero, but no separate check mode compares the declared registration with the actual one. The technique is written from the host side; a contributor-side note may be worth forging."
     }
   }
 }

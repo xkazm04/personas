@@ -6862,7 +6862,11 @@
           "revision": 28,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/contest/record.rs:140 a seat whose capture was lost to an app restart (reason text written at src-tauri/src/commands/contest/driver.rs:1123) is recorded OUTCOME_ERRORED, a definite failure verdict the app never observed; the restart cause survives only as app_note prose",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc",
+          "evaluatedRevision": 28
         },
         {
           "subject": "agent-memory",
@@ -7245,7 +7249,11 @@
           "revision": 28,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:918 a dispatch whose fleet session is gone (the fleet registry is in-memory, src-tauri/src/commands/fleet/registry.rs:506, so every app restart does this) is settled Failed with the cause only in a reason string (tick.rs:999): a restart-interrupted worker is booked as a failed request / blocked plan item with no first-class unknown outcome",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc",
+          "evaluatedRevision": 28
         },
         {
           "subject": "agent-memory",
@@ -19647,7 +19655,11 @@
           "revision": 28,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/mcp_server/mod.rs:34 this context is the personas-mcp stdio tool server answering JSON-RPC on the far side of the MCP wire; the subject stops at the host door and hands that side to mcp-tools (already paired here), and no hook chain, extension loader, checkpoint store or agent loop is assembled in it",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc",
+          "evaluatedRevision": 28
         }
       ],
       "governance": "governed"
