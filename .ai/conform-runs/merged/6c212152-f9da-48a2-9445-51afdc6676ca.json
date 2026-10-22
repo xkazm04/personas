@@ -1,0 +1,7 @@
+{"schema":"conform-run/1","worker":"6c212152-f9da-48a2-9445-51afdc6676ca","subject":"codebase-scanning",
+"evaluatedAt":"2026-10-22T00:00:00Z","pairs":[],
+"declined":[
+{"subject":"codebase-scanning","context":"fc62a53a-85f9-4491-8b54-9b5f1795ef91","reason":"overview-patterns: its entry points (src/features/overview/sub_patterns/*) are not tracked in this checkout (git ls-files returns nothing), so no anchor can be read; the context is a practice review modal, likely not-applicable, but unanchorable"},
+{"subject":"codebase-scanning","context":"cab45fee-e439-4bff-9924-217b1acc17f8","reason":"plugins-artist-hooks: entry points (src/features/plugins/artist/hooks/*) are not tracked here; its 'scan' is a media-folder import, probably not defect discovery, but unanchorable"},
+{"subject":"codebase-scanning","context":"a35d1f4a-5de8-4be1-af8b-1a3784296400","reason":"plugins-artist-gallery: weak context, a coverage question not a verdict"}],
+"consults":[]}
