@@ -1944,3 +1944,4 @@
 {"ts":"2026-10-22T02:44:00Z","bundle":"software-engineering","subjects":["test-harness"],"techniques":["negative-control-tests","unreached-decisions-pin-nothing","fixture-economics","pin-the-call-not-the-name"],"deviations":1}
 {"ts":"2026-10-22T02:46:05Z","bundle":"software-engineering","subjects":["table"],"techniques":["pagination","performance","grid-keyboard-model","clipboard-range-round-trip","one-door-for-range-writes","compressed-scroll-space","export-escapes-for-its-consumer"],"deviations":0}
 {"ts":"2026-10-22T02:46:05Z","bundle":"software-engineering","subjects":["table"],"techniques":["filtering","performance","sorting","pagination","client-server-split","loading-and-empty-states"],"deviations":0}
+{"ts":"2026-10-22T02:46:23Z","bundle":"software-engineering","subjects":["terminal-multiplexing"],"techniques":["keystroke-injection"],"deviations":3}

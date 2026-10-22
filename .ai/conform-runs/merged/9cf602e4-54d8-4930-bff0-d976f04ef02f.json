@@ -1,0 +1,81 @@
+{
+  "schema": "conform-run/1",
+  "worker": "9cf602e4-54d8-4930-bff0-d976f04ef02f",
+  "subject": "terminal-multiplexing",
+  "evaluatedAt": "2026-10-22T02:46:23Z",
+  "pairs": [
+    {
+      "context": "2de6333f-8375-404b-8fdc-fe0fb15d4f95",
+      "subject": "terminal-multiplexing",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/fleet/commands.rs:201 fleet_write_input still infers paste-vs-press from payload shape (len>1 and trailing newline), so a multi-line payload without a trailing newline is written raw and each internal newline reaches the composer unframed; re-verified 2026-10-22 against rev 7, no separate paste verb exists",
+      "evaluatedAgainst": "sha256-b2:c3ef11aba4a471f5",
+      "evaluatedRevision": 7,
+      "techniques": [
+        {
+          "technique": "keystroke-injection",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/commands.rs:201 one shape-sniffing door instead of distinct paste/press verbs; write_text_line (src-tauri/src/commands/fleet/registry.rs:1564) is only reached for newline-terminated text"
+        }
+      ]
+    },
+    {
+      "context": "4bdc9d46-06f1-4eb7-98f5-f6546aa5ef6e",
+      "subject": "terminal-multiplexing",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:138 an Enter-off broadcast sends the raw multi-line text and src-tauri/src/commands/fleet/commands.rs:201 frames only newline-terminated payloads, so the paste is never bracketed and internal newlines arrive as keystrokes; still live 2026-10-22",
+      "evaluatedAgainst": "sha256-b2:c3ef11aba4a471f5",
+      "evaluatedRevision": 7,
+      "techniques": [
+        {
+          "technique": "keystroke-injection",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:138 caller concatenates text+CR into one write and encodes the verb in the payload instead of calling paste-then-press"
+        }
+      ]
+    },
+    {
+      "context": "d7525012-ab19-4b29-99bb-0d4b6b9e084b",
+      "subject": "terminal-multiplexing",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/fleet/__tests__/FleetBroadcastPayload.test.tsx:115 asserts the unframed draft\nonly payload, and src/features/plugins/fleet/__tests__/FleetBroadcastModal.test.tsx:122 plus src/features/plugins/fleet/__tests__/SkillLibraryDrawer.test.tsx:124 pin text+CR in one write as the submit contract, freezing the defect; unchanged 2026-10-22",
+      "evaluatedAgainst": "sha256-b2:c3ef11aba4a471f5",
+      "evaluatedRevision": 7,
+      "techniques": [
+        {
+          "technique": "keystroke-injection",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/fleet/__tests__/FleetBroadcastPayload.test.tsx:115 the test asserts the raw payload shape rather than a paste verb followed by a separate Enter"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "terminal-multiplexing",
+      "context": "2651f2ce-7fc1-4331-8b31-61e783e9746a",
+      "reason": "companions-page is a weak-governance row (priorNotApplicable 18); the skill never judges weak pairs by default - a coverage question, not a verdict"
+    },
+    {
+      "subject": "terminal-multiplexing",
+      "context": "*other 19 judged pairs*",
+      "reason": "already judged against the current digest sha256-b2:c3ef11aba4a471f5 rev 7 (unchanged since 2026-09-04); not stale, not re-read this run"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-22T02:46:23Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "terminal-multiplexing"
+      ],
+      "techniques": [
+        "keystroke-injection"
+      ],
+      "deviations": 3
+    }
+  ]
+}
