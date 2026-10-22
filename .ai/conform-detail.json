@@ -35984,6 +35984,47 @@
         "at": "2026-10-22T03:18:49.414598+00:00",
         "reason": "reviewer (sonnet): The anchor (DesignReviewRunner.tsx:174) is the start button's disabled condition, which does not show that a metric gate is absent. The absence search covered only the generation directory, but the repo has repo-wide metric gates in scripts/ (bundle-baseline.json, bundle budget, agents-sub-boundarie"
       }
+    },
+    "e0ea6f08-ebdf-4c9e-aab4-969eee32f573/multi-provider-event-normalization": {
+      "context": "mastermind-scene-store",
+      "subject": "multi-provider-event-normalization",
+      "bundle": "llm-observability",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T03:36:00.743Z",
+      "techniques": [
+        {
+          "technique": "attribute-precedence-lists",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/lib/llmSpend.ts:24 This path reads observability-service API records through adapters; it does not map standard-telemetry span attributes across instrumentation generations."
+        },
+        {
+          "technique": "deterministic-span-derived-ids",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/lib/llmSpend.ts:26 The stored result is a per-project aggregate, which the technique explicitly excludes from span-derived identity."
+        },
+        {
+          "technique": "per-provider-usage-extractors",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/lib/llmSpend.ts:6 The dependency adapts observability-tool records rather than SDK responses from model providers; this context wraps no provider SDK call."
+        },
+        {
+          "technique": "provider-family-matching",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:302 The directly invoked LangSmith mapper only lowercases a supplied provider string, so hosted or namespaced variants bypass family resolution even when model identity is available."
+        },
+        {
+          "technique": "refuse-to-derive",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/llmSpend.ts:25 The called Helicone mapper passes optional costUSD through toNum at llmTracingAdapters.ts:402, whose missing-value branch returns zero at line 164; this aggregate retains neither missing-cost status nor an unpriced-row count."
+        }
+      ],
+      "withdrawn": {
+        "worker": "b0f63375-6d74-4b34-a30f-8c01a3e3617a",
+        "state": "deviation",
+        "at": "2026-10-22T03:36:22.917502+00:00",
+        "reason": "reviewer (sonnet): The seat's own technique anchors (llmSpend.ts:24, 26 and 6) say this context does no span or provider-event normalization and only sums per-project aggregates, so a deviation on multi-provider event normalization contradicts them; the line-302 anchor is in the sub_llm_overview adapter file, outside "
+      }
     }
   }
 }
