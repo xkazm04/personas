@@ -9693,7 +9693,11 @@
           "revision": 7,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/companions/CompanionsPage.tsx:24 the context is a route switch that lazy-loads AthenaPage (:56); it reads, writes and approves no constitution, self-model or capability inventory, so the identity precondition is unmet here.",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:ff529a6dc44bf233",
+          "evaluatedRevision": 7
         },
         {
           "subject": "mcp-tools",
@@ -25011,7 +25015,11 @@
           "revision": 7,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_glyph/personaCore/usePersonaCore.ts:1 this is the persona (agent) configuration backbone - model tier, traits, temperament - not a companion self-model; the lexical match on identity/edits is a resonance, and no companion constitution or identity document is touched.",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:ff529a6dc44bf233",
+          "evaluatedRevision": 7
         },
         {
           "subject": "cost-metering",

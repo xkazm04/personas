@@ -37029,6 +37029,27 @@
           "evidence": "src-tauri/src/companion/brain/oneshot.rs:6 no --resume, no durable conversation state to custody"
         }
       ]
+    },
+    "2651f2ce-7fc1-4331-8b31-61e783e9746a/companion-identity": {
+      "context": "companions-page",
+      "subject": "companion-identity",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T00:00:00.000Z",
+      "worker": "4fe6cefa-53e5-4eba-b89d-89ee96524fe3",
+      "techniques": []
+    },
+    "5ab49df3-3442-4ea6-a405-077dec64850d/companion-identity": {
+      "context": "persona-core-codex",
+      "subject": "companion-identity",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T00:00:00.000Z",
+      "worker": "4fe6cefa-53e5-4eba-b89d-89ee96524fe3",
+      "techniques": [],
+      "registryProposal": "Matcher paired companion-identity with a persona-configuration UI on the tokens companion/identity/edits (lexical-only); consider a precondition note in the golden path that it governs a companion's own self-model, not agent configuration screens."
     }
   }
 }
