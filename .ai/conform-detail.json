@@ -2624,13 +2624,13 @@
       "bundle": "software-engineering",
       "state": "deviation",
       "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T02:46:23.000Z",
-      "worker": "9cf602e4-54d8-4930-bff0-d976f04ef02f",
+      "evaluatedTs": "2026-10-22T19:52:03.629Z",
+      "worker": "49701164-b88b-420f-8fb8-70f14fe4c454",
       "techniques": [
         {
           "technique": "keystroke-injection",
-          "verdict": "deviation",
-          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:138 caller concatenates text+CR into one write and encodes the verb in the payload instead of calling paste-then-press"
+          "verdict": "not realized",
+          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:138 raw payload through the shape-inferring door"
         }
       ],
       "superseded": [
@@ -2654,6 +2654,13 @@
           "evaluatedAt": "2026-10-21T12:22:32.000Z",
           "worker": "d7fc10b7-5a64-4d64-8bb3-c2296ec93139",
           "reason": "replaced by 9cf602e4-54d8-4930-bff0-d976f04ef02f"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:138 an Enter-off broadcast sends the raw multi-line text and src-tauri/src/commands/fleet/commands.rs:201 frames only newline-terminated payloads, so the paste is never bracketed and internal newlines arrive as keystrokes; still live 2026-10-22",
+          "evaluatedAt": "2026-10-22T02:46:23.000Z",
+          "worker": "9cf602e4-54d8-4930-bff0-d976f04ef02f",
+          "reason": "replaced by 49701164-b88b-420f-8fb8-70f14fe4c454"
         }
       ]
     },
@@ -8259,13 +8266,13 @@
       "bundle": "software-engineering",
       "state": "deviation",
       "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T02:46:23.000Z",
-      "worker": "9cf602e4-54d8-4930-bff0-d976f04ef02f",
+      "evaluatedTs": "2026-10-22T19:52:03.629Z",
+      "worker": "49701164-b88b-420f-8fb8-70f14fe4c454",
       "techniques": [
         {
           "technique": "keystroke-injection",
-          "verdict": "deviation",
-          "evidence": "src/features/plugins/fleet/__tests__/FleetBroadcastPayload.test.tsx:115 the test asserts the raw payload shape rather than a paste verb followed by a separate Enter"
+          "verdict": "not realized",
+          "evidence": "src/features/plugins/fleet/__tests__/FleetBroadcastPayload.test.tsx:115 test pins the defect"
         },
         {
           "technique": "attach-detach-lifecycle",
@@ -8301,6 +8308,13 @@
           "evaluatedAt": "2026-10-21T12:22:32.000Z",
           "worker": "d7fc10b7-5a64-4d64-8bb3-c2296ec93139",
           "reason": "replaced by 9cf602e4-54d8-4930-bff0-d976f04ef02f"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/plugins/fleet/__tests__/FleetBroadcastPayload.test.tsx:115 asserts the unframed draft\nonly payload, and src/features/plugins/fleet/__tests__/FleetBroadcastModal.test.tsx:122 plus src/features/plugins/fleet/__tests__/SkillLibraryDrawer.test.tsx:124 pin text+CR in one write as the submit contract, freezing the defect; unchanged 2026-10-22",
+          "evaluatedAt": "2026-10-22T02:46:23.000Z",
+          "worker": "9cf602e4-54d8-4930-bff0-d976f04ef02f",
+          "reason": "replaced by 49701164-b88b-420f-8fb8-70f14fe4c454"
         }
       ]
     },
@@ -28964,13 +28978,13 @@
       "bundle": "software-engineering",
       "state": "deviation",
       "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T02:46:23.000Z",
-      "worker": "9cf602e4-54d8-4930-bff0-d976f04ef02f",
+      "evaluatedTs": "2026-10-22T19:52:03.629Z",
+      "worker": "49701164-b88b-420f-8fb8-70f14fe4c454",
       "techniques": [
         {
           "technique": "keystroke-injection",
-          "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/fleet/commands.rs:201 one shape-sniffing door instead of distinct paste/press verbs; write_text_line (src-tauri/src/commands/fleet/registry.rs:1564) is only reached for newline-terminated text"
+          "verdict": "not realized",
+          "evidence": "src-tauri/src/commands/fleet/commands.rs:201 paste-vs-press inferred from payload shape; one-authority-per-vocabulary broken"
         },
         {
           "technique": "pty-management",
@@ -29030,6 +29044,13 @@
           "evaluatedAt": "2026-10-21T12:22:32.000Z",
           "worker": "d7fc10b7-5a64-4d64-8bb3-c2296ec93139",
           "reason": "replaced by 9cf602e4-54d8-4930-bff0-d976f04ef02f"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/commands.rs:201 fleet_write_input still infers paste-vs-press from payload shape (len>1 and trailing newline), so a multi-line payload without a trailing newline is written raw and each internal newline reaches the composer unframed; re-verified 2026-10-22 against rev 7, no separate paste verb exists",
+          "evaluatedAt": "2026-10-22T02:46:23.000Z",
+          "worker": "9cf602e4-54d8-4930-bff0-d976f04ef02f",
+          "reason": "replaced by 49701164-b88b-420f-8fb8-70f14fe4c454"
         }
       ]
     },
