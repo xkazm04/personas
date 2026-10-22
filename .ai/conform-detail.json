@@ -3259,14 +3259,14 @@
       "subject": "companion-runtime",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:47:00.000Z",
-      "worker": "b4a6bb6b-a0a1-490d-b8be-f56800b32410",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T03:11:29.000Z",
+      "worker": "62bc84f0-7f43-48a7-aef8-34a8cba996db",
       "techniques": [
         {
           "technique": "action-catalog-single-source",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/companion/approvals/approval_lifecycle.rs:374 string match with a runtime `unknown action` arm instead of an executor derived from the one catalog declaration"
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_lifecycle.rs:374 string match with an unknown-action arm is the runtime shrug the technique names; no exhaustive binding over the table"
         }
       ],
       "superseded": [
@@ -3297,6 +3297,13 @@
           "evaluatedAt": "2026-10-16T17:48:29.000Z",
           "worker": "e5a005a2-7aa8-43d9-80d7-5a026c271c78",
           "reason": "replaced by b4a6bb6b-a0a1-490d-b8be-f56800b32410"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_lifecycle.rs:374 the executor still matches the action as a &str (:223) ending in `other => Err(unknown action)`, so a kind added to ALLOWED_ACTIONS (src-tauri/src/companion/dispatcher/catalog.rs:11, 60 entries, all with arms today) without an arm compiles and fails only when approved; src-tauri/src/companion/dispatcher/tests.rs:583 still pins membership only (re-confirmed 2026-10-21)",
+          "evaluatedAt": "2026-10-21T12:47:00.000Z",
+          "worker": "b4a6bb6b-a0a1-490d-b8be-f56800b32410",
+          "reason": "replaced by 62bc84f0-7f43-48a7-aef8-34a8cba996db"
         }
       ]
     },
@@ -3305,14 +3312,19 @@
       "subject": "companion-runtime",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T18:04:11.000Z",
-      "worker": "2d63f35f-3e38-4124-80af-c6f9bba95c94",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T03:11:29.000Z",
+      "worker": "62bc84f0-7f43-48a7-aef8-34a8cba996db",
       "techniques": [
         {
           "technique": "host-seam-contracts",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/disk.rs:23 runtime file imports the host db layer; the rule says such a file has already broken portability, and a second consumer exists (.claude/skills/athena/brain.py:16)"
+          "evidence": "src-tauri/src/companion/disk.rs:23 runtime reaches host modules directly; no package boundary or injected store"
+        },
+        {
+          "technique": "headless-turn-stream",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/session/turn.rs:70 the turn is bound to the Tauri AppHandle, not a typed event sink, so the second channel cannot call it"
         }
       ],
       "superseded": [
@@ -3329,6 +3341,13 @@
           "evaluatedAt": "2026-10-10T12:12:02.000Z",
           "worker": "529daf0c-daf4-423d-9a30-a4f3a61037c3",
           "reason": "replaced by 2d63f35f-3e38-4124-80af-c6f9bba95c94"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/Cargo.toml:14 lists no companion crate and src-tauri/src/companion/disk.rs:23 imports crate::db directly (111 of 162 companion files reach crate::db); src-tauri/src/companion/session/turn.rs:70 takes app: &AppHandle as the turn sink, so the second consumer .claude/skills/athena/brain.py:16 re-implements the episode write by parity contract instead of calling the turn (re-confirmed 2026-10-21, unchanged since 2026-10-10)",
+          "evaluatedAt": "2026-10-21T18:04:11.000Z",
+          "worker": "2d63f35f-3e38-4124-80af-c6f9bba95c94",
+          "reason": "replaced by 62bc84f0-7f43-48a7-aef8-34a8cba996db"
         }
       ]
     },
@@ -3337,14 +3356,14 @@
       "subject": "companion-runtime",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:47:00.000Z",
-      "worker": "b4a6bb6b-a0a1-490d-b8be-f56800b32410",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T03:11:29.000Z",
+      "worker": "62bc84f0-7f43-48a7-aef8-34a8cba996db",
       "techniques": [
         {
           "technique": "action-catalog-single-source",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/brain/dashboard.rs:176 reset exists but is unreachable; 'anything a model can compose, a person can reset' unmet for cockpit and dashboard"
+          "evidence": "src-tauri/src/companion/brain/dashboard.rs:176 a restore function nothing calls is a mechanism, not a reset"
         }
       ],
       "superseded": [
@@ -3368,6 +3387,13 @@
           "evaluatedAt": "2026-10-12T12:33:40.000Z",
           "worker": "7ebfa425-34fb-4871-8a6e-9346b53e9173",
           "reason": "replaced by b4a6bb6b-a0a1-490d-b8be-f56800b32410"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/brain/cockpit.rs:3 lets compose_cockpit overwrite the singleton spec and src-tauri/src/commands/companion/consolidate.rs:336 exposes get/pin/unpin with no cockpit reset, while src-tauri/src/companion/brain/dashboard.rs:176 reset_dashboard is still #[allow(dead_code)] with no command (untouched by the 10-19 dead-code sweep); a model-composed arrangement has no one-action way back to default (re-confirmed 2026-10-21)",
+          "evaluatedAt": "2026-10-21T12:47:00.000Z",
+          "worker": "b4a6bb6b-a0a1-490d-b8be-f56800b32410",
+          "reason": "replaced by 62bc84f0-7f43-48a7-aef8-34a8cba996db"
         }
       ]
     },
@@ -5899,14 +5925,14 @@
       "subject": "companion-runtime",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T18:04:11.000Z",
-      "worker": "2d63f35f-3e38-4124-80af-c6f9bba95c94",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T03:11:29.000Z",
+      "worker": "62bc84f0-7f43-48a7-aef8-34a8cba996db",
       "techniques": [
         {
           "technique": "action-catalog-single-source",
           "verdict": "deviation",
-          "evidence": "src/features/companions/athena/athenaLabels.ts:115 co-deployed surface falls back instead of being exhaustive or pinned by a source-reading test"
+          "evidence": "src/features/companions/athena/athenaLabels.ts:115 tolerant fallback inside one artifact hides the drift; the technique asks for an exhaustive surface or a source-reading pin"
         }
       ],
       "superseded": [
@@ -5937,6 +5963,13 @@
           "evaluatedAt": "2026-10-16T17:48:29.000Z",
           "worker": "e5a005a2-7aa8-43d9-80d7-5a026c271c78",
           "reason": "replaced by 2d63f35f-3e38-4124-80af-c6f9bba95c94"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/companions/athena/athenaLabels.ts:115 default arm title-cases the raw slug in the bundle that ships with the catalog; 25 of the 60 unique ALLOWED_ACTIONS (src-tauri/src/companion/dispatcher/catalog.rs:11) still have no case and src/features/companions/athena/ApprovalCard.tsx:40 renders that guess with nothing failing (re-confirmed 2026-10-21, count unchanged since 10-16)",
+          "evaluatedAt": "2026-10-21T18:04:11.000Z",
+          "worker": "2d63f35f-3e38-4124-80af-c6f9bba95c94",
+          "reason": "replaced by 62bc84f0-7f43-48a7-aef8-34a8cba996db"
         }
       ]
     },
@@ -14820,19 +14853,20 @@
       "subject": "companion-runtime",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:47:00.000Z",
-      "worker": "b4a6bb6b-a0a1-490d-b8be-f56800b32410",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T03:11:29.000Z",
+      "worker": "62bc84f0-7f43-48a7-aef8-34a8cba996db",
       "techniques": [
-        {
-          "technique": "signal-economy-contract",
-          "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/proactive/triggers.rs:75 unwrap_or_default erases a failed pressure read"
-        },
         {
           "technique": "autonomous-cycle-hosting",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/proactive/triggers.rs:207 latch set before the read, so a failed first read loses welcome-back for the process lifetime"
+          "evidence": "src-tauri/src/companion/proactive/triggers.rs:75 failure-not-empty-success law broken: a failed read is returned as an empty result"
+        },
+        {
+          "technique": "signal-economy-contract",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/proactive/triggers.rs:75 unwrap_or_default erases a failed pressure read",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "metered-llm-seam",
@@ -14855,6 +14889,13 @@
           "evaluatedAt": "2026-10-16T17:48:29.000Z",
           "worker": "e5a005a2-7aa8-43d9-80d7-5a026c271c78",
           "reason": "replaced by b4a6bb6b-a0a1-490d-b8be-f56800b32410"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/proactive/triggers.rs:75 collect_all still folds every trigger Err into an empty Vec with no log (also :328 and src-tauri/src/companion/proactive/incident_triggers.rs:99), so a failed goal/backlog/incident read is indistinguishable from nothing-to-report and the tick warn at src-tauri/src/commands/companion/mod.rs:658 never sees it; conversation_resume latches at triggers.rs:207 before reading; credential_triggers.rs:106 is the in-repo contrast that logs (re-confirmed 2026-10-21; the 10-19/10-21 proactive fixes do not touch this)",
+          "evaluatedAt": "2026-10-21T12:47:00.000Z",
+          "worker": "b4a6bb6b-a0a1-490d-b8be-f56800b32410",
+          "reason": "replaced by 62bc84f0-7f43-48a7-aef8-34a8cba996db"
         }
       ]
     },
