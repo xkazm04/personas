@@ -18755,7 +18755,11 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/lib/types/types.ts:2 pure frontend type definitions bridging ts-rs bindings; no dependency, archive, secret or install crossing exists in this context, the match came from build/review/team vocabulary",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:f5666db1094acd9f",
+          "evaluatedRevision": 6
         },
         {
           "subject": "agent-runtime-assembly",
@@ -34277,7 +34281,11 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/studio/StudioVisionStart.tsx:49 Studio is an IPC client that only probes for Bun presence (webbuild_bun_status) and shows install guidance; every fetch/spawn crossing lives in the backend webbuild contexts, already judged separately",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:f5666db1094acd9f",
+          "evaluatedRevision": 6
         },
         {
           "subject": "terminal-multiplexing",

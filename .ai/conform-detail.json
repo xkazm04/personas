@@ -36367,6 +36367,32 @@
       "evaluatedTs": "2026-10-22T15:32:38.207Z",
       "worker": "1b83b65a-696c-4b7a-ace9-ec1992fc6487",
       "techniques": []
+    },
+    "7741725e-8124-4899-b17e-8e39e7fcf1ed/supply-chain": {
+      "context": "studio",
+      "subject": "supply-chain",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T12:00:00.000Z",
+      "worker": "59d6e3e4-abf8-4884-bcfd-295856327ca8",
+      "techniques": [
+        {
+          "technique": "reading-is-not-running",
+          "verdict": "not-applicable here: the frontend spawns nothing, the spawn sits behind @/api/webbuild",
+          "evidence": "src/features/studio/studioStore.ts:21 imports only the IPC wrappers"
+        }
+      ]
+    },
+    "ad601e35-b998-4029-97a5-77487f00d561/supply-chain": {
+      "context": "lib-types",
+      "subject": "supply-chain",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T12:00:00.000Z",
+      "worker": "59d6e3e4-abf8-4884-bcfd-295856327ca8",
+      "techniques": []
     }
   }
 }
