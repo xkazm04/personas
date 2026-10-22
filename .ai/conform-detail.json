@@ -13746,27 +13746,38 @@
       "subject": "settings",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T01:31:42.000Z",
-      "worker": "95fd1114-33fe-417c-9447-c34d6f891573",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:54:02.000Z",
+      "worker": "0d9764be-c6d0-4902-8955-8a9d55722ee7",
       "techniques": [
         {
           "technique": "cross-source-precedence-chain",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/webbuild/bun.rs:23 present-and-malformed override is skipped like an absent one (malformed must stop), and resolve_bun returns a bare PathBuf naming neither the winning source nor the skipped override"
+          "evidence": "src-tauri/src/webbuild/bun.rs:23 present-but-unusable source is skipped instead of stopping the chain; no record of which source answered"
         },
         {
           "technique": "key-registry",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/webbuild/bun.rs:21 the context's only configuration is environment-sourced (PERSONAS_BUN_BIN, and PERSONAS_HOME at src-tauri/src/webbuild/project.rs:19); no settings:: read or write exists under src-tauri/src/webbuild"
+          "evidence": "src-tauri/src/webbuild/bun.rs:21 the context's only configuration is environment-sourced (PERSONAS_BUN_BIN, and PERSONAS_HOME at src-tauri/src/webbuild/project.rs:19); no settings:: read or write exists under src-tauri/src/webbuild",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "typed-accessors",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/webbuild/bun.rs:21 no app_settings key is read in this context, so there is no stored value to type"
+          "evidence": "src-tauri/src/webbuild/bun.rs:21 no app_settings key is read in this context, so there is no stored value to type",
+          "carriedFrom": "2026-10-10"
         }
       ],
-      "registryProposal": "Missing pairing: webbuild's bun.rs resolves a sidecar runtime binary (env override -> PATH), which is squarely software-engineering/sidecar-provisioning's territory; settings governs only through its cross-source-precedence-chain technique. Consider pairing sidecar-provisioning here, and consider whether sidecar-provisioning should cite cross-source-precedence-chain for binary-location chains."
+      "registryProposal": "The cross-source-precedence-chain 'when not to use this' says one source is ceremony; a two-rung env-override -> PATH binary lookup is the most common shape of this chain in desktop apps and could be named explicitly as in scope (an application note on rust--cross-source-precedence-chain for binary resolution would help).",
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/webbuild/bun.rs:23 a PERSONAS_BUN_BIN that is set but names no file is treated as absent and resolution falls through to PATH (:27) with no log or provenance, so a mistyped override silently runs a different Bun; the test at :112 pins that fall-through as intended",
+          "evaluatedAt": "2026-10-10T01:31:42.000Z",
+          "worker": "95fd1114-33fe-417c-9447-c34d6f891573",
+          "reason": "replaced by 0d9764be-c6d0-4902-8955-8a9d55722ee7"
+        }
+      ]
     },
     "97025c06-0d64-4025-8a1f-98b90ba1c233/settings": {
       "context": "model-config",
@@ -35267,6 +35278,91 @@
           "technique": "mirror-type-at-the-edge",
           "verdict": "not-applicable",
           "evidence": "src/features/vault/sub_databases/safeModeUtils.ts:178 the classifier takes a plain string; no host-minted input exists here"
+        }
+      ]
+    },
+    "0b0ee725-52a2-4656-9e13-07c5204de60e/settings": {
+      "context": "db",
+      "subject": "settings",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:54:02.000Z",
+      "worker": "0d9764be-c6d0-4902-8955-8a9d55722ee7",
+      "techniques": [
+        {
+          "technique": "typed-accessors",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/settings_keys.rs:636 safety-ceiling default fails open: absent/0 reads as unlimited, the fail-direction rule's named inversion"
+        },
+        {
+          "technique": "setting-kinds",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/settings_keys.rs:1681 validate_key checks membership only; the registry declares no kind, so ceilings validate and audit like preferences"
+        },
+        {
+          "technique": "key-registry",
+          "verdict": "realized",
+          "evidence": "src-tauri/db/src/settings_keys.rs:1681 store-side allowlist over ALLOWED_KEYS (:1486)"
+        },
+        {
+          "technique": "read-batching",
+          "verdict": "realized",
+          "evidence": "src-tauri/db/src/repos/core/settings.rs:195 get_batch bulk read, capped by GET_BATCH_MAX_KEYS (:186)"
+        },
+        {
+          "technique": "settings-audit-and-history",
+          "verdict": "realized",
+          "evidence": "src-tauri/db/src/repos/core/settings.rs:26 audit_setting_change records before/after per write"
+        },
+        {
+          "technique": "config-backup-and-restore",
+          "verdict": "realized",
+          "evidence": "src-tauri/db/src/lib.rs:86 restore module beside rotated boot backups"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/settings_keys.rs:618-620 defaults MONTHLY_COST_CEILING_USD to 0.0 meaning 'no ceiling', and the file defines no SettingKind taxonomy separating ceilings from flags/preferences - the exact fail-open inversion typed-accessors/setting-kinds name as the subject's canonical bad example (absent ceiling should mean zero-blocking, not unlimited); key-registry (validate_key :1479, ALLOWED_KEYS :1295), read-batching (settings.rs:195 get_batch, :186 GET_BATCH_MAX_KEYS), settings-audit-and-history (settings.rs:26 audit_setting_change + audit_category :2070) and config-backup-and-restore (backup.rs rotation + lib.rs:88 restore module) are realized; presence-decides-precedence is not-applicable here (deprecated_replacement :1894 only retires keys, no dual-name grace-period reader exists).",
+          "evaluatedAt": "2026-10-03",
+          "worker": null,
+          "reason": "replaced by 0d9764be-c6d0-4902-8955-8a9d55722ee7"
+        }
+      ]
+    },
+    "107445f8-c266-4671-8160-f854bd79319e/settings": {
+      "context": "hooks-utility-data",
+      "subject": "settings",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:54:02.000Z",
+      "worker": "0d9764be-c6d0-4902-8955-8a9d55722ee7",
+      "techniques": [
+        {
+          "technique": "key-registry",
+          "verdict": "deviation",
+          "evidence": "src/features/settings/sub_limits/components/monthlySpend.ts:10 per-feature CEILING_KEY literal; no shared TS key module generated from or tested against ALLOWED_KEYS (census rule covers Rust only)"
+        },
+        {
+          "technique": "typed-accessors",
+          "verdict": "deviation",
+          "evidence": "src/features/settings/sub_notifications/components/NotificationSettings.tsx:41 caller-supplied ad hoc validator + default per call site instead of one typed accessor per key"
+        },
+        {
+          "technique": "read-batching",
+          "verdict": "realized",
+          "evidence": "src/hooks/utility/data/useSettings.ts:44 pendingByKey microtask coalescer batches mount-time reads"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "useAppSetting.ts:39-43 accepts a bare key: string with a caller-supplied ad hoc validator instead of one typed accessor per key, and callers pass free string literals ('cli_engine' EngineCapabilityBadge.tsx:24, 'health_digest_enabled' NotificationSettings.tsx:40) or per-feature local *_KEY constants (LimitsSettings.tsx CEILING_KEY/CONCURRENCY_KEY) rather than one shared TS key-registry mirroring db/src/settings_keys.rs's ALLOWED_KEYS, so a frontend typo compiles clean and surfaces only as a backend runtime warn; useSettings.ts:44-112's microtask coalescer does realize read-batching.",
+          "evaluatedAt": "2026-10-03",
+          "worker": null,
+          "reason": "replaced by 0d9764be-c6d0-4902-8955-8a9d55722ee7"
         }
       ]
     }

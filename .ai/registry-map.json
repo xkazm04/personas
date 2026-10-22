@@ -10221,8 +10221,8 @@
           "changedAt": "2026-09-05",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/db/src/settings_keys.rs:618-620 defaults MONTHLY_COST_CEILING_USD to 0.0 meaning 'no ceiling', and the file defines no SettingKind taxonomy separating ceilings from flags/preferences - the exact fail-open inversion typed-accessors/setting-kinds name as the subject's canonical bad example (absent ceiling should mean zero-blocking, not unlimited); key-registry (validate_key :1479, ALLOWED_KEYS :1295), read-batching (settings.rs:195 get_batch, :186 GET_BATCH_MAX_KEYS), settings-audit-and-history (settings.rs:26 audit_setting_change + audit_category :2070) and config-backup-and-restore (backup.rs rotation + lib.rs:88 restore module) are realized; presence-decides-precedence is not-applicable here (deprecated_replacement :1894 only retires keys, no dual-name grace-period reader exists).",
-          "evaluatedAt": "2026-10-03",
+          "evidence": "src-tauri/db/src/settings_keys.rs:636 MONTHLY_COST_CEILING_USD_DEFAULT is still 0.0 meaning 'no ceiling' (and CHAIN_MAX_COST_USD_DEFAULT :1307 copies the convention), with no declared setting kind, so the unconfigured install is the most permissive one on the spend keys - re-verified live 2026-10-22",
+          "evaluatedAt": "2026-10-22",
           "evaluatedAgainst": "sha256-b2:85c48ec5bdb5581f",
           "evaluatedRevision": 13,
           "revisionsBehind": 0
@@ -16093,8 +16093,8 @@
           "changedAt": "2026-09-05",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "useAppSetting.ts:39-43 accepts a bare key: string with a caller-supplied ad hoc validator instead of one typed accessor per key, and callers pass free string literals ('cli_engine' EngineCapabilityBadge.tsx:24, 'health_digest_enabled' NotificationSettings.tsx:40) or per-feature local *_KEY constants (LimitsSettings.tsx CEILING_KEY/CONCURRENCY_KEY) rather than one shared TS key-registry mirroring db/src/settings_keys.rs's ALLOWED_KEYS, so a frontend typo compiles clean and surfaces only as a backend runtime warn; useSettings.ts:44-112's microtask coalescer does realize read-batching.",
-          "evaluatedAt": "2026-10-03",
+          "evidence": "src/hooks/utility/data/useAppSetting.ts:42 still takes a bare key: string and callers pass free literals ('cli_engine' src/features/settings/sub_engine/components/EngineCapabilityBadge.tsx:24), so a frontend key typo compiles clean and reads the default forever - re-verified live 2026-10-22",
+          "evaluatedAt": "2026-10-22",
           "evaluatedAgainst": "sha256-b2:85c48ec5bdb5581f",
           "evaluatedRevision": 13,
           "revisionsBehind": 0
@@ -42598,8 +42598,8 @@
           "changedAt": "2026-09-05",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/webbuild/bun.rs:23 a PERSONAS_BUN_BIN that is set but names no file is treated as absent and resolution falls through to PATH (:27) with no log or provenance, so a mistyped override silently runs a different Bun; the test at :112 pins that fall-through as intended",
-          "evaluatedAt": "2026-10-10",
+          "evidence": "src-tauri/src/webbuild/bun.rs:23 a set PERSONAS_BUN_BIN that names no file is treated as absent and falls through to PATH (:27) with no log or provenance, so a mistyped override silently runs a different Bun; the test at :189 pins the fall-through - re-verified live 2026-10-22",
+          "evaluatedAt": "2026-10-22",
           "evaluatedAgainst": "sha256-b2:85c48ec5bdb5581f",
           "evaluatedRevision": 13,
           "revisionsBehind": 0

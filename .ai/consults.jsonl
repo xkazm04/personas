@@ -1964,3 +1964,6 @@
 {"ts":"2026-10-22T02:52:27Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["module-depth","locality-and-leverage","seams-and-adapters","declarative-or-sequential","marked-unverifiable-region","io-free-core"],"deviations":1}
 {"ts":"2026-10-22T02:52:27Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["module-depth","locality-and-leverage","io-free-core","declarative-or-sequential","seams-and-adapters"],"deviations":1}
 {"ts":"2026-10-22T02:52:27Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["seams-and-adapters","module-depth","io-free-core","declarative-or-sequential","concurrency-at-the-edge","locality-and-leverage","marked-unverifiable-region"],"deviations":1}
+{"ts":"2026-10-22T02:54:02Z","bundle":"software-engineering","subjects":["settings"],"techniques":["typed-accessors","setting-kinds","key-registry","read-batching","settings-audit-and-history","config-backup-and-restore"],"deviations":2}
+{"ts":"2026-10-22T02:54:02Z","bundle":"software-engineering","subjects":["settings"],"techniques":["key-registry","typed-accessors","read-batching"],"deviations":2}
+{"ts":"2026-10-22T02:54:02Z","bundle":"software-engineering","subjects":["settings"],"techniques":["cross-source-precedence-chain"],"deviations":1}
