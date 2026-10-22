@@ -8042,14 +8042,14 @@
       "subject": "data-access",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T18:10:56.000Z",
-      "worker": "a2ed1275-cc0d-4308-8001-2b5b12bf55ee",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:49:06.000Z",
+      "worker": "bdacf617-e216-4c42-bc60-d916e4d13d0e",
       "techniques": [
         {
           "technique": "batching-and-n-plus-one",
           "verdict": "deviation",
-          "evidence": "src/api/devTools/devTools.ts:163 listGoals(projectId) and :908 listScans(projectId?) are single-parent; caller loops at src/features/teams/sub_mastermind/lib/sceneStore.ts:243"
+          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:254 const rows = await listScans(id, SCAN_PER_PROJECT) per project id"
         },
         {
           "technique": "layering-rules",
@@ -8065,6 +8065,13 @@
           "evaluatedAt": "2026-10-09T16:31:00.000Z",
           "worker": "a6beddbc-d977-484a-b82d-b5b70add603c",
           "reason": "replaced by a2ed1275-cc0d-4308-8001-2b5b12bf55ee"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:243 still calls listScans once per project (listGoals per project at :313) under mapWithConcurrency because src/api/devTools/devTools.ts:908 and :163 offer only per-parent reads; no children-of-parents operation grouped by project exists",
+          "evaluatedAt": "2026-10-16T18:10:56.000Z",
+          "worker": "a2ed1275-cc0d-4308-8001-2b5b12bf55ee",
+          "reason": "replaced by bdacf617-e216-4c42-bc60-d916e4d13d0e"
         }
       ]
     },
@@ -13497,14 +13504,14 @@
       "subject": "data-access",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T18:10:56.000Z",
-      "worker": "a2ed1275-cc0d-4308-8001-2b5b12bf55ee",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:49:06.000Z",
+      "worker": "bdacf617-e216-4c42-bc60-d916e4d13d0e",
       "techniques": [
         {
           "technique": "query-construction",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:42 local escaping copy interpolated into command text at :43; escaping not hoisted to one place"
+          "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:47 key.replace(...) then TYPE \"${escapedKey}\" at :48"
         }
       ],
       "superseded": [
@@ -13521,6 +13528,13 @@
           "evaluatedAt": "2026-10-10T01:31:33.733Z",
           "worker": "bd5abba4-e76b-472e-85a1-fe02de1d99c8",
           "reason": "replaced by a2ed1275-cc0d-4308-8001-2b5b12bf55ee"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:42 still hand-escapes a Redis key and splices it into TYPE command text at :43, a second quoting implementation beside src/features/vault/sub_databases/introspectionQueries.ts:147 escapeRedisGlob instead of one audited escaping door or a bound argument",
+          "evaluatedAt": "2026-10-16T18:10:56.000Z",
+          "worker": "a2ed1275-cc0d-4308-8001-2b5b12bf55ee",
+          "reason": "replaced by bdacf617-e216-4c42-bc60-d916e4d13d0e"
         }
       ]
     },
@@ -13529,14 +13543,14 @@
       "subject": "data-access",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T18:10:56.000Z",
-      "worker": "a2ed1275-cc0d-4308-8001-2b5b12bf55ee",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:49:06.000Z",
+      "worker": "bdacf617-e216-4c42-bc60-d916e4d13d0e",
       "techniques": [
         {
           "technique": "row-mapping",
           "verdict": "deviation",
-          "evidence": "src-tauri/core/src/models/build_session.rs:502 serde_json::from_str(...).unwrap_or_default() silently replaces a corrupt payload; :506 .ok() does the same"
+          "evidence": "src-tauri/core/src/models/build_session.rs:492 serde_json::from_str(&s.resolved_cells).unwrap_or_default()"
         }
       ],
       "superseded": [
@@ -13553,6 +13567,13 @@
           "evaluatedAt": "2026-10-10T01:31:33.733Z",
           "worker": "bd5abba4-e76b-472e-85a1-fe02de1d99c8",
           "reason": "replaced by a2ed1275-cc0d-4308-8001-2b5b12bf55ee"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/core/src/models/build_session.rs:502 PersistedBuildSession decode still maps a corrupt resolved_cells column to an empty default (unwrap_or_default) and pending_question to None via .ok() at :506, so an unreadable persisted session reads as an empty one instead of failing loud",
+          "evaluatedAt": "2026-10-16T18:10:56.000Z",
+          "worker": "a2ed1275-cc0d-4308-8001-2b5b12bf55ee",
+          "reason": "replaced by bdacf617-e216-4c42-bc60-d916e4d13d0e"
         }
       ]
     },
@@ -13561,14 +13582,14 @@
       "subject": "data-access",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T18:10:56.000Z",
-      "worker": "a2ed1275-cc0d-4308-8001-2b5b12bf55ee",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:49:06.000Z",
+      "worker": "bdacf617-e216-4c42-bc60-d916e4d13d0e",
       "techniques": [
         {
           "technique": "batching-and-n-plus-one",
           "verdict": "deviation",
-          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewActions.tsx:150 bulk route loops the singular write; no archive-by-ids exists beside src/api/agents/personas.ts:83"
+          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewActions.tsx:161 per-id archivePersona in a for-loop; no bulk archive/restore command exists"
         },
         {
           "technique": "layering-rules",
@@ -13577,7 +13598,6 @@
           "carriedFrom": "2026-10-10"
         }
       ],
-      "registryProposal": "Map lag: every data-access pair in this map carries digest sha256-b2:b67182492821d592 (revision 18) while the registry index is at sha256-b2:2dba94be6400dea1 (revision 19, an added rust--existence-authority-written-last--agent-mail application only); verdicts here were stamped against revision 19. Context recipes-playground (06ef5a64) has no live code and should be dropped or re-pointed at src/features/templates/sub_recipes on the next context scan + map rebuild.",
       "superseded": [
         {
           "state": "deviation",
@@ -13585,6 +13605,13 @@
           "evaluatedAt": "2026-10-10T01:31:33.733Z",
           "worker": "bd5abba4-e76b-472e-85a1-fe02de1d99c8",
           "reason": "replaced by a2ed1275-cc0d-4308-8001-2b5b12bf55ee"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewActions.tsx:150 batch archive still awaits the singular archivePersona IPC once per selected id (restore likewise at :174); src/api/agents/personas.ts:83 is the only archive door, so an N-row bulk action is N sequential round trips with no set-shaped operation",
+          "evaluatedAt": "2026-10-16T18:10:56.000Z",
+          "worker": "a2ed1275-cc0d-4308-8001-2b5b12bf55ee",
+          "reason": "replaced by bdacf617-e216-4c42-bc60-d916e4d13d0e"
         }
       ]
     },
@@ -15938,14 +15965,14 @@
       "subject": "data-access",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T18:10:56.000Z",
-      "worker": "a2ed1275-cc0d-4308-8001-2b5b12bf55ee",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:49:06.000Z",
+      "worker": "bdacf617-e216-4c42-bc60-d916e4d13d0e",
       "techniques": [
         {
           "technique": "row-mapping",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/execution/traces.rs:59 spans: serde_json::from_str(&spans_json).unwrap_or_default() on a single-record read"
+          "evidence": "src-tauri/db/src/repos/execution/traces.rs:59 serde_json::from_str(&spans_json).unwrap_or_default() inside a query_row single-record read"
         },
         {
           "technique": "query-construction",
@@ -15998,6 +16025,13 @@
           "evaluatedAt": "2026-10-10T11:38:19.000Z",
           "worker": "8839de9b-9ad2-4e19-862a-e3c630f43e4d",
           "reason": "replaced by a2ed1275-cc0d-4308-8001-2b5b12bf55ee"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/traces.rs:59 get_by_execution_id (single-record read by identity, query at :46) still decodes spans with unwrap_or_default(), so a corrupt trace returns as a present trace with zero spans rather than a loud decode error",
+          "evaluatedAt": "2026-10-16T18:10:56.000Z",
+          "worker": "a2ed1275-cc0d-4308-8001-2b5b12bf55ee",
+          "reason": "replaced by bdacf617-e216-4c42-bc60-d916e4d13d0e"
         }
       ]
     },
@@ -35008,6 +35042,23 @@
           "evidence": "src/features/shared/components/display/Numeric.tsx:30 primitives take a value, not fetch state; the body state model belongs to the table that hosts them"
         }
       ]
+    },
+    "06ef5a64-1796-4637-a4d9-f860bbe67562/data-access": {
+      "context": "recipes-playground",
+      "subject": "data-access",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:49:06.000Z",
+      "worker": "bdacf617-e216-4c42-bc60-d916e4d13d0e",
+      "techniques": [
+        {
+          "technique": "layering-rules",
+          "verdict": "not-applicable",
+          "evidence": "docs/features/recipes/README.md:242 execute_recipe/start_recipe_execution have no frontend caller since sub_playground was deleted"
+        }
+      ],
+      "registryProposal": "recipes-playground is a dead context (entry points all deleted); the context map should retire it so the matcher stops pairing subjects to it"
     }
   }
 }

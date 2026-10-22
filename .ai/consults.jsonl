@@ -1950,3 +1950,9 @@
 {"ts":"2026-10-22T02:46:59Z","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":["session-registry"],"deviations":1}
 {"ts":"2026-10-22T02:46:59Z","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":[],"deviations":0}
 {"ts":"2026-10-22T02:46:59Z","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":[],"deviations":0}
+{"ts":"2026-10-22T02:49:06Z","bundle":"software-engineering","subjects":["data-access"],"techniques":["layering-rules"],"deviations":0}
+{"ts":"2026-10-22T02:49:06Z","bundle":"software-engineering","subjects":["data-access"],"techniques":["batching-and-n-plus-one"],"deviations":1}
+{"ts":"2026-10-22T02:49:06Z","bundle":"software-engineering","subjects":["data-access"],"techniques":["row-mapping"],"deviations":1}
+{"ts":"2026-10-22T02:49:06Z","bundle":"software-engineering","subjects":["data-access"],"techniques":["row-mapping"],"deviations":1}
+{"ts":"2026-10-22T02:49:06Z","bundle":"software-engineering","subjects":["data-access"],"techniques":["batching-and-n-plus-one"],"deviations":1}
+{"ts":"2026-10-22T02:49:06Z","bundle":"software-engineering","subjects":["data-access"],"techniques":["query-construction"],"deviations":1}

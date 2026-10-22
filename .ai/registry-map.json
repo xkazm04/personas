@@ -2541,8 +2541,8 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewActions.tsx:150 batch archive still awaits the singular archivePersona IPC once per selected id (restore likewise at :174); src/api/agents/personas.ts:83 is the only archive door, so an N-row bulk action is N sequential round trips with no set-shaped operation",
-          "evaluatedAt": "2026-10-16",
+          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewActions.tsx:161 batch archive still awaits the singular archivePersona IPC once per selected id in a loop (restore likewise at :185); src/api/agents/personas.ts:83 is the only archive door, so an N-row bulk action is N sequential round trips with no set-shaped operation",
+          "evaluatedAt": "2026-10-22",
           "evaluatedAgainst": "sha256-b2:2dba94be6400dea1",
           "evaluatedRevision": 19,
           "source": "retained",
@@ -10879,8 +10879,8 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/db/src/repos/execution/traces.rs:59 get_by_execution_id (single-record read by identity, query at :46) still decodes spans with unwrap_or_default(), so a corrupt trace returns as a present trace with zero spans rather than a loud decode error",
-          "evaluatedAt": "2026-10-16",
+          "evidence": "src-tauri/db/src/repos/execution/traces.rs:59 get_by_execution_id (single-record read by identity) still decodes spans with unwrap_or_default(), so a corrupt trace returns as a present trace with zero spans rather than a loud decode error",
+          "evaluatedAt": "2026-10-22",
           "evaluatedAgainst": "sha256-b2:2dba94be6400dea1",
           "evaluatedRevision": 19,
           "revisionsBehind": 0
@@ -19265,8 +19265,8 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:243 still calls listScans once per project (listGoals per project at :313) under mapWithConcurrency because src/api/devTools/devTools.ts:908 and :163 offer only per-parent reads; no children-of-parents operation grouped by project exists",
-          "evaluatedAt": "2026-10-16",
+          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:254 still calls listScans once per project under mapWithConcurrency (listGoals per project at :326) because the API offers only per-parent reads; no children-of-parents operation grouped by project exists, so the N+1 is bounded, not removed",
+          "evaluatedAt": "2026-10-22",
           "evaluatedAgainst": "sha256-b2:2dba94be6400dea1",
           "evaluatedRevision": 19,
           "revisionsBehind": 0
@@ -30346,8 +30346,8 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/core/src/models/build_session.rs:502 PersistedBuildSession decode still maps a corrupt resolved_cells column to an empty default (unwrap_or_default) and pending_question to None via .ok() at :506, so an unreadable persisted session reads as an empty one instead of failing loud",
-          "evaluatedAt": "2026-10-16",
+          "evidence": "src-tauri/core/src/models/build_session.rs:492 PersistedBuildSession decode still maps a corrupt resolved_cells column to an empty default (unwrap_or_default) and pending_question to None via .ok() at :496, so an unreadable persisted session reads as an empty one instead of failing loud",
+          "evaluatedAt": "2026-10-22",
           "evaluatedAgainst": "sha256-b2:2dba94be6400dea1",
           "evaluatedRevision": 19,
           "revisionsBehind": 0
@@ -30526,7 +30526,11 @@
           "revision": 19,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "docs/features/recipes/README.md:242 the context's only code (features/recipes/sub_playground) was deleted 2026-09-25 in 450f1c9e5c and git ls-files has no file under src/features/recipes, so no query, decode seam or write door remains for the subject to govern",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:2dba94be6400dea1",
+          "evaluatedRevision": 19
         }
       ],
       "governance": "governed"
@@ -41446,8 +41450,8 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:42 still hand-escapes a Redis key and splices it into TYPE command text at :43, a second quoting implementation beside src/features/vault/sub_databases/introspectionQueries.ts:147 escapeRedisGlob instead of one audited escaping door or a bound argument",
-          "evaluatedAt": "2026-10-16",
+          "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:47 still hand-escapes a Redis key and splices it into TYPE command text at :48, a second quoting implementation beside src/features/vault/sub_databases/introspectionQueries.ts:147 escapeRedisGlob instead of one audited escaping door or a bound argument",
+          "evaluatedAt": "2026-10-22",
           "evaluatedAgainst": "sha256-b2:2dba94be6400dea1",
           "evaluatedRevision": 19,
           "revisionsBehind": 0
