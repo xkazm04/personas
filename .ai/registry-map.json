@@ -3825,13 +3825,12 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/agents/quick-answer/triage/triageDispatch.ts:2 'one verdict in, one backend write out'; src/features/agents/quick-answer/usePendingInteractions.ts:3 fuses pending questions and reviews into one queue (it only reads fleet monitor data, :25) and creates/dispatches/harvests no session; review-surface concerns belong to hitl-approval. Re-judged rev 26, unchanged.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
-          "evaluatedRevision": 26,
+          "evidence": "src/features/agents/quick-answer/triage/triageDispatch.ts:2 'one verdict in, one backend write out'; src/features/agents/quick-answer/usePendingInteractions.ts:25 only reads fleet monitor data via useSharedMonitorData and creates, dispatches or harvests no session. Re-judged rev 28, unchanged.",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28,
           "source": "retained",
-          "revisionsBehind": 2,
-          "stale": true
+          "revisionsBehind": 2
         },
         {
           "subject": "conversation-orchestration",
@@ -6725,7 +6724,11 @@
           "revision": 28,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/companion/fleet_bridge.rs:2504 parse_state_token re-declares the session-state vocabulary by hand and omits Finished and Expired (src-tauri/src/commands/fleet/types.rs:56), so companion_record_fleet_event returns Validation at :71 and the episode is lost for those states",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28
         }
       ],
       "governance": "governed"
@@ -14995,12 +14998,11 @@
           "changedAt": "2026-10-15",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/features/home/sub_releases/HomeReleases.tsx:2 a What's New roadmap view; the only fleet link in the neighbouring tour catalogue is a nav deep link at src/features/home/sub_learning/powerMoves/registry.ts:140. No session, roster, dispatch or harvest. Re-judged rev 26, unchanged.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/features/home/sub_releases/HomeReleases.tsx:2 a What's New view; the only fleet-adjacent link in the neighbouring tour catalogue is a nav deep link at src/features/home/sub_learning/powerMoves/registry.ts:140. No session, roster, dispatch or harvest. Re-judged rev 28, unchanged.",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28,
+          "revisionsBehind": 2
         },
         {
           "subject": "agent-memory",
@@ -15546,12 +15548,11 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/hooks/design/core/usePersonaCompiler.ts:2 a compiler wrapper around useDesignAnalysis for one persona; grep of src/hooks/design/core/*.ts for fleet finds nothing, so no multi-session registry, dispatch or harvest exists. Re-judged rev 26, unchanged (prior anchor was prose-only).",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/hooks/design/core/useDesignAnalysis.ts:2 drives one persona design analysis through startDesignAnalysis; its only session notion is a trace session (:11 SystemTraceSession), not a fleet session. No registry, dispatch or harvest. Re-judged rev 28; the prior anchor usePersonaCompiler.ts no longer exists.",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28,
+          "revisionsBehind": 2
         },
         {
           "subject": "test-harness",
