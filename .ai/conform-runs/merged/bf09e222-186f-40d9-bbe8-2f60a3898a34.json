@@ -1,0 +1,5 @@
+{"schema":"conform-run/1","worker":"bf09e222-186f-40d9-bbe8-2f60a3898a34","subject":"chat-transcript",
+"evaluatedAt":"2026-10-22T00:00:00Z",
+"pairs":[],
+"declined":[{"subject":"chat-transcript","context":"1d8a480b-eac4-4110-a60e-47a6ab281c97","reason":"glyph-persona-card is a weak context (declared domains barely cover it) and the pair carries priorNotApplicable:8; judging it would manufacture a verdict from a doubtful match. Reported as a coverage question, not judged."}],
+"consults":[]}
