@@ -2006,3 +2006,4 @@
 {"ts":"2026-10-22T03:11:29Z","bundle":"software-engineering","subjects":["companion-runtime"],"techniques":["autonomous-cycle-hosting"],"deviations":1}
 {"ts":"2026-10-22T03:11:29Z","bundle":"software-engineering","subjects":["companion-runtime"],"techniques":["host-seam-contracts","headless-turn-stream"],"deviations":1}
 {"ts":"2026-10-22T03:11:29Z","bundle":"software-engineering","subjects":["companion-runtime"],"techniques":["action-catalog-single-source"],"deviations":1}
+{"ts":"2026-10-22T03:17:34.750606+00:00","bundle":"software-engineering","subjects":["metric-gates"],"techniques":["counted-set-snapshot","deterministic-proxy-gate","operation-assertion-gates","proxy-metric-counts-its-own-satisfiers","ratchet-design"],"deviations":0,"context":"template-generation","via":"curator-multi:codex","model":"gpt-6.1-sol"}

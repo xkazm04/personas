@@ -1,0 +1,36 @@
+{
+  "schema": "conform-run/1",
+  "worker": "c97d06ed-a495-41ca-ae47-905673764066",
+  "subject": "metric-gates",
+  "evaluatedAt": "2026-10-22T03:17:34.750606+00:00",
+  "provider": "codex",
+  "model": "gpt-6.1-sol",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "metric-gates",
+      "context": "template-generation",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor (DesignReviewRunner.tsx:174) is the start button's disabled condition, which does not show that a metric gate is absent. The absence search covered only the generation directory, but the repo has repo-wide metric gates in scripts/ (bundle-baseline.json, bundle budget, agents-sub-boundarie"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-22T03:17:34.750606+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "metric-gates"
+      ],
+      "techniques": [
+        "counted-set-snapshot",
+        "deterministic-proxy-gate",
+        "operation-assertion-gates",
+        "proxy-metric-counts-its-own-satisfiers",
+        "ratchet-design"
+      ],
+      "deviations": 0,
+      "context": "template-generation",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    }
+  ]
+}
