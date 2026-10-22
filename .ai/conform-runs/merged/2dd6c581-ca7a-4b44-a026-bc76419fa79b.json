@@ -1,0 +1,5 @@
+{"schema": "conform-run/1", "worker": "2dd6c581-ca7a-4b44-a026-bc76419fa79b", "subject": "multi-project",
+ "evaluatedAt": "2026-10-22T02:54:24Z",
+ "pairs": [],
+ "declined": [{"subject": "multi-project", "context": "19e4120b-6020-4103-8a3d-a9fd0e13640b", "reason": "no work: the only unjudged multi-project pair is on a governance:weak context (plugins-research-lab-reports) whose context-map.json entry lists zero files - a lexical-only match on 'project/projects' with no code to read; left as a coverage question. The other 9 pairs are already judged against the current digest sha256-b2:07b32de44fd25fc6 (revision 3, registry 82801d41), none stale; the two oldest (10-10) anchors useProjectPulse.ts and studioBuildModel.ts have no commits since their verdicts"}],
+ "consults": []}
