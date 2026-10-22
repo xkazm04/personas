@@ -11470,7 +11470,11 @@
           "revision": 14,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src/features/shared/components/display/Numeric.tsx:98 pins tabular lining figures for right-aligned numeric columns, TruncateWithTooltip.tsx:56 truncates with keyboard-reachable recourse, and FilterBar.tsx:67 commits its enumerated chips on change - the table conventions this primitive set owns are met",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+          "evaluatedRevision": 14
         },
         {
           "subject": "structured-output",
@@ -16376,7 +16380,11 @@
           "revision": 14,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src/hooks/utility/interaction/useEndReached.ts:52 the scroll-triggered load-more detaches when the caller passes undefined (in flight / nothing more) and fires once on attach (:70) so a short first window cannot strand; useVirtualList.ts:10 windows with small overscan and leaves row keys to identity at the consumer (UnifiedTable.tsx:768)",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+          "evaluatedRevision": 14
         },
         {
           "subject": "talking-avatar",

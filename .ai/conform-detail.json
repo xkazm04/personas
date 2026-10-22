@@ -34862,6 +34862,93 @@
           "evidence": "src-tauri/engine/src/path_safety.rs:605 the neighbouring path guard is executed directly (26 tests) rather than pinned structurally"
         }
       ]
+    },
+    "cc76d419-f457-4fe4-833c-6869efbc9287/table": {
+      "context": "hooks-utility-interaction",
+      "subject": "table",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:46:05.000Z",
+      "worker": "4157fddb-4173-4a54-82c3-ab70aad7466b",
+      "techniques": [
+        {
+          "technique": "pagination",
+          "verdict": "realized",
+          "evidence": "src/hooks/utility/interaction/useEndReached.ts:52 returns without attaching when onEndReached is undefined or disabled, and :70 checks once on attach - both details the scroll-triggered load-more pattern names"
+        },
+        {
+          "technique": "performance",
+          "verdict": "realized",
+          "evidence": "src/hooks/utility/interaction/useVirtualList.ts:10 overscan 5 with a fixed estimateSize (:9); consumers key rows by identity, e.g. src/features/shared/components/display/UnifiedTable.tsx:768 key={rowKey}"
+        },
+        {
+          "technique": "grid-keyboard-model",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/useRovingTabIndex.ts:4 scoped to horizontal composites (tablists, toolbars, menubars), not two-dimensional grid traversal"
+        },
+        {
+          "technique": "clipboard-range-round-trip",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/useCopyToClipboard.ts:11 copies one text string; no cell-range copy/paste pair exists here"
+        },
+        {
+          "technique": "one-door-for-range-writes",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/useCopyToClipboard.ts:11 the only clipboard path is a write-out; no paste/fill/clear into cells"
+        },
+        {
+          "technique": "compressed-scroll-space",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/useVirtualList.ts:7 count is items.length of an in-memory array (hundreds of rows), far below the browser scroll-size ceiling the technique's precondition needs"
+        },
+        {
+          "technique": "export-escapes-for-its-consumer",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/useCopyToClipboard.ts:11 no CSV/spreadsheet export encoder lives in this hook set"
+        }
+      ]
+    },
+    "89eddf81-0c57-441d-a07d-de36bf022cb5/table": {
+      "context": "display-data-formatters",
+      "subject": "table",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:46:05.000Z",
+      "worker": "4157fddb-4173-4a54-82c3-ab70aad7466b",
+      "techniques": [
+        {
+          "technique": "filtering",
+          "verdict": "realized",
+          "evidence": "src/features/shared/components/overlays/FilterBar.tsx:67 an enumerated, low-cardinality chip control commits on change; counts (badge, summary) are caller-supplied, so the primitive cannot mint a predicate-less number"
+        },
+        {
+          "technique": "performance",
+          "verdict": "realized",
+          "evidence": "src/lib/utils/formatters.ts:232 the formatter Numeric delegates to caches Intl.NumberFormat at module scope, keeping per-cell formatting cheap on table hot paths"
+        },
+        {
+          "technique": "sorting",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/overlays/FilterBar.tsx:16 the props carry no sort state and no primitive here orders a collection"
+        },
+        {
+          "technique": "pagination",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/overlays/FilterBar.tsx:16 no window, cursor or total is held by any primitive in this context"
+        },
+        {
+          "technique": "client-server-split",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/overlays/FilterBar.tsx:22 reports the chosen id via onChange and executes no predicate on any tier"
+        },
+        {
+          "technique": "loading-and-empty-states",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/display/Numeric.tsx:30 primitives take a value, not fetch state; the body state model belongs to the table that hosts them"
+        }
+      ]
     }
   }
 }

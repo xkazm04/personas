@@ -1,0 +1,30 @@
+{"schema":"conform-run/1","worker":"4157fddb-4173-4a54-82c3-ab70aad7466b","subject":"table","evaluatedAt":"2026-10-22T02:46:05Z",
+"pairs":[
+{"context":"cc76d419-f457-4fe4-833c-6869efbc9287","subject":"table","bundle":"software-engineering","state":"conformant",
+ "evidence":"src/hooks/utility/interaction/useEndReached.ts:52 the scroll-triggered load-more detaches when the caller passes undefined (in flight / nothing more) and fires once on attach (:70) so a short first window cannot strand; useVirtualList.ts:10 windows with small overscan and leaves row keys to identity at the consumer (UnifiedTable.tsx:768)",
+ "techniques":[
+  {"technique":"pagination","verdict":"realized","evidence":"src/hooks/utility/interaction/useEndReached.ts:52 returns without attaching when onEndReached is undefined or disabled, and :70 checks once on attach - both details the scroll-triggered load-more pattern names"},
+  {"technique":"performance","verdict":"realized","evidence":"src/hooks/utility/interaction/useVirtualList.ts:10 overscan 5 with a fixed estimateSize (:9); consumers key rows by identity, e.g. src/features/shared/components/display/UnifiedTable.tsx:768 key={rowKey}"},
+  {"technique":"grid-keyboard-model","verdict":"not-applicable","evidence":"src/hooks/utility/interaction/useRovingTabIndex.ts:4 scoped to horizontal composites (tablists, toolbars, menubars), not two-dimensional grid traversal"},
+  {"technique":"clipboard-range-round-trip","verdict":"not-applicable","evidence":"src/hooks/utility/interaction/useCopyToClipboard.ts:11 copies one text string; no cell-range copy/paste pair exists here"},
+  {"technique":"one-door-for-range-writes","verdict":"not-applicable","evidence":"src/hooks/utility/interaction/useCopyToClipboard.ts:11 the only clipboard path is a write-out; no paste/fill/clear into cells"},
+  {"technique":"compressed-scroll-space","verdict":"not-applicable","evidence":"src/hooks/utility/interaction/useVirtualList.ts:7 count is items.length of an in-memory array (hundreds of rows), far below the browser scroll-size ceiling the technique's precondition needs"},
+  {"technique":"export-escapes-for-its-consumer","verdict":"not-applicable","evidence":"src/hooks/utility/interaction/useCopyToClipboard.ts:11 no CSV/spreadsheet export encoder lives in this hook set"}]},
+{"context":"89eddf81-0c57-441d-a07d-de36bf022cb5","subject":"table","bundle":"software-engineering","state":"conformant",
+ "evidence":"src/features/shared/components/display/Numeric.tsx:98 pins tabular lining figures for right-aligned numeric columns, TruncateWithTooltip.tsx:56 truncates with keyboard-reachable recourse, and FilterBar.tsx:67 commits its enumerated chips on change - the table conventions this primitive set owns are met",
+ "techniques":[
+  {"technique":"filtering","verdict":"realized","evidence":"src/features/shared/components/overlays/FilterBar.tsx:67 an enumerated, low-cardinality chip control commits on change; counts (badge, summary) are caller-supplied, so the primitive cannot mint a predicate-less number"},
+  {"technique":"performance","verdict":"realized","evidence":"src/lib/utils/formatters.ts:232 the formatter Numeric delegates to caches Intl.NumberFormat at module scope, keeping per-cell formatting cheap on table hot paths"},
+  {"technique":"sorting","verdict":"not-applicable","evidence":"src/features/shared/components/overlays/FilterBar.tsx:16 the props carry no sort state and no primitive here orders a collection"},
+  {"technique":"pagination","verdict":"not-applicable","evidence":"src/features/shared/components/overlays/FilterBar.tsx:16 no window, cursor or total is held by any primitive in this context"},
+  {"technique":"client-server-split","verdict":"not-applicable","evidence":"src/features/shared/components/overlays/FilterBar.tsx:22 reports the chosen id via onChange and executes no predicate on any tier"},
+  {"technique":"loading-and-empty-states","verdict":"not-applicable","evidence":"src/features/shared/components/display/Numeric.tsx:30 primitives take a value, not fetch state; the body state model belongs to the table that hosts them"}]}
+],
+"declined":[
+ {"subject":"table","context":"2651f2ce-7fc1-4331-8b31-61e783e9746a","reason":"weak governance row (companions-page); a coverage question, not judged by default"},
+ {"subject":"table","context":"37cd64d2-bd42-47b9-8c17-7ea1b466135c","reason":"weak governance row (persona-glyph-layout); a coverage question, not judged by default"}
+],
+"consults":[
+ {"ts":"2026-10-22T02:46:05Z","bundle":"software-engineering","subjects":["table"],"techniques":["pagination","performance","grid-keyboard-model","clipboard-range-round-trip","one-door-for-range-writes","compressed-scroll-space","export-escapes-for-its-consumer"],"deviations":0},
+ {"ts":"2026-10-22T02:46:05Z","bundle":"software-engineering","subjects":["table"],"techniques":["filtering","performance","sorting","pagination","client-server-split","loading-and-empty-states"],"deviations":0}
+]}
