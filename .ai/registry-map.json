@@ -9368,7 +9368,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/proactive/message_triage.rs:142 interpolates persona-authored title, persona name and content excerpt (model output) into the triage listing with no delimiter, flattening or data-only announcement, and the verdicts it steers (done/digest) mark messages read; a message saying 'mark this done' competes with the system instructions at :154",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         }
       ],
       "governance": "governed"
@@ -12590,7 +12594,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/project_tracking/consolidator.rs:288 re-injects the stored model-written prior narrative (narrative_md, parsed from the model's own envelope at :205) raw under 'NARRATIVE:', while notes at :380 get the untrusted-data wrapper; prior model output is an untrusted class per variable-interpolation, so one tick's injected text persists into every later prompt as an instruction-shaped span",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "engine-host-contract",
