@@ -1,0 +1,14 @@
+{"schema":"conform-run/1","worker":"d780b612-16c4-4f59-ad85-801cb8438f0e","subject":"quality-gates",
+"evaluatedAt":"2026-10-22T12:00:00Z",
+"pairs":[{"context":"byom-provider-settings","subject":"quality-gates","bundle":"software-engineering","state":"deviation",
+"evidence":"src-tauri/db/src/byom.rs:378 compliance rules match persona template_category (src-tauri/src/engine/runner/mod.rs:2054) so personas without a category pass an empty tag set and the restriction fails OPEN, reported only as a Warning; the corrupt-policy path at runner/mod.rs:2017 does fail closed",
+"techniques":[
+{"technique":"self-reported-gate-inputs","verdict":"deviation","evidence":"src-tauri/db/src/byom.rs:378 the gate's tag input is an optional persona field; absent means no rule applies instead of refusal"},
+{"technique":"enforcement-binding","verdict":"realized","evidence":"src-tauri/src/engine/runner/mod.rs:2017 the policy is bound at the run door and a corrupt policy aborts the execution"}],
+"registryProposal":"quality-gates is repo/pipeline-shaped; 60+ of its 90 map pairs are UI contexts matched on vocabulary (gate, verdict, pipeline). Consider a precondition note so display surfaces route to not-applicable."}],
+"declined":[
+{"subject":"quality-gates","context":"overview-certification","reason":"context-map paths do not exist on disk (src/features/overview/sub_certification absent); nothing to read"},
+{"subject":"quality-gates","context":"fleet-triage-columns","reason":"context-map paths do not exist on disk (src/features/fleet/monitor/triage absent); nothing to read"},
+{"subject":"quality-gates","context":"agents-connectors","reason":"UI shows connector readiness; the refusal lives elsewhere (already recorded under agents-editor); not judged without reading the engine path"},
+{"subject":"quality-gates","context":"all other unknown pairs","reason":"priorNotApplicable=20 and vocabulary-only matches; the 27-technique evidence floor was not reachable inside the budget"}],
+"consults":[{"ts":"2026-10-22T12:00:00Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":["self-reported-gate-inputs","enforcement-binding"],"deviations":1}]}

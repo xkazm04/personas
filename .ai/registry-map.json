@@ -5944,8 +5944,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 20
+          "state": "deviation",
+          "priorNotApplicable": 20,
+          "evidence": "src-tauri/db/src/byom.rs:378 compliance rules match persona template_category (src-tauri/src/engine/runner/mod.rs:2054) so personas without a category pass an empty tag set and the restriction fails OPEN, reported only as a Warning; the corrupt-policy path at runner/mod.rs:2017 does fail closed",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54
         },
         {
           "subject": "credential-vault",

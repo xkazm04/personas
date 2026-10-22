@@ -36025,6 +36025,28 @@
         "at": "2026-10-22T03:36:22.917502+00:00",
         "reason": "reviewer (sonnet): The seat's own technique anchors (llmSpend.ts:24, 26 and 6) say this context does no span or provider-event normalization and only sums per-project aggregates, so a deviation on multi-provider event normalization contradicts them; the line-302 anchor is in the sub_llm_overview adapter file, outside "
       }
+    },
+    "94b0b4ea-9adb-44d7-8222-4e2345de455b/quality-gates": {
+      "context": "byom-provider-settings",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T12:00:00.000Z",
+      "worker": "d780b612-16c4-4f59-ad85-801cb8438f0e",
+      "techniques": [
+        {
+          "technique": "self-reported-gate-inputs",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/byom.rs:378 the gate's tag input is an optional persona field; absent means no rule applies instead of refusal"
+        },
+        {
+          "technique": "enforcement-binding",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:2017 the policy is bound at the run door and a corrupt policy aborts the execution"
+        }
+      ],
+      "registryProposal": "quality-gates is repo/pipeline-shaped; 60+ of its 90 map pairs are UI contexts matched on vocabulary (gate, verdict, pipeline). Consider a precondition note so display surfaces route to not-applicable."
     }
   }
 }
