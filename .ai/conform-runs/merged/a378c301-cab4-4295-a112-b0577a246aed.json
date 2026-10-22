@@ -1,0 +1,35 @@
+{
+  "schema": "conform-run/1",
+  "worker": "a378c301-cab4-4295-a112-b0577a246aed",
+  "subject": "feed",
+  "evaluatedAt": "2026-10-22T01:54:16.820975+00:00",
+  "provider": "codex",
+  "model": "gpt-6.1-sol",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "feed",
+      "context": "fleet-monitor-channels",
+      "reason": "withdrawn after review: reviewer (sonnet): The lines quoted say what the verdict claims (`mergedFeed.tsx:50` sorts by timestamp only, `countUnread` uses `<=` on the watermark), but the deviation is about code outside this context. `mergedFeed.tsx` is not among the listed context files and no listed file imports it; its header comment says it"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-22T01:54:16.820975+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "feed"
+      ],
+      "techniques": [
+        "event-clustering",
+        "live-prepend",
+        "read-position-and-unseen",
+        "reverse-chronology-semantics"
+      ],
+      "deviations": 1,
+      "context": "fleet-monitor-channels",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    }
+  ]
+}

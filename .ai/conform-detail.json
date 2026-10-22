@@ -34381,6 +34381,42 @@
           "evidence": "src/i18n/locales/en.json:22951 EN-SPELLING: this American form coexists with 'Cancelled' at en.json:377; a whole-catalog scan excluding translator comments counted 3 'canceled' and 31 'cancelled' tokens."
         }
       ]
+    },
+    "0f1b56ac-cd96-4355-993e-dc445a20e63e/feed": {
+      "context": "fleet-monitor-channels",
+      "subject": "feed",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T01:54:16.820Z",
+      "techniques": [
+        {
+          "technique": "event-clustering",
+          "verdict": "deviation",
+          "evidence": "src/features/fleet/monitor/channels/__tests__/conversationModel.test.ts:88 The implemented and tested assignment grouping crosses unrelated intervening messages, contrary to the technique's consecutive-only clustering rule."
+        },
+        {
+          "technique": "live-prepend",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_timeline/components/LensStream.tsx:45 The current Timeline derives rendered rows directly from live data while scrolled, without holding prepends or compensating their height; its jump control also lacks a new-arrival count."
+        },
+        {
+          "technique": "read-position-and-unseen",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/pipeline/channelSlice.ts:149 The sidebar derives unread state from a persisted timestamp alone, so an unseen occurrence tied with the watermark timestamp is incorrectly excluded."
+        },
+        {
+          "technique": "reverse-chronology-semantics",
+          "verdict": "deviation",
+          "evidence": "src/features/fleet/monitor/channels/mergedFeed.tsx:50 The pop-up merge omits the identity tiebreaker despite merging multiple teams and cutting a bounded window."
+        }
+      ],
+      "withdrawn": {
+        "worker": "a378c301-cab4-4295-a112-b0577a246aed",
+        "state": "deviation",
+        "at": "2026-10-22T01:54:44.284681+00:00",
+        "reason": "reviewer (sonnet): The lines quoted say what the verdict claims (`mergedFeed.tsx:50` sorts by timestamp only, `countUnread` uses `<=` on the watermark), but the deviation is about code outside this context. `mergedFeed.tsx` is not among the listed context files and no listed file imports it; its header comment says it"
+      }
     }
   }
 }
