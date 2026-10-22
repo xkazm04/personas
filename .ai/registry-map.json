@@ -5661,7 +5661,11 @@
           "revision": 34,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/browser/webview/PendingApprovalBar.tsx:5 the context is React UI (tabs, address bar, lease badge) that decides nothing and speaks no MCP wire; grep finds one MCP mention in src/features/browser, in types.ts, so no tool boundary exists in these files",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34
         },
         {
           "subject": "test-harness",
@@ -32988,7 +32992,11 @@
           "revision": 34,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/browser_bridge/mcp.rs:653 returns page snapshot text to the scan/agent turn as a bare capped text block with no fence or source attribution, so a hostile page speaks into a model whose only mitigation is the write gate; auth, TTL and strict-mcp-config are realized",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34
         },
         {
           "subject": "module-design",

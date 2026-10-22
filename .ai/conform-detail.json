@@ -36839,6 +36839,43 @@
         }
       ],
       "registryProposal": "session-registry could name the stringly-typed event boundary (frontend ships state as a token string) as a variant of the consumer-copies-the-enum failure; the fix is serde on the shared enum, not a second parser."
+    },
+    "0f1de245-e9ba-41df-9b6c-d9ccd91dfb4b/mcp-tools": {
+      "context": "site-whitelist-management",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T19:54:20.562Z",
+      "worker": "4d0dd7a9-4e5a-4124-9de6-95ed8ca64aae",
+      "techniques": [
+        {
+          "technique": "client-integration",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/browser/sites.rs:369 passes --mcp-config plus --strict-mcp-config so the bridge is the turn only toolset, and the session is revoked on every failure path"
+        },
+        {
+          "technique": "authentication-and-scoping",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/browser_bridge/mod.rs:54 expires each per-turn session token after 30 min and mcp.rs:134 rejects tools/call without it; sites.rs:69 refuses loosening so the human and agent doors answer alike"
+        },
+        {
+          "technique": "untrusted-result-handling",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/browser_bridge/mcp.rs:653 emits page text unfenced and unattributed; only the effect-class gate (policy.rs:174) stands behind it, the framing layer is absent"
+        }
+      ],
+      "registryProposal": "Context file list for site-whitelist-management is UI plus Tauri commands; the MCP server it consumes lives in src-tauri/src/browser_bridge, a path no context map row seems to own, so the standard has no direct pair onto the bridge server itself. Consider a browser-bridge context."
+    },
+    "cbb061cf-5c61-49d4-80d8-98b8f9b40600/mcp-tools": {
+      "context": "browser-webview-control",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T19:54:20.562Z",
+      "worker": "4d0dd7a9-4e5a-4124-9de6-95ed8ca64aae",
+      "techniques": []
     }
   }
 }

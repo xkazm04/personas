@@ -2035,3 +2035,4 @@
 {"ts":"2026-10-22T00:00:00Z","bundle":"software-engineering","subjects":["eval-harness"],"techniques":["scenario-design"],"deviations":0}
 {"ts":"2026-10-22T19:52:16.469Z","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":["session-registry","absent-status-passthrough"],"deviations":1}
 {"ts":"2026-10-22T19:52:03.630Z","bundle":"software-engineering","subjects":["terminal-multiplexing"],"techniques":["keystroke-injection"],"deviations":3}
+{"ts":"2026-10-22T19:54:20.562Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["client-integration","authentication-and-scoping","untrusted-result-handling"],"deviations":1}
