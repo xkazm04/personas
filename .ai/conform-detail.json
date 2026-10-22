@@ -35126,6 +35126,149 @@
       "evaluatedTs": "2026-10-22T02:52:35.972Z",
       "worker": "39f1ea1f-891c-42db-9175-c9920257c170",
       "techniques": []
+    },
+    "f838d49f-2928-441e-ac8d-f6e6c412b262/module-design": {
+      "context": "shared-glyph",
+      "subject": "module-design",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:52:27.000Z",
+      "worker": "4aa44fab-f986-40fa-92c1-4f6fb09334c2",
+      "techniques": [
+        {
+          "technique": "module-depth",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/glyph/triggers.ts:75 a closed set the repo owns (generated TriggerKind) is matched on text with a fall-through to the raw value; the icon map in the same file proves the closed form is available (:48 satisfies Record<TriggerKind, ...>)"
+        },
+        {
+          "technique": "locality-and-leverage",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/glyph/channels.ts:22 icon and tint are one map keyed by channel, so a half-added channel cannot compile; petal geometry likewise has one definition at src/features/shared/glyph/helpers.ts:25"
+        },
+        {
+          "technique": "seams-and-adapters",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/glyph/types.ts:105 SigilUseCase is the structural contract the primitive reads, so any feature view model or test fixture satisfies it without the shared layer importing a feature"
+        },
+        {
+          "technique": "declarative-or-sequential",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/glyph/channels.ts:69 each summary segment takes one of three differently-shaped branches (pair, bare channel, prose scan), so the explicit loop is the honest form"
+        },
+        {
+          "technique": "marked-unverifiable-region",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/glyph/triggers.ts:86 the one key assertion is the true arm of an Object.hasOwn test in the same expression, so the invariant is the visible condition and the region is one token wide"
+        },
+        {
+          "technique": "io-free-core",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/glyph/channels.ts:66 parseChannels, humanizeCron and triggerDetail take values (and t) and return values; no clock, store or IPC is read"
+        },
+        {
+          "technique": "mirror-type-at-the-edge",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/glyph/types.ts:47 every input is a plain constructible record (GlyphRow), so there is no host-minted type to mirror"
+        },
+        {
+          "technique": "emitted-code-names-from-a-root",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/glyph/index.ts:1 the module is plain exports; it contains no macro or code generator"
+        }
+      ]
+    },
+    "8a57c65c-06fd-45c9-9d32-d50c89c4c705/module-design": {
+      "context": "template-generation",
+      "subject": "module-design",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:52:27.000Z",
+      "worker": "4aa44fab-f986-40fa-92c1-4f6fb09334c2",
+      "techniques": [
+        {
+          "technique": "module-depth",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/generation/runner/designRunnerConstants.ts:128 information leakage: one repo-owned decision (which trigger kinds exist) held in a second hand-maintained encoding with no compile-time link to src/lib/bindings/TriggerKind.ts"
+        },
+        {
+          "technique": "locality-and-leverage",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/generation/runner/useDesignRunnerState.ts:143 the valid-custom-case predicate is written twice (also :123) and one test-case shape is declared four times (PredefinedTestCase, CustomTemplateCase, ParsedTemplate, and TemplateSource at src/features/templates/sub_generated/generation/sources/TemplateSourceTypes.ts:5), so a field change is a multi-site edit"
+        },
+        {
+          "technique": "io-free-core",
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_generated/generation/runner/designRunnerConstants.ts:29 the list-markdown importer is a pure text-to-records function, kept out of the FileReader callback that drives it"
+        },
+        {
+          "technique": "declarative-or-sequential",
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_generated/generation/runner/designRunnerConstants.ts:33 the parser advances an index with lookahead over header/description/metadata lines; the cursor loop is the algorithm"
+        },
+        {
+          "technique": "seams-and-adapters",
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_generated/generation/runner/useDesignRunnerState.ts:10 run mode is a closed union and the panel props a discriminated union on it, so each source view receives only its own mode's surface"
+        },
+        {
+          "technique": "mirror-type-at-the-edge",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/generation/runner/designRunnerConstants.ts:29 inputs are plain strings and records a test can construct directly"
+        }
+      ]
+    },
+    "55d6d7cb-b016-4d73-8386-b5c18beafdae/module-design": {
+      "context": "vault-database-shell",
+      "subject": "module-design",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:52:27.000Z",
+      "worker": "4aa44fab-f986-40fa-92c1-4f6fb09334c2",
+      "techniques": [
+        {
+          "technique": "seams-and-adapters",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/safeModeUtils.ts:41 two producers of one classification with no divergence ledger or shared fixture for two of the three lists; the pinned third (src-tauri/engine/src/db_query.rs:3344) shows the mechanism exists and was not extended"
+        },
+        {
+          "technique": "module-depth",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/safeModeUtils.ts:9 the read-keyword vocabulary is a second hand-maintained copy of the Rust match arm in is_mutation, the information-leakage failure"
+        },
+        {
+          "technique": "io-free-core",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_databases/safeModeUtils.ts:178 classification is a pure string-to-bool function; useQuerySafeMode (src/features/vault/sub_databases/hooks/useQuerySafeMode.ts:21) is the driver that holds the pending state"
+        },
+        {
+          "technique": "declarative-or-sequential",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_databases/safeModeUtils.ts:119 literal/comment stripping is an explicit character state machine with a fail-closed unterminated flag; the loop is the algorithm"
+        },
+        {
+          "technique": "concurrency-at-the-edge",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:47 one latest-wins token guards the async result; nothing is offloaded and the concurrency is the query lifecycle the hook exists for"
+        },
+        {
+          "technique": "locality-and-leverage",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_databases/introspectionQueries.ts:42 language and dialect derive from one closed ConnectorFamily via totality-checked Records, so adding a family is compiler-walked"
+        },
+        {
+          "technique": "marked-unverifiable-region",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_databases/safeModeUtils.ts:266 the single record assertion sits directly under its object / 'error' in guard and reads one field"
+        },
+        {
+          "technique": "mirror-type-at-the-edge",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_databases/safeModeUtils.ts:178 the classifier takes a plain string; no host-minted input exists here"
+        }
+      ]
     }
   }
 }

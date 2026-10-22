@@ -32603,7 +32603,11 @@
           "revision": 18,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/shared/glyph/triggers.ts:75 prettyTriggerType re-encodes the trigger-kind vocabulary in an ungated string switch whose default returns the raw token, while TRIGGER_ICONS_BY_KIND beside it is totality-gated (:48); a TriggerKind added in Rust gets an icon compile error but its label silently renders as a machine token",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:7c8008f2207b1946",
+          "evaluatedRevision": 18
         },
         {
           "subject": "talking-avatar",
@@ -37127,7 +37131,11 @@
           "revision": 18,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/templates/sub_generated/generation/runner/designRunnerConstants.ts:128 TRIGGER_OPTIONS hand-copies the trigger vocabulary as a five-member literal (legacy 'event'; missing event_listener, file_watcher, app_focus, chain, clipboard, composite) instead of deriving from the generated TriggerKind, so kinds added in Rust are never offered as a design hint while the legacy alias still is",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:7c8008f2207b1946",
+          "evaluatedRevision": 18
         },
         {
           "subject": "metric-gates",
@@ -41227,7 +41235,11 @@
           "revision": 18,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_databases/safeModeUtils.ts:41 the client mutation-verb list and READ_ONLY_KEYWORDS (:9) mirror src-tauri/engine/src/db_query.rs:293 and is_mutation's read list with only a 'Keep the two lists in step' comment (:40); only READ_SHAPED_WRITES is pinned (db_query.rs:3344), so a verb added on one side skips the confirm banner and the user gets a raw backend rejection - the drift this file already suffered once with DROP/ALTER",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:7c8008f2207b1946",
+          "evaluatedRevision": 18
         },
         {
           "subject": "credential-vault",
