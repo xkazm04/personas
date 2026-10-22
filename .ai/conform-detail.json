@@ -36981,6 +36981,54 @@
       "evaluatedTs": "2026-10-22T19:57:16.784Z",
       "worker": "829803c6-a51c-43e1-b6e5-e7bb80058877",
       "techniques": []
+    },
+    "67c91bb4-f3ee-4aa0-91ca-e7097ac6b394/agent-runtime-assembly": {
+      "context": "fleet-session-grid",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T19:57:20.348Z",
+      "worker": "0bdd7d79-05d1-4719-bed0-6ac46df9c917",
+      "techniques": [
+        {
+          "technique": "semantic-hook-placement",
+          "verdict": "precondition unmet",
+          "evidence": "src/features/plugins/fleet/FleetHooksPill.tsx:21 pill only renders installed/port state; no chain composition here"
+        }
+      ]
+    },
+    "b6e66a59-78d3-465e-83b7-e77498b4c6ae/agent-runtime-assembly": {
+      "context": "stores-slices-agents",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T19:57:20.348Z",
+      "worker": "0bdd7d79-05d1-4719-bed0-6ac46df9c917",
+      "techniques": [
+        {
+          "technique": "session-scoped-capability",
+          "verdict": "precondition unmet",
+          "evidence": "src/stores/slices/agents/toolSlice.ts:15 60s read cache of tool definitions, no capability roster resolution"
+        }
+      ]
+    },
+    "9e46b252-8eb1-4a15-a627-f7e342f1d85a/agent-runtime-assembly": {
+      "context": "companion-brain",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T19:57:20.348Z",
+      "worker": "0bdd7d79-05d1-4719-bed0-6ac46df9c917",
+      "techniques": [
+        {
+          "technique": "checkpoint-mode-custody",
+          "verdict": "precondition unmet",
+          "evidence": "src-tauri/src/companion/brain/oneshot.rs:6 no --resume, no durable conversation state to custody"
+        }
+      ]
     }
   }
 }
