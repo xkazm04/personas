@@ -1957,3 +1957,7 @@
 {"ts":"2026-10-22T02:49:06Z","bundle":"software-engineering","subjects":["data-access"],"techniques":["batching-and-n-plus-one"],"deviations":1}
 {"ts":"2026-10-22T02:49:06Z","bundle":"software-engineering","subjects":["data-access"],"techniques":["query-construction"],"deviations":1}
 {"ts":"2026-10-22T02:49:53Z","bundle":"software-engineering","subjects":["concurrency-guards"],"techniques":["single-flight-primitives","idempotency-by-design","cross-process-exclusion"],"deviations":0}
+{"ts":"2026-10-22T02:52:35.972346+00:00","bundle":"software-engineering","subjects":["eval-harness"],"techniques":[],"deviations":0,"context":"agents-deployment","via":"curator-multi:codex","model":"gpt-6.1-sol"}
+{"ts":"2026-10-22T02:52:35.972346+00:00","bundle":"software-engineering","subjects":["eval-harness"],"techniques":[],"deviations":0,"context":"fleet-monitor-channels","via":"curator-multi:codex","model":"gpt-6.1-sol"}
+{"ts":"2026-10-22T02:52:35.972346+00:00","bundle":"software-engineering","subjects":["eval-harness"],"techniques":[],"deviations":0,"context":"triggers-triggers","via":"curator-multi:codex","model":"gpt-6.1-sol"}
+{"ts":"2026-10-22T02:52:35.972346+00:00","bundle":"software-engineering","subjects":["eval-harness"],"techniques":[],"deviations":0,"context":"template-adoption-persona-layout","via":"curator-multi:codex","model":"gpt-6.1-sol"}

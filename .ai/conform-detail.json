@@ -35086,6 +35086,46 @@
         }
       ],
       "registryProposal": "Dispatch said 5 consumer deviations ranked this subject, but Personas has 0 deviations on it: all 5 pairs are UI contexts matched lexically (key/shared/handle/fire), and all judge not-applicable via the client-state room split at concurrency-guards.md:39. Where this repo actually guards duplicate work (the src-tauri engine, db and core crates) no context carries the subject; the matcher should route it by its backend-platform precondition, not by UI vocabulary."
+    },
+    "e0a448bc-24d4-4663-ba31-27d4ce378a14/eval-harness": {
+      "context": "agents-deployment",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:52:35.972Z",
+      "worker": "39f1ea1f-891c-42db-9175-c9920257c170",
+      "techniques": []
+    },
+    "0f1b56ac-cd96-4355-993e-dc445a20e63e/eval-harness": {
+      "context": "fleet-monitor-channels",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:52:35.972Z",
+      "worker": "39f1ea1f-891c-42db-9175-c9920257c170",
+      "techniques": []
+    },
+    "0dabb588-48ce-4c35-b425-c344fd723ce7/eval-harness": {
+      "context": "triggers-triggers",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:52:35.972Z",
+      "worker": "39f1ea1f-891c-42db-9175-c9920257c170",
+      "techniques": []
+    },
+    "b88ef121-d028-4999-bf34-6e44aed99959/eval-harness": {
+      "context": "template-adoption-persona-layout",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:52:35.972Z",
+      "worker": "39f1ea1f-891c-42db-9175-c9920257c170",
+      "techniques": []
     }
   }
 }

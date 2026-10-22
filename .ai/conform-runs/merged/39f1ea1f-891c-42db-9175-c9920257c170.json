@@ -1,0 +1,119 @@
+{
+ "schema": "conform-run/1",
+ "worker": "39f1ea1f-891c-42db-9175-c9920257c170",
+ "subject": "eval-harness",
+ "evaluatedAt": "2026-10-22T02:52:35.972346+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [
+  {
+   "context": "agents-deployment",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_deployment/components/cloud/CloudHistoryPanel.tsx:82 Context searches found no benchmark, pairwise, or judge_packet references, and the inspected module retrieves operational execution history rather than evaluating declared scenarios.",
+   "techniques": [],
+   "absenceTerms": [
+    "benchmark",
+    "pairwise",
+    "judge_packet"
+   ]
+  },
+  {
+   "context": "fleet-monitor-channels",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/fleet/monitor/channels/useConversation.ts:233 Context searches found no benchmark, pairwise, or judge_packet references, while the inspected conversation code posts directives and launches team assignments without scoring evaluation scenarios.",
+   "techniques": [],
+   "absenceTerms": [
+    "benchmark",
+    "pairwise",
+    "judge_packet"
+   ]
+  },
+  {
+   "context": "triggers-triggers",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/triggers/sub_triggers/DryRunResultView.tsx:38 Context searches found no benchmark, pairwise, or judge_packet references, and the inspected dry-run surface displays trigger validation and subscription matching rather than model evaluations.",
+   "techniques": [],
+   "absenceTerms": [
+    "benchmark",
+    "pairwise",
+    "judge_packet"
+   ]
+  },
+  {
+   "context": "template-adoption-persona-layout",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/templates/sub_generated/adoption/persona-layout/PersonaLayoutBuild.tsx:464 Context searches found no benchmark, pairwise, or judge_packet references, and tracing the displayed tool results established direct API checks rather than scored model-behavior scenarios.",
+   "techniques": [],
+   "absenceTerms": [
+    "benchmark",
+    "pairwise",
+    "judge_packet"
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "eval-harness",
+   "context": "observability-audit-models",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-22T02:52:35.972346+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "eval-harness"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "agents-deployment",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-22T02:52:35.972346+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "eval-harness"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "fleet-monitor-channels",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-22T02:52:35.972346+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "eval-harness"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "triggers-triggers",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-22T02:52:35.972346+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "eval-harness"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "template-adoption-persona-layout",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  }
+ ]
+}

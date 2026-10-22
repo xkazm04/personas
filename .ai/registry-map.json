@@ -2905,8 +2905,12 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 15
+          "state": "not-applicable",
+          "priorNotApplicable": 15,
+          "evidence": "src/features/agents/sub_deployment/components/cloud/CloudHistoryPanel.tsx:82 Context searches found no benchmark, pairwise, or judge_packet references, and the inspected module retrieves operational execution history rather than evaluating declared scenarios.",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+          "evaluatedRevision": 37
         },
         {
           "subject": "cicd-monitoring",
@@ -13269,8 +13273,12 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 15
+          "state": "not-applicable",
+          "priorNotApplicable": 15,
+          "evidence": "src/features/fleet/monitor/channels/useConversation.ts:233 Context searches found no benchmark, pairwise, or judge_packet references, while the inspected conversation code posts directives and launches team assignments without scoring evaluation scenarios.",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+          "evaluatedRevision": 37
         },
         {
           "subject": "prompt-assembly",
@@ -36128,8 +36136,12 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 15
+          "state": "not-applicable",
+          "priorNotApplicable": 15,
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/PersonaLayoutBuild.tsx:464 Context searches found no benchmark, pairwise, or judge_packet references, and tracing the displayed tool results established direct API checks rather than scored model-behavior scenarios.",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+          "evaluatedRevision": 37
         },
         {
           "subject": "quality-gates",
@@ -39691,8 +39703,12 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 15
+          "state": "not-applicable",
+          "priorNotApplicable": 15,
+          "evidence": "src/features/triggers/sub_triggers/DryRunResultView.tsx:38 Context searches found no benchmark, pairwise, or judge_packet references, and the inspected dry-run surface displays trigger validation and subscription matching rather than model evaluations.",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+          "evaluatedRevision": 37
         },
         {
           "subject": "quality-gates",
