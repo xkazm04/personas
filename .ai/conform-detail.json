@@ -34155,6 +34155,78 @@
           "evidence": "src/lib/harness/orchestrator.ts:218 Completion uses model-reported feature passes and required code gates, then saves the guide; neither the explicit documentation task nor the model-derived guide receives document-specific semantic, structural, and human-read gates."
         }
       ]
+    },
+    "7901fd6c-0346-430b-aefe-fc4cd623b167/metrics-rollups": {
+      "context": "overview-usage-charts",
+      "subject": "metrics-rollups",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T00:10:30.566Z",
+      "worker": "9e678a4c-2919-44a7-915e-bbe65e9d734d",
+      "techniques": [
+        {
+          "technique": "bundle-endpoints",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:67 A failed aggregate request becomes an empty array and renders EmptyState, without a section error state distinguishing failure from no activity."
+        },
+        {
+          "technique": "cardinality-and-cost",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/resources/tool_audit_log.rs:157 The tool breakdown limits rows ranked by total_runs, but returns no overflow aggregate or truncation metadata."
+        },
+        {
+          "technique": "period-comparison",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:36 Periods are paired by ordinal position without densification or timestamp alignment; the activity caller supplies only occupied daily buckets."
+        },
+        {
+          "technique": "stored-rollups",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/db/src/repos/resources/tool_audit_log.rs:153 The inspected tool aggregation reads the raw audit log on demand; the comparison helper only transforms arrays in memory."
+        }
+      ]
+    },
+    "e8fa2ff7-145d-4c58-af83-1239b87d2c24/metrics-rollups": {
+      "context": "overview-activity-metrics",
+      "subject": "metrics-rollups",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T00:10:30.566Z",
+      "worker": "9e678a4c-2919-44a7-915e-bbe65e9d734d",
+      "techniques": [
+        {
+          "technique": "aggregate-honesty",
+          "verdict": "deviation",
+          "evidence": "src/lib/bindings/ExecutionDashboardData.ts:9 Neither this envelope nor its inspected daily-point type carries effective coverage, a snapshot moment, or partial-bucket marking, leaving live edge buckets indistinguishable from final ones."
+        },
+        {
+          "technique": "bucketing-strategy",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/metrics.rs:1545 Daily points are generated only from dates containing executions; covered days with no executions are not zero-filled."
+        },
+        {
+          "technique": "bundle-endpoints",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/llm_spend.rs:307 The LLM spend envelope obtains totals, daily points, and breakdowns through separate SELECTs without a read transaction, repeatedly resolving datetime('now') rather than sharing one snapshot and window."
+        },
+        {
+          "technique": "cardinality-and-cost",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_activity/components/LlmSpendSection.tsx:51 The trigger breakdown is truncated after the backend folds and returns every key, with neither an Other remainder nor truncation disclosure."
+        },
+        {
+          "technique": "period-comparison",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_activity/libs/useExecutionMetrics.ts:130 Although both periods are fetched together, this call sends undensified daily points to the helper that splits by array length instead of calendar boundary."
+        },
+        {
+          "technique": "stored-rollups",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/db/src/repos/execution/metrics.rs:1397 The traced execution, value, LLM spend, and Athena paths aggregate raw records on demand rather than reading materialized aggregate buckets requiring rebuilds."
+        }
+      ]
     }
   }
 }

@@ -21612,7 +21612,11 @@
           "revision": 3,
           "changedAt": "2026-09-30",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_activity/libs/useExecutionMetrics.ts:130 The activity charts pass sparse daily points into an ordinal period split, allowing comparisons to misassign days between periods.",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:1905deb541d7de9d",
+          "evaluatedRevision": 3
         },
         {
           "subject": "embedded-db",
@@ -23863,7 +23867,11 @@
           "revision": 3,
           "changedAt": "2026-09-30",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:30 The comparison splits by point count despite receiving sparse daily series, so previous and current values can represent different calendar spans.",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:1905deb541d7de9d",
+          "evaluatedRevision": 3
         },
         {
           "subject": "data-viz",
