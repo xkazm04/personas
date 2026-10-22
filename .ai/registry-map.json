@@ -7902,7 +7902,11 @@
           "revision": 34,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/pty.rs:857 every per-session mcp.json also bakes in the process-wide local_http token, which src-tauri/src/local_http/auth.rs:105 keeps stable across restarts with no expiry or rotation owner, so a config left in temp by a crash (cleanup lives only in the reaper, pty.rs:803) is a standing bearer credential",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34
         },
         {
           "subject": "agent-session-archive",
@@ -11944,7 +11948,11 @@
           "revision": 34,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/http_engine/tools.rs:287 the remote-model tool loop lets http_get fetch any public URL the model composes right after in-process MCP tools returned private data (executions, knowledge, vault, optionally Gmail), and :301 pushes every result unfenced into context, so an injected instruction in one result can exfiltrate another through a URL argument with no egress gate",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34
         },
         {
           "subject": "agent-memory",
@@ -34552,7 +34560,11 @@
           "revision": 34,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/system/mcp_integration.rs:123 one click (src/features/overview/components/health/HealthActions.tsx:123) writes a node <path> spawn entry into Claude Desktop's config without ever showing the command, and mcp_integration.rs:76 reports registered for ANY entry keyed personas, so a swapped binary inside the existing entry reads as healthy",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34
         },
         {
           "subject": "agent-memory",
@@ -42548,7 +42560,11 @@
           "revision": 34,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/webbuild/mcp.rs:45 build_config filter_maps away any enabled connector id it does not recognize (and returns None when none survive), and the caller src-tauri/src/companion/session/launch.rs:321 drops a tempfile/write failure with no else-branch, so a user-toggled connector can vanish from a build turn with no log, no event and no degraded marker",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34
         },
         {
           "subject": "agent-memory",

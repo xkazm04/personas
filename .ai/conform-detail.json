@@ -35387,6 +35387,106 @@
         }
       ],
       "registryProposal": "This row is marked governance: weak, but it holds the alert-rule CRUD, fired-alert persistence and the webhook-subscription door (alerts.rs, notifications.rs), so the subject genuinely governs it; the weak flag understates the match. Separately, the evaluator itself (src-tauri/src/commands/execution/alert_evaluator.rs) is the file most governed by this subject and should be checked for a pair on whichever context owns it."
+    },
+    "59918f8a-62ca-4e52-9435-1e5bf9a18bbd/mcp-tools": {
+      "context": "webbuild",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:58:00.000Z",
+      "worker": "709151c6-c5bd-4c6a-8a8a-16a212b0b92e",
+      "techniques": [
+        {
+          "technique": "client-integration",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/webbuild/mcp.rs:45 unknown ids and src-tauri/src/companion/session/launch.rs:321 config-write failures are dropped silently; failure-at-the-seam requires a per-server degraded state with name and reason"
+        },
+        {
+          "technique": "transport-selection",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/webbuild/mcp.rs:18 curated connectors are stdio child processes (identity by spawn, no listener), spawned from argument arrays with exact version pins (mcp.rs:10)"
+        }
+      ]
+    },
+    "dd45411d-8955-4579-906e-5a3b00ba16da/mcp-tools": {
+      "context": "system-health",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:58:00.000Z",
+      "worker": "709151c6-c5bd-4c6a-8a8a-16a212b0b92e",
+      "techniques": [
+        {
+          "technique": "client-integration",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/components/health/HealthActions.tsx:123 the install is a bare button with no consent view of the exact untruncated command; src-tauri/src/commands/infrastructure/system/mcp_integration.rs:76 checks key presence only, never that command/args are Personas' own (argv-array spawn and atomic tmp+rename write at :123/:131 are realized)"
+        },
+        {
+          "technique": "transport-selection",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/system/mcp_integration.rs:14 the spawn target is the first scripts/mcp-server/index.mjs found in ANY ancestor of the exe dir, so where no script is bundled the registered child process is whatever file sits higher up the tree (e.g. a user-writable drive root)"
+        }
+      ]
+    },
+    "2de6333f-8375-404b-8fdc-fe0fb15d4f95/mcp-tools": {
+      "context": "commands-fleet",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:58:00.000Z",
+      "worker": "709151c6-c5bd-4c6a-8a8a-16a212b0b92e",
+      "techniques": [
+        {
+          "technique": "client-integration",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/pty.rs:857 capability token written into client config with no expiry or rotation; pty.rs:824 MCP wiring failure only logs a warn and the session silently runs without Athena tools"
+        },
+        {
+          "technique": "authentication-and-scoping",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/fleet/pty.rs:854 a per-session X-Athena-Session token minted per spawn and released by the reaper at pty.rs:803 - per-consumer identity with a named reaper"
+        },
+        {
+          "technique": "transport-selection",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/fleet/pty.rs:853 the loopback HTTP server demands a credential header on every call rather than trusting the local port"
+        }
+      ]
+    },
+    "cd8712a3-9546-4c21-895b-9e64a4b161b1/mcp-tools": {
+      "context": "engine-build-session",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:58:00.000Z",
+      "worker": "709151c6-c5bd-4c6a-8a8a-16a212b0b92e",
+      "techniques": [
+        {
+          "technique": "untrusted-result-handling",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/http_engine/tools.rs:301 results enter the conversation as raw tool content with no fence or provenance and no consent on the read-private to egress transition"
+        },
+        {
+          "technique": "egress-argument-gating",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/http_engine/tools.rs:287 http_get arguments are checked only for SSRF (private addresses), never for whether they carry data out of the sanctioned set"
+        },
+        {
+          "technique": "tool-schema-design",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/http_engine/tools.rs:277 unparseable model arguments become {} and the tool runs anyway instead of returning an in-band validation error the model could fix"
+        },
+        {
+          "technique": "caller-differentiated-capability",
+          "verdict": "realized",
+          "evidence": "src-tauri/engine/src/http_engine/config.rs:102 the remote model's catalog is a strict-subset allow-list that a persona roster can only narrow, never widen"
+        }
+      ],
+      "registryProposal": "Upward lesson: src-tauri/engine/src/http_engine/config.rs:102 states the ordering rule 'a latency/cost roster may only intersect a security allow-list, never reopen it' - a crisp instance worth an application under caller-differentiated-capability."
     }
   }
 }
