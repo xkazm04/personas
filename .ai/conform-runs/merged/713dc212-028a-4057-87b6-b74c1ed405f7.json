@@ -1,0 +1,15 @@
+{
+ "schema": "conform-run/1",
+ "worker": "713dc212-028a-4057-87b6-b74c1ed405f7",
+ "subject": "data-access",
+ "evaluatedAt": "2026-10-22T15:31:14.724Z",
+ "pairs": [],
+ "declined": [
+  {
+   "subject": "data-access",
+   "context": "511ca12f-50df-4941-84e1-e2d74a3dff85",
+   "reason": "weak context (capability-config-view): declared domains barely cover it, so judging would manufacture a verdict; coverage question for the registry. The other 17 data-access pairs are already judged against the current digest sha256-b2:2dba94be6400dea1 (revision 19), none stale."
+  }
+ ],
+ "consults": []
+}
