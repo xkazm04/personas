@@ -36393,6 +36393,37 @@
       "evaluatedTs": "2026-10-22T12:00:00.000Z",
       "worker": "59d6e3e4-abf8-4884-bcfd-295856327ca8",
       "techniques": []
+    },
+    "a6843b83-43a1-4eab-ae40-26f23b949a0d/agent-runtime-assembly": {
+      "context": "hooks-execution",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T12:00:00.000Z",
+      "worker": "682758e8-be03-4491-aa8e-82a36107431d",
+      "techniques": []
+    },
+    "a3b615d2-05d8-47bd-ad92-672c6b42b0f3/agent-runtime-assembly": {
+      "context": "output-stream-parser",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T12:00:00.000Z",
+      "worker": "682758e8-be03-4491-aa8e-82a36107431d",
+      "techniques": [],
+      "registryProposal": "output-stream-parser matched on stream/tool vocabulary; the subject's precondition (the host assembles the loop around the model call) fails for a host that only drives a vendor CLI and parses its output. Consider stating that explicitly in the golden path's scope section."
+    },
+    "8650ca36-36fe-4862-98f5-745e866a2687/agent-runtime-assembly": {
+      "context": "agents-design",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T12:00:00.000Z",
+      "worker": "682758e8-be03-4491-aa8e-82a36107431d",
+      "techniques": []
     }
   }
 }

@@ -3081,7 +3081,11 @@
           "revision": 28,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_tool_runner/libs/useToolRunner.ts:95 the tool runner is a UI that calls invoke_tool_direct over IPC for a single tool; no agent loop, hook chain or session store is assembled in this context",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc",
+          "evaluatedRevision": 28
         },
         {
           "subject": "test-harness",
@@ -15710,7 +15714,11 @@
           "revision": 28,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/hooks/execution/usePersonaExecution.ts:2 these are React hooks that listen to Tauri events a spawned CLI run emits; the model/tool-call hook chain, extension loading and checkpoint store the subject assembles are not in this context",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc",
+          "evaluatedRevision": 28
         },
         {
           "subject": "terminal-multiplexing",
@@ -21570,7 +21578,11 @@
           "revision": 28,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/engine/src/parser.rs:167 parse_stream_line classifies one stdout line of an external CLI; the host does not own the agent loop here, so hook placement, assembly identity and checkpoint custody have no surface in the parser/protocol files",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc",
+          "evaluatedRevision": 28
         },
         {
           "subject": "fleet-orchestration",

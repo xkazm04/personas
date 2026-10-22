@@ -2023,3 +2023,4 @@
 {"ts":"2026-10-22T15:33:18.276Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["authentication-and-scoping","tool-identity-vs-tool-name"],"deviations":1}
 {"ts":"2026-10-22T15:33:18.276Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["golden-path-precondition"],"deviations":0}
 {"ts":"2026-10-22T12:00:00Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["reading-is-not-running"],"deviations":0}
+{"ts":"2026-10-22T12:00:00Z","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":[],"deviations":0}
