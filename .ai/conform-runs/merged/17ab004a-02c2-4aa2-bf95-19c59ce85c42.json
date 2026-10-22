@@ -1,0 +1,118 @@
+{
+ "schema": "conform-run/1",
+ "worker": "17ab004a-02c2-4aa2-bf95-19c59ce85c42",
+ "subject": "module-design",
+ "evaluatedAt": "2026-10-22T19:55:04.683Z",
+ "pairs": [
+  {
+   "context": "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f",
+   "subject": "module-design",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/home/sub_cockpit/widgets/TriggerSetWidget.tsx:45 re-implements config narrowing with inline typeof checks although narrow.ts:1 declares the one boundary-narrowing door (each widget narrows ONCE there); 7 sibling widgets use it, 5 in this context (TriggerSet, UseCaseSet, ModelTierChoice, ObservabilityPlan, PersonaReady) do not, so a malformed Athena payload is handled differently per widget",
+   "techniques": [
+    {
+     "technique": "module-depth",
+     "verdict": "deviation: the narrowing helpers (recordsOf/textOf/stringsOf/oneOf) hide the decision, but callers reach past them and duplicate the logic with variations",
+     "evidence": "src/features/home/sub_cockpit/widgets/TriggerSetWidget.tsx:45"
+    },
+    {
+     "technique": "locality-and-leverage",
+     "verdict": "deviation: a change to how malformed widget config is dropped or defaulted lands in narrow.ts plus every hand-rolled widget",
+     "evidence": "src/features/home/sub_cockpit/widgets/narrow.ts:12"
+    },
+    {
+     "technique": "mirror-type-at-the-edge",
+     "verdict": "realized where used: narrowing yields a domain type once at the edge and JSX renders only that",
+     "evidence": "src/features/home/sub_cockpit/widgets/narrow.ts:5"
+    }
+   ],
+   "registryProposal": "none"
+  },
+  {
+   "context": "80e0534a-d0ea-469a-9c3a-cf12910ecde9",
+   "subject": "module-design",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/templates/sub_generated/shared/vaultAdoptionMatcher.ts:28 hand-holds a service_type alias map for spellings emitted by Rust producers (src-tauri/src/commands/credentials/auth_detect.rs:274 emits 'google_cloud' while the catalog name is gcp_cloud), so the matcher must learn every producer's spelling instead of normalising once at the producer; a new creator path silently fails auto-detect until this map is edited",
+   "techniques": [
+    {
+     "technique": "locality-and-leverage",
+     "verdict": "deviation: one class of change (a credential spelling) is scattered across producer and TS matcher, and the file's own comment instructs editing the map per new creator path",
+     "evidence": "src/features/templates/sub_generated/shared/vaultAdoptionMatcher.ts:28"
+    },
+    {
+     "technique": "module-depth",
+     "verdict": "partial: the matcher's three match paths sit behind a small hasMatchingCredential/findMatchingCredential surface, but the alias knowledge leaks one decision (service_type naming) across two modules",
+     "evidence": "src/features/templates/sub_generated/shared/vaultAdoptionMatcher.ts:56"
+    },
+    {
+     "technique": "io-free-core",
+     "verdict": "realized: matching and binding derivation are pure functions over passed-in credentials and answers",
+     "evidence": "src/features/templates/sub_generated/shared/vaultAdoptionMatcher.ts:117"
+    }
+   ],
+   "registryProposal": "none"
+  }
+ ],
+ "declined": [
+  {
+   "subject": "module-design",
+   "context": "06ef5a64-1796-4637-a4d9-f860bbe67562",
+   "reason": "recipes-playground: context-map file_paths is empty and git ls-files finds no RecipePlayground or recipe test-runner file; entry points src/features/recipes/sub_playground/* do not exist, so there is no code to judge (stale context, a map question)"
+  },
+  {
+   "subject": "module-design",
+   "context": "8650ca36-36fe-4862-98f5-745e866a2687",
+   "reason": "agents-design: described design-session phases were retired by the 2026-09-04 manifest rebase; what remains (DesignHub tab shell, useToolRunner) was only partly read and no technique clearly fails, so left unknown rather than guessed"
+  },
+  {
+   "subject": "module-design",
+   "context": "5ab49df3-3442-4ea6-a405-077dec64850d",
+   "reason": "weak context; not judged by default"
+  },
+  {
+   "subject": "module-design",
+   "context": "11fe7642-7a1a-47c5-8910-499850aa04fe",
+   "reason": "weak context; not judged by default"
+  },
+  {
+   "subject": "module-design",
+   "context": "9b6cc17c-3add-4152-a349-c189b15a109f",
+   "reason": "weak context; not judged by default"
+  },
+  {
+   "subject": "module-design",
+   "context": "e0563a39-fb7e-485f-a698-f9c4dc1004a7",
+   "reason": "weak context; not judged by default"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-22T19:55:04.683Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "module-design"
+   ],
+   "techniques": [
+    "module-depth",
+    "locality-and-leverage",
+    "mirror-type-at-the-edge"
+   ],
+   "deviations": 1
+  },
+  {
+   "ts": "2026-10-22T19:55:04.683Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "module-design"
+   ],
+   "techniques": [
+    "locality-and-leverage",
+    "module-depth",
+    "io-free-core"
+   ],
+   "deviations": 1
+  }
+ ]
+}

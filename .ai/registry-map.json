@@ -14910,7 +14910,11 @@
           "revision": 18,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/home/sub_cockpit/widgets/TriggerSetWidget.tsx:45 re-implements config narrowing with inline typeof checks although narrow.ts:1 declares the one boundary-narrowing door (each widget narrows ONCE there); 7 sibling widgets use it, 5 in this context (TriggerSet, UseCaseSet, ModelTierChoice, ObservabilityPlan, PersonaReady) do not, so a malformed Athena payload is handled differently per widget",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:7c8008f2207b1946",
+          "evaluatedRevision": 18
         },
         {
           "subject": "eval-harness",
@@ -36643,7 +36647,11 @@
           "revision": 18,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/templates/sub_generated/shared/vaultAdoptionMatcher.ts:28 hand-holds a service_type alias map for spellings emitted by Rust producers (src-tauri/src/commands/credentials/auth_detect.rs:274 emits 'google_cloud' while the catalog name is gcp_cloud), so the matcher must learn every producer's spelling instead of normalising once at the producer; a new creator path silently fails auto-detect until this map is edited",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:7c8008f2207b1946",
+          "evaluatedRevision": 18
         },
         {
           "subject": "generated-workflow-candidates",

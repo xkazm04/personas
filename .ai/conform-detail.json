@@ -36876,6 +36876,60 @@
       "evaluatedTs": "2026-10-22T19:54:20.562Z",
       "worker": "4d0dd7a9-4e5a-4124-9de6-95ed8ca64aae",
       "techniques": []
+    },
+    "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f/module-design": {
+      "context": "home-cockpit-widgets",
+      "subject": "module-design",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T19:55:04.683Z",
+      "worker": "17ab004a-02c2-4aa2-bf95-19c59ce85c42",
+      "techniques": [
+        {
+          "technique": "module-depth",
+          "verdict": "deviation: the narrowing helpers (recordsOf/textOf/stringsOf/oneOf) hide the decision, but callers reach past them and duplicate the logic with variations",
+          "evidence": "src/features/home/sub_cockpit/widgets/TriggerSetWidget.tsx:45"
+        },
+        {
+          "technique": "locality-and-leverage",
+          "verdict": "deviation: a change to how malformed widget config is dropped or defaulted lands in narrow.ts plus every hand-rolled widget",
+          "evidence": "src/features/home/sub_cockpit/widgets/narrow.ts:12"
+        },
+        {
+          "technique": "mirror-type-at-the-edge",
+          "verdict": "realized where used: narrowing yields a domain type once at the edge and JSX renders only that",
+          "evidence": "src/features/home/sub_cockpit/widgets/narrow.ts:5"
+        }
+      ],
+      "registryProposal": "none"
+    },
+    "80e0534a-d0ea-469a-9c3a-cf12910ecde9/module-design": {
+      "context": "template-adoption-support",
+      "subject": "module-design",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T19:55:04.683Z",
+      "worker": "17ab004a-02c2-4aa2-bf95-19c59ce85c42",
+      "techniques": [
+        {
+          "technique": "locality-and-leverage",
+          "verdict": "deviation: one class of change (a credential spelling) is scattered across producer and TS matcher, and the file's own comment instructs editing the map per new creator path",
+          "evidence": "src/features/templates/sub_generated/shared/vaultAdoptionMatcher.ts:28"
+        },
+        {
+          "technique": "module-depth",
+          "verdict": "partial: the matcher's three match paths sit behind a small hasMatchingCredential/findMatchingCredential surface, but the alias knowledge leaks one decision (service_type naming) across two modules",
+          "evidence": "src/features/templates/sub_generated/shared/vaultAdoptionMatcher.ts:56"
+        },
+        {
+          "technique": "io-free-core",
+          "verdict": "realized: matching and binding derivation are pure functions over passed-in credentials and answers",
+          "evidence": "src/features/templates/sub_generated/shared/vaultAdoptionMatcher.ts:117"
+        }
+      ],
+      "registryProposal": "none"
     }
   }
 }
