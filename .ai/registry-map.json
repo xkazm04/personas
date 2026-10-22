@@ -11271,8 +11271,12 @@
           "revision": 2,
           "changedAt": "2026-09-15",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 2
+          "state": "not-applicable",
+          "priorNotApplicable": 2,
+          "evidence": "src-tauri/src/commands/infrastructure/dev_tools/git_ops.rs:1 the context's 7 files are Rust IPC handlers over the dev_tools repo (goals, milestones, triage rules, git ops); none hosts a guest app, frame, dev server or postMessage bridge - a grep for iframe/postMessage/dev_server/webview/preview over them is empty, so the golden path's precondition (a whole second application behind its own server) is unmet",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:a6e12ae70d42efcc",
+          "evaluatedRevision": 2
         }
       ],
       "governance": "weak"

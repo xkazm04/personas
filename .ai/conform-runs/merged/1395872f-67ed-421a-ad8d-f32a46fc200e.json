@@ -1,0 +1,12 @@
+{"schema":"conform-run/1","worker":"1395872f-67ed-421a-ad8d-f32a46fc200e","subject":"embedded-preview",
+"evaluatedAt":"2026-10-22T00:00:00Z",
+"pairs":[{"context":"aebcd52a-07a3-4305-bf42-d961b4f37a62","subject":"embedded-preview","bundle":"software-engineering",
+"state":"not-applicable",
+"evidence":"src-tauri/src/commands/infrastructure/dev_tools/git_ops.rs:1 the context's 7 files are Rust IPC handlers over the dev_tools repo (goals, milestones, triage rules, git ops); none hosts a guest app, frame, dev server or postMessage bridge - a grep for iframe/postMessage/dev_server/webview/preview over them is empty, so the golden path's precondition (a whole second application behind its own server) is unmet",
+"techniques":[],
+"registryProposal":"Matched via 'checkpoint'/'surface' vocabulary only (dev_tools_git_checkpoint is a git commit, not a per-mutation guest-state checkpoint); technique-shaped resonance with preview-checkpoints, routed by vocabulary not precondition. Consider downweighting the pairing for backend-only contexts."}],
+"declined":[
+{"subject":"embedded-preview","context":"c5f662f2-458b-4b5d-b03b-e4acf8f54049","reason":"already judged not-applicable 2026-10-16 against current digest sha256-b2:a6e12ae70d42efcc; not stale"},
+{"subject":"embedded-preview","context":"9b6cc17c-3add-4152-a349-c189b15a109f","reason":"already judged not-applicable 2026-10-16 against current digest; not stale"},
+{"subject":"embedded-preview","context":"59918f8a-62ca-4e52-9435-1e5bf9a18bbd","reason":"deviation re-judged 2026-10-21 against current digest; not stale"}],
+"consults":[{"ts":"2026-10-22T00:00:00Z","bundle":"software-engineering","subjects":["embedded-preview"],"techniques":[],"deviations":0}]}

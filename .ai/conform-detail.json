@@ -36930,6 +36930,17 @@
         }
       ],
       "registryProposal": "none"
+    },
+    "aebcd52a-07a3-4305-bf42-d961b4f37a62/embedded-preview": {
+      "context": "dev-tools-features",
+      "subject": "embedded-preview",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T00:00:00.000Z",
+      "worker": "1395872f-67ed-421a-ad8d-f32a46fc200e",
+      "techniques": [],
+      "registryProposal": "Matched via 'checkpoint'/'surface' vocabulary only (dev_tools_git_checkpoint is a git commit, not a per-mutation guest-state checkpoint); technique-shaped resonance with preview-checkpoints, routed by vocabulary not precondition. Consider downweighting the pairing for backend-only contexts."
     }
   }
 }
