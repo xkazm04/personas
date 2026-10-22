@@ -2011,3 +2011,4 @@
 {"ts":"2026-10-22T15:26:25.325Z","bundle":"software-engineering","subjects":["test-harness"],"techniques":["unreached-decisions-pin-nothing","negative-control-tests","pin-the-call-not-the-name"],"deviations":0}
 {"ts":"2026-10-22T12:00:00Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":["self-reported-gate-inputs","enforcement-binding"],"deviations":1}
 {"ts":"2026-10-22T12:00:00Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["rollup-compaction","scope-before-similarity","memory-governance","addresses-before-compression"],"deviations":3}
+{"ts":"2026-10-22T12:00:00Z","bundle":"software-engineering","subjects":["eval-harness"],"techniques":["reliability-aggregation","scenario-design","failure-attribution"],"deviations":1}

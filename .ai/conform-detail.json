@@ -36079,6 +36079,33 @@
         }
       ],
       "registryProposal": "Pair is a technique-shaped match for memory-compile; the rest of the agent-memory pairs listed as unknown are mostly UI/hook/lib contexts that only mention memory in passing and probably should not be governed by this subject (14+ contexts look like vocabulary resonance)."
+    },
+    "2fb16136-586e-478d-823f-38434d2d5b9a/eval-harness": {
+      "context": "commands-communication",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T12:00:00.000Z",
+      "worker": "5fc3fcb7-03c6-40a1-87e4-b268a66ad562",
+      "techniques": [
+        {
+          "technique": "reliability-aggregation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/communication/observability/prompt_lab.rs:206 one execution per arm; nothing aggregates repeats, so no spread is reported beside the A/B pair"
+        },
+        {
+          "technique": "scenario-design",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/communication/observability/prompt_lab.rs:212 the input is an optional ad hoc string, not a declared, versioned scenario"
+        },
+        {
+          "technique": "failure-attribution",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/communication/observability/prompt_lab.rs:191 cost_usd is Option so an unrecorded arm is not shown as $0.00 (failure-not-empty-success)"
+        }
+      ],
+      "registryProposal": "Boundary question: a side-by-side preview that returns no winner or score is arguably outside eval-harness; the golden path could say whether an unscored A/B preview is in scope."
     }
   }
 }

@@ -6391,8 +6391,12 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 15
+          "state": "deviation",
+          "priorNotApplicable": 15,
+          "evidence": "src-tauri/src/commands/communication/observability/prompt_lab.rs:206 run_prompt_ab_test compares two prompt versions on one free-form test_input (:212), one run per arm, with no scenario set, repeat or score, so a difference between arms is indistinguishable from run-to-run noise",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+          "evaluatedRevision": 37
         },
         {
           "subject": "prompt-assembly",
