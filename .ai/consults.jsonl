@@ -2025,3 +2025,4 @@
 {"ts":"2026-10-22T12:00:00Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["reading-is-not-running"],"deviations":0}
 {"ts":"2026-10-22T12:00:00Z","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":[],"deviations":0}
 {"ts":"2026-10-22T00:00:00Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":["sibling-floor-ownership","machine-owned-regions"],"deviations":1}
+{"ts":"2026-10-22T15:36:28.236Z","bundle":"software-engineering","subjects":["rate-limiting"],"techniques":[],"deviations":3}
