@@ -36424,6 +36424,38 @@
       "evaluatedTs": "2026-10-22T12:00:00.000Z",
       "worker": "682758e8-be03-4491-aa8e-82a36107431d",
       "techniques": []
+    },
+    "f9c8b6b9-7a46-4c84-a31a-19356b174d10/agent-instruction-files": {
+      "context": "resource-tracking",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T00:00:00.000Z",
+      "worker": "7f9e235b-5e85-494c-a7a5-1e0ade2c03d2",
+      "techniques": [
+        {
+          "technique": "sibling-floor-ownership",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/skill_files.rs:1207 single-file installs write no provenance, so install and retain are not separable decisions; the directory-install path does stamp it (:1187) and skill_files_list enumerates (:992), which is the realized half"
+        },
+        {
+          "technique": "machine-owned-regions",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/infrastructure/skill_files.rs:19-29 the provenance sidecar is excluded from the content hash and listing so the app never rewrites the skill body"
+        }
+      ],
+      "registryProposal": "Only skill_files.rs of this context touches the subject; the rest (llm_spend, tier_usage, scraper, cloud sync) is unrelated telemetry, so the pairing is technique-shaped resonance on one file. Same defect is already recorded under plugins-fleet-tests; consider whether the map should carry it once."
+    },
+    "66bc7a14-bf15-41d7-8d9a-900aa670f47e/agent-instruction-files": {
+      "context": "passport-wall-model",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T00:00:00.000Z",
+      "worker": "7f9e235b-5e85-494c-a7a5-1e0ade2c03d2",
+      "techniques": []
     }
   }
 }

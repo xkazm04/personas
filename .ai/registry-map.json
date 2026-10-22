@@ -24411,7 +24411,11 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/passport/passportDerive.ts:160 the model only reads an has_claude_md probe flag to grade a readiness rung; it authors, loads, delivers and maintains no instruction file, so the subject's precondition (a repo-owned file written for a harness) is unmet here.",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:25b61236a62604b0",
+          "evaluatedRevision": 31
         },
         {
           "subject": "quality-gates",
@@ -30741,7 +30745,11 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/skill_files.rs:1207 the single-file <name>.md install is a bare fs::copy into the target repo's .claude/skills with no provenance sidecar (read side confirms at :697-699, always local-only), so that part of the installed floor cannot be enumerated by source or reaped; sibling-floor-ownership wants every install to name its reaper.",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:25b61236a62604b0",
+          "evaluatedRevision": 31
         },
         {
           "subject": "agent-runtime-assembly",
