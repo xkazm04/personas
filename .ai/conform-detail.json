@@ -34727,6 +34727,141 @@
           "evidence": "src/features/triggers/hooks/useTriggerOperations.ts:137 executePersona(pid, triggerId) - ids only, no prompt text"
         }
       ]
+    },
+    "cd8712a3-9546-4c21-895b-9e64a4b161b1/test-harness": {
+      "context": "engine-build-session",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:44:00.000Z",
+      "worker": "f48933d7-8d2c-45f1-bd6d-380a825e37a4",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:3402 the scripted path is proven by asserting the LLM recorder stayed empty and the mock's authorised-hit counter is 1 (:3410), so the value names its producer"
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:3081 connectors seeded via connectors::create and keys via credentials::create_with_fields (:3113) on the init_test_db template copy - no write-path bypass"
+        },
+        {
+          "technique": "recorded-interaction-fixtures",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:3037 the API is locally hosted (200/401/hang) instead of recorded, the technique's own preferred alternative for a cheap deterministic service"
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/engine/http_engine/mod.rs:262 records that the pre-fix call also failed (dns error) and pins the refusal phrase precisely so the assertion fails against the bug"
+        },
+        {
+          "technique": "derived-selection-must-be-measured",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:3670 the catalog-wide mapping walk declares floors (>100 connectors here, >50 declared tools at :3701) so an empty seed cannot pass"
+        },
+        {
+          "technique": "far-side-oracle",
+          "verdict": "realized",
+          "evidence": "src-tauri/engine/src/cli_session_awareness/transcript.rs:282 the tail-window reader is checked against a full-scan oracle across window sizes rather than hand-written expectations"
+        }
+      ],
+      "registryProposal": "upward lesson for unreached-decisions-pin-nothing (rust application candidate): a split 'script what you can, hand the rest to an LLM' path is pinned by a Recorder counting prompts/summaries plus an authorised-hit counter on a loopback mock (src-tauri/src/engine/build_session/tool_tests.rs:3376), which names the producer without a live model"
+    },
+    "767b2bb5-4662-4be1-ad24-c881ac334016/test-harness": {
+      "context": "webhook-ingestion",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:44:00.000Z",
+      "worker": "f48933d7-8d2c-45f1-bd6d-380a825e37a4",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/cloud_webhook_relay.rs:347 ordering + watermark-hold decisions never lifted into a reachable unit; the sibling prune decision was (src-tauri/engine/src/webhook_ingest.rs:369 tests it), showing the lift is possible"
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/cloud_webhook_relay.rs:343 a recovery arm (publish failure holds the watermark) is a path the ordinary suite never executes, and nothing has ever been observed red on it"
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/engine/webhook.rs:771 the webhook state is built on init_test_db with persona and trigger seeded through personas::create (:772) and trigger_repo::create (:795)"
+        },
+        {
+          "technique": "far-side-oracle",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/engine/webhook.rs:766 the oversized-delivery test reads persona_events back and asserts zero rows reached the bus, not just the 422 status"
+        }
+      ]
+    },
+    "320d2cea-9761-4233-97c1-ee2eaf4d6c17/test-harness": {
+      "context": "db-repos-execution",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:44:00.000Z",
+      "worker": "f48933d7-8d2c-45f1-bd6d-380a825e37a4",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/failover.rs:202 with_persistence restore decisions (TTL filter, is_open -> Instant reconstruction) reached by no test; failover tests only drive the in-memory breaker"
+        },
+        {
+          "technique": "gate-scope-is-not-report-scope",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/circuit_breaker.rs:16 a repo file with no test importer does not appear in any test verdict at all"
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "realized",
+          "evidence": "src-tauri/db/src/repos/execution/executions.rs:3800 make_persona seeds through personas::create on the init_test_db template copy"
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "realized",
+          "evidence": "src-tauri/db/src/repos/execution/executions.rs:2900 the promotion CAS test pins the pre-CAS resurrection bug (doc :2897) by driving the reaped row it used to overwrite"
+        }
+      ]
+    },
+    "059fdee0-40da-434a-a5cb-874bc9179a31/test-harness": {
+      "context": "engine-core-infrastructure",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:44:00.000Z",
+      "worker": "f48933d7-8d2c-45f1-bd6d-380a825e37a4",
+      "techniques": [
+        {
+          "technique": "negative-control-tests",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/desktop_security.rs:141 a security fix with no test ever observed red against the basename ends_with check it replaced"
+        },
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/desktop_security.rs:172 path denial decisions are pure, reachable methods yet unexercised; desktop_bridges tests cover only the obsidian vault resolver, not the manifest allowlist"
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/engine/management_api.rs:5315 user-db tests take init_test_user_db instead of a hand-copied CREATE TABLE (reason stated at :5314)"
+        },
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "realized",
+          "evidence": "src-tauri/engine/src/path_safety.rs:605 the neighbouring path guard is executed directly (26 tests) rather than pinned structurally"
+        }
+      ]
     }
   }
 }
