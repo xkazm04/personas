@@ -8378,7 +8378,11 @@
           "revision": 18,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/wake_window.rs:89 gate() is a pure transition (pending, priority, window, minutes-since-last-wake -> due/reason) yet fetches window and age from the DB pool itself, so every branch test needs init_test_db (:239) instead of a value-in, value-out call (io-free-core)",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:7c8008f2207b1946",
+          "evaluatedRevision": 18
         }
       ],
       "governance": "governed"
@@ -11761,7 +11765,11 @@
           "revision": 18,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:152 UnifiedTableProps is a ~30-entry options bag with one-caller entries (rowFill has a single caller, LedgerCanvas.tsx:156; borderless and endReachedThreshold have none outside the file), the 'parameter that grows one entry per caller' that module-depth names as depth in the wrong place",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:7c8008f2207b1946",
+          "evaluatedRevision": 18
         },
         {
           "subject": "motion",

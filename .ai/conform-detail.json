@@ -36244,6 +36244,38 @@
           "evidence": "src/features/shared/glyph/persona-layout/PersonaSigilSummary.tsx:74 renders a fixed-dimension summary list and per-capability rows (PersonaLayout.tsx:257) that are identity-dominant, which the golden path assigns to cards or a list; no sort, filter or paging surface"
         }
       ]
+    },
+    "739b6d67-2c36-41ee-9794-a74bc0b25cfd/module-design": {
+      "context": "display-table-primitives",
+      "subject": "module-design",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T15:32:23.305Z",
+      "worker": "0f5a6f78-87d2-4868-866b-60763fd86b75",
+      "techniques": [
+        {
+          "technique": "module-depth",
+          "verdict": "deviation: options bag grows one entry per caller",
+          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:152 rowFill single-caller prop; :162 borderless and :196 endReachedThreshold set by no external caller"
+        }
+      ]
+    },
+    "b0e9ba6b-7737-43ec-b551-9bcc1b71d76f/module-design": {
+      "context": "companion",
+      "subject": "module-design",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T15:32:23.305Z",
+      "worker": "0f5a6f78-87d2-4868-866b-60763fd86b75",
+      "techniques": [
+        {
+          "technique": "io-free-core",
+          "verdict": "deviation: decision logic reads its inputs through DbPool",
+          "evidence": "src-tauri/src/companion/wake_window.rs:89 gate(pool,...) calls window_minutes(pool) and minutes_since_last_wake(pool,...) (:74) inside the decision"
+        }
+      ]
     }
   }
 }

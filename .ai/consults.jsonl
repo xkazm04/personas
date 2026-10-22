@@ -2015,3 +2015,4 @@
 {"ts":"2026-10-22T15:29:33.671Z","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":["parallel-dispatch","soft-budget-under-the-hard-cap","session-registry","absent-status-passthrough"],"deviations":1}
 {"ts":"2026-10-22T15:29:48.056Z","bundle":"software-engineering","subjects":["prompt-assembly"],"techniques":["task-envelope","context-budgeting","fingerprinting-and-cache-keys","continuation-prompts","layered-composition"],"deviations":2}
 {"ts":"2026-10-22T15:30:36.269Z","bundle":"software-engineering","subjects":["table"],"techniques":[],"deviations":0}
+{"ts":"2026-10-22T15:32:23.305Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["module-depth","io-free-core","seams-and-adapters"],"deviations":2}
