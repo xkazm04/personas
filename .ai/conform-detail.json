@@ -225,9 +225,9 @@
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T09:34:58.000Z",
-      "worker": "d6999eee-2a8f-4d51-95be-400f7116a285",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T15:29:33.671Z",
+      "worker": "d6d60d55-5c41-46fe-a14f-e1cbb62517c8",
       "techniques": [],
       "superseded": [
         {
@@ -243,6 +243,13 @@
           "evaluatedAt": "2026-10-09T16:31:00.000Z",
           "worker": "59c77aec-60ea-4b22-bb27-4b055a793a5e",
           "reason": "replaced by d6999eee-2a8f-4d51-95be-400f7116a285"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_design/DesignHub.tsx:52 SUB_TABS is authoring panels over one persona draft and src/features/agents/sub_tool_runner/libs/useToolRunner.ts:25 runs one tool call for one persona; no registry, dispatch or harvest of concurrent sessions, so the fleet precondition fails. Re-read against rev 26 (only result-harvest changed); unchanged.",
+          "evaluatedAt": "2026-10-14T09:34:58.000Z",
+          "worker": "d6999eee-2a8f-4d51-95be-400f7116a285",
+          "reason": "replaced by d6d60d55-5c41-46fe-a14f-e1cbb62517c8"
         }
       ]
     },
@@ -251,9 +258,9 @@
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T09:34:58.000Z",
-      "worker": "d6999eee-2a8f-4d51-95be-400f7116a285",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T15:29:33.671Z",
+      "worker": "d6d60d55-5c41-46fe-a14f-e1cbb62517c8",
       "techniques": [],
       "superseded": [
         {
@@ -269,6 +276,13 @@
           "evaluatedAt": "2026-10-09T16:31:00.000Z",
           "worker": "59c77aec-60ea-4b22-bb27-4b055a793a5e",
           "reason": "replaced by d6999eee-2a8f-4d51-95be-400f7116a285"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/home/sub_cockpit/widgets/ModelTierChoiceWidget.tsx:14 inline chat cards Athena emits; fleet references are DecisionDrawer.tsx:97 (a nav switch to the monitor) and PersonaOverviewWidget.tsx:70 (a persona-empty guard); nothing creates, tracks, dispatches or harvests a session. Re-judged rev 26, unchanged.",
+          "evaluatedAt": "2026-10-14T09:34:58.000Z",
+          "worker": "d6999eee-2a8f-4d51-95be-400f7116a285",
+          "reason": "replaced by d6d60d55-5c41-46fe-a14f-e1cbb62517c8"
         }
       ]
     },
@@ -6901,9 +6915,9 @@
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T09:34:58.000Z",
-      "worker": "d6999eee-2a8f-4d51-95be-400f7116a285",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T15:29:33.671Z",
+      "worker": "d6d60d55-5c41-46fe-a14f-e1cbb62517c8",
       "techniques": [],
       "superseded": [
         {
@@ -6919,6 +6933,13 @@
           "evaluatedAt": "2026-10-09T16:31:00.000Z",
           "worker": "59c77aec-60ea-4b22-bb27-4b055a793a5e",
           "reason": "replaced by d6999eee-2a8f-4d51-95be-400f7116a285"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:2 the context is generic display primitives (table, sorting, filters, virtual list); no session, dispatch or harvest concept or fleet status vocabulary in the display directory (only IllustratedEmptyState mentions fleet, as copy). Re-judged rev 26, unchanged.",
+          "evaluatedAt": "2026-10-14T09:34:58.000Z",
+          "worker": "d6999eee-2a8f-4d51-95be-400f7116a285",
+          "reason": "replaced by d6d60d55-5c41-46fe-a14f-e1cbb62517c8"
         }
       ]
     },
@@ -20248,51 +20269,59 @@
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-15",
-      "evaluatedTs": "2026-10-15T23:21:32.061Z",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T15:29:33.671Z",
+      "worker": "d6d60d55-5c41-46fe-a14f-e1cbb62517c8",
       "techniques": [
         {
           "technique": "durable-fleet-state",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/orchestration/mod.rs:10 No durable mirror and no startup reconcile; the OnceLock working set comes back empty."
+          "evidence": "src-tauri/src/companion/orchestration/mod.rs:10 No durable mirror and no startup reconcile; the OnceLock working set comes back empty.",
+          "carriedFrom": "2026-10-15"
         },
         {
           "technique": "lifecycle-signals",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/orchestration/operative_memory.rs:40 Hooks update last_state; nothing sweeps a silent Running session to lost."
+          "evidence": "src-tauri/src/companion/orchestration/operative_memory.rs:40 Hooks update last_state; nothing sweeps a silent Running session to lost.",
+          "carriedFrom": "2026-10-15"
         },
         {
           "technique": "result-harvest",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/orchestration/operative_memory.rs:372 Exit alone completes the operation; there is no drop-point or roster account."
+          "evidence": "src-tauri/src/companion/orchestration/operative_memory.rs:372 Exit alone completes the operation; there is no drop-point or roster account.",
+          "carriedFrom": "2026-10-15"
         },
         {
           "technique": "absent-status-passthrough",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/orchestration/operative_memory.rs:158 A placeholder SessionRef is seeded Spawning before any lifecycle observation."
+          "evidence": "src-tauri/src/companion/orchestration/operative_memory.rs:158 A placeholder SessionRef is seeded Spawning before any lifecycle observation.",
+          "carriedFrom": "2026-10-15"
         },
         {
           "technique": "session-registry",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/orchestration/operative_memory.rs:331 Status is assigned from the event with no legal-edge door."
+          "evidence": "src-tauri/src/companion/orchestration/operative_memory.rs:331 Status is assigned from the event with no legal-edge door.",
+          "carriedFrom": "2026-10-15"
         },
         {
           "technique": "completion-claim-verification",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/orchestration/operative_memory.rs:496 Exit code 0 becomes the summary; no artifact or receipt is read."
+          "evidence": "src-tauri/src/companion/orchestration/operative_memory.rs:496 Exit code 0 becomes the summary; no artifact or receipt is read.",
+          "carriedFrom": "2026-10-15"
         },
         {
           "technique": "hibernation-and-resume",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/orchestration/operative_memory.rs:894 Redirect targets are every non-Exited state, so Hibernated stays in the live broadcast set."
+          "evidence": "src-tauri/src/companion/orchestration/operative_memory.rs:894 Redirect targets are every non-Exited state, so Hibernated stays in the live broadcast set.",
+          "carriedFrom": "2026-10-15"
         },
         {
           "technique": "evidence-outranks-a-liveness-claim",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/companion/orchestration/operative_memory.rs:1063 Age only drops terminal operations; a budget expiry never declares a session dead."
+          "evidence": "src-tauri/src/companion/orchestration/operative_memory.rs:1063 Age only drops terminal operations; a budget expiry never declares a session dead.",
+          "carriedFrom": "2026-10-15"
         }
       ],
-      "registryProposal": "A volatile projection should count as conformant only when startup rebuilds it from the durable registry before any prompt read; an empty post-restart cache shown as the live fleet is still a second truth.",
       "superseded": [
         {
           "state": "not-applicable",
@@ -20300,14 +20329,15 @@
           "evaluatedAt": "2026-10-12T17:45:22.732Z",
           "worker": "0b6f836d-b418-4311-9a91-fd30c9d76e08",
           "reason": "replaced by 53d5d40f-ed3f-47d8-b2b5-14386b9119f0"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/companion/brain/fleet.rs:3 Athena's companion intelligence layer acts as a downstream consumer of fleet events for episodic memory and digest formatting rather than an orchestrator of fleet state.",
+          "evaluatedAt": "2026-10-12",
+          "worker": null,
+          "reason": "replaced by d6d60d55-5c41-46fe-a14f-e1cbb62517c8"
         }
-      ],
-      "withdrawn": {
-        "worker": "53d5d40f-ed3f-47d8-b2b5-14386b9119f0",
-        "state": "deviation",
-        "at": "2026-10-15T23:22:15.013964+00:00",
-        "reason": "reviewer (sonnet): mod.rs:10 does say the working set evaporates on restart, but it describes orchestration/, which the module comment says is distinct from brain/. None of the context's brain/*.rs files use it except a few references in episodic.rs and sleep_cycle. Also, the operative_memory.rs:40 anchor is the cap c"
-      }
+      ]
     },
     "a3cb83b5-7325-4d1c-b10d-b249ab1a186f/fleet-orchestration": {
       "context": "run-desk",
@@ -36106,6 +36136,27 @@
         }
       ],
       "registryProposal": "Boundary question: a side-by-side preview that returns no winner or score is arguably outside eval-harness; the golden path could say whether an unscored A/B preview is in scope."
+    },
+    "468953eb-0204-4013-b366-9357b2161138/fleet-orchestration": {
+      "context": "core",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T15:29:33.671Z",
+      "worker": "d6d60d55-5c41-46fe-a14f-e1cbb62517c8",
+      "techniques": [
+        {
+          "technique": "parallel-dispatch",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/run_budget.rs:85 enforcement off by default; ledger records post-spawn cost only (run_budget.rs:190)"
+        },
+        {
+          "technique": "soft-budget-under-the-hard-cap",
+          "verdict": "realized for single execution",
+          "evidence": "src-tauri/core/src/limits.rs:56 stream deadline clamped below ENGINE_MAX_EXECUTION_SECS with a 60s finalize margin"
+        }
+      ]
     }
   }
 }

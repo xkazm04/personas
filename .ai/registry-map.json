@@ -3040,12 +3040,11 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/agents/sub_design/DesignHub.tsx:52 SUB_TABS is authoring panels over one persona draft and src/features/agents/sub_tool_runner/libs/useToolRunner.ts:25 runs one tool call for one persona; no registry, dispatch or harvest of concurrent sessions, so the fleet precondition fails. Re-read against rev 26 (only result-harvest changed); unchanged.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/features/agents/sub_design/DesignHub.tsx:52 SUB_TABS are authoring panels over one persona draft, and src/features/agents/sub_tool_runner/libs/useToolRunner.ts:95 invokes a single tool call; no concurrent-session registry, dispatch or harvest. Re-judged rev 28, unchanged.",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28,
+          "revisionsBehind": 2
         },
         {
           "subject": "session-continuation",
@@ -8518,9 +8517,10 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/src/companion/brain/fleet.rs:3 Athena's companion intelligence layer acts as a downstream consumer of fleet events for episodic memory and digest formatting rather than an orchestrator of fleet state.",
-          "evaluatedAt": "2026-10-12",
-          "stale": true
+          "evidence": "src-tauri/src/companion/brain/fleet.rs:3 states Athena does not own the Fleet registry and is only a consumer writing episodes and a digest; no session is created, dispatched or harvested here, so the orchestrator precondition fails. Re-judged rev 28, unchanged.",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28
         },
         {
           "subject": "voice-io",
@@ -9967,7 +9967,11 @@
           "revision": 28,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/core/src/run_budget.rs:85 PERSONAS_RUN_BUDGET_ENFORCE defaults false, so the run-level total for multi-spawn runs only warns (run_budget.rs:21) and is booked at completion not reserved at admission; parallel-dispatch wants a run total reserved at the door and overflow deferred, so a fan-out can overspend its ceiling unchecked. (src-tauri/core/src/limits.rs:56 stream_timeout_ms is derived from the engine ceiling with a finalize margin, which does realize soft-under-hard for a single execution.)",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28
         },
         {
           "subject": "supply-chain",
@@ -11733,12 +11737,11 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:2 the context is generic display primitives (table, sorting, filters, virtual list); no session, dispatch or harvest concept or fleet status vocabulary in the display directory (only IllustratedEmptyState mentions fleet, as copy). Re-judged rev 26, unchanged.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:2 the context is generic table/list display primitives with no session registry, dispatch or harvest concept. Re-judged rev 28, unchanged.",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28,
+          "revisionsBehind": 2
         },
         {
           "subject": "module-design",
@@ -14743,12 +14746,11 @@
           "changedAt": "2026-10-15",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/features/home/sub_cockpit/widgets/ModelTierChoiceWidget.tsx:14 inline chat cards Athena emits; fleet references are DecisionDrawer.tsx:97 (a nav switch to the monitor) and PersonaOverviewWidget.tsx:70 (a persona-empty guard); nothing creates, tracks, dispatches or harvests a session. Re-judged rev 26, unchanged.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/features/home/sub_cockpit/widgets/DecisionDrawer.tsx:97 only switches navigation to the fleet monitor (sys.setMonitorInitialView); the cockpit widgets are chat cards that create, track, dispatch and harvest no session. Re-judged rev 28, unchanged.",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28,
+          "revisionsBehind": 2
         },
         {
           "subject": "test-harness",
