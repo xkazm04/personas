@@ -15975,7 +15975,11 @@
           "revision": 26,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/hooks/realtime/__tests__/useSmeeRelayStatus.test.ts:52 claims the payload the backend actually serializes but builds it from the hand-kept TS SmeeRelayStatusPayload, so renaming a field in src-tauri/src/engine/smee_relay.rs:142 leaves it green and the counters read undefined again",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:5521806124d93882",
+          "evaluatedRevision": 26
         },
         {
           "subject": "voice-io",
@@ -17661,7 +17665,11 @@
           "revision": 26,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src/lib/analytics/sink.test.ts:31 swaps the real sink and asserts what the production trackInteraction call emitted, so the decision it names is reached; session.test.ts:21 and sink.test.ts:11 restore state per test",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:5521806124d93882",
+          "evaluatedRevision": 26
         },
         {
           "subject": "analytics-store-design",

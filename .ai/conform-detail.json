@@ -36674,6 +36674,59 @@
         }
       ],
       "registryProposal": "Consider noting in variable-interpolation that a length-capped excerpt (CONTENT_EXCERPT_CHARS) is a budget, not a trust control; the repo shows the two are easily conflated."
+    },
+    "0a73aef0-7c50-4be1-b990-cbddad3671bd/test-harness": {
+      "context": "lib-analytics",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T19:50:20.014Z",
+      "worker": "afe29407-ce9d-4c41-80fa-262960015574",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "realized",
+          "evidence": "src/lib/analytics/sink.test.ts:31 name claims routing through the active sink and the assertion reads the sink that answered; activation.test.ts:96 asserts a capturing sink saw nothing under noop"
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "realized",
+          "evidence": "src/lib/analytics/session.test.ts:55 the emits-nothing case shares a fixture with the pagehide positives at :34, :42, :49, so the empty result is falsifiable"
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "realized",
+          "evidence": "src/lib/analytics/session.test.ts:21 per-test reset plus sink restore; no shared template to go stale"
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "realized",
+          "evidence": "src/lib/analytics/sink.test.ts:11 afterEach restores the default sink so order cannot leak the active one"
+        }
+      ]
+    },
+    "03e7f46a-3f19-47b8-98a5-398efed815b4/test-harness": {
+      "context": "hooks-realtime",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T19:50:20.014Z",
+      "worker": "afe29407-ce9d-4c41-80fa-262960015574",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "not realized",
+          "evidence": "src/hooks/realtime/__tests__/useSmeeRelayStatus.test.ts:52 the wire-name claim is never reached: no assertion touches the Rust struct or a generated binding; line 46 channel check restates a literal that scripts/check-event-registry.mjs already gates"
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "realized",
+          "evidence": "src/hooks/realtime/__tests__/createSingletonListener.test.ts:221 ships a reset hatch and tests it"
+        }
+      ],
+      "registryProposal": "Cross-language payload parity (TS hand-kept interface vs Rust serde struct) recurs across this repo as the commonest test-harness deviation; unreached-decisions-pin-nothing could name it as a distinct fixture shape."
     }
   }
 }
