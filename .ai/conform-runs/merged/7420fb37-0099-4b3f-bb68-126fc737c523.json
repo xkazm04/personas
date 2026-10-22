@@ -1,0 +1,4 @@
+{"schema":"conform-run/1","worker":"7420fb37-0099-4b3f-bb68-126fc737c523","subject":"multi-project",
+"evaluatedAt":"2026-10-22T00:00:00Z","pairs":[],
+"declined":[{"subject":"multi-project","context":"plugins-research-lab-reports","reason":"weak context (lexical-only, governance weak): the match itself is doubtful, so judging it would manufacture a verdict; left unknown and reported as a coverage question"}],
+"consults":[]}
