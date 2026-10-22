@@ -29269,37 +29269,39 @@
       "context": "plugins-fleet-tests",
       "subject": "agent-instruction-files",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T21:39:03.410Z",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T03:02:40.000Z",
+      "worker": "9e0ad266-f0be-4330-96cb-79df6e9a90b0",
       "techniques": [
         {
-          "technique": "line-earning",
-          "verdict": "not-applicable",
-          "evidence": "src/features/plugins/fleet/sub_harvest/fleetRunMarkdown.ts:7 This markdown is an operator paste artefact, not a harness-injected floor."
-        },
-        {
-          "technique": "sibling-floor-ownership",
+          "technique": "single-source-topology",
           "verdict": "deviation",
-          "evidence": "src/features/plugins/fleet/sub_skills/useSkillData.ts:100 Install is implemented; the hook's API has no removal or retention review."
-        },
-        {
-          "technique": "write-back-sink-class",
-          "verdict": "not-applicable",
-          "evidence": "src/features/plugins/fleet/sub_skills/useSkillData.ts:179 This save writes the editor buffer a person is editing, not an agent append sink."
+          "evidence": "src-tauri/src/commands/infrastructure/skill_files.rs:1207 single-file copy skips write_provenance (done for directory skills at :1187), so this copy-regime fork carries no drift check"
         },
         {
           "technique": "listing-tier-by-initiator",
           "verdict": "deviation",
-          "evidence": "src/features/plugins/fleet/sub_skills/useSkillData.ts:107 The install call has name, source, target, and overwrite, and no listed / name-only / hidden tier."
+          "evidence": "src-tauri/src/commands/infrastructure/skill_files.rs:1187 the installer stamps provenance but writes no listing tier into the consumer's local settings, so every installed skill lands fully listed by default (same gap as fleet-session-grid's SkillLibraryDrawer)"
+        },
+        {
+          "technique": "sibling-floor-ownership",
+          "verdict": "realized",
+          "evidence": "src/features/plugins/fleet/sub_skills/useSkillData.ts:78 the drawer enumerates the global and project skill sets with descriptions, and useSkillData.ts:113 previews a re-install diff before overwrite"
+        },
+        {
+          "technique": "line-earning",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/fleet/sub_harvest/fleetRunMarkdown.ts:7 This markdown is an operator paste artefact, not a harness-injected floor.",
+          "carriedFrom": "2026-10-16"
+        },
+        {
+          "technique": "write-back-sink-class",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/fleet/sub_skills/useSkillData.ts:179 This save writes the editor buffer a person is editing, not an agent append sink.",
+          "carriedFrom": "2026-10-16"
         }
-      ],
-      "withdrawn": {
-        "worker": "f1c065e5-8322-4ad1-8db3-0f17d8a51969",
-        "state": "deviation",
-        "at": "2026-10-16T21:39:35.565202+00:00",
-        "reason": "reviewer (sonnet): The verdict is about sub_skills/useSkillData.ts, which is not among this context's files (only __tests__ files); the code it describes belongs to the skill-browser and fleet-session-grid contexts, not this one."
-      }
+      ]
     },
     "cd8712a3-9546-4c21-895b-9e64a4b161b1/agent-instruction-files": {
       "context": "engine-build-session",
@@ -35520,6 +35522,37 @@
         }
       ],
       "registryProposal": "Upward lesson: src-tauri/engine/src/http_engine/config.rs:102 states the ordering rule 'a latency/cost roster may only intersect a security allow-list, never reopen it' - a crisp instance worth an application under caller-differentiated-capability."
+    },
+    "059fdee0-40da-434a-a5cb-874bc9179a31/agent-instruction-files": {
+      "context": "engine-core-infrastructure",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T03:02:40.000Z",
+      "worker": "9e0ad266-f0be-4330-96cb-79df6e9a90b0",
+      "techniques": []
+    },
+    "c5f662f2-458b-4b5d-b03b-e4acf8f54049/agent-instruction-files": {
+      "context": "plugins-dev-tools-projects",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T03:02:40.000Z",
+      "worker": "9e0ad266-f0be-4330-96cb-79df6e9a90b0",
+      "techniques": [],
+      "registryProposal": "src-tauri/src/engine/runner/team_context.rs:365 renders that config into a ~9k-char STANDARDS & BRANCHING POLICY block injected into every team execution - functionally an always-loaded floor in app-assembled form, asserting 'pre-commit gates that must pass: lint' (:345) in prose with no gate. It falls between agent-instruction-files (repo-owned) and prompt-assembly; consider whether line-earning/enforcement-demotion should explicitly cover app-injected standing briefs, and pair the engine-runner context to this subject."
+    },
+    "f71df7d8-fb1c-4151-bba3-00fe164a537b/agent-instruction-files": {
+      "context": "teams-collaboration-repo",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T03:02:40.000Z",
+      "worker": "9e0ad266-f0be-4330-96cb-79df6e9a90b0",
+      "techniques": []
     }
   }
 }

@@ -1974,3 +1974,7 @@
 {"ts":"2026-10-22T02:58:00Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["untrusted-result-handling","egress-argument-gating","tool-schema-design","caller-differentiated-capability"],"deviations":1}
 {"ts":"2026-10-22T02:57:09Z","bundle":"software-engineering","subjects":["client-fetch-cache"],"techniques":["swr-design"],"deviations":1}
 {"ts":"2026-10-22T02:57:09Z","bundle":"software-engineering","subjects":["client-fetch-cache"],"techniques":["swr-design","warm-remount-caches"],"deviations":1}
+{"ts":"2026-10-22T03:02:40Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":["single-source-topology","listing-tier-by-initiator","sibling-floor-ownership"],"deviations":1}
+{"ts":"2026-10-22T03:02:40Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":[],"deviations":0}
+{"ts":"2026-10-22T03:02:40Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":[],"deviations":0}
+{"ts":"2026-10-22T03:02:40Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":[],"deviations":0}

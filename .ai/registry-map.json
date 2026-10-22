@@ -12277,7 +12277,11 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/engine/system_ops.rs:318 the context only schedules the context scan and delegates the CLAUDE.md fence write to commands/infrastructure (judged under workspace-governance); llm_topology.rs:82 assembles app-authored persona instructions - nothing here authors, loads or spawns against a repo-owned instruction file",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:25b61236a62604b0",
+          "evaluatedRevision": 31
         },
         {
           "subject": "translation-pipeline-topology",
@@ -27360,7 +27364,11 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_projects/pipeline/standardsConfig.ts:4 the project surface stores the standards policy as an opaque DB JSON column; the prose it becomes is assembled engine-side (team_context.rs), so this UI owns no instruction file",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:25b61236a62604b0",
+          "evaluatedRevision": 31
         },
         {
           "subject": "supply-chain",
@@ -28169,7 +28177,11 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/skill_files.rs:1207 the install modal's single-file <name>.md path copies a skill into the target repo's .claude/skills with no provenance sidecar and no registry refresh, so the fork is listed local_only (skill_files.rs:697) and library updates or local edits to it are undetectable - the copy regime without its drift check",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:25b61236a62604b0",
+          "evaluatedRevision": 31
         },
         {
           "subject": "prompt-assembly",
@@ -35014,7 +35026,11 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/db/src/repos/resources/teams.rs:23 shared_instructions is a SQLite column read by the app's prompt assembler; these repos persist app state and never author, load or deliver a repo-owned instruction file",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:25b61236a62604b0",
+          "evaluatedRevision": 31
         },
         {
           "subject": "prompt-assembly",
