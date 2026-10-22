@@ -1978,3 +1978,7 @@
 {"ts":"2026-10-22T03:02:40Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":[],"deviations":0}
 {"ts":"2026-10-22T03:02:40Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":[],"deviations":0}
 {"ts":"2026-10-22T03:02:40Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":[],"deviations":0}
+{"ts":"2026-10-22T03:02:06Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["reading-is-not-running","verification-scope"],"deviations":1}
+{"ts":"2026-10-22T03:02:06Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["reading-is-not-running","archive-extraction-safety"],"deviations":0}
+{"ts":"2026-10-22T03:02:06Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["archive-extraction-safety","reading-is-not-running"],"deviations":0}
+{"ts":"2026-10-22T03:02:06Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["verification-scope","reading-is-not-running"],"deviations":0}

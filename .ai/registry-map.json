@@ -20289,7 +20289,11 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/notepad/NoteArchiveModal.tsx:17 'archive' is a drawer of shipped notes, not an unpacked archive, and src/features/notepad/parts/NoteDispatchBar.tsx:92 dispatch is a gated, operator-armed send into the note's own project; the context crosses no lockfile, archive, permission manifest or code-loading boundary",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:f5666db1094acd9f",
+          "evaluatedRevision": 6
         },
         {
           "subject": "agent-session-archive",
@@ -28682,7 +28686,11 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/commands/obsidian_brain/revitalize.rs:240 the only spawn is an operator-armed rewrite job in the operator's own chosen vault (reading-is-not-running's knowingly-armed exclusion), and Drive pull writes single-component names validated at src-tauri/src/commands/obsidian_brain/drive.rs:42 - user-owned notes moving as data, with no dependency graph, archive unpack, permission manifest or stranger-authored code crossing",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:f5666db1094acd9f",
+          "evaluatedRevision": 6
         },
         {
           "subject": "voice-io",
@@ -30109,7 +30117,11 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/prompt/cli_args.rs:107 the one CLI-args builder emits --dangerously-skip-permissions with no setting-sources restriction on every spawn and offers no read-mode, and headless one-shots (context scan, design analysis, revitalize) inherit it via src-tauri/engine/src/cli_process.rs:467, so a read verb spawned in a foreign tree cannot stay a read",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:f5666db1094acd9f",
+          "evaluatedRevision": 6
         },
         {
           "subject": "translation-pipeline-topology",
@@ -31905,7 +31917,11 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/shared/chrome/UpdateBanner.tsx:41 the one inbound-code crossing is the app's own signed self-update (minisign pubkey at src-tauri/tauri.conf.json:61, via src/hooks/utility/data/useAutoUpdater.ts:148), which the golden path routes to packaging/signing-and-trust; CliReadinessBanner.tsx only shows probe guidance and installs nothing",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:f5666db1094acd9f",
+          "evaluatedRevision": 6
         },
         {
           "subject": "agent-instruction-files",
