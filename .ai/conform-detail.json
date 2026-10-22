@@ -34268,6 +34268,47 @@
           "evidence": "src/features/shared/components/display/ColumnResize.tsx:81 The implemented gesture changes a column dimension using its key; entity payload transport and positional reorder statements are not implemented by this context."
         }
       ]
+    },
+    "621caefc-8ae0-42e7-89b6-8e879ad62814/dynamic-secret-lifecycle": {
+      "context": "api-key-management",
+      "subject": "dynamic-secret-lifecycle",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T00:49:05.985Z",
+      "worker": "6bc78239-928b-49ec-b791-e61932aeb574",
+      "techniques": [
+        {
+          "technique": "expiry-buffer-beyond-lease",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/db/src/repos/resources/external_api_keys.rs:189 The issuer enforces the stored expiry during authentication; there is no separate remote credential expiry requiring a buffer."
+        },
+        {
+          "technique": "idempotent-revoke-and-give-up",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/resources/external_api_keys.rs:214 Revoking an absent key returns NotFound instead of success; the standard explicitly retains this requirement for purely local revocation."
+        },
+        {
+          "technique": "lease-vs-native-tracking",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/management_api.rs:720 The issuer itself validates these opaque tokens against its store, which the technique explicitly excludes from independently enforced native tracking."
+        },
+        {
+          "technique": "persist-before-provision",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/pairing.rs:141 The five-minute claim-window cleanup drops approved, unclaimed plaintext without revoking its persisted key; approval also propagates set_approved failures without compensation."
+        },
+        {
+          "technique": "ttl-ladder-derivation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/resources/external_api_keys.rs:59 expiry_from_days rejects requests above MAX_EXPIRY_DAYS instead of granting the ceiling with a warning as the technique requires."
+        },
+        {
+          "technique": "wal-per-external-side-effect",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/db/src/repos/resources/external_api_keys.rs:101 Minting creates the authenticating record in local SQLite; this lifecycle performs no remote credential mutation requiring a separate write-ahead witness."
+        }
+      ]
     }
   }
 }

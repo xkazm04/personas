@@ -4478,7 +4478,11 @@
           "revision": 2,
           "changedAt": "2026-09-26",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/credentials/external_api_keys.rs:200 Pairing persists an enabled key before storing its plaintext for claim, but a failed handout returns an error without revoking that key.",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:9d26f7a6264acd94",
+          "evaluatedRevision": 2
         },
         {
           "subject": "agent-runtime-assembly",
