@@ -8258,8 +8258,8 @@
           "changedAt": "2026-09-25",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/companion/disk.rs:93 the pre-upgrade constitution backup is still `let _ = fs::copy(...)` and :94 overwrites constitution.md regardless, keyed only on version (:87), so a version bump replaces the person's amended law even when the backup failed.",
-          "evaluatedAt": "2026-10-16",
+          "evidence": "src-tauri/src/companion/disk.rs:93 the pre-upgrade constitution backup is still `let _ = fs::copy(...)` and :94 overwrites constitution.md unconditionally on any version bump (:87, no shipped-text fingerprint), so the person's amended law is replaced even when it was edited and even when the backup failed.",
+          "evaluatedAt": "2026-10-22",
           "evaluatedAgainst": "sha256-b2:ff529a6dc44bf233",
           "evaluatedRevision": 7,
           "revisionsBehind": 0
@@ -9230,8 +9230,8 @@
           "changedAt": "2026-09-25",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/companion/proactive/mod.rs:342 an Athena schedule_proactive commitment (a promise the code itself says has no re-fire path, :214) is written only as a companion_proactive_message row with no brain document, so a DB reset, rebuild or folder export silently drops every open check-in she promised and nothing on disk says one is owed.",
-          "evaluatedAt": "2026-10-10",
+          "evidence": "src-tauri/src/companion/proactive/mod.rs:342 a schedule_proactive commitment (no re-fire path, :214) is still written only as a companion_proactive_message row via approval_exec_dev.rs:843 with no brain document, so a rebuild or folder export silently drops every check-in she promised.",
+          "evaluatedAt": "2026-10-22",
           "evaluatedAgainst": "sha256-b2:ff529a6dc44bf233",
           "evaluatedRevision": 7,
           "revisionsBehind": 0

@@ -5094,14 +5094,14 @@
       "subject": "companion-identity",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:31:07.000Z",
-      "worker": "ccad5e7a-194d-48a5-88ee-0a53559f8c17",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T03:05:29.000Z",
+      "worker": "51f22730-c7ce-4fec-8e83-bd666788305e",
       "techniques": [
         {
           "technique": "constitution-self-model-split",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/disk.rs:94 fs::write(&const_path, CONSTITUTION_MD) runs after an ignored backup result (:93); no shipped-text fingerprint guards an edited constitution"
+          "evidence": "src-tauri/src/companion/disk.rs:93 backup ignored on failure then :94 replaces an edited file; the technique requires an edited file to stay live and any pre-write copy to succeed first"
         },
         {
           "technique": "anchored-identity-diffs",
@@ -5124,6 +5124,13 @@
           "evaluatedAt": "2026-10-09T17:47:13.000Z",
           "worker": "4d8c5d79-58b9-4388-817a-018e13252e0f",
           "reason": "replaced by ccad5e7a-194d-48a5-88ee-0a53559f8c17"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/disk.rs:93 the pre-upgrade constitution backup is still `let _ = fs::copy(...)` and :94 overwrites constitution.md regardless, keyed only on version (:87), so a version bump replaces the person's amended law even when the backup failed.",
+          "evaluatedAt": "2026-10-16T17:31:07.000Z",
+          "worker": "ccad5e7a-194d-48a5-88ee-0a53559f8c17",
+          "reason": "replaced by 51f22730-c7ce-4fec-8e83-bd666788305e"
         }
       ]
     },
@@ -15062,17 +15069,25 @@
       "subject": "companion-identity",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T02:34:10.000Z",
-      "worker": "c8b1b239-46a2-41d7-869d-9fd8d9fa2c68",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T03:05:29.000Z",
+      "worker": "51f22730-c7ce-4fec-8e83-bd666788305e",
       "techniques": [
         {
           "technique": "disk-truth-db-index",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_dev.rs:843 the op executor persists the commitment via insert_scheduled into user_db alone; the open/kept state of a promise is DB-only meaning, which the technique forbids outside the documents"
+          "evidence": "src-tauri/src/companion/proactive/mod.rs:342 index-only promise state; a rebuild resetting it makes the companion's promise false, which the technique forbids"
         }
       ],
-      "registryProposal": "disk-truth-db-index names whether a promise is still open as document-owned state, but the realistic shape is an agent-authored future commitment parked in a delivery/nudge queue table that proactive-nudges owns for rationing; one sentence routing commitment durability to this subject while proactive-nudges keeps cadence would stop the pairing reading as lexical-only."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/proactive/mod.rs:342 an Athena schedule_proactive commitment (a promise the code itself says has no re-fire path, :214) is written only as a companion_proactive_message row with no brain document, so a DB reset, rebuild or folder export silently drops every open check-in she promised and nothing on disk says one is owed.",
+          "evaluatedAt": "2026-10-10T02:34:10.000Z",
+          "worker": "c8b1b239-46a2-41d7-869d-9fd8d9fa2c68",
+          "reason": "replaced by 51f22730-c7ce-4fec-8e83-bd666788305e"
+        }
+      ]
     },
     "1bad7967-29dc-4e12-b99a-cb5177b4fb9b/companion-identity": {
       "context": "db-repos",

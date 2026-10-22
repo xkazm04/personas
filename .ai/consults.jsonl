@@ -1988,3 +1988,5 @@
 {"ts":"2026-10-22T03:02:49Z","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":["indeterminate-closure-on-interruption"],"deviations":1}
 {"ts":"2026-10-22T03:02:49Z","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":["indeterminate-closure-on-interruption","nested-run-is-not-its-parent"],"deviations":1}
 {"ts":"2026-10-22T03:02:49Z","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":["activation-is-a-separate-mutation","session-scoped-capability"],"deviations":0}
+{"ts":"2026-10-22T03:05:29Z","bundle":"software-engineering","subjects":["companion-identity"],"techniques":["constitution-self-model-split"],"deviations":1}
+{"ts":"2026-10-22T03:05:29Z","bundle":"software-engineering","subjects":["companion-identity"],"techniques":["disk-truth-db-index"],"deviations":1}
