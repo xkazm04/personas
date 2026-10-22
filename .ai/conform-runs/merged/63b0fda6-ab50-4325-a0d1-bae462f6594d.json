@@ -1,0 +1,77 @@
+{
+ "schema": "conform-run/1",
+ "worker": "63b0fda6-ab50-4325-a0d1-bae462f6594d",
+ "subject": "document-text-extraction",
+ "evaluatedAt": "2026-10-18T23:22:44.194227+00:00",
+ "provider": "agy",
+ "model": "gemini-3.8-flash-high",
+ "pairs": [
+  {
+   "context": "vault-shared-vector",
+   "subject": "document-text-extraction",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/vault/shared/vector/tabs/DocumentsTab.tsx:172 The document listing surfaces unreadable pages as a bare cardinality instead of preserving and showing the specific page locus or ranges, and leaks a stage-one emptiness heuristic as a user-facing warning without optical recognition confirmation or escalation.",
+   "techniques": [
+    {
+     "technique": "unreadable-region-refusal",
+     "verdict": "deviation",
+     "evidence": "src/features/vault/shared/vector/tabs/DocumentsTab.tsx:172 Reduces unreadable pages to a bare count in a warning rather than presenting the page range locus to the user."
+    },
+    {
+     "technique": "extraction-yield-bands",
+     "verdict": "deviation",
+     "evidence": "src/features/vault/shared/vector/search/SearchResultCard.tsx:19 Collapses extraction quality into a boolean threshold over a confidence float rather than using discrete action-routing yield bands."
+    },
+    {
+     "technique": "band-calibration-by-construction",
+     "verdict": "deviation",
+     "evidence": "src/features/vault/shared/vector/partialConfidence.ts:13 Threshold separating partial from full extraction is hardcoded without constructed defect fixtures or precision-recall curve validation."
+    },
+    {
+     "technique": "screen-then-confirm-detection",
+     "verdict": "deviation",
+     "evidence": "src/features/vault/shared/vector/extract/EntityTable.tsx:104 Surfaces stage-one extraction confidence suspicion directly to the user as a warning badge without optical confirmation."
+    },
+    {
+     "technique": "recognition-boundary-and-escalation",
+     "verdict": "deviation",
+     "evidence": "src/features/vault/shared/vector/tabs/DocumentsTab.tsx:168 Surfaces unreadable pages passively with no escalation path to optical character recognition."
+    },
+    {
+     "technique": "structural-amplification-caps",
+     "verdict": "deviation",
+     "evidence": "src/features/vault/shared/vector/ingest/IngestTextModal.tsx:24 Permits unbounded text submission without a maximum payload cap or structural amplification guard."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "document-text-extraction",
+   "context": "display-data-formatters",
+   "reason": "Subject document-text-extraction does not apply to display-data-formatters, which is a library of read-only UI display primitives (RelativeTime, AbsoluteTime, Numeric, Tooltip, TruncateWithTooltip) rather than document extraction or ingest components; per seat instructions not-applicable is not accepted from this seat, so the pair is declined."
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-18T23:22:44.194227+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "document-text-extraction"
+   ],
+   "techniques": [
+    "band-calibration-by-construction",
+    "extraction-yield-bands",
+    "recognition-boundary-and-escalation",
+    "screen-then-confirm-detection",
+    "structural-amplification-caps",
+    "unreadable-region-refusal"
+   ],
+   "deviations": 1,
+   "context": "vault-shared-vector",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  }
+ ]
+}
