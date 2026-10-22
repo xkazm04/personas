@@ -11371,12 +11371,11 @@
           "changedAt": "2026-10-14",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "precondition unmet: read-only time/number display primitives with no model call or prompt text; src/features/shared/components/display/Numeric.tsx:1 imports only react and renders values",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:7436fd55a7cb2500",
-          "evaluatedRevision": 43,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/shared/dispatch/DispatchChooser.tsx:46 the only prompt here is caller-prepared, user-editable task text handed verbatim to an external harness (claude -p / Fleet / console) whose assembler the app does not own; the rest are display primitives (re-judged at rev 44)",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44,
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-memory",
@@ -14725,12 +14724,11 @@
           "changedAt": "2026-10-14",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "precondition unmet: cockpit widgets render a build summary Athena already produced and assemble nothing; src/features/home/sub_cockpit/widgets/PersonaReadyWidget.tsx:90 only lists summary.system_prompt_outline as a display row",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:7436fd55a7cb2500",
-          "evaluatedRevision": 43,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/home/sub_cockpit/widgets/PersonaReadyWidget.tsx:90 widgets only display a build summary Athena produced; the one text they emit seeds a user chat turn, not an assembled prompt (re-judged at rev 44)",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44,
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-memory",
@@ -14939,7 +14937,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/home/sub_releases/useLiveRoadmap.ts:2 the context fetches a remote roadmap and renders tours and power moves; none of its 17 files calls a model or builds prompt text",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "agent-instruction-files",
@@ -32208,7 +32210,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/shared/components/editors/PromptTabsPreview.tsx:30 prompt editors read an already-designed structured_prompt for display and review; nothing here assembles, budgets or sends a prompt - matched on the word prompt only",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "page-load-pipeline",
@@ -33583,7 +33589,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/stores/slices/system/cloudSlice.ts:260 the only model-adjacent call hands typed inputs (personaId, inputData) to the execution backend, which owns assembly; the slices hold UI and dev-tools state",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "voice-io",
@@ -39082,7 +39092,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/triggers/hooks/useTriggerHistory.ts:130 trigger runs hand typed inputs (persona, trigger, input_data, use_case) to executePersona; assembly belongs to the engine (prompt-assembly-engine context), none happens in the studio",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "test-harness",

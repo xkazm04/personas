@@ -25038,22 +25038,51 @@
       "subject": "prompt-assembly",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T00:00:00.000Z",
-      "worker": "03ab05cd-5f89-4d7c-bd2c-1d7e91fc69b2",
-      "techniques": [],
-      "registryProposal": "pair is lexical; the display formatters have no relation to prompt assembly"
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:43:01.000Z",
+      "worker": "893480fc-660a-49ef-88e7-e02a408b9ff4",
+      "techniques": [
+        {
+          "technique": "layered-composition",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/dispatch/localDispatch.ts:47 the prompt string passes unmodified to spawnExternalConsole / spawnSession; no layers are composed here"
+        }
+      ],
+      "registryProposal": "Six strong or stale pairs in this repo matched prompt-assembly on incidental tokens (time, counter, decisions, routing, task) yet own no assembler. The golden path names its inverse case (agent-instruction-files) but has no explicit when-NOT-to-use section stating the precondition (the context owns a prompt assembler); adding one would let judges and the matcher route these away cheaply.",
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "precondition unmet: read-only time/number display primitives with no model call or prompt text; src/features/shared/components/display/Numeric.tsx:1 imports only react and renders values",
+          "evaluatedAt": "2026-10-14T00:00:00.000Z",
+          "worker": "03ab05cd-5f89-4d7c-bd2c-1d7e91fc69b2",
+          "reason": "replaced by 893480fc-660a-49ef-88e7-e02a408b9ff4"
+        }
+      ]
     },
     "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f/prompt-assembly": {
       "context": "home-cockpit-widgets",
       "subject": "prompt-assembly",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T00:00:00.000Z",
-      "worker": "03ab05cd-5f89-4d7c-bd2c-1d7e91fc69b2",
-      "techniques": [],
-      "registryProposal": "matcher hit on 'system_prompt_outline' field name"
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:43:01.000Z",
+      "worker": "893480fc-660a-49ef-88e7-e02a408b9ff4",
+      "techniques": [
+        {
+          "technique": "layered-composition",
+          "verdict": "not-applicable",
+          "evidence": "src/features/home/sub_cockpit/widgets/WalkthroughOfferWidget.tsx:65 setPendingPrompt seeds the Athena composer draft (a user turn); the chat assembler lives outside this context"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "precondition unmet: cockpit widgets render a build summary Athena already produced and assemble nothing; src/features/home/sub_cockpit/widgets/PersonaReadyWidget.tsx:90 only lists summary.system_prompt_outline as a display row",
+          "evaluatedAt": "2026-10-14T00:00:00.000Z",
+          "worker": "03ab05cd-5f89-4d7c-bd2c-1d7e91fc69b2",
+          "reason": "replaced by 893480fc-660a-49ef-88e7-e02a408b9ff4"
+        }
+      ]
     },
     "7741725e-8124-4899-b17e-8e39e7fcf1ed/prompt-assembly": {
       "context": "studio",
@@ -34632,6 +34661,70 @@
           "technique": "price-row-variant-encoding",
           "verdict": "not-applicable",
           "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:394 Copies the reported model identity for display; no rate-card storage or pricing-modifier grammar was found."
+        }
+      ]
+    },
+    "b39776f5-3909-41e3-b69f-14c9a6c70bec/prompt-assembly": {
+      "context": "home-learning",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:43:01.000Z",
+      "worker": "893480fc-660a-49ef-88e7-e02a408b9ff4",
+      "techniques": [
+        {
+          "technique": "layered-composition",
+          "verdict": "not-applicable",
+          "evidence": "src/features/home/sub_releases/useLiveRoadmap.ts:2 a roadmap fetch hook, the context's only remote I/O"
+        }
+      ]
+    },
+    "283b44f6-a4af-4a1f-8a0e-8b2dedb9adc0/prompt-assembly": {
+      "context": "shared-components-layout",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:43:01.000Z",
+      "worker": "893480fc-660a-49ef-88e7-e02a408b9ff4",
+      "techniques": [
+        {
+          "technique": "layered-composition",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/editors/PromptTemplateRenderer.tsx:11 renders a prompt template as markdown for reading, not for a model call"
+        }
+      ]
+    },
+    "c06088ef-d143-4aa4-b60a-9d6f7aff9aba/prompt-assembly": {
+      "context": "stores-slices-system",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:43:01.000Z",
+      "worker": "893480fc-660a-49ef-88e7-e02a408b9ff4",
+      "techniques": [
+        {
+          "technique": "layered-composition",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/system/cloudSlice.ts:260 typed inputs to cloudExecutePersona, no prompt text composed"
+        }
+      ]
+    },
+    "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc/prompt-assembly": {
+      "context": "triggers-studio",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:43:01.000Z",
+      "worker": "893480fc-660a-49ef-88e7-e02a408b9ff4",
+      "techniques": [
+        {
+          "technique": "layered-composition",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/hooks/useTriggerOperations.ts:137 executePersona(pid, triggerId) - ids only, no prompt text"
         }
       ]
     }

@@ -1937,3 +1937,4 @@
 {"ts":"2026-10-22T02:42:36Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["memory-governance","pending-beliefs-live-apart"],"deviations":1}
 {"ts":"2026-10-22T02:42:36Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["consolidation","episodic-capture"],"deviations":1}
 {"ts":"2026-10-22T02:42:36Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["decay-and-forgetting","rollup-compaction"],"deviations":1}
+{"ts":"2026-10-22T02:43:01Z","bundle":"software-engineering","subjects":["prompt-assembly"],"techniques":["layered-composition"],"deviations":0}
