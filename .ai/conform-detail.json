@@ -36484,6 +36484,17 @@
       "evaluatedTs": "2026-10-22T00:00:00.000Z",
       "worker": "7f9e235b-5e85-494c-a7a5-1e0ade2c03d2",
       "techniques": []
+    },
+    "fc62a53a-85f9-4491-8b54-9b5f1795ef91/native-shell-integration": {
+      "context": "overview-patterns",
+      "subject": "native-shell-integration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T12:00:00.000Z",
+      "worker": "3461d0d3-94a7-4457-b3cc-698aff97d3e2",
+      "techniques": [],
+      "registryProposal": "Stale context: overview-patterns paths no longer exist; the context map should drop or rename it. Not a registry gap."
     }
   }
 }

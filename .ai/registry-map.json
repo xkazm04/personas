@@ -23780,7 +23780,11 @@
           "revision": 4,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/db/src/migrations/incremental/e28_retire_workspace_knowledge.rs:14 the context's surface (Practice Detail modal, sub_patterns) was removed (git 6ea91dd77b, bec576bc8f) and its workspace_knowledge table retired; no tracked file remains under src/features/overview/sub_patterns, so no native capability, command target, overlay or stream exists to judge",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
+          "evaluatedRevision": 4
         },
         {
           "subject": "structured-output",
