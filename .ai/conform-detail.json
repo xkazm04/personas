@@ -36157,6 +36157,60 @@
           "evidence": "src-tauri/core/src/limits.rs:56 stream deadline clamped below ENGINE_MAX_EXECUTION_SECS with a 60s finalize margin"
         }
       ]
+    },
+    "6a81750d-fdbf-4518-bae6-689303e1a884/prompt-assembly": {
+      "context": "test-runner-lab",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T15:29:48.056Z",
+      "worker": "a0186e65-b1de-47f5-b559-fd5d87bc5cd2",
+      "techniques": [
+        {
+          "technique": "task-envelope",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/eval.rs:545 opens with an expertise claim, not a behaviour-changing identity fact; the done criterion (JSON schema) is stated well below it"
+        },
+        {
+          "technique": "fingerprinting-and-cache-keys",
+          "verdict": "realized",
+          "evidence": "src-tauri/engine/src/prepared_run_cache.rs:41 cache_key hashes persona prompt fields, tools, charters and states the deliberate exclusion of episodes at :38; no version stamp on the key procedure itself"
+        },
+        {
+          "technique": "continuation-prompts",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/engine/incident_continuation.rs:328 build_resume_hint carries the resolver note, says so when none exists, and orders the run to re-measure the incident-named quantity before acting"
+        }
+      ],
+      "registryProposal": "Context matches by resonance (session/continuation/cache) over a mixed bag; only eval.rs, prepared_run_cache.rs and incident_continuation.rs assemble prompts. Not a coverage hole. Side finding (code, not standard): incident_continuation.rs:335 resume hint contains literal runs of ~10 spaces inside the string where a line-continuation was intended."
+    },
+    "059fdee0-40da-434a-a5cb-874bc9179a31/prompt-assembly": {
+      "context": "engine-core-infrastructure",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T15:29:48.056Z",
+      "worker": "a0186e65-b1de-47f5-b559-fd5d87bc5cd2",
+      "techniques": [
+        {
+          "technique": "context-budgeting",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/llm_topology.rs:72 .take(50) drops templates with no omitted-N line in the prompt; persona catalog unbounded"
+        },
+        {
+          "technique": "task-envelope",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/llm_topology.rs:95 prompt opens \"You are a team composition architect\", a role/competence claim rather than a locate pointer"
+        },
+        {
+          "technique": "layered-composition",
+          "verdict": "partial",
+          "evidence": "src-tauri/src/engine/llm_topology.rs:41 is a single builder for the topology family taking typed inputs (query, personas, templates), but the user query leads the volatile content with no trust fencing; not judged further"
+        }
+      ],
+      "registryProposal": "Only llm_topology.rs (1 of 32 paths) assembles a prompt; the rest of engine-core-infrastructure is event bus/watchers/security. Governance of this pair by prompt-assembly is thin: consider whether the context should be split or the pair marked partial-coverage."
     }
   }
 }

@@ -12340,7 +12340,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/llm_topology.rs:72 template catalog is silently cut with .take(50) and no in-prompt notice of how many were dropped (context-budgeting bottom rung is a notice); persona catalog at :50 has no cap at all, so the model reasons over an unmarked partial view",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "quality-gates",
@@ -38667,7 +38671,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/eval.rs:545 the LLM-judge prompt opens with the competence claim \"You are an expert AI persona evaluator\" (task-envelope: replace with a locate pointer/done criterion); the claim buys nothing measured",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "guest-execution-bounding",
