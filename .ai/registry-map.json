@@ -7339,8 +7339,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 20
+          "state": "not-applicable",
+          "priorNotApplicable": 20,
+          "evidence": "src-tauri/src/commands/curator/dispatch.rs:115 vet_autonomous refuses an invocation the app would invent, which is dispatch validation not a quality gate; line 291 only instructs workers not to bypass repo hooks and builds none",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54
         },
         {
           "subject": "guest-execution-bounding",
@@ -10336,8 +10340,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 20
+          "state": "not-applicable",
+          "priorNotApplicable": 20,
+          "evidence": "src-tauri/db/src/query_builder.rs:233 the context's only refusals are SQL ORDER BY allowlist input validation at runtime; it defines no check that refuses a change to the tree, so the gate precondition (a verdict over the gated tree) is unmet",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54
         },
         {
           "subject": "prompt-assembly",
@@ -25728,8 +25736,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 20
+          "state": "not-applicable",
+          "priorNotApplicable": 20,
+          "evidence": "src-tauri/src/engine/pipeline_executor.rs:767 the only gate is a runtime human approval gate pausing a pipeline run, which is hitl-approval's subject; the context holds no refusal over code or artifacts",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54
         },
         {
           "subject": "module-design",

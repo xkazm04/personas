@@ -36605,6 +36605,37 @@
       "worker": "3461d0d3-94a7-4457-b3cc-698aff97d3e2",
       "techniques": [],
       "registryProposal": "Stale context: overview-patterns paths no longer exist; the context map should drop or rename it. Not a registry gap."
+    },
+    "0b0ee725-52a2-4656-9e13-07c5204de60e/quality-gates": {
+      "context": "db",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T19:48:37.037Z",
+      "worker": "5a807c85-8405-49e3-92d4-9d9359ab6729",
+      "techniques": []
+    },
+    "de8b648f-7971-452b-88dc-773b215c5f09/quality-gates": {
+      "context": "pipeline-and-automation",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T19:48:37.037Z",
+      "worker": "5a807c85-8405-49e3-92d4-9d9359ab6729",
+      "techniques": []
+    },
+    "33a96a83-6adc-42f7-b57c-839382bcef54/quality-gates": {
+      "context": "commands-curator",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T19:48:37.037Z",
+      "worker": "5a807c85-8405-49e3-92d4-9d9359ab6729",
+      "techniques": [],
+      "registryProposal": "dispatch.rs:291 states the hook-bypass prohibition (--no-verify, LEFTHOOK=0) only as prompt prose to dispatched workers, so prose-rule-drift would apply to whichever layer holds the mechanical deny in target repos; the context itself has no such layer to judge."
     }
   }
 }
