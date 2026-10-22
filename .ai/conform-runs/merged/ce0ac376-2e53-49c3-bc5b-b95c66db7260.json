@@ -1,0 +1,71 @@
+{
+ "schema": "conform-run/1",
+ "worker": "ce0ac376-2e53-49c3-bc5b-b95c66db7260",
+ "subject": "drag-drop",
+ "evaluatedAt": "2026-10-22T00:32:06.591267+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [
+  {
+   "context": "display-table-primitives",
+   "subject": "drag-drop",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/shared/components/display/DragHandle.tsx:45 DragHandle announces a button without providing default focusability or keyboard activation, creating the false affordance explicitly prohibited by the standard.",
+   "techniques": [
+    {
+     "technique": "cross-surface-handoff",
+     "verdict": "not-applicable",
+     "evidence": "src/features/shared/components/display/DataGrid.tsx:124 The grid delegates drag attributes to callers; these primitives implement no cross-surface receiver, negotiated payload contract, or handoff translation."
+    },
+    {
+     "technique": "drag-lifecycle",
+     "verdict": "deviation",
+     "evidence": "src/features/shared/components/display/ColumnResize.tsx:105 Resize listeners are removed only through pointerup; there is no Escape, pointercancel, blur, or unmount cleanup, so interrupted gestures can retain listeners and resize state."
+    },
+    {
+     "technique": "drop-affordances",
+     "verdict": "conformant",
+     "evidence": "src/features/shared/components/display/DropIndicator.tsx:53 The visual primitive provides a distinct insertion indicator that cannot intercept target hit-testing, supports either axis, and reduces its animation for reduced motion; callers own placement geometry."
+    },
+    {
+     "technique": "keyboard-alternatives",
+     "verdict": "deviation",
+     "evidence": "src/features/shared/components/display/DragHandle.tsx:45 The rendered span has no default tabIndex or key handler despite declaring button semantics; inspected callers supply pointer behavior without repairing the grip's keyboard operability."
+    },
+    {
+     "technique": "ownership-boundaries",
+     "verdict": "deviation",
+     "evidence": "src/features/shared/components/display/ColumnResize.tsx:76 Interface-owned widths update immediately, but persistence failure only logs a warning instead of retrying and surfacing failure, allowing an apparently accepted layout to disappear after reload."
+    },
+    {
+     "technique": "payload-and-identity",
+     "verdict": "not-applicable",
+     "evidence": "src/features/shared/components/display/ColumnResize.tsx:81 The implemented gesture changes a column dimension using its key; entity payload transport and positional reorder statements are not implemented by this context."
+    }
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-22T00:32:06.591267+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "drag-drop"
+   ],
+   "techniques": [
+    "cross-surface-handoff",
+    "drag-lifecycle",
+    "drop-affordances",
+    "keyboard-alternatives",
+    "ownership-boundaries",
+    "payload-and-identity"
+   ],
+   "deviations": 1,
+   "context": "display-table-primitives",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  }
+ ]
+}

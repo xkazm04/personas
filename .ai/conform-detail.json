@@ -34227,6 +34227,47 @@
           "evidence": "src-tauri/db/src/repos/execution/metrics.rs:1397 The traced execution, value, LLM spend, and Athena paths aggregate raw records on demand rather than reading materialized aggregate buckets requiring rebuilds."
         }
       ]
+    },
+    "739b6d67-2c36-41ee-9794-a74bc0b25cfd/drag-drop": {
+      "context": "display-table-primitives",
+      "subject": "drag-drop",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T00:32:06.591Z",
+      "worker": "ce0ac376-2e53-49c3-bc5b-b95c66db7260",
+      "techniques": [
+        {
+          "technique": "cross-surface-handoff",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/display/DataGrid.tsx:124 The grid delegates drag attributes to callers; these primitives implement no cross-surface receiver, negotiated payload contract, or handoff translation."
+        },
+        {
+          "technique": "drag-lifecycle",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/display/ColumnResize.tsx:105 Resize listeners are removed only through pointerup; there is no Escape, pointercancel, blur, or unmount cleanup, so interrupted gestures can retain listeners and resize state."
+        },
+        {
+          "technique": "drop-affordances",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/components/display/DropIndicator.tsx:53 The visual primitive provides a distinct insertion indicator that cannot intercept target hit-testing, supports either axis, and reduces its animation for reduced motion; callers own placement geometry."
+        },
+        {
+          "technique": "keyboard-alternatives",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/display/DragHandle.tsx:45 The rendered span has no default tabIndex or key handler despite declaring button semantics; inspected callers supply pointer behavior without repairing the grip's keyboard operability."
+        },
+        {
+          "technique": "ownership-boundaries",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/display/ColumnResize.tsx:76 Interface-owned widths update immediately, but persistence failure only logs a warning instead of retrying and surfacing failure, allowing an apparently accepted layout to disappear after reload."
+        },
+        {
+          "technique": "payload-and-identity",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/display/ColumnResize.tsx:81 The implemented gesture changes a column dimension using its key; entity payload transport and positional reorder statements are not implemented by this context."
+        }
+      ]
     }
   }
 }

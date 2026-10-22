@@ -11753,7 +11753,11 @@
           "revision": 5,
           "changedAt": "2026-09-26",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/shared/components/display/DragHandle.tsx:45 DragHandle announces a button without providing default focusability or keyboard activation, creating the false affordance explicitly prohibited by the standard.",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:31c96c1f832f7148",
+          "evaluatedRevision": 5
         },
         {
           "subject": "concurrency-guards",
