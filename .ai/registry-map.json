@@ -2847,12 +2847,11 @@
           "changedAt": "2026-10-18",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/features/agents/executionPlayer/ExecutionMiniPlayer.tsx:38 the context's 'player' is a progress/result view of an execution; none of its 34 cloud-deployment and execution files captures, transcribes, synthesizes or plays audio, so neither voice-io pipeline exists here",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
-          "evaluatedRevision": 20,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src/features/agents/executionPlayer/ExecutionMiniPlayer.tsx:37 the 'player' is a progress/result view of an execution; re-checked at rev 23, a grep of all 34 context files for speech/tts/whisper/microphone/audio/voice is empty",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23,
+          "revisionsBehind": 3
         },
         {
           "subject": "agent-memory",
@@ -28839,12 +28838,11 @@
           "changedAt": "2026-10-18",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/features/plugins/radio/hooks/useRadioState.ts:8 the radio surface consumes only station/now-playing/state APIs; re-checked against rev 20, none of its 14 files captures, transcribes, synthesizes or speaks (zero speech/tts/getUserMedia/voice references), and streaming music is the 'producing/plumbing media' boundary the golden path hands elsewhere",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
-          "evaluatedRevision": 20,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src/features/plugins/radio/components/RadioFooter.tsx:87 the radio plays third-party music streams through an <audio> element; re-checked at rev 23, none of its 14 files captures or transcribes speech or synthesizes the product's own text, so neither voice-io pipeline exists here",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23,
+          "revisionsBehind": 3
         },
         {
           "subject": "media-playback",
@@ -33692,8 +33690,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "strong",
-          "state": "unknown",
-          "priorNotApplicable": 21
+          "state": "deviation",
+          "priorNotApplicable": 21,
+          "evidence": "src/stores/slices/system/twinSlice.ts:616 reads the stored twin voice profile (raw ElevenLabs model_id/voice_id) with no retired-engine normalization door, and :625 exposes ElevenLabs-only knobs (stability/similarityBoost/style) as the slice API, so a retired model id reaches any future consumer unnormalized; today the profile has no reader or writer outside the slice at all",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23
         },
         {
           "subject": "test-harness",
@@ -34145,12 +34147,11 @@
           "changedAt": "2026-10-18",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/features/studio/StudioBuildSettings.tsx:95 'voice' in Studio is a written-style picker (how much Athena explains, per the header at :11); none of the context's 19 files captures, transcribes, synthesizes or plays audio",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
-          "evaluatedRevision": 20,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src/features/studio/StudioBuildSettings.tsx:95 'voice' in Studio is a written-style picker (concise/balanced/teaching); re-checked at rev 23, none of the context's 17 existing files captures, transcribes, synthesizes or plays audio",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23,
+          "revisionsBehind": 3
         },
         {
           "subject": "agent-memory",
@@ -34350,12 +34351,11 @@
           "changedAt": "2026-10-18",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src-tauri/src/cloud/sync/mod.rs:1 is a desktop-to-cloud sync writer; its files (athena_chat.rs, rows.rs, notes.rs, ...) carry no audio capture, transcription, synthesis or engine adapter (grep for whisper/tts/speech/microphone empty). Re-checked against rev 20.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
-          "evaluatedRevision": 20,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src-tauri/src/cloud/sync/mod.rs:1 is the desktop-to-cloud sync writer; re-checked at rev 23, its 4 files carry no audio capture, transcription, synthesis or engine adapter (only text hit: rows.rs:980 a 'no transcripts' comment)",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23,
+          "revisionsBehind": 3
         },
         {
           "subject": "test-harness",
