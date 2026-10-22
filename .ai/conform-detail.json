@@ -15656,9 +15656,9 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T19:48:16.584Z",
+      "worker": "ffe8a68a-826a-4845-ab8e-4e952c701b13",
       "techniques": [],
       "superseded": [
         {
@@ -15667,6 +15667,13 @@
           "evaluatedAt": "2026-10-10T11:14:00.000Z",
           "worker": "ae1def3a-8e43-4ee7-a7e9-a74fe0c5d27d",
           "reason": "replaced by 4f615649-b5a0-4caa-ac5a-dfb0d9c79a24"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/stores/slices/agents/chatSlice.ts:180 re-read: slice drives only the display, turn assembly is in Rust; the 500-message cap at :97 is a render buffer evicting FIFO, not a recall budget; no agent-recalled store",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
+          "reason": "replaced by ffe8a68a-826a-4845-ab8e-4e952c701b13"
         }
       ]
     },
@@ -18300,9 +18307,9 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T19:48:16.584Z",
+      "worker": "ffe8a68a-826a-4845-ab8e-4e952c701b13",
       "techniques": [],
       "superseded": [
         {
@@ -18311,6 +18318,13 @@
           "evaluatedAt": "2026-10-12T11:42:48.000Z",
           "worker": "07aaac1d-8803-42ca-9d5f-ce0b55598b01",
           "reason": "replaced by 4f615649-b5a0-4caa-ac5a-dfb0d9c79a24"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/commands/infrastructure/dev_tools/portfolio.rs:330 re-read: deterministic aggregation of project context maps, not anything an agent observed or believes; no capture, consolidation, decay or recall stage",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
+          "reason": "replaced by ffe8a68a-826a-4845-ab8e-4e952c701b13"
         }
       ]
     },
@@ -19711,9 +19725,9 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T19:48:16.584Z",
+      "worker": "ffe8a68a-826a-4845-ab8e-4e952c701b13",
       "techniques": [],
       "superseded": [
         {
@@ -19722,6 +19736,13 @@
           "evaluatedAt": "2026-10-12T17:24:13.297Z",
           "worker": "c510a03f-1707-4f7f-ba23-6336f8e5416c",
           "reason": "replaced by 4f615649-b5a0-4caa-ac5a-dfb0d9c79a24"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/companions/athena/types.ts:5 re-read: the context's own types are UI-shape concerns that do not cross the IPC boundary; the memory pipeline lives in the Rust brain, so the subject's precondition (a store an agent writes/recalls) is unmet here",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
+          "reason": "replaced by ffe8a68a-826a-4845-ab8e-4e952c701b13"
         }
       ]
     },
@@ -19748,11 +19769,18 @@
       "context": "plugins-dev-tools-skills",
       "subject": "agent-memory",
       "bundle": "software-engineering",
-      "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
-      "techniques": [],
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T19:48:16.584Z",
+      "worker": "ffe8a68a-826a-4845-ab8e-4e952c701b13",
+      "techniques": [
+        {
+          "technique": "coverage-instrumentation",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_skills/analytics/CoveragePipeline.tsx:72 denominator is every project context (right), but the numerator is a truncated, unwindowed row list: a false zero and a false non-zero, neither marked as a failure"
+        }
+      ],
+      "registryProposal": "Prior not-applicable verdict was wrong for this context: the skills page hosts a coverage instrument over the memory ledger. Technique-shaped match the lexical matcher missed; coverage-instrumentation could name truncated-numerator as an honest-zero failure case.",
       "superseded": [
         {
           "state": "not-applicable",
@@ -19760,6 +19788,13 @@
           "evaluatedAt": "2026-10-12T17:24:13.297Z",
           "worker": "c510a03f-1707-4f7f-ba23-6336f8e5416c",
           "reason": "replaced by 4f615649-b5a0-4caa-ac5a-dfb0d9c79a24"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_skills/SkillsManagerPage.tsx:1 re-read: workspace skill library manager; operator-managed skill files, not an agent memory pipeline (no procedure-promotion from observed runs here)",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
+          "reason": "replaced by ffe8a68a-826a-4845-ab8e-4e952c701b13"
         }
       ]
     },
@@ -19768,9 +19803,9 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T19:48:16.584Z",
+      "worker": "ffe8a68a-826a-4845-ab8e-4e952c701b13",
       "techniques": [],
       "superseded": [
         {
@@ -19779,6 +19814,13 @@
           "evaluatedAt": "2026-10-12T17:24:13.297Z",
           "worker": "c510a03f-1707-4f7f-ba23-6336f8e5416c",
           "reason": "replaced by 4f615649-b5a0-4caa-ac5a-dfb0d9c79a24"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/settings/sub_network/components/ExposureManager.tsx:34 re-read: lists resource types exposed to peers (persona/template/execution_result/knowledge/connector) as sharing permissions, not an agent's memory store or its governance",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
+          "reason": "replaced by ffe8a68a-826a-4845-ab8e-4e952c701b13"
         }
       ]
     },

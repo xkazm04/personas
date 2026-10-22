@@ -8850,12 +8850,11 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/companions/athena/types.ts:5 re-read: the context's own types are UI-shape concerns that do not cross the IPC boundary; the memory pipeline lives in the Rust brain, so the subject's precondition (a store an agent writes/recalls) is unmet here",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
-          "evaluatedRevision": 48,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src/features/companions/athena/types.ts:5 UI-shape types that do not cross the IPC boundary; the memory pipeline lives in the Rust brain (companion-brain context)",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
+          "evaluatedRevision": 51,
+          "revisionsBehind": 3
         },
         {
           "subject": "prompt-assembly",
@@ -27383,12 +27382,11 @@
           "changedAt": "2026-10-15",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src-tauri/src/commands/infrastructure/dev_tools/portfolio.rs:330 re-read: deterministic aggregation of project context maps, not anything an agent observed or believes; no capture, consolidation, decay or recall stage",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
-          "evaluatedRevision": 48,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src-tauri/src/commands/infrastructure/dev_tools/portfolio.rs:330 deterministic aggregation of project context maps; nothing an agent observed or believes, so no capture, consolidation, decay or recall stage exists here",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
+          "evaluatedRevision": 51,
+          "revisionsBehind": 3
         },
         {
           "subject": "mcp-tools",
@@ -27583,13 +27581,12 @@
           "revision": 51,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_skills/SkillsManagerPage.tsx:1 re-read: workspace skill library manager; operator-managed skill files, not an agent memory pipeline (no procedure-promotion from observed runs here)",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
-          "evaluatedRevision": 48,
-          "revisionsBehind": 3,
-          "stale": true
+          "state": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_skills/analytics/CoveragePipeline.tsx:70 coverage is counted client-side from listMemoryNodes(...,500), which the backend orders by updated_at DESC LIMIT 500 (src-tauri/src/commands/infrastructure/memory_ledger.rs:556) and never filters to the 30d the :30 comment claims, so a context beyond the cap reads as uncovered and a context with only stale nodes reads as covered",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
+          "evaluatedRevision": 51,
+          "revisionsBehind": 3
         },
         {
           "subject": "mcp-tools",
@@ -31433,12 +31430,11 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/settings/sub_network/components/ExposureManager.tsx:34 re-read: lists resource types exposed to peers (persona/template/execution_result/knowledge/connector) as sharing permissions, not an agent's memory store or its governance",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
-          "evaluatedRevision": 48,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src/features/settings/sub_network/components/ExposureManager.tsx:37 RESOURCE_TYPES lists resources exposed to peers as sharing permissions; not an agent memory store or its governance",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
+          "evaluatedRevision": 51,
+          "revisionsBehind": 3
         },
         {
           "subject": "supply-chain",
@@ -33309,12 +33305,11 @@
           "changedAt": "2026-10-15",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/stores/slices/agents/chatSlice.ts:180 re-read: slice drives only the display, turn assembly is in Rust; the 500-message cap at :97 is a render buffer evicting FIFO, not a recall budget; no agent-recalled store",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
-          "evaluatedRevision": 48,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src/stores/slices/agents/chatSlice.ts:97 the 500-message cap is a render buffer evicting FIFO and turn assembly lives in Rust (:180); no agent-recalled store in this slice",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
+          "evaluatedRevision": 51,
+          "revisionsBehind": 3
         },
         {
           "subject": "quality-gates",
