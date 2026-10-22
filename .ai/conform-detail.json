@@ -6035,14 +6035,14 @@
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T00:00:00.000Z",
-      "worker": "324fd756-14c3-41e3-98ac-77bdb11352dd",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:46:59.000Z",
+      "worker": "06114ca7-7188-4cdf-b5e0-c11ce13eb3f7",
       "techniques": [
         {
           "technique": "session-registry",
           "verdict": "deviation",
-          "evidence": "src-tauri/core/src/models/team_assignment.rs:150 open String beside a closed enum: two vocabularies, no single door"
+          "evidence": "src-tauri/core/src/models/team_assignment.rs:31 the defined vocabulary omits a state the store accepts and nothing derives from it"
         }
       ],
       "superseded": [
@@ -6059,6 +6059,13 @@
           "evaluatedAt": "2026-10-09T16:31:00.000Z",
           "worker": "59c77aec-60ea-4b22-bb27-4b055a793a5e",
           "reason": "replaced by 324fd756-14c3-41e3-98ac-77bdb11352dd"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/core/src/models/team_assignment.rs:150 types the assignment status as a free String beside the closed TeamAssignmentStatus enum (:31, six members, no Paused), so src-tauri/src/engine/team_assignment_orchestrator.rs:624 writes 'paused', a value neither the enum nor the CHECK at src-tauri/db/src/migrations/incremental/c02_dev_goals_and_kpis.rs:90 admits (the comment at orchestrator :525 already knows); it compiles and fails at the DB, so pause_team_assignment always errors. Re-judged against rev 26: still true.",
+          "evaluatedAt": "2026-10-14T00:00:00.000Z",
+          "worker": "324fd756-14c3-41e3-98ac-77bdb11352dd",
+          "reason": "replaced by 06114ca7-7188-4cdf-b5e0-c11ce13eb3f7"
         }
       ]
     },
@@ -13262,9 +13269,9 @@
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T09:34:58.000Z",
-      "worker": "d6999eee-2a8f-4d51-95be-400f7116a285",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:46:59.000Z",
+      "worker": "06114ca7-7188-4cdf-b5e0-c11ce13eb3f7",
       "techniques": [],
       "superseded": [
         {
@@ -13273,6 +13280,13 @@
           "evaluatedAt": "2026-10-10T01:20:06.000Z",
           "worker": "aa50e55b-1d63-4ec1-822b-feadc4c21f08",
           "reason": "replaced by d6999eee-2a8f-4d51-95be-400f7116a285"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/home/sub_welcome/lib/useNavCardStatus.ts:80 'Active agents' = enabled personas, the configured fleet, not sessions; src/features/home/sub_welcome/lib/fleetHealth.ts:2 is a success-rate pill over finished executions. No session registration, dispatch or harvest. Re-judged rev 26, unchanged.",
+          "evaluatedAt": "2026-10-14T09:34:58.000Z",
+          "worker": "d6999eee-2a8f-4d51-95be-400f7116a285",
+          "reason": "replaced by 06114ca7-7188-4cdf-b5e0-c11ce13eb3f7"
         }
       ]
     },
@@ -20153,14 +20167,14 @@
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T00:00:00.000Z",
-      "worker": "324fd756-14c3-41e3-98ac-77bdb11352dd",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:46:59.000Z",
+      "worker": "06114ca7-7188-4cdf-b5e0-c11ce13eb3f7",
       "techniques": [
         {
           "technique": "soft-budget-under-the-hard-cap",
           "verdict": "deviation",
-          "evidence": "src/lib/harness/orchestrator.ts:112 cap exit is not distinguishable from completion (failure-not-empty-success)"
+          "evidence": "src/lib/harness/orchestrator.ts:112 cap exit unmarked; decision rule 'treat a cap-fired run's artifact as truncated' and 'report the cap-fired fraction' unrealizable"
         }
       ],
       "superseded": [
@@ -20170,6 +20184,13 @@
           "evaluatedAt": "2026-10-12T17:45:22.732Z",
           "worker": "0b6f836d-b418-4311-9a91-fd30c9d76e08",
           "reason": "replaced by 324fd756-14c3-41e3-98ac-77bdb11352dd"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/lib/harness/orchestrator.ts:112 the area loop exits on config.maxIterations (default 100, src/lib/harness/types.ts:180) with no event: only pass-rate (:118) and no-areas (:143) emit harness:completed and the event union (src/lib/harness/types.ts:191) has no cap-fired member, so a loop cut by the cap returns the same guide as a finished one and the cap-fired fraction cannot be measured. Revised on re-read: the dispatcher here is code spawning one claude -p worker per area (src/lib/harness/executor.ts:146), so the earlier 'no soft budget in the prompt' framing was too strong; the defect is the unmarked cap exit.",
+          "evaluatedAt": "2026-10-14T00:00:00.000Z",
+          "worker": "324fd756-14c3-41e3-98ac-77bdb11352dd",
+          "reason": "replaced by 06114ca7-7188-4cdf-b5e0-c11ce13eb3f7"
         }
       ]
     },
@@ -24563,32 +24584,49 @@
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T07:54:31.000Z",
-      "worker": "212150d0-ab3d-4a68-8347-4345f31077f7",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:46:59.000Z",
+      "worker": "06114ca7-7188-4cdf-b5e0-c11ce13eb3f7",
       "techniques": [
         {
           "technique": "lifecycle-signals",
-          "verdict": "deviation: consumer restates the per-state staleness budget as a literal instead of reading the registry's cutoff",
-          "evidence": "src-tauri/src/companion/proactive/fleet_triggers.rs:64 vs src-tauri/src/commands/fleet/stale.rs:65"
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/proactive/fleet_triggers.rs:64 staleness budget restated as a literal instead of read from src-tauri/src/commands/fleet/stale.rs:65"
         },
         {
           "technique": "session-registry",
-          "verdict": "realized: the evaluator reads the in-process registry and matches FleetSessionState exhaustively, with the silent arms each justified",
-          "evidence": "src-tauri/src/companion/proactive/fleet_triggers.rs:49 registry().list_dto(); :98 exhaustive arm list"
+          "verdict": "realized",
+          "evidence": "src-tauri/src/companion/proactive/fleet_triggers.rs:59 matches on the registry's FleetSessionState::Stale rather than an invented state"
         }
       ],
-      "registryProposal": "lifecycle-signals could add a decision rule that user-facing text quoting a staleness budget must derive it from the live cutoff."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/proactive/fleet_triggers.rs:64 the stale nudge tells the operator 'no activity for 5+ minutes' (doc :10 says 'currently 5 min') while the single authority is STALE_AFTER_SECS = 6*60 (src-tauri/src/commands/fleet/stale.rs:65), operator-tunable 60-3600 s via set_state_cutoffs (stale.rs:187), so the message states a number the registry does not use and drifts with every retune",
+          "evaluatedAt": "2026-10-14T07:54:31.000Z",
+          "worker": "212150d0-ab3d-4a68-8347-4345f31077f7",
+          "reason": "replaced by 06114ca7-7188-4cdf-b5e0-c11ce13eb3f7"
+        }
+      ]
     },
     "5e531c95-b6d9-46f5-a33d-d07001fee61e/fleet-orchestration": {
       "context": "overview-shared-libs",
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T07:54:31.000Z",
-      "worker": "212150d0-ab3d-4a68-8347-4345f31077f7",
-      "techniques": []
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:46:59.000Z",
+      "worker": "06114ca7-7188-4cdf-b5e0-c11ce13eb3f7",
+      "techniques": [],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/overview/libs/fleetOptimizer.ts:2 'Fleet' here is the persona population: it recommends model downgrades and retry cuts from ExecutionDashboardData cost/success rollups (:4, :17-:18), with no sessions, registry, dispatch or lifecycle states for the subject to govern",
+          "evaluatedAt": "2026-10-14T07:54:31.000Z",
+          "worker": "212150d0-ab3d-4a68-8347-4345f31077f7",
+          "reason": "replaced by 06114ca7-7188-4cdf-b5e0-c11ce13eb3f7"
+        }
+      ]
     },
     "9e46b252-8eb1-4a15-a627-f7e342f1d85a/agent-memory": {
       "context": "companion-brain",

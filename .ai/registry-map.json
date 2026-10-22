@@ -9268,12 +9268,11 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/companion/proactive/fleet_triggers.rs:64 the stale nudge tells the operator 'no activity for 5+ minutes' (doc :10 says 'currently 5 min') while the single authority is STALE_AFTER_SECS = 6*60 (src-tauri/src/commands/fleet/stale.rs:65), operator-tunable 60-3600 s via set_state_cutoffs (stale.rs:187), so the message states a number the registry does not use and drifts with every retune",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src-tauri/src/companion/proactive/fleet_triggers.rs:64 the stale nudge hard-codes 'no activity for 5+ minutes' while the one authority is STALE_AFTER_SECS = 6*60 (src-tauri/src/commands/fleet/stale.rs:65), operator-tunable 60-3600 s via set_state_cutoffs (:187), so the message states a budget the registry does not use. Re-judged rev 28: unchanged.",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28,
+          "revisionsBehind": 2
         },
         {
           "subject": "agent-memory",
@@ -15147,12 +15146,11 @@
           "changedAt": "2026-10-15",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/features/home/sub_welcome/lib/useNavCardStatus.ts:80 'Active agents' = enabled personas, the configured fleet, not sessions; src/features/home/sub_welcome/lib/fleetHealth.ts:2 is a success-rate pill over finished executions. No session registration, dispatch or harvest. Re-judged rev 26, unchanged.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/features/home/sub_welcome/lib/useNavCardStatus.ts:80 'Active agents' = enabled personas, not sessions; src/features/home/sub_welcome/lib/fleetHealth.ts:2 is a success-rate tile over finished executions; none of the context's 30 files creates, tracks, dispatches or harvests a session. Re-judged rev 28 (verifier-seat-capacity, parallel-dispatch supervisory stock): still no fleet precondition.",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28,
+          "revisionsBehind": 2
         },
         {
           "subject": "quality-gates",
@@ -18193,12 +18191,11 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/lib/harness/orchestrator.ts:112 the area loop exits on config.maxIterations (default 100, src/lib/harness/types.ts:180) with no event: only pass-rate (:118) and no-areas (:143) emit harness:completed and the event union (src/lib/harness/types.ts:191) has no cap-fired member, so a loop cut by the cap returns the same guide as a finished one and the cap-fired fraction cannot be measured. Revised on re-read: the dispatcher here is code spawning one claude -p worker per area (src/lib/harness/executor.ts:146), so the earlier 'no soft budget in the prompt' framing was too strong; the defect is the unmarked cap exit.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/lib/harness/orchestrator.ts:112 the area loop exits on config.maxIterations (src/lib/harness/types.ts:180, default 100) with no event; only pass-rate (:118) and no-areas (:142) emit harness:completed and the HarnessEventType union (src/lib/harness/types.ts:190) has no cap-fired member, so a cap-cut run is indistinguishable from a finished one and the cap-fired fraction cannot be measured. Re-judged rev 28: unchanged.",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28,
+          "revisionsBehind": 2
         },
         {
           "subject": "session-continuation",
@@ -23805,12 +23802,11 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/overview/libs/fleetOptimizer.ts:2 'Fleet' here is the persona population: it recommends model downgrades and retry cuts from ExecutionDashboardData cost/success rollups (:4, :17-:18), with no sessions, registry, dispatch or lifecycle states for the subject to govern",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/features/overview/libs/fleetOptimizer.ts:2 'Fleet' is the persona population; it recommends model/retry changes from ExecutionDashboardData and healing issues (:8-:9), with no sessions, registry, dispatch or lifecycle states. Re-judged rev 28: unchanged.",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28,
+          "revisionsBehind": 2
         }
       ],
       "governance": "governed"
@@ -30255,12 +30251,11 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/core/src/models/team_assignment.rs:150 types the assignment status as a free String beside the closed TeamAssignmentStatus enum (:31, six members, no Paused), so src-tauri/src/engine/team_assignment_orchestrator.rs:624 writes 'paused', a value neither the enum nor the CHECK at src-tauri/db/src/migrations/incremental/c02_dev_goals_and_kpis.rs:90 admits (the comment at orchestrator :525 already knows); it compiles and fails at the DB, so pause_team_assignment always errors. Re-judged against rev 26: still true.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:3eafb649495c9498",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src-tauri/core/src/models/team_assignment.rs:150 status is still a free String beside a closed TeamAssignmentStatus enum (:31) that lacks Paused and that no code references; since e70 (src-tauri/db/src/migrations/incremental/e70_team_assignment_paused.rs:1) the DB CHECK admits paused, so pause now works, but the vocabulary has three disagreeing homes (enum, CHECK, string literals in src-tauri/src/engine/team_assignment_orchestrator.rs:623). Revised on rev 28: runtime failure fixed, single-source defect remains.",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28,
+          "revisionsBehind": 2
         },
         {
           "subject": "module-design",
