@@ -34350,6 +34350,37 @@
           "evidence": "src-tauri/engine/src/bridge_manifest/mod.rs:315 Bridge execution awaits subprocess output; no synchronous foreign-engine callback requiring asynchronous resource acquisition was found."
         }
       ]
+    },
+    "2e1e105a-866c-4039-9620-7ed5d0d30b17/english": {
+      "context": "i18n",
+      "subject": "english",
+      "bundle": "localization",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T01:31:43.222Z",
+      "worker": "90e813c4-5f3b-4c1d-9997-87ea5009ddaf",
+      "techniques": [
+        {
+          "technique": "register-and-voice",
+          "verdict": "deviation",
+          "evidence": "src/i18n/locales/en.json:8162 EN-PLEASE: routine URL validation includes decorative 'Please'; EditFormFields.tsx:57–69 confirms this is input validation rather than recovery from a product fault."
+        },
+        {
+          "technique": "typography-and-capitalization",
+          "verdict": "deviation",
+          "evidence": "src/i18n/locales/en.json:15669 EN-DASH explicitly rejects double hyphens as prose dashes; the generated English errors section preserves this value."
+        },
+        {
+          "technique": "ui-and-landing-microcopy",
+          "verdict": "deviation",
+          "evidence": "src/i18n/locales/en.json:720 EN-BUTTON explicitly rejects generic 'Submit'; useTriageCopy.ts:26 supplies this string to the question action label in triageAdapters.ts:910."
+        },
+        {
+          "technique": "variant-and-locale-conventions",
+          "verdict": "deviation",
+          "evidence": "src/i18n/locales/en.json:22951 EN-SPELLING: this American form coexists with 'Cancelled' at en.json:377; a whole-catalog scan excluding translator comments counted 3 'canceled' and 31 'cancelled' tokens."
+        }
+      ]
     }
   }
 }

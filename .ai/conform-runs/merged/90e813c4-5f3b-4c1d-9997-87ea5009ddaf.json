@@ -1,0 +1,59 @@
+{
+ "schema": "conform-run/1",
+ "worker": "90e813c4-5f3b-4c1d-9997-87ea5009ddaf",
+ "subject": "english",
+ "evaluatedAt": "2026-10-22T01:31:43.222077+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [
+  {
+   "context": "i18n",
+   "subject": "english",
+   "bundle": "localization",
+   "state": "deviation",
+   "evidence": "src/i18n/locales/en.json:15669 The English source catalog contains double-hyphen punctuation, decorative politeness, generic action labels, and mixed spelling variants, violating four techniques.",
+   "techniques": [
+    {
+     "technique": "register-and-voice",
+     "verdict": "deviation",
+     "evidence": "src/i18n/locales/en.json:8162 EN-PLEASE: routine URL validation includes decorative 'Please'; EditFormFields.tsx:57\u201369 confirms this is input validation rather than recovery from a product fault."
+    },
+    {
+     "technique": "typography-and-capitalization",
+     "verdict": "deviation",
+     "evidence": "src/i18n/locales/en.json:15669 EN-DASH explicitly rejects double hyphens as prose dashes; the generated English errors section preserves this value."
+    },
+    {
+     "technique": "ui-and-landing-microcopy",
+     "verdict": "deviation",
+     "evidence": "src/i18n/locales/en.json:720 EN-BUTTON explicitly rejects generic 'Submit'; useTriageCopy.ts:26 supplies this string to the question action label in triageAdapters.ts:910."
+    },
+    {
+     "technique": "variant-and-locale-conventions",
+     "verdict": "deviation",
+     "evidence": "src/i18n/locales/en.json:22951 EN-SPELLING: this American form coexists with 'Cancelled' at en.json:377; a whole-catalog scan excluding translator comments counted 3 'canceled' and 31 'cancelled' tokens."
+    }
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-22T01:31:43.222077+00:00",
+   "bundle": "localization",
+   "subjects": [
+    "english"
+   ],
+   "techniques": [
+    "register-and-voice",
+    "typography-and-capitalization",
+    "ui-and-landing-microcopy",
+    "variant-and-locale-conventions"
+   ],
+   "deviations": 1,
+   "context": "i18n",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  }
+ ]
+}
