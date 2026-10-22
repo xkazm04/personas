@@ -2027,3 +2027,4 @@
 {"ts":"2026-10-22T00:00:00Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":["sibling-floor-ownership","machine-owned-regions"],"deviations":1}
 {"ts":"2026-10-22T15:36:28.236Z","bundle":"software-engineering","subjects":["rate-limiting"],"techniques":[],"deviations":3}
 {"ts":"2026-10-22T12:00:00Z","bundle":"software-engineering","subjects":["native-shell-integration"],"techniques":[],"deviations":0}
+{"ts":"2026-10-22T15:38:55.742Z","bundle":"software-engineering","subjects":["voice-io"],"techniques":["stt-pipeline","tts-pipeline"],"deviations":0}

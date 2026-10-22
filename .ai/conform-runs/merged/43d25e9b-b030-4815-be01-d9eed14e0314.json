@@ -1,0 +1,98 @@
+{
+  "schema": "conform-run/1",
+  "worker": "43d25e9b-b030-4815-be01-d9eed14e0314",
+  "subject": "voice-io",
+  "evaluatedAt": "2026-10-22T15:38:55.741Z",
+  "pairs": [
+    {
+      "context": "2de6333f-8375-404b-8fdc-fe0fb15d4f95",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/src/commands/fleet/transcript.rs:4 'transcript' is a Claude Code per-session JSONL file watched for liveness, not speech; re-checked at rev 23, a regex for speechSynthesis/getUserMedia/MediaRecorder/whisper/tts/kokoro/sherpa/microphone/AudioContext/<audio over all 21 context files is empty",
+      "digest": "sha256-b2:29f8b158c4d44054",
+      "revision": 23
+    },
+    {
+      "context": "468953eb-0204-4013-b366-9357b2161138",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/core/src/engine_kind.rs:29 EngineKind::ALL is the single CLI engine ClaudeCode; re-checked at rev 23, the same audio/speech regex over all 31 core files is empty, so no capture, synthesis or voice engine exists here",
+      "digest": "sha256-b2:29f8b158c4d44054",
+      "revision": 23
+    },
+    {
+      "context": "03e7f46a-3f19-47b8-98a5-398efed815b4",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/hooks/realtime/useCloudWebhookRelay.ts:3 realtime here is the app event bus and cloud webhook relay status, not duplex voice; re-checked at rev 23, the audio/speech regex over 25 readable context files is empty",
+      "digest": "sha256-b2:29f8b158c4d44054",
+      "revision": 23
+    },
+    {
+      "context": "7159d27d-86c2-43be-a83f-8b50c4c816be",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/settings/sub_network/components/ExposureManager.tsx:2 the network settings manage exposed-resource sharing (Share2/Eye/GitFork icons), not audio; re-checked at rev 23, the audio/speech regex over all 34 context files is empty",
+      "digest": "sha256-b2:29f8b158c4d44054",
+      "revision": 23
+    },
+    {
+      "context": "d7525012-ab19-4b29-99bb-0d4b6b9e084b",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/plugins/fleet/sub_activity/FleetActivityPage.tsx:16 lists Claude Code session transcripts for search, not speech transcripts; re-checked at rev 23, the audio/speech regex over all 33 context files is empty",
+      "digest": "sha256-b2:29f8b158c4d44054",
+      "revision": 23
+    },
+    {
+      "context": "3619ab0d-0367-43d0-b4eb-ec39c1302d65",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/sub_catalog/components/picker/CredentialPicker.tsx:31 picking a connector records a catalog view; re-checked at rev 23, the audio/speech regex over all 33 context files is empty (an ElevenLabs connector entry would be catalog data, not a voice pipeline)",
+      "digest": "sha256-b2:29f8b158c4d44054",
+      "revision": 23
+    }
+  ],
+  "declined": [
+    {
+      "subject": "voice-io",
+      "context": "lib-credentials, plugins-twin-shared, plugins-obsidian-brain, webbuild",
+      "reason": "only hit is an ElevenLabs connector/role label or a retired-milestone comment (src/features/plugins/twin/useTwinReadiness.ts:17), no voice pipeline; priorNotApplicable 21, left unknown rather than guessed"
+    },
+    {
+      "subject": "voice-io",
+      "context": "plugins-artist-media-studio (+hooks, artist-hooks), plugins-research-lab-reports, fleet-triage-columns",
+      "reason": "context-map.json lists no readable file_paths for these, so the code could not be read at the real list; left unknown"
+    },
+    {
+      "subject": "voice-io",
+      "context": "29 other unknown pairs (priorNotApplicable 21, zero audio/speech hits)",
+      "reason": "unread beyond a regex sweep; not-applicable would be a guess wearing a verdict"
+    },
+    {
+      "subject": "voice-io",
+      "context": "11 other stale not-applicable pairs and 8 current deviations",
+      "reason": "deviations were judged 2026-10-21/22 at rev 23 (current); remaining stale NAs have ElevenLabs/transcrib hits needing a read, left for the next run"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-22T15:38:55.742Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "voice-io"
+      ],
+      "techniques": [
+        "stt-pipeline",
+        "tts-pipeline"
+      ],
+      "deviations": 0
+    }
+  ]
+}

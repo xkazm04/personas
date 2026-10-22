@@ -23709,24 +23709,36 @@
       "subject": "voice-io",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-13",
-      "evaluatedTs": "2026-10-13T12:00:13.603Z",
-      "worker": "0d1f8670-3002-4701-98d8-6af401cfaf33",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T15:38:55.741Z",
+      "worker": "43d25e9b-b030-4815-be01-d9eed14e0314",
       "techniques": [
         {
           "technique": "voice-setup-experience",
           "verdict": "not-applicable",
-          "evidence": "src/features/settings/components/SettingsPage.tsx:8 SettingsPage routes solely to account, appearance, notifications, radio, engine, byom, portability, network, devices, admin, api-keys, history, and limits tabs, lacking a voice setup or speech onboarding flow."
+          "evidence": "src/features/settings/components/SettingsPage.tsx:8 SettingsPage routes solely to account, appearance, notifications, radio, engine, byom, portability, network, devices, admin, api-keys, history, and limits tabs, lacking a voice setup or speech onboarding flow.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "caller-scoped-voice-binding",
           "verdict": "not-applicable",
-          "evidence": "src/features/settings/sub_network/components/IdentitySettings.tsx:14 P2P network identities manage cryptographic peer trust and device pairing records, with no automated caller speech binding or voice identity resolution."
+          "evidence": "src/features/settings/sub_network/components/IdentitySettings.tsx:14 P2P network identities manage cryptographic peer trust and device pairing records, with no automated caller speech binding or voice identity resolution.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "voice-ux-integration",
           "verdict": "not-applicable",
-          "evidence": "src/features/settings/sub_network/components/BundleExportDialog.tsx:24 Network bundle export handles cryptographic archive generation and temporary clipboard sharing without read-aloud controls, narration arbiters, or speech mute architecture."
+          "evidence": "src/features/settings/sub_network/components/BundleExportDialog.tsx:24 Network bundle export handles cryptographic archive generation and temporary clipboard sharing without read-aloud controls, narration arbiters, or speech mute architecture.",
+          "carriedFrom": "2026-10-13"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/settings/sub_network/components/ExposureManager.tsx:34 Searched for microphone, speech-to-text, text-to-speech, and whisper with zero hits across context directories; settings-network manages P2P exposure of static resources and cryptographic bundle exchange without speech input or audio playback surfaces.",
+          "evaluatedAt": "2026-10-13T12:00:13.603Z",
+          "worker": "0d1f8670-3002-4701-98d8-6af401cfaf33",
+          "reason": "replaced by 43d25e9b-b030-4815-be01-d9eed14e0314"
         }
       ]
     },
@@ -23735,24 +23747,36 @@
       "subject": "voice-io",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-13",
-      "evaluatedTs": "2026-10-13T12:00:13.603Z",
-      "worker": "0d1f8670-3002-4701-98d8-6af401cfaf33",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T15:38:55.741Z",
+      "worker": "43d25e9b-b030-4815-be01-d9eed14e0314",
       "techniques": [
         {
           "technique": "engine-abstraction",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/engine_kind.rs:19 The engine kind enum in core models solely headless CLI execution backends (ClaudeCode), with no voice synthesis or speech recognition engine abstractions."
+          "evidence": "src-tauri/core/src/engine_kind.rs:19 The engine kind enum in core models solely headless CLI execution backends (ClaudeCode), with no voice synthesis or speech recognition engine abstractions.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "on-device-vs-cloud",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/limits.rs:15 Execution limits govern headless persona timeouts without residency decisions, on-device model provisioning, or cloud speech fallback logic."
+          "evidence": "src-tauri/core/src/limits.rs:15 Execution limits govern headless persona timeouts without residency decisions, on-device model provisioning, or cloud speech fallback logic.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "duplex-agent-sessions",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/lifecycle.rs:3 Core lifecycle state machines model entity statuses and transitions declaratively, containing no vendor duplex voice sessions or audio socket protocols."
+          "evidence": "src-tauri/core/src/lifecycle.rs:3 Core lifecycle state machines model entity statuses and transitions declaratively, containing no vendor duplex voice sessions or audio socket protocols.",
+          "carriedFrom": "2026-10-13"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/core/src/engine_kind.rs:29 Searched for microphone, speech-to-text, text-to-speech, and whisper with zero hits across context directories; core provides foundational CLI engine enums and system limits rather than speech recognition or synthesis pipelines.",
+          "evaluatedAt": "2026-10-13T12:00:13.603Z",
+          "worker": "0d1f8670-3002-4701-98d8-6af401cfaf33",
+          "reason": "replaced by 43d25e9b-b030-4815-be01-d9eed14e0314"
         }
       ]
     },
@@ -25910,10 +25934,19 @@
       "subject": "voice-io",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "24d4e28a-165d-4531-9482-157bb32bc74c",
-      "techniques": []
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T15:38:55.741Z",
+      "worker": "43d25e9b-b030-4815-be01-d9eed14e0314",
+      "techniques": [],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/hooks/realtime/useCloudWebhookRelay.ts:3 realtime here is the app event bus and webhook relay singleton listeners; grep of src/hooks for whisper/getUserMedia/speech/tts/microphone is empty, so neither voice pipeline exists.",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "24d4e28a-165d-4531-9482-157bb32bc74c",
+          "reason": "replaced by 43d25e9b-b030-4815-be01-d9eed14e0314"
+        }
+      ]
     },
     "63a0a6fc-fa9a-453c-943d-4579b83f0ca3/translation-quality-measurement": {
       "context": "stores",
@@ -30221,19 +30254,30 @@
       "subject": "voice-io",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-17",
-      "evaluatedTs": "2026-10-17T00:02:26.925Z",
-      "worker": "117a75ae-750a-41f4-804a-979a2101e5eb",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T15:38:55.741Z",
+      "worker": "43d25e9b-b030-4815-be01-d9eed14e0314",
       "techniques": [
         {
           "technique": "stt-pipeline",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/picker/CredentialPicker.tsx:31 The action is choosing a connector type, not opening a microphone."
+          "evidence": "src/features/vault/sub_catalog/components/picker/CredentialPicker.tsx:31 The action is choosing a connector type, not opening a microphone.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "voice-setup-experience",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/picker/ConnectorCard.tsx:7 The card renders a connector's auth method and license, not a voice install or compare-by-ear step."
+          "evidence": "src/features/vault/sub_catalog/components/picker/ConnectorCard.tsx:7 The card renders a connector's auth method and license, not a voice install or compare-by-ear step.",
+          "carriedFrom": "2026-10-17"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/picker/CredentialPicker.tsx:31 Picking a connector records a catalog view and calls onPickType; a search of the picker, design, and negotiator trees found no tts, microphone, whisper, dictation, or speechSynthesis.",
+          "evaluatedAt": "2026-10-17T00:02:26.925Z",
+          "worker": "117a75ae-750a-41f4-804a-979a2101e5eb",
+          "reason": "replaced by 43d25e9b-b030-4815-be01-d9eed14e0314"
         }
       ]
     },
@@ -30263,29 +30307,42 @@
       "subject": "voice-io",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-17",
-      "evaluatedTs": "2026-10-17T00:02:26.925Z",
-      "worker": "117a75ae-750a-41f4-804a-979a2101e5eb",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T15:38:55.741Z",
+      "worker": "43d25e9b-b030-4815-be01-d9eed14e0314",
       "techniques": [
         {
           "technique": "stt-pipeline",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/fleet/screen_activity.rs:3 Liveness is PTY bytes, not microphone audio."
+          "evidence": "src-tauri/src/commands/fleet/screen_activity.rs:3 Liveness is PTY bytes, not microphone audio.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "tts-pipeline",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/fleet/screen_activity.rs:21 What is observed is a terminal grid, not a synthesis queue."
+          "evidence": "src-tauri/src/commands/fleet/screen_activity.rs:21 What is observed is a terminal grid, not a synthesis queue.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "transcript-normalization",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/fleet/transcript.rs:4 The transcript is a coding-session JSONL log, not dictated speech to rewrite for a reader."
+          "evidence": "src-tauri/src/commands/fleet/transcript.rs:4 The transcript is a coding-session JSONL log, not dictated speech to rewrite for a reader.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "transcript-handoff-receipts",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/fleet/transcript.rs:36 Disposition is a filesystem watch for liveness, not a paste into another application's cursor."
+          "evidence": "src-tauri/src/commands/fleet/transcript.rs:36 Disposition is a filesystem watch for liveness, not a paste into another application's cursor.",
+          "carriedFrom": "2026-10-17"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/commands/fleet/transcript.rs:4 Fleet's transcript is a Claude Code JSONL file watched for session liveness; searches for tts, microphone, whisper, dictation, and speechSynthesis under commands/fleet returned nothing.",
+          "evaluatedAt": "2026-10-17T00:02:26.925Z",
+          "worker": "117a75ae-750a-41f4-804a-979a2101e5eb",
+          "reason": "replaced by 43d25e9b-b030-4815-be01-d9eed14e0314"
         }
       ]
     },
@@ -30294,19 +30351,30 @@
       "subject": "voice-io",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-17",
-      "evaluatedTs": "2026-10-17T00:02:26.925Z",
-      "worker": "117a75ae-750a-41f4-804a-979a2101e5eb",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T15:38:55.741Z",
+      "worker": "43d25e9b-b030-4815-be01-d9eed14e0314",
       "techniques": [
         {
           "technique": "spoken-intent-parsing",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/fleet/__tests__/fleetAttention.test.ts:23 Attention classification keys off a Claude CLI attach failure string, not a parsed spoken command."
+          "evidence": "src/features/plugins/fleet/__tests__/fleetAttention.test.ts:23 Attention classification keys off a Claude CLI attach failure string, not a parsed spoken command.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "transcript-normalization",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/fleet/sub_activity/FleetActivityPage.tsx:16 The transcript is a Claude Code session rollup, not dictated speech to clean."
+          "evidence": "src/features/plugins/fleet/sub_activity/FleetActivityPage.tsx:16 The transcript is a Claude Code session rollup, not dictated speech to clean.",
+          "carriedFrom": "2026-10-17"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/fleet/sub_activity/FleetActivityPage.tsx:16 The activity page lists Claude Code session transcripts for project and tool search; the fleet plugin tree has no tts, microphone, whisper, dictation, or speechSynthesis identifiers.",
+          "evaluatedAt": "2026-10-17T00:02:26.925Z",
+          "worker": "117a75ae-750a-41f4-804a-979a2101e5eb",
+          "reason": "replaced by 43d25e9b-b030-4815-be01-d9eed14e0314"
         }
       ]
     },

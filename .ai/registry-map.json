@@ -7864,12 +7864,11 @@
           "changedAt": "2026-10-18",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/src/commands/fleet/transcript.rs:4 Fleet's transcript is a Claude Code JSONL file watched for session liveness; searches for tts, microphone, whisper, dictation, and speechSynthesis under commands/fleet returned nothing.",
-          "evaluatedAt": "2026-10-17",
-          "evaluatedAgainst": "sha256-b2:fa03abeab38c89c7",
-          "evaluatedRevision": 21,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src-tauri/src/commands/fleet/transcript.rs:4 'transcript' is a Claude Code per-session JSONL file watched for liveness, not speech; re-checked at rev 23, a regex for speechSynthesis/getUserMedia/MediaRecorder/whisper/tts/kokoro/sherpa/microphone/AudioContext/<audio over all 21 context files is empty",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23,
+          "revisionsBehind": 2
         },
         {
           "subject": "terminal-multiplexing",
@@ -9849,12 +9848,11 @@
           "changedAt": "2026-10-18",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src-tauri/core/src/engine_kind.rs:29 Searched for microphone, speech-to-text, text-to-speech, and whisper with zero hits across context directories; core provides foundational CLI engine enums and system limits rather than speech recognition or synthesis pipelines.",
-          "evaluatedAt": "2026-10-13",
-          "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
-          "evaluatedRevision": 20,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src-tauri/core/src/engine_kind.rs:29 EngineKind::ALL is the single CLI engine ClaudeCode; re-checked at rev 23, the same audio/speech regex over all 31 core files is empty, so no capture, synthesis or voice engine exists here",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23,
+          "revisionsBehind": 3
         },
         {
           "subject": "agent-runtime-assembly",
@@ -15979,12 +15977,11 @@
           "changedAt": "2026-10-18",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/hooks/realtime/useCloudWebhookRelay.ts:3 realtime here is the app event bus and webhook relay singleton listeners; grep of src/hooks for whisper/getUserMedia/speech/tts/microphone is empty, so neither voice pipeline exists.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
-          "evaluatedRevision": 20,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src/hooks/realtime/useCloudWebhookRelay.ts:3 realtime here is the app event bus and cloud webhook relay status, not duplex voice; re-checked at rev 23, the audio/speech regex over 25 readable context files is empty",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23,
+          "revisionsBehind": 3
         },
         {
           "subject": "talking-avatar",
@@ -28368,12 +28365,11 @@
           "changedAt": "2026-10-18",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/plugins/fleet/sub_activity/FleetActivityPage.tsx:16 The activity page lists Claude Code session transcripts for project and tool search; the fleet plugin tree has no tts, microphone, whisper, dictation, or speechSynthesis identifiers.",
-          "evaluatedAt": "2026-10-17",
-          "evaluatedAgainst": "sha256-b2:fa03abeab38c89c7",
-          "evaluatedRevision": 21,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/features/plugins/fleet/sub_activity/FleetActivityPage.tsx:16 lists Claude Code session transcripts for search, not speech transcripts; re-checked at rev 23, the audio/speech regex over all 33 context files is empty",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23,
+          "revisionsBehind": 2
         },
         {
           "subject": "mcp-tools",
@@ -31480,12 +31476,11 @@
           "changedAt": "2026-10-18",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/settings/sub_network/components/ExposureManager.tsx:34 Searched for microphone, speech-to-text, text-to-speech, and whisper with zero hits across context directories; settings-network manages P2P exposure of static resources and cryptographic bundle exchange without speech input or audio playback surfaces.",
-          "evaluatedAt": "2026-10-13",
-          "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
-          "evaluatedRevision": 20,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src/features/settings/sub_network/components/ExposureManager.tsx:2 the network settings manage exposed-resource sharing (Share2/Eye/GitFork icons), not audio; re-checked at rev 23, the audio/speech regex over all 34 context files is empty",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23,
+          "revisionsBehind": 3
         },
         {
           "subject": "prompt-assembly",
@@ -40350,12 +40345,11 @@
           "changedAt": "2026-10-18",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/picker/CredentialPicker.tsx:31 Picking a connector records a catalog view and calls onPickType; a search of the picker, design, and negotiator trees found no tts, microphone, whisper, dictation, or speechSynthesis.",
-          "evaluatedAt": "2026-10-17",
-          "evaluatedAgainst": "sha256-b2:fa03abeab38c89c7",
-          "evaluatedRevision": 21,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/features/vault/sub_catalog/components/picker/CredentialPicker.tsx:31 picking a connector records a catalog view; re-checked at rev 23, the audio/speech regex over all 33 context files is empty (an ElevenLabs connector entry would be catalog data, not a voice pipeline)",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23,
+          "revisionsBehind": 2
         },
         {
           "subject": "prompt-assembly",
