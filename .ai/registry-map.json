@@ -9747,7 +9747,11 @@
           "revision": 14,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/companions/CompanionsPage.tsx:2 the context is a section content router over lazy companion pages with no dataset of uniform records, so no cross-record comparison job exists for a table to serve",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+          "evaluatedRevision": 14
         },
         {
           "subject": "agent-runtime-assembly",
@@ -25140,7 +25144,11 @@
           "revision": 14,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/shared/glyph/persona-layout/PersonaSigilSummary.tsx:74 renders a fixed-dimension summary list and per-capability rows (PersonaLayout.tsx:257) that are identity-dominant, which the golden path assigns to cards or a list; no sort, filter or paging surface",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+          "evaluatedRevision": 14
         },
         {
           "subject": "plan-entitlements",
