@@ -37149,6 +37149,39 @@
       "evaluatedTs": "2026-10-22T12:00:00.000Z",
       "worker": "90ae0c4d-9b74-4584-93b7-bfb54b79e8d4",
       "techniques": []
+    },
+    "a35d1f4a-5de8-4be1-af8b-1a3784296400/deployment-contract": {
+      "context": "plugins-artist-gallery",
+      "subject": "deployment-contract",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T12:00:00.000Z",
+      "worker": "8c84ee84-67af-4035-baa4-04ccef7e8938",
+      "techniques": [
+        {
+          "technique": "cache-immutability-licensing",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:3 'assets' matched a local creative-asset gallery, not served build output"
+        }
+      ]
+    },
+    "cab45fee-e439-4bff-9924-217b1acc17f8/deployment-contract": {
+      "context": "plugins-artist-hooks",
+      "subject": "deployment-contract",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T12:00:00.000Z",
+      "worker": "8c84ee84-67af-4035-baa4-04ccef7e8938",
+      "techniques": [
+        {
+          "technique": "cache-immutability-licensing",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:3 'cache invalidation' there was an in-process local-image cache, not HTTP cache headers on build output"
+        }
+      ],
+      "registryProposal": "Lexical matches on 'asset'/'assets'/'cache' route creative-asset and in-process-cache contexts to deployment-contract; its golden path is about hosted-build delivery, so those terms in use_when/technique text attract false pairings."
     }
   }
 }

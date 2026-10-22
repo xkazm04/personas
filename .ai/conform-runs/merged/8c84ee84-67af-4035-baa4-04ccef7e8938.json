@@ -1,0 +1,16 @@
+{"schema":"conform-run/1","worker":"8c84ee84-67af-4035-baa4-04ccef7e8938","subject":"deployment-contract",
+"evaluatedAt":"2026-10-22T12:00:00Z",
+"pairs":[
+{"context":"a35d1f4a-5de8-4be1-af8b-1a3784296400","subject":"deployment-contract","bundle":"software-engineering","state":"not-applicable",
+"evidence":"src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:3 the Artist plugin was removed from the app on 2026-09-14 (no src/features/plugins/artist tree is tracked), and even while live it was a local-file gallery with no hosted build, environment or served build output, so none of the subject's six techniques had its precondition",
+"techniques":[{"technique":"cache-immutability-licensing","verdict":"not-applicable","evidence":"src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:3 'assets' matched a local creative-asset gallery, not served build output"}]},
+{"context":"cab45fee-e439-4bff-9924-217b1acc17f8","subject":"deployment-contract","bundle":"software-engineering","state":"not-applicable",
+"evidence":"src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:3 the Artist plugin and its hooks were removed on 2026-09-14; the context described a module-level data-URL cache over local files via Tauri IPC, not a cache lifetime on a served deploy, so the subject's precondition never held",
+"techniques":[{"technique":"cache-immutability-licensing","verdict":"not-applicable","evidence":"src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:3 'cache invalidation' there was an in-process local-image cache, not HTTP cache headers on build output"}],
+"registryProposal":"Lexical matches on 'asset'/'assets'/'cache' route creative-asset and in-process-cache contexts to deployment-contract; its golden path is about hosted-build delivery, so those terms in use_when/technique text attract false pairings."}
+],
+"declined":[
+{"subject":"deployment-contract","context":"e0a448bc-24d4-4663-ba31-27d4ce378a14","reason":"already judged deviation today (2026-10-22) against the current digest sha256-b2:0aecb9f382210cdc, revision 4; nothing moved since"},
+{"subject":"deployment-contract","context":"2b61b648-d166-4255-b7b7-5d32ffdd6751","reason":"already judged deviation today (2026-10-22) against the current digest; nothing moved since"}
+],
+"consults":[{"ts":"2026-10-22T12:00:00Z","bundle":"software-engineering","subjects":["deployment-contract"],"techniques":["cache-immutability-licensing"],"deviations":0}]}

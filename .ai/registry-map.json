@@ -25939,7 +25939,11 @@
           "revision": 4,
           "changedAt": "2026-09-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:3 the Artist plugin was removed from the app on 2026-09-14 (no src/features/plugins/artist tree is tracked), and even while live it was a local-file gallery with no hosted build, environment or served build output, so none of the subject's six techniques had its precondition",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:0aecb9f382210cdc",
+          "evaluatedRevision": 4
         },
         {
           "subject": "entity-lifecycle",
@@ -26097,7 +26101,11 @@
           "revision": 4,
           "changedAt": "2026-09-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:3 the Artist plugin and its hooks were removed on 2026-09-14; the context described a module-level data-URL cache over local files via Tauri IPC, not a cache lifetime on a served deploy, so the subject's precondition never held",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:0aecb9f382210cdc",
+          "evaluatedRevision": 4
         },
         {
           "subject": "codebase-scanning",
