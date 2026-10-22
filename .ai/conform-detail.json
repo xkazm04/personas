@@ -34309,6 +34309,47 @@
           "evidence": "src-tauri/db/src/repos/resources/external_api_keys.rs:101 Minting creates the authenticating record in local SQLite; this lifecycle performs no remote credential mutation requiring a separate write-ahead witness."
         }
       ]
+    },
+    "a3b615d2-05d8-47bd-ad92-672c6b42b0f3/engine-binding-surface": {
+      "context": "output-stream-parser",
+      "subject": "engine-binding-surface",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T01:10:22.837Z",
+      "worker": "34e6f317-e4ab-4dfd-ab9e-418911b8204b",
+      "techniques": [
+        {
+          "technique": "address-sensitive-construction",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/safe_json.rs:85 Constructs owned deserialized data; no foreign constructor retaining the host object's address was found."
+        },
+        {
+          "technique": "ask-the-authority-not-the-shadow",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/api_proxy.rs:90 The inspected cache loads connector definitions from the database, rather than shadowing safety-critical foreign-runtime ownership or lock state."
+        },
+        {
+          "technique": "capability-deferred-release",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/rotation.rs:374 The inspected destructor releases a host atomic concurrency flag; it performs no capability-gated foreign-resource release."
+        },
+        {
+          "technique": "hierarchy-as-three-relations",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/parser.rs:700 Decoding constructs protocol enum variants; no foreign class hierarchy, layout reinterpretation, or handle downcast was found."
+        },
+        {
+          "technique": "phantom-capability-parameter",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/protocol.rs:71 Dispatch accepts an ordinary parsed message; no foreign region-entry precondition was found."
+        },
+        {
+          "technique": "pre-resolve-what-the-engine-cannot-await",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/bridge_manifest/mod.rs:315 Bridge execution awaits subprocess output; no synchronous foreign-engine callback requiring asynchronous resource acquisition was found."
+        }
+      ]
     }
   }
 }

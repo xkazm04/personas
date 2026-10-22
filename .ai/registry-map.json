@@ -21520,7 +21520,11 @@
           "revision": 2,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/engine/src/parser.rs:163 The context handles serialized CLI output and asynchronous external operations; searches found no foreign-memory binding constructs in the supplied files and no PhantomPinned or PhantomData occurrences in either context directory or the repository search.",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:823cd55ac89d000b",
+          "evaluatedRevision": 2
         }
       ],
       "governance": "governed"
