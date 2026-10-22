@@ -1,0 +1,80 @@
+{
+ "schema": "conform-run/1",
+ "worker": "98c5bdfe-d2e1-4712-aa06-f6153f5e14ec",
+ "subject": "eval-harness",
+ "evaluatedAt": "2026-10-22T00:00:00Z",
+ "pairs": [
+  {
+   "context": "b164f847-45d6-4c9e-85bc-a1308375085d",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/db/src/repos/communication/manual_reviews.rs:52 create() persists a human review request raised by a persona; precondition unmet: no declared scenarios, candidates or scoring are run against anything, it is a human-in-the-loop queue",
+   "techniques": [
+    {
+     "technique": "scenario-design",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/db/src/repos/communication/manual_reviews.rs:52 create() persists a human review request raised by a persona; precondition unmet: no declared scenarios, candidates or scoring are run against anything, it is a human-in-the-loop queue"
+    }
+   ]
+  },
+  {
+   "context": "a7ece012-8300-4780-b286-b9cea81801fc",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/core/src/models/llm_spend.rs:5 spend ledger and audit record types for operational cost attribution; precondition unmet: no scenario/judge/aggregation, the models and metric match is vocabulary only",
+   "techniques": [
+    {
+     "technique": "scenario-design",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/core/src/models/llm_spend.rs:5 spend ledger and audit record types for operational cost attribution; precondition unmet: no scenario/judge/aggregation, the models and metric match is vocabulary only"
+    }
+   ]
+  },
+  {
+   "context": "90f639de-ffc7-4225-b67f-1566e5d66b8b",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/overview/sub_health/libs/compositeHealthScore.ts:13 per-persona live operational health composite from SLA and healing telemetry; precondition unmet: no declared scenarios or judge, it is production monitoring (scoring-rubrics territory)",
+   "techniques": [
+    {
+     "technique": "scenario-design",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_health/libs/compositeHealthScore.ts:13 per-persona live operational health composite from SLA and healing telemetry; precondition unmet: no declared scenarios or judge, it is production monitoring (scoring-rubrics territory)"
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "eval-harness",
+   "context": "fc62a53a-85f9-4491-8b54-9b5f1795ef91",
+   "reason": "overview-patterns has no file paths in context-map.json, nothing to anchor an absence on"
+  },
+  {
+   "subject": "eval-harness",
+   "context": "ad601e35-b998-4029-97a5-77487f00d561",
+   "reason": "lib-types spans many unrelated type files; not read in this budget"
+  },
+  {
+   "subject": "eval-harness",
+   "context": "all other unknown pairs",
+   "reason": "remaining unknowns are priorNotApplicable=15 resonance pairs, ranked last; no stale or strong-unknown pairs existed. The 8 judged deviations were already recorded and current (digest sha256-b2:7ccead00b7f92aba matches registry)."
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-22T00:00:00Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "eval-harness"
+   ],
+   "techniques": [
+    "scenario-design"
+   ],
+   "deviations": 0
+  }
+ ]
+}

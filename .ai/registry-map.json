@@ -10722,8 +10722,12 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 15
+          "state": "not-applicable",
+          "priorNotApplicable": 15,
+          "evidence": "src-tauri/db/src/repos/communication/manual_reviews.rs:52 create() persists a human review request raised by a persona; precondition unmet: no declared scenarios, candidates or scoring are run against anything, it is a human-in-the-loop queue",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+          "evaluatedRevision": 37
         }
       ],
       "governance": "governed"
@@ -21076,8 +21080,12 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 15
+          "state": "not-applicable",
+          "priorNotApplicable": 15,
+          "evidence": "src-tauri/core/src/models/llm_spend.rs:5 spend ledger and audit record types for operational cost attribution; precondition unmet: no scenario/judge/aggregation, the models and metric match is vocabulary only",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+          "evaluatedRevision": 37
         },
         {
           "subject": "cost-metering",
@@ -22558,8 +22566,12 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 15
+          "state": "not-applicable",
+          "priorNotApplicable": 15,
+          "evidence": "src/features/overview/sub_health/libs/compositeHealthScore.ts:13 per-persona live operational health composite from SLA and healing telemetry; precondition unmet: no declared scenarios or judge, it is production monitoring (scoring-rubrics territory)",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+          "evaluatedRevision": 37
         },
         {
           "subject": "self-healing",

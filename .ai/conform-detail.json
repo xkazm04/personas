@@ -36727,6 +36727,54 @@
         }
       ],
       "registryProposal": "Cross-language payload parity (TS hand-kept interface vs Rust serde struct) recurs across this repo as the commonest test-harness deviation; unreached-decisions-pin-nothing could name it as a distinct fixture shape."
+    },
+    "b164f847-45d6-4c9e-85bc-a1308375085d/eval-harness": {
+      "context": "db-repos-communication",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T00:00:00.000Z",
+      "worker": "98c5bdfe-d2e1-4712-aa06-f6153f5e14ec",
+      "techniques": [
+        {
+          "technique": "scenario-design",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/db/src/repos/communication/manual_reviews.rs:52 create() persists a human review request raised by a persona; precondition unmet: no declared scenarios, candidates or scoring are run against anything, it is a human-in-the-loop queue"
+        }
+      ]
+    },
+    "a7ece012-8300-4780-b286-b9cea81801fc/eval-harness": {
+      "context": "observability-audit-models",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T00:00:00.000Z",
+      "worker": "98c5bdfe-d2e1-4712-aa06-f6153f5e14ec",
+      "techniques": [
+        {
+          "technique": "scenario-design",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/models/llm_spend.rs:5 spend ledger and audit record types for operational cost attribution; precondition unmet: no scenario/judge/aggregation, the models and metric match is vocabulary only"
+        }
+      ]
+    },
+    "90f639de-ffc7-4225-b67f-1566e5d66b8b/eval-harness": {
+      "context": "overview-health",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T00:00:00.000Z",
+      "worker": "98c5bdfe-d2e1-4712-aa06-f6153f5e14ec",
+      "techniques": [
+        {
+          "technique": "scenario-design",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_health/libs/compositeHealthScore.ts:13 per-persona live operational health composite from SLA and healing telemetry; precondition unmet: no declared scenarios or judge, it is production monitoring (scoring-rubrics territory)"
+        }
+      ]
     }
   }
 }
