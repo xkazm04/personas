@@ -1,0 +1,7 @@
+{"schema":"conform-run/1","worker":"a81851a7-70d3-4506-b40f-c7600289cec8","subject":"hitl-approval",
+"evaluatedAt":"2026-10-22T00:00:00Z","pairs":[],
+"declined":[
+{"subject":"hitl-approval","context":"942d2449-34ab-4f02-af7e-b130269d10ef","reason":"Both context-map entry points (src/features/fleet/monitor/triage/triageModel.ts and MonitorProjectColumns.tsx) no longer exist: the triage/ directory is absent, and the only tracked triageModel.ts is src/features/projects/development/goals/triage/triageModel.ts, a different feature. The map row has empty paths. Nothing to read, so no verdict; the context needs a rescan (context-map last_written_at 2026-09-21)."},
+{"subject":"hitl-approval","context":"11fe7642-7a1a-47c5-8910-499850aa04fe","reason":"Weak context (governance: weak, empty paths); the match is the doubtful part, so it is reported as a coverage question rather than judged."}
+],
+"consults":[]}
