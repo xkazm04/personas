@@ -1,0 +1,6 @@
+{"schema":"conform-run/1","worker":"1406f2bf-9d1f-4bb6-be5b-3bfd60577113","subject":"codebase-scanning","evaluatedAt":"2026-10-22T20:02:19Z","pairs":[],
+"declined":[
+{"subject":"codebase-scanning","context":"overview-patterns","reason":"unjudgeable: the context's entry points (src/features/overview/sub_patterns/*) no longer exist in the tree (git ls-files finds no sub_patterns), so no anchor can be read; the context also describes a practice-review UI, not a defect scanner"},
+{"subject":"codebase-scanning","context":"plugins-artist-hooks","reason":"unjudgeable: src/features/plugins/artist/ is absent from the tree (plugins holds dev-tools, drive, fleet, gitlab, obsidian-brain, radio, twin only); the hooks scan an image folder, not a codebase"},
+{"subject":"codebase-scanning","context":"plugins-artist-gallery","reason":"weak context, skipped by rule; its code is also absent from the tree"}],
+"consults":[]}
