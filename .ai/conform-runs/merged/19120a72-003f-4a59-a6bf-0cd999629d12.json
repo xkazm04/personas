@@ -1,0 +1,9 @@
+{"schema": "conform-run/1", "worker": "19120a72-003f-4a59-a6bf-0cd999629d12", "subject": "codebase-scanning",
+ "evaluatedAt": "2026-10-22T03:11:04Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "codebase-scanning", "context": "fc62a53a-85f9-4491-8b54-9b5f1795ef91", "reason": "overview-patterns has no code to judge: context-map.json lists file_paths [] and its entry points (src/features/overview/sub_patterns/*) were deleted by bec576bc8f on 2026-09-14 (src-tauri/db/src/migrations/incremental/e28_retire_workspace_knowledge.rs:1 retires the library); a verdict here would be about a dead context - the context map owes a rescan, not a judgment"},
+  {"subject": "codebase-scanning", "context": "cab45fee-e439-4bff-9924-217b1acc17f8", "reason": "plugins-artist-hooks has no code to judge: file_paths [] and src/features/plugins/artist/hooks/* were removed by 0697f13438 on 2026-09-15 (src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:1 records the plugin removal); dead context awaiting a context-map rescan"},
+  {"subject": "codebase-scanning", "context": "a35d1f4a-5de8-4be1-af8b-1a3784296400", "reason": "plugins-artist-gallery is a weak row (skipped by rule) and its code was also removed by 0697f13438; dead context awaiting a context-map rescan"}
+ ],
+ "consults": []}
