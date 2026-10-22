@@ -14093,7 +14093,11 @@
           "revision": 4,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_glyph/commandPanel/composer/ComposerPickerShell.tsx:2 the pickers are in-document modals; no file in the context imports @/api or @tauri-apps (only stores and the read-only useTableIntrospection hook at composer/ConnectorTableScopeRow.tsx:18), so no native capability, destructive command, overlay or stream crosses here",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
+          "evaluatedRevision": 4
         },
         {
           "subject": "mcp-tools",
@@ -19160,7 +19164,11 @@
           "revision": 4,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src-tauri/src/commands/infrastructure/memory_ledger.rs:716 vault projection/import take only a project id (src/features/teams/sub_mastermind/lib/MemorySection.tsx:36); the native side resolves the write root from stored config and deletes only notes it stamped with personas_id (:850), so the renderer cannot pick a directory or a deletion set",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
+          "evaluatedRevision": 4
         },
         {
           "subject": "multi-project",
@@ -36060,7 +36068,11 @@
           "revision": 4,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src-tauri/src/commands/core/gallery.rs:260 the outward publish and the rollback delete (src/features/teams/sub_teamWorkspace/useAutoTeam.ts:157) send only a team id; the native side re-derives the payload and refuses a delete while a pipeline runs (src-tauri/src/commands/teams/teams.rs:71); no other native-only capability is reached",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
+          "evaluatedRevision": 4
         },
         {
           "subject": "sidecar-provisioning",
