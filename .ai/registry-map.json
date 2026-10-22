@@ -6421,7 +6421,11 @@
           "revision": 5,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/communication/notifications.rs:38 stores an operator-supplied webhook (alert_fired is relayed to Slack/Discord/Teams/generic) with no per-channel signing secret and no https-only check, and delivery at src-tauri/src/engine/webhook_notifier.rs:425 posts unsigned, so a generic receiver cannot tell a real breach alert from any forged POST",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:183ec8b74ed943d6",
+          "evaluatedRevision": 5
         },
         {
           "subject": "metrics-rollups",

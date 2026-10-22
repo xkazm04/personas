@@ -1967,3 +1967,4 @@
 {"ts":"2026-10-22T02:54:02Z","bundle":"software-engineering","subjects":["settings"],"techniques":["typed-accessors","setting-kinds","key-registry","read-batching","settings-audit-and-history","config-backup-and-restore"],"deviations":2}
 {"ts":"2026-10-22T02:54:02Z","bundle":"software-engineering","subjects":["settings"],"techniques":["key-registry","typed-accessors","read-batching"],"deviations":2}
 {"ts":"2026-10-22T02:54:02Z","bundle":"software-engineering","subjects":["settings"],"techniques":["cross-source-precedence-chain"],"deviations":1}
+{"ts":"2026-10-22T02:56:05Z","bundle":"llm-observability","subjects":["breach-alerting-and-attribution"],"techniques":["notification-channel-security","scoped-dedup-keys"],"deviations":1}

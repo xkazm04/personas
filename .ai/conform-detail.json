@@ -35365,6 +35365,28 @@
           "reason": "replaced by 0d9764be-c6d0-4902-8955-8a9d55722ee7"
         }
       ]
+    },
+    "2fb16136-586e-478d-823f-38434d2d5b9a/breach-alerting-and-attribution": {
+      "context": "commands-communication",
+      "subject": "breach-alerting-and-attribution",
+      "bundle": "llm-observability",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:56:05.000Z",
+      "worker": "73f06b72-7f5e-4458-9a8a-a989af68bead",
+      "techniques": [
+        {
+          "technique": "notification-channel-security",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/webhook_notifier.rs:425 sends only User-Agent/X-Personas-Provider headers, no HMAC+timestamp over the delivered bytes; notifications.rs:38 issues no secret and accepts plaintext URLs; notifications.rs:70 echoes the sink's response body (256 chars) into the operator UI. Delivery-time private-address refusal IS present via SSRF_SAFE_HTTP at webhook_notifier.rs:419"
+        },
+        {
+          "technique": "scoped-dedup-keys",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/communication/observability/alerts.rs:123 create_fired_alert lets the client persist fires into the rule.id-keyed history the server evaluator reads as its cooldown, the same cross-scope suppression already recorded on overview-observability and stores-slices-overview"
+        }
+      ],
+      "registryProposal": "This row is marked governance: weak, but it holds the alert-rule CRUD, fired-alert persistence and the webhook-subscription door (alerts.rs, notifications.rs), so the subject genuinely governs it; the weak flag understates the match. Separately, the evaluator itself (src-tauri/src/commands/execution/alert_evaluator.rs) is the file most governed by this subject and should be checked for a pair on whichever context owns it."
     }
   }
 }

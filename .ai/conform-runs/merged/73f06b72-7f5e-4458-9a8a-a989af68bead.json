@@ -1,0 +1,14 @@
+{"schema":"conform-run/1","worker":"73f06b72-7f5e-4458-9a8a-a989af68bead","subject":"breach-alerting-and-attribution",
+ "evaluatedAt":"2026-10-22T02:56:05Z",
+ "pairs":[{"context":"2fb16136-586e-478d-823f-38434d2d5b9a","subject":"breach-alerting-and-attribution","bundle":"llm-observability",
+  "state":"deviation",
+  "evidence":"src-tauri/src/commands/communication/notifications.rs:38 stores an operator-supplied webhook (alert_fired is relayed to Slack/Discord/Teams/generic) with no per-channel signing secret and no https-only check, and delivery at src-tauri/src/engine/webhook_notifier.rs:425 posts unsigned, so a generic receiver cannot tell a real breach alert from any forged POST",
+  "techniques":[
+   {"technique":"notification-channel-security","verdict":"deviation","evidence":"src-tauri/src/engine/webhook_notifier.rs:425 sends only User-Agent/X-Personas-Provider headers, no HMAC+timestamp over the delivered bytes; notifications.rs:38 issues no secret and accepts plaintext URLs; notifications.rs:70 echoes the sink's response body (256 chars) into the operator UI. Delivery-time private-address refusal IS present via SSRF_SAFE_HTTP at webhook_notifier.rs:419"},
+   {"technique":"scoped-dedup-keys","verdict":"deviation","evidence":"src-tauri/src/commands/communication/observability/alerts.rs:123 create_fired_alert lets the client persist fires into the rule.id-keyed history the server evaluator reads as its cooldown, the same cross-scope suppression already recorded on overview-observability and stores-slices-overview"}
+  ],
+  "registryProposal":"This row is marked governance: weak, but it holds the alert-rule CRUD, fired-alert persistence and the webhook-subscription door (alerts.rs, notifications.rs), so the subject genuinely governs it; the weak flag understates the match. Separately, the evaluator itself (src-tauri/src/commands/execution/alert_evaluator.rs) is the file most governed by this subject and should be checked for a pair on whichever context owns it."}],
+ "declined":[
+  {"subject":"breach-alerting-and-attribution","context":"4810daf8-0549-4899-95d2-99c81cde6455","reason":"judged deviation on 2026-10-21 against the current digest sha256-b2:183ec8b74ed943d6 (revision 5); the anchor files have no commits since, so a re-read would repeat the verdict"},
+  {"subject":"breach-alerting-and-attribution","context":"532bbf10-3fd3-4b57-a8ea-95a957645697","reason":"judged deviation on 2026-10-21 against the current digest sha256-b2:183ec8b74ed943d6 (revision 5); alertSlice.ts unchanged since, verdict still current"}],
+ "consults":[{"ts":"2026-10-22T02:56:05Z","bundle":"llm-observability","subjects":["breach-alerting-and-attribution"],"techniques":["notification-channel-security","scoped-dedup-keys"],"deviations":1}]}
