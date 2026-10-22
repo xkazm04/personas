@@ -1,0 +1,96 @@
+{
+ "schema": "conform-run/1",
+ "worker": "be5adfda-b70a-42e2-a448-15231976350a",
+ "subject": "voice-io",
+ "evaluatedAt": "2026-10-22T20:00:59.570Z",
+ "pairs": [
+  {
+   "context": "5d4b913e-4384-49d7-8854-5c7ddac7e19e",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/commands/teams/team_channel.rs:84 voice here is a message author kind (internal vs slack), not audio; re-judged at rev 23: a regex for speechSynthesis/getUserMedia/MediaRecorder/AudioContext/Audio()/whisper/tts/stt/elevenlabs/kokoro/microphone/sherpa over all readable context files returned zero hits, so no capture, synthesis or playback precondition holds",
+   "techniques": [],
+   "digest": "sha256-b2:29f8b158c4d44054",
+   "revision": 23
+  },
+  {
+   "context": "cd8712a3-9546-4c21-895b-9e64a4b161b1",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:245 voice is the persona written style/output_format in a prompt sample, not speech; re-judged at rev 23: a regex for speechSynthesis/getUserMedia/MediaRecorder/AudioContext/Audio()/whisper/tts/stt/elevenlabs/kokoro/microphone/sherpa over all readable context files returned zero hits, so no capture, synthesis or playback precondition holds",
+   "techniques": [],
+   "digest": "sha256-b2:29f8b158c4d44054",
+   "revision": 23
+  },
+  {
+   "context": "059fdee0-40da-434a-a5cb-874bc9179a31",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/engine/persona_jobs.rs:380 synthesis is LLM memory reflection text, not audio; re-judged at rev 23: a regex for speechSynthesis/getUserMedia/MediaRecorder/AudioContext/Audio()/whisper/tts/stt/elevenlabs/kokoro/microphone/sherpa over all readable context files returned zero hits, so no capture, synthesis or playback precondition holds",
+   "techniques": [],
+   "digest": "sha256-b2:29f8b158c4d44054",
+   "revision": 23
+  },
+  {
+   "context": "a3b615d2-05d8-47bd-ad92-672c6b42b0f3",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/engine/deliberation.rs:1397 voice is the persona viewpoint in an LLM deliberation turn, not audio; re-judged at rev 23: a regex for speechSynthesis/getUserMedia/MediaRecorder/AudioContext/Audio()/whisper/tts/stt/elevenlabs/kokoro/microphone/sherpa over all readable context files returned zero hits, so no capture, synthesis or playback precondition holds",
+   "techniques": [],
+   "digest": "sha256-b2:29f8b158c4d44054",
+   "revision": 23
+  },
+  {
+   "context": "de8b648f-7971-452b-88dc-773b215c5f09",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/engine/pipeline_executor.rs:351 pipeline node execution returns NodeOutcome over persona runs; no audio surface; re-judged at rev 23: a regex for speechSynthesis/getUserMedia/MediaRecorder/AudioContext/Audio()/whisper/tts/stt/elevenlabs/kokoro/microphone/sherpa over all readable context files returned zero hits, so no capture, synthesis or playback precondition holds",
+   "techniques": [],
+   "digest": "sha256-b2:29f8b158c4d44054",
+   "revision": 23
+  }
+ ],
+ "declined": [
+  {
+   "subject": "voice-io",
+   "context": "50bf2ad0-3da7-4405-991a-6e22695903a2",
+   "reason": "companion-narration-ops: context-map.json has no entry by that name, so file list not resolvable; stale not-applicable left for a later run"
+  },
+  {
+   "subject": "voice-io",
+   "context": "7dddb34a-3a9b-4ce0-832f-55ea352c12b5",
+   "reason": "budget; stale not-applicable not re-read"
+  },
+  {
+   "subject": "voice-io",
+   "context": "6a81750d-fdbf-4518-bae6-689303e1a884",
+   "reason": "budget; stale not-applicable not re-read"
+  },
+  {
+   "subject": "voice-io",
+   "context": "c4a2fa9d-1b41-4141-894b-c90663aa0433",
+   "reason": "budget; stale not-applicable not re-read"
+  },
+  {
+   "subject": "voice-io",
+   "context": "767b2bb5-4662-4be1-ad24-c881ac334016",
+   "reason": "budget; stale not-applicable not re-read"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-22T20:00:59.571Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "voice-io"
+   ],
+   "techniques": [],
+   "deviations": 0
+  }
+ ]
+}

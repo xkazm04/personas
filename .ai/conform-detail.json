@@ -613,9 +613,9 @@
       "subject": "voice-io",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "24d4e28a-165d-4531-9482-157bb32bc74c",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T20:00:59.570Z",
+      "worker": "be5adfda-b70a-42e2-a448-15231976350a",
       "techniques": [],
       "superseded": [
         {
@@ -624,6 +624,13 @@
           "evaluatedAt": "2026-10-06",
           "worker": null,
           "reason": "replaced by 24d4e28a-165d-4531-9482-157bb32bc74c"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:245 voice is the persona written style/output_format in a prompt sample; the context synthesizes gate questions, and its only transcript is Claude Code JSONL (src-tauri/engine/src/cli_session_awareness/transcript.rs:1), so no capture/synthesis precondition holds. Re-checked against rev 20; no audio/speech hits in the context.",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "24d4e28a-165d-4531-9482-157bb32bc74c",
+          "reason": "replaced by be5adfda-b70a-42e2-a448-15231976350a"
         }
       ]
     },
@@ -17289,41 +17296,62 @@
       "subject": "voice-io",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T12:17:30.000Z",
-      "worker": "7c71c706-fa81-4f13-8b31-48ba7d7f8d37",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T20:00:59.570Z",
+      "worker": "be5adfda-b70a-42e2-a448-15231976350a",
       "techniques": [
         {
           "technique": "tts-pipeline",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/persona_jobs.rs:380 the only 'synthesis' is LLM memory synthesis, not speech"
+          "evidence": "src-tauri/src/engine/persona_jobs.rs:380 the only 'synthesis' is LLM memory synthesis, not speech",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "transcript-handoff-receipts",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/persona_jobs.rs:475 'transcripts' are CLI session text; the context's clipboard monitor reads the clipboard for error detection and delivers no dictated transcript"
+          "evidence": "src-tauri/src/engine/persona_jobs.rs:475 'transcripts' are CLI session text; the context's clipboard monitor reads the clipboard for error detection and delivers no dictated transcript",
+          "carriedFrom": "2026-10-10"
         }
       ],
-      "registryProposal": "Same resonance: 'synthesis' and 'transcript' are LLM/CLI vocabulary in this repo; voice-io pairs scored on them without an audio token are near-certain not-applicable."
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/engine/persona_jobs.rs:380 'synthesis' here is LLM synthesis of memories into insights; the 32 engine-infrastructure files (jobs, topology, event bus, clipboard/file watchers) carry no audio capture, transcription, synthesis or playback, so no voice-io precondition holds",
+          "evaluatedAt": "2026-10-10T12:17:30.000Z",
+          "worker": "7c71c706-fa81-4f13-8b31-48ba7d7f8d37",
+          "reason": "replaced by be5adfda-b70a-42e2-a448-15231976350a"
+        }
+      ]
     },
     "a3b615d2-05d8-47bd-ad92-672c6b42b0f3/voice-io": {
       "context": "output-stream-parser",
       "subject": "voice-io",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T12:17:30.000Z",
-      "worker": "7c71c706-fa81-4f13-8b31-48ba7d7f8d37",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T20:00:59.570Z",
+      "worker": "be5adfda-b70a-42e2-a448-15231976350a",
       "techniques": [
         {
           "technique": "speech-ready-text",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/engine/src/chunker.rs:1 chunking is for vector embeddings, not cutting text for synthesis"
+          "evidence": "src-tauri/engine/src/chunker.rs:1 chunking is for vector embeddings, not cutting text for synthesis",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "tts-pipeline",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/deliberation.rs:1397 persona 'voice' is written viewpoint; nothing is spoken"
+          "evidence": "src-tauri/src/engine/deliberation.rs:1397 persona 'voice' is written viewpoint; nothing is spoken",
+          "carriedFrom": "2026-10-10"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/engine/deliberation.rs:1397 'voice' is the persona's viewpoint in an LLM deliberation turn and synthesize_proposal is LLM text synthesis; the context parses the CLI stream (src-tauri/engine/src/parser.rs:2 ProtocolMessage/StreamLineType) and chunks documents for embeddings, with no audio anywhere",
+          "evaluatedAt": "2026-10-10T12:17:30.000Z",
+          "worker": "7c71c706-fa81-4f13-8b31-48ba7d7f8d37",
+          "reason": "replaced by be5adfda-b70a-42e2-a448-15231976350a"
         }
       ]
     },
@@ -18721,10 +18749,19 @@
       "subject": "voice-io",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T12:41:29.000Z",
-      "worker": "20b83d7d-3128-42dd-a700-92e31c420fbd",
-      "techniques": []
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T20:00:59.570Z",
+      "worker": "be5adfda-b70a-42e2-a448-15231976350a",
+      "techniques": [],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/commands/teams/team_channel.rs:84 'voice' here is a message author (internal vs slack) and 'synthesis' across the 33 design/teams command files is LLM text; no file carries an audio, tts or transcription path",
+          "evaluatedAt": "2026-10-12T12:41:29.000Z",
+          "worker": "20b83d7d-3128-42dd-a700-92e31c420fbd",
+          "reason": "replaced by be5adfda-b70a-42e2-a448-15231976350a"
+        }
+      ]
     },
     "d7525012-ab19-4b29-99bb-0d4b6b9e084b/test-harness": {
       "context": "plugins-fleet-tests",
@@ -23888,24 +23925,36 @@
       "subject": "voice-io",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-13",
-      "evaluatedTs": "2026-10-13T12:00:13.603Z",
-      "worker": "0d1f8670-3002-4701-98d8-6af401cfaf33",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T20:00:59.570Z",
+      "worker": "be5adfda-b70a-42e2-a448-15231976350a",
       "techniques": [
         {
           "technique": "spoken-intent-parsing",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/pipeline_executor.rs:135 Pipeline edge conditions evaluate JSON fields and operators on node output text, with no spoken grammar parsing or confidence-gated speech command matching."
+          "evidence": "src-tauri/src/engine/pipeline_executor.rs:135 Pipeline edge conditions evaluate JSON fields and operators on node output text, with no spoken grammar parsing or confidence-gated speech command matching.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "unattended-caller-attribution",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/engine/src/failure_signature.rs:28 Failure signatures detect deterministic execution errors and recursion loops without managing unattended caller voice output or automated synthesis attribution."
+          "evidence": "src-tauri/engine/src/failure_signature.rs:28 Failure signatures detect deterministic execution errors and recursion loops without managing unattended caller voice output or automated synthesis attribution.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "transcript-normalization",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/engine/src/credential_design.rs:9 Credential design prompt assembly creates connector schemas from text instructions without normalizing speech disfluencies or converting transcripts for readers."
+          "evidence": "src-tauri/engine/src/credential_design.rs:9 Credential design prompt assembly creates connector schemas from text instructions without normalizing speech disfluencies or converting transcripts for readers.",
+          "carriedFrom": "2026-10-13"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/engine/pipeline_executor.rs:351 Searched for microphone, speech-to-text, text-to-speech, and whisper with zero hits across context directories; pipeline-and-automation executes multi-persona team graphs across persona and command nodes without speech I/O processing.",
+          "evaluatedAt": "2026-10-13T12:00:13.603Z",
+          "worker": "0d1f8670-3002-4701-98d8-6af401cfaf33",
+          "reason": "replaced by be5adfda-b70a-42e2-a448-15231976350a"
         }
       ]
     },

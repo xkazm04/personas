@@ -7626,12 +7626,11 @@
           "changedAt": "2026-10-18",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/src/commands/teams/team_channel.rs:84 'voice' here is a message author (internal vs slack) and 'synthesis' across the 33 design/teams command files is LLM text; no file carries an audio, tts or transcription path",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
-          "evaluatedRevision": 20,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src-tauri/src/commands/teams/team_channel.rs:84 voice here is a message author kind (internal vs slack), not audio; re-judged at rev 23: a regex for speechSynthesis/getUserMedia/MediaRecorder/AudioContext/Audio()/whisper/tts/stt/elevenlabs/kokoro/microphone/sherpa over all readable context files returned zero hits, so no capture, synthesis or playback precondition holds",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23,
+          "revisionsBehind": 3
         },
         {
           "subject": "agent-instruction-files",
@@ -11981,12 +11980,11 @@
           "changedAt": "2026-10-18",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:245 voice is the persona written style/output_format in a prompt sample; the context synthesizes gate questions, and its only transcript is Claude Code JSONL (src-tauri/engine/src/cli_session_awareness/transcript.rs:1), so no capture/synthesis precondition holds. Re-checked against rev 20; no audio/speech hits in the context.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
-          "evaluatedRevision": 20,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:245 voice is the persona written style/output_format in a prompt sample, not speech; re-judged at rev 23: a regex for speechSynthesis/getUserMedia/MediaRecorder/AudioContext/Audio()/whisper/tts/stt/elevenlabs/kokoro/microphone/sherpa over all readable context files returned zero hits, so no capture, synthesis or playback precondition holds",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23,
+          "revisionsBehind": 3
         },
         {
           "subject": "quality-gates",
@@ -12247,12 +12245,11 @@
           "changedAt": "2026-10-18",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src-tauri/src/engine/persona_jobs.rs:380 'synthesis' here is LLM synthesis of memories into insights; the 32 engine-infrastructure files (jobs, topology, event bus, clipboard/file watchers) carry no audio capture, transcription, synthesis or playback, so no voice-io precondition holds",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
-          "evaluatedRevision": 20,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src-tauri/src/engine/persona_jobs.rs:380 synthesis is LLM memory reflection text, not audio; re-judged at rev 23: a regex for speechSynthesis/getUserMedia/MediaRecorder/AudioContext/Audio()/whisper/tts/stt/elevenlabs/kokoro/microphone/sherpa over all readable context files returned zero hits, so no capture, synthesis or playback precondition holds",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23,
+          "revisionsBehind": 3
         },
         {
           "subject": "engine-host-contract",
@@ -21517,12 +21514,11 @@
           "changedAt": "2026-10-18",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src-tauri/src/engine/deliberation.rs:1397 'voice' is the persona's viewpoint in an LLM deliberation turn and synthesize_proposal is LLM text synthesis; the context parses the CLI stream (src-tauri/engine/src/parser.rs:2 ProtocolMessage/StreamLineType) and chunks documents for embeddings, with no audio anywhere",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
-          "evaluatedRevision": 20,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src-tauri/src/engine/deliberation.rs:1397 voice is the persona viewpoint in an LLM deliberation turn, not audio; re-judged at rev 23: a regex for speechSynthesis/getUserMedia/MediaRecorder/AudioContext/Audio()/whisper/tts/stt/elevenlabs/kokoro/microphone/sherpa over all readable context files returned zero hits, so no capture, synthesis or playback precondition holds",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23,
+          "revisionsBehind": 3
         },
         {
           "subject": "mcp-tools",
@@ -25731,12 +25727,11 @@
           "changedAt": "2026-10-18",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/src/engine/pipeline_executor.rs:351 Searched for microphone, speech-to-text, text-to-speech, and whisper with zero hits across context directories; pipeline-and-automation executes multi-persona team graphs across persona and command nodes without speech I/O processing.",
-          "evaluatedAt": "2026-10-13",
-          "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
-          "evaluatedRevision": 20,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src-tauri/src/engine/pipeline_executor.rs:351 pipeline node execution returns NodeOutcome over persona runs; no audio surface; re-judged at rev 23: a regex for speechSynthesis/getUserMedia/MediaRecorder/AudioContext/Audio()/whisper/tts/stt/elevenlabs/kokoro/microphone/sherpa over all readable context files returned zero hits, so no capture, synthesis or playback precondition holds",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23,
+          "revisionsBehind": 3
         },
         {
           "subject": "supply-chain",
