@@ -1,0 +1,7 @@
+{"schema": "conform-run/1", "worker": "4d935eb7-8c71-4e35-9e44-8ae211c81f36", "subject": "wizard-flows",
+ "evaluatedAt": "2026-10-22T03:07:52Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "wizard-flows", "context": "89d44c76-ec4c-4388-843e-503cf6ca2507", "reason": "weak context (progress-transform), lexical-only match on 'progress/wizard/flows'; ContentLoader.tsx and EstimatedProgressBar.tsx contain no wizard or step vocabulary at all - a loading/progress primitive, not a staged flow. Coverage question for the registry matcher, not a pair to judge."}
+ ],
+ "consults": []}
