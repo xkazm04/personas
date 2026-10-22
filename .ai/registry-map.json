@@ -15972,8 +15972,8 @@
           "changedAt": "2026-09-03",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/hooks/lab/useLabEvents.ts:54 subscribes to the literal 'lab-arena-status' (also ab/matrix/eval), emitted as a bare literal at src-tauri/engine/src/test_runner/modes.rs:228 and absent from src/lib/eventRegistry.ts and src-tauri/core/src/events.rs; the gate (scripts/check-event-registry.mjs:268) sees only literal listen('x') and event_name::CONST, so a rename on either side silently stops Lab progress and completion",
-          "evaluatedAt": "2026-10-21",
+          "evidence": "src/hooks/lab/useLabEvents.ts:54 subscribes to the literal \"lab-arena-status\" (also ab/matrix/eval), emitted as a bare literal at src-tauri/engine/src/test_runner/modes.rs:228 and absent from src/lib/eventRegistry.ts and src-tauri/core/src/events.rs; the gate (scripts/check-event-registry.mjs:268) sees only literal listen(x) and event_name::CONST, so a rename on either side silently stops Lab progress and completion",
+          "evaluatedAt": "2026-10-22",
           "evaluatedAgainst": "sha256-b2:a0685592373df03f",
           "evaluatedRevision": 6,
           "revisionsBehind": 0
