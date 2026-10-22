@@ -8978,12 +8978,11 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/companions/athena/RecallStrip.tsx:68 returns null when nothing was consulted, and CompanionRecallPreview (src/api/companion.ts:2279) has no failure field because both recall_for arms swallow a retrieval error into an empty Recall (src-tauri/src/companion/prompt/recall.rs:27, :50): a down store is shown, and treated, as novelty",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
-          "evaluatedRevision": 48,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src-tauri/src/companion/prompt/recall.rs:27 both recall_for arms (:27, :50) still unwrap_or_default a retrieval error into an empty Recall, CompanionRecallPreview (src/api/companion.ts:2351) has no failure field and RecallStrip.tsx:68 hides the strip on zero: a down store is shown and treated as novelty",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
+          "evaluatedRevision": 51,
+          "revisionsBehind": 3
         },
         {
           "subject": "chat-transcript",
@@ -22047,12 +22046,11 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:1404 the Director cleanup (src/features/companions/overseer/components/PersonaDetailModal.tsx:109, per cycle via src-tauri/src/engine/director.rs:1617) offers archive candidates ordered by raw importance/access_count/created_at, not decay_score (src-tauri/db/src/memory_recall.rs:157), with no grace period, and drops the archive reason (src-tauri/src/engine/director_memory.rs:65, dead_code): the archive carries no audit line",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
-          "evaluatedRevision": 48,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1404 Director archive candidates still ORDER BY importance/access_count/created_at, not the shared decay_score (src-tauri/db/src/memory_recall.rs:157), with no grace clause, and the archive reason is dropped (src-tauri/src/engine/director_memory.rs:65): the janitor ranks against recall and leaves no audit line",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
+          "evaluatedRevision": 51,
+          "revisionsBehind": 3
         },
         {
           "subject": "quality-gates",
@@ -26241,12 +26239,11 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/companions/athena/decision/rosterDecisions.ts:86 approvalDecision builds the orb decision for a write_fact approval (Approval tier, src-tauri/src/companion/dispatcher/catalog.rs:638) from label plus rationale; params ride in payload (:112), documented Not rendered (src/features/companions/athena/decision/types.ts:59), and write_fact is classed low (src/features/companions/athena/decision/actionRisk.ts:50) so option 0 recommends approving: a durable belief can be adopted by one digit without seeing the asserted value or sources (the chat card variant does show params; the gap is the hands-free path). Anchor moved from useDecisionQueue.ts:90, which no longer holds it",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
-          "evaluatedRevision": 48,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src/features/companions/athena/decision/rosterDecisions.ts:84 approvalDecision prompts a write_fact approval from label+rationale only, params ride in an unrendered payload, and write_fact is LOW_RISK (src/features/companions/athena/decision/actionRisk.ts:50) so the orb recommends approve: a durable user-scope belief is adopted by one key without the value or sources shown",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
+          "evaluatedRevision": 51,
+          "revisionsBehind": 3
         },
         {
           "subject": "conversation-orchestration",
@@ -29979,12 +29976,11 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/engine/src/prompt/templates.rs:207 the autonomous directive makes 'Store memories - record 1-3 key business learnings' a MUST on every run, while src-tauri/engine/src/prompt/assemble.rs:630 tells the same agent 'If it won't change a future decision, don't store it'; a per-run write quota manufactures low-value episodes/beliefs that decay and consolidation must then clean up",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
-          "evaluatedRevision": 48,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src-tauri/engine/src/prompt/templates.rs:207 the autonomous directive still makes 'record 1-3 key business learnings' a MUST per run, contradicting src-tauri/engine/src/prompt/assemble.rs:660 'If it won't change a future decision, don't store it'; writes land straight in persona_memories (src-tauri/src/engine/dispatch.rs:909), so a quota manufactures recalled beliefs",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
+          "evaluatedRevision": 51,
+          "revisionsBehind": 3
         },
         {
           "subject": "session-continuation",
@@ -33348,12 +33344,11 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/stores/slices/overview/memorySlice.ts:186 mergeMemories drives merge_memories with deleteIdA/deleteIdB, which hard-DELETEs both originals (src-tauri/db/src/repos/core/memories.rs:1661); the slice sends source_execution_id null (:196) but the repo now falls back to the originals' (src-tauri/db/src/repos/core/memories.rs:1625), so execution provenance survives while persona_memory_sources episode rows do not and the originals are unrecoverable",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
-          "evaluatedRevision": 48,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src/stores/slices/overview/memorySlice.ts:190 mergeMemories drives merge with deleteIdA/deleteIdB, which hard-DELETEs both originals (src-tauri/db/src/repos/core/memories.rs:1662, :1666) with no tombstone or archive tier; persona_memory_sources cascade away (src-tauri/db/src/migrations/incremental/e16_living_agent.rs) so the merged belief's episode grounding is lost",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
+          "evaluatedRevision": 51,
+          "revisionsBehind": 3
         },
         {
           "subject": "voice-io",

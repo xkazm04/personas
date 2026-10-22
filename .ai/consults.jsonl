@@ -1932,3 +1932,8 @@
 {"ts":"2026-10-22T02:39:40.010Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":["policy-projection"],"deviations":0,"context":"d9cffe6c-a868-4ed4-b5e8-6c8add36918a"}
 {"ts":"2026-10-22T02:39:40.010Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":[],"deviations":0,"context":"0f1de245-e9ba-41df-9b6c-d9ccd91dfb4b"}
 {"ts":"2026-10-22T02:39:40.010Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":[],"deviations":0,"context":"b6e66a59-78d3-465e-83b7-e77498b4c6ae"}
+{"ts":"2026-10-22T02:42:36Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["recall-injection"],"deviations":1}
+{"ts":"2026-10-22T02:42:36Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["memory-value-model","decay-and-forgetting"],"deviations":1}
+{"ts":"2026-10-22T02:42:36Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["memory-governance","pending-beliefs-live-apart"],"deviations":1}
+{"ts":"2026-10-22T02:42:36Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["consolidation","episodic-capture"],"deviations":1}
+{"ts":"2026-10-22T02:42:36Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["decay-and-forgetting","rollup-compaction"],"deviations":1}

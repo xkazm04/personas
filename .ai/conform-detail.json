@@ -17991,19 +17991,25 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:42:36.000Z",
+      "worker": "d424e3fc-5423-4b76-b2b8-c767a78d3d1a",
       "techniques": [
         {
           "technique": "memory-value-model",
-          "verdict": "not realized: janitor ordering differs from recall ranking",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:1404"
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1404 lexicographic column sort instead of the one value model recall uses"
+        },
+        {
+          "technique": "decay-and-forgetting",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/director_memory.rs:146 candidates feed the archive pass with no grace-period or low-confidence clause; reason not persisted at :65"
         },
         {
           "technique": "memory-governance",
           "verdict": "not realized: archive reason not persisted",
-          "evidence": "src-tauri/src/engine/director_memory.rs:65"
+          "evidence": "src-tauri/src/engine/director_memory.rs:65",
+          "carriedFrom": "2026-10-14"
         }
       ],
       "superseded": [
@@ -18013,6 +18019,13 @@
           "evaluatedAt": "2026-10-12T11:42:48.000Z",
           "worker": "07aaac1d-8803-42ca-9d5f-ce0b55598b01",
           "reason": "replaced by eb06c63f-1bdf-4963-bd38-1f3a60ec203b"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1404 the Director cleanup (src/features/companions/overseer/components/PersonaDetailModal.tsx:109, per cycle via src-tauri/src/engine/director.rs:1617) offers archive candidates ordered by raw importance/access_count/created_at, not decay_score (src-tauri/db/src/memory_recall.rs:157), with no grace period, and drops the archive reason (src-tauri/src/engine/director_memory.rs:65, dead_code): the archive carries no audit line",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
+          "reason": "replaced by d424e3fc-5423-4b76-b2b8-c767a78d3d1a"
         }
       ]
     },
@@ -24243,22 +24256,36 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T07:51:32.035Z",
-      "worker": "fafffaa1-f7f4-49f8-b3d9-a1290fb6e924",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:42:36.000Z",
+      "worker": "d424e3fc-5423-4b76-b2b8-c767a78d3d1a",
       "techniques": [
+        {
+          "technique": "consolidation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/dispatch.rs:909 per-run agent writes enter the consolidated store under a quota, not a strict distillation judgment"
+        },
         {
           "technique": "episodic-capture",
           "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/prompt/templates.rs:207 capture is demanded per run (1-3 items) rather than at meaningful boundaries; contradicted by src-tauri/engine/src/prompt/assemble.rs:630"
+          "evidence": "src-tauri/engine/src/prompt/templates.rs:207 a fixed write count replaces the 'non-empty summary' capture criterion"
         },
         {
           "technique": "recall-injection",
           "verdict": "realized",
-          "evidence": "src-tauri/engine/src/prompt/assemble.rs:595 recalled episodes are labeled as memory/data that cannot instruct, nonce-fenced at :599, role+timestamp per row (:588 area) and hard-capped at 8 (:28); persona-memory recall itself lives outside this context (src-tauri/src/engine/runner/mod.rs:1316)"
+          "evidence": "src-tauri/engine/src/prompt/assemble.rs:595 recalled episodes are labeled as memory/data that cannot instruct, nonce-fenced at :599, role+timestamp per row (:588 area) and hard-capped at 8 (:28); persona-memory recall itself lives outside this context (src-tauri/src/engine/runner/mod.rs:1316)",
+          "carriedFrom": "2026-10-14"
         }
       ],
-      "registryProposal": "The governing map row covers only src-tauri/engine/src/prompt/*; the persona-memory recall block is assembled in src-tauri/src/engine/runner/mod.rs, which is in no context for this subject. Only 2 of the subject's 30 techniques could be read here, so no conformant verdict was possible; consider a pair for the runner context."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/prompt/templates.rs:207 the autonomous directive makes 'Store memories - record 1-3 key business learnings' a MUST on every run, while src-tauri/engine/src/prompt/assemble.rs:630 tells the same agent 'If it won't change a future decision, don't store it'; a per-run write quota manufactures low-value episodes/beliefs that decay and consolidation must then clean up",
+          "evaluatedAt": "2026-10-14T07:51:32.035Z",
+          "worker": "fafffaa1-f7f4-49f8-b3d9-a1290fb6e924",
+          "reason": "replaced by d424e3fc-5423-4b76-b2b8-c767a78d3d1a"
+        }
+      ]
     },
     "1db5c86e-3237-4d2a-8e2f-1426d680757c/agent-memory": {
       "context": "lib-execution",
@@ -24301,14 +24328,25 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:42:36.000Z",
+      "worker": "d424e3fc-5423-4b76-b2b8-c767a78d3d1a",
       "techniques": [
+        {
+          "technique": "decay-and-forgetting",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1662 merge deletes instead of demoting; forgetting orphans provenance"
+        },
+        {
+          "technique": "rollup-compaction",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1662 the superseded originals become unreachable rather than out of default reads"
+        },
         {
           "technique": "consolidation",
           "verdict": "not realized: originals deleted not superseded",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:1661"
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1661",
+          "carriedFrom": "2026-10-14"
         }
       ],
       "superseded": [
@@ -24318,6 +24356,13 @@
           "evaluatedAt": "2026-10-14T07:51:32.035Z",
           "worker": "fafffaa1-f7f4-49f8-b3d9-a1290fb6e924",
           "reason": "replaced by eb06c63f-1bdf-4963-bd38-1f3a60ec203b"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/stores/slices/overview/memorySlice.ts:186 mergeMemories drives merge_memories with deleteIdA/deleteIdB, which hard-DELETEs both originals (src-tauri/db/src/repos/core/memories.rs:1661); the slice sends source_execution_id null (:196) but the repo now falls back to the originals' (src-tauri/db/src/repos/core/memories.rs:1625), so execution provenance survives while persona_memory_sources episode rows do not and the originals are unrecoverable",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
+          "reason": "replaced by d424e3fc-5423-4b76-b2b8-c767a78d3d1a"
         }
       ]
     },
@@ -24573,14 +24618,14 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:42:36.000Z",
+      "worker": "d424e3fc-5423-4b76-b2b8-c767a78d3d1a",
       "techniques": [
         {
           "technique": "recall-injection",
-          "verdict": "not realized: failed and empty recall read the same",
-          "evidence": "src-tauri/src/companion/prompt/recall.rs:50"
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/prompt/recall.rs:50 .unwrap_or_default() collapses failed recall into empty recall; the empty-vs-failed status signal is absent"
         }
       ],
       "superseded": [
@@ -24590,6 +24635,13 @@
           "evaluatedAt": "2026-10-06",
           "worker": null,
           "reason": "replaced by eb06c63f-1bdf-4963-bd38-1f3a60ec203b"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/companions/athena/RecallStrip.tsx:68 returns null when nothing was consulted, and CompanionRecallPreview (src/api/companion.ts:2279) has no failure field because both recall_for arms swallow a retrieval error into an empty Recall (src-tauri/src/companion/prompt/recall.rs:27, :50): a down store is shown, and treated, as novelty",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
+          "reason": "replaced by d424e3fc-5423-4b76-b2b8-c767a78d3d1a"
         }
       ]
     },
@@ -24598,19 +24650,19 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:42:36.000Z",
+      "worker": "d424e3fc-5423-4b76-b2b8-c767a78d3d1a",
       "techniques": [
         {
-          "technique": "pending-beliefs-live-apart",
-          "verdict": "not realized: review surface lacks the claim beside its sources",
-          "evidence": "src/features/companions/athena/decision/rosterDecisions.ts:86"
+          "technique": "memory-governance",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/decision/rosterDecisions.ts:101 prompt carries label+rationale, never the asserted value; the proposal-reviewed lane reviews blind"
         },
         {
-          "technique": "memory-governance",
-          "verdict": "partly: approval gate exists, informed approval does not",
-          "evidence": "src/features/companions/athena/decision/actionRisk.ts:50"
+          "technique": "pending-beliefs-live-apart",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/decision/rosterDecisions.ts:113 the extraction (params) is serialized into a payload documented as Not rendered, so the review card cannot show it"
         }
       ],
       "superseded": [
@@ -24620,6 +24672,13 @@
           "evaluatedAt": "2026-10-06",
           "worker": null,
           "reason": "replaced by eb06c63f-1bdf-4963-bd38-1f3a60ec203b"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/companions/athena/decision/rosterDecisions.ts:86 approvalDecision builds the orb decision for a write_fact approval (Approval tier, src-tauri/src/companion/dispatcher/catalog.rs:638) from label plus rationale; params ride in payload (:112), documented Not rendered (src/features/companions/athena/decision/types.ts:59), and write_fact is classed low (src/features/companions/athena/decision/actionRisk.ts:50) so option 0 recommends approving: a durable belief can be adopted by one digit without seeing the asserted value or sources (the chat card variant does show params; the gap is the hands-free path). Anchor moved from useDecisionQueue.ts:90, which no longer holds it",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
+          "reason": "replaced by d424e3fc-5423-4b76-b2b8-c767a78d3d1a"
         }
       ]
     },
