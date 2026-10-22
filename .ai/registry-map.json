@@ -14454,7 +14454,11 @@
           "revision": 22,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/shared/glyph/glyphs/goalsGlyph.ts:1 vendored machine-traced art (static TracedGlyph data); no pending state, consequence boundary or decision, so no gate exists to govern",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9",
+          "evaluatedRevision": 22
         },
         {
           "subject": "agent-runtime-assembly",

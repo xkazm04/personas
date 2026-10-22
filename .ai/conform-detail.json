@@ -36276,6 +36276,16 @@
           "evidence": "src-tauri/src/companion/wake_window.rs:89 gate(pool,...) calls window_minutes(pool) and minutes_since_last_wake(pool,...) (:74) inside the decision"
         }
       ]
+    },
+    "a38e2b93-2322-4187-befa-c0443c4ca85f/hitl-approval": {
+      "context": "glyph-definitions",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T15:32:38.207Z",
+      "worker": "1b83b65a-696c-4b7a-ace9-ec1992fc6487",
+      "techniques": []
     }
   }
 }
