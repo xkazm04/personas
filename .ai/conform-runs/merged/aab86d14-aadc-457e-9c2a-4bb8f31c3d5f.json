@@ -1,0 +1,17 @@
+{"schema":"conform-run/1","worker":"aab86d14-aadc-457e-9c2a-4bb8f31c3d5f","subject":"deployment-contract","evaluatedAt":"2026-10-22T03:11:06Z",
+"pairs":[
+{"context":"e0a448bc-24d4-4663-ba31-27d4ce378a14","subject":"deployment-contract","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:64 re-confirmed 2026-10-22 (no commit since 10-20): the deployment smoke test still calls local executePersona, not the endpoint the card advertises (src/features/agents/sub_deployment/components/cloud/DeploymentCard.tsx:45) though src/api/system/cloud.ts:50 cloudExecutePersona exists - a pass describes the local twin, never the deployed build",
+ "techniques":[{"technique":"deploy-gate-coupling","verdict":"deviation","evidence":"src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:64 the verifying check targets local execution, against the rule 'point the verifying check at the address production serves'"}]},
+{"context":"2b61b648-d166-4255-b7b7-5d32ffdd6751","subject":"deployment-contract","bundle":"software-engineering","state":"deviation",
+ "evidence":"src-tauri/src/commands/infrastructure/gitlab.rs:1277 re-confirmed 2026-10-22 (no commit since 10-20): rollback rebuilds the agent from the snapshot prompt plus CURRENT tools/model and with no snapshot falls back to current persona state (gitlab.rs:1288) - rollback ships a never-run artifact instead of re-pointing to the last known-good one",
+ "techniques":[{"technique":"environment-promotion","verdict":"deviation","evidence":"src-tauri/src/commands/infrastructure/gitlab.rs:1288 rollback re-derives a build from current state; 'Rollback is re-pointing' to the last known-good build is not realized"}]}
+],
+"declined":[
+{"subject":"deployment-contract","context":"cab45fee-e439-4bff-9924-217b1acc17f8","reason":"plugins-artist-hooks has no code: the Artist plugin was removed in 0697f13438 (src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs retires its tables) and the context lists no file_paths; the context itself is dead and belongs to a context-map rescan, not a verdict"},
+{"subject":"deployment-contract","context":"a35d1f4a-5de8-4be1-af8b-1a3784296400","reason":"plugins-artist-gallery is a weak row and its code was removed with the Artist plugin in 0697f13438; nothing to judge"}
+],
+"consults":[
+{"ts":"2026-10-22T03:11:06Z","bundle":"software-engineering","subjects":["deployment-contract"],"techniques":["deploy-gate-coupling"],"deviations":1},
+{"ts":"2026-10-22T03:11:06Z","bundle":"software-engineering","subjects":["deployment-contract"],"techniques":["environment-promotion"],"deviations":1}
+]}

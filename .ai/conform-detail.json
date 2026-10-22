@@ -3031,14 +3031,14 @@
       "subject": "deployment-contract",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:46:18.000Z",
-      "worker": "7ab03a8f-c0ff-40ff-8c5d-4268ea469d61",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T03:11:06.000Z",
+      "worker": "aab86d14-aadc-457e-9c2a-4bb8f31c3d5f",
       "techniques": [
         {
           "technique": "deploy-gate-coupling",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:64 the verifying check targets the local runtime, not the address the deployment serves (technique: point the check at what production serves)"
+          "evidence": "src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:64 the verifying check targets local execution, against the rule 'point the verifying check at the address production serves'"
         },
         {
           "technique": "environment-promotion",
@@ -3047,7 +3047,6 @@
           "carriedFrom": "2026-10-16"
         }
       ],
-      "registryProposal": "Map hygiene, not corpus: contexts plugins-artist-hooks and plugins-artist-gallery point at files no longer in the tree (artist plugin removed) yet still carry deployment-contract pairs matched on asset/assets; a context rescan + map rebuild should retire them",
       "superseded": [
         {
           "state": "deviation",
@@ -3076,6 +3075,13 @@
           "evaluatedAt": "2026-10-16T17:51:28.000Z",
           "worker": "e3be0a26-9882-4372-b8b6-1436b4ef6c80",
           "reason": "replaced by 7ab03a8f-c0ff-40ff-8c5d-4268ea469d61"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:64 re-confirmed after the 10-18 edits (anchor moved from :58): the deployment smoke test still runs local executePersona, not the endpoint the card advertises (src/features/agents/sub_deployment/components/cloud/DeploymentCard.tsx:45) though src/api/system/cloud.ts:50 cloudExecutePersona exists - a pass describes the local twin, never the deployed build",
+          "evaluatedAt": "2026-10-21T12:46:18.000Z",
+          "worker": "7ab03a8f-c0ff-40ff-8c5d-4268ea469d61",
+          "reason": "replaced by aab86d14-aadc-457e-9c2a-4bb8f31c3d5f"
         }
       ]
     },
@@ -12136,14 +12142,14 @@
       "subject": "deployment-contract",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:46:18.000Z",
-      "worker": "7ab03a8f-c0ff-40ff-8c5d-4268ea469d61",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T03:11:06.000Z",
+      "worker": "aab86d14-aadc-457e-9c2a-4bb8f31c3d5f",
       "techniques": [
         {
           "technique": "environment-promotion",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/gitlab.rs:1288 no-snapshot rollback redeploys current persona state; the technique requires rollback by re-pointing to the last known-good build"
+          "evidence": "src-tauri/src/commands/infrastructure/gitlab.rs:1288 rollback re-derives a build from current state; 'Rollback is re-pointing' to the last known-good build is not realized"
         },
         {
           "technique": "deploy-gate-coupling",
@@ -12173,6 +12179,13 @@
           "evaluatedAt": "2026-10-16T17:51:28.000Z",
           "worker": "e3be0a26-9882-4372-b8b6-1436b4ef6c80",
           "reason": "replaced by 7ab03a8f-c0ff-40ff-8c5d-4268ea469d61"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/gitlab.rs:1277 re-confirmed 2026-10-21 (file unchanged since 09-17): rollback offered at src/features/plugins/gitlab/components/DeploymentHistoryTab.tsx:55 rebuilds the agent from the snapshot prompt plus CURRENT tools/model, and with no snapshot falls back to current persona state (gitlab.rs:1288); same rebuild at gitlab.rs:988 - rollback ships a never-run artifact instead of re-pointing to the last known-good one",
+          "evaluatedAt": "2026-10-21T12:46:18.000Z",
+          "worker": "7ab03a8f-c0ff-40ff-8c5d-4268ea469d61",
+          "reason": "replaced by aab86d14-aadc-457e-9c2a-4bb8f31c3d5f"
         }
       ]
     },
