@@ -1,0 +1,75 @@
+{
+ "schema": "conform-run/1",
+ "worker": "caac7b36-7d08-4d83-b0d6-d1714f4fea90",
+ "subject": "llm-price-book-operations",
+ "evaluatedAt": "2026-10-22T02:29:14.226795+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [
+  {
+   "context": "plugins-dev-tools-llm-overview",
+   "subject": "llm-price-book-operations",
+   "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:235 Context and repository searches found no price_book, priceBook, price_row or priceRow identifiers; broader searches found an external LightTrack price-book reference, while this context consumes connector-reported costs rather than operating a price book.",
+   "techniques": [
+    {
+     "technique": "embedded-seed-fallback",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:80 Fetches externally computed use-case costs; this context does not initialize a metering service's price book."
+    },
+    {
+     "technique": "hot-swap-price-book",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_llm_overview/LlmOverviewPage.tsx:64 The administrative write here assigns a connector credential, without changing provider prices."
+    },
+    {
+     "technique": "no-retroactive-repricing",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:475 Aggregates supplied monetary amounts; it neither stamps ingest costs nor corrects price rows."
+    },
+    {
+     "technique": "price-provenance-and-staleness",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:96 Explicitly places the price book in the external LightTrack service; its row provenance and verification lifecycle are outside this context."
+    },
+    {
+     "technique": "price-resolution-order",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:303 Chooses between connector-reported cost fields, without resolving model, lane or tier price rows."
+    },
+    {
+     "technique": "price-row-variant-encoding",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:394 Copies the reported model identity for display; no rate-card storage or pricing-modifier grammar was found."
+    }
+   ],
+   "absenceTerms": [
+    "priceBook",
+    "priceRow"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-22T02:29:14.226795+00:00",
+   "bundle": "llm-observability",
+   "subjects": [
+    "llm-price-book-operations"
+   ],
+   "techniques": [
+    "embedded-seed-fallback",
+    "hot-swap-price-book",
+    "no-retroactive-repricing",
+    "price-provenance-and-staleness",
+    "price-resolution-order",
+    "price-row-variant-encoding"
+   ],
+   "deviations": 0,
+   "context": "plugins-dev-tools-llm-overview",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  }
+ ]
+}

@@ -27186,7 +27186,11 @@
           "revision": 2,
           "changedAt": "2026-10-02",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:235 Context and repository searches found no price_book, priceBook, price_row or priceRow identifiers; broader searches found an external LightTrack price-book reference, while this context consumes connector-reported costs rather than operating a price book.",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:1f43aefeff056ea5",
+          "evaluatedRevision": 2
         }
       ],
       "governance": "governed"

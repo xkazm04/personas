@@ -34463,6 +34463,47 @@
           "evidence": "src/lib/credentials/catalogApiEndpoints.ts:17 The endpoint helper constructs API Explorer metadata and exposes no unconstrained signing operation."
         }
       ]
+    },
+    "2dcda6bf-9982-422b-b63f-1481c414cdab/llm-price-book-operations": {
+      "context": "plugins-dev-tools-llm-overview",
+      "subject": "llm-price-book-operations",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:29:14.226Z",
+      "worker": "caac7b36-7d08-4d83-b0d6-d1714f4fea90",
+      "techniques": [
+        {
+          "technique": "embedded-seed-fallback",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:80 Fetches externally computed use-case costs; this context does not initialize a metering service's price book."
+        },
+        {
+          "technique": "hot-swap-price-book",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/LlmOverviewPage.tsx:64 The administrative write here assigns a connector credential, without changing provider prices."
+        },
+        {
+          "technique": "no-retroactive-repricing",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:475 Aggregates supplied monetary amounts; it neither stamps ingest costs nor corrects price rows."
+        },
+        {
+          "technique": "price-provenance-and-staleness",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:96 Explicitly places the price book in the external LightTrack service; its row provenance and verification lifecycle are outside this context."
+        },
+        {
+          "technique": "price-resolution-order",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:303 Chooses between connector-reported cost fields, without resolving model, lane or tier price rows."
+        },
+        {
+          "technique": "price-row-variant-encoding",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:394 Copies the reported model identity for display; no rate-card storage or pricing-modifier grammar was found."
+        }
+      ]
     }
   }
 }
