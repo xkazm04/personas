@@ -1982,3 +1982,6 @@
 {"ts":"2026-10-22T03:02:06Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["reading-is-not-running","archive-extraction-safety"],"deviations":0}
 {"ts":"2026-10-22T03:02:06Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["archive-extraction-safety","reading-is-not-running"],"deviations":0}
 {"ts":"2026-10-22T03:02:06Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["verification-scope","reading-is-not-running"],"deviations":0}
+{"ts":"2026-10-22T03:04:57Z","bundle":"software-engineering","subjects":["rate-limiting"],"techniques":["storm-hygiene","refusal-contract","limit-derivation"],"deviations":1}
+{"ts":"2026-10-22T03:04:57Z","bundle":"software-engineering","subjects":["rate-limiting"],"techniques":["limit-observability","limiter-topology"],"deviations":1}
+{"ts":"2026-10-22T03:04:57Z","bundle":"software-engineering","subjects":["rate-limiting"],"techniques":["refusal-contract","storm-hygiene"],"deviations":1}
