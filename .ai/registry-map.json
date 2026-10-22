@@ -9232,12 +9232,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/src/companion/proactive/budget.rs:23 GLOBAL_DAILY_CAP throttles nudge delivery volume; nothing in companion/proactive refuses an artifact, change or advancement against a quality standard, so the subject's precondition (a check that can refuse a state) does not hold - governed by proactive-nudges/rate-limiting instead",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
-          "evaluatedRevision": 53,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/src/companion/proactive/backlog_triage.rs:15 the context's only accept/reject judgment is a proposal persisted for a human click, and execution_review triages attention, not quality; nothing here can refuse an artifact, change or advancement, so no gate exists to judge (re-checked at r54; r54 only added a rust panic-lint application, not relevant here)",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54,
+          "revisionsBehind": 1
         },
         {
           "subject": "mcp-tools",
@@ -11661,12 +11660,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/shared/components/display/DataGrid.tsx:3 These modules implement presentation and interaction primitives rather than a quality-check decision that authorizes advancement.",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
-          "evaluatedRevision": 53,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/shared/components/display/DataGrid.tsx:2 the context is shared table/badge/empty-state presentation primitives; no file computes a verdict or refuses any state, so the subject's precondition (a check that can refuse) does not hold (re-anchored: the r53 anchor was a blank comment line)",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54,
+          "revisionsBehind": 1
         },
         {
           "subject": "test-harness",
@@ -15154,12 +15152,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/home/sub_welcome/lib/connectorScope.ts:13 The inspected Welcome logic produces informational health, navigation and resume signals rather than authorizing advancement through a quality gate.",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
-          "evaluatedRevision": 53,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/home/sub_welcome/lib/connectorScope.ts:10 says it is intentionally NOT a readiness gate; the Welcome/Cockpit files only compute informational health, briefing and resume signals and refuse nothing (re-anchored: the r53 anchor was a blank comment line)",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54,
+          "revisionsBehind": 1
         },
         {
           "subject": "test-harness",
@@ -26918,12 +26915,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/journey/journeyModel.ts:25 the context only renders per-step enforcement strength (STATE_STRENGTH) from a backend snapshot; it refuses nothing and no check here can block a change. It reads gate data (enforcement-binding / advancement-evidence-fields shape, :53 unknown never skipped) but owns no gate. The gates live elsewhere.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
-          "evaluatedRevision": 53,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/LifecyclePage.tsx:15 the context is now only the page shell and project picker (2 files); the Gate plane it composes lives in lifecycleView/, outside this context, and nothing here refuses a change (r53 anchor journey/journeyModel.ts is no longer in this context's file list)",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54,
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-memory",
@@ -32709,12 +32705,11 @@
           "changedAt": "2026-10-14",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/features/browser/whitelist/AddSiteModal.tsx:4 the context's only refusals are origin validation and per-site enable/tool permission for agent browsing - an authorization allowlist enforced in Rust, not a quality standard over a tree, change or release (matched on site/policy/allowlist tokens)",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
-          "evaluatedRevision": 53,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/browser/whitelist/WhitelistPage.tsx:7 the only refusal in the context is the origin allowlist every browser backend consults: an authorization boundary over agent browsing, not a quality standard over a tree, change or release (re-checked at r54)",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54,
+          "revisionsBehind": 1
         },
         {
           "subject": "test-harness",
@@ -33189,12 +33184,11 @@
           "changedAt": "2026-10-14",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/stores/slices/agents/budgetEnforcementSlice.ts:133 is the context's only refusal and it is spend admission control, not a quality standard; src/stores/slices/agents/matrixBuildSlice.ts:1067 merely records a backend-computed test verdict and refuses nothing",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:6e635d76a310aa4b",
-          "evaluatedRevision": 53,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/stores/slices/agents/budgetEnforcementSlice.ts:133 the context's only refusal is spend admission control (isBudgetBlocked); src/stores/slices/agents/matrixBuildSlice.ts:1067 just records a backend test verdict and gates nothing, so no quality gate lives here (re-checked at r54)",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54,
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-instruction-files",

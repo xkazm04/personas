@@ -7199,11 +7199,19 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T15:40:00.000Z",
-      "worker": "910f5999-b183-4f5d-a67e-e49e43242f9b",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:39:40.010Z",
+      "worker": "f3497fd0-afe7-4a95-9c13-32e4acd5d854",
       "techniques": [],
-      "registryProposal": "technique-shaped resonance, not governance: src/stores/slices/agents/budgetEnforcementSlice.ts:108 fails closed (with a session-scoped human override) when the spend instrument cannot be read - the in-path branch of quality-gates/unmeasurable-criteria - but the subject governing it is llm-observability/usage-limit-governance, which the matcher never paired with this context"
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/stores/slices/agents/budgetEnforcementSlice.ts:133 is the context's only refusal and it is spend admission control, not a quality standard; src/stores/slices/agents/matrixBuildSlice.ts:1067 merely records a backend-computed test verdict and refuses nothing",
+          "evaluatedAt": "2026-10-09T15:40:00.000Z",
+          "worker": "910f5999-b183-4f5d-a67e-e49e43242f9b",
+          "reason": "replaced by f3497fd0-afe7-4a95-9c13-32e4acd5d854"
+        }
+      ]
     },
     "71d36b74-2b52-4759-a000-b505ddf27915/agent-memory": {
       "context": "db-repos-core",
@@ -15575,14 +15583,24 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T11:13:52.000Z",
-      "worker": "2d8e0e50-5978-4133-8647-1bbaae10b6ce",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:39:40.010Z",
+      "worker": "f3497fd0-afe7-4a95-9c13-32e4acd5d854",
       "techniques": [
         {
           "technique": "gate-laddering",
           "verdict": "not-applicable",
-          "evidence": "src/features/browser/whitelist/AddSiteModal.tsx:5 the UI pre-check defers to the Rust refusal as the binding rung, but what it gates is access, which authorization / browser-credential-boundary govern"
+          "evidence": "src/features/browser/whitelist/AddSiteModal.tsx:5 the UI pre-check defers to the Rust refusal as the binding rung, but what it gates is access, which authorization / browser-credential-boundary govern",
+          "carriedFrom": "2026-10-10"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/browser/whitelist/AddSiteModal.tsx:4 the context's only refusals are origin validation and per-site enable/tool permission for agent browsing - an authorization allowlist enforced in Rust, not a quality standard over a tree, change or release (matched on site/policy/allowlist tokens)",
+          "evaluatedAt": "2026-10-10T11:13:52.000Z",
+          "worker": "2d8e0e50-5978-4133-8647-1bbaae10b6ce",
+          "reason": "replaced by f3497fd0-afe7-4a95-9c13-32e4acd5d854"
         }
       ]
     },
@@ -17947,10 +17965,26 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T11:42:13.122Z",
-      "worker": "4a2b286f-12e8-42a5-b463-b7ae3887c447",
-      "techniques": []
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:39:40.010Z",
+      "worker": "f3497fd0-afe7-4a95-9c13-32e4acd5d854",
+      "techniques": [
+        {
+          "technique": "unmeasurable-criteria",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/companion/proactive/backlog_triage.rs:19 fails closed to reject on a missing verdict, which is the technique's rule, but the verdict cannot refuse anything without a human click, so the gate precondition is unmet"
+        }
+      ],
+      "registryProposal": "Technique-shaped resonance: backlog_triage.rs realizes unmeasurable-criteria fail-closed doctrine for an LLM proposal that has no refusal power. Route by precondition: hitl-approval/triage-queues govern it, not quality-gates. A judge-proposal pattern could be a cross-reference from unmeasurable-criteria.",
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/companion/proactive/budget.rs:23 GLOBAL_DAILY_CAP throttles nudge delivery volume; nothing in companion/proactive refuses an artifact, change or advancement against a quality standard, so the subject's precondition (a check that can refuse a state) does not hold - governed by proactive-nudges/rate-limiting instead",
+          "evaluatedAt": "2026-10-12T11:42:13.122Z",
+          "worker": "4a2b286f-12e8-42a5-b463-b7ae3887c447",
+          "reason": "replaced by f3497fd0-afe7-4a95-9c13-32e4acd5d854"
+        }
+      ]
     },
     "c413de7d-1182-4abc-8a08-9c8832254c62/agent-memory": {
       "context": "overview-director",
@@ -19245,14 +19279,24 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T17:26:57.381Z",
-      "worker": "fb31e5ee-9279-4216-b79d-a710d3d84858-rv",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:39:40.010Z",
+      "worker": "f3497fd0-afe7-4a95-9c13-32e4acd5d854",
       "techniques": [
         {
           "technique": "renameable-detector-keys",
           "verdict": "not-applicable",
-          "evidence": "src/features/home/sub_welcome/lib/connectorScope.ts:2 The literal connector names classify a display count; renaming does not evade a blocking detector here."
+          "evidence": "src/features/home/sub_welcome/lib/connectorScope.ts:2 The literal connector names classify a display count; renaming does not evade a blocking detector here.",
+          "carriedFrom": "2026-10-12"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/home/sub_welcome/lib/connectorScope.ts:13 The inspected Welcome logic produces informational health, navigation and resume signals rather than authorizing advancement through a quality gate.",
+          "evaluatedAt": "2026-10-12T17:26:57.381Z",
+          "worker": "fb31e5ee-9279-4216-b79d-a710d3d84858-rv",
+          "reason": "replaced by f3497fd0-afe7-4a95-9c13-32e4acd5d854"
         }
       ]
     },
@@ -19335,14 +19379,25 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T17:26:57.381Z",
-      "worker": "fb31e5ee-9279-4216-b79d-a710d3d84858-rv",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:39:40.010Z",
+      "worker": "f3497fd0-afe7-4a95-9c13-32e4acd5d854",
       "techniques": [
         {
           "technique": "severity-by-construction",
           "verdict": "not-applicable",
-          "evidence": "src/features/shared/components/display/StatusBadge.tsx:5 These are badge presentation variants; this component does not connect severity to a gate's refusal."
+          "evidence": "src/features/shared/components/display/StatusBadge.tsx:5 These are badge presentation variants; this component does not connect severity to a gate's refusal.",
+          "carriedFrom": "2026-10-12"
+        }
+      ],
+      "registryProposal": "Matched on display/shared/table tokens only; quality-gates scores 822 here with no gate in 32 files. A lexical false positive worth damping for presentation-primitive contexts.",
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/shared/components/display/DataGrid.tsx:3 These modules implement presentation and interaction primitives rather than a quality-check decision that authorizes advancement.",
+          "evaluatedAt": "2026-10-12T17:26:57.381Z",
+          "worker": "fb31e5ee-9279-4216-b79d-a710d3d84858-rv",
+          "reason": "replaced by f3497fd0-afe7-4a95-9c13-32e4acd5d854"
         }
       ]
     },
@@ -24065,14 +24120,30 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T07:49:49.292Z",
-      "worker": "0408d088-1b0c-464a-b9c4-5ec13c2256ba",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T02:39:40.010Z",
+      "worker": "f3497fd0-afe7-4a95-9c13-32e4acd5d854",
       "techniques": [
+        {
+          "technique": "policy-projection",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/LifecyclePage.tsx:15 the gate verdict surface is composed from lifecycleView/, which this context does not own"
+        },
         {
           "technique": "advancement-evidence-fields",
           "verdict": "display honours unknown-is-not-a-value but is not a gate",
-          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/journey/journeyModel.ts:53"
+          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/journey/journeyModel.ts:53",
+          "carriedFrom": "2026-10-14"
+        }
+      ],
+      "registryProposal": "Coverage hole: src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/** and journey/** belong to no context in context-map.json, so the surface that actually projects gate verdicts (policy-projection, advancement-evidence-fields) has no pair anywhere. A context should be added for it.",
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/journey/journeyModel.ts:25 the context only renders per-step enforcement strength (STATE_STRENGTH) from a backend snapshot; it refuses nothing and no check here can block a change. It reads gate data (enforcement-binding / advancement-evidence-fields shape, :53 unknown never skipped) but owns no gate. The gates live elsewhere.",
+          "evaluatedAt": "2026-10-14T07:49:49.292Z",
+          "worker": "0408d088-1b0c-464a-b9c4-5ec13c2256ba",
+          "reason": "replaced by f3497fd0-afe7-4a95-9c13-32e4acd5d854"
         }
       ]
     },
