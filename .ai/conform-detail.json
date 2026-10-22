@@ -36047,6 +36047,38 @@
         }
       ],
       "registryProposal": "quality-gates is repo/pipeline-shaped; 60+ of its 90 map pairs are UI contexts matched on vocabulary (gate, verdict, pipeline). Consider a precondition note so display surfaces route to not-applicable."
+    },
+    "e62cdb2d-a626-4a0b-afdf-ac3d7aada9f0/agent-memory": {
+      "context": "commands-core",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-22",
+      "evaluatedTs": "2026-10-22T12:00:00.000Z",
+      "worker": "fe870690-5a4d-48ed-875a-217a1e2c96f1",
+      "techniques": [
+        {
+          "technique": "rollup-compaction",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/core/memory_compile.rs:245 sources are not marked superseded or linked (comment admits no link table); article is inserted alongside them"
+        },
+        {
+          "technique": "scope-before-similarity",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/core/memory_compile.rs:87 window is partitioned by persona only; use_case_id is not partitioned and the article is written with use_case_id None, so the merged item takes no scope from its members"
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/core/memories.rs:950 review proposals apply via compare-and-swap on pending_review status (human-approved door); memories.rs:556 core-tier rows are shielded from LLM re-scoring"
+        },
+        {
+          "technique": "addresses-before-compression",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/core/memory_compile.rs:226 compile is triggered by caller on any 3+ memories with no measurement that the pass saves recall seats or accuracy"
+        }
+      ],
+      "registryProposal": "Pair is a technique-shaped match for memory-compile; the rest of the agent-memory pairs listed as unknown are mostly UI/hook/lib contexts that only mention memory in passing and probably should not be governed by this subject (14+ contexts look like vocabulary resonance)."
     }
   }
 }

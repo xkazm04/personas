@@ -6986,7 +6986,11 @@
           "revision": 51,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/core/memory_compile.rs:245 compile writes a new article beside its sources and links them only in body text; sources stay in default recall, so rollup-compaction's supersede-and-link obligation is unmet and the store grows instead of shrinking",
+          "evaluatedAt": "2026-10-22",
+          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
+          "evaluatedRevision": 51
         },
         {
           "subject": "test-harness",
