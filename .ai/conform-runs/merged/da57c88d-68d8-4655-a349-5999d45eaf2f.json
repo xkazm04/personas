@@ -1,0 +1,71 @@
+{
+ "schema": "conform-run/1",
+ "worker": "da57c88d-68d8-4655-a349-5999d45eaf2f",
+ "subject": "remediation-handoff",
+ "evaluatedAt": "2026-10-23T21:25:10.482915+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [
+  {
+   "context": "plugins-dev-tools-triage",
+   "subject": "remediation-handoff",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/plugins/dev-tools/sub_triage/findings/sweep.ts:125 A failed standards read becomes an empty list and is subsequently marked probed, allowing findings to receive a persisted cleared verdict without a successful observation.",
+   "techniques": [
+    {
+     "technique": "batch-shaping-for-one-session",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_triage/findings/dispatch.ts:49 This dispatcher sends one finding per invocation; the sweep's discovery caps do not constitute a batch handed to one executor."
+    },
+    {
+     "technique": "claim-carry-forward-rules",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_triage/findings/sweep.ts:296 Existing findings remain persisted and their exact dedup keys suppress new inserts; this path does not regenerate ledger rows or transfer judgements through title/category matching."
+    },
+    {
+     "technique": "evidence-based-auto-close",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/dev-tools/sub_triage/findings/sweep.ts:116 The catch returns [] at line 118, after which line 125 marks standards_finding probed; verdictFor then returns cleared for missing keys, violating the requirement to distinguish failed observation from successful empty observation."
+    },
+    {
+     "technique": "handoff-tenancy-and-idempotence",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_triage/findings/dispatch.ts:62 This route records a local triage acceptance and launches an observable executor; it does not record ownership of an externally handed-off batch."
+    },
+    {
+     "technique": "resolution-trailers",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_triage/findings/verify.ts:171 Verification eligibility uses the linked task's observed completion, so this execution path does not require a return signal from an executor without a callback."
+    },
+    {
+     "technique": "single-artifact-prompt-construction",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_triage/findings/dispatch.ts:85 Fleet receives the prompt through an app-controlled interactive session, while Runner execution is followed to termination; the technique explicitly excludes executors whose runs can be watched."
+    }
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-23T21:25:10.482915+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "remediation-handoff"
+   ],
+   "techniques": [
+    "batch-shaping-for-one-session",
+    "claim-carry-forward-rules",
+    "evidence-based-auto-close",
+    "handoff-tenancy-and-idempotence",
+    "resolution-trailers",
+    "single-artifact-prompt-construction"
+   ],
+   "deviations": 1,
+   "context": "plugins-dev-tools-triage",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  }
+ ]
+}

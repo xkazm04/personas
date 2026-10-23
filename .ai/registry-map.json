@@ -27945,7 +27945,11 @@
           "revision": 6,
           "changedAt": "2026-10-01",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/sweep.ts:125 A failed standards read becomes an empty list and is subsequently marked probed, allowing findings to receive a persisted cleared verdict without a successful observation.",
+          "evaluatedAt": "2026-10-23",
+          "evaluatedAgainst": "sha256-b2:ab4f0ae40c100d8e",
+          "evaluatedRevision": 6
         },
         {
           "subject": "test-harness",
