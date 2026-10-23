@@ -20884,7 +20884,11 @@
           "revision": 4,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/notepad/plan/ShipVelocityNote.tsx:30 When the displayed milestone is not the single unshipped target, the component silently drops the forecast while continuing to show project-wide cycle statistics, omitting scoped unavailable indicators.",
+          "evaluatedAt": "2026-10-23",
+          "evaluatedAgainst": "sha256-b2:c9a78a4c9faf0799",
+          "evaluatedRevision": 5
         },
         {
           "subject": "agent-memory",

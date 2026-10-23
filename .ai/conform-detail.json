@@ -37232,6 +37232,42 @@
           "evidence": "src/features/templates/sub_generated/generation/runner/useDesignRunnerState.ts:149 These positional identifiers address application template test cases, not delivery-plan steps, so this subject's step-identity contract does not apply."
         }
       ]
+    },
+    "959baa73-f18f-42c8-8569-466939b9050d/plan-review": {
+      "context": "notepad-plan",
+      "subject": "plan-review",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-23",
+      "evaluatedTs": "2026-10-23T21:13:55.076Z",
+      "worker": "941b91b7-4719-4006-9b33-20dd48497a69",
+      "techniques": [
+        {
+          "technique": "decision-sized-slicing",
+          "verdict": "deviation",
+          "evidence": "src/features/notepad/plan/ShipDispatch.tsx:45 The dispatch prompt directs the agent to decompose and execute in a single pass without pausing for pre-plan human disposition across decision boundaries."
+        },
+        {
+          "technique": "fresh-posture-self-challenge",
+          "verdict": "deviation",
+          "evidence": "src/features/notepad/plan/ShipDispatch.tsx:47 Critique is bundled into an unconstrained manual review summary block without a separate reframing posture, fixed rubric questions, retained challenge notes, or an explicit sentinel."
+        },
+        {
+          "technique": "informational-fold-in",
+          "verdict": "deviation",
+          "evidence": "src/features/notepad/plan/ShipVelocityNote.tsx:30 Forecast dates drop silently when the open milestone is not the next unshipped milestone, violating the requirement that unavailable figures carry their scope rather than leaving the surface looking complete."
+        },
+        {
+          "technique": "objection-before-artifacts",
+          "verdict": "deviation",
+          "evidence": "src/features/notepad/plan/ShipCertifyModal.tsx:39 Scope cut certification advances without a chartered objection reader evaluating premise, design, threat, or failure risks before implementation artifacts are created."
+        },
+        {
+          "technique": "silent-decision-surfacing",
+          "verdict": "deviation",
+          "evidence": "src/features/notepad/plan/shipAthena.ts:91 Decomposition proposes goals directly onto an editable card without mapping unstated commitments across the four lenses or routing recurring conventions to instruction files."
+        }
+      ]
     }
   }
 }
