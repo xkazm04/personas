@@ -37354,7 +37354,11 @@
           "revision": 5,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/generation/runner/useDesignRunnerState.ts:130 The context submits AI template test cases; searches found only a Pipeline category label and no merge-base, workflow_dispatch, or depends_on constructs here, while repository searches located delivery scheduling elsewhere.",
+          "evaluatedAt": "2026-10-23",
+          "evaluatedAgainst": "sha256-b2:809d2a648d853f13",
+          "evaluatedRevision": 5
         },
         {
           "subject": "module-design",

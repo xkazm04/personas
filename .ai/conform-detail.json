@@ -37191,6 +37191,47 @@
         }
       ],
       "registryProposal": "Lexical matches on 'asset'/'assets'/'cache' route creative-asset and in-process-cache contexts to deployment-contract; its golden path is about hosted-build delivery, so those terms in use_when/technique text attract false pairings."
+    },
+    "8a57c65c-06fd-45c9-9d32-d50c89c4c705/pipeline-authoring": {
+      "context": "template-generation",
+      "subject": "pipeline-authoring",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-23",
+      "evaluatedTs": "2026-10-23T21:02:15.082Z",
+      "worker": "77c88cd7-1960-4138-9421-38bae0e3b8f5",
+      "techniques": [
+        {
+          "technique": "change-scoped-work-selection",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/generation/sources/BatchSourceView.tsx:21 Selection filters uploaded templates by category; it does not select delivery checks from repository changes."
+        },
+        {
+          "technique": "foreign-config-replay",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/generation/runner/designRunnerConstants.ts:37 The parser reads template descriptions from numbered Markdown entries, rather than replaying another tool's check-selection configuration."
+        },
+        {
+          "technique": "human-checkpoints-in-a-pipeline",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/generation/runner/DesignReviewRunner.tsx:162 The runner displays generation results; this context contains no deployment or migration approval node in a delivery plan."
+        },
+        {
+          "technique": "pipeline-plan-auditability",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/generation/runner/useDesignRunnerState.ts:157 This action copies application generation logs; no generated delivery plan exists here to capture or preview."
+        },
+        {
+          "technique": "runtime-pipeline-generation",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/design/reviews.rs:326 The corresponding IPC implementation builds an AI design prompt, rather than emitting work for a delivery scheduler."
+        },
+        {
+          "technique": "step-identity-stability",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/generation/runner/useDesignRunnerState.ts:149 These positional identifiers address application template test cases, not delivery-plan steps, so this subject's step-identity contract does not apply."
+        }
+      ]
     }
   }
 }
