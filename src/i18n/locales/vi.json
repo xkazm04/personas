@@ -3601,6 +3601,17 @@
     "palette_agent_updated": "Đã cập nhật tác tử",
     "palette_update_failed": "Không thể cập nhật tác tử"
   },
+  "cockpit": {
+    "inbox": {
+      "relative_days_one": "{d} ngày trước",
+      "relative_days_other": "{d} ngày trước",
+      "relative_hours_one": "{h} giờ trước",
+      "relative_hours_other": "{h} giờ trước",
+      "relative_just_now": "vừa xong",
+      "relative_minutes_one": "{m} phút trước",
+      "relative_minutes_other": "{m} phút trước"
+    }
+  },
   "common": {
     "_comment_refine": "Generic refine action used in adoption + scratch build phases",
     "_comment_reject": "Generic reject action used in adoption build phase",

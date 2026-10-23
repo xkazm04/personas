@@ -3601,6 +3601,17 @@
     "palette_agent_updated": "एजेंट अपडेट हो गया",
     "palette_update_failed": "एजेंट अपडेट करने में विफल"
   },
+  "cockpit": {
+    "inbox": {
+      "relative_days_one": "{d}दि पहले",
+      "relative_days_other": "{d}दि पहले",
+      "relative_hours_one": "{h}घं पहले",
+      "relative_hours_other": "{h}घं पहले",
+      "relative_just_now": "अभी",
+      "relative_minutes_one": "{m}मि पहले",
+      "relative_minutes_other": "{m}मि पहले"
+    }
+  },
   "common": {
     "_comment_refine": "Generic refine action used in adoption + scratch build phases",
     "_comment_reject": "Generic reject action used in adoption build phase",

@@ -25031,6 +25031,17 @@ export type Translations = {
     station_toggle_label: string;
     auto_resume_description: string;
   };
+  cockpit: {
+    inbox: {
+      relative_just_now: string;
+      relative_minutes_one: string;
+      relative_minutes_other: string;
+      relative_hours_one: string;
+      relative_hours_other: string;
+      relative_days_one: string;
+      relative_days_other: string;
+    };
+  };
   kpis: {
     overview: {
       variant_switcher_aria: string;

@@ -3601,6 +3601,17 @@
     "palette_agent_updated": "تم تحديث الوكيل",
     "palette_update_failed": "فشل تحديث الوكيل"
   },
+  "cockpit": {
+    "inbox": {
+      "relative_days_one": "منذ {d} ي",
+      "relative_days_other": "منذ {d} ي",
+      "relative_hours_one": "منذ {h} س",
+      "relative_hours_other": "منذ {h} س",
+      "relative_just_now": "الآن",
+      "relative_minutes_one": "منذ {m} د",
+      "relative_minutes_other": "منذ {m} د"
+    }
+  },
   "common": {
     "_comment_refine": "Generic refine action used in adoption + scratch build phases",
     "_comment_reject": "Generic reject action used in adoption build phase",

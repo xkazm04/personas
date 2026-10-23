@@ -3601,6 +3601,17 @@
     "palette_agent_updated": "Agente actualizado",
     "palette_update_failed": "No se pudo actualizar el agente"
   },
+  "cockpit": {
+    "inbox": {
+      "relative_days_one": "hace {d} d",
+      "relative_days_other": "hace {d} d",
+      "relative_hours_one": "hace {h} h",
+      "relative_hours_other": "hace {h} h",
+      "relative_just_now": "ahora mismo",
+      "relative_minutes_one": "hace {m} min",
+      "relative_minutes_other": "hace {m} min"
+    }
+  },
   "common": {
     "_comment_refine": "Generic refine action used in adoption + scratch build phases",
     "_comment_reject": "Generic reject action used in adoption build phase",

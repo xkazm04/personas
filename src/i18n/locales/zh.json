@@ -3601,6 +3601,17 @@
     "palette_agent_updated": "代理已更新",
     "palette_update_failed": "更新代理失败"
   },
+  "cockpit": {
+    "inbox": {
+      "relative_days_one": "{d} 天前",
+      "relative_days_other": "{d} 天前",
+      "relative_hours_one": "{h} 小时前",
+      "relative_hours_other": "{h} 小时前",
+      "relative_just_now": "刚刚",
+      "relative_minutes_one": "{m} 分钟前",
+      "relative_minutes_other": "{m} 分钟前"
+    }
+  },
   "common": {
     "_comment_refine": "Generic refine action used in adoption + scratch build phases",
     "_comment_reject": "Generic reject action used in adoption build phase",

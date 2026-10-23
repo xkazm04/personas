@@ -764,6 +764,9 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "samples": {}
   },
   "radio": {},
+  "cockpit": {
+    "inbox": {}
+  },
   "kpis": {
     "overview": {
       "variant_labels": {},

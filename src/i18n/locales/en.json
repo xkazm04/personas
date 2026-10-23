@@ -25025,6 +25025,17 @@
     "station_toggle_label": "Show in picker",
     "auto_resume_description": "When on, the last-playing station starts automatically the first time the radio loads after the app opens. Off by default."
   },
+  "cockpit": {
+    "inbox": {
+      "relative_just_now": "just now",
+      "relative_minutes_one": "{m}m ago",
+      "relative_minutes_other": "{m}m ago",
+      "relative_hours_one": "{h}h ago",
+      "relative_hours_other": "{h}h ago",
+      "relative_days_one": "{d}d ago",
+      "relative_days_other": "{d}d ago"
+    }
+  },
   "kpis": {
     "overview": {
       "variant_switcher_aria": "KPI overview style",

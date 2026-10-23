@@ -3601,6 +3601,17 @@
     "palette_agent_updated": "에이전트가 업데이트되었습니다",
     "palette_update_failed": "에이전트를 업데이트하지 못했습니다"
   },
+  "cockpit": {
+    "inbox": {
+      "relative_days_one": "{d}일 전",
+      "relative_days_other": "{d}일 전",
+      "relative_hours_one": "{h}시간 전",
+      "relative_hours_other": "{h}시간 전",
+      "relative_just_now": "방금",
+      "relative_minutes_one": "{m}분 전",
+      "relative_minutes_other": "{m}분 전"
+    }
+  },
   "common": {
     "_comment_refine": "Generic refine action used in adoption + scratch build phases",
     "_comment_reject": "Generic reject action used in adoption build phase",

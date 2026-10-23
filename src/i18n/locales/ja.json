@@ -3601,6 +3601,17 @@
     "palette_agent_updated": "エージェントを更新しました",
     "palette_update_failed": "エージェントを更新できませんでした"
   },
+  "cockpit": {
+    "inbox": {
+      "relative_days_one": "{d}日前",
+      "relative_days_other": "{d}日前",
+      "relative_hours_one": "{h}時間前",
+      "relative_hours_other": "{h}時間前",
+      "relative_just_now": "たった今",
+      "relative_minutes_one": "{m}分前",
+      "relative_minutes_other": "{m}分前"
+    }
+  },
   "common": {
     "_comment_refine": "Generic refine action used in adoption + scratch build phases",
     "_comment_reject": "Generic reject action used in adoption build phase",
